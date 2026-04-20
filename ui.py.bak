@@ -1,0 +1,735 @@
+import pygame
+from items import ITEMS
+from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, MAX_HEALTH
+from crafting import match_recipe, craft_costs, can_craft, RECIPES
+
+
+class UI:
+    def __init__(self, screen):
+        self.screen = screen
+        pygame.font.init()
+        self.font  = pygame.font.SysFont("consolas", 18)
+        self.small = pygame.font.SysFont("consolas", 13)
+        self.research_open    = False
+        self.inventory_open   = False
+        self.crafting_open    = False
+        self.recipe_book_open = False
+        self._card_rects   = {}   # node_id -> pygame.Rect
+        self._inv_rects    = {}   # item_id -> pygame.Rect
+        self._cell_rects        = {}   # (row, col) -> pygame.Rect  (crafting grid)
+        self._hotbar_rects      = []   # list[pygame.Rect], one per hotbar slot
+        self._craft_btn         = None
+        self._craft_grid        = [[None] * 3 for _ in range(3)]
+        self._recipe_craft_btns = {}   # recipe idx -> pygame.Rect
+        self._drag_item        = None  # item being dragged from crafting mini-inv
+        self._craft_inv_rects  = {}    # iid -> Rect in crafting mini-inventory
+
+    def draw(self, player, research=None):
+        self._draw_health(player)
+        self._draw_depth(player)
+        self._draw_pick_level(player)
+        self._draw_hotbar(player)
+        self._draw_mine_bar(player)
+        self._draw_research_hint(research, player)
+        self._draw_inventory_hint()
+        self._draw_crafting_hint()
+        self._draw_recipe_book_hint()
+        if self.research_open and research:
+            self._draw_research(player, research)
+        if self.inventory_open:
+            self._draw_inventory(player)
+        if self.crafting_open:
+            self._draw_crafting(player)
+        if self.recipe_book_open:
+            self._draw_recipe_book(player)
+        self._draw_drag_ghost()
+
+    def handle_research_click(self, pos, player, world, research):
+        for node_id, rect in self._card_rects.items():
+            if rect.collidepoint(pos):
+                research.unlock(node_id, player, world)
+                break
+
+    def handle_inventory_click(self, pos, player):
+        for item_id, rect in self._inv_rects.items():
+            if rect.collidepoint(pos):
+                player.hotbar[player.selected_slot] = item_id
+                break
+
+    def handle_hotbar_click(self, pos, player):
+        for i, rect in enumerate(self._hotbar_rects):
+            if rect.collidepoint(pos):
+                player.selected_slot = i
+                return True
+        return False
+
+    def handle_crafting_mousedown(self, pos, button, player):
+        if button == 1:
+            for iid, rect in self._craft_inv_rects.items():
+                if rect.collidepoint(pos):
+                    self._drag_item = iid
+                    return
+            for (r, c), rect in self._cell_rects.items():
+                if rect.collidepoint(pos):
+                    self._craft_grid[r][c] = self._cycle_craft_item(r, c, player)
+                    return
+            if self._craft_btn and self._craft_btn.collidepoint(pos):
+                self._do_craft(player)
+        elif button == 3:
+            for (r, c), rect in self._cell_rects.items():
+                if rect.collidepoint(pos):
+                    self._craft_grid[r][c] = None
+                    return
+
+    def handle_crafting_mouseup(self, pos, player):
+        if self._drag_item is not None:
+            for (r, c), rect in self._cell_rects.items():
+                if rect.collidepoint(pos):
+                    self._craft_grid[r][c] = self._drag_item
+                    break
+            self._drag_item = None
+
+    def _cycle_craft_item(self, row, col, player):
+        choices = [None] + sorted(
+            [iid for iid, cnt in player.inventory.items() if cnt > 0],
+            key=lambda x: ITEMS.get(x, {}).get("name", x),
+        )
+        cur = self._craft_grid[row][col]
+        idx = choices.index(cur) if cur in choices else -1
+        return choices[(idx + 1) % len(choices)]
+
+    def _do_craft(self, player):
+        out_id, out_count = match_recipe(self._craft_grid)
+        if out_id:
+            self._craft_from_pattern(self._craft_grid, out_id, out_count, player)
+
+    def _craft_from_pattern(self, pattern, out_id, out_count, player):
+        costs = craft_costs(pattern)
+        if not all(player.inventory.get(iid, 0) >= needed for iid, needed in costs.items()):
+            return
+        for iid, needed in costs.items():
+            player.inventory[iid] = player.inventory.get(iid, 0) - needed
+            if player.inventory[iid] <= 0:
+                del player.inventory[iid]
+                for i in range(len(player.hotbar)):
+                    if player.hotbar[i] == iid:
+                        player.hotbar[i] = None
+        for _ in range(out_count):
+            player._add_item(out_id)
+
+    def handle_recipe_book_click(self, pos, player):
+        for idx, btn_rect in self._recipe_craft_btns.items():
+            if btn_rect.collidepoint(pos):
+                recipe = RECIPES[idx]
+                self._craft_from_pattern(
+                    recipe["pattern"], recipe["output_id"], recipe["output_count"], player)
+                return
+
+    # ------------------------------------------------------------------
+
+    def _draw_health(self, player):
+        bw, bh = 180, 18
+        x, y = 10, 10
+        pygame.draw.rect(self.screen, (70, 10, 10), (x, y, bw, bh))
+        hp_w = int(bw * player.health / MAX_HEALTH)
+        r = 255 - int(200 * player.health / MAX_HEALTH)
+        g = int(180 * player.health / MAX_HEALTH)
+        pygame.draw.rect(self.screen, (r, g, 20), (x, y, hp_w, bh))
+        pygame.draw.rect(self.screen, (220, 220, 220), (x, y, bw, bh), 1)
+        txt = self.small.render(f"HP {player.health}/{MAX_HEALTH}", True, (255, 255, 255))
+        self.screen.blit(txt, (x + 4, y + 2))
+
+    def _draw_depth(self, player):
+        depth = player.get_depth()
+        txt = self.font.render(f"Depth: {depth} m", True, (230, 230, 230))
+        self.screen.blit(txt, (SCREEN_W - txt.get_width() - 10, 10))
+
+    def _draw_pick_level(self, player):
+        ep = player.effective_pick_power
+        tiers = [(6, "Obsidian Pick"), (5, "Ruby Pick"), (4, "Crystal Pick"),
+                 (3, "Gold Pick"), (2, "Iron Pick"), (1.4, "Stone Pick")]
+        label = next((name for thresh, name in tiers if ep >= thresh), "Wood Pick")
+        txt = self.small.render(label, True, (200, 200, 150))
+        self.screen.blit(txt, (SCREEN_W - txt.get_width() - 10, 32))
+
+    def _draw_hotbar(self, player):
+        slot_sz = 48
+        gap = 4
+        total_w = HOTBAR_SIZE * (slot_sz + gap) - gap
+        start_x = (SCREEN_W - total_w) // 2
+        y = SCREEN_H - slot_sz - 10
+
+        self._hotbar_rects = []
+        for i in range(HOTBAR_SIZE):
+            x = start_x + i * (slot_sz + gap)
+            self._hotbar_rects.append(pygame.Rect(x, y, slot_sz, slot_sz))
+            selected = (i == player.selected_slot)
+            bg_col   = (60, 60, 60)
+            bdr_col  = (220, 200, 50) if selected else (140, 140, 140)
+            pygame.draw.rect(self.screen, bg_col, (x, y, slot_sz, slot_sz))
+            pygame.draw.rect(self.screen, bdr_col, (x, y, slot_sz, slot_sz), 2 if not selected else 3)
+
+            item_id = player.hotbar[i]
+            if item_id and item_id in ITEMS:
+                item = ITEMS[item_id]
+                swatch = slot_sz - 14
+                max_uses = item.get("max_uses")
+                swatch_h = (swatch - 2) if not max_uses else (swatch - 7)
+                pygame.draw.rect(self.screen, item["color"], (x + 5, y + 5, swatch, swatch_h))
+                count = player.inventory.get(item_id, 0)
+                ctxt  = self.small.render(str(count), True, (255, 255, 255))
+                self.screen.blit(ctxt, (x + slot_sz - ctxt.get_width() - 3, y + slot_sz - 15))
+                if max_uses:
+                    uses_left = player.hotbar_uses[i] or 0
+                    frac = max(0.0, uses_left / max_uses)
+                    bar_x = x + 5
+                    bar_y = y + 5 + swatch_h + 2
+                    bar_w = swatch
+                    bar_h = 4
+                    pygame.draw.rect(self.screen, (40, 40, 40), (bar_x, bar_y, bar_w, bar_h))
+                    fill_w = max(1, int(bar_w * frac))
+                    g = int(200 * frac)
+                    r = int(200 * (1 - frac))
+                    pygame.draw.rect(self.screen, (r, g, 0), (bar_x, bar_y, fill_w, bar_h))
+                name_txt = self.small.render(item["name"], True, (200, 200, 200))
+                # Show name below hotbar for selected slot
+                if selected:
+                    nx = (SCREEN_W - name_txt.get_width()) // 2
+                    self.screen.blit(name_txt, (nx, y - 18))
+
+    def _draw_mine_bar(self, player):
+        if not player.mining_block or player.mine_progress <= 0:
+            return
+        bw, bh = 160, 14
+        x = SCREEN_W // 2 - bw // 2
+        y = SCREEN_H // 2 + 50
+        pygame.draw.rect(self.screen, (30, 30, 30), (x, y, bw, bh))
+        pygame.draw.rect(self.screen, (60, 210, 60), (x, y, int(bw * player.mine_progress), bh))
+        pygame.draw.rect(self.screen, (200, 200, 200), (x, y, bw, bh), 1)
+        txt = self.small.render("Mining...", True, (220, 220, 220))
+        self.screen.blit(txt, (x + bw // 2 - txt.get_width() // 2, y - 16))
+
+    def _draw_research_hint(self, research, player):
+        if research and any(research.can_unlock(nid, player.inventory)
+                            for nid in research.nodes):
+            color = (220, 200, 50)
+        else:
+            color = (130, 130, 130)
+        txt = self.small.render("R: Research", True, color)
+        self.screen.blit(txt, (SCREEN_W - txt.get_width() - 10, 48))
+
+    def _draw_inventory_hint(self):
+        color = (220, 200, 50) if self.inventory_open else (130, 130, 130)
+        txt = self.small.render("I: Inventory", True, color)
+        self.screen.blit(txt, (SCREEN_W - txt.get_width() - 10, 64))
+
+    def _draw_crafting_hint(self):
+        color = (220, 200, 50) if self.crafting_open else (130, 130, 130)
+        txt = self.small.render("C: Crafting", True, color)
+        self.screen.blit(txt, (SCREEN_W - txt.get_width() - 10, 80))
+
+    def _draw_recipe_book_hint(self):
+        color = (220, 200, 50) if self.recipe_book_open else (130, 130, 130)
+        txt = self.small.render("B: Recipes", True, color)
+        self.screen.blit(txt, (SCREEN_W - txt.get_width() - 10, 96))
+
+    # ------------------------------------------------------------------
+    # Research tree overlay
+    # ------------------------------------------------------------------
+
+    def _draw_research(self, player, research):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 210))
+        self.screen.blit(overlay, (0, 0))
+
+        title = self.font.render("RESEARCH TREE", True, (255, 220, 50))
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 8))
+
+        hint = self.small.render(
+            "Press R to close  |  Click an available upgrade to unlock it",
+            True, (150, 150, 150))
+        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 30))
+
+        CARD_W, CARD_H = 350, 98
+        COL_GAP = 28
+        ROW_GAP = 8
+        total_w = 3 * CARD_W + 2 * COL_GAP
+        col_x = [(SCREEN_W - total_w) // 2 + c * (CARD_W + COL_GAP)
+                 for c in range(3)]
+        header_y = 52
+
+        for c, label in enumerate(research.COLUMNS):
+            hdr = self.small.render(label, True, (190, 190, 190))
+            self.screen.blit(hdr, (col_x[c], header_y))
+
+        self._card_rects.clear()
+
+        for col, row, node_id in research.layout:
+            node = research.nodes[node_id]
+            x = col_x[col]
+            y = header_y + 18 + row * (CARD_H + ROW_GAP)
+            rect = pygame.Rect(x, y, CARD_W, CARD_H)
+            self._card_rects[node_id] = rect
+
+            prereqs_ok = research.prereqs_met(node_id)
+            can = research.can_unlock(node_id, player.inventory)
+
+            if node.unlocked:
+                bg, border = (10, 45, 10), (40, 170, 40)
+                status_txt, status_col = "UNLOCKED", (50, 200, 50)
+            elif can:
+                bg, border = (55, 45, 5), (220, 180, 30)
+                status_txt, status_col = "AVAILABLE", (220, 180, 30)
+            elif prereqs_ok:
+                bg, border = (45, 20, 20), (160, 70, 70)
+                status_txt, status_col = "NEED ITEMS", (200, 90, 90)
+            else:
+                bg, border = (20, 20, 28), (55, 55, 80)
+                status_txt, status_col = "LOCKED", (90, 90, 120)
+
+            pygame.draw.rect(self.screen, bg, rect)
+            pygame.draw.rect(self.screen, border, rect, 2)
+
+            # Name
+            name_surf = self.font.render(node.name, True, (255, 255, 220))
+            self.screen.blit(name_surf, (x + 7, y + 6))
+
+            # Status (top-right)
+            st_surf = self.small.render(status_txt, True, status_col)
+            self.screen.blit(st_surf, (x + CARD_W - st_surf.get_width() - 7, y + 9))
+
+            # Description
+            desc_surf = self.small.render(node.description, True, (150, 150, 150))
+            self.screen.blit(desc_surf, (x + 7, y + 30))
+
+            # Cost or prereq info
+            if node.unlocked:
+                pass
+            elif not prereqs_ok:
+                blocked = [research.nodes[p].name
+                           for p in node.prerequisites
+                           if not research.nodes[p].unlocked]
+                req_surf = self.small.render(
+                    "Requires: " + ", ".join(blocked), True, (160, 80, 80))
+                self.screen.blit(req_surf, (x + 7, y + 52))
+            else:
+                cx = x + 7
+                for item_id, needed in node.cost.items():
+                    have = player.inventory.get(item_id, 0)
+                    item_name = ITEMS.get(item_id, {}).get("name", item_id)
+                    col_c = (70, 200, 70) if have >= needed else (210, 80, 80)
+                    cost_surf = self.small.render(
+                        f"{item_name}: {have}/{needed}", True, col_c)
+                    self.screen.blit(cost_surf, (cx, y + 52))
+                    cx += cost_surf.get_width() + 12
+
+            # Vertical connector line to card above in same column
+            if row > 0 and prereqs_ok and not node.unlocked:
+                mid_x = x + CARD_W // 2
+                pygame.draw.line(self.screen, border,
+                                 (mid_x, y - ROW_GAP), (mid_x, y), 1)
+
+    # ------------------------------------------------------------------
+    # Inventory overlay
+    # ------------------------------------------------------------------
+
+    def _draw_inventory(self, player):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 215))
+        self.screen.blit(overlay, (0, 0))
+
+        title = self.font.render("INVENTORY", True, (220, 220, 100))
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 8))
+
+        hint = self.small.render(
+            "Press I to close  |  Click an item to assign to selected hotbar slot",
+            True, (130, 130, 130))
+        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 30))
+
+        items_held = sorted(
+            [(iid, cnt) for iid, cnt in player.inventory.items() if cnt > 0],
+            key=lambda t: ITEMS.get(t[0], {}).get("name", t[0])
+        )
+
+        self._inv_rects.clear()
+
+        if not items_held:
+            empty = self.font.render("Your inventory is empty.", True, (90, 90, 90))
+            self.screen.blit(empty, (SCREEN_W // 2 - empty.get_width() // 2, SCREEN_H // 2 - 10))
+            return
+
+        COLS   = 4
+        CELL_W = 210
+        CELL_H = 74
+        GAP    = 8
+        total_w = COLS * CELL_W + (COLS - 1) * GAP
+        start_x = (SCREEN_W - total_w) // 2
+        start_y = 52
+
+        hotbar_map = {iid: i for i, iid in enumerate(player.hotbar) if iid}
+
+        for idx, (item_id, count) in enumerate(items_held):
+            col = idx % COLS
+            row = idx // COLS
+            x = start_x + col * (CELL_W + GAP)
+            y = start_y + row * (CELL_H + GAP)
+
+            rect = pygame.Rect(x, y, CELL_W, CELL_H)
+            self._inv_rects[item_id] = rect
+
+            item        = ITEMS.get(item_id, {})
+            item_color  = item.get("color", (128, 128, 128))
+            hotbar_slot = hotbar_map.get(item_id)
+            in_selected = (hotbar_slot == player.selected_slot)
+
+            if in_selected:
+                bg, border = (55, 50, 10), (220, 200, 50)
+            elif hotbar_slot is not None:
+                bg, border = (25, 38, 52), (70, 120, 175)
+            else:
+                bg, border = (32, 32, 38), (75, 75, 88)
+
+            pygame.draw.rect(self.screen, bg, rect)
+            pygame.draw.rect(self.screen, border, rect, 2)
+
+            # Color swatch
+            sw = 46
+            sy = y + (CELL_H - sw) // 2
+            pygame.draw.rect(self.screen, item_color, (x + 8, sy, sw, sw))
+            pygame.draw.rect(self.screen, (180, 180, 180), (x + 8, sy, sw, sw), 1)
+
+            # Name
+            name_surf = self.font.render(item.get("name", item_id), True, (235, 235, 215))
+            self.screen.blit(name_surf, (x + 62, y + 10))
+
+            # Count
+            count_surf = self.small.render(f"x{count}", True, (150, 215, 150))
+            self.screen.blit(count_surf, (x + 62, y + 33))
+
+            # Placeable tag
+            if item.get("place_block") is not None:
+                tag = self.small.render("placeable", True, (90, 160, 90))
+                self.screen.blit(tag, (x + 62, y + 50))
+
+            # Hotbar slot badge (top-right corner)
+            if hotbar_slot is not None:
+                badge_txt = f"[{hotbar_slot + 1}]"
+                badge_col = (220, 200, 50) if in_selected else (100, 150, 210)
+                badge_surf = self.small.render(badge_txt, True, badge_col)
+                self.screen.blit(badge_surf, (x + CELL_W - badge_surf.get_width() - 7, y + 7))
+
+    # ------------------------------------------------------------------
+    # Crafting overlay
+    # ------------------------------------------------------------------
+
+    def _draw_crafting(self, player):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 215))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 740, 490
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+
+        pygame.draw.rect(self.screen, (22, 22, 30), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (80, 80, 105), (px, py, PW, PH), 2)
+
+        title = self.font.render("CRAFTING TABLE", True, (220, 220, 100))
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, py + 8))
+
+        hint_s = self.small.render(
+            "Drag item from inventory to grid  |  Left-click: cycle  |  Right-click: clear  |  C/ESC: close",
+            True, (100, 100, 115))
+        self.screen.blit(hint_s, (SCREEN_W // 2 - hint_s.get_width() // 2, py + 30))
+
+        # ── 3×3 Grid ──────────────────────────────────────────────────
+        CELL = 70
+        CGAP = 6
+        GW   = 3 * CELL + 2 * CGAP   # 222
+        gx   = px + 30
+        gy   = py + 56
+
+        self._cell_rects.clear()
+
+        for r in range(3):
+            for c in range(3):
+                cx = gx + c * (CELL + CGAP)
+                cy = gy + r * (CELL + CGAP)
+                item_id = self._craft_grid[r][c]
+                rect    = pygame.Rect(cx, cy, CELL, CELL)
+                self._cell_rects[(r, c)] = rect
+
+                if item_id and item_id in ITEMS:
+                    item = ITEMS[item_id]
+                    pygame.draw.rect(self.screen, (45, 50, 56), rect)
+                    pygame.draw.rect(self.screen, (110, 110, 132), rect, 2)
+                    sw = CELL - 16
+                    pygame.draw.rect(self.screen, item["color"],      (cx + 6, cy + 6, sw, sw))
+                    pygame.draw.rect(self.screen, (155, 155, 155),    (cx + 6, cy + 6, sw, sw), 1)
+                    short = item["name"].split()[0]
+                    ns = self.small.render(short, True, (190, 190, 190))
+                    self.screen.blit(ns, (cx + CELL // 2 - ns.get_width() // 2, cy + CELL - 15))
+                else:
+                    pygame.draw.rect(self.screen, (28, 28, 36), rect)
+                    pygame.draw.rect(self.screen, (52, 52, 66),  rect, 1)
+                    ps = self.small.render("+", True, (52, 52, 66))
+                    self.screen.blit(ps, (cx + CELL // 2 - ps.get_width() // 2,
+                                          cy + CELL // 2 - ps.get_height() // 2))
+
+        # ── Arrow ─────────────────────────────────────────────────────
+        arr = self.font.render("→", True, (110, 110, 110))
+        self.screen.blit(arr, (gx + GW + 16,
+                               gy + GW // 2 - arr.get_height() // 2))
+
+        # ── Output slot ───────────────────────────────────────────────
+        OUT = 82
+        ox  = gx + GW + 58
+        oy  = gy + (GW - OUT) // 2
+
+        out_id, out_count = match_recipe(self._craft_grid)
+        craftable = can_craft(self._craft_grid, player.inventory)
+
+        if out_id and out_id in ITEMS:
+            out_item = ITEMS[out_id]
+            bg_c  = (20, 50, 20)   if craftable else (42, 28, 28)
+            bdr_c = (55, 200, 55)  if craftable else (140, 75, 75)
+            pygame.draw.rect(self.screen, bg_c,  (ox, oy, OUT, OUT))
+            pygame.draw.rect(self.screen, bdr_c, (ox, oy, OUT, OUT), 2)
+            sw = OUT - 14
+            pygame.draw.rect(self.screen, out_item["color"],    (ox + 5, oy + 5, sw, sw))
+            pygame.draw.rect(self.screen, (175, 175, 175),      (ox + 5, oy + 5, sw, sw), 1)
+            cnt_s = self.small.render(f"×{out_count}", True, (200, 200, 200))
+            self.screen.blit(cnt_s, (ox + OUT - cnt_s.get_width() - 4, oy + OUT - 14))
+        else:
+            pygame.draw.rect(self.screen, (25, 25, 33), (ox, oy, OUT, OUT))
+            pygame.draw.rect(self.screen, (52, 52, 66),  (ox, oy, OUT, OUT), 1)
+            qs = self.font.render("?", True, (55, 55, 70))
+            self.screen.blit(qs, (ox + OUT // 2 - qs.get_width() // 2,
+                                  oy + OUT // 2 - qs.get_height() // 2))
+
+        out_lbl = self.small.render("Output", True, (85, 85, 105))
+        self.screen.blit(out_lbl, (ox + OUT // 2 - out_lbl.get_width() // 2, oy + OUT + 4))
+
+        # ── Craft button ──────────────────────────────────────────────
+        BW, BH = 110, 36
+        bx = ox + (OUT - BW) // 2
+        by = oy + OUT + 22
+
+        if craftable:
+            bbg, bbdr, btxt = (18, 90, 18), (45, 190, 45), (190, 255, 190)
+        else:
+            bbg, bbdr, btxt = (30, 30, 36), (55, 55, 68), (70, 70, 82)
+
+        self._craft_btn = pygame.Rect(bx, by, BW, BH)
+        pygame.draw.rect(self.screen, bbg,  self._craft_btn)
+        pygame.draw.rect(self.screen, bbdr, self._craft_btn, 2)
+        cl = self.font.render("CRAFT", True, btxt)
+        self.screen.blit(cl, (bx + BW // 2 - cl.get_width() // 2,
+                               by + BH // 2 - cl.get_height() // 2))
+
+        # ── Materials / result info ───────────────────────────────────
+        info_x = ox + OUT + 18
+        info_y = gy
+
+        if out_id:
+            mh = self.small.render("Materials needed:", True, (150, 150, 150))
+            self.screen.blit(mh, (info_x, info_y))
+            info_y += 20
+            for iid, needed in craft_costs(self._craft_grid).items():
+                have = player.inventory.get(iid, 0)
+                col  = (65, 200, 65) if have >= needed else (210, 75, 75)
+                name = ITEMS.get(iid, {}).get("name", iid)
+                ms = self.small.render(f"  {name}: {have} / {needed}", True, col)
+                self.screen.blit(ms, (info_x, info_y))
+                info_y += 16
+            info_y += 8
+            rl = self.small.render("Result:", True, (150, 150, 150))
+            self.screen.blit(rl, (info_x, info_y))
+            info_y += 18
+            rn = self.font.render(ITEMS[out_id]["name"], True, (225, 225, 180))
+            self.screen.blit(rn, (info_x, info_y))
+        elif any(self._craft_grid[r][c] for r in range(3) for c in range(3)):
+            nm = self.small.render("No matching recipe.", True, (130, 75, 75))
+            self.screen.blit(nm, (info_x, info_y))
+        else:
+            tip = self.small.render("Fill the grid to craft.", True, (85, 85, 105))
+            self.screen.blit(tip, (info_x, info_y))
+
+        # ── Divider ───────────────────────────────────────────────────
+        div_y = gy + GW + 16
+        pygame.draw.line(self.screen, (58, 58, 72),
+                         (px + 10, div_y), (px + PW - 10, div_y), 1)
+
+        # ── Mini inventory ────────────────────────────────────────────
+        inv_lbl = self.small.render("Inventory:", True, (100, 100, 120))
+        self.screen.blit(inv_lbl, (gx, div_y + 6))
+
+        MI, MIGAP = 48, 4
+        items_held = sorted(
+            [(iid, cnt) for iid, cnt in player.inventory.items() if cnt > 0],
+            key=lambda t: ITEMS.get(t[0], {}).get("name", t[0]),
+        )
+        max_slots = (PW - 60) // (MI + MIGAP)
+        self._craft_inv_rects.clear()
+        for idx, (iid, cnt) in enumerate(items_held[:max_slots]):
+            sx  = gx + idx * (MI + MIGAP)
+            sy  = div_y + 22
+            itm = ITEMS.get(iid, {})
+            dragging  = (self._drag_item == iid)
+            bg_col    = (50, 50, 20) if dragging else (30, 30, 38)
+            bdr_col   = (220, 200, 50) if dragging else (62, 62, 78)
+            slot_rect = pygame.Rect(sx, sy, MI, MI)
+            self._craft_inv_rects[iid] = slot_rect
+            pygame.draw.rect(self.screen, bg_col,  slot_rect)
+            pygame.draw.rect(self.screen, bdr_col, slot_rect, 2 if dragging else 1)
+            sw = MI - 12
+            pygame.draw.rect(self.screen, itm.get("color", (80, 80, 80)), (sx + 4, sy + 4, sw, sw))
+            cs = self.small.render(str(cnt), True, (200, 200, 200))
+            self.screen.blit(cs, (sx + MI - cs.get_width() - 2, sy + MI - 14))
+
+    # ------------------------------------------------------------------
+    # Recipe book overlay
+    # ------------------------------------------------------------------
+
+    def _draw_recipe_book(self, player):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 215))
+        self.screen.blit(overlay, (0, 0))
+
+        CARD_H  = 120
+        CARD_GAP = 12
+        PW = 830
+        PH = max(260, 78 + len(RECIPES) * (CARD_H + CARD_GAP) + 20)
+        PH = min(PH, SCREEN_H - 40)
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+
+        pygame.draw.rect(self.screen, (22, 22, 30), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (80, 80, 105), (px, py, PW, PH), 2)
+
+        title = self.font.render("RECIPE BOOK", True, (220, 220, 100))
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, py + 8))
+
+        hint = self.small.render("B or ESC to close", True, (100, 100, 115))
+        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, py + 30))
+
+        if not RECIPES:
+            msg = self.font.render("No recipes discovered yet.", True, (90, 90, 90))
+            self.screen.blit(msg, (SCREEN_W // 2 - msg.get_width() // 2, py + PH // 2 - 10))
+            return
+
+        CW       = PW - 40
+        MINI_C   = 26
+        MINI_G   = 3
+        MINI_GW  = 3 * MINI_C + 2 * MINI_G   # 84
+        OUT      = 56
+        BTN_W, BTN_H = 90, 32
+
+        self._recipe_craft_btns.clear()
+
+        for idx, recipe in enumerate(RECIPES):
+            cy = py + 56 + idx * (CARD_H + CARD_GAP)
+            cx = px + 20
+
+            card_rect = pygame.Rect(cx, cy, CW, CARD_H)
+            pygame.draw.rect(self.screen, (28, 28, 36), card_rect)
+            pygame.draw.rect(self.screen, (68, 68, 88),  card_rect, 1)
+
+            # ── Mini 3×3 pattern ──────────────────────────────────────
+            mgx = cx + 14
+            mgy = cy + (CARD_H - MINI_GW) // 2
+
+            for r in range(3):
+                for c in range(3):
+                    mcx     = mgx + c * (MINI_C + MINI_G)
+                    mcy     = mgy + r * (MINI_C + MINI_G)
+                    cell_id = recipe["pattern"][r][c]
+                    if cell_id and cell_id in ITEMS:
+                        pygame.draw.rect(self.screen, (45, 50, 56),   (mcx, mcy, MINI_C, MINI_C))
+                        pygame.draw.rect(self.screen, (100, 100, 120), (mcx, mcy, MINI_C, MINI_C), 1)
+                        sw = MINI_C - 6
+                        pygame.draw.rect(self.screen, ITEMS[cell_id]["color"], (mcx + 3, mcy + 3, sw, sw))
+                    else:
+                        pygame.draw.rect(self.screen, (22, 22, 28), (mcx, mcy, MINI_C, MINI_C))
+                        pygame.draw.rect(self.screen, (42, 42, 52),  (mcx, mcy, MINI_C, MINI_C), 1)
+
+            # ── Arrow ─────────────────────────────────────────────────
+            arr = self.font.render("→", True, (110, 110, 110))
+            arr_x = mgx + MINI_GW + 10
+            self.screen.blit(arr, (arr_x, cy + CARD_H // 2 - arr.get_height() // 2))
+
+            # ── Output slot ───────────────────────────────────────────
+            ox = arr_x + arr.get_width() + 10
+            oy = cy + (CARD_H - OUT) // 2
+
+            out_id    = recipe["output_id"]
+            out_count = recipe["output_count"]
+
+            if out_id in ITEMS:
+                out_item = ITEMS[out_id]
+                pygame.draw.rect(self.screen, (30, 45, 30), (ox, oy, OUT, OUT))
+                pygame.draw.rect(self.screen, (70, 160, 70), (ox, oy, OUT, OUT), 2)
+                sw = OUT - 10
+                pygame.draw.rect(self.screen, out_item["color"],    (ox + 4, oy + 4, sw, sw))
+                pygame.draw.rect(self.screen, (160, 160, 160),      (ox + 4, oy + 4, sw, sw), 1)
+                if out_count > 1:
+                    cs = self.small.render(f"×{out_count}", True, (200, 200, 200))
+                    self.screen.blit(cs, (ox + OUT - cs.get_width() - 2, oy + OUT - 13))
+
+            # ── Info (name + ingredients) ─────────────────────────────
+            info_x = ox + OUT + 18
+            info_y = cy + 14
+
+            name_s = self.font.render(
+                ITEMS.get(out_id, {}).get("name", out_id), True, (225, 225, 185))
+            self.screen.blit(name_s, (info_x, info_y))
+            info_y += 24
+
+            req_lbl = self.small.render("Requires:", True, (130, 130, 130))
+            self.screen.blit(req_lbl, (info_x, info_y))
+            info_y += 16
+
+            for iid, needed in craft_costs(recipe["pattern"]).items():
+                have   = player.inventory.get(iid, 0)
+                iname  = ITEMS.get(iid, {}).get("name", iid)
+                col    = (65, 200, 65) if have >= needed else (170, 170, 170)
+                row_s  = self.small.render(
+                    f"  \u2022 {iname} \xd7{needed}   ({have} owned)", True, col)
+                self.screen.blit(row_s, (info_x, info_y))
+                info_y += 15
+
+            # ── Craft button (right edge of card) ─────────────────────
+            craftable = can_craft(recipe["pattern"], player.inventory)
+            bx = cx + CW - BTN_W - 12
+            by = cy + (CARD_H - BTN_H) // 2
+            btn_rect = pygame.Rect(bx, by, BTN_W, BTN_H)
+            self._recipe_craft_btns[idx] = btn_rect
+
+            if craftable:
+                bbg, bbdr, btxt = (18, 90, 18), (45, 190, 45), (190, 255, 190)
+            else:
+                bbg, bbdr, btxt = (30, 30, 36), (55, 55, 68), (70, 70, 82)
+
+            pygame.draw.rect(self.screen, bbg,  btn_rect)
+            pygame.draw.rect(self.screen, bbdr, btn_rect, 2)
+            lbl = self.font.render("CRAFT", True, btxt)
+            self.screen.blit(lbl, (bx + BTN_W // 2 - lbl.get_width() // 2,
+                                   by + BTN_H // 2 - lbl.get_height() // 2))
+
+    # ------------------------------------------------------------------
+    # Drag ghost
+    # ------------------------------------------------------------------
+
+    def _draw_drag_ghost(self):
+        if self._drag_item is None:
+            return
+        itm   = ITEMS.get(self._drag_item, {})
+        color = itm.get("color", (128, 128, 128))
+        mx, my = pygame.mouse.get_pos()
+        SZ    = 40
+        ghost = pygame.Surface((SZ, SZ), pygame.SRCALPHA)
+        ghost.fill((*color, 200))
+        pygame.draw.rect(ghost, (230, 230, 230, 220), (0, 0, SZ, SZ), 2)
+        self.screen.blit(ghost, (mx - SZ // 2, my - SZ // 2))
+        ns = self.small.render(itm.get("name", self._drag_item), True, (235, 235, 235))
+        self.screen.blit(ns, (mx - ns.get_width() // 2, my + SZ // 2 + 3))
