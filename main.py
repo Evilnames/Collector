@@ -1,6 +1,8 @@
 import sys
 import time
 import random
+import json
+from pathlib import Path
 import pygame
 from world import World
 from player import Player
@@ -10,6 +12,29 @@ from research import ResearchTree
 from constants import SCREEN_W, SCREEN_H, FPS
 from automations import Automation, AUTOMATION_DEFS
 from save_manager import SaveManager
+
+SETTINGS_PATH = Path(__file__).parent / "settings.json"
+
+
+def _load_settings():
+    try:
+        if SETTINGS_PATH.exists():
+            return json.loads(SETTINGS_PATH.read_text())
+    except Exception:
+        pass
+    return {"fullscreen": True}
+
+
+def _save_settings(settings):
+    try:
+        SETTINGS_PATH.write_text(json.dumps(settings, indent=2))
+    except Exception:
+        pass
+
+
+def _apply_display_mode(settings):
+    flags = pygame.FULLSCREEN if settings.get("fullscreen", True) else 0
+    return pygame.display.set_mode((SCREEN_W, SCREEN_H), flags)
 
 
 def _show_splash(screen):
@@ -105,8 +130,84 @@ def _show_splash(screen):
         pygame.display.flip()
 
 
-def _show_main_menu(screen, has_save):
-    """Returns 'new' or 'load'. Blocks until the player clicks a button."""
+def _show_settings_screen(screen, settings):
+    """Settings screen with fullscreen toggle. Returns (screen, settings)."""
+    clock = pygame.time.Clock()
+
+    BLACK      = (0,   0,   0)
+    BLUE_DARK  = (10,  50, 180)
+    BLUE_LIGHT = (55, 130, 255)
+    WHITE      = (255, 255, 255)
+    BTN_HOVER  = (40, 100, 240)
+    BTN_NORMAL = (20,  60, 160)
+    GREEN_ON   = (20, 140,  50)
+    GREEN_HOV  = (30, 180,  70)
+
+    try:
+        font_title = pygame.font.SysFont("Arial Black", 72, bold=True)
+        font_btn   = pygame.font.SysFont("Arial Black", 36, bold=True)
+    except Exception:
+        font_title = pygame.font.SysFont(None, 80, bold=True)
+        font_btn   = pygame.font.SysFont(None, 42, bold=True)
+
+    btn_w, btn_h = 320, 62
+
+    def _make_rects(w, h):
+        bx = w // 2 - btn_w // 2
+        return (
+            pygame.Rect(bx, h // 2 - 50, btn_w, btn_h),
+            pygame.Rect(bx, h // 2 + 40, btn_w, btn_h),
+        )
+
+    def draw_button(surf, rect, label, hovered, active=False):
+        if active:
+            col = GREEN_HOV if hovered else GREEN_ON
+        elif hovered:
+            col = BTN_HOVER
+        else:
+            col = BTN_NORMAL
+        pygame.draw.rect(surf, col, rect, border_radius=10)
+        pygame.draw.rect(surf, BLUE_LIGHT, rect, 2, border_radius=10)
+        lbl = font_btn.render(label, True, WHITE)
+        surf.blit(lbl, lbl.get_rect(center=rect.center))
+
+    W, H = screen.get_size()
+    rect_fs, rect_back = _make_rects(W, H)
+
+    while True:
+        mx, my = pygame.mouse.get_pos()
+        hover_fs   = rect_fs.collidepoint(mx, my)
+        hover_back = rect_back.collidepoint(mx, my)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                return screen, settings
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if rect_fs.collidepoint(mx, my):
+                    settings["fullscreen"] = not settings.get("fullscreen", True)
+                    _save_settings(settings)
+                    screen = _apply_display_mode(settings)
+                    W, H = screen.get_size()
+                    rect_fs, rect_back = _make_rects(W, H)
+                if rect_back.collidepoint(mx, my):
+                    return screen, settings
+
+        screen.fill(BLACK)
+        title = font_title.render("Settings", True, WHITE)
+        screen.blit(title, title.get_rect(center=(W // 2, H // 4)))
+        fs_on = settings.get("fullscreen", True)
+        draw_button(screen, rect_fs, "Fullscreen: ON" if fs_on else "Fullscreen: OFF",
+                    hover_fs, active=fs_on)
+        draw_button(screen, rect_back, "Back", hover_back)
+        pygame.display.flip()
+        clock.tick(60)
+
+
+def _show_main_menu(screen, has_save, settings):
+    """Returns ('new'|'load', screen). Blocks until the player clicks a button."""
     W, H = screen.get_size()
     clock = pygame.time.Clock()
 
@@ -145,13 +246,14 @@ def _show_main_menu(screen, has_save):
     # Button layout
     btn_w, btn_h = 280, 62
     btn_gap = 24
-    total_btns_h = btn_h * 2 + btn_gap
     btn_x = W // 2 - btn_w // 2
     btn_new_y = H // 2 + 20
     btn_load_y = btn_new_y + btn_h + btn_gap
+    btn_settings_y = btn_load_y + btn_h + btn_gap
 
-    rect_new  = pygame.Rect(btn_x, btn_new_y,  btn_w, btn_h)
-    rect_load = pygame.Rect(btn_x, btn_load_y, btn_w, btn_h)
+    rect_new      = pygame.Rect(btn_x, btn_new_y,      btn_w, btn_h)
+    rect_load     = pygame.Rect(btn_x, btn_load_y,     btn_w, btn_h)
+    rect_settings = pygame.Rect(btn_x, btn_settings_y, btn_w, btn_h)
 
     def draw_button(surf, rect, label, hovered, enabled):
         if not enabled:
@@ -171,8 +273,9 @@ def _show_main_menu(screen, has_save):
 
     while True:
         mx, my = pygame.mouse.get_pos()
-        hover_new  = rect_new.collidepoint(mx, my)
-        hover_load = rect_load.collidepoint(mx, my) and has_save
+        hover_new      = rect_new.collidepoint(mx, my)
+        hover_load     = rect_load.collidepoint(mx, my) and has_save
+        hover_settings = rect_settings.collidepoint(mx, my)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -183,9 +286,12 @@ def _show_main_menu(screen, has_save):
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if rect_new.collidepoint(mx, my):
-                    return "new"
+                    return "new", screen
                 if has_save and rect_load.collidepoint(mx, my):
-                    return "load"
+                    return "load", screen
+                if rect_settings.collidepoint(mx, my):
+                    screen, settings = _show_settings_screen(screen, settings)
+                    W, H = screen.get_size()
 
         screen.fill(BLACK)
 
@@ -197,8 +303,9 @@ def _show_main_menu(screen, has_save):
         tr = title_txt.get_rect(center=(W // 2, oy + oval_h // 2))
         screen.blit(title_txt, tr)
 
-        draw_button(screen, rect_new,  "New Game",   hover_new,  True)
-        draw_button(screen, rect_load, "Load Game",  hover_load, has_save)
+        draw_button(screen, rect_new,      "New Game",  hover_new,      True)
+        draw_button(screen, rect_load,     "Load Game", hover_load,     has_save)
+        draw_button(screen, rect_settings, "Settings",  hover_settings, True)
 
         pygame.display.flip()
         clock.tick(60)
@@ -234,7 +341,8 @@ def main():
     pygame.init()
     t0 = _t("pygame.init", t0)
 
-    screen = pygame.display.set_mode((SCREEN_W, SCREEN_H), pygame.FULLSCREEN)
+    settings = _load_settings()
+    screen = _apply_display_mode(settings)
     pygame.display.set_caption("CollectorBlocks")
     clock = pygame.time.Clock()
     t0 = _t("display init", t0)
@@ -245,7 +353,7 @@ def main():
     save_mgr = SaveManager()
     t0 = _t("SaveManager", t0)
 
-    choice = _show_main_menu(screen, save_mgr.has_save())
+    choice, screen = _show_main_menu(screen, save_mgr.has_save(), settings)
     t0 = _t("menu choice: " + choice, t0)
 
     renderer = Renderer(screen)
