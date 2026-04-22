@@ -21,8 +21,8 @@ class SaveManager:
             with sqlite3.connect(self.db_path) as con:
                 self._create_tables(con)
                 for tbl in ("save_meta", "chunks", "world_meta", "player",
-                            "rocks", "wildflowers", "research", "automations",
-                            "entities", "dropped_items", "chests"):
+                            "rocks", "wildflowers", "fossils", "research", "automations",
+                            "farm_bots", "entities", "dropped_items", "chests"):
                     con.execute(f"DELETE FROM {tbl}")
                 con.commit()
         except Exception:
@@ -52,8 +52,10 @@ class SaveManager:
             self._save_player(con, player)
             self._save_rocks(con, player)
             self._save_wildflowers(con, player)
+            self._save_fossils(con, player)
             self._save_research(con, research)
             self._save_automations(con, world)
+            self._save_farm_bots(con, world)
             self._save_entities(con, world)
             self._save_dropped_items(con, world)
             self._save_chests(con, world)
@@ -67,6 +69,7 @@ class SaveManager:
             water_level = self._load_world_meta(con)
             player_data = self._load_player(con)
             automations = self._load_automations(con)
+            farm_bots = self._load_farm_bots(con)
             entities = self._load_entities(con)
             research = self._load_research(con)
             dropped_items = self._load_dropped_items(con)
@@ -76,6 +79,7 @@ class SaveManager:
             "water_level": water_level,
             "player": player_data,
             "automations": automations,
+            "farm_bots": farm_bots,
             "entities": entities,
             "research": research,
             "dropped_items": dropped_items,
@@ -168,7 +172,8 @@ class SaveManager:
             selected_slot INTEGER,
             inventory TEXT, hotbar TEXT, hotbar_uses TEXT, known_recipes TEXT,
             discovered_types TEXT, discovered_flower_types TEXT,
-            discovered_mushroom_types TEXT, mushrooms_found TEXT
+            discovered_mushroom_types TEXT, mushrooms_found TEXT,
+            discovered_fossil_types TEXT
         );
         CREATE TABLE IF NOT EXISTS rocks (
             uid TEXT PRIMARY KEY, base_type TEXT, rarity TEXT, size TEXT,
@@ -183,15 +188,27 @@ class SaveManager:
             petal_pattern TEXT, petal_count INTEGER, fragrance REAL,
             vibrancy REAL, specials TEXT, biodome_found TEXT, seed INTEGER
         );
+        CREATE TABLE IF NOT EXISTS fossils (
+            uid TEXT PRIMARY KEY, fossil_type TEXT, rarity TEXT, size TEXT,
+            primary_color TEXT, secondary_color TEXT,
+            pattern TEXT, pattern_density REAL, age TEXT,
+            clarity REAL, detail REAL, specials TEXT,
+            depth_found INTEGER, seed INTEGER, upgrades TEXT
+        );
         CREATE TABLE IF NOT EXISTS research (
             node_id TEXT PRIMARY KEY, unlocked INTEGER
         );
         CREATE TABLE IF NOT EXISTS automations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            x REAL, y REAL, auto_type TEXT, direction INTEGER,
+            x REAL, y REAL, auto_type TEXT, direction TEXT,
             fuel REAL, supports INTEGER,
             stored TEXT, state TEXT, halt_reason TEXT,
             blocks_since_support INTEGER
+        );
+        CREATE TABLE IF NOT EXISTS farm_bots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            x REAL, y REAL, bot_type TEXT,
+            fuel REAL, seeds TEXT, stored TEXT, state TEXT
         );
         CREATE TABLE IF NOT EXISTS entities (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -211,6 +228,10 @@ class SaveManager:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} REAL DEFAULT {default}")
             except Exception:
                 pass
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN discovered_fossil_types TEXT DEFAULT '[]'")
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------
     # Migration: old world_grid BLOB → per-chunk rows
@@ -303,8 +324,8 @@ class SaveManager:
                 selected_slot, inventory, hotbar, hotbar_uses, known_recipes,
                 discovered_types, discovered_flower_types,
                 discovered_mushroom_types, mushrooms_found,
-                spawn_x, spawn_y)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                spawn_x, spawn_y, discovered_fossil_types)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 player.x, player.y, player.vx, player.vy, player.facing,
                 player.health, player.hunger, player.pick_power, player.money,
@@ -318,6 +339,7 @@ class SaveManager:
                 json.dumps([str(x) for x in player.discovered_mushroom_types]),
                 json.dumps(mushrooms),
                 player.spawn_x, player.spawn_y,
+                json.dumps(list(player.discovered_fossil_types)),
             )
         )
 
@@ -354,6 +376,23 @@ class SaveManager:
                 )
             )
 
+    def _save_fossils(self, con, player):
+        con.execute("DELETE FROM fossils")
+        for f in player.fossils:
+            con.execute(
+                "INSERT OR REPLACE INTO fossils VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    f.uid, f.fossil_type, f.rarity, f.size,
+                    json.dumps(list(f.primary_color)),
+                    json.dumps(list(f.secondary_color)),
+                    f.pattern, f.pattern_density, f.age,
+                    f.clarity, f.detail,
+                    json.dumps(f.specials),
+                    f.depth_found, f.seed,
+                    json.dumps(f.upgrades),
+                )
+            )
+
     def _save_research(self, con, research):
         con.execute("DELETE FROM research")
         for node_id, node in research.nodes.items():
@@ -369,12 +408,21 @@ class SaveManager:
                     state, halt_reason, blocks_since_support)
                    VALUES (?,?,?,?,?,?,?,?,?,?)""",
                 (
-                    a.x, a.y, a.auto_type, a.direction,
+                    a.x, a.y, a.auto_type, json.dumps(list(a.direction)),
                     a.fuel, a.supports,
                     json.dumps(a.stored),
                     a._state, a._halt_reason,
                     a._blocks_since_support,
                 )
+            )
+
+    def _save_farm_bots(self, con, world):
+        con.execute("DELETE FROM farm_bots")
+        for fb in world.farm_bots:
+            con.execute(
+                "INSERT INTO farm_bots (x, y, bot_type, fuel, seeds, stored, state) VALUES (?,?,?,?,?,?,?)",
+                (fb.x, fb.y, fb.bot_type, fb.fuel,
+                 json.dumps(fb.seeds), json.dumps(fb.stored), fb._state)
             )
 
     def _save_entities(self, con, world):
@@ -433,7 +481,7 @@ class SaveManager:
                    selected_slot, inventory, hotbar, hotbar_uses, known_recipes,
                    discovered_types, discovered_flower_types,
                    discovered_mushroom_types, mushrooms_found,
-                   spawn_x, spawn_y
+                   spawn_x, spawn_y, discovered_fossil_types
             FROM player LIMIT 1
         """).fetchone()
 
@@ -441,7 +489,7 @@ class SaveManager:
          selected_slot, inventory, hotbar, hotbar_uses, known_recipes,
          discovered_types, discovered_flower_types,
          discovered_mushroom_types, mushrooms_found,
-         spawn_x, spawn_y) = row
+         spawn_x, spawn_y, discovered_fossil_types) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -482,6 +530,25 @@ class SaveManager:
                 "biodome_found": wf[12], "seed": wf[13],
             })
 
+        fossil_rows = con.execute("""
+            SELECT uid, fossil_type, rarity, size, primary_color, secondary_color,
+                   pattern, pattern_density, age, clarity, detail, specials,
+                   depth_found, seed, upgrades
+            FROM fossils
+        """).fetchall()
+        fossils_data = []
+        for f in fossil_rows:
+            fossils_data.append({
+                "uid": f[0], "fossil_type": f[1], "rarity": f[2], "size": f[3],
+                "primary_color": tuple(json.loads(f[4])),
+                "secondary_color": tuple(json.loads(f[5])),
+                "pattern": f[6], "pattern_density": f[7], "age": f[8],
+                "clarity": f[9], "detail": f[10],
+                "specials": json.loads(f[11]),
+                "depth_found": f[12], "seed": f[13],
+                "upgrades": json.loads(f[14]),
+            })
+
         return {
             "x": x, "y": y, "vx": vx, "vy": vy, "facing": facing,
             "health": health, "hunger": hunger, "pick_power": pick_power,
@@ -496,6 +563,8 @@ class SaveManager:
             "mushrooms_found": json.loads(mushrooms_found),
             "rocks": rocks_data,
             "wildflowers": wf_data,
+            "fossils": fossils_data,
+            "discovered_fossil_types": json.loads(discovered_fossil_types or "[]"),
             "spawn_x": spawn_x,
             "spawn_y": spawn_y,
         }
@@ -508,14 +577,34 @@ class SaveManager:
         """).fetchall()
         result = []
         for row in rows:
-            (x, y, auto_type, direction, fuel, supports, stored,
+            (x, y, auto_type, raw_dir, fuel, supports, stored,
              state, halt_reason, blocks_since_support) = row
+            if isinstance(raw_dir, int):
+                direction = (raw_dir, 0)
+            else:
+                direction = tuple(json.loads(raw_dir))
             result.append({
                 "x": x, "y": y, "auto_type": auto_type, "direction": direction,
                 "fuel": fuel, "supports": supports,
                 "stored": json.loads(stored),
                 "state": state, "halt_reason": halt_reason,
                 "blocks_since_support": blocks_since_support,
+            })
+        return result
+
+    def _load_farm_bots(self, con):
+        try:
+            rows = con.execute(
+                "SELECT x, y, bot_type, fuel, seeds, stored, state FROM farm_bots"
+            ).fetchall()
+        except Exception:
+            return []
+        result = []
+        for x, y, bot_type, fuel, seeds, stored, state in rows:
+            result.append({
+                "x": x, "y": y, "bot_type": bot_type, "fuel": fuel,
+                "seeds": json.loads(seeds), "stored": json.loads(stored),
+                "state": state,
             })
         return result
 

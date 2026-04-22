@@ -16,6 +16,7 @@ class World:
         self._dirty_chunks = set()
         self.entities = []
         self.automations = []
+        self.farm_bots = []
         self.dropped_items = []
         self.chest_data = {}     # (bx, by) -> {item_id: count}
         self._water_level = {}   # (x,y) -> int 1-8; 8 = world-gen source block
@@ -201,7 +202,7 @@ class World:
         for cx in range(player_cx - CHUNK_LOAD_RADIUS, player_cx + CHUNK_LOAD_RADIUS + 1):
             self.load_chunk(cx)
 
-        from automations import Automation
+        from automations import Automation, FarmBot
         for a_data in data["automations"]:
             a = Automation(a_data["x"], a_data["y"], a_data["auto_type"], a_data["direction"])
             a.fuel = a_data["fuel"]
@@ -211,6 +212,11 @@ class World:
             a._halt_reason = a_data["halt_reason"]
             a._blocks_since_support = a_data["blocks_since_support"]
             self.automations.append(a)
+        for fb_data in data.get("farm_bots", []):
+            fb = FarmBot(fb_data["x"], fb_data["y"], fb_data["bot_type"],
+                         fuel=fb_data["fuel"], seeds=fb_data["seeds"],
+                         stored=fb_data["stored"], state=fb_data["state"])
+            self.farm_bots.append(fb)
 
         from animals import Sheep, Cow, Chicken
         _CLASS_MAP = {"Sheep": Sheep, "Cow": Cow, "Chicken": Chicken}
@@ -712,6 +718,15 @@ class World:
                 return ROCK_DEPOSIT
             elif r < 0.008:
                 return ROCK_DEPOSIT
+        # Fossil deposits — only below depth 50, rarer than rocks
+        if depth >= 50:
+            fr = rng.random()
+            if depth >= 150 and fr < 0.004:
+                return FOSSIL_DEPOSIT
+            elif depth >= 100 and fr < 0.002:
+                return FOSSIL_DEPOSIT
+            elif fr < 0.001:
+                return FOSSIL_DEPOSIT
         r = rng.random()  # fresh roll so deposit chance doesn't eat ore slots
         m = BIOME_ORE_MULTIPLIERS.get(biome, {})
         cm = m.get("coal", 1.0)

@@ -146,9 +146,13 @@ class Renderer:
         self._support_zone_surf = self._build_support_zone_surf()
         self._log_variants  = self._build_log_variants()
         self._leaf_variants = self._build_leaf_variants()
-        self._light_surf = pygame.Surface((SCREEN_W, SCREEN_H))
+        self._light_surf = pygame.Surface((SCREEN_W, SCREEN_H)).convert()
         self._light_gradient = None
         self._light_cache_key = None
+        self._water_overlay_surf = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        self._water_overlay_surf.fill((30, 80, 180, 70))
+        self._ghost_surf = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+        self._ghost_color_key = None
         self._mine_overlay = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
         self._npc_font = pygame.font.SysFont("consolas", 14)
         self._minimap_surf  = None
@@ -1257,6 +1261,10 @@ class Renderer:
         for a in automations:
             a.draw(self.screen, self.cam_x, self.cam_y)
 
+    def draw_farm_bots(self, farm_bots):
+        for fb in farm_bots:
+            fb.draw(self.screen, self.cam_x, self.cam_y)
+
     def _draw_npc_quest(self, sx, sy, npc):
         bob = int(npc._bob_offset)
         # Body
@@ -1417,9 +1425,11 @@ class Renderer:
         from blocks import BLOCKS
         color = BLOCKS.get(block_id, {}).get("color")
         if color:
-            ghost = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
-            ghost.fill((*color, 120))
-            self.screen.blit(ghost, (sx, sy))
+            if self._ghost_color_key != color:
+                self._ghost_color_key = color
+                self._ghost_surf.fill((0, 0, 0, 0))
+                self._ghost_surf.fill((*color, 120))
+            self.screen.blit(self._ghost_surf, (sx, sy))
         pygame.draw.rect(self.screen, (255, 255, 255), (sx, sy, BLOCK_SIZE, BLOCK_SIZE), 2)
 
     # ------------------------------------------------------------------
@@ -1450,9 +1460,7 @@ class Renderer:
 
     def draw_water_overlay(self, player):
         if player._head_in_water():
-            overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-            overlay.fill((30, 80, 180, 70))
-            self.screen.blit(overlay, (0, 0))
+            self.screen.blit(self._water_overlay_surf, (0, 0))
 
     # ------------------------------------------------------------------
     # Lighting
@@ -1470,7 +1478,7 @@ class Renderer:
         if self._light_cache_key != (ambient, radius):
             self._light_cache_key = (ambient, radius)
             size = radius * 2 + 1
-            grad = pygame.Surface((size, size))
+            grad = pygame.Surface((size, size)).convert()
             grad.fill((ambient, ambient, ambient))
             step = 5
             for r in range(radius, 0, -step):

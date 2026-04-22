@@ -405,6 +405,37 @@ RECIPES = [
         "output_id":    "chest_item",
         "output_count": 1,
     },
+    # --- Farm Bots ---
+    {
+        "name": "Farm Bot",
+        "pattern": [
+            ["lumber",     "iron_chunk", "lumber"    ],
+            ["iron_chunk", "coal",       "iron_chunk"],
+            ["lumber",     "iron_chunk", "lumber"    ],
+        ],
+        "output_id":    "farm_bot_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Iron Farm Bot",
+        "pattern": [
+            ["iron_chunk", "gold_nugget", "iron_chunk"],
+            ["gold_nugget", "iron_chunk", "gold_nugget"],
+            ["iron_chunk", "gold_nugget", "iron_chunk"],
+        ],
+        "output_id":    "iron_farm_bot_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Crystal Farm Bot",
+        "pattern": [
+            ["crystal_shard", "gold_nugget",   "crystal_shard"],
+            ["gold_nugget",   "iron_chunk",     "gold_nugget"  ],
+            ["crystal_shard", "gold_nugget",    "crystal_shard"],
+        ],
+        "output_id":    "crystal_farm_bot_item",
+        "output_count": 1,
+    },
 ]
 
 

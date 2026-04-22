@@ -10,6 +10,9 @@ from rocks import (render_rock, render_codex_preview, RARITY_COLORS,
 from wildflowers import (render_wildflower, get_flower_preview,
                          WILDFLOWER_TYPE_ORDER, WILDFLOWER_TYPES,
                          WILDFLOWER_BIODOME_AFFINITY)
+from fossils import (render_fossil, render_fossil_codex_preview,
+                     FOSSIL_TYPE_ORDER, FOSSIL_TYPES,
+                     FOSSIL_SPECIAL_DESCS, FOSSIL_TYPE_DESCRIPTIONS, FOSSIL_AGE_COLORS)
 from renderer import render_mushroom_preview
 from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, MAX_HEALTH
 from blocks import (BLOCKS, BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
@@ -115,6 +118,14 @@ class UI:
         self._mushroom_codex_rects        = {}
         self._mushroom_codex_scroll       = 0
         self._max_mushroom_codex_scroll   = 0
+        self._selected_fossil_idx          = None
+        self._fossil_rects                 = {}
+        self._fossil_codex_selected_type   = None
+        self._fossil_codex_rects           = {}
+        self._fossil_codex_scroll          = 0
+        self._max_fossil_codex_scroll      = 0
+        self._my_fossils_scroll            = 0
+        self._max_my_fossils_scroll        = 0
         self._craft_btn     = None
         self._craft_grid    = [[None] * 3 for _ in range(3)]
         self._cell_rects    = {}
@@ -152,6 +163,12 @@ class UI:
         self._auto_support1_btn    = None
         self._auto_support_all_btn = None
         self._auto_take_btn        = None
+        self.farm_bot_open   = False
+        self.active_farm_bot = None
+        self._fb_deposit1_btn    = None
+        self._fb_deposit_all_btn = None
+        self._fb_seeds_btn       = None
+        self._fb_take_btn        = None
         # Chest UI
         self.chest_open       = False
         self.active_chest_inv = None   # direct reference to world.chest_data[(bx,by)]
@@ -208,6 +225,8 @@ class UI:
             self._draw_npc_panel(player)
         if self.automation_open and self.active_automation is not None:
             self._draw_automation_panel(player)
+        if self.farm_bot_open and self.active_farm_bot is not None:
+            self._draw_farm_bot_panel(player)
         if self.chest_open and self.active_chest_inv is not None:
             self._draw_chest(player)
         if self.cheat_open:
@@ -316,11 +335,15 @@ class UI:
                 self._selected_flower_idx = None
                 self._flower_codex_selected_type = None
                 self._mushroom_codex_selected_bid = None
+                self._selected_fossil_idx = None
+                self._fossil_codex_selected_type = None
                 self._codex_scroll = 0
                 self._my_rocks_scroll = 0
                 self._flower_codex_scroll = 0
                 self._my_flowers_scroll = 0
                 self._mushroom_codex_scroll = 0
+                self._fossil_codex_scroll = 0
+                self._my_fossils_scroll = 0
                 return
         if self._collection_tab == 0:
             for idx, rect in self._rock_rects.items():
@@ -342,10 +365,20 @@ class UI:
                 if rect.collidepoint(pos):
                     self._flower_codex_selected_type = type_key if self._flower_codex_selected_type != type_key else None
                     return
-        else:
+        elif self._collection_tab == 4:
             for bid, rect in self._mushroom_codex_rects.items():
                 if rect.collidepoint(pos):
                     self._mushroom_codex_selected_bid = bid if self._mushroom_codex_selected_bid != bid else None
+                    return
+        elif self._collection_tab == 5:
+            for idx, rect in self._fossil_rects.items():
+                if rect.collidepoint(pos):
+                    self._selected_fossil_idx = idx if self._selected_fossil_idx != idx else None
+                    return
+        else:
+            for type_key, rect in self._fossil_codex_rects.items():
+                if rect.collidepoint(pos):
+                    self._fossil_codex_selected_type = type_key if self._fossil_codex_selected_type != type_key else None
                     return
 
     def handle_scroll(self, dy):
@@ -369,8 +402,12 @@ class UI:
                 self._my_flowers_scroll = max(0, min(self._max_my_flowers_scroll, self._my_flowers_scroll - dy))
             elif self._collection_tab == 3:
                 self._flower_codex_scroll = max(0, min(self._max_flower_codex_scroll, self._flower_codex_scroll - dy))
-            else:
+            elif self._collection_tab == 4:
                 self._mushroom_codex_scroll = max(0, min(self._max_mushroom_codex_scroll, self._mushroom_codex_scroll - dy))
+            elif self._collection_tab == 5:
+                self._my_fossils_scroll = max(0, min(self._max_my_fossils_scroll, self._my_fossils_scroll - dy))
+            else:
+                self._fossil_codex_scroll = max(0, min(self._max_fossil_codex_scroll, self._fossil_codex_scroll - dy))
         elif self.chest_open:
             mouse = pygame.mouse.get_pos()
             PW = 1140
@@ -557,7 +594,15 @@ class UI:
             r, g = 255, int(200 * t)
         pygame.draw.rect(self.screen, (r, g, 10), (x, y, hng_w, bh))
         pygame.draw.rect(self.screen, (200, 200, 200), (x, y, bw, bh), 1)
-        txt = self.small.render(f"Food {int(player.hunger)}%", True, (255, 255, 255))
+        if frac > 0.75:
+            label, label_col = "Full",      (180, 255, 120)
+        elif frac > 0.5:
+            label, label_col = "Satisfied", (230, 255, 100)
+        elif frac > 0.25:
+            label, label_col = "Hungry",    (255, 180,  40)
+        else:
+            label, label_col = "Starving",  (255,  60,  40)
+        txt = self.small.render(f"Hunger: {label}", True, label_col)
         self.screen.blit(txt, (x + 4, y + 2))
 
     def _draw_depth(self, player):
@@ -1226,10 +1271,16 @@ class UI:
         n_fl_total = len(WILDFLOWER_TYPE_ORDER)
         n_mush_disc = len(player.discovered_mushroom_types)
         n_mush_total = len(_MUSHROOM_ORDER)
+        n_fossil_disc = len(player.discovered_fossil_types)
+        n_fossil_total = len(FOSSIL_TYPE_ORDER)
 
         is_flowers   = self._collection_tab in (2, 3)
         is_mushrooms = self._collection_tab == 4
-        if is_mushrooms:
+        is_fossils   = self._collection_tab in (5, 6)
+        if is_fossils:
+            title_text = "FOSSIL COLLECTION"
+            title_col  = (210, 185, 140)
+        elif is_mushrooms:
             title_text = "MUSHROOM CODEX"
             title_col  = (200, 230, 150)
         elif is_flowers:
@@ -1243,14 +1294,16 @@ class UI:
 
         # Tab buttons
         self._tab_rects.clear()
-        TAB_W, TAB_H = 160, 26
+        TAB_W, TAB_H = 150, 26
         tab_y = 24
         tab_labels = [
             f"MY ROCKS ({len(player.rocks)})",
-            f"CODEX ({n_rock_disc}/{n_rock_total})",
+            f"ROCK CODEX ({n_rock_disc}/{n_rock_total})",
             f"MY FLOWERS ({len(player.wildflowers)})",
             f"FLOWER CODEX ({n_fl_disc}/{n_fl_total})",
             f"MUSHROOMS ({n_mush_disc}/{n_mush_total})",
+            f"MY FOSSILS ({len(player.fossils)})",
+            f"FOSSIL CODEX ({n_fossil_disc}/{n_fossil_total})",
         ]
         total_tabs_w = len(tab_labels) * TAB_W + (len(tab_labels) - 1) * 6
         tab_x0 = SCREEN_W // 2 - total_tabs_w // 2
@@ -1259,27 +1312,32 @@ class UI:
             rect = pygame.Rect(tx, tab_y, TAB_W, TAB_H)
             self._tab_rects[i] = rect
             active = (i == self._collection_tab)
-            flower_tab = i in (2, 3)
+            fossil_tab = i in (5, 6)
             mush_tab   = i == 4
+            flower_tab = i in (2, 3)
             if active:
-                bg     = (38, 42, 18) if mush_tab else (40, 75, 45) if flower_tab else (45, 60, 80)
-                border = (165, 150, 65) if mush_tab else (100, 210, 120) if flower_tab else (100, 160, 220)
+                bg     = (42, 35, 18) if fossil_tab else (38, 42, 18) if mush_tab else (40, 75, 45) if flower_tab else (45, 60, 80)
+                border = (195, 165, 95) if fossil_tab else (165, 150, 65) if mush_tab else (100, 210, 120) if flower_tab else (100, 160, 220)
             else:
-                bg     = (22, 24, 10) if mush_tab else (25, 35, 27) if flower_tab else (25, 30, 40)
-                border = (80, 72, 32) if mush_tab else (55, 90, 60) if flower_tab else (55, 65, 80)
+                bg     = (25, 20, 10) if fossil_tab else (22, 24, 10) if mush_tab else (25, 35, 27) if flower_tab else (25, 30, 40)
+                border = (90, 75, 38) if fossil_tab else (80, 72, 32) if mush_tab else (55, 90, 60) if flower_tab else (55, 65, 80)
             pygame.draw.rect(self.screen, bg, rect)
             pygame.draw.rect(self.screen, border, rect, 2)
             ls = self.small.render(label, True,
-                                   (210, 200, 120) if (active and mush_tab)
+                                   (220, 190, 110) if (active and fossil_tab)
+                                   else (210, 200, 120) if (active and mush_tab)
                                    else (200, 240, 205) if (active and flower_tab)
                                    else (220, 230, 255) if active
+                                   else (105, 88, 40) if fossil_tab
                                    else (95, 86, 38) if mush_tab
                                    else (90, 130, 95) if flower_tab
                                    else (110, 120, 135))
             self.screen.blit(ls, (tx + TAB_W // 2 - ls.get_width() // 2,
                                    tab_y + TAB_H // 2 - ls.get_height() // 2))
 
-        hint_text = ("G or ESC to close  |  Click a mushroom to inspect"
+        hint_text = ("G or ESC to close  |  Click a fossil to inspect"
+                     if is_fossils else
+                     "G or ESC to close  |  Click a mushroom to inspect"
                      if is_mushrooms else
                      "G or ESC to close  |  Click a flower to inspect"
                      if is_flowers else
@@ -1295,8 +1353,12 @@ class UI:
             self._draw_my_flowers(player)
         elif self._collection_tab == 3:
             self._draw_flower_codex(player)
-        else:
+        elif self._collection_tab == 4:
             self._draw_mushroom_codex(player)
+        elif self._collection_tab == 5:
+            self._draw_my_fossils(player)
+        else:
+            self._draw_fossil_codex(player)
 
     def _draw_my_rocks(self, player):
         if not player.rocks:
@@ -1791,6 +1853,227 @@ class UI:
             self.screen.blit(qs, (dx + dw // 2 - qs.get_width() // 2, dy2 + 8))
             dlabel("Not yet discovered.", (80, 72, 34))
             dlabel("Find it underground in caves.", (100, 90, 44))
+
+    # ------------------------------------------------------------------
+    # Fossil collection tabs
+    # ------------------------------------------------------------------
+
+    def _draw_my_fossils(self, player):
+        if not player.fossils:
+            msg = self.font.render("No fossils yet.  Mine Fossil Deposits deep underground!", True, (90, 80, 65))
+            self.screen.blit(msg, (SCREEN_W // 2 - msg.get_width() // 2, SCREEN_H // 2 - 10))
+            return
+
+        CELL, GAP, COLS = 82, 8, 8
+        gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        gy0 = 58
+
+        detail_x = None
+        if self._selected_fossil_idx is not None and self._selected_fossil_idx < len(player.fossils):
+            detail_x = SCREEN_W - 340
+            COLS = max(1, (detail_x - gx0 - 10) // (CELL + GAP))
+
+        total_rows = (len(player.fossils) + COLS - 1) // COLS
+        visible_rows = (SCREEN_H - gy0 - 8 + GAP) // (CELL + GAP)
+        self._max_my_fossils_scroll = max(0, total_rows - visible_rows)
+        self._my_fossils_scroll = max(0, min(self._max_my_fossils_scroll, self._my_fossils_scroll))
+
+        self._fossil_rects.clear()
+        for idx, fossil in enumerate(player.fossils):
+            col = idx % COLS
+            row = idx // COLS
+            display_row = row - self._my_fossils_scroll
+            if display_row < 0:
+                continue
+            x = gx0 + col * (CELL + GAP)
+            y = gy0 + display_row * (CELL + GAP)
+            if y + CELL > SCREEN_H - 8:
+                break
+            rect = pygame.Rect(x, y, CELL, CELL)
+            self._fossil_rects[idx] = rect
+
+            selected = (idx == self._selected_fossil_idx)
+            rar_col = RARITY_COLORS[fossil.rarity]
+            pygame.draw.rect(self.screen, (45, 40, 28) if selected else (30, 26, 18), rect)
+            pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
+            img = render_fossil(fossil, 58)
+            self.screen.blit(img, (x + (CELL - 58) // 2, y + (CELL - 58) // 2 - 6))
+            type_s = self.small.render(fossil.fossil_type.replace("_", " "), True, (175, 155, 115))
+            self.screen.blit(type_s, (x + CELL // 2 - type_s.get_width() // 2, y + CELL - 14))
+
+        if detail_x is None:
+            return
+
+        fossil = player.fossils[self._selected_fossil_idx]
+        dx, dy = detail_x, gy0
+        dw, dh = SCREEN_W - dx - 8, SCREEN_H - gy0 - 10
+        pygame.draw.rect(self.screen, (22, 18, 12), (dx, dy, dw, dh))
+        pygame.draw.rect(self.screen, RARITY_COLORS[fossil.rarity], (dx, dy, dw, dh), 2)
+        img_big = render_fossil(fossil, 80)
+        self.screen.blit(img_big, (dx + dw // 2 - 40, dy + 8))
+
+        iy = [dy + 96]
+
+        def dlabel(text, color=(215, 195, 155)):
+            s = self.small.render(text, True, color)
+            self.screen.blit(s, (dx + 8, iy[0]))
+            iy[0] += 15
+
+        dlabel(fossil.fossil_type.replace("_", " ").title(), (235, 205, 130))
+        dlabel(RARITY_LABEL[fossil.rarity], RARITY_COLORS[fossil.rarity])
+        dlabel(f"Age: {fossil.age.title()}", FOSSIL_AGE_COLORS.get(fossil.age, (180, 160, 120)))
+        dlabel(f"Size: {fossil.size.title()}")
+        dlabel(f"Found at: {fossil.depth_found}m depth")
+        dlabel(f"Pattern: {fossil.pattern.title()}")
+        iy[0] += 4
+
+        def stat_bar(label, val, col=(180, 150, 80)):
+            ls = self.small.render(label, True, (160, 145, 110))
+            self.screen.blit(ls, (dx + 8, iy[0]))
+            bx2 = dx + 72
+            bw = dw - 82
+            pygame.draw.rect(self.screen, (35, 30, 20), (bx2, iy[0] + 2, bw, 8))
+            pygame.draw.rect(self.screen, col, (bx2, iy[0] + 2, int(bw * val), 8))
+            vs = self.small.render(f"{val:.2f}", True, (180, 160, 120))
+            self.screen.blit(vs, (bx2 + bw + 4, iy[0]))
+            iy[0] += 16
+
+        stat_bar("Clarity", fossil.clarity, (100, 180, 200))
+        stat_bar("Detail",  fossil.detail,  (180, 155, 80))
+        iy[0] += 4
+
+        if fossil.specials:
+            dlabel("Traits:", (210, 185, 120))
+            for sp in fossil.specials:
+                desc = FOSSIL_SPECIAL_DESCS.get(sp, "")
+                dlabel(f"  {sp.replace('_', ' ').title()}", (220, 195, 105))
+                dlabel(f"    {desc}", (145, 130, 90))
+        else:
+            dlabel("No special traits.", (90, 82, 60))
+
+    def _draw_fossil_codex(self, player):
+        CELL, GAP, COLS = 82, 8, 6
+        gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        gy0 = 58
+
+        detail_x = None
+        if self._fossil_codex_selected_type is not None:
+            detail_x = SCREEN_W - 340
+            COLS = max(1, (detail_x - gx0 - 10) // (CELL + GAP))
+
+        total_rows = (len(FOSSIL_TYPE_ORDER) + COLS - 1) // COLS
+        visible_rows = (SCREEN_H - gy0 - 8 + GAP) // (CELL + GAP)
+        self._max_fossil_codex_scroll = max(0, total_rows - visible_rows)
+        self._fossil_codex_scroll = max(0, min(self._max_fossil_codex_scroll, self._fossil_codex_scroll))
+
+        if self._max_fossil_codex_scroll > 0:
+            sb_x = gx0 + COLS * (CELL + GAP) - GAP + 8
+            sb_h = SCREEN_H - gy0 - 8
+            sb_th = max(20, sb_h * visible_rows // total_rows)
+            sb_top = gy0 + (sb_h - sb_th) * self._fossil_codex_scroll // self._max_fossil_codex_scroll
+            pygame.draw.rect(self.screen, (28, 24, 14), (sb_x, gy0, 7, sb_h))
+            pygame.draw.rect(self.screen, (160, 135, 72), (sb_x, sb_top, 7, sb_th))
+
+        self._fossil_codex_rects.clear()
+        for idx, type_key in enumerate(FOSSIL_TYPE_ORDER):
+            col = idx % COLS
+            row = idx // COLS
+            display_row = row - self._fossil_codex_scroll
+            if display_row < 0:
+                continue
+            x = gx0 + col * (CELL + GAP)
+            y = gy0 + display_row * (CELL + GAP)
+            if y + CELL > SCREEN_H - 8:
+                break
+            rect = pygame.Rect(x, y, CELL, CELL)
+            self._fossil_codex_rects[type_key] = rect
+
+            discovered = type_key in player.discovered_fossil_types
+            selected = (type_key == self._fossil_codex_selected_type)
+
+            if discovered:
+                img = render_fossil_codex_preview(type_key, 58)
+                pygame.draw.rect(self.screen, (48, 42, 28) if selected else (30, 26, 18), rect)
+                pygame.draw.rect(self.screen, (185, 158, 82) if selected else (100, 84, 42), rect,
+                                 3 if selected else 2)
+                self.screen.blit(img, (x + (CELL - 58) // 2, y + (CELL - 58) // 2 - 6))
+                label = type_key.replace("_", " ")
+            else:
+                tdef = FOSSIL_TYPES[type_key]
+                min_d = tdef["min_depth"]
+                pygame.draw.rect(self.screen, (20, 17, 10) if selected else (14, 12, 8), rect)
+                pygame.draw.rect(self.screen, (62, 52, 26) if selected else (38, 32, 16), rect,
+                                 2 if selected else 1)
+                qs = self.font.render("?", True, (58, 48, 24))
+                self.screen.blit(qs, (x + CELL // 2 - qs.get_width() // 2,
+                                      y + CELL // 2 - qs.get_height() // 2 - 6))
+                label = f">{min_d}m"
+
+            ls = self.small.render(label, True, (185, 162, 108) if discovered else (58, 48, 24))
+            self.screen.blit(ls, (x + CELL // 2 - ls.get_width() // 2, y + CELL - 14))
+
+        if detail_x is None:
+            return
+
+        type_key = self._fossil_codex_selected_type
+        tdef = FOSSIL_TYPES[type_key]
+        discovered = type_key in player.discovered_fossil_types
+
+        dx, dy = detail_x, gy0
+        dw, dh = SCREEN_W - dx - 8, SCREEN_H - gy0 - 10
+        border_col = (175, 148, 72) if discovered else (55, 46, 22)
+        pygame.draw.rect(self.screen, (18, 15, 10), (dx, dy, dw, dh))
+        pygame.draw.rect(self.screen, border_col, (dx, dy, dw, dh), 2)
+
+        iy = [dy + 8]
+
+        def dlabel(text, color=(215, 195, 155)):
+            s = self.small.render(text, True, color)
+            self.screen.blit(s, (dx + 8, iy[0]))
+            iy[0] += 15
+
+        if discovered:
+            img_big = render_fossil_codex_preview(type_key, 80)
+            self.screen.blit(img_big, (dx + dw // 2 - 40, dy + 8))
+            iy[0] = dy + 96
+            dlabel(type_key.replace("_", " ").title(), (235, 205, 130))
+            dlabel(f"Era: {tdef['age'].title()}",
+                   FOSSIL_AGE_COLORS.get(tdef["age"], (180, 160, 120)))
+            dlabel(f"Found from {tdef['min_depth']}m depth", (155, 138, 100))
+
+            desc = FOSSIL_TYPE_DESCRIPTIONS.get(type_key, "")
+            words = desc.split()
+            line, lines = [], []
+            for w in words:
+                trial = " ".join(line + [w])
+                if self.small.size(trial)[0] > dw - 18:
+                    lines.append(" ".join(line))
+                    line = [w]
+                else:
+                    line.append(w)
+            if line:
+                lines.append(" ".join(line))
+            iy[0] += 4
+            for ln in lines:
+                dlabel(ln, (125, 112, 85))
+            iy[0] += 6
+
+            pool = tdef["rarity_pool"]
+            counts = {r: pool.count(r) for r in dict.fromkeys(pool)}
+            dlabel("Rarity: " + "  ".join(f"{r[0].upper()}×{c}" for r, c in counts.items()),
+                   (175, 155, 105))
+            owned = [f for f in player.fossils if f.fossil_type == type_key]
+            dlabel(f"In collection: {len(owned)}", (155, 200, 155))
+            if owned:
+                rarities = ["common", "uncommon", "rare", "epic", "legendary"]
+                best = max(owned, key=lambda f: rarities.index(f.rarity))
+                dlabel(f"Best rarity: {RARITY_LABEL[best.rarity]}", RARITY_COLORS[best.rarity])
+        else:
+            iy[0] = dy + 30
+            qs = self.font.render("???", True, (55, 46, 22))
+            self.screen.blit(qs, (dx + dw // 2 - qs.get_width() // 2, dy + 8))
+            dlabel("Not yet discovered.", (82, 70, 38))
+            dlabel(f"Find it below {tdef['min_depth']}m depth.", (105, 90, 50))
 
     # ------------------------------------------------------------------
     # Refinery overlay (E key near equipment block)
@@ -2330,7 +2613,8 @@ class UI:
                                    ty + TH // 2 - take_t.get_height() // 2))
 
         # Direction indicator
-        dir_sym = "\u2192" if auto.direction == 1 else "\u2190"
+        _DIR_SYMBOLS = {(1,0): "\u2192", (-1,0): "\u2190", (0,-1): "\u2191", (0,1): "\u2193"}
+        dir_sym = _DIR_SYMBOLS.get(tuple(auto.direction), "?")
         dir_t = self.small.render(f"Direction: {dir_sym}", True, (150, 140, 180))
         self.screen.blit(dir_t, (px + 14, py + PH - 20))
 
@@ -2348,6 +2632,142 @@ class UI:
             auto.deposit_supports(player)
         elif self._auto_take_btn and self._auto_take_btn.collidepoint(pos):
             auto.take_all(player)
+
+    def _draw_farm_bot_panel(self, player):
+        fb = self.active_farm_bot
+        adef = fb._def
+        PW, PH = 480, 460
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        bar_w = PW - 28
+
+        panel = pygame.Surface((PW, PH), pygame.SRCALPHA)
+        panel.fill((18, 28, 20, 230))
+        self.screen.blit(panel, (px, py))
+        pygame.draw.rect(self.screen, (60, 100, 70), (px, py, PW, PH), 2)
+
+        # Title
+        title = self.font.render(adef["name"].upper(), True, (200, 255, 200))
+        self.screen.blit(title, (px + 14, py + 10))
+        hint = self.small.render("[E] close", True, (100, 150, 110))
+        self.screen.blit(hint, (px + PW - hint.get_width() - 10, py + 13))
+
+        # Status
+        status = fb.status
+        sc = self._STATUS_COLOR.get(status, (180, 180, 180))
+        sl = self._STATUS_LABEL.get(status, status)
+        st = self.small.render(f"Status: {sl}", True, sc)
+        self.screen.blit(st, (px + 14, py + 32))
+        r_t = self.small.render(f"Scan radius: {adef['scan_radius']} blocks", True, (120, 160, 130))
+        self.screen.blit(r_t, (px + PW - r_t.get_width() - 14, py + 32))
+
+        pygame.draw.line(self.screen, (60, 100, 70), (px + 10, py + 52), (px + PW - 10, py + 52))
+
+        # Fuel section
+        fuel_item_name = ITEMS.get(adef["fuel_item"], {}).get("name", adef["fuel_item"])
+        self._draw_resource_row(
+            "FUEL", fb.fuel, adef["fuel_tank"], fuel_item_name,
+            (220, 155, 40),
+            "_fb_deposit1_btn", "_fb_deposit_all_btn",
+            player.inventory.get(adef["fuel_item"], 0) > 0,
+            py + 58, px, bar_w, py + 90,
+        )
+
+        pygame.draw.line(self.screen, (60, 100, 70), (px + 10, py + 124), (px + PW - 10, py + 124))
+
+        # Seeds section
+        seeds_label = self.small.render("SEEDS LOADED", True, (180, 230, 180))
+        self.screen.blit(seeds_label, (px + 14, py + 130))
+        has_seeds_in_inv = any(
+            idata.get("place_block") in __import__("blocks").YOUNG_CROP_BLOCKS
+            and player.inventory.get(iid, 0) > 0
+            for iid, idata in ITEMS.items()
+        )
+        BW, BH = 160, 22
+        btn_col    = (20, 60, 25) if has_seeds_in_inv else (25, 30, 25)
+        btn_border = (60, 180, 80) if has_seeds_in_inv else (50, 60, 50)
+        btn_tc     = (140, 255, 160) if has_seeds_in_inv else (60, 70, 60)
+        self._fb_seeds_btn = pygame.Rect(px + PW - BW - 14, py + 127, BW, BH)
+        pygame.draw.rect(self.screen, btn_col, self._fb_seeds_btn)
+        pygame.draw.rect(self.screen, btn_border, self._fb_seeds_btn, 1)
+        bt = self.small.render("Deposit All Seeds", True, btn_tc)
+        self.screen.blit(bt, (self._fb_seeds_btn.x + BW // 2 - bt.get_width() // 2,
+                               self._fb_seeds_btn.y + BH // 2 - bt.get_height() // 2))
+
+        # Show loaded seeds as small items
+        SW2, GAP2 = 36, 4
+        ix0, iy0 = px + 14, py + 156
+        for idx, (seed_id, count) in enumerate(sorted(fb.seeds.items())):
+            sx_ = ix0 + idx * (SW2 + GAP2)
+            if sx_ + SW2 > px + PW - 14:
+                break
+            seed_color = ITEMS.get(seed_id, {}).get("color", (120, 160, 90))
+            pygame.draw.rect(self.screen, seed_color, (sx_, iy0, SW2, SW2))
+            pygame.draw.rect(self.screen, (60, 100, 70), (sx_, iy0, SW2, SW2), 1)
+            c_surf = self.small.render(str(count), True, (255, 255, 255))
+            self.screen.blit(c_surf, (sx_ + SW2 - c_surf.get_width() - 2, iy0 + SW2 - c_surf.get_height() - 1))
+        if not fb.seeds:
+            empty_s = self.small.render("(no seeds)", True, (80, 110, 80))
+            self.screen.blit(empty_s, (ix0, iy0 + 8))
+
+        pygame.draw.line(self.screen, (60, 100, 70), (px + 10, py + 200), (px + PW - 10, py + 200))
+
+        # Stored produce section
+        inv_count = fb.inv_count
+        inv_label = self.small.render("HARVESTED PRODUCE", True, (200, 230, 200))
+        self.screen.blit(inv_label, (px + 14, py + 206))
+        count_label = self.small.render(f"{inv_count} / {adef['inv_limit']}", True, (140, 180, 150))
+        self.screen.blit(count_label, (px + PW - count_label.get_width() - 14, py + 206))
+
+        SW, SH, GAP = 44, 44, 6
+        items_per_row = (PW - 28 + GAP) // (SW + GAP)
+        ix0, iy0 = px + 14, py + 224
+        for idx, (item_id, count) in enumerate(sorted(fb.stored.items())):
+            col_i = idx % items_per_row
+            row_i = idx // items_per_row
+            sx_ = ix0 + col_i * (SW + GAP)
+            sy_ = iy0 + row_i * (SH + GAP)
+            if sy_ + SH > py + PH - 50:
+                break
+            item_color = ITEMS.get(item_id, {}).get("color", (120, 120, 120))
+            pygame.draw.rect(self.screen, item_color, (sx_, sy_, SW, SH))
+            pygame.draw.rect(self.screen, (60, 100, 70), (sx_, sy_, SW, SH), 1)
+            c_surf = self.small.render(str(count), True, (255, 255, 255))
+            self.screen.blit(c_surf, (sx_ + SW - c_surf.get_width() - 2, sy_ + SH - c_surf.get_height() - 1))
+            name_surf = self.small.render(ITEMS.get(item_id, {}).get("name", item_id)[:6], True, (220, 240, 220))
+            self.screen.blit(name_surf, (sx_ + 2, sy_ + 2))
+
+        if inv_count == 0:
+            empty = self.small.render("(empty)", True, (80, 110, 80))
+            self.screen.blit(empty, (ix0, iy0 + 10))
+
+        # Take All button
+        TW, TH = 140, 28
+        tx = px + PW - TW - 14
+        ty = py + PH - TH - 10
+        has_items = inv_count > 0
+        t_col    = (20, 70, 25)    if has_items else (25, 30, 25)
+        t_border = (50, 180, 70)   if has_items else (50, 60, 50)
+        t_txt_col = (140, 255, 160) if has_items else (60, 70, 60)
+        self._fb_take_btn = pygame.Rect(tx, ty, TW, TH)
+        pygame.draw.rect(self.screen, t_col, self._fb_take_btn)
+        pygame.draw.rect(self.screen, t_border, self._fb_take_btn, 1)
+        take_t = self.small.render("TAKE ALL ITEMS", True, t_txt_col)
+        self.screen.blit(take_t, (tx + TW // 2 - take_t.get_width() // 2,
+                                   ty + TH // 2 - take_t.get_height() // 2))
+
+    def handle_farm_bot_click(self, pos, player):
+        fb = self.active_farm_bot
+        if fb is None:
+            return
+        if self._fb_deposit1_btn and self._fb_deposit1_btn.collidepoint(pos):
+            fb.deposit_fuel(player, 1)
+        elif self._fb_deposit_all_btn and self._fb_deposit_all_btn.collidepoint(pos):
+            fb.deposit_fuel(player)
+        elif self._fb_seeds_btn and self._fb_seeds_btn.collidepoint(pos):
+            fb.deposit_all_seeds(player)
+        elif self._fb_take_btn and self._fb_take_btn.collidepoint(pos):
+            fb.take_all(player)
 
     # ------------------------------------------------------------------
     # Death screen

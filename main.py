@@ -406,6 +406,8 @@ def main():
         ui.collection_open = ui.refinery_open = ui.npc_open = False
         ui.automation_open = False
         ui.active_automation = None
+        ui.farm_bot_open = False
+        ui.active_farm_bot = None
         if hasattr(ui, 'equipment_crafting_open'):
             ui.equipment_crafting_open = False
         ui.active_npc = None
@@ -417,7 +419,7 @@ def main():
     def _any_ui_open():
         return any([ui.pause_open, ui.research_open, ui.inventory_open, ui.crafting_open,
                     ui.collection_open, ui.refinery_open, ui.npc_open,
-                    ui.automation_open, ui.chest_open])
+                    ui.automation_open, ui.farm_bot_open, ui.chest_open])
 
     def _find_nearby_npc(world, player):
         from cities import NPC
@@ -544,6 +546,9 @@ def main():
                     nearby_auto = next(
                         (a for a in world.automations if a.in_range(player)), None
                     )
+                    nearby_fb = next(
+                        (fb for fb in world.farm_bots if fb.in_range(player)), None
+                    )
                     nearby_npc = _find_nearby_npc(world, player)
                     nearby_bed = player.get_nearby_bed()
                     if nearby_auto is not None:
@@ -554,6 +559,14 @@ def main():
                             _close_all_ui()
                             ui.automation_open = True
                             ui.active_automation = nearby_auto
+                    elif nearby_fb is not None:
+                        if ui.farm_bot_open and ui.active_farm_bot is nearby_fb:
+                            ui.farm_bot_open = False
+                            ui.active_farm_bot = None
+                        else:
+                            _close_all_ui()
+                            ui.farm_bot_open = True
+                            ui.active_farm_bot = nearby_fb
                     elif nearby_npc is not None:
                         if ui.npc_open and ui.active_npc is nearby_npc:
                             ui.npc_open = False
@@ -628,6 +641,8 @@ def main():
                         running = False
                 elif ui.automation_open:
                     ui.handle_automation_click(event.pos, player)
+                elif ui.farm_bot_open:
+                    ui.handle_farm_bot_click(event.pos, player)
                 elif ui.npc_open:
                     ui.handle_npc_click(event.pos, player)
                 elif ui.research_open:
@@ -659,6 +674,7 @@ def main():
             renderer.draw_dropped_items(world.dropped_items)
             renderer.draw_entities(world.entities)
             renderer.draw_automations(world.automations)
+            renderer.draw_farm_bots(world.farm_bots)
             ui.draw(player, research, dt)
             pygame.display.flip()
             continue
@@ -685,6 +701,8 @@ def main():
             entity.update(dt)
         for automation in world.automations:
             automation.update(dt, world)
+        for farm_bot in world.farm_bots:
+            farm_bot.update(dt, world)
         world.update_physics(dt, player)
         world.update_water(dt, player)
         world.update_saplings(dt)
@@ -697,6 +715,7 @@ def main():
         renderer.draw_player(player)
         renderer.draw_entities(world.entities)
         renderer.draw_automations(world.automations)
+        renderer.draw_farm_bots(world.farm_bots)
         renderer.draw_dropped_items(world.dropped_items)
         renderer.draw_farm_sense(player, world)
         renderer.draw_mining_indicator(player)

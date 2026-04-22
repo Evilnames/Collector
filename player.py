@@ -1,7 +1,7 @@
 import random
 import pygame
-from automations import Automation, AUTOMATION_DEFS
-from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, CAVE_MUSHROOMS, EQUIPMENT_BLOCKS, LADDER, SUPPORT, WATER,
+from automations import Automation, AUTOMATION_DEFS, FarmBot, FARM_BOT_DEFS, FARM_BOT_TYPES
+from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT, CAVE_MUSHROOMS, EQUIPMENT_BLOCKS, LADDER, SUPPORT, WATER,
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
                     ALL_SUPPORTS, SAPLING, GRASS, DIRT, ALL_LOGS, ALL_LEAVES,
                     YOUNG_CROP_BLOCKS, MATURE_CROP_BLOCKS, BUSH_BLOCKS,
@@ -22,6 +22,7 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, CAVE_MUSHROOMS,
 from items import ITEMS
 from rocks import RockGenerator, Rock
 from wildflowers import WildflowerGenerator, Wildflower
+from fossils import FossilGenerator, Fossil
 from constants import (
     BLOCK_SIZE, PLAYER_W, PLAYER_H,
     GRAVITY, JUMP_FORCE, MOVE_SPEED, MAX_FALL,
@@ -60,6 +61,10 @@ class Player:
         # Mushroom collection
         self.mushrooms_found = {}        # block_id -> count
         self.discovered_mushroom_types = set()
+        # Fossil collection
+        self.fossils = []
+        self.discovered_fossil_types = set()
+        self._fossil_gen = FossilGenerator(world.seed)
         self.known_recipes = set()
         # Water state
         self._drowning_timer = 0.0
@@ -95,8 +100,10 @@ class Player:
         self.known_recipes = set(d["known_recipes"])
         self.rocks = [Rock(**r) for r in d["rocks"]]
         self.wildflowers = [Wildflower(**wf) for wf in d["wildflowers"]]
+        self.fossils = [Fossil(**f) for f in d.get("fossils", [])]
         self.discovered_types = set(d["discovered_types"])
         self.discovered_flower_types = set(d["discovered_flower_types"])
+        self.discovered_fossil_types = set(d.get("discovered_fossil_types", []))
         self.mushrooms_found = {int(k): v for k, v in d["mushrooms_found"].items()}
         self.discovered_mushroom_types = set(int(x) for x in d["discovered_mushroom_types"])
         self.spawn_x = d.get("spawn_x")
@@ -288,6 +295,10 @@ class Player:
                 flower = self._flower_gen.generate(bx, by, self.world.get_biodome(bx))
                 self.wildflowers.append(flower)
                 self.discovered_flower_types.add(flower.flower_type)
+            elif block_id == FOSSIL_DEPOSIT:
+                fossil = self._fossil_gen.generate(bx, by, self.get_depth(), self.world.get_biome(bx))
+                self.fossils.append(fossil)
+                self.discovered_fossil_types.add(fossil.fossil_type)
             elif block_id in CAVE_MUSHROOMS:
                 self.mushrooms_found[block_id] = self.mushrooms_found.get(block_id, 0) + 1
                 self.discovered_mushroom_types.add(block_id)
@@ -434,10 +445,23 @@ class Player:
         if spawn_type:
             if self.inventory.get(item_id, 0) <= 0:
                 return
-            adef = AUTOMATION_DEFS[spawn_type]
-            ax = bx * BLOCK_SIZE + (BLOCK_SIZE - adef["w"]) // 2
-            ay = by * BLOCK_SIZE + (BLOCK_SIZE - adef["h"]) // 2
-            self.world.automations.append(Automation(ax, ay, spawn_type, self.facing))
+            if spawn_type in FARM_BOT_TYPES:
+                adef = FARM_BOT_DEFS[spawn_type]
+                ax = bx * BLOCK_SIZE + (BLOCK_SIZE - adef["w"]) // 2
+                ay = by * BLOCK_SIZE + (BLOCK_SIZE - adef["h"]) // 2
+                self.world.farm_bots.append(FarmBot(ax, ay, spawn_type))
+            else:
+                adef = AUTOMATION_DEFS[spawn_type]
+                ax = bx * BLOCK_SIZE + (BLOCK_SIZE - adef["w"]) // 2
+                ay = by * BLOCK_SIZE + (BLOCK_SIZE - adef["h"]) // 2
+                pcx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+                pcy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+                ddx, ddy = bx - pcx, by - pcy
+                if abs(ddx) >= abs(ddy):
+                    spawn_dir = (1 if ddx >= 0 else -1, 0)
+                else:
+                    spawn_dir = (0, 1 if ddy >= 0 else -1)
+                self.world.automations.append(Automation(ax, ay, spawn_type, spawn_dir))
             self.inventory[item_id] -= 1
             if self.inventory[item_id] <= 0:
                 del self.inventory[item_id]
