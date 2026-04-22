@@ -401,6 +401,7 @@ def main():
     renderer.cam_y = player.y - SCREEN_H // 2
 
     def _close_all_ui():
+        ui.pause_open = False
         ui.research_open = ui.inventory_open = ui.crafting_open = False
         ui.collection_open = ui.refinery_open = ui.npc_open = False
         ui.automation_open = False
@@ -414,7 +415,7 @@ def main():
         ui.active_chest_pos = None
 
     def _any_ui_open():
-        return any([ui.research_open, ui.inventory_open, ui.crafting_open,
+        return any([ui.pause_open, ui.research_open, ui.inventory_open, ui.crafting_open,
                     ui.collection_open, ui.refinery_open, ui.npc_open,
                     ui.automation_open, ui.chest_open])
 
@@ -504,10 +505,12 @@ def main():
                     continue
 
                 if event.key == pygame.K_ESCAPE:
-                    if _any_ui_open():
+                    if ui.pause_open:
+                        ui.pause_open = False
+                    elif _any_ui_open():
                         _close_all_ui()
                     else:
-                        running = False
+                        ui.pause_open = True
 
                 if event.key == pygame.K_BACKQUOTE:
                     ui.cheat_open = True
@@ -613,6 +616,16 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if player.dead or ui.cheat_open:
                     pass
+                elif ui.pause_open:
+                    action = ui.handle_pause_click(event.pos)
+                    if action == "resume":
+                        ui.pause_open = False
+                    elif action == "save":
+                        save_mgr.save(world, player, research)
+                        print("Game saved.")
+                    elif action == "quit":
+                        save_mgr.save(world, player, research)
+                        running = False
                 elif ui.automation_open:
                     ui.handle_automation_click(event.pos, player)
                 elif ui.npc_open:
@@ -639,6 +652,16 @@ def main():
             mouse_scr_pos[0] + renderer.cam_x,
             mouse_scr_pos[1] + renderer.cam_y,
         )
+
+        if ui.pause_open:
+            renderer.draw_world(world, player)
+            renderer.draw_player(player)
+            renderer.draw_dropped_items(world.dropped_items)
+            renderer.draw_entities(world.entities)
+            renderer.draw_automations(world.automations)
+            ui.draw(player, research, dt)
+            pygame.display.flip()
+            continue
 
         if player.dead:
             # Freeze game while dead; just do minimal updates

@@ -169,6 +169,11 @@ class UI:
         self._cheat_msg_timer = 0.0
         self._death_font  = pygame.font.SysFont("Arial Black", 72, bold=True)
         self._death_font2 = pygame.font.SysFont("Arial", 26)
+        # Pause menu
+        self.pause_open = False
+        self._pause_btn_rects = {}
+        self._pause_font  = pygame.font.SysFont("Arial Black", 56, bold=True)
+        self._pause_font2 = pygame.font.SysFont("Arial Black", 30, bold=True)
         self._cheat_font  = pygame.font.SysFont("consolas", 20)
         # Drag-and-drop state for inventory → hotbar
         self._drag_item_id = None
@@ -207,6 +212,8 @@ class UI:
             self._draw_chest(player)
         if self.cheat_open:
             self._draw_cheat_console()
+        if self.pause_open:
+            self._draw_pause_menu()
         self._draw_hotbar(player)
         if self._drag_item_id is not None and self.inventory_open:
             self._draw_drag_item()
@@ -2345,6 +2352,43 @@ class UI:
     # ------------------------------------------------------------------
     # Death screen
     # ------------------------------------------------------------------
+
+    def _draw_pause_menu(self):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 160))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 360, 320
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (12, 20, 60), (px, py, PW, PH), border_radius=12)
+        pygame.draw.rect(self.screen, (55, 130, 255), (px, py, PW, PH), 2, border_radius=12)
+
+        title = self._pause_font.render("PAUSED", True, (255, 255, 255))
+        self.screen.blit(title, title.get_rect(center=(SCREEN_W // 2, py + 60)))
+
+        BTN_W, BTN_H = 260, 52
+        bx = SCREEN_W // 2 - BTN_W // 2
+        btn_labels = [("resume", "RESUME"), ("save", "SAVE"), ("quit", "SAVE & QUIT")]
+        btn_y_start = py + 120
+        btn_gap = 66
+        mx, my = pygame.mouse.get_pos()
+        self._pause_btn_rects = {}
+        for i, (key, label) in enumerate(btn_labels):
+            rect = pygame.Rect(bx, btn_y_start + i * btn_gap, BTN_W, BTN_H)
+            self._pause_btn_rects[key] = rect
+            hovered = rect.collidepoint(mx, my)
+            color = (40, 100, 240) if hovered else (20, 60, 160)
+            pygame.draw.rect(self.screen, color, rect, border_radius=8)
+            pygame.draw.rect(self.screen, (55, 130, 255), rect, 2, border_radius=8)
+            lbl = self._pause_font2.render(label, True, (255, 255, 255))
+            self.screen.blit(lbl, lbl.get_rect(center=rect.center))
+
+    def handle_pause_click(self, pos):
+        for key, rect in self._pause_btn_rects.items():
+            if rect.collidepoint(pos):
+                return key
+        return None
 
     def _draw_death_screen(self, player):
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)

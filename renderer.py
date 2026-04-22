@@ -147,6 +147,8 @@ class Renderer:
         self._log_variants  = self._build_log_variants()
         self._leaf_variants = self._build_leaf_variants()
         self._light_surf = pygame.Surface((SCREEN_W, SCREEN_H))
+        self._light_gradient = None
+        self._light_cache_key = None
         self._mine_overlay = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
         self._npc_font = pygame.font.SysFont("consolas", 14)
         self._minimap_surf  = None
@@ -1464,18 +1466,25 @@ class Renderer:
         ambient = max(10, 230 - depth * 2)
         radius = max(70, 220 - depth)
 
-        self._light_surf.fill((ambient, ambient, ambient))
+        # Rebuild gradient only when lighting params change (not every frame)
+        if self._light_cache_key != (ambient, radius):
+            self._light_cache_key = (ambient, radius)
+            size = radius * 2 + 1
+            grad = pygame.Surface((size, size))
+            grad.fill((ambient, ambient, ambient))
+            step = 5
+            for r in range(radius, 0, -step):
+                ratio = r / radius
+                brightness = int(ambient + (255 - ambient) * (1 - ratio ** 0.6))
+                brightness = min(255, brightness)
+                pygame.draw.circle(grad, (brightness, brightness, brightness), (radius, radius), r)
+            self._light_gradient = grad
 
         px = int(player.x - self.cam_x) + PLAYER_W // 2
         py = int(player.y - self.cam_y) + PLAYER_H // 2
 
-        step = 5
-        for r in range(radius, 0, -step):
-            ratio = r / radius
-            brightness = int(ambient + (255 - ambient) * (1 - ratio ** 0.6))
-            brightness = min(255, brightness)
-            pygame.draw.circle(self._light_surf, (brightness, brightness, brightness), (px, py), r)
-
+        self._light_surf.fill((ambient, ambient, ambient))
+        self._light_surf.blit(self._light_gradient, (px - radius, py - radius))
         self.screen.blit(self._light_surf, (0, 0), special_flags=pygame.BLEND_MULT)
 
     # ------------------------------------------------------------------
