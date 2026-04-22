@@ -1,39 +1,44 @@
+import math
 import random
 import time as _time
 from math import cos, sin, pi
 from blocks import *  # noqa: F401,F403
-from constants import WORLD_W, WORLD_H, SURFACE_Y, BLOCK_SIZE, PLAYER_W, PLAYER_H
+from constants import CHUNK_W, CHUNK_LOAD_RADIUS, WORLD_MAX_X, WORLD_H, SURFACE_Y, BLOCK_SIZE, PLAYER_W, PLAYER_H
 from biomes import BIOMES, BIOME_ORE_MULTIPLIERS, BIODOME_TYPES
 
 
 class World:
-    def __init__(self, seed=42, preloaded=None):
+    def __init__(self, seed=42, preloaded=None, save_mgr=None, player_x=0.0):
         self.seed = seed
-        self.width = WORLD_W
         self.height = WORLD_H
+        self._save_mgr = save_mgr
+        self._chunks = {}           # chunk_x -> [[block_id]*CHUNK_W]*WORLD_H
+        self._dirty_chunks = set()
         self.entities = []
         self.automations = []
         self.dropped_items = []
+        self.chest_data = {}     # (bx, by) -> {item_id: count}
         self._water_level = {}   # (x,y) -> int 1-8; 8 = world-gen source block
-        if preloaded:
-            self._load_from(preloaded)
-        else:
-            random.seed(seed)
-            self.grid = [[AIR] * self.width for _ in range(self.height)]
-            self._surface = self._gen_surface()
-            self._biome_map = self._build_biome_map()
-            self._biodome_map = self._build_biodome_map()
-            self._generate()
-            self._spawn_animals()
-            from cities import generate_cities
-            generate_cities(self, self.seed)
+        self._lake_cells  = []
+        # Pre-compute deterministic terrain noise once
+        _rng = random.Random(self.seed)
+        self._surf_octaves = [(0.015, 6.0), (0.04, 3.0), (0.10, 1.5), (0.22, 0.6)]
+        self._surf_phases  = [_rng.uniform(0, 6.28) for _ in self._surf_octaves]
         self._physics_timer = 0.0
         self._physics_interval = 0.5
         self._fall_chance = 0.25
         self._physics_rng = random.Random(seed + 77)
         self.pending_physics = set()
         self._physics_tick = 0
-        self._physics_grace = {}  # (x, y) -> first tick when eligible to fall
+        self._physics_grace = {}
+        if preloaded:
+            self._load_from(preloaded, player_x)
+        else:
+            for cx in range(-CHUNK_LOAD_RADIUS, CHUNK_LOAD_RADIUS + 1):
+                self.load_chunk(cx)
+            self._spawn_animals()
+            from cities import generate_cities
+            generate_cities(self, self.seed)
         if preloaded:
             self._seed_physics()
         # Water simulation
@@ -55,13 +60,146 @@ class World:
         self._crop_rng      = random.Random(seed + 11111)
         self.pending_crops  = set()
 
-    def _load_from(self, data):
-        self.grid = data["grid"]
-        meta = data["meta"]
-        self._surface = meta["surface"]
-        self._biome_map = meta["biome_map"]
-        self._biodome_map = meta["biodome_map"]
-        self._water_level = meta["water_level"]
+    # ------------------------------------------------------------------
+    # Backward-compat properties
+    # ------------------------------------------------------------------
+
+    @property
+    def width(self):
+        """Loaded world span in blocks — used for minimap and backward compat."""
+        if not self._chunks:
+            return CHUNK_W
+        return (max(self._chunks) - min(self._chunks) + 1) * CHUNK_W
+
+    @property
+    def chunk_min_x(self):
+        return min(self._chunks, default=0) * CHUNK_W
+
+    # ------------------------------------------------------------------
+    # Deterministic terrain queries (replace fixed arrays)
+    # ------------------------------------------------------------------
+
+    def surface_height(self, x: int) -> int:
+        h = SURFACE_Y
+        for (freq, amp), phase in zip(self._surf_octaves, self._surf_phases):
+            h += amp * math.sin(x * freq + phase)
+        return round(h)
+
+    def biome_at(self, x: int) -> str:
+        zone = x // 150
+        nearest_biome, nearest_dist = BIOMES[0], float('inf')
+        for z in (zone - 1, zone, zone + 1):
+            rng = random.Random(hash((self.seed, z, 'bc')) & 0x7FFFFFFF)
+            cx = z * 150 + rng.randint(-25, 25)
+            dist = abs(x - cx)
+            if dist < nearest_dist:
+                nearest_dist = dist
+                brng = random.Random(hash((self.seed, z, 'bt')) & 0x7FFFFFFF)
+                nearest_biome = brng.choice(BIOMES)
+        return nearest_biome
+
+    def biodome_at(self, x: int) -> str:
+        zone = x // 200
+        nearest, nearest_dist = BIODOME_TYPES[0], float('inf')
+        for z in (zone - 1, zone, zone + 1):
+            rng = random.Random(hash((self.seed, z, 'bdc')) & 0x7FFFFFFF)
+            cxz = z * 200 + rng.randint(-40, 40)
+            dist = abs(x - cxz)
+            if dist < nearest_dist:
+                nearest_dist = dist
+                brng = random.Random(hash((self.seed, z, 'bdt')) & 0x7FFFFFFF)
+                nearest = brng.choice(BIODOME_TYPES)
+        return nearest
+
+    def get_biome(self, bx: int) -> str:
+        return self.biome_at(bx)
+
+    def get_biodome(self, bx: int) -> str:
+        return self.biodome_at(bx)
+
+    def surface_y_at(self, x: int) -> int:
+        return self.surface_height(x)
+
+    # ------------------------------------------------------------------
+    # Chunk infrastructure
+    # ------------------------------------------------------------------
+
+    def load_chunk(self, cx: int):
+        """Load chunk from DB, or generate fresh if unseen."""
+        if cx in self._chunks:
+            return
+        data = self._save_mgr.load_chunk(cx) if self._save_mgr else None
+        self._chunks[cx] = data if data is not None else [[AIR] * CHUNK_W for _ in range(WORLD_H)]
+        if data is None:
+            self._fill_chunk(cx)
+
+    def unload_chunk(self, cx: int):
+        """Save dirty chunk to DB and evict from memory."""
+        if cx not in self._chunks:
+            return
+        if self._save_mgr and cx in self._dirty_chunks:
+            self._save_mgr.save_chunk(cx, self._chunks[cx])
+            self._dirty_chunks.discard(cx)
+        del self._chunks[cx]
+
+    def update_loaded_chunks(self, player_x_pixels: float):
+        """Call each frame to stream chunks in and out around the player."""
+        player_cx = int(player_x_pixels // BLOCK_SIZE) // CHUNK_W
+        desired = set(range(player_cx - CHUNK_LOAD_RADIUS, player_cx + CHUNK_LOAD_RADIUS + 1))
+        loaded = set(self._chunks.keys())
+
+        to_unload = loaded - desired
+        to_load = desired - loaded
+        if not to_unload and not to_load:
+            return
+
+        # Save all dirty evicted chunks in one transaction
+        if to_unload and self._save_mgr:
+            dirty = {cx: self._chunks[cx] for cx in to_unload if cx in self._dirty_chunks}
+            if dirty:
+                self._save_mgr.save_chunks_batch(dirty)
+                self._dirty_chunks -= set(dirty.keys())
+        for cx in to_unload:
+            del self._chunks[cx]
+
+        # Load all needed chunks from DB in one query, generate any that are new
+        if to_load:
+            db_data = self._save_mgr.load_chunks_batch(to_load) if self._save_mgr else {}
+            for cx in to_load:
+                if cx in db_data:
+                    self._chunks[cx] = db_data[cx]
+                else:
+                    self._chunks[cx] = [[AIR] * CHUNK_W for _ in range(WORLD_H)]
+                    self._fill_chunk(cx)
+
+    def _chunk_get(self, x: int, y: int) -> int:
+        """Raw chunk read — no side effects. Returns BEDROCK for unloaded/OOB."""
+        if y < 0 or y >= WORLD_H:
+            return BEDROCK
+        chunk = self._chunks.get(x // CHUNK_W)
+        return chunk[y][x % CHUNK_W] if chunk is not None else BEDROCK
+
+    def _chunk_set(self, x: int, y: int, bid: int):
+        """Raw chunk write — no side effects. Silently skips unloaded chunks."""
+        if y < 0 or y >= WORLD_H:
+            return
+        cx = x // CHUNK_W
+        chunk = self._chunks.get(cx)
+        if chunk is not None:
+            chunk[y][x % CHUNK_W] = bid
+            self._dirty_chunks.add(cx)
+
+    def _load_from(self, data, player_x: float = 0.0):
+        self._water_level = data.get("water_level", {})
+        raw_chests = data.get("chest_data", {})
+        self.chest_data = {
+            tuple(int(v) for v in k.split(",")): inv
+            for k, inv in raw_chests.items()
+        }
+        # Load chunks around the player's saved position
+        player_cx = int(player_x // BLOCK_SIZE) // CHUNK_W
+        for cx in range(player_cx - CHUNK_LOAD_RADIUS, player_cx + CHUNK_LOAD_RADIUS + 1):
+            self.load_chunk(cx)
 
         from automations import Automation
         for a_data in data["automations"]:
@@ -100,171 +238,123 @@ class World:
                 DroppedItem(d["x"], d["y"], d["item_id"], d["count"], d["lifetime"])
             )
 
-    def _gen_surface(self):
-        heights = [SURFACE_Y] * self.width
-        h = SURFACE_Y
-        for x in range(self.width):
-            h += random.randint(-1, 1)
-            h = max(SURFACE_Y - 6, min(SURFACE_Y + 6, h))
-            heights[x] = h
-        # Smooth pass
-        smoothed = heights[:]
-        for x in range(1, self.width - 1):
-            smoothed[x] = (heights[x - 1] + heights[x] + heights[x + 1]) // 3
-        return smoothed
+    # ------------------------------------------------------------------
+    # Chunk terrain generation
+    # ------------------------------------------------------------------
 
-    def _build_biome_map(self):
-        rng = random.Random(self.seed + 9999)
-        n_seeds = 14
-        seeds = [(rng.randint(0, self.width - 1), rng.choice(BIOMES)) for _ in range(n_seeds)]
-        result = []
-        for x in range(self.width):
-            closest = min(seeds, key=lambda s: abs(s[0] - x))
-            result.append(closest[1])
-        return result
+    def _fill_chunk(self, cx: int):
+        """Fill self._chunks[cx] with generated terrain (chunk must already be in dict)."""
+        chunk = self._chunks[cx]
+        ore_rng = random.Random(hash((self.seed, cx, 'ore')) & 0x7FFFFFFF)
 
-    def get_biome(self, bx):
-        return self._biome_map[max(0, min(self.width - 1, bx))]
-
-    def _build_biodome_map(self):
-        rng = random.Random(self.seed + 77777)
-        n_seeds = 2
-        seeds = [(rng.randint(0, self.width - 1), rng.choice(BIODOME_TYPES)) for _ in range(n_seeds)]
-        result = []
-        for x in range(self.width):
-            closest = min(seeds, key=lambda s: abs(s[0] - x))
-            result.append(closest[1])
-        return result
-
-    def get_biodome(self, bx):
-        return self._biodome_map[max(0, min(self.width - 1, bx))]
-
-    def _generate(self):
-        # Use a separate Random instance so ores are independent of surface rng
-        ore_rng = random.Random(self.seed + 1)
-
-        for x in range(self.width):
-            sy = self._surface[x]
-            biome = self._biome_map[x]
-            for y in range(self.height):
-                row = self.grid[y]
+        for lx in range(CHUNK_W):
+            x = cx * CHUNK_W + lx
+            sy = self.surface_height(x)
+            biome = self.biome_at(x)
+            for y in range(WORLD_H):
                 if y < sy:
-                    row[x] = AIR
+                    chunk[y][lx] = AIR
                 elif y == sy:
-                    row[x] = GRASS
+                    chunk[y][lx] = GRASS
                 elif y < sy + 6:
-                    row[x] = DIRT
-                elif y >= self.height - 1:
-                    row[x] = BEDROCK
+                    chunk[y][lx] = DIRT
+                elif y >= WORLD_H - 1:
+                    chunk[y][lx] = BEDROCK
                 else:
-                    row[x] = self._pick_block(y - sy, ore_rng, biome)
+                    chunk[y][lx] = self._pick_block(y - sy, ore_rng, biome)
 
-        # Guarantee bedrock bottom row
-        for x in range(self.width):
-            self.grid[self.height - 1][x] = BEDROCK
+        # Bedrock bottom
+        for lx in range(CHUNK_W):
+            chunk[WORLD_H - 1][lx] = BEDROCK
 
-        # Trees on the surface — species determined by surface biodome
-        tree_rng = random.Random(self.seed + 2)
-        x = 2
-        while x < self.width - 2:
-            sy = self._surface[x]
-            biodome = self._biodome_map[x]
-            self._dispatch_grow(x, sy - 1, biodome, tree_rng)
-            lo, hi = {
-                "jungle":    (3, 6),
-                "fungal":    (3, 7),
-                "boreal":    (4, 8),
-                "wetland":   (4, 8),
-                "wasteland": (9, 16),
-                "savanna":   (7, 13),
-            }.get(biodome, (5, 10))
-            x += tree_rng.randint(lo, hi)
-
-        # Bushes on the surface — sparser than trees
-        bush_rng = random.Random(self.seed + 3)
-        bx_pos = 5
-        while bx_pos < self.width - 5:
-            sy = self._surface[bx_pos]
-            if self.grid[sy - 1][bx_pos] == AIR and self.grid[sy][bx_pos] == GRASS:
-                self.grid[sy - 1][bx_pos] = bush_rng.choice([
-                    STRAWBERRY_BUSH, WHEAT_BUSH,
-                    CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
-                    RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, GARLIC_BUSH,
-                    SCALLION_BUSH, CHILI_BUSH,
-                    PEPPER_BUSH, ONION_BUSH, POTATO_BUSH, EGGPLANT_BUSH, CABBAGE_BUSH,
-                ])
-            bx_pos += bush_rng.randint(7, 15)
-
-        # Wildflowers on the surface — spacing varies by biodome
-        flower_rng = random.Random(self.seed + 8888)
-        fx = 1
-        while fx < self.width - 1:
-            sy = self._surface[fx]
-            biodome = self._biodome_map[fx]
-            if self.grid[sy - 1][fx] == AIR and self.grid[sy][fx] == GRASS:
-                if flower_rng.random() < 0.75:
-                    self.grid[sy - 1][fx] = WILDFLOWER_PATCH
-            lo, hi = {
-                "jungle":       (2, 5),
-                "tropical":     (2, 5),
-                "wetland":      (3, 7),
-                "temperate":    (4, 9),
-                "boreal":       (5, 10),
-                "birch_forest": (4, 9),
-                "redwood":      (5, 11),
-                "savanna":      (6, 13),
-                "wasteland":    (12, 25),
-                "fungal":       (4, 10),
-            }.get(biodome, (5, 10))
-            fx += flower_rng.randint(lo, hi)
-
-        # Zone barriers — 2 rows thick, at depths ~40/100/160 from average surface
-        _barriers = [
-            (SURFACE_Y + 40, GATE_MID),
-            (SURFACE_Y + 100, GATE_DEEP),
-            (SURFACE_Y + 160, GATE_CORE),
-        ]
-        for y_abs, gate in _barriers:
+        # Zone barriers (2 rows thick at fixed depths)
+        for y_abs, gate in [(SURFACE_Y + 40, GATE_MID), (SURFACE_Y + 100, GATE_DEEP),
+                             (SURFACE_Y + 160, GATE_CORE)]:
             for dy in range(2):
                 gy = y_abs + dy
-                if 0 < gy < self.height - 1:
-                    for x in range(self.width):
-                        self.grid[gy][x] = gate
+                if 0 < gy < WORLD_H - 1:
+                    for lx in range(CHUNK_W):
+                        chunk[gy][lx] = gate
 
-        # Underground lakes — carved after solid generation so they override ore/stone
-        self._gen_lakes()
+        # Trees — _dispatch_grow uses set_block which silently skips unloaded chunks
+        tree_rng = random.Random(hash((self.seed, cx, 'trees')) & 0x7FFFFFFF)
+        lx = 2
+        while lx < CHUNK_W - 2:
+            x = cx * CHUNK_W + lx
+            sy = self.surface_height(x)
+            biodome = self.biodome_at(x)
+            self._dispatch_grow(x, sy - 1, biodome, tree_rng)
+            lo, hi = {
+                "jungle":    (3, 6), "fungal":    (3, 7), "boreal":    (4, 8),
+                "wetland":   (4, 8), "wasteland": (9, 16), "savanna":  (7, 13),
+            }.get(biodome, (5, 10))
+            lx += tree_rng.randint(lo, hi)
 
-        # Cave networks — disabled temporarily
-        # self._gen_caves()
+        # Bushes — write directly into chunk array (within-chunk positions)
+        bush_rng = random.Random(hash((self.seed, cx, 'bushes')) & 0x7FFFFFFF)
+        lx = 5
+        while lx < CHUNK_W - 5:
+            sy = self.surface_height(cx * CHUNK_W + lx)
+            if 0 < sy < WORLD_H and chunk[sy - 1][lx] == AIR and chunk[sy][lx] == GRASS:
+                chunk[sy - 1][lx] = bush_rng.choice([
+                    STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH,
+                    PUMPKIN_BUSH, APPLE_BUSH, RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH,
+                    GARLIC_BUSH, SCALLION_BUSH, CHILI_BUSH, PEPPER_BUSH, ONION_BUSH,
+                    POTATO_BUSH, EGGPLANT_BUSH, CABBAGE_BUSH,
+                ])
+            lx += bush_rng.randint(7, 15)
 
-    def _gen_lakes(self):
-        rng = random.Random(self.seed + 5555)
-        # (depth_min, depth_max, count, w_min, w_max, h_min, h_max)
-        zones = [
-            (15,  38,  4,  4,  8,  2, 3),   # shallow — small puddles
-            (45,  98,  5,  7, 14,  3, 4),   # mid — medium lakes
-            (105, 158, 5, 10, 20,  3, 5),   # deep — large lakes
-            (165, 190, 3, 12, 24,  4, 6),   # core — vast flooded chambers
-        ]
+        # Wildflowers
+        flower_rng = random.Random(hash((self.seed, cx, 'flowers')) & 0x7FFFFFFF)
+        lx = 1
+        while lx < CHUNK_W - 1:
+            x = cx * CHUNK_W + lx
+            sy = self.surface_height(x)
+            biodome = self.biodome_at(x)
+            if 0 < sy < WORLD_H and chunk[sy - 1][lx] == AIR and chunk[sy][lx] == GRASS:
+                if flower_rng.random() < 0.75:
+                    chunk[sy - 1][lx] = WILDFLOWER_PATCH
+            lo, hi = {
+                "jungle": (2, 5), "tropical": (2, 5), "wetland": (3, 7),
+                "temperate": (4, 9), "boreal": (5, 10), "birch_forest": (4, 9),
+                "redwood": (5, 11), "savanna": (6, 13), "wasteland": (12, 25),
+                "fungal": (4, 10),
+            }.get(biodome, (5, 10))
+            lx += flower_rng.randint(lo, hi)
+
+        # Lakes (chunk-local)
+        self._gen_chunk_lakes(cx, chunk)
+
+    def _gen_chunk_lakes(self, cx: int, chunk: list):
+        """Carve small lakes within this chunk."""
+        rng = random.Random(hash((self.seed, cx, 'lakes')) & 0x7FFFFFFF)
         _impassable = {BEDROCK, GATE_MID, GATE_DEEP, GATE_CORE}
-        self._lake_cells = []
-        for depth_min, depth_max, count, w_min, w_max, h_min, h_max in zones:
-            for _ in range(count):
-                cx = rng.randint(8, self.width - 8)
-                depth = rng.randint(depth_min, depth_max)
-                abs_y = SURFACE_Y + depth
-                w = rng.randint(w_min, w_max)
-                h = rng.randint(h_min, h_max)
-                x0 = max(1, cx - w // 2)
-                x1 = min(self.width - 2, cx + w // 2)
-                y0 = max(SURFACE_Y + 8, abs_y - h // 2)
-                y1 = min(self.height - 3, abs_y + h // 2)
-                for ly in range(y0, y1 + 1):
-                    for lx in range(x0, x1 + 1):
-                        if self.grid[ly][lx] not in _impassable:
-                            self.grid[ly][lx] = WATER
-                            self._water_level[(lx, ly)] = 8
-                            self._lake_cells.append((ly, lx))
+        # Each zone has a probability of spawning one lake per chunk
+        zones = [
+            (15,  38,  0.43,  4,  8, 2, 3),
+            (45,  98,  0.54,  7, 14, 3, 4),
+            (105, 158, 0.54, 10, 20, 3, 5),
+            (165, 190, 0.32, 12, 24, 4, 6),
+        ]
+        for depth_min, depth_max, prob, w_min, w_max, h_min, h_max in zones:
+            if rng.random() > prob:
+                continue
+            center_lx = rng.randint(4, CHUNK_W - 5)
+            depth  = rng.randint(depth_min, depth_max)
+            abs_y  = SURFACE_Y + depth
+            w = rng.randint(w_min, w_max)
+            h = rng.randint(h_min, h_max)
+            lx0 = max(0, center_lx - w // 2)
+            lx1 = min(CHUNK_W - 1, center_lx + w // 2)
+            y0  = max(SURFACE_Y + 8, abs_y - h // 2)
+            y1  = min(WORLD_H - 3, abs_y + h // 2)
+            for ly in range(y0, y1 + 1):
+                for lx in range(lx0, lx1 + 1):
+                    if chunk[ly][lx] not in _impassable:
+                        chunk[ly][lx] = WATER
+                        world_x = cx * CHUNK_W + lx
+                        self._water_level[(world_x, ly)] = 8
+                        self._lake_cells.append((ly, world_x))
 
     # ------------------------------------------------------------------ caves --
 
@@ -345,7 +435,7 @@ class World:
         _ct("mushrooms", t)
 
     def _biome_cave_params(self, bx):
-        biome = self._biome_map[max(0, min(self.width - 1, bx))]
+        biome = self.biome_at(bx)
         return self._BIOME_CAVE.get(biome, {"freq": 1.0, "size": 1.0})
 
     _circle_cache = {}
@@ -648,43 +738,51 @@ class World:
         return STONE
 
     def get_block(self, x, y):
-        if 0 <= x < self.width and 0 <= y < self.height:
-            return self.grid[y][x]
-        return BEDROCK
+        if y < 0 or y >= WORLD_H or abs(x) > WORLD_MAX_X:
+            return BEDROCK
+        cx = x // CHUNK_W
+        chunk = self._chunks.get(cx)
+        return chunk[y][x % CHUNK_W] if chunk is not None else BEDROCK
 
     def set_block(self, x, y, block_id):
-        if 0 <= x < self.width and 0 <= y < self.height:
-            old_bid = self.grid[y][x]
-            self.grid[y][x] = block_id
-            if block_id == SAPLING:
-                self.pending_saplings.add((x, y))
-            elif old_bid == SAPLING:
-                self.pending_saplings.discard((x, y))
-            if block_id in YOUNG_CROP_BLOCKS:
-                self.pending_crops.add((x, y))
-            elif old_bid in YOUNG_CROP_BLOCKS:
-                self.pending_crops.discard((x, y))
-            if old_bid == WATER:
-                self._water_level.pop((x, y), None)
-            if block_id == AIR:
-                for dx, dy in ((0, -1), (-1, 0), (1, 0)):
-                    nx, ny = x + dx, y + dy
-                    if 0 <= nx < self.width and 0 <= ny < self.height:
-                        nb = self.grid[ny][nx]
-                        if nb in PHYSICS_BLOCKS:
-                            self.pending_physics.add((nx, ny))
-                            self._physics_grace[(nx, ny)] = self._physics_tick + 3
-                        elif nb == WATER:
-                            self._pending_water.add((nx, ny))
-                if old_bid in ALL_SUPPORTS:
-                    r = SUPPORT_RANGE[old_bid]
-                    for check_y in (y, y - 1):
-                        if 0 <= check_y < self.height:
-                            for dx in range(-r, r + 1):
-                                nx = x + dx
-                                if 0 <= nx < self.width and self.grid[check_y][nx] in PHYSICS_BLOCKS:
-                                    self.pending_physics.add((nx, check_y))
-                                    self._physics_grace[(nx, check_y)] = self._physics_tick + 3
+        if y < 0 or y >= WORLD_H or abs(x) > WORLD_MAX_X:
+            return
+        cx = x // CHUNK_W
+        chunk = self._chunks.get(cx)
+        if chunk is None:
+            return  # silently skip unloaded chunks
+        old_bid = chunk[y][x % CHUNK_W]
+        chunk[y][x % CHUNK_W] = block_id
+        self._dirty_chunks.add(cx)
+        if block_id == SAPLING:
+            self.pending_saplings.add((x, y))
+        elif old_bid == SAPLING:
+            self.pending_saplings.discard((x, y))
+        if block_id in YOUNG_CROP_BLOCKS:
+            self.pending_crops.add((x, y))
+        elif old_bid in YOUNG_CROP_BLOCKS:
+            self.pending_crops.discard((x, y))
+        if old_bid == WATER:
+            self._water_level.pop((x, y), None)
+        if block_id == AIR:
+            for ddx, ddy in ((0, -1), (-1, 0), (1, 0)):
+                nx, ny = x + ddx, y + ddy
+                if 0 <= ny < WORLD_H:
+                    nb = self._chunk_get(nx, ny)
+                    if nb in PHYSICS_BLOCKS:
+                        self.pending_physics.add((nx, ny))
+                        self._physics_grace[(nx, ny)] = self._physics_tick + 3
+                    elif nb == WATER:
+                        self._pending_water.add((nx, ny))
+            if old_bid in ALL_SUPPORTS:
+                r = SUPPORT_RANGE[old_bid]
+                for check_y in (y, y - 1):
+                    if 0 <= check_y < WORLD_H:
+                        for ddx in range(-r, r + 1):
+                            nx = x + ddx
+                            if self._chunk_get(nx, check_y) in PHYSICS_BLOCKS:
+                                self.pending_physics.add((nx, check_y))
+                                self._physics_grace[(nx, check_y)] = self._physics_tick + 3
 
     def is_solid(self, x, y):
         bid = self.get_block(x, y)
@@ -694,16 +792,18 @@ class World:
                 and bid not in OPEN_DOORS)
 
     def _seed_physics(self):
-        for y in range(self.height - 1):
-            for x in range(self.width):
-                if self.grid[y][x] in PHYSICS_BLOCKS and self.grid[y + 1][x] == AIR:
-                    self.pending_physics.add((x, y))
+        for cx, chunk in self._chunks.items():
+            base_x = cx * CHUNK_W
+            for y in range(WORLD_H - 1):
+                for lx in range(CHUNK_W):
+                    if chunk[y][lx] in PHYSICS_BLOCKS and chunk[y + 1][lx] == AIR:
+                        self.pending_physics.add((base_x + lx, y))
 
     def _is_supported(self, x, y):
         for check_y in (y, y + 1):
-            if 0 <= check_y < self.height:
-                for nx in range(max(0, x - 10), min(self.width, x + 11)):
-                    bid = self.grid[check_y][nx]
+            if 0 <= check_y < WORLD_H:
+                for nx in range(x - 10, x + 11):
+                    bid = self._chunk_get(nx, check_y)
                     if bid in SUPPORT_RANGE and abs(nx - x) <= SUPPORT_RANGE[bid]:
                         return True
         return False
@@ -735,14 +835,14 @@ class World:
         newly_pending = set()
 
         for (x, y) in to_check:
-            bid = self.grid[y][x]
+            bid = self._chunk_get(x, y)
             if bid not in PHYSICS_BLOCKS:
                 self._physics_grace.pop((x, y), None)
                 continue
             below_y = y + 1
-            if below_y >= self.height:
+            if below_y >= WORLD_H:
                 continue
-            if self.grid[below_y][x] != AIR:
+            if self._chunk_get(x, below_y) != AIR:
                 continue
             if self._is_supported(x, y):
                 self._physics_grace.pop((x, y), None)
@@ -752,14 +852,14 @@ class World:
                 continue
             self._physics_grace.pop((x, y), None)
             if self._physics_rng.random() < self._fall_chance:
-                self.grid[y][x] = AIR
-                self.grid[below_y][x] = bid
+                self._chunk_set(x, y, AIR)
+                self._chunk_set(x, below_y, bid)
                 if self._hits_player(x, below_y, player):
                     self._push_player(x, below_y, player)
                     player.health = max(0, player.health - 10)
-                if y - 1 >= 0 and self.grid[y - 1][x] in PHYSICS_BLOCKS:
+                if y - 1 >= 0 and self._chunk_get(x, y - 1) in PHYSICS_BLOCKS:
                     newly_pending.add((x, y - 1))
-                if below_y + 1 < self.height and self.grid[below_y + 1][x] == AIR:
+                if below_y + 1 < WORLD_H and self._chunk_get(x, below_y + 1) == AIR:
                     newly_pending.add((x, below_y))
             else:
                 newly_pending.add((x, y))
@@ -784,7 +884,7 @@ class World:
         max_spreads = 160
 
         for (x, y) in to_process:
-            if self.grid[y][x] != WATER:
+            if self._chunk_get(x, y) != WATER:
                 self._water_level.pop((x, y), None)
                 continue
             level = self._water_level.get((x, y), 8)
@@ -793,18 +893,16 @@ class World:
                 continue
 
             below = y + 1
-            if below < self.height and self.grid[below][x] == AIR:
+            if below < WORLD_H and self._chunk_get(x, below) == AIR:
                 # Water FALLS: block moves down, leaving AIR behind.
-                # This means lakes drain as water pours out.
-                self.grid[y][x] = AIR
+                self._chunk_set(x, y, AIR)
                 self._water_level.pop((x, y), None)
-                self.grid[below][x] = WATER
+                self._chunk_set(x, below, WATER)
                 self._water_level[(x, below)] = level
                 new_water.add((x, below))
-                # Neighbours may now flow sideways into the vacated cell
                 for adx in (-1, 1):
                     anx = x + adx
-                    if 0 <= anx < self.width and self.grid[y][anx] == WATER:
+                    if self._chunk_get(anx, y) == WATER:
                         new_water.add((anx, y))
                 spreads += 1
                 continue
@@ -813,8 +911,8 @@ class World:
             if level > 1:
                 for dx in (-1, 1):
                     nx = x + dx
-                    if 0 <= nx < self.width and self.grid[y][nx] == AIR:
-                        self.grid[y][nx] = WATER
+                    if self._chunk_get(nx, y) == AIR:
+                        self._chunk_set(nx, y, WATER)
                         self._water_level[(nx, y)] = level - 1
                         new_water.add((nx, y))
                         spreads += 1
@@ -831,11 +929,12 @@ class World:
 
     def _place_canopy(self, layers, leaf_bid, rng=None, density=1.0):
         for ly, lx_range in layers:
+            if ly < 0 or ly >= WORLD_H:
+                continue
             for lx in lx_range:
-                if 0 <= lx < self.width and 0 <= ly < self.height:
-                    if self.get_block(lx, ly) == AIR:
-                        if rng is None or density >= 1.0 or rng.random() < density:
-                            self.set_block(lx, ly, leaf_bid)
+                if self.get_block(lx, ly) == AIR:
+                    if rng is None or density >= 1.0 or rng.random() < density:
+                        self.set_block(lx, ly, leaf_bid)
 
     def _add_branch_stubs(self, bx, by, h, log_bid, rng, count=2):
         used = set()
@@ -848,7 +947,7 @@ class World:
                 side = rng.choice([-1, 1])
                 for dx in range(1, rng.randint(1, 3)):
                     bx2 = bx + side * dx
-                    if 0 <= bx2 < self.width and 0 <= branch_y < self.height:
+                    if 0 <= branch_y < WORLD_H:
                         if self.get_block(bx2, branch_y) == AIR:
                             self.set_block(bx2, branch_y, log_bid)
                 break
@@ -857,7 +956,7 @@ class World:
         for side in [-1, 1]:
             if rng.random() < 0.65:
                 rx = bx + side
-                if 0 <= rx < self.width and self.get_block(rx, by) == AIR:
+                if self.get_block(rx, by) == AIR:
                     self.set_block(rx, by, log_bid)
 
     def _place_trunk(self, bx, by, h, log_bid):
@@ -919,11 +1018,11 @@ class World:
         for lx in range(bx - 4, bx + 5):
             if rng.random() < 0.38:
                 vine_y = top_y + 4
-                if 0 <= lx < self.width and 0 <= vine_y < self.height:
+                if 0 <= vine_y < WORLD_H:
                     if self.get_block(lx, vine_y) == AIR:
                         self.set_block(lx, vine_y, JUNGLE_LEAVES)
                         # Occasionally a second vine block below
-                        if rng.random() < 0.4 and vine_y + 1 < self.height:
+                        if rng.random() < 0.4 and vine_y + 1 < WORLD_H:
                             if self.get_block(lx, vine_y + 1) == AIR:
                                 self.set_block(lx, vine_y + 1, JUNGLE_LEAVES)
         self._add_branch_stubs(bx, by, h, JUNGLE_LOG, rng, count=rng.randint(2, 3))
@@ -946,7 +1045,7 @@ class World:
                 dangle = rng.randint(1, 4)
                 for dy in range(1, dangle + 1):
                     hy = top_y + 3 + dy
-                    if 0 <= lx < self.width and 0 <= hy < self.height:
+                    if 0 <= hy < WORLD_H:
                         if self.get_block(lx, hy) == AIR:
                             self.set_block(lx, hy, WILLOW_LEAVES)
         self._add_branch_stubs(bx, by, h, WILLOW_LOG, rng, count=1)
@@ -978,7 +1077,7 @@ class World:
             (top_y + 1, range(cx - 2, cx + 3)),
         ], PALM_LEAVES, rng, density=1.0)
         # Crown tip
-        if 0 <= top_y - 2 < self.height and self.get_block(cx, top_y - 2) == AIR:
+        if 0 <= top_y - 2 < WORLD_H and self.get_block(cx, top_y - 2) == AIR:
             self.set_block(cx, top_y - 2, PALM_LEAVES)
 
     def _grow_acacia(self, bx, by, rng=None):
@@ -1007,7 +1106,7 @@ class World:
             (bx - 2, top_y + 2), (bx + 2, top_y + 2),
         ]
         for tx, ty in candidates:
-            if rng.random() < 0.65 and 0 <= tx < self.width and 0 <= ty < self.height:
+            if rng.random() < 0.65 and 0 <= ty < WORLD_H:
                 if self.get_block(tx, ty) == AIR:
                     self.set_block(tx, ty, DEAD_LOG)
 
@@ -1080,10 +1179,10 @@ class World:
         to_check = list(self.pending_crops)
         still_pending = set()
         for (x, y) in to_check:
-            bid = self.grid[y][x]
+            bid = self._chunk_get(x, y)
             if bid not in YOUNG_CROP_BLOCKS:
                 continue
-            if y + 1 >= self.height:
+            if y + 1 >= WORLD_H:
                 still_pending.add((x, y))
                 continue
             below = self.get_block(x, y + 1)
@@ -1126,24 +1225,25 @@ class World:
         self._leaves_timer -= self._leaves_interval
 
         to_remove = []
-        for y in range(self.height):
-            for x in range(self.width):
-                bid = self.grid[y][x]
-                if bid not in ALL_LEAVES:
-                    continue
-                log_bid = LEAF_LOG_MAP[bid]
-                has_wood = False
-                for dy in range(-2, 3):
-                    for dx in range(-2, 3):
-                        nx, ny = x + dx, y + dy
-                        if 0 <= nx < self.width and 0 <= ny < self.height:
-                            if self.grid[ny][nx] == log_bid:
+        for cx, chunk in list(self._chunks.items()):
+            base_x = cx * CHUNK_W
+            for y in range(WORLD_H):
+                for lx in range(CHUNK_W):
+                    bid = chunk[y][lx]
+                    if bid not in ALL_LEAVES:
+                        continue
+                    x = base_x + lx
+                    log_bid = LEAF_LOG_MAP[bid]
+                    has_wood = False
+                    for dy in range(-2, 3):
+                        for dx in range(-2, 3):
+                            if self.get_block(x + dx, y + dy) == log_bid:
                                 has_wood = True
                                 break
-                    if has_wood:
-                        break
-                if not has_wood:
-                    to_remove.append((x, y))
+                        if has_wood:
+                            break
+                    if not has_wood:
+                        to_remove.append((x, y))
 
         for (x, y) in to_remove:
             self.set_block(x, y, AIR)
@@ -1153,20 +1253,23 @@ class World:
     def _spawn_animals(self):
         from animals import Sheep, Cow, Chicken
         rng = random.Random(self.seed + 12345)
-        x = 5
-        while x < self.width - 5:
-            sy = self._surface[x]
-            # Only spawn on grass, not under trees
-            if self.grid[sy][x] == GRASS and self.grid[sy - 1][x] == AIR:
-                animal_cls = rng.choice([Sheep, Sheep, Cow, Chicken])
-                ax = x * BLOCK_SIZE + (BLOCK_SIZE - animal_cls.ANIMAL_W) // 2
-                ay = sy * BLOCK_SIZE - animal_cls.ANIMAL_H
-                self.entities.append(animal_cls(ax, ay, self))
-            x += rng.randint(8, 20)
+        for cx in sorted(self._chunks.keys()):
+            chunk = self._chunks[cx]
+            base_x = cx * CHUNK_W
+            x = base_x + 5
+            x_end = base_x + CHUNK_W - 5
+            while x < x_end:
+                lx = x - base_x
+                sy = self.surface_height(x)
+                if 0 < sy < WORLD_H and chunk[sy][lx] == GRASS and chunk[sy - 1][lx] == AIR:
+                    animal_cls = rng.choice([Sheep, Sheep, Cow, Chicken])
+                    ax = x * BLOCK_SIZE + (BLOCK_SIZE - animal_cls.ANIMAL_W) // 2
+                    ay = sy * BLOCK_SIZE - animal_cls.ANIMAL_H
+                    self.entities.append(animal_cls(ax, ay, self))
+                x += rng.randint(8, 20)
 
-    def surface_y_at(self, x):
-        bx = max(0, min(self.width - 1, x))
-        return self._surface[bx]
+    def surface_y_at(self, x: int) -> int:
+        return self.surface_height(x)
 
     def spawn_drops(self, x, y, items_dict):
         from dropped_item import DroppedItem

@@ -12,7 +12,7 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     SCALLION_CROP_YOUNG, CHILI_CROP_YOUNG,
                     BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
                     PEPPER_CROP_YOUNG, ONION_CROP_YOUNG, POTATO_CROP_YOUNG,
-                    EGGPLANT_CROP_YOUNG, CABBAGE_CROP_YOUNG, BED)
+                    EGGPLANT_CROP_YOUNG, CABBAGE_CROP_YOUNG, BED, CHEST_BLOCK)
 
 ITEMS = {
     # --- Natural resources ---
@@ -42,7 +42,7 @@ ITEMS = {
     "garlic":          {"name": "Garlic",          "color": (230, 225, 200), "place_block": None},
     "scallion":        {"name": "Scallion",        "color": ( 60, 200,  80), "place_block": None},
     "chili":           {"name": "Chili",           "color": (215,  50,  40), "place_block": None},
-    "pepper":          {"name": "Pepper",          "color": (215,  65,  30), "place_block": None},
+    "pepper":          {"name": "Pepper",          "color": (215,  65,  30), "place_block": None, "edible": True, "hunger_restore": 15},
     "onion":           {"name": "Onion",           "color": (175, 148,  85), "place_block": None},
     "potato":          {"name": "Potato",          "color": (160, 128,  62), "place_block": None},
     "eggplant":        {"name": "Eggplant",        "color": ( 95,  45, 135), "place_block": None},
@@ -179,6 +179,7 @@ ITEMS = {
     "iron_door":  {"name": "Iron Door",  "color": (160, 160, 165), "place_block": IRON_DOOR_CLOSED},
     # --- Furniture ---
     "bed":                {"name": "Bed",            "color": (200, 80, 110),  "place_block": BED},
+    "chest_item":         {"name": "Chest",          "color": (160, 110, 55),  "place_block": CHEST_BLOCK},
     # --- Automations ---
     "coal_miner_item":    {"name": "Coal Miner",    "color": (110, 90,  70),  "place_block": None, "spawn_automation": "coal_miner"},
     "iron_miner_item":    {"name": "Iron Miner",    "color": (160, 170, 180), "place_block": None, "spawn_automation": "iron_miner"},

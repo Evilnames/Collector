@@ -1,0 +1,20 @@
+# Database (save data)
+*.db
+*.db-shm
+*.db-wal
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Backup files
+*.bak
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -31,11 +31,14 @@ def _add_pick(amount):
 
 
 def _unlock_gate(gate_block):
+    from constants import CHUNK_W, WORLD_H
     def effect(player, world):
-        for y in range(world.height):
-            for x in range(world.width):
-                if world.grid[y][x] == gate_block:
-                    world.grid[y][x] = STONE
+        for cx, chunk in list(world._chunks.items()):
+            for y in range(WORLD_H):
+                for lx in range(CHUNK_W):
+                    if chunk[y][lx] == gate_block:
+                        chunk[y][lx] = STONE
+                        world._dirty_chunks.add(cx)
     return effect
 
 

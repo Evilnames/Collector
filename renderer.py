@@ -1,5 +1,6 @@
 import pygame
 from blocks import (BLOCKS, AIR, LADDER, SUPPORT, IRON_SUPPORT, DIAMOND_SUPPORT, STONE, WATER,
+                    YOUNG_CROP_BLOCKS, MATURE_CROP_BLOCKS,
                     ALL_SUPPORTS, SUPPORT_RANGE, RESOURCE_BLOCKS, ALL_LOGS, ALL_LEAVES,
                     STRAWBERRY_BUSH, WHEAT_BUSH,
                     CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
@@ -37,7 +38,8 @@ from blocks import (BLOCKS, AIR, LADDER, SUPPORT, IRON_SUPPORT, DIAMOND_SUPPORT,
                     BONE_STALK, MAGMA_CAP, DEEP_INK, BIOLUME,
                     WOOD_FENCE, IRON_FENCE,
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN,
-                    IRON_DOOR_CLOSED, IRON_DOOR_OPEN)
+                    IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
+                    CHEST_BLOCK)
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE
 from biomes import BIOME_STONE_COLORS
 
@@ -149,7 +151,7 @@ class Renderer:
         self._npc_font = pygame.font.SysFont("consolas", 14)
         self._minimap_surf  = None
         self._minimap_timer = 0.0
-        self.minimap_visible = True
+        self.minimap_visible = False
         self._mm_ctable     = self._build_mm_color_table()
 
     def _build_block_surfs(self):
@@ -917,6 +919,25 @@ class Renderer:
                 pygame.draw.circle(s, (100, 100, 108), (4, 16), 2)
                 surfs[bid] = s
                 continue
+            if bid == CHEST_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                base = (160, 110, 55)
+                dark = _darken(base, 35)
+                bright = tuple(min(255, c + 25) for c in base)
+                s.fill(base)
+                # plank lines
+                pygame.draw.line(s, dark, (0, 10), (BLOCK_SIZE, 10), 1)
+                pygame.draw.line(s, dark, (0, 22), (BLOCK_SIZE, 22), 1)
+                # iron band across middle
+                pygame.draw.rect(s, (130, 130, 140), (0, 12, BLOCK_SIZE, 8))
+                pygame.draw.rect(s, (90, 90, 100), (0, 12, BLOCK_SIZE, 8), 1)
+                # clasp / lock
+                pygame.draw.rect(s, (200, 175, 80), (12, 14, 8, 5))
+                pygame.draw.rect(s, (150, 130, 50), (12, 14, 8, 5), 1)
+                # outer border
+                pygame.draw.rect(s, dark, s.get_rect(), 2)
+                surfs[bid] = s
+                continue
             if bid == WATER:
                 continue   # rendered per-level via _water_surfs
             s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
@@ -1094,10 +1115,8 @@ class Renderer:
         target_y = player.y - SCREEN_H // 2 + PLAYER_H // 2
         self.cam_x += (target_x - self.cam_x) * 0.12
         self.cam_y += (target_y - self.cam_y) * 0.12
-        # Clamp to world bounds
-        max_cx = world.width  * BLOCK_SIZE - SCREEN_W
+        # Clamp only vertical bounds; horizontal is infinite
         max_cy = world.height * BLOCK_SIZE - SCREEN_H
-        self.cam_x = max(0.0, min(self.cam_x, float(max_cx)))
         self.cam_y = max(0.0, min(self.cam_y, float(max_cy)))
 
     # ------------------------------------------------------------------
@@ -1111,8 +1130,8 @@ class Renderer:
         cam_xi = int(self.cam_x)
         cam_yi = int(self.cam_y)
 
-        bx0 = max(0, cam_xi // BLOCK_SIZE)
-        bx1 = min(world.width,  (cam_xi + SCREEN_W)  // BLOCK_SIZE + 2)
+        bx0 = cam_xi // BLOCK_SIZE
+        bx1 = (cam_xi + SCREEN_W) // BLOCK_SIZE + 2
         by0 = max(0, cam_yi // BLOCK_SIZE)
         by1 = min(world.height, (cam_yi + SCREEN_H) // BLOCK_SIZE + 2)
 
@@ -1166,8 +1185,8 @@ class Renderer:
 
     def _draw_support_zones(self, world, bx0, bx1, by0, by1, cam_xi, cam_yi):
         max_r = max(SUPPORT_RANGE.values())
-        ex0 = max(0, bx0 - max_r)
-        ex1 = min(world.width, bx1 + max_r)
+        ex0 = bx0 - max_r
+        ex1 = bx1 + max_r
         ey0 = max(0, by0 - 1)
         ey1 = min(world.height, by1 + 2)
 
@@ -1180,7 +1199,7 @@ class Renderer:
                     for dx in range(-r, r + 1):
                         nx = sx + dx
                         for cy in (sy, sy - 1):
-                            if 0 <= nx < world.width and 0 <= cy < world.height:
+                            if 0 <= cy < world.height:
                                 covered.add((nx, cy))
 
         for (cx, cy) in covered:
@@ -1402,6 +1421,28 @@ class Renderer:
         pygame.draw.rect(self.screen, (255, 255, 255), (sx, sy, BLOCK_SIZE, BLOCK_SIZE), 2)
 
     # ------------------------------------------------------------------
+    # Farm sense: readiness indicator on targeted crop blocks
+    # ------------------------------------------------------------------
+
+    def draw_farm_sense(self, player, world):
+        tb = player.target_block
+        if tb is None:
+            return
+        bx, by = tb
+        block_id = world.get_block(bx, by)
+        if block_id not in YOUNG_CROP_BLOCKS and block_id not in MATURE_CROP_BLOCKS:
+            return
+        sx = bx * BLOCK_SIZE - int(self.cam_x)
+        sy = by * BLOCK_SIZE - int(self.cam_y)
+        if block_id in MATURE_CROP_BLOCKS:
+            pygame.draw.rect(self.screen, (255, 210, 0), (sx - 1, sy - 1, BLOCK_SIZE + 2, BLOCK_SIZE + 2), 3)
+            label = self._npc_font.render("Ready!", True, (255, 210, 0))
+        else:
+            pygame.draw.rect(self.screen, (140, 140, 140), (sx - 1, sy - 1, BLOCK_SIZE + 2, BLOCK_SIZE + 2), 2)
+            label = self._npc_font.render("Growing...", True, (140, 140, 140))
+        self.screen.blit(label, (sx, sy - label.get_height() - 2))
+
+    # ------------------------------------------------------------------
     # Water submersion overlay
     # ------------------------------------------------------------------
 
@@ -1442,23 +1483,49 @@ class Renderer:
     # ------------------------------------------------------------------
 
     def _build_mm_color_table(self):
+        from blocks import (GRASS, DIRT, OBSIDIAN, BEDROCK, GATE_MID, GATE_DEEP, GATE_CORE,
+                            HOUSE_WALL, HOUSE_ROOF)
+        # Only terrain and surface landmarks show their real color; ores/resources/NPCs
+        # blend into stone so the minimap doesn't reveal their locations.
+        TERRAIN_IDS = (
+            {AIR, GRASS, DIRT, STONE, OBSIDIAN, BEDROCK, WATER, GRAVEL,
+             GATE_MID, GATE_DEEP, GATE_CORE,
+             CRACKED_STONE, STALACTITE, STALAGMITE, CAVE_MOSS,
+             HOUSE_WALL, HOUSE_ROOF}
+            | ALL_LOGS | ALL_LEAVES
+        )
+        stone_col = BLOCKS[STONE]["color"]
         table = [(30, 28, 38)] * 256
         for bid, bdata in BLOCKS.items():
             if 0 <= bid < 256:
-                col = bdata.get("color")
-                table[bid] = col if col else (0, 0, 0)
+                if bid in TERRAIN_IDS:
+                    col = bdata.get("color")
+                    table[bid] = col if col else stone_col
+                else:
+                    table[bid] = stone_col
         return table
 
     def _rebuild_minimap(self, world):
-        W, H = world.width, world.height
-        raw = pygame.Surface((W, H))
+        from constants import CHUNK_W, WORLD_H
+        if not world._chunks:
+            self._minimap_surf = None
+            return
+        cxs = sorted(world._chunks.keys())
+        min_cx, max_cx = cxs[0], cxs[-1]
+        raw_w = (max_cx - min_cx + 1) * CHUNK_W
+        raw_h = WORLD_H
+        self._mm_min_bx = min_cx * CHUNK_W
+        self._mm_span_bx = raw_w
+        raw = pygame.Surface((raw_w, raw_h))
         ctable = self._mm_ctable
         mapped = [raw.map_rgb(*ctable[i]) for i in range(256)]
         pa = pygame.PixelArray(raw)
-        for y in range(H):
-            row = world.grid[y]
-            for x in range(W):
-                pa[x][y] = mapped[row[x]]
+        for cx in cxs:
+            chunk = world._chunks[cx]
+            base_x = (cx - min_cx) * CHUNK_W
+            for lx in range(CHUNK_W):
+                for y in range(raw_h):
+                    pa[base_x + lx][y] = mapped[chunk[y][lx] & 0xFF]
         del pa
         self._minimap_surf = pygame.transform.scale(raw, (_MM_W, _MM_H))
 
@@ -1469,6 +1536,8 @@ class Renderer:
         if self._minimap_surf is None or self._minimap_timer <= 0:
             self._rebuild_minimap(world)
             self._minimap_timer = 3.0
+        if self._minimap_surf is None:
+            return
 
         mx = SCREEN_W - _MM_W - _MM_MARGIN
         my = SCREEN_H - _MM_H - 58 - _MM_MARGIN
@@ -1477,16 +1546,20 @@ class Renderer:
         self.screen.blit(self._minimap_surf, (mx, my))
         pygame.draw.rect(self.screen, (65, 65, 75), (mx - 4, my - 4, _MM_W + 8, _MM_H + 8), 1)
 
-        vx = int(self.cam_x / BLOCK_SIZE * _MM_W / world.width)
-        vy = int(self.cam_y / BLOCK_SIZE * _MM_H / world.height)
-        vw = max(2, int(SCREEN_W / BLOCK_SIZE * _MM_W / world.width))
-        vh = max(2, int(SCREEN_H / BLOCK_SIZE * _MM_H / world.height))
+        mm_off = getattr(self, '_mm_min_bx', 0)
+        mm_span = max(1, getattr(self, '_mm_span_bx', 1))
+        h = world.height
+
+        vx = int((self.cam_x / BLOCK_SIZE - mm_off) / mm_span * _MM_W)
+        vy = int(self.cam_y / BLOCK_SIZE * _MM_H / h)
+        vw = max(2, int(SCREEN_W / BLOCK_SIZE / mm_span * _MM_W))
+        vh = max(2, int(SCREEN_H / BLOCK_SIZE * _MM_H / h))
         vx = max(0, min(_MM_W - 1, vx))
         vy = max(0, min(_MM_H - 1, vy))
         pygame.draw.rect(self.screen, (220, 215, 50), (mx + vx, my + vy, vw, vh), 1)
 
-        px_map = int(player.x / BLOCK_SIZE * _MM_W / world.width)
-        py_map = int(player.y / BLOCK_SIZE * _MM_H / world.height)
+        px_map = int((player.x / BLOCK_SIZE - mm_off) / mm_span * _MM_W)
+        py_map = int(player.y / BLOCK_SIZE * _MM_H / h)
         px_map = max(1, min(_MM_W - 2, px_map))
         py_map = max(1, min(_MM_H - 2, py_map))
         pygame.draw.rect(self.screen, (255, 255, 255), (mx + px_map - 1, my + py_map - 1, 3, 3))

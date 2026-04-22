@@ -17,7 +17,8 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, CAVE_MUSHROOMS,
                     BOK_CHOY_CROP_MATURE, GARLIC_CROP_MATURE,
                     SCALLION_CROP_MATURE, CHILI_CROP_MATURE,
                     PEPPER_CROP_MATURE, ONION_CROP_MATURE, POTATO_CROP_MATURE,
-                    EGGPLANT_CROP_MATURE, CABBAGE_CROP_MATURE)
+                    EGGPLANT_CROP_MATURE, CABBAGE_CROP_MATURE,
+                    PERENNIAL_CROP_MATURE, MATURE_TO_YOUNG_CROP, CHEST_BLOCK)
 from items import ITEMS
 from rocks import RockGenerator, Rock
 from wildflowers import WildflowerGenerator, Wildflower
@@ -32,7 +33,7 @@ from constants import (
 class Player:
     def __init__(self, world):
         self.world = world
-        sx = world.width // 2
+        sx = 0
         sy = world.surface_y_at(sx)
         self.x = float(sx * BLOCK_SIZE + (BLOCK_SIZE - PLAYER_W) // 2)
         self.y = float((sy - 2) * BLOCK_SIZE)
@@ -78,6 +79,8 @@ class Player:
         self._mine_total = 0.0
         # Placement state
         self.place_target = None  # (bx, by) ghost shown by renderer
+        # Farm sense: block under mouse (for crop readiness display)
+        self.target_block = None
 
     def apply_save(self, d):
         self.x, self.y = d["x"], d["y"]
@@ -182,6 +185,15 @@ class Player:
         if not mining:
             self._reset_mine()
 
+        # Track mouse target for farm sense display
+        self.target_block = None
+        mx, my = mouse_world_pos
+        tbx = int(mx // BLOCK_SIZE)
+        tby = int(my // BLOCK_SIZE)
+        pcx = self.x + PLAYER_W / 2
+        if ((tbx - pcx / BLOCK_SIZE) ** 2 + (tby - (self.y + PLAYER_H / 2) / BLOCK_SIZE) ** 2) ** 0.5 <= MINE_REACH:
+            self.target_block = (tbx, tby)
+
         # Reset harvest state for animals not currently targeted
         for entity in getattr(self.world, 'entities', []):
             if entity is not harvest_target:
@@ -251,7 +263,7 @@ class Player:
         if block_id == AIR:
             self._reset_mine()
             return
-        if not self._has_line_of_sight(bx, by):
+        if block_id in YOUNG_CROP_BLOCKS:
             self._reset_mine()
             return
 
@@ -286,6 +298,10 @@ class Player:
                     chance = block_data.get("drop_chance", 1.0)
                     if random.random() < chance:
                         self._add_item(drop)
+                if block_id == CHEST_BLOCK:
+                    for item_id, count in self.world.chest_data.pop((bx, by), {}).items():
+                        if count > 0:
+                            self._add_item(item_id, count)
                 # Mature crops also drop seeds back
                 if block_id == STRAWBERRY_CROP_MATURE:
                     for _ in range(random.randint(1, 2)):
@@ -378,7 +394,10 @@ class Player:
                     self._add_item("eggplant")
                 elif block_id == CABBAGE_BUSH and random.random() < 0.30:
                     self._add_item("cabbage")
-            self.world.set_block(bx, by, AIR)
+            if block_id in PERENNIAL_CROP_MATURE and random.random() > 0.33:
+                self.world.set_block(bx, by, MATURE_TO_YOUNG_CROP[block_id])
+            else:
+                self.world.set_block(bx, by, AIR)
             self._consume_tool_use()
             self._reset_mine()
 
@@ -499,7 +518,7 @@ class Player:
             self.x = float(self.spawn_x)
             self.y = float(self.spawn_y)
         else:
-            sx = self.world.width // 2
+            sx = 0
             sy = self.world.surface_y_at(sx)
             self.x = float(sx * BLOCK_SIZE + (BLOCK_SIZE - PLAYER_W) // 2)
             self.y = float((sy - 2) * BLOCK_SIZE)
@@ -667,6 +686,16 @@ class Player:
                 bid = self.world.get_block(cx + dx, cy + dy)
                 if bid in EQUIPMENT_BLOCKS:
                     return bid
+        return None
+
+    def get_nearby_chest(self):
+        """Return (bx, by) of a chest block within 2 blocks of the player, or None."""
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        for dy in range(-2, 3):
+            for dx in range(-2, 3):
+                if self.world.get_block(cx + dx, cy + dy) == CHEST_BLOCK:
+                    return (cx + dx, cy + dy)
         return None
 
     def get_depth(self):

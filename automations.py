@@ -1,14 +1,14 @@
 import random
 import pygame
 from blocks import BLOCKS, AIR, SUPPORT, IRON_SUPPORT, DIAMOND_SUPPORT
-from constants import BLOCK_SIZE, WORLD_W, WORLD_H, MINE_REACH, PLAYER_W, PLAYER_H
+from constants import BLOCK_SIZE, WORLD_MAX_X, WORLD_H, MINE_REACH, PLAYER_W, PLAYER_H
 
 AUTOMATION_DEFS = {
     "coal_miner": {
         "name":             "Coal Miner",
         "fuel_item":        "coal",
         "fuel_tank":        20,
-        "fuel_rate":        1 / 5.0,
+        "fuel_rate":        1 / 40.0,
         "mine_time":        3.0,
         "max_hardness":     3,
         "inv_limit":        30,
@@ -23,7 +23,7 @@ AUTOMATION_DEFS = {
         "name":             "Iron Miner",
         "fuel_item":        "iron_chunk",
         "fuel_tank":        10,
-        "fuel_rate":        1 / 8.0,
+        "fuel_rate":        1 / 64.0,
         "mine_time":        1.5,
         "max_hardness":     6,
         "inv_limit":        50,
@@ -38,7 +38,7 @@ AUTOMATION_DEFS = {
         "name":             "Crystal Miner",
         "fuel_item":        "crystal_shard",
         "fuel_tank":        5,
-        "fuel_rate":        1 / 12.0,
+        "fuel_rate":        1 / 96.0,
         "mine_time":        0.5,
         "max_hardness":     9,
         "inv_limit":        80,
@@ -144,7 +144,7 @@ class Automation:
                 self._halt_reason = ""
             elif self._halt_reason == "blocked":
                 tbx, tby = self._target_block()
-                if 0 <= tbx < WORLD_W and 0 <= tby < WORLD_H:
+                if abs(tbx) < WORLD_MAX_X and 0 <= tby < WORLD_H:
                     bid = world.get_block(tbx, tby)
                     h = BLOCKS[bid]["hardness"]
                     if bid == AIR or (h != float("inf") and h <= adef["max_hardness"]):
@@ -166,7 +166,7 @@ class Automation:
         tbx, tby = self._target_block()
 
         # --- World edge ---
-        if not (0 <= tbx < WORLD_W and 0 <= tby < WORLD_H):
+        if not (abs(tbx) < WORLD_MAX_X and 0 <= tby < WORLD_H):
             self._halt("blocked")
             return
 

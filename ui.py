@@ -152,6 +152,16 @@ class UI:
         self._auto_support1_btn    = None
         self._auto_support_all_btn = None
         self._auto_take_btn        = None
+        # Chest UI
+        self.chest_open       = False
+        self.active_chest_inv = None   # direct reference to world.chest_data[(bx,by)]
+        self.active_chest_pos = None   # (bx, by) for title display
+        self._chest_rects     = {}     # item_id -> Rect  (chest side)
+        self._player_for_chest_rects = {}  # item_id -> Rect  (player side)
+        self._chest_scroll    = 0
+        self._max_chest_scroll = 0
+        self._player_chest_scroll = 0
+        self._max_player_chest_scroll = 0
         # Cheat console
         self.cheat_open    = False
         self.cheat_text    = ""
@@ -163,6 +173,8 @@ class UI:
         # Drag-and-drop state for inventory → hotbar
         self._drag_item_id = None
         self._drag_pos     = (0, 0)
+        self._inv_scroll     = 0
+        self._max_inv_scroll = 0
 
     def draw(self, player, research=None, dt=0.0):
         if self._cheat_msg_timer > 0:
@@ -175,7 +187,6 @@ class UI:
         self._draw_depth(player)
         self._draw_pick_level(player)
         self._draw_money(player)
-        self._draw_hotbar(player)
         self._draw_mine_bar(player)
         self._draw_hints(research, player)
         if self.research_open and research:
@@ -192,8 +203,11 @@ class UI:
             self._draw_npc_panel(player)
         if self.automation_open and self.active_automation is not None:
             self._draw_automation_panel(player)
+        if self.chest_open and self.active_chest_inv is not None:
+            self._draw_chest(player)
         if self.cheat_open:
             self._draw_cheat_console()
+        self._draw_hotbar(player)
         if self._drag_item_id is not None and self.inventory_open:
             self._draw_drag_item()
 
@@ -285,7 +299,6 @@ class UI:
                             player.hotbar[i] = None
             for _ in range(out_count):
                 player._add_item(out_id)
-            self._craft_grid = [[None] * 3 for _ in range(3)]
 
     def handle_collection_click(self, pos, player):
         for tab_idx, rect in self._tab_rects.items():
@@ -329,7 +342,9 @@ class UI:
                     return
 
     def handle_scroll(self, dy):
-        if self.crafting_open:
+        if self.inventory_open:
+            self._inv_scroll = max(0, min(self._max_inv_scroll, self._inv_scroll - dy))
+        elif self.crafting_open:
             self._recipe_scroll = max(0, min(self._max_recipe_scroll, self._recipe_scroll - dy))
         elif self.refinery_open and self.refinery_block_id == BAKERY_BLOCK:
             self._bakery_scroll = max(0, min(self._max_bakery_scroll, self._bakery_scroll - dy))
@@ -349,6 +364,43 @@ class UI:
                 self._flower_codex_scroll = max(0, min(self._max_flower_codex_scroll, self._flower_codex_scroll - dy))
             else:
                 self._mushroom_codex_scroll = max(0, min(self._max_mushroom_codex_scroll, self._mushroom_codex_scroll - dy))
+        elif self.chest_open:
+            mouse = pygame.mouse.get_pos()
+            PW = 1140
+            px = (SCREEN_W - PW) // 2
+            if mouse[0] < px + PW // 2:
+                self._chest_scroll = max(0, min(self._max_chest_scroll, self._chest_scroll - dy))
+            else:
+                self._player_chest_scroll = max(0, min(self._max_player_chest_scroll, self._player_chest_scroll - dy))
+
+    def handle_chest_click(self, pos, player, button):
+        """Left-click transfers whole stack; right-click transfers one."""
+        inv = self.active_chest_inv
+        if inv is None:
+            return
+        count = 1 if button == 3 else None
+        for item_id, rect in self._chest_rects.items():
+            if rect.collidepoint(pos) and inv.get(item_id, 0) > 0:
+                available = inv[item_id]
+                take = min(available, count if count else available)
+                inv[item_id] = available - take
+                if inv[item_id] <= 0:
+                    del inv[item_id]
+                player._add_item(item_id, take)
+                return
+        for item_id, rect in self._player_for_chest_rects.items():
+            if rect.collidepoint(pos) and player.inventory.get(item_id, 0) > 0:
+                available = player.inventory[item_id]
+                deposit = min(available, count if count else available)
+                player.inventory[item_id] = available - deposit
+                if player.inventory[item_id] <= 0:
+                    del player.inventory[item_id]
+                    if item_id in player.hotbar:
+                        idx = player.hotbar.index(item_id)
+                        player.hotbar[idx] = None
+                        player.hotbar_uses[idx] = None
+                inv[item_id] = inv.get(item_id, 0) + deposit
+                return
 
     def handle_npc_click(self, pos, player):
         from cities import RockQuestNPC, TradeNPC
@@ -583,6 +635,7 @@ class UI:
             ("G: Collection",  self.collection_open),
             ("E: Talk",       self.npc_open),
             ("E: Refinery",   self.refinery_open),
+            ("E: Chest",      self.chest_open),
             ("E: Set Spawn",  nearby_bed is not None),
             ("`  Cheats",     self.cheat_open),
         ]
@@ -854,7 +907,7 @@ class UI:
 
         title = self.font.render("INVENTORY", True, (220, 220, 100))
         self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 8))
-        hint = self.small.render("I to close  |  Drag item to a hotbar slot",
+        hint = self.small.render("I to close  |  Drag item to a hotbar slot  |  Scroll to navigate",
                                  True, (130, 130, 130))
         self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 30))
 
@@ -874,11 +927,25 @@ class UI:
         start_x = (SCREEN_W - total_w) // 2
         hotbar_map = {iid: i for i, iid in enumerate(player.hotbar) if iid}
 
+        AREA_TOP = 50
+        AREA_BOT = SCREEN_H - 68  # leave room above hotbar (48px slot + 10px gap + 10px margin)
+        area_h = AREA_BOT - AREA_TOP
+
+        num_rows = (len(items_held) + COLS - 1) // COLS
+        total_content_h = num_rows * (CELL_H + GAP) - GAP
+        self._max_inv_scroll = max(0, total_content_h - area_h)
+        self._inv_scroll = max(0, min(self._max_inv_scroll, self._inv_scroll))
+
+        old_clip = self.screen.get_clip()
+        self.screen.set_clip(pygame.Rect(0, AREA_TOP, SCREEN_W, area_h))
+
         for idx, (item_id, count) in enumerate(items_held):
             col = idx % COLS
             row = idx // COLS
             x = start_x + col * (CELL_W + GAP)
-            y = 52 + row * (CELL_H + GAP)
+            y = AREA_TOP + row * (CELL_H + GAP) - self._inv_scroll
+            if y + CELL_H < AREA_TOP or y > AREA_BOT:
+                continue
             rect = pygame.Rect(x, y, CELL_W, CELL_H)
             self._inv_rects[item_id] = rect
 
@@ -908,6 +975,15 @@ class UI:
                 badge_col = (220, 200, 50) if in_selected else (100, 150, 210)
                 badge = self.small.render(f"[{hotbar_slot + 1}]", True, badge_col)
                 self.screen.blit(badge, (x + CELL_W - badge.get_width() - 7, y + 7))
+
+        self.screen.set_clip(old_clip)
+
+        if self._max_inv_scroll > 0:
+            bar_x = start_x + total_w + 10
+            pygame.draw.rect(self.screen, (40, 40, 50), (bar_x, AREA_TOP, 6, area_h))
+            thumb_h = max(20, int(area_h * area_h / total_content_h))
+            thumb_y = AREA_TOP + int((area_h - thumb_h) * self._inv_scroll / self._max_inv_scroll)
+            pygame.draw.rect(self.screen, (120, 120, 150), (bar_x, thumb_y, 6, thumb_h))
 
     # ------------------------------------------------------------------
     # Crafting overlay (C key) — 3x3 grid left, equipment recipes right
@@ -2291,6 +2367,94 @@ class UI:
     # ------------------------------------------------------------------
     # Cheat console
     # ------------------------------------------------------------------
+
+    # ------------------------------------------------------------------
+    # Chest overlay (E near chest block)
+    # ------------------------------------------------------------------
+
+    def _draw_chest(self, player):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 210))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 1140, 580
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (22, 18, 12), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (140, 95, 45), (px, py, PW, PH), 2)
+
+        hint = self.small.render(
+            "Left-click: transfer all  |  Right-click: transfer one  |  E or ESC: close",
+            True, (110, 90, 60))
+        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, py + 8))
+
+        half = (PW - 30) // 2
+        lx = px + 10
+        rx = px + 20 + half
+
+        # --- divider ---
+        pygame.draw.line(self.screen, (80, 60, 35),
+                         (px + half + 15, py + 30), (px + half + 15, py + PH - 10), 1)
+
+        COLS, CW, CH, GAP = 3, 170, 54, 6
+        VISIBLE_ROWS = 7
+        AREA_H = VISIBLE_ROWS * (CH + GAP)
+
+        def _draw_section(title, items_list, start_x, scroll, rects_out):
+            title_s = self.font.render(title, True, (220, 190, 100))
+            self.screen.blit(title_s, (start_x + half // 2 - title_s.get_width() // 2, py + 30))
+
+            clip_rect = pygame.Rect(start_x, py + 55, half, AREA_H + 5)
+            self.screen.set_clip(clip_rect)
+            rects_out.clear()
+
+            for idx, (item_id, count) in enumerate(items_list):
+                col = idx % COLS
+                row = idx // COLS
+                x = start_x + col * (CW + GAP)
+                y = py + 58 + row * (CH + GAP) - scroll * (CH + GAP)
+                if y + CH < clip_rect.top or y > clip_rect.bottom:
+                    continue
+                rect = pygame.Rect(x, y, CW, CH)
+                rects_out[item_id] = rect
+                item = ITEMS.get(item_id, {})
+                pygame.draw.rect(self.screen, (38, 28, 16), rect)
+                pygame.draw.rect(self.screen, (110, 80, 40), rect, 1)
+                icon = render_item_icon(item_id, item.get("color", (128, 128, 128)), 38)
+                self.screen.blit(icon, (x + 6, y + (CH - 38) // 2))
+                self.screen.blit(self.small.render(item.get("name", item_id), True, (235, 215, 185)),
+                                 (x + 50, y + 8))
+                self.screen.blit(self.small.render(f"x{count}", True, (160, 220, 160)),
+                                 (x + 50, y + 30))
+
+            self.screen.set_clip(None)
+            total_rows = max(0, (len(items_list) - 1) // COLS + 1)
+            return max(0, total_rows - VISIBLE_ROWS)
+
+        chest_items = sorted(
+            [(iid, cnt) for iid, cnt in self.active_chest_inv.items() if cnt > 0],
+            key=lambda t: ITEMS.get(t[0], {}).get("name", t[0])
+        )
+        player_items = sorted(
+            [(iid, cnt) for iid, cnt in player.inventory.items() if cnt > 0],
+            key=lambda t: ITEMS.get(t[0], {}).get("name", t[0])
+        )
+
+        self._max_chest_scroll = _draw_section(
+            "CHEST CONTENTS", chest_items, lx, self._chest_scroll, self._chest_rects)
+        self._chest_scroll = min(self._chest_scroll, self._max_chest_scroll)
+
+        self._max_player_chest_scroll = _draw_section(
+            "YOUR INVENTORY", player_items, rx, self._player_chest_scroll,
+            self._player_for_chest_rects)
+        self._player_chest_scroll = min(self._player_chest_scroll, self._max_player_chest_scroll)
+
+        if not chest_items:
+            empty_s = self.small.render("Chest is empty", True, (80, 65, 45))
+            self.screen.blit(empty_s, (lx + half // 2 - empty_s.get_width() // 2, py + 280))
+        if not player_items:
+            empty_s = self.small.render("Inventory is empty", True, (80, 65, 45))
+            self.screen.blit(empty_s, (rx + half // 2 - empty_s.get_width() // 2, py + 280))
 
     def _draw_cheat_console(self):
         W = SCREEN_W

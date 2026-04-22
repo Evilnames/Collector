@@ -156,6 +156,7 @@ WOOD_DOOR_OPEN   = 145
 IRON_DOOR_CLOSED = 146
 IRON_DOOR_OPEN   = 147
 BED              = 148
+CHEST_BLOCK      = 149
 
 OPEN_DOORS = {WOOD_DOOR_OPEN, IRON_DOOR_OPEN}
 
@@ -202,6 +203,34 @@ MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATU
                      SCALLION_CROP_MATURE, CHILI_CROP_MATURE,
                      PEPPER_CROP_MATURE, ONION_CROP_MATURE, POTATO_CROP_MATURE, EGGPLANT_CROP_MATURE, CABBAGE_CROP_MATURE}
 CROP_BLOCKS       = YOUNG_CROP_BLOCKS | MATURE_CROP_BLOCKS
+
+# Perennial crops regrow after harvest (each harvest has ~33% chance to die)
+PERENNIAL_CROP_MATURE = {
+    STRAWBERRY_CROP_MATURE, APPLE_CROP_MATURE, TOMATO_CROP_MATURE,
+    PEPPER_CROP_MATURE, CHILI_CROP_MATURE, EGGPLANT_CROP_MATURE,
+}
+
+# Reverse mapping: mature → young, used for perennial regrowth
+MATURE_TO_YOUNG_CROP = {
+    STRAWBERRY_CROP_MATURE: STRAWBERRY_CROP_YOUNG,
+    WHEAT_CROP_MATURE:      WHEAT_CROP_YOUNG,
+    CARROT_CROP_MATURE:     CARROT_CROP_YOUNG,
+    TOMATO_CROP_MATURE:     TOMATO_CROP_YOUNG,
+    CORN_CROP_MATURE:       CORN_CROP_YOUNG,
+    PUMPKIN_CROP_MATURE:    PUMPKIN_CROP_YOUNG,
+    APPLE_CROP_MATURE:      APPLE_CROP_YOUNG,
+    RICE_CROP_MATURE:       RICE_CROP_YOUNG,
+    GINGER_CROP_MATURE:     GINGER_CROP_YOUNG,
+    BOK_CHOY_CROP_MATURE:   BOK_CHOY_CROP_YOUNG,
+    GARLIC_CROP_MATURE:     GARLIC_CROP_YOUNG,
+    SCALLION_CROP_MATURE:   SCALLION_CROP_YOUNG,
+    CHILI_CROP_MATURE:      CHILI_CROP_YOUNG,
+    PEPPER_CROP_MATURE:     PEPPER_CROP_YOUNG,
+    ONION_CROP_MATURE:      ONION_CROP_YOUNG,
+    POTATO_CROP_MATURE:     POTATO_CROP_YOUNG,
+    EGGPLANT_CROP_MATURE:   EGGPLANT_CROP_YOUNG,
+    CABBAGE_CROP_MATURE:    CABBAGE_CROP_YOUNG,
+}
 
 BLOCKS = {
     AIR:              {"name": "Air",               "hardness": 0,            "color": None,            "drop": None},
@@ -359,4 +388,5 @@ BLOCKS = {
     IRON_DOOR_CLOSED: {"name": "Iron Door",         "hardness": 4,   "color": (160, 160, 165), "drop": "iron_door"},
     IRON_DOOR_OPEN:   {"name": "Iron Door (Open)",  "hardness": 4,   "color": (160, 160, 165), "drop": "iron_door"},
     BED:              {"name": "Bed",               "hardness": 1.0, "color": (200, 80,  110), "drop": "bed"},
+    CHEST_BLOCK:      {"name": "Chest",             "hardness": 1.5, "color": (160, 110, 55),  "drop": "chest_item"},
 }

@@ -263,7 +263,8 @@ def main():
             t0 = time.perf_counter()
             data = save_mgr.load()
             t0 = _t("  save_mgr.load", t0)
-            w = World(seed=data["seed"], preloaded=data)
+            w = World(seed=data["seed"], preloaded=data,
+                      save_mgr=save_mgr, player_x=data["player"]["x"])
             t0 = _t("  World(preloaded)", t0)
             p = Player(w)
             t0 = _t("  Player", t0)
@@ -278,7 +279,8 @@ def main():
         def _do_gen():
             global t0
             t0 = time.perf_counter()
-            w = World(seed=seed)
+            save_mgr.new_game()
+            w = World(seed=seed, save_mgr=save_mgr)
             t0 = _t("  World(new)", t0)
             p = Player(w)
             t0 = _t("  Player", t0)
@@ -299,11 +301,14 @@ def main():
             ui.equipment_crafting_open = False
         ui.active_npc = None
         ui._drag_item_id = None
+        ui.chest_open = False
+        ui.active_chest_inv = None
+        ui.active_chest_pos = None
 
     def _any_ui_open():
         return any([ui.research_open, ui.inventory_open, ui.crafting_open,
                     ui.collection_open, ui.refinery_open, ui.npc_open,
-                    ui.automation_open])
+                    ui.automation_open, ui.chest_open])
 
     def _find_nearby_npc(world, player):
         from cities import NPC
@@ -352,6 +357,9 @@ def main():
             player.health = 0
             return "RIP"
         return f"!Unknown command: {verb}"
+
+    _fps_font = pygame.font.SysFont("consolas", 16)
+    _fps_smooth = 60.0
 
     running = True
     while running:
@@ -449,14 +457,27 @@ def main():
                     else:
                         ui.npc_open = False
                         ui.active_npc = None
-                        equip = player.get_nearby_equipment()
-                        if equip is not None:
-                            ui.refinery_open = True
-                            ui.refinery_block_id = equip
-                            ui.research_open = ui.inventory_open = ui.crafting_open = False
-                            ui.equipment_crafting_open = ui.collection_open = False
+                        nearby_chest = player.get_nearby_chest()
+                        if nearby_chest is not None:
+                            if ui.chest_open and ui.active_chest_pos == nearby_chest:
+                                ui.chest_open = False
+                                ui.active_chest_inv = None
+                                ui.active_chest_pos = None
+                            else:
+                                _close_all_ui()
+                                bx, by = nearby_chest
+                                ui.active_chest_inv = world.chest_data.setdefault((bx, by), {})
+                                ui.active_chest_pos = nearby_chest
+                                ui.chest_open = True
                         else:
-                            ui.refinery_open = False
+                            equip = player.get_nearby_equipment()
+                            if equip is not None:
+                                ui.refinery_open = True
+                                ui.refinery_block_id = equip
+                                ui.research_open = ui.inventory_open = ui.crafting_open = False
+                                ui.equipment_crafting_open = ui.collection_open = False
+                            else:
+                                ui.refinery_open = False
 
                 if event.key == pygame.K_m:
                     renderer.minimap_visible = not renderer.minimap_visible
@@ -468,7 +489,7 @@ def main():
 
             if event.type == pygame.MOUSEWHEEL:
                 if not player.dead and not ui.cheat_open:
-                    if ui.crafting_open or ui.collection_open:
+                    if ui.inventory_open or ui.crafting_open or ui.collection_open or ui.refinery_open or ui.chest_open:
                         ui.handle_scroll(event.y)
                     elif not _any_ui_open():
                         player.selected_slot = (player.selected_slot - event.y) % 8
@@ -498,6 +519,8 @@ def main():
                     ui.handle_collection_click(event.pos, player)
                 elif ui.refinery_open:
                     ui.handle_refinery_click(event.pos, player)
+                elif ui.chest_open:
+                    ui.handle_chest_click(event.pos, player, event.button)
                 else:
                     ui.handle_hotbar_click(event.pos, player)
 
@@ -522,6 +545,7 @@ def main():
         if not _any_ui_open() and not ui.cheat_open:
             player.handle_input(keys, mouse_btns, mouse_world, dt)
         player.update(dt)
+        world.update_loaded_chunks(player.x)
         if player.dead:
             drops = player.collect_all_items()
             world.spawn_drops(player.x + 10, player.y + 14, drops)
@@ -543,12 +567,18 @@ def main():
         renderer.draw_entities(world.entities)
         renderer.draw_automations(world.automations)
         renderer.draw_dropped_items(world.dropped_items)
+        renderer.draw_farm_sense(player, world)
         renderer.draw_mining_indicator(player)
         renderer.draw_place_indicator(player)
         renderer.draw_water_overlay(player)
         renderer.draw_lighting(player, player.get_depth())
         ui.draw(player, research, dt)
         renderer.draw_minimap(world, player, dt)
+
+        if dt > 0:
+            _fps_smooth += (1.0 / dt - _fps_smooth) * 0.1
+        fps_surf = _fps_font.render(f"FPS: {_fps_smooth:.0f}", True, (255, 255, 255))
+        screen.blit(fps_surf, (8, 8))
 
         pygame.display.flip()
 

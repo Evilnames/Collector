@@ -5,13 +5,28 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from constants import CHUNK_W, WORLD_H
+
 DB_PATH = Path(__file__).parent / "collectorblocks.db"
-SAVE_VERSION = 1
+SAVE_VERSION = 2
 
 
 class SaveManager:
     def __init__(self, db_path=None):
         self.db_path = Path(db_path) if db_path else DB_PATH
+
+    def new_game(self):
+        """Wipe all saved state so a new World generates fresh terrain."""
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                self._create_tables(con)
+                for tbl in ("save_meta", "chunks", "world_meta", "player",
+                            "rocks", "wildflowers", "research", "automations",
+                            "entities", "dropped_items", "chests"):
+                    con.execute(f"DELETE FROM {tbl}")
+                con.commit()
+        except Exception:
+            pass
 
     def has_save(self):
         if not self.db_path.exists():
@@ -32,7 +47,7 @@ class SaveManager:
         with sqlite3.connect(self.db_path) as con:
             self._create_tables(con)
             self._save_meta(con, world.seed)
-            self._save_grid(con, world)
+            self._save_dirty_chunks(con, world)
             self._save_world_meta(con, world)
             self._save_player(con, player)
             self._save_rocks(con, player)
@@ -41,28 +56,95 @@ class SaveManager:
             self._save_automations(con, world)
             self._save_entities(con, world)
             self._save_dropped_items(con, world)
+            self._save_chests(con, world)
             con.commit()
 
     def load(self):
         with sqlite3.connect(self.db_path) as con:
+            self._create_tables(con)
+            self._maybe_migrate(con)
             seed = con.execute("SELECT seed FROM save_meta LIMIT 1").fetchone()[0]
-            grid = self._load_grid(con)
-            meta = self._load_world_meta(con)
+            water_level = self._load_world_meta(con)
             player_data = self._load_player(con)
             automations = self._load_automations(con)
             entities = self._load_entities(con)
             research = self._load_research(con)
             dropped_items = self._load_dropped_items(con)
+            chest_data = self._load_chests(con)
         return {
             "seed": seed,
-            "grid": grid,
-            "meta": meta,
+            "water_level": water_level,
             "player": player_data,
             "automations": automations,
             "entities": entities,
             "research": research,
             "dropped_items": dropped_items,
+            "chest_data": chest_data,
         }
+
+    def load_chunk(self, chunk_x):
+        """Load a single chunk from DB. Returns 2-D list [y][lx] or None."""
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                row = con.execute(
+                    "SELECT data FROM chunks WHERE chunk_x=?", (chunk_x,)
+                ).fetchone()
+        except Exception:
+            return None
+        if row is None:
+            return None
+        flat = struct.unpack(f"<{CHUNK_W * WORLD_H}H", zlib.decompress(row[0]))
+        return [[flat[y * CHUNK_W + lx] for lx in range(CHUNK_W)]
+                for y in range(WORLD_H)]
+
+    def save_chunk(self, chunk_x, chunk):
+        """Immediately persist a single chunk to DB."""
+        raw = struct.pack(
+            f"<{CHUNK_W * WORLD_H}H",
+            *[chunk[y][lx] for y in range(WORLD_H) for lx in range(CHUNK_W)],
+        )
+        data = zlib.compress(raw, level=1)
+        with sqlite3.connect(self.db_path) as con:
+            con.execute("CREATE TABLE IF NOT EXISTS chunks "
+                        "(chunk_x INTEGER PRIMARY KEY, data BLOB NOT NULL)")
+            con.execute("INSERT OR REPLACE INTO chunks VALUES (?,?)", (chunk_x, data))
+            con.commit()
+
+    def save_chunks_batch(self, chunks_dict):
+        """Persist multiple chunks in a single transaction."""
+        if not chunks_dict:
+            return
+        with sqlite3.connect(self.db_path) as con:
+            con.execute("CREATE TABLE IF NOT EXISTS chunks "
+                        "(chunk_x INTEGER PRIMARY KEY, data BLOB NOT NULL)")
+            for cx, chunk in chunks_dict.items():
+                raw = struct.pack(
+                    f"<{CHUNK_W * WORLD_H}H",
+                    *[chunk[y][lx] for y in range(WORLD_H) for lx in range(CHUNK_W)],
+                )
+                con.execute("INSERT OR REPLACE INTO chunks VALUES (?,?)",
+                            (cx, zlib.compress(raw, level=1)))
+            con.commit()
+
+    def load_chunks_batch(self, chunk_xs):
+        """Load multiple chunks from DB in one query. Returns {cx: 2D-list}."""
+        if not chunk_xs:
+            return {}
+        placeholders = ",".join("?" * len(chunk_xs))
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                rows = con.execute(
+                    f"SELECT chunk_x, data FROM chunks WHERE chunk_x IN ({placeholders})",
+                    list(chunk_xs),
+                ).fetchall()
+        except Exception:
+            return {}
+        result = {}
+        for cx, data in rows:
+            flat = struct.unpack(f"<{CHUNK_W * WORLD_H}H", zlib.decompress(data))
+            result[cx] = [[flat[y * CHUNK_W + lx] for lx in range(CHUNK_W)]
+                          for y in range(WORLD_H)]
+        return result
 
     # ------------------------------------------------------------------
     # Schema
@@ -71,11 +153,14 @@ class SaveManager:
     def _create_tables(self, con):
         con.executescript("""
         CREATE TABLE IF NOT EXISTS save_meta (
-            seed INTEGER, save_version INTEGER DEFAULT 1, last_saved TEXT
+            seed INTEGER, save_version INTEGER DEFAULT 2, last_saved TEXT
         );
-        CREATE TABLE IF NOT EXISTS world_grid (data BLOB);
+        CREATE TABLE IF NOT EXISTS chunks (
+            chunk_x INTEGER PRIMARY KEY,
+            data    BLOB NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS world_meta (
-            surface TEXT, biome_map TEXT, biodome_map TEXT, water_level TEXT
+            water_level TEXT
         );
         CREATE TABLE IF NOT EXISTS player (
             x REAL, y REAL, vx REAL, vy REAL, facing INTEGER,
@@ -117,12 +202,69 @@ class SaveManager:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             x REAL, y REAL, item_id TEXT, count INTEGER, lifetime REAL
         );
+        CREATE TABLE IF NOT EXISTS chests (
+            x INTEGER, y INTEGER, contents TEXT
+        );
         """)
         for col, default in [("spawn_x", "NULL"), ("spawn_y", "NULL")]:
             try:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} REAL DEFAULT {default}")
             except Exception:
                 pass
+
+    # ------------------------------------------------------------------
+    # Migration: old world_grid BLOB → per-chunk rows
+    # ------------------------------------------------------------------
+
+    def _maybe_migrate(self, con):
+        has_grid = con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='world_grid'"
+        ).fetchone()
+        if not has_grid:
+            return
+
+        already_done = con.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
+        if already_done > 0:
+            return
+
+        blob_row = con.execute("SELECT data FROM world_grid LIMIT 1").fetchone()
+        if blob_row is None:
+            return
+
+        OLD_W = 300
+        OFFSET = OLD_W // 2  # old spawn was at x=150; map to new x=0
+
+        raw = zlib.decompress(blob_row[0])
+        flat = list(struct.unpack(f"{OLD_W * WORLD_H}h", raw))
+        old_grid = [[flat[y * OLD_W + x] for x in range(OLD_W)] for y in range(WORLD_H)]
+
+        chunks_dict = {}
+        for old_x in range(OLD_W):
+            new_x = old_x - OFFSET
+            cx = new_x // CHUNK_W
+            lx = new_x % CHUNK_W  # Python mod is always non-negative
+            if cx not in chunks_dict:
+                chunks_dict[cx] = [[0] * CHUNK_W for _ in range(WORLD_H)]
+            for y in range(WORLD_H):
+                chunks_dict[cx][y][lx] = old_grid[y][old_x]
+
+        for cx, chunk in chunks_dict.items():
+            raw_chunk = struct.pack(
+                f"<{CHUNK_W * WORLD_H}H",
+                *[chunk[y][lx] for y in range(WORLD_H) for lx in range(CHUNK_W)],
+            )
+            data = zlib.compress(raw_chunk, level=1)
+            con.execute("INSERT OR REPLACE INTO chunks VALUES (?,?)", (cx, data))
+
+        # Migrate world_meta water_level from old multi-column row
+        old_meta = con.execute(
+            "SELECT water_level FROM world_meta LIMIT 1"
+        ).fetchone()
+        if old_meta:
+            con.execute("DELETE FROM world_meta")
+            con.execute("INSERT INTO world_meta (water_level) VALUES (?)", (old_meta[0],))
+
+        con.commit()
 
     # ------------------------------------------------------------------
     # Save helpers
@@ -133,22 +275,24 @@ class SaveManager:
         con.execute("INSERT INTO save_meta VALUES (?, ?, ?)",
                     (seed, SAVE_VERSION, datetime.now().isoformat()))
 
-    def _save_grid(self, con, world):
-        W, H = world.width, world.height
-        flat = [world.grid[y][x] for y in range(H) for x in range(W)]
-        blob = zlib.compress(struct.pack(f'{len(flat)}h', *flat))
-        con.execute("DELETE FROM world_grid")
-        con.execute("INSERT INTO world_grid VALUES (?)", (blob,))
+    def _save_dirty_chunks(self, con, world):
+        for cx in list(world._dirty_chunks):
+            if cx not in world._chunks:
+                continue
+            chunk = world._chunks[cx]
+            raw = struct.pack(
+                f"<{CHUNK_W * WORLD_H}H",
+                *[chunk[y][lx] for y in range(WORLD_H) for lx in range(CHUNK_W)],
+            )
+            data = zlib.compress(raw, level=1)
+            con.execute("INSERT OR REPLACE INTO chunks VALUES (?,?)", (cx, data))
+        world._dirty_chunks.clear()
 
     def _save_world_meta(self, con, world):
         water = {f"{x},{y}": lvl for (x, y), lvl in world._water_level.items()}
         con.execute("DELETE FROM world_meta")
-        con.execute("INSERT INTO world_meta VALUES (?, ?, ?, ?)", (
-            json.dumps(world._surface),
-            json.dumps(world._biome_map),
-            json.dumps(world._biodome_map),
-            json.dumps(water),
-        ))
+        con.execute("INSERT INTO world_meta (water_level) VALUES (?)",
+                    (json.dumps(water),))
 
     def _save_player(self, con, player):
         con.execute("DELETE FROM player")
@@ -252,33 +396,36 @@ class SaveManager:
                 (type(e).__name__, e.x, e.y, e.facing, e.animal_id, json.dumps(extra))
             )
 
+    def _save_chests(self, con, world):
+        con.execute("DELETE FROM chests")
+        for (bx, by), inv in world.chest_data.items():
+            non_empty = {k: v for k, v in inv.items() if v > 0}
+            if non_empty:
+                con.execute("INSERT INTO chests (x, y, contents) VALUES (?,?,?)",
+                            (bx, by, json.dumps(non_empty)))
+
+    def _save_dropped_items(self, con, world):
+        con.execute("DELETE FROM dropped_items")
+        for item in world.dropped_items:
+            con.execute(
+                "INSERT INTO dropped_items (x, y, item_id, count, lifetime) VALUES (?,?,?,?,?)",
+                (item.x, item.y, item.item_id, item.count, item._life)
+            )
+
     # ------------------------------------------------------------------
     # Load helpers
     # ------------------------------------------------------------------
 
-    def _load_grid(self, con):
-        blob = con.execute("SELECT data FROM world_grid LIMIT 1").fetchone()[0]
-        from constants import WORLD_W, WORLD_H
-        W, H = WORLD_W, WORLD_H
-        raw = zlib.decompress(blob)
-        flat = list(struct.unpack(f'{W * H}h', raw))
-        return [[flat[y * W + x] for x in range(W)] for y in range(H)]
-
     def _load_world_meta(self, con):
-        row = con.execute(
-            "SELECT surface, biome_map, biodome_map, water_level FROM world_meta LIMIT 1"
-        ).fetchone()
-        water_raw = json.loads(row[3])
+        row = con.execute("SELECT water_level FROM world_meta LIMIT 1").fetchone()
+        if row is None or row[0] is None:
+            return {}
+        water_raw = json.loads(row[0])
         water = {}
         for key, lvl in water_raw.items():
             xs, ys = key.split(",")
             water[(int(xs), int(ys))] = lvl
-        return {
-            "surface": json.loads(row[0]),
-            "biome_map": json.loads(row[1]),
-            "biodome_map": json.loads(row[2]),
-            "water_level": water,
-        }
+        return water
 
     def _load_player(self, con):
         row = con.execute("""
@@ -390,13 +537,12 @@ class SaveManager:
         rows = con.execute("SELECT node_id, unlocked FROM research").fetchall()
         return [node_id for node_id, unlocked in rows if unlocked]
 
-    def _save_dropped_items(self, con, world):
-        con.execute("DELETE FROM dropped_items")
-        for item in world.dropped_items:
-            con.execute(
-                "INSERT INTO dropped_items (x, y, item_id, count, lifetime) VALUES (?,?,?,?,?)",
-                (item.x, item.y, item.item_id, item.count, item._life)
-            )
+    def _load_chests(self, con):
+        try:
+            rows = con.execute("SELECT x, y, contents FROM chests").fetchall()
+        except Exception:
+            return {}
+        return {f"{x},{y}": json.loads(contents) for x, y, contents in rows}
 
     def _load_dropped_items(self, con):
         try:

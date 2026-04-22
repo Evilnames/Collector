@@ -11,6 +11,7 @@ BAKERY_RECIPES = [
     {"name": "Pumpkin Pie", "ingredients": {"pumpkin": 1, "wheat": 2},     "output_id": "pumpkin_pie", "output_count": 1},
     {"name": "Apple Pie",   "ingredients": {"apple": 2, "wheat": 2},       "output_id": "apple_pie",   "output_count": 1},
     {"name": "Carrot Cake",    "ingredients": {"carrot": 2, "wheat": 2},                  "output_id": "carrot_cake",    "output_count": 1},
+    {"name": "Cheese Bread",   "ingredients": {"bread": 1, "cheese": 1},                  "output_id": "cheese_bread",   "output_count": 1},
     # --- Chinese cuisine ---
     {"name": "Tofu",           "ingredients": {"corn": 3},                                 "output_id": "tofu",           "output_count": 1},
     {"name": "Steamed Rice",   "ingredients": {"rice": 2},                                 "output_id": "steamed_rice",   "output_count": 1},
@@ -36,6 +37,9 @@ WOK_RECIPES = [
     {"name": "Spicy Corn",       "ingredients": {"corn": 2, "chili": 1},                         "output_id": "spicy_corn",       "output_count": 2},
     {"name": "Chili Bok Choy",   "ingredients": {"bok_choy": 2, "chili": 1, "garlic": 1},       "output_id": "chili_bok_choy",   "output_count": 1},
     {"name": "Scallion Eggs",    "ingredients": {"egg": 2, "scallion": 1},                       "output_id": "scallion_eggs",    "output_count": 1},
+    {"name": "Cooked Egg",       "ingredients": {"egg": 1},                                      "output_id": "cooked_egg",       "output_count": 1},
+    {"name": "Omelette",         "ingredients": {"egg": 2},                                      "output_id": "omelette",         "output_count": 1},
+    {"name": "Garlic Bok Choy",  "ingredients": {"bok_choy": 2, "garlic": 1},                   "output_id": "garlic_bok_choy",  "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -56,8 +60,11 @@ STEAMER_RECIPES = [
 
 NOODLE_POT_RECIPES = [
     {"name": "Soy Sauce",     "ingredients": {"wheat": 3},                                       "output_id": "soy_sauce",     "output_count": 1},
+    {"name": "Noodles",       "ingredients": {"wheat": 2},                                       "output_id": "noodles",       "output_count": 2},
     {"name": "Ramen",         "ingredients": {"noodles": 1, "soy_sauce": 1, "scallion": 1},     "output_id": "ramen",         "output_count": 1},
     {"name": "Chili Noodles", "ingredients": {"noodles": 1, "chili": 1, "garlic": 1},           "output_id": "chili_noodles", "output_count": 1},
+    {"name": "Noodle Soup",   "ingredients": {"noodles": 1, "bok_choy": 1, "mushroom": 1},      "output_id": "noodle_soup",   "output_count": 1},
+    {"name": "Sesame Noodles","ingredients": {"noodles": 1, "ginger": 1},                        "output_id": "sesame_noodles","output_count": 1},
     {"name": "Hot Pot Broth", "ingredients": {"mushroom": 2, "ginger": 1, "chili": 1},          "output_id": "hot_pot_broth", "output_count": 1},
     {"name": "Scallion Soup", "ingredients": {"scallion": 2, "tofu": 1},                         "output_id": "scallion_soup", "output_count": 1},
 ]
@@ -346,78 +353,6 @@ RECIPES = [
         "output_id":    "clay_pot_item",
         "output_count": 1,
     },
-    # --- Cooked foods ---
-    {
-        "name": "Cooked Egg",
-        "pattern": [
-            ["egg",  "coal", None],
-            [None,   None,   None],
-            [None,   None,   None],
-        ],
-        "output_id":    "cooked_egg",
-        "output_count": 1,
-    },
-    {
-        "name": "Omelette",
-        "pattern": [
-            ["egg", "egg", "coal"],
-            [None,  None,  None],
-            [None,  None,  None],
-        ],
-        "output_id":    "omelette",
-        "output_count": 1,
-    },
-    {
-        "name": "Cheese Bread",
-        "pattern": [
-            ["bread", "cheese", None],
-            [None,    None,     None],
-            [None,    None,     None],
-        ],
-        "output_id":    "cheese_bread",
-        "output_count": 1,
-    },
-    # --- Chinese cuisine (crafting table) ---
-    {
-        "name": "Noodles",
-        "pattern": [
-            ["wheat", "wheat", None],
-            [None,    "coal",  None],
-            [None,    None,    None],
-        ],
-        "output_id":    "noodles",
-        "output_count": 2,
-    },
-    {
-        "name": "Noodle Soup",
-        "pattern": [
-            ["noodles", "bok_choy", "mushroom"],
-            [None,       None,       None],
-            [None,       None,       None],
-        ],
-        "output_id":    "noodle_soup",
-        "output_count": 1,
-    },
-    {
-        "name": "Sesame Noodles",
-        "pattern": [
-            ["noodles", "ginger", None],
-            [None,       None,    None],
-            [None,       None,    None],
-        ],
-        "output_id":    "sesame_noodles",
-        "output_count": 1,
-    },
-    {
-        "name": "Garlic Bok Choy",
-        "pattern": [
-            ["bok_choy", "garlic",   "coal"],
-            ["bok_choy",  None,       None],
-            [None,        None,       None],
-        ],
-        "output_id":    "garlic_bok_choy",
-        "output_count": 1,
-    },
     # --- Furniture ---
     {
         "name": "Bed",
@@ -458,6 +393,16 @@ RECIPES = [
             ["crystal_shard", "iron_chunk",  "crystal_shard"],
         ],
         "output_id":    "crystal_miner_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Chest",
+        "pattern": [
+            ["lumber", "lumber",     "lumber"],
+            ["lumber", None,         "lumber"],
+            ["lumber", "iron_chunk", "lumber"],
+        ],
+        "output_id":    "chest_item",
         "output_count": 1,
     },
 ]

@@ -252,20 +252,20 @@ def _place_house(world, left_x, sy, width, wall_height, facing='right'):
     for wy in range(sy - wall_height, sy):
         for wx in range(left_x, left_x + width):
             is_door = (wx == door_col and wy >= sy - 2)
-            if not is_door and 0 <= wx < world.width and 0 <= wy < world.height:
-                world.grid[wy][wx] = HOUSE_WALL
+            if not is_door and 0 <= wy < world.height:
+                world.set_block(wx, wy, HOUSE_WALL)
 
     # Flat roof overhang (1 block wider each side, 1 row above walls)
     roof_y = sy - wall_height - 1
     for rx in range(left_x - 1, left_x + width + 1):
-        if 0 <= rx < world.width and 0 <= roof_y < world.height:
-            world.grid[roof_y][rx] = HOUSE_ROOF
+        if 0 <= roof_y < world.height:
+            world.set_block(rx, roof_y, HOUSE_ROOF)
 
     # Peaked ridge (same width as walls, 1 row above overhang)
     peak_y = roof_y - 1
     for rx in range(left_x, left_x + width):
-        if 0 <= rx < world.width and 0 <= peak_y < world.height:
-            world.grid[peak_y][rx] = HOUSE_ROOF
+        if 0 <= peak_y < world.height:
+            world.set_block(rx, peak_y, HOUSE_ROOF)
 
 
 _CITY_HALF_WIDTH = 7  # platform extends cx±7
@@ -275,13 +275,13 @@ _PLANT_BLOCKS = ALL_LOGS | ALL_LEAVES | BUSH_BLOCKS | {SAPLING}
 def generate_cities(world, seed):
     rng = random.Random(seed + 77777)
     placed = 0
-    x = CITY_SPACING // 2
+    # Centre cities around x=0: e.g. 4 cities → -180, -60, 60, 180
+    x = -(CITY_COUNT // 2) * CITY_SPACING + CITY_SPACING // 2
     world.city_zones = []  # list of (min_x, max_x) used by sapling-grow checks
 
-    while x < world.width - CITY_SPACING // 2 and placed < CITY_COUNT:
+    while placed < CITY_COUNT:
         jitter = rng.randint(-6, 6)
         cx = x + jitter
-        cx = max(8, min(world.width - 9, cx))
         sy = world.surface_y_at(cx)
 
         # Difficulty scales with city index: 0→0, 1→0, 2→1, 3→1, 4→2, 5→2
@@ -292,15 +292,14 @@ def generate_cities(world, seed):
         # Clear all vegetation above the city footprint so no trees poke through
         _CLEAR_HEIGHT = 25
         for bx in range(cx - _CITY_HALF_WIDTH, cx + _CITY_HALF_WIDTH + 1):
-            if 0 <= bx < world.width:
-                for by in range(max(0, sy - _CLEAR_HEIGHT), sy):
-                    if world.grid[by][bx] in _PLANT_BLOCKS:
-                        world.grid[by][bx] = AIR
+            for by in range(max(0, sy - _CLEAR_HEIGHT), sy):
+                if world.get_block(bx, by) in _PLANT_BLOCKS:
+                    world.set_block(bx, by, AIR)
 
         # Stone platform (14 blocks wide)
         for bx in range(cx - 7, cx + 8):
-            if 0 <= bx < world.width and world.grid[sy][bx] != BEDROCK:
-                world.grid[sy][bx] = STONE
+            if world.get_block(bx, sy) != BEDROCK:
+                world.set_block(bx, sy, STONE)
 
         # Two houses flanking the NPC plaza (doors face the city centre)
         _place_house(world, cx - 7, sy, width=4, wall_height=3, facing='right')
@@ -311,11 +310,11 @@ def generate_cities(world, seed):
         trade_bx = cx + 3
         for dy in [1, 2]:
             qby = sy - dy
-            if 0 <= quest_bx < world.width and 0 <= qby < world.height:
-                world.grid[qby][quest_bx] = NPC_QUEST_BLOCK
+            if 0 <= qby < world.height:
+                world.set_block(quest_bx, qby, NPC_QUEST_BLOCK)
             tby = sy - dy
-            if 0 <= trade_bx < world.width and 0 <= tby < world.height:
-                world.grid[tby][trade_bx] = NPC_TRADE_BLOCK
+            if 0 <= tby < world.height:
+                world.set_block(trade_bx, tby, NPC_TRADE_BLOCK)
 
         # NPC entities positioned one block above marker columns
         npc_py = (sy - 3) * BLOCK_SIZE
