@@ -9,8 +9,8 @@ from player import Player
 from renderer import Renderer
 from ui import UI
 from research import ResearchTree
-from constants import SCREEN_W, SCREEN_H, FPS
-from automations import Automation, AUTOMATION_DEFS, Backhoe
+from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
+from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
 from blocks import GEM_CUTTER_BLOCK
@@ -404,6 +404,7 @@ def main():
     t0 = _t("total after choice", t0)
 
     world._player_ref = player
+    ui.world_ref = world
 
     renderer.cam_x = player.x - SCREEN_W // 2
     renderer.cam_y = player.y - SCREEN_H // 2
@@ -412,6 +413,7 @@ def main():
         ui.pause_open = False
         ui.research_open = ui.inventory_open = ui.crafting_open = False
         ui.collection_open = ui.refinery_open = ui.npc_open = False
+        ui.breeding_open = False
         ui.automation_open = False
         ui.active_automation = None
         ui.farm_bot_open = False
@@ -430,7 +432,7 @@ def main():
         return any([ui.pause_open, ui.research_open, ui.inventory_open, ui.crafting_open,
                     ui.collection_open, ui.refinery_open, ui.npc_open,
                     ui.automation_open, ui.farm_bot_open, ui.chest_open,
-                    ui.backhoe_open])
+                    ui.backhoe_open, ui.breeding_open])
 
     def _find_nearby_npc(world, player):
         from cities import NPC
@@ -528,7 +530,10 @@ def main():
                     continue
 
                 if event.key == pygame.K_ESCAPE:
-                    if ui.pause_open:
+                    if player.fishing_state in ("casting", "biting"):
+                        player.fishing_state = None
+                        player._fishing_biome = None
+                    elif ui.pause_open:
                         ui.pause_open = False
                     elif _any_ui_open():
                         _close_all_ui()
@@ -558,7 +563,10 @@ def main():
                         _candidate = (bh.arm_dx, bh.arm_dy + 1)
                     if _candidate is not None and _candidate[0] ** 2 + _candidate[1] ** 2 <= _arm_r_sq:
                         if _candidate != (0, 0):
-                            bh.arm_dx, bh.arm_dy = _candidate
+                            _cbx, _cby = bh.center_block()
+                            _tbx, _tby = _cbx + _candidate[0], _cby + _candidate[1]
+                            if not world.is_solid(_tbx, _tby):
+                                bh.arm_dx, bh.arm_dy = _candidate
 
                 if event.key == pygame.K_BACKQUOTE:
                     ui.cheat_open = True
@@ -586,7 +594,12 @@ def main():
                 if event.key == pygame.K_g:
                     ui.collection_open = not ui.collection_open
                     ui.research_open = ui.inventory_open = ui.crafting_open = False
-                    ui.equipment_crafting_open = ui.refinery_open = False
+                    ui.equipment_crafting_open = ui.refinery_open = ui.breeding_open = False
+
+                if event.key == pygame.K_b:
+                    ui.breeding_open = not ui.breeding_open
+                    ui.research_open = ui.inventory_open = ui.crafting_open = False
+                    ui.equipment_crafting_open = ui.collection_open = ui.refinery_open = False
 
                 if event.key == pygame.K_e:
                     # Dismount backhoe if currently riding
@@ -673,6 +686,9 @@ def main():
                 if event.key == pygame.K_m:
                     renderer.minimap_visible = not renderer.minimap_visible
 
+                if event.key == pygame.K_f and not _any_ui_open() and not player.dead:
+                    player.on_fish_press()
+
                 # Hotbar number keys 1–8
                 for i in range(8):
                     if event.key == getattr(pygame, f"K_{i + 1}", None):
@@ -707,7 +723,16 @@ def main():
                         _save_and_notify(world, player, research)
                         running = False
                 elif ui.automation_open:
-                    ui.handle_automation_click(event.pos, player)
+                    action = ui.handle_automation_click(event.pos, player)
+                    if action == "pickup":
+                        auto = ui.active_automation
+                        auto.take_all(player)
+                        world.automations.remove(auto)
+                        item_id = AUTOMATION_ITEM.get(auto.auto_type)
+                        if item_id:
+                            player._add_item(item_id)
+                        ui.automation_open = False
+                        ui.active_automation = None
                 elif ui.farm_bot_open:
                     ui.handle_farm_bot_click(event.pos, player)
                 elif ui.backhoe_open:
@@ -728,6 +753,8 @@ def main():
                     ui.handle_crafting_click(event.pos, player, event.button)
                 elif ui.collection_open:
                     ui.handle_collection_click(event.pos, player)
+                elif ui.breeding_open:
+                    ui.handle_breeding_click(event.pos, player)
                 elif ui.refinery_open:
                     if ui.refinery_block_id == GEM_CUTTER_BLOCK:
                         ui.handle_gem_cutter_click(event.pos, player)
@@ -736,6 +763,15 @@ def main():
                 elif ui.chest_open:
                     ui.handle_chest_click(event.pos, player, event.button)
                 else:
+                    # Check for bird clicks before falling through to hotbar/world
+                    if event.button == 1 and not ui._bird_obs_active:
+                        mx, my = event.pos
+                        for bird in world.birds:
+                            bsx = int(bird.x - renderer.cam_x)
+                            bsy = int(bird.y - renderer.cam_y)
+                            if pygame.Rect(bsx - 4, bsy - 4, bird.W + 8, bird.H + 8).collidepoint(mx, my):
+                                ui.open_bird_observation(bird)
+                                break
                     ui.handle_hotbar_click(event.pos, player)
 
         keys = pygame.key.get_pressed()
@@ -751,6 +787,7 @@ def main():
             renderer.draw_player(player)
             renderer.draw_dropped_items(world.dropped_items)
             renderer.draw_entities(world.entities)
+            renderer.draw_birds(world.birds)
             renderer.draw_automations(world.automations)
             renderer.draw_farm_bots(world.farm_bots)
             renderer.draw_backhoes(world.backhoes, player)
@@ -792,6 +829,37 @@ def main():
 
         for entity in world.entities:
             entity.update(dt)
+        world._player_ref = player
+        for bird in world.birds:
+            bird.update(dt)
+        # Bird observation mini-game tick
+        if ui._bird_obs_active and ui._bird_obs_bird is not None:
+            bird = ui._bird_obs_bird
+            player_moving = abs(player.vx) > 0.5
+            if bird.state in ("flying", "taking_off"):
+                if not ui._bird_obs_failed:
+                    ui._bird_obs_failed = True
+                    ui._bird_obs_fail_timer = 1.5
+                    ui._bird_obs_timer = 0.0
+            elif not player_moving:
+                ui._bird_obs_timer += dt
+            if ui._bird_obs_timer >= 2.0:
+                sp = bird.SPECIES
+                biome = world.biodome_at(int(bird.x // BLOCK_SIZE))
+                player.birds_observed.setdefault(sp, {"count": 0, "biome": biome})
+                player.birds_observed[sp]["count"] += 1
+                player.discovered_bird_types.add(sp)
+                player.pending_notifications.append(
+                    ("Bird", sp.replace("_", " ").title(), bird.RARITY))
+                bird.spook()
+                ui._bird_obs_active = False
+                ui._bird_obs_bird = None
+        if ui._bird_obs_failed:
+            ui._bird_obs_fail_timer -= dt
+            if ui._bird_obs_fail_timer <= 0:
+                ui._bird_obs_active = False
+                ui._bird_obs_failed = False
+                ui._bird_obs_bird = None
         for automation in world.automations:
             automation.update(dt, world)
         for farm_bot in world.farm_bots:
@@ -809,6 +877,7 @@ def main():
         renderer.draw_world(world, player)
         renderer.draw_player(player)
         renderer.draw_entities(world.entities)
+        renderer.draw_birds(world.birds)
         renderer.draw_automations(world.automations)
         renderer.draw_farm_bots(world.farm_bots)
         renderer.draw_backhoes(world.backhoes, player)
@@ -819,6 +888,9 @@ def main():
         renderer.draw_water_overlay(player)
         renderer.draw_lighting(player, player.get_depth())
         ui.draw(player, research, dt)
+        if ui._bird_obs_active:
+            ui._draw_bird_observation_overlay(player)
+        ui.draw_fishing_overlay(player, dt)
         renderer.draw_minimap(world, player, dt)
 
         if dt > 0:

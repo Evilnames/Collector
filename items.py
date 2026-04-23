@@ -16,8 +16,9 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     BEET_CROP_YOUNG, TURNIP_CROP_YOUNG, LEEK_CROP_YOUNG,
                     ZUCCHINI_CROP_YOUNG, SWEET_POTATO_CROP_YOUNG, WATERMELON_CROP_YOUNG,
                     RADISH_CROP_YOUNG, PEA_CROP_YOUNG, CELERY_CROP_YOUNG, BROCCOLI_CROP_YOUNG,
-                    CACTUS_YOUNG, SANDSTONE_BLOCK, DESERT_FORGE_BLOCK,
-                    DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG)
+                    CACTUS_YOUNG, SANDSTONE_BLOCK, DESERT_FORGE_BLOCK, SAND,
+                    DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG,
+                    BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK)
 
 ITEMS = {
     # --- Natural resources ---
@@ -99,7 +100,7 @@ ITEMS = {
     "cactus_spine":      {"name": "Cactus Spine",      "color": ( 50, 130,  50),  "place_block": CACTUS_YOUNG},
     "date_palm_seed":    {"name": "Date Palm Seed",    "color": (140,  80,  25),  "place_block": DATE_PALM_CROP_YOUNG},
     "agave_seed":        {"name": "Agave Seed",        "color": ( 60, 140,  80),  "place_block": AGAVE_CROP_YOUNG},
-    "sand_grain":        {"name": "Sand",              "color": (210, 190, 140),  "place_block": None},
+    "sand_grain":        {"name": "Sand",              "color": (210, 190, 140),  "place_block": SAND},
     "stone_pickaxe": {"name": "Stone Pickaxe", "color": (155, 155, 168), "place_block": None, "pick_power": 1.5,  "max_uses": 20},
     "iron_pickaxe":  {"name": "Iron Pickaxe",  "color": (185, 150, 120), "place_block": None, "pick_power": 2.25, "max_uses": 60},
     "gold_pickaxe":  {"name": "Gold Pickaxe",  "color": (230, 195, 60),  "place_block": None, "pick_power": 3.0,  "max_uses": 100},
@@ -249,6 +250,8 @@ ITEMS = {
     # --- Furniture ---
     "bed":                {"name": "Bed",            "color": (200, 80, 110),  "place_block": BED},
     "chest_item":         {"name": "Chest",          "color": (160, 110, 55),  "place_block": CHEST_BLOCK},
+    "bird_feeder":        {"name": "Bird Feeder",    "color": (160, 115,  65), "place_block": BIRD_FEEDER_BLOCK},
+    "bird_bath":          {"name": "Bird Bath",      "color": (185, 180, 172), "place_block": BIRD_BATH_BLOCK},
     # --- Automations ---
     "coal_miner_item":    {"name": "Coal Miner",    "color": (110, 90,  70),  "place_block": None, "spawn_automation": "coal_miner"},
     "iron_miner_item":    {"name": "Iron Miner",    "color": (160, 170, 180), "place_block": None, "spawn_automation": "iron_miner"},
@@ -261,4 +264,7 @@ ITEMS = {
     "empty_barrel": {"name": "Empty Barrel", "color": (110, 80,  45),  "place_block": None, "harvest_oil": True},
     "oil_barrel":   {"name": "Oil Barrel",   "color": ( 30, 25,  15),  "place_block": None},
     "backhoe_item": {"name": "Backhoe",      "color": (210, 160, 30),  "place_block": None, "spawn_backhoe": True},
+    # --- Fishing ---
+    "fishing_pole": {"name": "Fishing Pole", "color": (139, 90,  43),  "place_block": None, "fishing_tool": True, "max_uses": 60},
+    "fish":         {"name": "Fish",         "color": (100, 160, 200), "place_block": None, "edible": True, "hunger_restore": 30},
 }

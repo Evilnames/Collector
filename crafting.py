@@ -549,6 +549,38 @@ RECIPES = [
         "output_id":    "hunting_knife",
         "output_count": 1,
     },
+    # --- Fishing ---
+    {
+        "name": "Fishing Pole",
+        "pattern": [
+            [None,     None,     "lumber"],
+            [None,     "lumber", None    ],
+            ["lumber", None,     None    ],
+        ],
+        "output_id":    "fishing_pole",
+        "output_count": 1,
+    },
+    # --- Bird furniture ---
+    {
+        "name": "Bird Feeder",
+        "pattern": [
+            ["lumber", "lumber", "lumber"],
+            [None,     "lumber", None    ],
+            ["lumber", "lumber", "lumber"],
+        ],
+        "output_id":    "bird_feeder",
+        "output_count": 1,
+    },
+    {
+        "name": "Bird Bath",
+        "pattern": [
+            ["stone_chip", "stone_chip", "stone_chip"],
+            [None,         "stone_chip", None        ],
+            [None,         "stone_chip", None        ],
+        ],
+        "output_id":    "bird_bath",
+        "output_count": 1,
+    },
 ]
 
 

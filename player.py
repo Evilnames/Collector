@@ -24,12 +24,13 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     ZUCCHINI_CROP_MATURE, SWEET_POTATO_CROP_MATURE, WATERMELON_CROP_MATURE,
                     RADISH_CROP_MATURE, PEA_CROP_MATURE, CELERY_CROP_MATURE, BROCCOLI_CROP_MATURE,
                     PERENNIAL_CROP_MATURE, MATURE_TO_YOUNG_CROP, CHEST_BLOCK,
-                    OIL)
+                    OIL, BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK)
 from items import ITEMS
 from rocks import RockGenerator, Rock
 from wildflowers import WildflowerGenerator, Wildflower
 from fossils import FossilGenerator, Fossil
 from gemstones import GemGenerator, Gemstone
+from fish import FishGenerator, Fish
 from constants import (
     BLOCK_SIZE, PLAYER_W, PLAYER_H,
     GRAVITY, JUMP_FORCE, MOVE_SPEED, MAX_FALL,
@@ -40,7 +41,8 @@ from constants import (
 # Blocks that cannot be placed in the background layer
 _BG_DISALLOWED = (
     {WATER, LADDER, SAPLING, CHEST_BLOCK,
-     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN}
+     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
+     BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK}
     | BUSH_BLOCKS
     | YOUNG_CROP_BLOCKS
     | EQUIPMENT_BLOCKS
@@ -85,6 +87,18 @@ class Player:
         self.gems = []
         self.discovered_gem_types = set()
         self._gem_gen = GemGenerator(world.seed)
+        # Fish collection
+        self.fish_caught = []
+        self.discovered_fish_species = set()
+        self._fish_gen = FishGenerator(world.seed)
+        # Fishing mini-game state
+        self.fishing_state = None     # None | "casting" | "biting" | "result"
+        self._fishing_timer = 0.0
+        self._fishing_result = None   # "caught" | "missed"
+        self._fishing_biome = None
+        # Bird observations
+        self.birds_observed = {}           # species_id -> {"count": int, "biome": str}
+        self.discovered_bird_types = set()
         self.pending_notifications = []   # (category, name_or_bid, rarity)
         self.known_recipes = set()
         # Water state
@@ -110,6 +124,8 @@ class Player:
         self.target_block = None
         # Construction equipment
         self.mounted_machine = None
+        # Doors the player auto-opened by walking into them
+        self._auto_opened_doors = set()  # set of (bx, by)
 
     def apply_save(self, d):
         self.x, self.y = d["x"], d["y"]
@@ -126,10 +142,14 @@ class Player:
         self.wildflowers = [Wildflower(**wf) for wf in d["wildflowers"]]
         self.fossils = [Fossil(**f) for f in d.get("fossils", [])]
         self.gems = [Gemstone(**g) for g in d.get("gems", [])]
+        self.fish_caught = [Fish(**f) for f in d.get("fish", [])]
+        self.birds_observed = d.get("birds_observed", {})
+        self.discovered_bird_types = set(d.get("discovered_bird_types", []))
         self.discovered_types = set(d["discovered_types"])
         self.discovered_flower_types = set(d["discovered_flower_types"])
         self.discovered_fossil_types = set(d.get("discovered_fossil_types", []))
         self.discovered_gem_types = set(d.get("discovered_gem_types", []))
+        self.discovered_fish_species = set(d.get("discovered_fish_species", []))
         self.mushrooms_found = {int(k): v for k, v in d["mushrooms_found"].items()}
         self.discovered_mushroom_types = set(int(x) for x in d["discovered_mushroom_types"])
         self.spawn_x = d.get("spawn_x")
@@ -746,6 +766,94 @@ class Player:
         self.spawn_x = float(bx * BLOCK_SIZE + (BLOCK_SIZE - PLAYER_W) // 2)
         self.spawn_y = float((by - 1) * BLOCK_SIZE)
 
+    # ------------------------------------------------------------------
+    # Fishing
+    # ------------------------------------------------------------------
+
+    def has_fishing_pole(self):
+        item_id = self.hotbar[self.selected_slot]
+        return item_id is not None and ITEMS.get(item_id, {}).get("fishing_tool", False)
+
+    def get_nearby_water_biome(self):
+        """Return biome string if water is within 3 blocks and player is not in water, else None."""
+        if self._in_water():
+            return None
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        for dy in range(-2, 3):
+            for dx in range(-3, 4):
+                if self.world.get_block(cx + dx, cy + dy) == WATER:
+                    return self.world.get_biome(cx + dx)
+        return None
+
+    def on_fish_press(self):
+        """Called when the player presses the fishing key (F)."""
+        if self.fishing_state is None:
+            return self._start_fishing()
+        elif self.fishing_state == "biting":
+            self._catch_fish()
+            return True
+        elif self.fishing_state == "casting":
+            # Cancel
+            self.fishing_state = None
+            self._fishing_biome = None
+            return True
+        return False
+
+    def _start_fishing(self):
+        if not self.has_fishing_pole():
+            return False
+        biome = self.get_nearby_water_biome()
+        if biome is None:
+            return False
+        self.fishing_state = "casting"
+        self._fishing_timer = random.uniform(3.0, 8.0)
+        self._fishing_biome = biome
+        return True
+
+    def _catch_fish(self):
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        fish = self._fish_gen.generate(cx, cy, self._fishing_biome or "")
+        self.fish_caught.append(fish)
+        self.discovered_fish_species.add(fish.species)
+        self._add_item("fish")
+        self._consume_tool_use()
+        self.pending_notifications.append(
+            ("Fish", fish.species.replace("_", " ").title(), fish.rarity))
+        self.fishing_state = "result"
+        self._fishing_result = "caught"
+        self._fishing_timer = 2.0
+
+    def _update_fishing(self, dt):
+        if self.fishing_state is None:
+            return
+        # Auto-cancel if pole no longer equipped or left the water
+        if self.fishing_state in ("casting", "biting"):
+            if not self.has_fishing_pole() or self.get_nearby_water_biome() is None:
+                self.fishing_state = None
+                self._fishing_biome = None
+                return
+
+        self._fishing_timer -= dt
+
+        if self.fishing_state == "casting":
+            if self._fishing_timer <= 0:
+                self.fishing_state = "biting"
+                self._fishing_timer = 2.0
+
+        elif self.fishing_state == "biting":
+            if self._fishing_timer <= 0:
+                self.fishing_state = "result"
+                self._fishing_result = "missed"
+                self._fishing_timer = 1.5
+
+        elif self.fishing_state == "result":
+            if self._fishing_timer <= 0:
+                self.fishing_state = None
+                self._fishing_result = None
+                self._fishing_biome = None
+
     def _try_eat(self):
         if self._eat_cooldown > 0:
             return False
@@ -811,14 +919,59 @@ class Player:
         # Death detection
         if not self.dead and self.health <= 0:
             self.dead = True
+        self._update_fishing(dt)
+        # Auto-close doors the player has walked away from
+        if self._auto_opened_doors:
+            player_left  = int(self.x // BLOCK_SIZE) - 1
+            player_right = int((self.x + PLAYER_W - 1) // BLOCK_SIZE) + 1
+            to_close = {(dbx, dby) for (dbx, dby) in self._auto_opened_doors
+                        if dbx < player_left or dbx > player_right}
+            for (dbx, dby) in to_close:
+                self._auto_opened_doors.discard((dbx, dby))
+                bid = self.world.get_block(dbx, dby)
+                if bid == WOOD_DOOR_OPEN:
+                    self.world.set_block(dbx, dby, WOOD_DOOR_CLOSED)
+                elif bid == IRON_DOOR_OPEN:
+                    self.world.set_block(dbx, dby, IRON_DOOR_CLOSED)
 
     def _move_x(self, dx):
         if dx == 0:
             return
         self.x += dx
         if self._collides():
+            if self._try_auto_open_door():
+                return  # door opened, movement proceeds
             self.x -= dx
             self.vx = 0.0
+
+    def _try_auto_open_door(self):
+        left  = int(self.x // BLOCK_SIZE)
+        right = int((self.x + PLAYER_W - 1) // BLOCK_SIZE)
+        top   = int(self.y // BLOCK_SIZE)
+        bot   = int((self.y + PLAYER_H - 1) // BLOCK_SIZE)
+        opened = False
+        for bx in range(left, right + 1):
+            for by in range(top, bot + 1):
+                bid = self.world.get_block(bx, by)
+                if bid == WOOD_DOOR_CLOSED:
+                    self.world.set_block(bx, by, WOOD_DOOR_OPEN)
+                    self._auto_opened_doors.add((bx, by))
+                    for dy in (-1, 1):
+                        if self.world.get_block(bx, by + dy) == WOOD_DOOR_CLOSED:
+                            self.world.set_block(bx, by + dy, WOOD_DOOR_OPEN)
+                            self._auto_opened_doors.add((bx, by + dy))
+                            break
+                    opened = True
+                elif bid == IRON_DOOR_CLOSED:
+                    self.world.set_block(bx, by, IRON_DOOR_OPEN)
+                    self._auto_opened_doors.add((bx, by))
+                    for dy in (-1, 1):
+                        if self.world.get_block(bx, by + dy) == IRON_DOOR_CLOSED:
+                            self.world.set_block(bx, by + dy, IRON_DOOR_OPEN)
+                            self._auto_opened_doors.add((bx, by + dy))
+                            break
+                    opened = True
+        return opened
 
     def _move_y(self, dy):
         if dy == 0:

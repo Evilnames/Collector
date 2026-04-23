@@ -42,6 +42,12 @@ AUTOMATION_DEFS = {
 }
 
 
+AUTOMATION_ITEM = {
+    "coal_miner":    "coal_miner_item",
+    "iron_miner":    "iron_miner_item",
+    "crystal_miner": "crystal_miner_item",
+}
+
 FARM_BOT_TYPES = {"farm_bot", "iron_farm_bot", "crystal_farm_bot"}
 
 FARM_BOT_DEFS = {
@@ -125,6 +131,13 @@ class Automation:
         }.get(self._halt_reason, "active")
 
     # ------------------------------------------------------------------ logic
+    def set_direction(self, direction):
+        self.direction = direction
+        if self._halt_reason == "blocked":
+            self._state = "moving"
+            self._halt_reason = ""
+            self._mine_timer = 0.0
+
     def _halt(self, reason):
         self._state = "halted"
         self._halt_reason = reason

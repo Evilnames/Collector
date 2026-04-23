@@ -157,6 +157,26 @@ AGAVE_CROP_YOUNG       = 192
 AGAVE_CROP_MATURE      = 193
 OIL                    = 194  # static underground liquid pocket; harvested by empty_barrel
 
+HOUSE_WALL_STONE = 195  # stone city house wall
+HOUSE_ROOF_STONE = 196  # stone city house roof
+HOUSE_WALL_BRICK = 197  # brick city house wall
+HOUSE_ROOF_BRICK = 198  # brick city house roof
+HOUSE_WALL_DARK  = 199  # dark-timber city house wall
+HOUSE_ROOF_DARK  = 200  # dark-timber city house roof
+
+# --- Additional tree species ---
+MAPLE_LOG      = 201
+MAPLE_LEAVES   = 202
+CHERRY_LOG     = 203
+CHERRY_LEAVES  = 204
+CYPRESS_LOG    = 205
+CYPRESS_LEAVES = 206
+BAOBAB_LOG     = 207
+BAOBAB_LEAVES  = 208
+
+BIRD_FEEDER_BLOCK = 209
+BIRD_BATH_BLOCK   = 210
+
 HOUSE_WALL           = 108  # city house wall block
 HOUSE_ROOF           = 109  # city house roof block
 WILDFLOWER_PATCH     = 110  # surface collectable; interact → generates unique Wildflower object
@@ -217,9 +237,11 @@ CAVE_MUSHROOMS = {
 }
 
 ALL_LOGS   = {TREE_LOG, PINE_LOG, BIRCH_LOG, JUNGLE_LOG, WILLOW_LOG,
-              REDWOOD_LOG, PALM_LOG, ACACIA_LOG, DEAD_LOG, MUSHROOM_STEM}
+              REDWOOD_LOG, PALM_LOG, ACACIA_LOG, DEAD_LOG, MUSHROOM_STEM,
+              MAPLE_LOG, CHERRY_LOG, CYPRESS_LOG, BAOBAB_LOG}
 ALL_LEAVES = {TREE_LEAVES, PINE_LEAVES, BIRCH_LEAVES, JUNGLE_LEAVES, WILLOW_LEAVES,
-              REDWOOD_LEAVES, PALM_LEAVES, ACACIA_LEAVES, MUSHROOM_CAP}
+              REDWOOD_LEAVES, PALM_LEAVES, ACACIA_LEAVES, MUSHROOM_CAP,
+              MAPLE_LEAVES, CHERRY_LEAVES, CYPRESS_LEAVES, BAOBAB_LEAVES}
 # Maps each leaf block to its paired log for decay checks
 LEAF_LOG_MAP = {
     TREE_LEAVES:    TREE_LOG,
@@ -231,6 +253,10 @@ LEAF_LOG_MAP = {
     PALM_LEAVES:    PALM_LOG,
     ACACIA_LEAVES:  ACACIA_LOG,
     MUSHROOM_CAP:   MUSHROOM_STEM,
+    MAPLE_LEAVES:   MAPLE_LOG,
+    CHERRY_LEAVES:  CHERRY_LOG,
+    CYPRESS_LEAVES: CYPRESS_LOG,
+    BAOBAB_LEAVES:  BAOBAB_LOG,
 }
 
 EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, BAKERY_BLOCK,
@@ -371,6 +397,14 @@ BLOCKS = {
     DEAD_LOG:      {"name": "Dead Wood",         "hardness": 2, "color": (88,  82,  78),  "drop": "lumber"},
     MUSHROOM_STEM: {"name": "Mushroom Stem",     "hardness": 1, "color": (228, 218, 198), "drop": "mushroom", "drop_chance": 1.0},
     MUSHROOM_CAP:  {"name": "Mushroom Cap",      "hardness": 1, "color": (175, 38,  38),  "drop": "mushroom", "drop_chance": 0.5},
+    MAPLE_LOG:     {"name": "Maple Log",         "hardness": 2, "color": (118, 72,  38),  "drop": "lumber"},
+    MAPLE_LEAVES:  {"name": "Maple Leaves",      "hardness": 1, "color": (185, 108, 35),  "drop": "sapling", "drop_chance": 0.10},
+    CHERRY_LOG:    {"name": "Cherry Log",        "hardness": 2, "color": (72,  52,  60),  "drop": "lumber"},
+    CHERRY_LEAVES: {"name": "Cherry Blossoms",   "hardness": 1, "color": (205, 130, 158), "drop": "sapling", "drop_chance": 0.10},
+    CYPRESS_LOG:   {"name": "Cypress Log",       "hardness": 2, "color": (78,  55,  35),  "drop": "lumber"},
+    CYPRESS_LEAVES:{"name": "Cypress Needles",   "hardness": 1, "color": (22,  88,  28),  "drop": "sapling", "drop_chance": 0.10},
+    BAOBAB_LOG:    {"name": "Baobab Log",        "hardness": 3, "color": (165, 145, 115), "drop": "lumber"},
+    BAOBAB_LEAVES: {"name": "Baobab Leaves",     "hardness": 1, "color": (82,  120, 45),  "drop": "sapling", "drop_chance": 0.10},
     NPC_QUEST_BLOCK: {"name": "Rock Collector", "hardness": float('inf'), "color": (200, 160, 80),  "drop": None},
     NPC_TRADE_BLOCK: {"name": "Trader",         "hardness": float('inf'), "color": (80,  150, 200), "drop": None},
     # --- Chinese cuisine crops ---
@@ -418,6 +452,12 @@ BLOCKS = {
     CABBAGE_CROP_MATURE:   {"name": "Cabbage Crop (Ripe)",     "hardness": 0.5, "color": (80, 160, 90),  "drop": "cabbage",       "drop_chance": 1.0},
     HOUSE_WALL:            {"name": "House Wall",              "hardness": 2,   "color": (160, 115, 70), "drop": "lumber"},
     HOUSE_ROOF:            {"name": "House Roof",              "hardness": 2,   "color": (90,  45,  30), "drop": "lumber"},
+    HOUSE_WALL_STONE:      {"name": "Stone Wall",              "hardness": 3,   "color": (140, 135, 128), "drop": "stone_chip"},
+    HOUSE_ROOF_STONE:      {"name": "Stone Roof",              "hardness": 3,   "color": ( 80,  75,  70), "drop": "stone_chip"},
+    HOUSE_WALL_BRICK:      {"name": "Brick Wall",              "hardness": 2,   "color": (165,  90,  75), "drop": "lumber"},
+    HOUSE_ROOF_BRICK:      {"name": "Brick Roof",              "hardness": 2,   "color": (110,  50,  40), "drop": "lumber"},
+    HOUSE_WALL_DARK:       {"name": "Dark Timber Wall",        "hardness": 2,   "color": ( 90,  55,  35), "drop": "lumber"},
+    HOUSE_ROOF_DARK:       {"name": "Dark Timber Roof",        "hardness": 2,   "color": ( 50,  25,  15), "drop": "lumber"},
     WILDFLOWER_PATCH:      {"name": "Wildflower",              "hardness": 0.3, "color": (180, 220, 120), "drop": None},
     CRACKED_STONE:         {"name": "Cracked Stone",           "hardness": 2,   "color": (105, 100, 95),  "drop": "stone_chip"},
     STALACTITE:            {"name": "Stalactite",              "hardness": 2,   "color": (110, 108, 112), "drop": "stone_chip"},
@@ -505,4 +545,6 @@ BLOCKS = {
     AGAVE_CROP_YOUNG:       {"name": "Agave Plant",              "hardness": 0.5, "color": ( 70, 165,  90), "drop": "agave_seed",        "drop_chance": 1.0},
     AGAVE_CROP_MATURE:      {"name": "Agave Plant (Ripe)",       "hardness": 0.5, "color": ( 95, 185, 105), "drop": "agave",             "drop_chance": 1.0},
     OIL:                    {"name": "Oil",                      "hardness": float('inf'),    "color": ( 30,  22,  10), "drop": None},
+    BIRD_FEEDER_BLOCK:      {"name": "Bird Feeder",              "hardness": 1.5,             "color": (160, 115,  65), "drop": "bird_feeder"},
+    BIRD_BATH_BLOCK:        {"name": "Bird Bath",                "hardness": 2.0,             "color": (185, 180, 172), "drop": "bird_bath"},
 }

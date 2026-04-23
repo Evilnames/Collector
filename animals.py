@@ -365,3 +365,75 @@ class Chicken(Animal):
             self._refill_timer = self.REFILL_TIME
             return ("egg", 1)
         return None
+
+
+BIG_CAT_FLEE_RADIUS = 7   # blocks
+BIG_CAT_FLEE_SPEED  = 2.6
+
+
+class BigCat(Animal):
+    """Base class for rare, unhuntable big cats that flee from the player."""
+    ANIMAL_W = 36
+    ANIMAL_H = 20
+    PREFERRED_FOODS = ()
+    MEAT_DROP = (None, 0)
+
+    def __init__(self, x, y, world, animal_id):
+        super().__init__(x, y, world, animal_id)
+
+    def try_harvest(self, player, dt):
+        self.reset_harvest()
+        return None
+
+    def _try_harvest_resource(self, player, dt):
+        return None
+
+    def _breed(self, other, world):
+        pass
+
+    def update(self, dt):
+        if self.dead:
+            return
+
+        player = getattr(self.world, '_player_ref', None)
+        if player is not None:
+            pdx = (player.x + PLAYER_W / 2) - (self.x + self.W / 2)
+            pdy = (player.y + PLAYER_H / 2) - (self.y + self.H / 2)
+            dist = ((pdx / BLOCK_SIZE) ** 2 + (pdy / BLOCK_SIZE) ** 2) ** 0.5
+            if dist < BIG_CAT_FLEE_RADIUS:
+                flee_dir = -1 if pdx > 0 else 1
+                self.vx = flee_dir * BIG_CAT_FLEE_SPEED
+                self.facing = 1 if self.vx > 0 else -1
+                self.vy = min(self.vy + GRAVITY, MAX_FALL)
+                self._move_x(self.vx)
+                self._move_y(self.vy)
+                return
+
+        self._wander_timer -= dt
+        if self._wander_timer <= 0:
+            self._wander_timer = random.uniform(2.0, 8.0)
+            self._wander_dir = random.choice([-1, -1, 0, 0, 0, 1, 1])
+
+        self.vx = self._wander_dir * ANIMAL_MOVE_SPEED
+        if self.vx != 0:
+            self.facing = 1 if self.vx > 0 else -1
+
+        self.vy = min(self.vy + GRAVITY, MAX_FALL)
+        self._move_x(self.vx)
+        self._move_y(self.vy)
+
+
+class SnowLeopard(BigCat):
+    ANIMAL_W = 36
+    ANIMAL_H = 20
+
+    def __init__(self, x, y, world):
+        super().__init__(x, y, world, "snow_leopard")
+
+
+class MountainLion(BigCat):
+    ANIMAL_W = 38
+    ANIMAL_H = 22
+
+    def __init__(self, x, y, world):
+        super().__init__(x, y, world, "mountain_lion")

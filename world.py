@@ -20,6 +20,7 @@ class World:
         self.automations = []
         self.farm_bots = []
         self.backhoes = []
+        self.birds = []
         self.dropped_items = []
         self.chest_data = {}     # (bx, by) -> {item_id: count}
         self._water_level = {}   # (x,y) -> int 1-8; 8 = world-gen source block
@@ -28,6 +29,7 @@ class World:
         _rng = random.Random(self.seed)
         self._surf_octaves = [(0.015, 6.0), (0.04, 3.0), (0.10, 1.5), (0.22, 0.6)]
         self._surf_phases  = [_rng.uniform(0, 6.28) for _ in self._surf_octaves]
+        self._surf_water_cache = {}
         if preloaded:
             self._load_from(preloaded, player_x)
         else:
@@ -55,6 +57,7 @@ class World:
         if not preloaded:
             from cities import generate_cities
             generate_cities(self, self.seed)
+        self._spawn_birds()
 
     # ------------------------------------------------------------------
     # Backward-compat properties
@@ -257,8 +260,9 @@ class World:
         for bh_data in data.get("backhoes", []):
             self.backhoes.append(Backhoe.from_dict(bh_data))
 
-        from animals import Sheep, Cow, Chicken
-        _CLASS_MAP = {"Sheep": Sheep, "Cow": Cow, "Chicken": Chicken}
+        from animals import Sheep, Cow, Chicken, SnowLeopard, MountainLion
+        _CLASS_MAP = {"Sheep": Sheep, "Cow": Cow, "Chicken": Chicken,
+                      "SnowLeopard": SnowLeopard, "MountainLion": MountainLion}
         for e_data in data["entities"]:
             cls = _CLASS_MAP.get(e_data["entity_type"])
             if cls is None:
@@ -352,6 +356,8 @@ class World:
                     for lx in range(CHUNK_W):
                         chunk[gy][lx] = gate
 
+        self._gen_surface_water(cx, chunk)
+
         # Trees — _dispatch_grow uses set_block which silently skips unloaded chunks
         tree_rng = random.Random(hash((self.seed, cx, 'trees')) & 0x7FFFFFFF)
         lx = 2
@@ -359,7 +365,8 @@ class World:
             x = cx * CHUNK_W + lx
             sy = self.surface_height(x)
             biodome = self.biodome_at(x)
-            self._dispatch_grow(x, sy - 1, biodome, tree_rng)
+            if chunk[sy][lx] != WATER:
+                self._dispatch_grow(x, sy - 1, biodome, tree_rng)
             lo, hi = {
                 "jungle":          (3, 6),  "fungal":         (3, 7),
                 "boreal":          (4, 8),  "wetland":        (4, 8),
@@ -373,20 +380,57 @@ class World:
             }.get(biodome, (5, 10))
             lx += tree_rng.randint(lo, hi)
 
-        # Bushes — write directly into chunk array (within-chunk positions)
+        # Bushes — biome-appropriate plants on grass surfaces
+        _BIOME_BUSHES = {
+            "temperate":      [STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, POTATO_BUSH,
+                               BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, LEEK_BUSH, CORN_BUSH,
+                               PUMPKIN_BUSH, GARLIC_BUSH, SCALLION_BUSH, APPLE_BUSH,
+                               RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, BROCCOLI_BUSH],
+            "boreal":         [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
+                               TURNIP_BUSH, CABBAGE_BUSH, LEEK_BUSH, APPLE_BUSH,
+                               RADISH_BUSH, PEA_BUSH, BROCCOLI_BUSH],
+            "birch_forest":   [STRAWBERRY_BUSH, CARROT_BUSH, APPLE_BUSH, POTATO_BUSH,
+                               BEET_BUSH, PUMPKIN_BUSH, PEA_BUSH, BROCCOLI_BUSH],
+            "jungle":         [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
+                               PEPPER_BUSH, EGGPLANT_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH,
+                               CHILI_BUSH],
+            "wetland":        [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, LEEK_BUSH,
+                               CELERY_BUSH, SCALLION_BUSH, PUMPKIN_BUSH, TOMATO_BUSH,
+                               WATERMELON_BUSH],
+            "redwood":        [STRAWBERRY_BUSH, APPLE_BUSH, POTATO_BUSH, CARROT_BUSH,
+                               BEET_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH],
+            "tropical":       [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
+                               CORN_BUSH, PEPPER_BUSH, CHILI_BUSH, EGGPLANT_BUSH,
+                               WATERMELON_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH, ZUCCHINI_BUSH],
+            "savanna":        [CORN_BUSH, CHILI_BUSH, PEPPER_BUSH, EGGPLANT_BUSH,
+                               SWEET_POTATO_BUSH, WATERMELON_BUSH, ONION_BUSH, PUMPKIN_BUSH],
+            "wasteland":      [BEET_BUSH, TURNIP_BUSH, RADISH_BUSH, ONION_BUSH],
+            "fungal":         [],
+            "alpine_mountain":[BEET_BUSH, TURNIP_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH, POTATO_BUSH],
+            "rocky_mountain": [BEET_BUSH, TURNIP_BUSH, POTATO_BUSH, CARROT_BUSH],
+            "rolling_hills":  [STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, CORN_BUSH,
+                               POTATO_BUSH, APPLE_BUSH, PUMPKIN_BUSH, GARLIC_BUSH,
+                               RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, CABBAGE_BUSH, ONION_BUSH],
+            "steep_hills":    [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
+                               APPLE_BUSH, CABBAGE_BUSH, BROCCOLI_BUSH],
+            "steppe":         [WHEAT_BUSH, CORN_BUSH, RADISH_BUSH, ONION_BUSH,
+                               GARLIC_BUSH, TURNIP_BUSH],
+            "arid_steppe":    [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, RADISH_BUSH,
+                               SWEET_POTATO_BUSH],
+            "tundra":         [BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, RADISH_BUSH],
+            "swamp":          [RICE_BUSH, CELERY_BUSH, LEEK_BUSH, SCALLION_BUSH],
+            "beach":          [WATERMELON_BUSH, SWEET_POTATO_BUSH, CORN_BUSH],
+            "canyon":         [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, TOMATO_BUSH, CORN_BUSH],
+        }
         bush_rng = random.Random(hash((self.seed, cx, 'bushes')) & 0x7FFFFFFF)
         lx = 5
         while lx < CHUNK_W - 5:
-            sy = self.surface_height(cx * CHUNK_W + lx)
-            if 0 < sy < WORLD_H and chunk[sy - 1][lx] == AIR and chunk[sy][lx] == GRASS:
-                chunk[sy - 1][lx] = bush_rng.choice([
-                    STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH,
-                    PUMPKIN_BUSH, APPLE_BUSH, RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH,
-                    GARLIC_BUSH, SCALLION_BUSH, CHILI_BUSH, PEPPER_BUSH, ONION_BUSH,
-                    POTATO_BUSH, EGGPLANT_BUSH, CABBAGE_BUSH,
-                    BEET_BUSH, TURNIP_BUSH, LEEK_BUSH, ZUCCHINI_BUSH, SWEET_POTATO_BUSH,
-                    WATERMELON_BUSH, RADISH_BUSH, PEA_BUSH, CELERY_BUSH, BROCCOLI_BUSH,
-                ])
+            x = cx * CHUNK_W + lx
+            sy = self.surface_height(x)
+            biodome = self.biodome_at(x)
+            pool = _BIOME_BUSHES.get(biodome, [])
+            if pool and 0 < sy < WORLD_H and chunk[sy - 1][lx] == AIR and chunk[sy][lx] == GRASS:
+                chunk[sy - 1][lx] = bush_rng.choice(pool)
             lx += bush_rng.randint(7, 15)
 
         # Desert surface flora — spawns on SAND in desert/arid biomes
@@ -483,6 +527,113 @@ class World:
             for lx in range(lx0, lx1 + 1):
                 if chunk[ly][lx] not in _impassable:
                     chunk[ly][lx] = OIL
+
+    # ------------------------------------------------------------------ surface water --
+
+    _SURF_WATER_ZONE_W = 300
+    _SURF_WATER_LAKE_BIOMES = frozenset({
+        "temperate", "boreal", "birch_forest", "wetland", "swamp",
+        "tundra", "jungle", "tropical", "rolling_hills",
+    })
+    _SURF_WATER_RIVER_BIOMES = frozenset({
+        "temperate", "boreal", "wetland", "swamp", "rolling_hills",
+        "birch_forest", "jungle",
+    })
+
+    def _get_surf_water_body(self, zone_idx: int):
+        if zone_idx in self._surf_water_cache:
+            return self._surf_water_cache[zone_idx]
+
+        zone_center = zone_idx * self._SURF_WATER_ZONE_W + self._SURF_WATER_ZONE_W // 2
+        biodome = self.biodome_at(zone_center)
+        can_lake = biodome in self._SURF_WATER_LAKE_BIOMES
+        can_river = biodome in self._SURF_WATER_RIVER_BIOMES
+
+        if not can_lake and not can_river:
+            self._surf_water_cache[zone_idx] = None
+            return None
+
+        rng = random.Random(self._zone_seed(self.seed, zone_idx, 7))
+        prob = 0.35 if can_river else 0.25
+        if rng.random() > prob:
+            self._surf_water_cache[zone_idx] = None
+            return None
+
+        if can_river and can_lake:
+            wb_type = rng.choice(["lake", "lake", "river"])
+        elif can_river:
+            wb_type = "river"
+        else:
+            wb_type = "lake"
+
+        zone_start = zone_idx * self._SURF_WATER_ZONE_W
+        cx_abs = zone_start + rng.randint(50, self._SURF_WATER_ZONE_W - 50)
+
+        if wb_type == "lake":
+            half_w = rng.randint(6, 18)
+            max_depth = rng.randint(3, 10)
+        else:
+            half_w = rng.randint(15, 35)
+            max_depth = rng.randint(2, 5)
+
+        result = {"type": wb_type, "cx_abs": cx_abs, "half_w": half_w, "max_depth": max_depth}
+        self._surf_water_cache[zone_idx] = result
+        return result
+
+    def _gen_surface_water(self, cx: int, chunk: list):
+        _impassable = {BEDROCK, GATE_MID, GATE_DEEP, GATE_CORE}
+        chunk_x0 = cx * CHUNK_W
+        chunk_x1 = chunk_x0 + CHUNK_W - 1
+        max_reach = 35
+
+        z0 = (chunk_x0 - max_reach) // self._SURF_WATER_ZONE_W
+        z1 = (chunk_x1 + max_reach) // self._SURF_WATER_ZONE_W
+
+        for zone_idx in range(z0, z1 + 1):
+            wb = self._get_surf_water_body(zone_idx)
+            if wb is None:
+                continue
+
+            cx_abs = wb["cx_abs"]
+            half_w = wb["half_w"]
+            max_depth = wb["max_depth"]
+            wb_type = wb["type"]
+
+            x_start = cx_abs - half_w
+            x_end = cx_abs + half_w
+            if x_end < chunk_x0 or x_start > chunk_x1:
+                continue
+
+            water_top_y = self.surface_height(cx_abs)
+
+            for x in range(max(x_start, chunk_x0), min(x_end, chunk_x1) + 1):
+                lx = x - chunk_x0
+                dx = abs(x - cx_abs)
+                t = dx / half_w
+
+                # Skip columns where terrain drops below the water level — water
+                # would float in air above the actual ground surface there.
+                local_sy = self.surface_height(x)
+                if local_sy > water_top_y:
+                    continue
+
+                if wb_type == "lake":
+                    depth_x = max(1, round(max_depth * (1.0 - t * t)))
+                else:
+                    flat_half = half_w * 0.55
+                    if dx <= flat_half:
+                        depth_x = max_depth
+                    else:
+                        edge_t = (dx - flat_half) / (half_w - flat_half)
+                        depth_x = max(1, round(max_depth * (1.0 - edge_t)))
+
+                for y in range(water_top_y, water_top_y + depth_x):
+                    if y <= 0 or y >= WORLD_H - 1:
+                        continue
+                    if chunk[y][lx] not in _impassable:
+                        chunk[y][lx] = WATER
+                        self._water_level[(x, y)] = 8
+                        self._lake_cells.append((y, x))
 
     # ------------------------------------------------------------------ caves --
 
@@ -1227,30 +1378,92 @@ class World:
             (top_y + 1, range(bx - cap_w, bx + cap_w + 1)),
         ], MUSHROOM_CAP, rng, density=0.92)
 
+    def _grow_maple(self, bx, by, rng=None):
+        rng = rng or self._sapling_rng
+        h = rng.randint(4, 7)
+        top_y = self._place_trunk(bx, by, h, MAPLE_LOG)
+        self._place_canopy([
+            (top_y - 2, range(bx - 1, bx + 2)),
+            (top_y - 1, range(bx - 2, bx + 3)),
+            (top_y,     range(bx - 3, bx + 4)),
+            (top_y + 1, range(bx - 3, bx + 4)),
+            (top_y + 2, range(bx - 2, bx + 3)),
+        ], MAPLE_LEAVES, rng, density=0.82)
+        self._add_branch_stubs(bx, by, h, MAPLE_LOG, rng, count=rng.randint(1, 3))
+        if rng.random() < 0.5:
+            self._add_root_flare(bx, by, MAPLE_LOG, rng)
+
+    def _grow_cherry(self, bx, by, rng=None):
+        rng = rng or self._sapling_rng
+        h = rng.randint(3, 5)
+        top_y = self._place_trunk(bx, by, h, CHERRY_LOG)
+        off = rng.randint(-1, 1)
+        self._place_canopy([
+            (top_y - 1, range(bx + off - 1, bx + off + 2)),
+            (top_y,     range(bx + off - 2, bx + off + 3)),
+            (top_y + 1, range(bx + off - 2, bx + off + 3)),
+            (top_y + 2, range(bx + off - 1, bx + off + 2)),
+        ], CHERRY_LEAVES, rng, density=0.78)
+        if rng.random() < 0.4:
+            self._add_branch_stubs(bx, by, h, CHERRY_LOG, rng, count=1)
+
+    def _grow_cypress(self, bx, by, rng=None):
+        rng = rng or self._sapling_rng
+        h = rng.randint(8, 13)
+        top_y = self._place_trunk(bx, by, h, CYPRESS_LOG)
+        # Tight columnar canopy — narrow throughout, slightly wider near base
+        layers = [(top_y, range(bx, bx + 1))]  # bare pointed tip
+        for i in range(1, h):
+            w = 2 if i >= h - 2 else 1
+            layers.append((top_y + i, range(bx - w, bx + w + 1)))
+        self._place_canopy(layers, CYPRESS_LEAVES, rng, density=0.93)
+
+    def _grow_baobab(self, bx, by, rng=None):
+        rng = rng or self._sapling_rng
+        h = rng.randint(3, 5)
+        top_y = self._place_trunk(bx, by, h, BAOBAB_LOG)
+        # Fat trunk — widen the bottom two rows
+        for i in range(min(2, h)):
+            ty = by - i
+            if 0 <= ty < WORLD_H:
+                for dx in (-1, 1):
+                    if self.get_block(bx + dx, ty) == AIR:
+                        self.set_block(bx + dx, ty, BAOBAB_LOG)
+        # Small sparse crown offset slightly for character
+        off = rng.randint(-1, 1)
+        self._place_canopy([
+            (top_y - 1, range(bx + off - 2, bx + off + 3)),
+            (top_y,     range(bx + off - 3, bx + off + 4)),
+            (top_y + 1, range(bx + off - 2, bx + off + 3)),
+        ], BAOBAB_LEAVES, rng, density=0.55)
+
     def _dispatch_grow(self, bx, by, biodome, rng=None):
-        {
-            "temperate":       self._grow_oak,
-            "boreal":          self._grow_pine,
-            "birch_forest":    self._grow_birch,
-            "jungle":          self._grow_jungle,
-            "wetland":         self._grow_willow,
-            "redwood":         self._grow_redwood,
-            "tropical":        self._grow_palm,
-            "savanna":         self._grow_acacia,
-            "wasteland":       self._grow_dead,
-            "fungal":          self._grow_mushroom,
-            "alpine_mountain": self._grow_pine,
-            "rocky_mountain":  self._grow_pine,
-            "rolling_hills":   self._grow_oak,
-            "steep_hills":     self._grow_birch,
-            "steppe":          self._grow_acacia,
-            "arid_steppe":     self._grow_dead,
-            "desert":          self._grow_dead,
-            "tundra":          self._grow_pine,
-            "swamp":           self._grow_willow,
-            "beach":           self._grow_palm,
-            "canyon":          self._grow_dead,
-        }.get(biodome, self._grow_oak)(bx, by, rng)
+        rng = rng or self._sapling_rng
+        options = {
+            "temperate":       [(self._grow_oak, 6),    (self._grow_maple, 3),   (self._grow_cherry, 1)],
+            "rolling_hills":   [(self._grow_oak, 5),    (self._grow_maple, 3),   (self._grow_cherry, 2)],
+            "birch_forest":    [(self._grow_birch, 7),  (self._grow_maple, 2),   (self._grow_oak, 1)],
+            "steep_hills":     [(self._grow_birch, 7),  (self._grow_maple, 3)],
+            "boreal":          [(self._grow_pine, 8),   (self._grow_birch, 2)],
+            "alpine_mountain": [(self._grow_pine, 9),   (self._grow_cypress, 1)],
+            "rocky_mountain":  [(self._grow_pine, 8),   (self._grow_cypress, 2)],
+            "jungle":          [(self._grow_jungle, 1)],
+            "wetland":         [(self._grow_willow, 6), (self._grow_cypress, 4)],
+            "swamp":           [(self._grow_willow, 5), (self._grow_cypress, 5)],
+            "redwood":         [(self._grow_redwood, 1)],
+            "tropical":        [(self._grow_palm, 1)],
+            "savanna":         [(self._grow_acacia, 7), (self._grow_baobab, 3)],
+            "steppe":          [(self._grow_acacia, 7), (self._grow_baobab, 3)],
+            "wasteland":       [(self._grow_dead, 1)],
+            "arid_steppe":     [(self._grow_dead, 1)],
+            "desert":          [(self._grow_dead, 1)],
+            "tundra":          [(self._grow_pine, 1)],
+            "beach":           [(self._grow_palm, 1)],
+            "canyon":          [(self._grow_dead, 1)],
+            "fungal":          [(self._grow_mushroom, 1)],
+        }.get(biodome, [(self._grow_oak, 1)])
+        fns, wts = zip(*options)
+        rng.choices(fns, weights=wts)[0](bx, by, rng)
 
     def _grow_tree(self, bx, by):
         biodome = self.get_biodome(bx)
@@ -1375,13 +1588,16 @@ class World:
                     if not has_wood:
                         to_remove.append((x, y))
 
+        from dropped_item import DroppedItem
         for (x, y) in to_remove:
             self.set_block(x, y, AIR)
             if self._leaves_rng.random() < 0.25:
-                player._add_item("sapling")
+                wx = x * BLOCK_SIZE + BLOCK_SIZE // 2
+                wy = y * BLOCK_SIZE + BLOCK_SIZE // 2
+                self.dropped_items.append(DroppedItem(wx, wy, "sapling", 1))
 
     def _spawn_animals(self):
-        from animals import Sheep, Cow, Chicken
+        from animals import Sheep, Cow, Chicken, SnowLeopard, MountainLion
         rng = random.Random(self.seed + 12345)
         for cx in sorted(self._chunks.keys()):
             chunk = self._chunks[cx]
@@ -1397,6 +1613,80 @@ class World:
                     ay = sy * BLOCK_SIZE - animal_cls.ANIMAL_H
                     self.entities.append(animal_cls(ax, ay, self))
                 x += rng.randint(8, 20)
+
+        # Big cats — rare, biome-specific
+        cat_rng = random.Random(self.seed + 99991)
+        for cx in sorted(self._chunks.keys()):
+            chunk = self._chunks[cx]
+            base_x = cx * CHUNK_W
+            x = base_x + 3
+            x_end = base_x + CHUNK_W - 3
+            while x < x_end:
+                lx = x - base_x
+                sy = self.surface_height(x)
+                if 0 < sy < WORLD_H and chunk[sy - 1][lx] == AIR:
+                    surf = chunk[sy][lx]
+                    biodome = self.biodome_at(x)
+                    if surf == SNOW and biodome in ("alpine_mountain", "tundra") and cat_rng.random() < 0.05:
+                        ax = x * BLOCK_SIZE + (BLOCK_SIZE - SnowLeopard.ANIMAL_W) // 2
+                        ay = sy * BLOCK_SIZE - SnowLeopard.ANIMAL_H
+                        self.entities.append(SnowLeopard(ax, ay, self))
+                    elif surf == GRASS and biodome == "rocky_mountain" and cat_rng.random() < 0.05:
+                        ax = x * BLOCK_SIZE + (BLOCK_SIZE - MountainLion.ANIMAL_W) // 2
+                        ay = sy * BLOCK_SIZE - MountainLion.ANIMAL_H
+                        self.entities.append(MountainLion(ax, ay, self))
+                x += cat_rng.randint(25, 55)
+
+    def _spawn_birds(self):
+        from birds import ALL_SPECIES
+        self.birds.clear()
+        rng = random.Random(self.seed + 77777)
+        max_birds = 150
+        spacing = 15  # blocks between spawn attempts
+
+        for cx in sorted(self._chunks.keys()):
+            base_x = cx * CHUNK_W
+            x = base_x + 2
+            while x < base_x + CHUNK_W - 2:
+                if len(self.birds) >= max_birds:
+                    return
+                biodome = self.biodome_at(x)
+                candidates = [cls for cls in ALL_SPECIES if not cls.BIOMES or biodome in cls.BIOMES]
+                if not candidates:
+                    x += rng.randint(spacing, spacing * 2)
+                    continue
+
+                species_cls = rng.choice(candidates)
+                alt_px = rng.randint(*species_cls.ALTITUDE_BLOCKS) * BLOCK_SIZE
+                sy = self.surface_height(x)
+                spawn_x = float(x * BLOCK_SIZE)
+                spawn_y = float(sy * BLOCK_SIZE - alt_px)
+
+                if species_cls.IS_FLOCK:
+                    n = rng.randint(*species_cls.FLOCK_SIZE_RANGE)
+                    leader = species_cls(spawn_x, spawn_y, self)
+                    leader._pick_flight_target(rng)
+                    self.birds.append(leader)
+                    for _ in range(n - 1):
+                        if len(self.birds) >= max_birds:
+                            break
+                        follower = species_cls(
+                            spawn_x + rng.uniform(-20, 20),
+                            spawn_y + rng.uniform(-10, 10),
+                            self,
+                        )
+                        follower._flock_leader = leader
+                        follower._flock_offset = (
+                            rng.uniform(-28, 28),
+                            rng.uniform(-12, 12),
+                        )
+                        self.birds.append(follower)
+                else:
+                    bird = species_cls(spawn_x, spawn_y, self)
+                    bird._pick_flight_target(rng)
+                    self.birds.append(bird)
+
+                x += rng.randint(spacing, spacing * 2)
 
     def surface_y_at(self, x: int) -> int:
         return self.surface_height(x)

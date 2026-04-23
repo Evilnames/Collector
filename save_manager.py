@@ -21,7 +21,9 @@ class SaveManager:
             with sqlite3.connect(self.db_path) as con:
                 self._create_tables(con)
                 for tbl in ("save_meta", "chunks", "bg_chunks", "world_meta", "player",
-                            "rocks", "wildflowers", "fossils", "gems", "research", "automations",
+                            "rocks", "wildflowers", "fossils", "gems", "bird_observations",
+                            "fish",
+                            "research", "automations",
                             "farm_bots", "backhoes", "entities", "dropped_items", "chests"):
                     # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
@@ -56,6 +58,8 @@ class SaveManager:
             self._save_wildflowers(con, player)
             self._save_fossils(con, player)
             self._save_gems(con, player)
+            self._save_fish(con, player)
+            self._save_bird_observations(con, player)
             self._save_research(con, research)
             self._save_automations(con, world)
             self._save_farm_bots(con, world)
@@ -74,7 +78,8 @@ class SaveManager:
             self._maybe_migrate(con)
             seed = con.execute("SELECT seed FROM save_meta LIMIT 1").fetchone()[0]
             water_level = self._load_world_meta(con)
-            player_data = self._load_player(con)
+            bird_obs    = self._load_bird_observations(con)
+            player_data = self._load_player(con, bird_obs)
             automations = self._load_automations(con)
             farm_bots = self._load_farm_bots(con)
             backhoes = self._load_backhoes(con)
@@ -279,6 +284,15 @@ class SaveManager:
             primary_color TEXT, secondary_color TEXT,
             depth_found INTEGER, seed INTEGER, biome TEXT, upgrades TEXT
         );
+        CREATE TABLE IF NOT EXISTS bird_observations (
+            species_id TEXT PRIMARY KEY, count INTEGER, biome TEXT
+        );
+        CREATE TABLE IF NOT EXISTS fish (
+            uid TEXT PRIMARY KEY, species TEXT, rarity TEXT,
+            weight_kg REAL, length_cm INTEGER, pattern TEXT,
+            primary_color TEXT, secondary_color TEXT,
+            habitat TEXT, biome_found TEXT, seed INTEGER
+        );
         CREATE TABLE IF NOT EXISTS research (
             node_id TEXT PRIMARY KEY, unlocked INTEGER
         );
@@ -363,6 +377,11 @@ class SaveManager:
             con.execute(
                 "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
                 ("gem", t),
+            )
+        for t in player.discovered_fish_species:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("fish", t),
             )
 
     def _check_and_save_achievements(self, con):
@@ -604,6 +623,37 @@ class SaveManager:
                 )
             )
 
+    def _save_fish(self, con, player):
+        con.execute("DELETE FROM fish")
+        for f in player.fish_caught:
+            con.execute(
+                "INSERT OR REPLACE INTO fish VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    f.uid, f.species, f.rarity,
+                    f.weight_kg, f.length_cm, f.pattern,
+                    json.dumps(list(f.primary_color)),
+                    json.dumps(list(f.secondary_color)),
+                    f.habitat, f.biome_found, f.seed,
+                )
+            )
+
+    def _save_bird_observations(self, con, player):
+        con.execute("DELETE FROM bird_observations")
+        for species_id, data in player.birds_observed.items():
+            con.execute(
+                "INSERT INTO bird_observations VALUES (?,?,?)",
+                (species_id, data.get("count", 0), data.get("biome", "")),
+            )
+
+    def _load_bird_observations(self, con):
+        try:
+            rows = con.execute(
+                "SELECT species_id, count, biome FROM bird_observations"
+            ).fetchall()
+        except Exception:
+            return {}
+        return {row[0]: {"count": row[1], "biome": row[2]} for row in rows}
+
     def _save_research(self, con, research):
         con.execute("DELETE FROM research")
         for node_id, node in research.nodes.items():
@@ -645,7 +695,7 @@ class SaveManager:
             )
 
     def _save_entities(self, con, world):
-        from animals import Sheep, Cow, Chicken
+        from animals import Sheep, Cow, Chicken, SnowLeopard, MountainLion
         from cities import NPC
         con.execute("DELETE FROM entities")
         for e in world.entities:
@@ -707,7 +757,7 @@ class SaveManager:
             water[(int(xs), int(ys))] = lvl
         return water
 
-    def _load_player(self, con):
+    def _load_player(self, con, bird_obs=None):
         row = con.execute("""
             SELECT x, y, vx, vy, facing, health, hunger, pick_power, money,
                    selected_slot, inventory, hotbar, hotbar_uses, known_recipes,
@@ -801,6 +851,21 @@ class SaveManager:
                 "upgrades": json.loads(g[16]) if g[16] else [],
             })
 
+        fish_rows = con.execute("""
+            SELECT uid, species, rarity, weight_kg, length_cm, pattern,
+                   primary_color, secondary_color, habitat, biome_found, seed
+            FROM fish
+        """).fetchall()
+        fish_data = []
+        for f in fish_rows:
+            fish_data.append({
+                "uid": f[0], "species": f[1], "rarity": f[2],
+                "weight_kg": f[3], "length_cm": f[4], "pattern": f[5],
+                "primary_color": tuple(json.loads(f[6])),
+                "secondary_color": tuple(json.loads(f[7])),
+                "habitat": f[8], "biome_found": f[9] or "", "seed": f[10],
+            })
+
         return {
             "x": x, "y": y, "vx": vx, "vy": vy, "facing": facing,
             "health": health, "hunger": hunger, "pick_power": pick_power,
@@ -819,6 +884,10 @@ class SaveManager:
             "gems": gems_data,
             "discovered_fossil_types": json.loads(discovered_fossil_types or "[]"),
             "discovered_gem_types": list({g["gem_type"] for g in gems_data}),
+            "birds_observed": bird_obs or {},
+            "discovered_bird_types": list((bird_obs or {}).keys()),
+            "fish": fish_data,
+            "discovered_fish_species": list({f["species"] for f in fish_data}),
             "spawn_x": spawn_x,
             "spawn_y": spawn_y,
         }

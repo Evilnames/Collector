@@ -1,7 +1,10 @@
+import math
 import pygame
 from achievements import ACHIEVEMENTS, ACHIEVEMENT_BY_ID, item_display_name, get_achievement_progress
 from items import ITEMS
 from item_icons import render_item_icon
+from fish import (render_fish, FISH_TYPES, FISH_TYPE_ORDER, FISH_BIOME_GROUPS,
+                  FISH_RARITY_COLORS, RARITY_LABEL as FISH_RARITY_LABEL)
 from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOODLE_POT_RECIPES,
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES,
                       match_recipe, craft_costs, can_craft)
@@ -22,6 +25,7 @@ from gemstones import (render_rough_gem, render_gem, render_gem_codex_preview,
                        invalidate_gem_cache)
 from renderer import render_mushroom_preview
 from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, MAX_HEALTH
+from automations import AUTOMATION_ITEM
 from blocks import (BLOCKS, BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK, GEM_CUTTER_BLOCK, DESERT_FORGE_BLOCK,
                     CAVE_MUSHROOMS,
                     CAVE_MUSHROOM, EMBER_CAP, PALE_GHOST, GOLD_CHANTERELLE, COBALT_CAP,
@@ -217,6 +221,8 @@ class UI:
         self._auto_deposit1_btn    = None
         self._auto_deposit_all_btn = None
         self._auto_take_btn        = None
+        self._auto_dir_btns        = {}
+        self._auto_pickup_btn      = None
         self.farm_bot_open   = False
         self.active_farm_bot = None
         self._fb_deposit1_btn    = None
@@ -246,6 +252,12 @@ class UI:
         self.cheat_text    = ""
         self.cheat_message = ""
         self._cheat_msg_timer = 0.0
+        # Fish codex UI state
+        self._fish_codex_rects         = {}
+        self._fish_codex_scroll        = 0
+        self._max_fish_codex_scroll    = 0
+        # Fishing overlay fonts
+        self._fish_bite_font = pygame.font.SysFont("Arial Black", 34, bold=True)
         # Toast notifications
         self._toasts = []
         self._toast_font = pygame.font.SysFont("consolas", 14)
@@ -267,6 +279,107 @@ class UI:
         self.global_collection: dict  = {}   # {category: set(item_id_str)}
         self._achievement_scroll     = 0
         self._max_achievement_scroll = 0
+        # Animal registry / breeding screen
+        self.breeding_open        = False
+        self.world_ref            = None
+        self._breed_tab           = 0          # 0=all 1=sheep 2=cow 3=chicken
+        self._breed_tab_rects     = {}
+        self._breed_list_rects    = {}         # uid -> Rect
+        self._breed_selected_uid  = None
+        self._breed_scroll        = 0
+        self._max_breed_scroll    = 0
+        # Bird observation mini-game overlay
+        self._bird_obs_active    = False
+        self._bird_obs_bird      = None
+        self._bird_obs_timer     = 0.0   # 0.0 → 2.0 when complete
+        self._bird_obs_failed    = False
+        self._bird_obs_fail_timer = 0.0
+        # Bird collection
+        self._bird_journal_rects  = {}
+        self._bird_journal_scroll = 0
+        self._bird_codex_rects    = {}
+
+    # ------------------------------------------------------------------
+    # Bird observation
+    # ------------------------------------------------------------------
+
+    def open_bird_observation(self, bird):
+        if self._bird_obs_active:
+            return
+        self._bird_obs_active    = True
+        self._bird_obs_bird      = bird
+        self._bird_obs_timer     = 0.0
+        self._bird_obs_failed    = False
+        self._bird_obs_fail_timer = 0.0
+
+    def _draw_bird_observation_overlay(self, player):
+        PANEL_W, PANEL_H = 200, 150
+        px = SCREEN_W - PANEL_W - 12
+        py = SCREEN_H - PANEL_H - 60
+
+        # Background panel
+        surf = pygame.Surface((PANEL_W, PANEL_H), pygame.SRCALPHA)
+        surf.fill((15, 20, 30, 210))
+        self.screen.blit(surf, (px, py))
+        pygame.draw.rect(self.screen, (80, 150, 200), (px, py, PANEL_W, PANEL_H), 2)
+
+        bird = self._bird_obs_bird
+        already_seen = bird.SPECIES in player.birds_observed
+
+        # Title
+        title = "OBSERVING..." if not self._bird_obs_failed else "BIRD FLEW AWAY!"
+        title_col = (180, 220, 255) if not self._bird_obs_failed else (255, 120, 80)
+        ts = self.small.render(title, True, title_col)
+        self.screen.blit(ts, (px + PANEL_W // 2 - ts.get_width() // 2, py + 6))
+
+        # Large bird drawing (hand-off to renderer style — we just blit a scaled surface)
+        bird_surf = pygame.Surface((bird.W * 3, bird.H * 3), pygame.SRCALPHA)
+        bird_surf.fill((0, 0, 0, 0))
+        # Draw simple coloured silhouette into the surf
+        col = bird.BODY_COLOR
+        wing_col = bird.WING_COLOR
+        W2, H2 = bird.W * 3, bird.H * 3
+        pygame.draw.ellipse(bird_surf, wing_col, (0, H2 // 3, W2, H2 // 2))
+        pygame.draw.ellipse(bird_surf, col, (W2 // 6, H2 // 3, W2 * 2 // 3, H2 // 2))
+        pygame.draw.circle(bird_surf, bird.HEAD_COLOR, (W2 - W2 // 5, H2 // 4), H2 // 5)
+        pygame.draw.rect(bird_surf, bird.ACCENT_COLOR,
+                         (W2 // 6, H2 // 3 + H2 // 8, W2 // 2, H2 // 5))
+        self.screen.blit(bird_surf, (px + PANEL_W // 2 - W2 // 2, py + 22))
+
+        # Species name
+        if already_seen or self._bird_obs_timer >= 2.0:
+            name_str = bird.SPECIES.replace("_", " ").title()
+            name_col = (255, 220, 100)
+        else:
+            # Reveal progressively
+            full = bird.SPECIES.replace("_", " ").title()
+            chars_shown = max(1, int(len(full) * (self._bird_obs_timer / 2.0)))
+            name_str = full[:chars_shown] + "?" * (len(full) - chars_shown)
+            name_col = (180, 200, 220)
+        ns = self.small.render(name_str, True, name_col)
+        self.screen.blit(ns, (px + PANEL_W // 2 - ns.get_width() // 2, py + 22 + bird.H * 3 + 4))
+
+        # Rarity
+        rarity_cols = {"common": (180, 200, 180), "uncommon": (120, 200, 255),
+                       "rare": (200, 130, 255)}
+        rc = rarity_cols.get(bird.RARITY, (200, 200, 200))
+        rs = self.small.render(bird.RARITY.upper(), True, rc)
+        self.screen.blit(rs, (px + PANEL_W // 2 - rs.get_width() // 2,
+                               py + 22 + bird.H * 3 + 18))
+
+        # Progress bar
+        bar_y = py + PANEL_H - 22
+        bar_w = PANEL_W - 24
+        pygame.draw.rect(self.screen, (30, 40, 50), (px + 12, bar_y, bar_w, 10))
+        fill = int(bar_w * min(1.0, self._bird_obs_timer / 2.0))
+        if not self._bird_obs_failed and fill > 0:
+            pygame.draw.rect(self.screen, (80, 200, 130), (px + 12, bar_y, fill, 10))
+        pygame.draw.rect(self.screen, (80, 150, 200), (px + 12, bar_y, bar_w, 10), 1)
+
+        # Instruction
+        hint = "Stay still!" if not self._bird_obs_failed else ""
+        hs = self.small.render(hint, True, (140, 180, 200))
+        self.screen.blit(hs, (px + PANEL_W // 2 - hs.get_width() // 2, py + PANEL_H - 38))
 
     def draw(self, player, research=None, dt=0.0):
         if self._cheat_msg_timer > 0:
@@ -289,6 +402,8 @@ class UI:
             self._draw_crafting(player, research)
         if self.collection_open:
             self._draw_collection(player)
+        if self.breeding_open:
+            self._draw_breeding(player)
         if self.refinery_open and self.refinery_block_id is not None:
             self._draw_refinery(player, dt)
         if self.npc_open and self.active_npc is not None:
@@ -414,6 +529,7 @@ class UI:
                 self._mushroom_codex_scroll = 0
                 self._fossil_codex_scroll = 0
                 self._gem_codex_scroll = 0
+                self._fish_codex_scroll = 0
                 self._codex_selected_type = None
                 self._flower_codex_selected_type = None
                 self._mushroom_codex_selected_bid = None
@@ -445,6 +561,7 @@ class UI:
                     self._mushroom_codex_scroll = 0
                     self._fossil_codex_scroll = 0
                     self._gem_codex_scroll = 0
+                    self._fish_codex_scroll = 0
                     self._codex_selected_type = None
                     self._flower_codex_selected_type = None
                     self._mushroom_codex_selected_bid = None
@@ -477,6 +594,7 @@ class UI:
                     if rect.collidepoint(pos):
                         self._gem_codex_selected_type = type_key if self._gem_codex_selected_type != type_key else None
                         return
+            # cat 5 = bird codex (view only, no selection needed)
         # tab 2 (awards) has no click-to-select items
 
     def handle_scroll(self, dy):
@@ -505,8 +623,12 @@ class UI:
                     self._fossil_codex_scroll = max(0, min(self._max_fossil_codex_scroll, self._fossil_codex_scroll - dy))
                 elif self._encyclopedia_cat == 4:
                     self._gem_codex_scroll = max(0, min(self._max_gem_codex_scroll, self._gem_codex_scroll - dy))
+                elif self._encyclopedia_cat == 6:
+                    self._fish_codex_scroll = max(0, min(self._max_fish_codex_scroll, self._fish_codex_scroll - dy * 80))
             elif self._collection_tab == 2:
                 self._achievement_scroll = max(0, min(self._max_achievement_scroll, self._achievement_scroll - dy))
+        elif self.breeding_open:
+            self._breed_scroll = max(0, min(self._max_breed_scroll, self._breed_scroll - dy))
         elif self.chest_open:
             mouse = pygame.mouse.get_pos()
             PW = 1140
@@ -856,6 +978,7 @@ class UI:
             ("I: Inventory",  self.inventory_open),
             ("C: Craft",      self.crafting_open),
             ("G: Collection",  self.collection_open),
+            ("B: Animals",     self.breeding_open),
             ("E: Talk",       self.npc_open),
             ("E: Refinery",   self.refinery_open),
             ("E: Chest",      self.chest_open),
@@ -1594,6 +1717,8 @@ class UI:
         n_ach_total    = len(ACHIEVEMENTS)
 
         n_mush_owned = sum(1 for b in _MUSHROOM_ORDER if player.mushrooms_found.get(b, 0) > 0)
+        n_fish_disc  = len(player.discovered_fish_species)
+        n_fish_total = len(FISH_TYPE_ORDER)
         total_collected = (len(player.rocks) + len(player.wildflowers) +
                            len(player.fossils) + len(player.gems) + n_mush_owned)
 
@@ -1624,8 +1749,8 @@ class UI:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -1684,12 +1809,16 @@ class UI:
         elif self._collection_tab == 1:
             # Encyclopedia sub-category buttons
             self._encyclopedia_cat_rects.clear()
+            n_bird_disc  = len(player.birds_observed)
+            n_bird_total = 85
             enc_defs = [
                 (0, f"ROCKS ({n_rock_disc}/{n_rock_total})"),
                 (1, f"FLOWERS ({n_fl_disc}/{n_fl_total})"),
                 (2, f"MUSHROOMS ({n_mush_disc}/{n_mush_total})"),
                 (3, f"FOSSILS ({n_fossil_disc}/{n_fossil_total})"),
                 (4, f"GEMS ({n_gem_disc}/{n_gem_total})"),
+                (5, f"BIRDS ({n_bird_disc}/{n_bird_total})"),
+                (6, f"FISH ({n_fish_disc}/{n_fish_total})"),
             ]
             ENC_THEME = [
                 ((42, 52, 70),  (95, 138, 198),  (175, 208, 248)),
@@ -1697,6 +1826,8 @@ class UI:
                 ((40, 36, 16),  (148, 132, 56),  (198, 182, 105)),
                 ((50, 40, 20),  (168, 140, 72),  (215, 182, 112)),
                 ((22, 48, 45),  (72, 195, 170),  (145, 235, 215)),
+                ((18, 40, 58),  (70, 150, 220),  (140, 210, 255)),
+                ((18, 32, 50),  (55, 110, 185),  (120, 185, 240)),
             ]
             eGAP = 6
             eW = min(190, (SCREEN_W - 20 - eGAP * (len(enc_defs) - 1)) // len(enc_defs))
@@ -1731,8 +1862,11 @@ class UI:
                 self._draw_mushroom_codex,
                 self._draw_fossil_codex,
                 self._draw_gem_codex,
+                self._draw_bird_codex,
+                self._draw_fish_codex,
             ]
-            cat_draw[self._encyclopedia_cat](player, gy0=GY0)
+            if 0 <= self._encyclopedia_cat < len(cat_draw):
+                cat_draw[self._encyclopedia_cat](player, gy0=GY0)
         else:
             self._draw_achievements()
 
@@ -1845,6 +1979,38 @@ class UI:
                 img = render_rough_gem(it, 58) if it.state == "rough" else render_gem(it, 58)
                 label = ("rough " if it.state == "rough" else "") + it.gem_type.replace("_", " ")
                 label_col = (120, 195, 175)
+            elif cat == "bird":
+                from birds import SPECIES_BY_ID
+                obs  = player.birds_observed.get(key, {})
+                sp_cls = SPECIES_BY_ID.get(key)
+                rarity_bird_cols = {"common": (120, 170, 120), "uncommon": (100, 170, 220), "rare": (180, 120, 230)}
+                rar_col = rarity_bird_cols.get(sp_cls.RARITY if sp_cls else "common", (120, 170, 120))
+                pygame.draw.rect(self.screen, (18, 35, 50) if selected else (12, 24, 36), rect)
+                pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
+                # Draw bird icon into a surface
+                bird_icon = pygame.Surface((58, 58), pygame.SRCALPHA)
+                bird_icon.fill((0, 0, 0, 0))
+                if sp_cls:
+                    bc = sp_cls.BODY_COLOR
+                    wc = sp_cls.WING_COLOR
+                    pygame.draw.ellipse(bird_icon, wc, (4, 22, 50, 20))
+                    pygame.draw.ellipse(bird_icon, bc, (10, 24, 36, 16))
+                    pygame.draw.circle(bird_icon, sp_cls.HEAD_COLOR, (44, 22), 8)
+                    pygame.draw.rect(bird_icon, sp_cls.BEAK_COLOR, (50, 22, 8, 3))
+                    pygame.draw.ellipse(bird_icon, sp_cls.ACCENT_COLOR, (14, 28, 24, 8))
+                img = bird_icon
+                label = key.replace("_", " ")
+                label_col = (140, 200, 230)
+                cnt_s = self.small.render(f"×{obs.get('count', 0)}", True, (180, 220, 240))
+                self.screen.blit(cnt_s, (x + CELL - cnt_s.get_width() - 2, y + 2))
+            elif cat == "fish":
+                it = player.fish_caught[key]
+                rar_col = FISH_RARITY_COLORS.get(it.rarity, (120, 120, 120))
+                pygame.draw.rect(self.screen, (18, 30, 46) if selected else (10, 18, 28), rect)
+                pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
+                img = render_fish(it, 58)
+                label = FISH_TYPES.get(it.species, {}).get("name", it.species.replace("_", " ").title())
+                label_col = (100, 165, 215)
             else:  # mushroom
                 count = player.mushrooms_found.get(key, 0)
                 pygame.draw.rect(self.screen, (40, 36, 20) if selected else (25, 22, 12), rect)
@@ -1994,6 +2160,66 @@ class UI:
             grow("Crystal", gem.crystal_system.title())
             grow("Depth", f"{gem.depth_found}m")
 
+        elif sel_cat == "bird":
+            from birds import SPECIES_BY_ID
+            sp_cls  = SPECIES_BY_ID.get(sel_key)
+            obs     = player.birds_observed.get(sel_key, {})
+            rarity_bird_cols = {"common": (120, 170, 120), "uncommon": (100, 170, 220), "rare": (180, 120, 230)}
+            rar_col = rarity_bird_cols.get(sp_cls.RARITY if sp_cls else "common", (120, 170, 120))
+            pygame.draw.rect(self.screen, (10, 20, 32), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, rar_col, (dx, dy2, dw, dh), 2)
+            # Bird icon at large scale
+            if sp_cls:
+                bw2, bh2 = sp_cls.W * 4, sp_cls.H * 4
+                bird_icon = pygame.Surface((bw2, bh2), pygame.SRCALPHA)
+                bird_icon.fill((0, 0, 0, 0))
+                pygame.draw.ellipse(bird_icon, sp_cls.WING_COLOR, (0, bh2 // 3, bw2, bh2 // 2))
+                pygame.draw.ellipse(bird_icon, sp_cls.BODY_COLOR,
+                                    (bw2 // 6, bh2 // 3, bw2 * 2 // 3, bh2 // 2))
+                pygame.draw.circle(bird_icon, sp_cls.HEAD_COLOR,
+                                   (bw2 - bw2 // 5, bh2 // 4), bh2 // 5)
+                pygame.draw.ellipse(bird_icon, sp_cls.ACCENT_COLOR,
+                                    (bw2 // 6, bh2 // 3 + bh2 // 8, bw2 // 2, bh2 // 5))
+                self.screen.blit(bird_icon, (dx + dw // 2 - bw2 // 2, dy2 + 6))
+            dlabel(sel_key.replace("_", " ").title(), (200, 230, 255))
+            dlabel(sp_cls.RARITY.title() if sp_cls else "", rar_col)
+            dlabel(f"Times observed: {obs.get('count', 0)}", (160, 220, 180))
+            dlabel(f"First seen: {obs.get('biome', '?').replace('_', ' ').title()}", (140, 180, 210))
+            if sp_cls and sp_cls.BIOMES:
+                dlabel(f"Habitat: {', '.join(b.replace('_',' ').title() for b in sp_cls.BIOMES[:2])}", (140, 170, 140))
+            else:
+                dlabel("Habitat: Widespread", (140, 170, 140))
+            dlabel("Flock species" if (sp_cls and sp_cls.IS_FLOCK) else "Solitary", (170, 185, 200))
+        elif sel_cat == "fish":
+            fish = player.fish_caught[sel_key]
+            fdata = FISH_TYPES.get(fish.species, {})
+            rar_col = FISH_RARITY_COLORS.get(fish.rarity, (120, 120, 180))
+            pygame.draw.rect(self.screen, (10, 18, 28), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, rar_col, (dx, dy2, dw, dh), 2)
+            self.screen.blit(render_fish(fish, 80), (dx + dw // 2 - 40, dy2 + 6))
+            dlabel(fdata.get("name", fish.species.replace("_", " ").title()), (200, 230, 255))
+            dlabel(FISH_RARITY_LABEL.get(fish.rarity, fish.rarity.title()), rar_col)
+            dlabel(f"Weight: {fish.weight_kg:.2f} kg", (160, 200, 230))
+            dlabel(f"Length: {fish.length_cm} cm", (140, 185, 215))
+            dlabel(f"Pattern: {fish.pattern.title()}", (140, 170, 200))
+            dlabel(f"Habitat: {fish.habitat.title()}", (120, 165, 190))
+            dlabel(f"Found in: {fish.biome_found.replace('_', ' ').title()}", (120, 155, 180))
+            iy[0] += 4
+            desc = fdata.get("description", "")
+            if desc:
+                # Word-wrap description to panel width
+                words = desc.split()
+                line = ""
+                for w in words:
+                    test = (line + " " + w).strip()
+                    if self.small.size(test)[0] <= dw - 16:
+                        line = test
+                    else:
+                        if line:
+                            dlabel(line, (140, 150, 165))
+                        line = w
+                if line:
+                    dlabel(line, (140, 150, 165))
         else:  # mushroom
             bid = sel_key
             pygame.draw.rect(self.screen, (16, 14, 8), (dx, dy2, dw, dh))
@@ -3157,6 +3383,157 @@ class UI:
                 cd = self.small.render(self._fit_label(cut_desc_short, BTN_W - 8), True, (72, 140, 122))
                 self.screen.blit(cd, (bx + BTN_W // 2 - cd.get_width() // 2, info_y + 26))
 
+    # ------------------------------------------------------------------
+    # Bird codex
+    # ------------------------------------------------------------------
+
+    def _draw_bird_codex(self, player, gy0=58):
+        from birds import ALL_SPECIES
+        RARITY_BIRD_COLS = {"common": (120, 170, 120), "uncommon": (100, 170, 220),
+                            "rare": (180, 120, 230)}
+
+        CELL, GAP, COLS = 120, 10, 6
+        gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+
+        self._bird_codex_rects.clear()
+        for idx, sp_cls in enumerate(ALL_SPECIES):
+            col = idx % COLS
+            row = idx // COLS
+            x = gx0 + col * (CELL + GAP)
+            y = gy0 + row * (CELL + GAP)
+            if y + CELL > SCREEN_H - 8:
+                break
+            rect = pygame.Rect(x, y, CELL, CELL)
+            self._bird_codex_rects[sp_cls.SPECIES] = rect
+
+            discovered = sp_cls.SPECIES in player.birds_observed
+            obs = player.birds_observed.get(sp_cls.SPECIES, {})
+            rar_col = RARITY_BIRD_COLS.get(sp_cls.RARITY, (150, 150, 150))
+
+            # Background
+            bg_col = (14, 28, 42) if discovered else (18, 18, 22)
+            pygame.draw.rect(self.screen, bg_col, rect)
+            pygame.draw.rect(self.screen, rar_col if discovered else (40, 40, 55), rect, 2)
+
+            # Bird icon
+            bw, bh = sp_cls.W * 3, sp_cls.H * 3
+            bird_surf = pygame.Surface((bw, bh), pygame.SRCALPHA)
+            bird_surf.fill((0, 0, 0, 0))
+            if discovered:
+                pygame.draw.ellipse(bird_surf, sp_cls.WING_COLOR, (0, bh // 3, bw, bh // 2))
+                pygame.draw.ellipse(bird_surf, sp_cls.BODY_COLOR,
+                                    (bw // 6, bh // 3, bw * 2 // 3, bh // 2))
+                pygame.draw.circle(bird_surf, sp_cls.HEAD_COLOR,
+                                   (bw - bw // 5, bh // 4), bh // 5)
+                pygame.draw.ellipse(bird_surf, sp_cls.ACCENT_COLOR,
+                                    (bw // 6, bh // 3 + bh // 8, bw // 2, bh // 5))
+            else:
+                # Silhouette
+                pygame.draw.ellipse(bird_surf, (50, 50, 60), (0, bh // 3, bw, bh // 2))
+                pygame.draw.ellipse(bird_surf, (40, 40, 50),
+                                    (bw // 6, bh // 3, bw * 2 // 3, bh // 2))
+                pygame.draw.circle(bird_surf, (50, 50, 60), (bw - bw // 5, bh // 4), bh // 5)
+            self.screen.blit(bird_surf, (x + CELL // 2 - bw // 2, y + 6))
+
+            # Name
+            if discovered:
+                name = sp_cls.SPECIES.replace("_", " ").title()
+                name_col = (200, 225, 255)
+            else:
+                name = "???"
+                name_col = (60, 60, 75)
+            ns = self.small.render(self._fit_label(name, CELL - 6), True, name_col)
+            self.screen.blit(ns, (x + CELL // 2 - ns.get_width() // 2, y + CELL - 28))
+
+            # Rarity
+            rs = self.small.render(sp_cls.RARITY.upper(), True,
+                                    rar_col if discovered else (50, 50, 65))
+            self.screen.blit(rs, (x + CELL // 2 - rs.get_width() // 2, y + CELL - 14))
+
+            # Observation count badge
+            if discovered:
+                cnt = obs.get("count", 0)
+                cb = self.small.render(f"×{cnt}", True, (180, 230, 200))
+                self.screen.blit(cb, (x + CELL - cb.get_width() - 3, y + 3))
+
+    # ------------------------------------------------------------------
+    # Fish codex
+    # ------------------------------------------------------------------
+
+    def _draw_fish_codex(self, player, gy0=58):
+        CELL, GAP, COLS = 74, 6, 9
+        ROW_H    = CELL + GAP
+        HDR_H    = 26
+        gx0      = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        visible_h = SCREEN_H - gy0 - 8
+
+        # Build list of virtual rows: ("header", label) or ("fish", [species...])
+        vrows = []
+        for group_label, species_list in FISH_BIOME_GROUPS:
+            vrows.append(("header", group_label))
+            for i in range(0, len(species_list), COLS):
+                vrows.append(("fish", species_list[i:i + COLS]))
+
+        total_h = sum(HDR_H if r[0] == "header" else ROW_H for r in vrows)
+        self._max_fish_codex_scroll = max(0, total_h - visible_h)
+        self._fish_codex_scroll = max(0, min(self._max_fish_codex_scroll,
+                                              self._fish_codex_scroll))
+
+        if self._max_fish_codex_scroll > 0:
+            sb_x  = gx0 + COLS * (CELL + GAP) - GAP + 8
+            sb_th = max(20, visible_h * visible_h // total_h)
+            sb_top = gy0 + (visible_h - sb_th) * self._fish_codex_scroll // self._max_fish_codex_scroll
+            pygame.draw.rect(self.screen, (35, 35, 48), (sb_x, gy0, 7, visible_h))
+            pygame.draw.rect(self.screen, (100, 100, 140), (sb_x, sb_top, 7, sb_th))
+
+        self._fish_codex_rects.clear()
+        cy = gy0 - self._fish_codex_scroll
+        grid_w = COLS * CELL + (COLS - 1) * GAP
+
+        for row in vrows:
+            if row[0] == "header":
+                if gy0 <= cy + HDR_H and cy < SCREEN_H - 8:
+                    lbl = self.font.render(row[1].upper(), True, (140, 190, 255))
+                    self.screen.blit(lbl, (gx0, cy + 4))
+                    sep_y = cy + HDR_H - 3
+                    pygame.draw.line(self.screen, (45, 65, 95),
+                                     (gx0, sep_y), (gx0 + grid_w, sep_y), 1)
+                cy += HDR_H
+            else:
+                if gy0 <= cy + ROW_H and cy < SCREEN_H - 8:
+                    for col_idx, species in enumerate(row[1]):
+                        x = gx0 + col_idx * (CELL + GAP)
+                        y = cy
+                        if y + CELL > SCREEN_H - 8:
+                            continue
+                        fdata = FISH_TYPES[species]
+                        discovered = species in player.discovered_fish_species
+                        rar_col = FISH_RARITY_COLORS.get(fdata["rarity_pool"][0], (120, 120, 120))
+                        rect = pygame.Rect(x, y, CELL, CELL)
+                        self._fish_codex_rects[species] = rect
+
+                        if discovered:
+                            preview = next(
+                                (f for f in reversed(player.fish_caught)
+                                 if f.species == species), None)
+                            pygame.draw.rect(self.screen, (12, 22, 34), rect)
+                            pygame.draw.rect(self.screen, rar_col, rect, 2)
+                            if preview:
+                                img = render_fish(preview, CELL - 12)
+                                self.screen.blit(img, (x + 6, y + 3))
+                            name_s = self.small.render(
+                                self._fit_label(fdata["name"], CELL - 4), True, (120, 185, 240))
+                        else:
+                            pygame.draw.rect(self.screen, (14, 14, 20), rect)
+                            pygame.draw.rect(self.screen, (35, 50, 65), rect, 1)
+                            pygame.draw.ellipse(self.screen, (28, 42, 58),
+                                                (x + 8, y + CELL // 2 - 10, CELL - 16, 20))
+                            name_s = self.small.render("???", True, (50, 65, 80))
+
+                        self.screen.blit(name_s,
+                                         (x + CELL // 2 - name_s.get_width() // 2, y + CELL - 14))
+                cy += ROW_H
+
     def _draw_achievements(self):
         CARD_W, CARD_H = 360, 118
         COLS            = 3
@@ -3712,7 +4089,7 @@ class UI:
     def _draw_automation_panel(self, player):
         auto = self.active_automation
         adef = auto._def
-        PW, PH = 480, 358
+        PW, PH = 480, 420
         px = (SCREEN_W - PW) // 2
         py = (SCREEN_H - PH) // 2
         bar_w = PW - 28
@@ -3765,7 +4142,7 @@ class UI:
             row_i = idx // items_per_row
             sx_ = ix0 + col_i * (SW + GAP)
             sy_ = iy0 + row_i * (SH + GAP)
-            if sy_ + SH > py + PH - 50:
+            if sy_ + SH > py + 298:
                 break
             item_color = ITEMS.get(item_id, {}).get("color", (120, 120, 120))
             pygame.draw.rect(self.screen, item_color, (sx_, sy_, SW, SH))
@@ -3781,37 +4158,79 @@ class UI:
             empty = self.small.render("(empty)", True, (100, 90, 120))
             self.screen.blit(empty, (ix0, iy0 + 10))
 
+        pygame.draw.line(self.screen, (70, 60, 90), (px + 10, py + 304), (px + PW - 10, py + 304))
+
+        # --- Direction section ---
+        dir_lbl = self.small.render("DIRECTION", True, (200, 190, 230))
+        self.screen.blit(dir_lbl, (px + 14, py + 312))
+
+        _DIRS = [
+            ((-1, 0), "\u2190 Left"),
+            ((1,  0), "\u2192 Right"),
+            ((0, -1), "\u2191 Up"),
+            ((0,  1), "\u2193 Down"),
+        ]
+        DBW, DBH, DB_GAP = 98, 26, 6
+        self._auto_dir_btns = {}
+        cur_dir = tuple(auto.direction)
+        for i, (d, label) in enumerate(_DIRS):
+            bx_ = px + 14 + i * (DBW + DB_GAP)
+            btn = pygame.Rect(bx_, py + 328, DBW, DBH)
+            self._auto_dir_btns[d] = btn
+            selected = (d == cur_dir)
+            bg  = (40, 50, 80) if selected else (25, 22, 38)
+            bdr = (120, 160, 255) if selected else (60, 55, 80)
+            tc  = (200, 220, 255) if selected else (100, 90, 130)
+            pygame.draw.rect(self.screen, bg, btn)
+            pygame.draw.rect(self.screen, bdr, btn, 1 if not selected else 2)
+            t = self.small.render(label, True, tc)
+            self.screen.blit(t, (bx_ + DBW // 2 - t.get_width() // 2,
+                                  py + 328 + DBH // 2 - t.get_height() // 2))
+
+        pygame.draw.line(self.screen, (70, 60, 90), (px + 10, py + 362), (px + PW - 10, py + 362))
+
+        # --- Bottom buttons: Pick Up (left) + Take All (right) ---
+        BW, BH = 140, 28
+        by_ = py + 372
+
+        # Pick Up button
+        self._auto_pickup_btn = pygame.Rect(px + 14, by_, BW, BH)
+        pygame.draw.rect(self.screen, (50, 30, 70), self._auto_pickup_btn)
+        pygame.draw.rect(self.screen, (140, 80, 200), self._auto_pickup_btn, 1)
+        pu_t = self.small.render("PICK UP", True, (200, 150, 255))
+        self.screen.blit(pu_t, (px + 14 + BW // 2 - pu_t.get_width() // 2,
+                                 by_ + BH // 2 - pu_t.get_height() // 2))
+
         # Take All button
-        TW, TH = 140, 28
-        tx = px + PW - TW - 14
-        ty = py + PH - TH - 10
         has_items = inv_count > 0
-        t_col    = (30, 80, 30)   if has_items else (30, 30, 40)
-        t_border = (60, 180, 60)  if has_items else (55, 55, 68)
+        t_col     = (30, 80, 30)    if has_items else (30, 30, 40)
+        t_border  = (60, 180, 60)   if has_items else (55, 55, 68)
         t_txt_col = (160, 255, 160) if has_items else (70, 70, 82)
-        self._auto_take_btn = pygame.Rect(tx, ty, TW, TH)
+        self._auto_take_btn = pygame.Rect(px + PW - BW - 14, by_, BW, BH)
         pygame.draw.rect(self.screen, t_col, self._auto_take_btn)
         pygame.draw.rect(self.screen, t_border, self._auto_take_btn, 1)
         take_t = self.small.render("TAKE ALL ITEMS", True, t_txt_col)
-        self.screen.blit(take_t, (tx + TW // 2 - take_t.get_width() // 2,
-                                   ty + TH // 2 - take_t.get_height() // 2))
-
-        # Direction indicator
-        _DIR_SYMBOLS = {(1,0): "\u2192", (-1,0): "\u2190", (0,-1): "\u2191", (0,1): "\u2193"}
-        dir_sym = _DIR_SYMBOLS.get(tuple(auto.direction), "?")
-        dir_t = self.small.render(f"Direction: {dir_sym}", True, (150, 140, 180))
-        self.screen.blit(dir_t, (px + 14, py + PH - 20))
+        self.screen.blit(take_t, (self._auto_take_btn.x + BW // 2 - take_t.get_width() // 2,
+                                   by_ + BH // 2 - take_t.get_height() // 2))
 
     def handle_automation_click(self, pos, player):
         auto = self.active_automation
         if auto is None:
-            return
+            return None
         if self._auto_deposit1_btn and self._auto_deposit1_btn.collidepoint(pos):
             auto.deposit_fuel(player, 1)
         elif self._auto_deposit_all_btn and self._auto_deposit_all_btn.collidepoint(pos):
             auto.deposit_fuel(player)
         elif self._auto_take_btn and self._auto_take_btn.collidepoint(pos):
             auto.take_all(player)
+        elif self._auto_pickup_btn and self._auto_pickup_btn.collidepoint(pos):
+            return "pickup"
+        else:
+            for direction, btn in self._auto_dir_btns.items():
+                if btn.collidepoint(pos):
+                    auto.set_direction(direction)
+                    break
+        return None
 
     def _draw_farm_bot_panel(self, player):
         fb = self.active_farm_bot
@@ -4260,6 +4679,380 @@ class UI:
             empty_s = self.small.render("Inventory is empty", True, (80, 65, 45))
             self.screen.blit(empty_s, (rx + half // 2 - empty_s.get_width() // 2, py + 280))
 
+    # ------------------------------------------------------------------
+    # Animal registry / breeding screen
+    # ------------------------------------------------------------------
+
+    def _draw_animal_preview(self, animal, cx, cy, scale=3.5):
+        """Draw a scaled animal preview centred at (cx, cy) on self.screen."""
+        def _t(base, sh):
+            return tuple(max(0, min(255, int(base[i] + sh[i] * 255))) for i in range(3))
+        aid    = getattr(animal, 'animal_id', '')
+        traits = getattr(animal, 'traits', {})
+        sh     = traits.get("color_shift", (0, 0, 0))
+        s      = traits.get("size", 1.0) * scale
+        if aid == "sheep":
+            BW, BH = int(24 * s), int(18 * s)
+            sx, sy = cx - BW // 2, cy - BH // 2
+            bh = BH - int(8 * s)
+            for lo in (2, 7, 14, 19):
+                pygame.draw.rect(self.screen, (80, 60, 40),
+                                 (sx + int(lo * s), sy + bh, max(1, int(3 * s)), int(8 * s)))
+            bclr = _t((220, 220, 220) if getattr(animal, 'has_wool', True) else (175, 140, 95), sh)
+            pygame.draw.rect(self.screen, bclr, (sx, sy, BW, bh))
+            hw, hh = int(9 * s), int(9 * s)
+            hclr = _t((200, 200, 200) if getattr(animal, 'has_wool', True) else (155, 125, 85), sh)
+            hx = sx + BW - int(2 * s)
+            hy = sy - max(1, int(1 * s))
+            pygame.draw.rect(self.screen, hclr, (hx, hy, hw, hh))
+            pygame.draw.rect(self.screen, (30, 30, 30),
+                             (hx + hw - int(3 * s), hy + int(3 * s), max(1, int(2 * s)), max(1, int(2 * s))))
+        elif aid == "cow":
+            BW, BH = int(30 * s), int(20 * s)
+            sx, sy = cx - BW // 2, cy - BH // 2
+            bh = BH - int(8 * s)
+            for lo in (2, 8, 18, 24):
+                pygame.draw.rect(self.screen, (60, 40, 30),
+                                 (sx + int(lo * s), sy + bh, max(1, int(4 * s)), int(8 * s)))
+            bclr = _t((140, 85, 45), sh)
+            pygame.draw.rect(self.screen, bclr, (sx, sy, BW, bh))
+            pygame.draw.rect(self.screen, (30, 20, 10),
+                             (sx + int(8 * s), sy + int(2 * s), int(10 * s), int(5 * s)))
+            hw, hh = int(11 * s), int(11 * s)
+            hx = sx + BW - int(3 * s)
+            hy = sy - int(2 * s)
+            hclr = _t((140, 85, 45), sh)
+            pygame.draw.rect(self.screen, hclr, (hx, hy, hw, hh))
+            pygame.draw.rect(self.screen, _t((190, 130, 100), sh),
+                             (hx + hw - int(4 * s), hy + int(6 * s), int(4 * s), int(4 * s)))
+            pygame.draw.rect(self.screen, (20, 10, 5),
+                             (hx + hw - int(4 * s), hy + int(2 * s), max(1, int(2 * s)), max(1, int(2 * s))))
+        elif aid == "chicken":
+            BW, BH = int(18 * s), int(16 * s)
+            sx, sy = cx - BW // 2, cy - BH // 2
+            for lo in (4, 11):
+                pygame.draw.rect(self.screen, (220, 160, 30),
+                                 (sx + int(lo * s), sy + BH - int(6 * s), max(1, int(2 * s)), int(6 * s)))
+            bclr = _t((235, 235, 210), sh)
+            pygame.draw.ellipse(self.screen, bclr,
+                                (sx + max(1, int(1 * s)), sy + int(2 * s),
+                                 max(2, BW - int(4 * s)), max(2, BH - int(8 * s))))
+            hw, hh = int(8 * s), int(8 * s)
+            hx = sx + BW - int(4 * s)
+            hy = sy - int(2 * s)
+            pygame.draw.ellipse(self.screen, bclr, (hx, hy, max(4, hw), max(4, hh)))
+            pygame.draw.rect(self.screen, (220, 160, 30),
+                             (hx + hw - max(1, int(1 * s)), hy + int(3 * s),
+                              max(1, int(3 * s)), max(1, int(2 * s))))
+            pygame.draw.rect(self.screen, (20, 20, 20),
+                             (hx + hw - int(3 * s), hy + int(2 * s), max(1, int(2 * s)), max(1, int(2 * s))))
+            pygame.draw.rect(self.screen, (220, 50, 50),
+                             (hx + int(2 * s), hy - max(1, int(2 * s)),
+                              max(1, int(4 * s)), max(1, int(3 * s))))
+
+    def handle_breeding_click(self, pos, player):
+        for tab_idx, rect in self._breed_tab_rects.items():
+            if rect.collidepoint(pos):
+                if self._breed_tab != tab_idx:
+                    self._breed_tab = tab_idx
+                    self._breed_scroll = 0
+                    self._breed_selected_uid = None
+                return
+        for uid, rect in self._breed_list_rects.items():
+            if rect.collidepoint(pos):
+                self._breed_selected_uid = uid if uid != self._breed_selected_uid else None
+                return
+
+    def _draw_breeding(self, player):
+        world = self.world_ref
+        if world is None:
+            return
+
+        ov = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        ov.fill((0, 0, 0, 215))
+        self.screen.blit(ov, (0, 0))
+
+        PW, PH = 1060, 580
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+
+        pygame.draw.rect(self.screen, (16, 22, 20), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (55, 120, 75), (px, py, PW, PH), 2)
+
+        # All living tamed animals; uid map for the whole world
+        all_tamed = [e for e in world.entities
+                     if getattr(e, 'tamed', False) and not getattr(e, 'dead', False)]
+        uid_map   = {e.uid: e for e in world.entities if hasattr(e, 'uid')}
+
+        # Stable numbering within each type (by appearance order in all_tamed)
+        type_ctr       = {}
+        animal_numbers = {}
+        for e in all_tamed:
+            aid = e.animal_id
+            type_ctr[aid] = type_ctr.get(aid, 0) + 1
+            animal_numbers[e.uid] = type_ctr[aid]
+
+        TYPE_LABELS = {"sheep": "Sheep", "cow": "Cow", "chicken": "Chicken"}
+
+        # ── LEFT LIST COLUMN ──────────────────────────────────────────
+        LW = 295
+        lx0 = px
+        lx1 = px + LW
+
+        title_s = self.font.render(f"ANIMALS  ({len(all_tamed)})", True, (110, 210, 135))
+        self.screen.blit(title_s, (lx0 + LW // 2 - title_s.get_width() // 2, py + 10))
+
+        # Species filter tabs
+        tab_defs = [(0, "All"), (1, "Sheep"), (2, "Cow"), (3, "Chicken")]
+        tw = (LW - 6) // len(tab_defs)
+        self._breed_tab_rects.clear()
+        for ti, (tidx, label) in enumerate(tab_defs):
+            tx = lx0 + ti * (tw + 2)
+            tr = pygame.Rect(tx, py + 36, tw, 22)
+            self._breed_tab_rects[tidx] = tr
+            active = (tidx == self._breed_tab)
+            pygame.draw.rect(self.screen, (28, 62, 40) if active else (20, 30, 24), tr)
+            pygame.draw.rect(self.screen, (55, 150, 80) if active else (38, 65, 48), tr, 1)
+            lbl = self.small.render(label, True, (150, 255, 170) if active else (90, 130, 105))
+            self.screen.blit(lbl, (tx + tw // 2 - lbl.get_width() // 2,
+                                   py + 36 + 11 - lbl.get_height() // 2))
+
+        # Divider
+        pygame.draw.line(self.screen, (38, 75, 52), (lx1, py), (lx1, py + PH))
+
+        # Build filtered list
+        tab_filter = {1: "sheep", 2: "cow", 3: "chicken"}.get(self._breed_tab)
+        filtered = [e for e in all_tamed
+                    if tab_filter is None or e.animal_id == tab_filter]
+
+        ROW_H   = 54
+        list_y0 = py + 64
+        list_h  = PH - 68
+        vis     = list_h // ROW_H
+        self._max_breed_scroll = max(0, len(filtered) - vis)
+        self._breed_scroll     = max(0, min(self._max_breed_scroll, self._breed_scroll))
+
+        clip_rect = pygame.Rect(lx0, list_y0, LW, list_h)
+        old_clip  = self.screen.get_clip()
+        self.screen.set_clip(clip_rect)
+        self._breed_list_rects.clear()
+
+        for i, animal in enumerate(filtered[self._breed_scroll: self._breed_scroll + vis + 1]):
+            ry  = list_y0 + i * ROW_H
+            row = pygame.Rect(lx0, ry, LW - 1, ROW_H - 2)
+            sel = (animal.uid == self._breed_selected_uid)
+            pygame.draw.rect(self.screen, (26, 50, 34) if sel else (18, 28, 22), row)
+            if sel:
+                pygame.draw.rect(self.screen, (70, 170, 95), row, 1)
+
+            self._draw_animal_preview(animal, lx0 + 28, ry + ROW_H // 2, scale=1.4)
+
+            num  = animal_numbers.get(animal.uid, 1)
+            name = f"{TYPE_LABELS.get(animal.animal_id, animal.animal_id)} #{num}"
+            nl   = self.small.render(name, True, (195, 240, 210))
+            self.screen.blit(nl, (lx0 + 60, ry + 8))
+
+            uid_s = self.small.render(animal.uid[:12], True, (70, 95, 80))
+            self.screen.blit(uid_s, (lx0 + 60, ry + 23))
+
+            breed_ready = animal._breed_cooldown <= 0
+            dot_col = (75, 215, 100) if breed_ready else (175, 75, 75)
+            pygame.draw.circle(self.screen, dot_col, (lx0 + LW - 15, ry + ROW_H // 2), 5)
+
+            self._breed_list_rects[animal.uid] = row
+
+        self.screen.set_clip(old_clip)
+
+        if not filtered:
+            empty = self.small.render("No tamed animals in this category", True, (70, 95, 80))
+            self.screen.blit(empty, (lx0 + LW // 2 - empty.get_width() // 2, list_y0 + 30))
+
+        # ── RIGHT DETAIL COLUMN ───────────────────────────────────────
+        rx0 = lx1 + 10
+        rw  = PW - LW - 10
+
+        if self._breed_selected_uid is None:
+            msg = self.font.render("Select an animal to view details", True, (70, 100, 80))
+            self.screen.blit(msg, (rx0 + rw // 2 - msg.get_width() // 2, py + PH // 2 - 20))
+            legend_rows = [((75, 215, 100), "Ready to breed"),
+                           ((175, 75, 75),  "Breed cooldown")]
+            for li, (dot_col, dot_txt) in enumerate(legend_rows):
+                ly = py + PH // 2 + 10 + li * 18
+                pygame.draw.circle(self.screen, dot_col, (rx0 + rw // 2 - 55, ly + 5), 5)
+                lg = self.small.render(dot_txt, True, (100, 135, 110))
+                self.screen.blit(lg, (rx0 + rw // 2 - 45, ly))
+            return
+
+        animal = uid_map.get(self._breed_selected_uid)
+        if animal is None or getattr(animal, 'dead', False):
+            self._breed_selected_uid = None
+            return
+
+        num   = animal_numbers.get(animal.uid, 1)
+        tname = TYPE_LABELS.get(animal.animal_id, animal.animal_id)
+
+        # Header row
+        hdg = self.font.render(f"{tname}  #{num}", True, (170, 255, 195))
+        self.screen.blit(hdg, (rx0 + 12, py + 12))
+
+        uid_lbl = self.small.render(f"uid: {animal.uid[:18]}…", True, (65, 90, 75))
+        self.screen.blit(uid_lbl, (rx0 + 12, py + 35))
+
+        breed_ready = animal._breed_cooldown <= 0
+        if breed_ready:
+            bst_s = self.small.render("● READY TO BREED", True, (75, 215, 100))
+        else:
+            m = int(animal._breed_cooldown // 60)
+            s_rem = int(animal._breed_cooldown % 60)
+            bst_s = self.small.render(f"● COOLDOWN  {m}m {s_rem:02d}s", True, (200, 95, 75))
+        self.screen.blit(bst_s, (rx0 + rw - bst_s.get_width() - 12, py + 35))
+
+        # ── Sub-layout: preview (left) | stats+lineage (right) ──
+        PREV_W  = 260
+        prev_cx = rx0 + PREV_W // 2 + 8
+        stats_x = rx0 + PREV_W + 28
+
+        # Preview box
+        prev_box = pygame.Rect(rx0 + 8, py + 58, PREV_W, 210)
+        pygame.draw.rect(self.screen, (20, 30, 24), prev_box)
+        pygame.draw.rect(self.screen, (38, 78, 52), prev_box, 1)
+        self._draw_animal_preview(animal, prev_cx, py + 58 + 105, scale=3.5)
+
+        # Harvest-resource status below preview
+        res_parts = []
+        if animal.animal_id == "sheep":
+            res_parts = [("Wool", getattr(animal, 'has_wool', False))]
+        elif animal.animal_id == "cow":
+            res_parts = [("Milk", getattr(animal, 'has_milk', False))]
+        elif animal.animal_id == "chicken":
+            res_parts = [("Egg", getattr(animal, 'has_egg', False))]
+        for label, ready in res_parts:
+            col = (120, 220, 140) if ready else (140, 100, 80)
+            rs = self.small.render(f"{label}: {'ready' if ready else 'regrow...'}", True, col)
+            self.screen.blit(rs, (prev_box.x + prev_box.w // 2 - rs.get_width() // 2,
+                                  prev_box.bottom + 5))
+
+        # ── GENETICS ─────────────────────────────────────────────────
+        sy = py + 58
+        gen_lbl = self.small.render("GENETICS", True, (85, 155, 105))
+        self.screen.blit(gen_lbl, (stats_x, sy))
+        pygame.draw.line(self.screen, (38, 75, 52),
+                         (stats_x, sy + 16), (rx0 + rw - 8, sy + 16))
+        sy += 24
+
+        traits = animal.traits
+        size_v = traits.get("size", 1.0)
+        BAR_W, BAR_H = 180, 10
+        siz_label = self.small.render("Size", True, (150, 195, 165))
+        self.screen.blit(siz_label, (stats_x, sy))
+        fill = int(BAR_W * (size_v - 0.85) / 0.30)
+        pygame.draw.rect(self.screen, (28, 48, 36), (stats_x + 50, sy + 1, BAR_W, BAR_H))
+        pygame.draw.rect(self.screen, (65, 185, 95), (stats_x + 50, sy + 1, fill, BAR_H))
+        sv = self.small.render(f"{size_v:.2f}x", True, (175, 215, 185))
+        self.screen.blit(sv, (stats_x + 50 + BAR_W + 6, sy))
+        sy += 22
+
+        cs = traits.get("color_shift", (0, 0, 0))
+        cs_label = self.small.render("Color", True, (150, 195, 165))
+        self.screen.blit(cs_label, (stats_x, sy))
+        CB_W = 52
+        for ci, (ch_name, ch_col) in enumerate([("R", (215, 55, 55)),
+                                                 ("G", (55, 195, 75)),
+                                                 ("B", (55, 105, 225))]):
+            cx2 = stats_x + 50 + ci * (CB_W + 4)
+            v   = cs[ci]
+            pygame.draw.rect(self.screen, (28, 48, 36), (cx2, sy + 1, CB_W, BAR_H))
+            mid = cx2 + CB_W // 2
+            fp  = int(CB_W // 2 * abs(v) / 0.25)
+            if v >= 0:
+                pygame.draw.rect(self.screen, ch_col, (mid, sy + 1, fp, BAR_H))
+            else:
+                pygame.draw.rect(self.screen, ch_col, (mid - fp, sy + 1, fp, BAR_H))
+            cl = self.small.render(ch_name, True, ch_col)
+            self.screen.blit(cl, (mid - cl.get_width() // 2, sy + BAR_H + 3))
+
+        # Tinted body-colour swatch
+        def _tc(base, sh):
+            return tuple(max(0, min(255, int(base[i] + sh[i] * 255))) for i in range(3))
+        base_colors = {"sheep": (220, 220, 220), "cow": (140, 85, 45), "chicken": (235, 235, 210)}
+        swatch_col = _tc(base_colors.get(animal.animal_id, (200, 200, 200)), cs)
+        sw_x = stats_x + 50 + 3 * (CB_W + 4) + 10
+        pygame.draw.rect(self.screen, swatch_col, (sw_x, sy, 20, 20))
+        pygame.draw.rect(self.screen, (75, 108, 88), (sw_x, sy, 20, 20), 1)
+        sy += 36
+
+        # ── LINEAGE ───────────────────────────────────────────────────
+        lin_lbl = self.small.render("LINEAGE", True, (85, 155, 105))
+        self.screen.blit(lin_lbl, (stats_x, sy))
+        pygame.draw.line(self.screen, (38, 75, 52),
+                         (stats_x, sy + 16), (rx0 + rw - 8, sy + 16))
+        sy += 24
+
+        parent_uids   = [animal.parent_a_uid, animal.parent_b_uid]
+        parent_labels = ["Parent A", "Parent B"]
+        has_parents   = any(p is not None for p in parent_uids)
+
+        if not has_parents:
+            wb = self.small.render("Wild-born  (no recorded parents)", True, (110, 145, 120))
+            self.screen.blit(wb, (stats_x, sy))
+            sy += 18
+        else:
+            for puid, plabel in zip(parent_uids, parent_labels):
+                pl_s = self.small.render(plabel + ":", True, (95, 135, 110))
+                self.screen.blit(pl_s, (stats_x, sy + 4))
+                if puid is None:
+                    unk = self.small.render("Unknown", True, (65, 88, 75))
+                    self.screen.blit(unk, (stats_x + 80, sy + 4))
+                else:
+                    parent = uid_map.get(puid)
+                    if parent is not None and not getattr(parent, 'dead', True):
+                        self._draw_animal_preview(parent, stats_x + 88, sy + 10, scale=1.2)
+                        pnum  = animal_numbers.get(puid, "?")
+                        ptxt  = f"{TYPE_LABELS.get(parent.animal_id, parent.animal_id)} #{pnum}"
+                        pt_s  = self.small.render(ptxt, True, (175, 218, 188))
+                        self.screen.blit(pt_s, (stats_x + 112, sy + 2))
+                        is_tamed = getattr(parent, 'tamed', False)
+                        st_txt = "alive (tamed)" if is_tamed else "alive (wild)"
+                        st_s   = self.small.render(st_txt, True, (75, 195, 100))
+                        self.screen.blit(st_s, (stats_x + 112, sy + 16))
+                    else:
+                        gone = self.small.render(f"Deceased  ({puid[:10]}…)", True, (155, 80, 80))
+                        self.screen.blit(gone, (stats_x + 80, sy + 4))
+                sy += 40
+
+        # Generation depth
+        def _gen(uid, depth=0):
+            if depth > 20 or uid is None:
+                return depth
+            e2 = uid_map.get(uid)
+            if e2 is None:
+                return depth
+            pa, pb = getattr(e2, 'parent_a_uid', None), getattr(e2, 'parent_b_uid', None)
+            if pa is None and pb is None:
+                return depth
+            return max(_gen(pa, depth + 1), _gen(pb, depth + 1))
+
+        gen = _gen(animal.uid)
+        gen_txt = "Wild-born" if gen == 0 else f"Gen {gen}"
+        gen_s = self.small.render(f"Generation: {gen_txt}", True, (110, 150, 125))
+        self.screen.blit(gen_s, (stats_x, sy))
+        sy += 20
+
+        # Children list
+        children = [e for e in all_tamed
+                    if getattr(e, 'parent_a_uid', None) == animal.uid
+                    or getattr(e, 'parent_b_uid', None) == animal.uid]
+        if children:
+            ch_hdr = self.small.render(f"Children: {len(children)}", True, (85, 155, 105))
+            self.screen.blit(ch_hdr, (stats_x, sy))
+            sy += 16
+            for ch in children[:5]:
+                cnum  = animal_numbers.get(ch.uid, "?")
+                ctxt  = f"  {TYPE_LABELS.get(ch.animal_id, ch.animal_id)} #{cnum}"
+                ch_s  = self.small.render(ctxt, True, (140, 195, 155))
+                self.screen.blit(ch_s, (stats_x, sy))
+                sy += 14
+
     def _draw_cheat_console(self):
         W = SCREEN_W
         pygame.draw.rect(self.screen, (15, 14, 25), (0, 0, W, 40))
@@ -4288,6 +5081,10 @@ class UI:
             if category == "Mushroom":
                 display = _MUSHROOM_NAMES.get(name_or_bid, "Mushroom")
                 color = (200, 170, 110)
+            elif category == "Bird":
+                display = name_or_bid
+                rarity_bird_cols = {"common": (120, 190, 120), "uncommon": (100, 170, 220), "rare": (180, 120, 230)}
+                color = rarity_bird_cols.get(rarity, (140, 210, 255))
             elif category == "Achievement":
                 display = name_or_bid
                 color = (255, 215, 80)
@@ -4342,3 +5139,88 @@ class UI:
             surf.blit(name_surf, (10, 22))
 
             self.screen.blit(surf, (x, y))
+
+    # ------------------------------------------------------------------
+    # Fishing overlay (drawn on top of the game world, no UI panel)
+    # ------------------------------------------------------------------
+
+    def draw_fishing_overlay(self, player, dt):
+        state = player.fishing_state
+        if state is None:
+            return
+
+        W, H = SCREEN_W, SCREEN_H
+        cx = W // 2
+
+        if state == "casting":
+            tick = pygame.time.get_ticks()
+            dots = "." * (1 + (tick // 500) % 3)
+            msg = f"Fishing{dots}"
+            s = self.font.render(msg, True, (160, 210, 255))
+            bw = s.get_width() + 24
+            bh = s.get_height() + 10
+            bx2 = cx - bw // 2
+            by2 = H - 110
+            box = pygame.Surface((bw + 4, bh + 4), pygame.SRCALPHA)
+            box.fill((12, 28, 48, 200))
+            self.screen.blit(box, (bx2 - 2, by2 - 2))
+            pygame.draw.rect(self.screen, (60, 120, 200), (bx2 - 2, by2 - 2, bw + 4, bh + 4), 1)
+            self.screen.blit(s, (bx2 + 12, by2 + 5))
+
+        elif state == "biting":
+            frac = max(0.0, player._fishing_timer / 2.0)
+            pulse = (math.sin(pygame.time.get_ticks() * 0.012) + 1) * 0.5
+            r = int(235 + 20 * pulse)
+            g = int(60 + 80 * pulse)
+            glow_col = (r, g, 20)
+
+            bite_s = self._fish_bite_font.render("! BITE !", True, glow_col)
+            sub_s = self.small.render("Press  F  to reel in!", True, (230, 230, 230))
+
+            bar_w = 220
+            bar_h = 11
+            pad = 10
+            box_w = max(bite_s.get_width(), sub_s.get_width(), bar_w) + pad * 2
+            box_h = bite_s.get_height() + sub_s.get_height() + bar_h + pad * 3 + 4
+            bx2 = cx - box_w // 2
+            by2 = H - 140 - box_h
+
+            box = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+            box.fill((32, 18, 8, 215))
+            self.screen.blit(box, (bx2, by2))
+            pygame.draw.rect(self.screen, glow_col, (bx2, by2, box_w, box_h), 2)
+
+            self.screen.blit(bite_s, (cx - bite_s.get_width() // 2, by2 + pad))
+            self.screen.blit(sub_s, (cx - sub_s.get_width() // 2,
+                                     by2 + pad + bite_s.get_height() + 4))
+
+            # Countdown bar
+            bar_y = by2 + box_h - bar_h - pad
+            bar_x = cx - bar_w // 2
+            pygame.draw.rect(self.screen, (50, 38, 18), (bar_x, bar_y, bar_w, bar_h))
+            fill = max(0, int(bar_w * frac))
+            bar_col = (int(80 + 175 * frac), int(200 * frac), 20)
+            if fill > 0:
+                pygame.draw.rect(self.screen, bar_col, (bar_x, bar_y, fill, bar_h))
+            pygame.draw.rect(self.screen, (110, 90, 40), (bar_x, bar_y, bar_w, bar_h), 1)
+
+        elif state == "result":
+            if player._fishing_result == "caught" and player.fish_caught:
+                last = player.fish_caught[-1]
+                species_name = FISH_TYPES.get(last.species, {}).get("name", last.species.replace("_", " ").title())
+                msg = f"Caught a {species_name}!  ({last.weight_kg:.2f} kg)"
+                col = FISH_RARITY_COLORS.get(last.rarity, (180, 220, 180))
+            else:
+                msg = "The fish got away..."
+                col = (180, 145, 100)
+
+            s = self.font.render(msg, True, col)
+            bw = s.get_width() + 24
+            bh = s.get_height() + 10
+            bx2 = cx - bw // 2
+            by2 = H - 110
+            box = pygame.Surface((bw + 4, bh + 4), pygame.SRCALPHA)
+            box.fill((12, 22, 14, 205))
+            self.screen.blit(box, (bx2 - 2, by2 - 2))
+            pygame.draw.rect(self.screen, col, (bx2 - 2, by2 - 2, bw + 4, bh + 4), 1)
+            self.screen.blit(s, (bx2 + 12, by2 + 5))

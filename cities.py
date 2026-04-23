@@ -1,7 +1,10 @@
 import math
 import random
 
-from blocks import (STONE, BEDROCK, HOUSE_WALL, HOUSE_ROOF, AIR,
+from blocks import (STONE, BEDROCK, HOUSE_WALL, HOUSE_ROOF, AIR, LADDER,
+                    HOUSE_WALL_STONE, HOUSE_ROOF_STONE,
+                    HOUSE_WALL_BRICK, HOUSE_ROOF_BRICK,
+                    HOUSE_WALL_DARK,  HOUSE_ROOF_DARK,
                     WOOD_DOOR_CLOSED, ALL_LOGS, ALL_LEAVES, BUSH_BLOCKS, SAPLING)
 from constants import BLOCK_SIZE, PLAYER_W, PLAYER_H, CITY_SPACING, CITY_COUNT, NPC_INTERACT_RANGE
 from rocks import ROCK_TYPES
@@ -293,8 +296,7 @@ class NPC:
         return pygame.Rect(int(self.x), int(self.y), self.NPC_W, self.NPC_H)
 
     def update(self, dt):
-        self._bob_timer += dt
-        self._bob_offset = math.sin(self._bob_timer * 1.5) * 1.5
+        pass
 
     def reset_harvest(self):
         pass
@@ -469,38 +471,52 @@ class GemQuestNPC(NPC):
 # City generation
 # ---------------------------------------------------------------------------
 
-# Building: (offset_from_cx, width, height, facing)
-# facing='right' → door on right wall (city-center side); 'left' → door on left wall
+# Building style palettes: (wall_block, roof_block)
+BUILDING_PALETTES = [
+    (HOUSE_WALL,       HOUSE_ROOF),        # warm wood
+    (HOUSE_WALL_STONE, HOUSE_ROOF_STONE),  # grey stone
+    (HOUSE_WALL_BRICK, HOUSE_ROOF_BRICK),  # red brick
+    (HOUSE_WALL_DARK,  HOUSE_ROOF_DARK),   # dark timber
+]
+
+# Building slot format: (offset_from_cx, (min_w, max_w), (min_h, max_h), variants)
+# variants is a list sampled uniformly; repeat entries to weight them.
+# Use (offset, None, None, None) for an outdoor NPC slot with no building.
+# Variants: "house", "two_story", "tower", "longhouse", "ruin"
 CITY_CONFIGS = {
     "small": {
-        "half_w": 8,
+        "half_w": 11,
         "buildings": [
-            (-8, 5, 4, "right"),
-            ( 4, 5, 4, "left"),
+            (-10, (4, 6), (3, 5), ["house", "house", "two_story", "tower", "ruin"]),
+            (  4, (4, 6), (3, 5), ["house", "house", "two_story", "longhouse", "ruin"]),
         ],
         "npc_types": ["quest_rock", "trade"],
     },
     "medium": {
-        "half_w": 13,
+        "half_w": 18,
         "buildings": [
-            (-13, 5, 4, "right"),
-            ( -7, 5, 4, "right"),
-            (  3, 5, 4, "left"),
-            (  9, 5, 4, "left"),
+            (-17, (4, 6), (3, 5), ["house", "two_story", "tower", "ruin", "longhouse"]),
+            (-10, (4, 6), (3, 4), ["house", "house", "two_story", "longhouse", "ruin"]),
+            (  0, None,   None,   None),    # outdoor NPC at city center
+            (  4, (4, 6), (3, 4), ["house", "house", "two_story", "ruin", "tower"]),
+            ( 11, (4, 6), (3, 5), ["house", "two_story", "tower", "longhouse", "ruin"]),
         ],
-        "npc_types": ["quest_rock", "trade", "quest_wildflower", "quest_gem"],
+        "npc_types": ["quest_rock", "quest_wildflower", "trade", "quest_gem", "trade"],
     },
     "large": {
-        "half_w": 19,
+        "half_w": 26,
         "buildings": [
-            (-19, 6, 5, "right"),
-            (-12, 5, 4, "right"),
-            ( -6, 4, 4, "right"),
-            (  3, 4, 4, "left"),
-            (  8, 5, 4, "left"),
-            ( 14, 6, 5, "left"),
+            (-25, (5, 7), (4, 5), ["house", "two_story", "two_story", "tower", "longhouse"]),
+            (-17, (4, 6), (3, 5), ["house", "house", "ruin", "tower", "two_story"]),
+            (-10, (4, 5), (3, 4), ["house", "house", "two_story", "ruin", "longhouse"]),
+            ( -2, None,   None,   None),    # outdoor NPC — main-street left
+            (  4, (4, 5), (3, 4), ["house", "two_story", "ruin", "tower", "longhouse"]),
+            ( 10, (4, 6), (3, 5), ["house", "house", "tower", "ruin", "two_story"]),
+            ( 17, None,   None,   None),    # outdoor NPC — main-street right
+            ( 20, (5, 7), (4, 5), ["house", "two_story", "two_story", "tower", "longhouse"]),
         ],
-        "npc_types": ["quest_rock", "quest_wildflower", "trade", "quest_gem", "trade", "quest_rock"],
+        "npc_types": ["quest_rock", "quest_wildflower", "trade", "trade",
+                      "quest_gem", "trade", "quest_wildflower", "quest_rock"],
     },
 }
 
@@ -513,40 +529,104 @@ _SIZE_BY_DIFFICULTY = {
 _PLANT_BLOCKS = ALL_LOGS | ALL_LEAVES | BUSH_BLOCKS | {SAPLING}
 
 
-def _place_house(world, left_x, sy, width, wall_height, facing="right"):
-    """
-    Hollow enterable house: solid perimeter on top + two side walls, AIR interior
-    with HOUSE_WALL background for visual depth. Door in the city-facing side wall.
-    """
-    door_col = left_x + width - 1 if facing == "right" else left_x
-
+def _place_house(world, left_x, sy, width, wall_height,
+                 wall_block=HOUSE_WALL, roof_block=HOUSE_ROOF):
+    """Hollow enterable house with doors on BOTH sides for city passthrough."""
     for wy in range(sy - wall_height, sy):
         for wx in range(left_x, left_x + width):
             if not (0 <= wy < world.height):
                 continue
-            is_top  = (wy == sy - wall_height)
-            is_side = (wx == left_x or wx == left_x + width - 1)
-            is_door = (wx == door_col and wy >= sy - 2)
+            is_top        = (wy == sy - wall_height)
+            is_left_side  = (wx == left_x)
+            is_right_side = (wx == left_x + width - 1)
+            is_door_row   = (wy >= sy - 2)
+            is_left_door  = is_left_side  and is_door_row
+            is_right_door = is_right_side and is_door_row
 
-            if is_door:
+            if is_left_door or is_right_door:
                 world.set_block(wx, wy, WOOD_DOOR_CLOSED)
-            elif is_top or is_side:
-                world.set_block(wx, wy, HOUSE_WALL)
+            elif is_top or is_left_side or is_right_side:
+                world.set_block(wx, wy, wall_block)
             else:
                 world.set_block(wx, wy, AIR)
-                world.set_bg_block(wx, wy, HOUSE_WALL)
+                world.set_bg_block(wx, wy, wall_block)
 
     # Flat roof overhang (1 block wider each side)
     roof_y = sy - wall_height - 1
     for rx in range(left_x - 1, left_x + width + 1):
         if 0 <= roof_y < world.height:
-            world.set_block(rx, roof_y, HOUSE_ROOF)
+            world.set_block(rx, roof_y, roof_block)
 
     # Peaked ridge
     peak_y = roof_y - 1
     for rx in range(left_x, left_x + width):
         if 0 <= peak_y < world.height:
-            world.set_block(rx, peak_y, HOUSE_ROOF)
+            world.set_block(rx, peak_y, roof_block)
+
+
+def _place_house_two_story(world, left_x, sy, width, floor1_h, floor2_h,
+                            wall_block=HOUSE_WALL, roof_block=HOUSE_ROOF):
+    """Two-story building. Ground floor has doors on both sides; upper floor via ladder."""
+    ladder_col = left_x + width - 2  # one column from right wall
+
+    # Ground floor
+    for wy in range(sy - floor1_h, sy):
+        for wx in range(left_x, left_x + width):
+            if not (0 <= wy < world.height):
+                continue
+            is_ceiling    = (wy == sy - floor1_h)
+            is_left_side  = (wx == left_x)
+            is_right_side = (wx == left_x + width - 1)
+            is_door_row   = (wy >= sy - 2)
+            is_left_door  = is_left_side  and is_door_row
+            is_right_door = is_right_side and is_door_row
+            is_ladder_pos = (wx == ladder_col)
+            is_hole       = (is_ceiling and is_ladder_pos)
+
+            if is_left_door or is_right_door:
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
+            elif is_hole:
+                # Opening in ceiling for ladder passthrough
+                world.set_block(wx, wy, LADDER)
+                world.set_bg_block(wx, wy, wall_block)
+            elif is_ceiling or is_left_side or is_right_side:
+                world.set_block(wx, wy, wall_block)
+            elif is_ladder_pos:
+                world.set_block(wx, wy, LADDER)
+                world.set_bg_block(wx, wy, wall_block)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, wall_block)
+
+    # Upper floor
+    for wy in range(sy - floor1_h - floor2_h, sy - floor1_h):
+        for wx in range(left_x, left_x + width):
+            if not (0 <= wy < world.height):
+                continue
+            is_top        = (wy == sy - floor1_h - floor2_h)
+            is_left_side  = (wx == left_x)
+            is_right_side = (wx == left_x + width - 1)
+
+            if is_top or is_left_side or is_right_side:
+                world.set_block(wx, wy, wall_block)
+            elif wx == ladder_col:
+                world.set_block(wx, wy, LADDER)
+                world.set_bg_block(wx, wy, wall_block)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, wall_block)
+
+    # Flat roof overhang
+    roof_y = sy - floor1_h - floor2_h - 1
+    for rx in range(left_x - 1, left_x + width + 1):
+        if 0 <= roof_y < world.height:
+            world.set_block(rx, roof_y, roof_block)
+
+    # Peaked ridge
+    peak_y = roof_y - 1
+    for rx in range(left_x, left_x + width):
+        if 0 <= peak_y < world.height:
+            world.set_block(rx, peak_y, roof_block)
 
 
 def generate_cities(world, seed):
@@ -569,7 +649,7 @@ def generate_cities(world, seed):
 
         # Clear vegetation above city footprint
         for bx in range(cx - half_w - 2, cx + half_w + 3):
-            for by in range(max(0, sy - 30), sy):
+            for by in range(max(0, sy - 35), sy):
                 if world.get_block(bx, by) in _PLANT_BLOCKS:
                     world.set_block(bx, by, AIR)
 
@@ -578,13 +658,28 @@ def generate_cities(world, seed):
             if world.get_block(bx, sy) != BEDROCK:
                 world.set_block(bx, sy, STONE)
 
-        # Build houses and place NPCs inside them
-        for (offset, width, height, facing), npc_type in zip(cfg["buildings"], cfg["npc_types"]):
+        # Build structures and place NPCs
+        for (offset, w_range, h_range, variants), npc_type in zip(cfg["buildings"], cfg["npc_types"]):
             left_x = cx + offset
-            _place_house(world, left_x, sy, width, height, facing)
+            wall_block, roof_block = rng.choice(BUILDING_PALETTES)
 
-            # NPC stands near the back wall, away from the door
-            npc_bx = left_x + 1 if facing == "right" else left_x + width - 2
+            if w_range is None:
+                # Outdoor NPC — no building
+                npc_bx = left_x
+            else:
+                width   = rng.randint(*w_range)
+                height  = rng.randint(*h_range)
+                variant = rng.choice(variants) if variants else "house"
+
+                if variant == "two_story":
+                    floor2_h = rng.randint(2, 3)
+                    _place_house_two_story(world, left_x, sy, width, height, floor2_h,
+                                           wall_block, roof_block)
+                else:
+                    _place_house(world, left_x, sy, width, height, wall_block, roof_block)
+
+                npc_bx = left_x + 1
+
             npc_px = npc_bx * BLOCK_SIZE + (BLOCK_SIZE - NPC.NPC_W) // 2
             npc_py = (sy - 2) * BLOCK_SIZE
 
