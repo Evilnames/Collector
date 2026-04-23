@@ -14,6 +14,25 @@ You explore a procedurally generated world, mine resources, craft items, researc
 - Automations: deploy coal/iron/diamond miners that dig tunnels and deposit loot
 - Farming: plant and harvest a wide variety of crops
 - Save/load via SQLite database
+- Somewhere elusive snow leopards and mountain lions roam.
+
+## Collectables
+- This game is focused very much on collecting natural wonders. It currently has:
+ - Birds - They fly around, if you stay still as they're nesting you can collect them into your encycolopedia. You can also build bird nests and bird feeders to get them to stop by.
+ - Fish - Find a lake or river and start fishing for one of 50 unique types of fish.
+ - Wildflowers - Scattered around 15 different biomes is different wildflowers to collect.
+ - Mushrooms - Mushrooms live underground and in some forests.
+ - Rocks - Hundreds of unique rocks to collect, polish and trade with other collectors in game.
+ - Gems - Unique gems require cleaning.
+ - Fossils - Deep underground undercover the animals that were before you.
+
+ ## Breeding
+- Taming animals gives you the ability to breed different features, from size to color.
+- Animals have history that you can see to see how you got there.
+
+## Construction Equipment and Automation
+- Mine deep underground with construction equipment that requires oil.
+- Use automations to quickly build out tunnels or tend to your crops.
 
 ## Requirements
 
