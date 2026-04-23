@@ -30,6 +30,7 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, SUPPORT, IRON_SUPPORT, DIAMON
                     WILDFLOWER_PATCH,
                     CRACKED_STONE, STALACTITE, STALAGMITE,
                     CAVE_MOSS, CAVE_CRYSTAL, GRAVEL,
+                    CRYSTAL_ORE, RUBY_ORE, GEM_DEPOSIT,
                     CAVE_MUSHROOM, CAVE_MUSHROOMS,
                     EMBER_CAP, PALE_GHOST, GOLD_CHANTERELLE, COBALT_CAP, MOSSY_CAP,
                     VIOLET_CROWN, BLOOD_CAP, SULFUR_DOME, IVORY_BELL, ASH_BELL,
@@ -39,13 +40,52 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, SUPPORT, IRON_SUPPORT, DIAMON
                     WOOD_FENCE, IRON_FENCE,
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN,
                     IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
-                    CHEST_BLOCK, SNOW)
+                    CHEST_BLOCK, SNOW, SAND)
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE
 from biomes import BIOME_STONE_COLORS
 
 
+_SHIMMER_BLOCKS = {
+    CRYSTAL_ORE:  (200, 255, 255),
+    RUBY_ORE:     (255, 190, 190),
+    GEM_DEPOSIT:  (230, 200, 255),
+    CAVE_CRYSTAL: (190, 250, 255),
+}
+
+
+def _los_clear(world, px, py, tx, ty):
+    """DDA grid walk: True if only AIR blocks lie between player block and target block."""
+    dx = tx - px
+    dy = ty - py
+    nx = abs(dx)
+    ny = abs(dy)
+    sign_x = 1 if dx > 0 else -1
+    sign_y = 1 if dy > 0 else -1
+    x, y = px, py
+    ix = iy = 0
+    while ix < nx or iy < ny:
+        step_x = (0.5 + ix) / nx if nx else float('inf')
+        step_y = (0.5 + iy) / ny if ny else float('inf')
+        if step_x < step_y:
+            x += sign_x
+            ix += 1
+        else:
+            y += sign_y
+            iy += 1
+        if x == tx and y == ty:
+            break
+        if world.get_block(x, y) != AIR:
+            return False
+    return True
+
+
 def _darken(color, amount=25):
     return tuple(max(0, c - amount) for c in color)
+
+
+def _tinted(base_color, shift):
+    """Apply float shift tuple (-0.25..0.25) per channel to an RGB color."""
+    return tuple(max(0, min(255, int(base_color[i] + shift[i] * 255))) for i in range(3))
 
 
 # Mushroom style table: shape, cap_col, stem_col, spots [(x,y,r)…]|None, extra|None
@@ -1216,9 +1256,15 @@ class Renderer:
                 biome_stone = self._biome_stone_surfs.get(biome)
                 if bid == STONE and biome_stone:
                     surf = biome_stone
+                dist = 0.0
+                ore_visible = True
                 if bid in RESOURCE_BLOCKS and px_blk is not None:
                     dist = ((bx - px_blk) ** 2 + (by - py_blk) ** 2) ** 0.5
-                    if dist > warm:
+                    underground = by > surface_ys.get(bx, 100)
+                    ore_visible = (not underground) or (
+                        dist <= warm and _los_clear(world, int(px_blk), int(py_blk), bx, by)
+                    )
+                    if not ore_visible or dist > warm:
                         surf = biome_stone or self._block_surfs.get(STONE)
                     elif dist > detect:
                         biome_hints = self._biome_resource_hint_surfs.get(biome, self._resource_hint_surfs)
@@ -1227,6 +1273,16 @@ class Renderer:
                     sx = bx * BLOCK_SIZE - cam_xi
                     sy = by * BLOCK_SIZE - cam_yi
                     self.screen.blit(surf, (sx, sy))
+                    if bid in _SHIMMER_BLOCKS and ore_visible and (px_blk is None or dist <= detect):
+                        now = pygame.time.get_ticks()
+                        sc = _SHIMMER_BLOCKS[bid]
+                        h = bx * 1283 + by * 7919
+                        for i in range(4):
+                            phase = (h + i * 4999) % 65536
+                            if ((now + phase) // 350) % 5 == 0:
+                                spx = 1 + (h * (i + 3) * 43) % 28
+                                spy = 1 + (h * (i + 3) * 97) % 28
+                                pygame.draw.rect(self.screen, sc, (sx + spx, sy + spy, 2, 2))
 
         self._draw_support_zones(world, bx0, bx1, by0, by1, cam_xi, cam_yi)
 
@@ -1285,6 +1341,8 @@ class Renderer:
 
     def draw_entities(self, entities):
         for e in entities:
+            if getattr(e, 'dead', False):
+                continue
             sx = int(e.x - self.cam_x)
             sy = int(e.y - self.cam_y)
             if e.animal_id == "sheep":
@@ -1329,6 +1387,74 @@ class Renderer:
                 txt = self._npc_font.render(label, True, (220, 160, 40))
                 self.screen.blit(txt, (sx + fb.W // 2 - txt.get_width() // 2, sy - 22))
 
+    def draw_backhoes(self, backhoes, player):
+        for bh in backhoes:
+            self._draw_backhoe(bh, is_mounted=(player.mounted_machine is bh))
+
+    def _draw_backhoe(self, bh, is_mounted=False):
+        sx = int(bh.x - self.cam_x)
+        sy = int(bh.y - self.cam_y)
+        W, H = bh.W, bh.H
+
+        BODY_COLOR = (210, 160, 30)
+        BODY_DARK  = (130, 95, 15)
+        CAB_COLOR  = (240, 200, 50)
+
+        # Main body (lower 2/3)
+        body_rect = (sx, sy + H // 3, W, H * 2 // 3)
+        pygame.draw.rect(self.screen, BODY_COLOR, body_rect)
+        pygame.draw.rect(self.screen, BODY_DARK, body_rect, 2)
+
+        # Cab (upper-left portion)
+        cab_rect = (sx + 2, sy, W // 2, H // 2 + 4)
+        pygame.draw.rect(self.screen, CAB_COLOR, cab_rect)
+        pygame.draw.rect(self.screen, BODY_DARK, cab_rect, 2)
+        pygame.draw.rect(self.screen, (180, 230, 240), (sx + 5, sy + 3, W // 2 - 8, H // 3))
+
+        # Wheels
+        wheel_y = sy + H - 5
+        for wx in (sx + 9, sx + W - 9):
+            pygame.draw.circle(self.screen, (30, 30, 30), (wx, wheel_y), 6)
+            pygame.draw.circle(self.screen, (80, 80, 80), (wx, wheel_y), 3)
+
+        # Arm: line from body centre to arm-target block centre
+        cbx, cby = bh.center_block()
+        body_cx = int(cbx * BLOCK_SIZE - self.cam_x + BLOCK_SIZE // 2)
+        body_cy = int(cby * BLOCK_SIZE - self.cam_y + BLOCK_SIZE // 2)
+        tbx, tby = bh.arm_target_block()
+        tip_x = int(tbx * BLOCK_SIZE - self.cam_x + BLOCK_SIZE // 2)
+        tip_y = int(tby * BLOCK_SIZE - self.cam_y + BLOCK_SIZE // 2)
+        pygame.draw.line(self.screen, BODY_DARK,  (body_cx, body_cy), (tip_x, tip_y), 4)
+        pygame.draw.line(self.screen, BODY_COLOR, (body_cx, body_cy), (tip_x, tip_y), 2)
+        # Bucket end
+        pygame.draw.rect(self.screen, (60, 50, 20), (tip_x - 4, tip_y - 4, 8, 8))
+        pygame.draw.rect(self.screen, BODY_DARK, (tip_x - 4, tip_y - 4, 8, 8), 1)
+
+        # Target block highlight
+        hx = tbx * BLOCK_SIZE - int(self.cam_x)
+        hy = tby * BLOCK_SIZE - int(self.cam_y)
+        if is_mounted:
+            pygame.draw.rect(self.screen, (255, 200, 0), (hx, hy, BLOCK_SIZE, BLOCK_SIZE), 3)
+        else:
+            pygame.draw.rect(self.screen, (160, 120, 0), (hx, hy, BLOCK_SIZE, BLOCK_SIZE), 1)
+
+        # Mining progress bar below target block
+        prog = bh.mine_progress
+        if prog > 0:
+            pygame.draw.rect(self.screen, (30, 30, 30), (hx, hy + BLOCK_SIZE + 1, BLOCK_SIZE, 3))
+            pygame.draw.rect(self.screen, (80, 200, 80),
+                             (hx, hy + BLOCK_SIZE + 1, int(BLOCK_SIZE * prog), 3))
+
+        # Fuel bar above body
+        frac = bh.fuel / bh.FUEL_TANK if bh.FUEL_TANK > 0 else 0
+        pygame.draw.rect(self.screen, (30, 30, 30), (sx, sy - 6, W, 4))
+        pygame.draw.rect(self.screen, (200, 140, 30), (sx, sy - 6, int(W * frac), 4))
+
+        # Mounted hint
+        if is_mounted:
+            hint = self._npc_font.render("[E] Dismount", True, (255, 220, 100))
+            self.screen.blit(hint, (sx + W // 2 - hint.get_width() // 2, sy - 22))
+
     def _draw_npc_quest(self, sx, sy, npc):
         bob = int(npc._bob_offset)
         # Body
@@ -1357,103 +1483,163 @@ class Renderer:
 
     def _draw_sheep(self, sx, sy, sheep):
         W, H = sheep.W, sheep.H
-        body_h = H - 8
+        traits = getattr(sheep, 'traits', {})
+        shift = traits.get("color_shift", (0, 0, 0))
+        s = traits.get("size", 1.0)
+        body_h = H - int(8 * s)
         leg_y = sy + body_h
 
         # Legs
-        leg_color = (80, 60, 40)
-        for lx in [sx + 2, sx + 7, sx + 14, sx + 19]:
-            pygame.draw.rect(self.screen, leg_color, (lx, leg_y, 3, 8))
+        for lx_off in [2, 7, 14, 19]:
+            pygame.draw.rect(self.screen, (80, 60, 40),
+                             (sx + int(lx_off * s), leg_y, max(1, int(3 * s)), int(8 * s)))
 
         # Body
-        body_color = (220, 220, 220) if sheep.has_wool else (175, 140, 95)
+        body_color = _tinted((220, 220, 220) if sheep.has_wool else (175, 140, 95), shift)
         pygame.draw.rect(self.screen, body_color, (sx, sy, W, body_h))
 
         # Head
-        head_w, head_h = 9, 9
-        head_color = (200, 200, 200) if sheep.has_wool else (155, 125, 85)
-        hx = (sx + W - 2) if sheep.facing == 1 else (sx - head_w + 2)
-        hy = sy - 1
+        head_w, head_h = int(9 * s), int(9 * s)
+        head_color = _tinted((200, 200, 200) if sheep.has_wool else (155, 125, 85), shift)
+        hx = (sx + W - int(2 * s)) if sheep.facing == 1 else (sx - head_w + int(2 * s))
+        hy = sy - max(1, int(1 * s))
         pygame.draw.rect(self.screen, head_color, (hx, hy, head_w, head_h))
-        eye_x = (hx + head_w - 3) if sheep.facing == 1 else (hx + 1)
-        pygame.draw.rect(self.screen, (30, 30, 30), (eye_x, hy + 3, 2, 2))
+        eye_x = (hx + head_w - int(3 * s)) if sheep.facing == 1 else (hx + max(1, int(1 * s)))
+        pygame.draw.rect(self.screen, (30, 30, 30), (eye_x, hy + int(3 * s), 2, 2))
 
-        # Harvest progress bar
-        if sheep.being_harvested and sheep._harvest_time > 0:
-            progress = sheep._harvest_time / sheep.HARVEST_TIME
-            pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 7, W, 4))
-            pygame.draw.rect(self.screen, (100, 220, 100), (sx, sy - 7, int(W * progress), 4))
+        # Tame indicator
+        if getattr(sheep, 'tamed', False):
+            pygame.draw.circle(self.screen, (255, 80, 120), (sx + W // 2, sy - 10), 4)
+
+        # Attack / harvest progress bar
+        if sheep.being_harvested:
+            if sheep._kill_timer > 0:
+                progress = sheep._kill_timer / 0.5
+                pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 7, W, 4))
+                pygame.draw.rect(self.screen, (220, 60, 60), (sx, sy - 7, int(W * progress), 4))
+            elif sheep._harvest_time > 0:
+                progress = sheep._harvest_time / sheep.HARVEST_TIME
+                pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 7, W, 4))
+                pygame.draw.rect(self.screen, (100, 220, 100), (sx, sy - 7, int(W * progress), 4))
+
+        # Health bar when damaged
+        if sheep.health < 3:
+            pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 13, W, 3))
+            pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 13, int(W * sheep.health / 3), 3))
 
     def _draw_cow(self, sx, sy, cow):
         W, H = cow.W, cow.H
-        body_h = H - 8
+        traits = getattr(cow, 'traits', {})
+        shift = traits.get("color_shift", (0, 0, 0))
+        s = traits.get("size", 1.0)
+        body_h = H - int(8 * s)
         leg_y = sy + body_h
 
         # Legs
-        leg_color = (60, 40, 30)
-        for lx in [sx + 2, sx + 8, sx + 18, sx + 24]:
-            pygame.draw.rect(self.screen, leg_color, (lx, leg_y, 4, 8))
+        for lx_off in [2, 8, 18, 24]:
+            pygame.draw.rect(self.screen, (60, 40, 30),
+                             (sx + int(lx_off * s), leg_y, max(1, int(4 * s)), int(8 * s)))
 
         # Body (brown base + black patches)
-        pygame.draw.rect(self.screen, (140, 85, 45), (sx, sy, W, body_h))
-        pygame.draw.rect(self.screen, (30, 20, 10), (sx + 8, sy + 2, 10, 5))
-        pygame.draw.rect(self.screen, (30, 20, 10), (sx + 20, sy + 5, 6, 4))
+        body_color = _tinted((140, 85, 45), shift)
+        pygame.draw.rect(self.screen, body_color, (sx, sy, W, body_h))
+        pygame.draw.rect(self.screen, (30, 20, 10),
+                         (sx + int(8 * s), sy + int(2 * s), int(10 * s), int(5 * s)))
+        pygame.draw.rect(self.screen, (30, 20, 10),
+                         (sx + int(20 * s), sy + int(5 * s), int(6 * s), int(4 * s)))
 
         # Head
-        head_w, head_h = 11, 11
-        hx = (sx + W - 3) if cow.facing == 1 else (sx - head_w + 3)
-        hy = sy - 2
-        pygame.draw.rect(self.screen, (140, 85, 45), (hx, hy, head_w, head_h))
-        # Nose/snout
-        snout_x = (hx + head_w - 4) if cow.facing == 1 else hx
-        pygame.draw.rect(self.screen, (190, 130, 100), (snout_x, hy + 6, 4, 4))
-        eye_x = (hx + head_w - 4) if cow.facing == 1 else (hx + 1)
-        pygame.draw.rect(self.screen, (20, 10, 5), (eye_x, hy + 2, 2, 2))
+        head_w, head_h = int(11 * s), int(11 * s)
+        hx = (sx + W - int(3 * s)) if cow.facing == 1 else (sx - head_w + int(3 * s))
+        hy = sy - int(2 * s)
+        head_color = _tinted((140, 85, 45), shift)
+        pygame.draw.rect(self.screen, head_color, (hx, hy, head_w, head_h))
+        snout_x = (hx + head_w - int(4 * s)) if cow.facing == 1 else hx
+        pygame.draw.rect(self.screen, _tinted((190, 130, 100), shift),
+                         (snout_x, hy + int(6 * s), int(4 * s), int(4 * s)))
+        eye_x = (hx + head_w - int(4 * s)) if cow.facing == 1 else (hx + max(1, int(1 * s)))
+        pygame.draw.rect(self.screen, (20, 10, 5), (eye_x, hy + int(2 * s), 2, 2))
 
         # Udder indicator when has milk
         if cow.has_milk:
-            udder_x = sx + W // 2 - 4
-            pygame.draw.rect(self.screen, (220, 180, 180), (udder_x, leg_y - 3, 8, 3))
+            udder_x = sx + W // 2 - int(4 * s)
+            pygame.draw.rect(self.screen, (220, 180, 180),
+                             (udder_x, leg_y - int(3 * s), int(8 * s), int(3 * s)))
 
-        # Harvest progress bar
-        if cow.being_harvested and cow._harvest_time > 0:
-            progress = cow._harvest_time / cow.HARVEST_TIME
-            pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 7, W, 4))
-            pygame.draw.rect(self.screen, (80, 160, 220), (sx, sy - 7, int(W * progress), 4))
+        # Tame indicator
+        if getattr(cow, 'tamed', False):
+            pygame.draw.circle(self.screen, (255, 80, 120), (sx + W // 2, sy - 10), 4)
+
+        # Attack / harvest progress bar
+        if cow.being_harvested:
+            if cow._kill_timer > 0:
+                progress = cow._kill_timer / 0.5
+                pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 7, W, 4))
+                pygame.draw.rect(self.screen, (220, 60, 60), (sx, sy - 7, int(W * progress), 4))
+            elif cow._harvest_time > 0:
+                progress = cow._harvest_time / cow.HARVEST_TIME
+                pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 7, W, 4))
+                pygame.draw.rect(self.screen, (80, 160, 220), (sx, sy - 7, int(W * progress), 4))
+
+        # Health bar when damaged
+        if cow.health < 3:
+            pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 13, W, 3))
+            pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 13, int(W * cow.health / 3), 3))
 
     def _draw_chicken(self, sx, sy, chicken):
         W, H = chicken.W, chicken.H
+        traits = getattr(chicken, 'traits', {})
+        shift = traits.get("color_shift", (0, 0, 0))
+        s = traits.get("size", 1.0)
 
         # Legs
-        for lx in [sx + 4, sx + 11]:
-            pygame.draw.rect(self.screen, (220, 160, 30), (lx, sy + H - 6, 2, 6))
+        for lx_off in [4, 11]:
+            pygame.draw.rect(self.screen, (220, 160, 30),
+                             (sx + int(lx_off * s), sy + H - int(6 * s), max(1, int(2 * s)), int(6 * s)))
 
-        # Body (white/cream oval)
-        pygame.draw.ellipse(self.screen, (235, 235, 210), (sx + 1, sy + 2, W - 4, H - 8))
+        # Body (cream oval)
+        body_color = _tinted((235, 235, 210), shift)
+        pygame.draw.ellipse(self.screen, body_color,
+                            (sx + max(1, int(1 * s)), sy + int(2 * s), W - int(4 * s), H - int(8 * s)))
 
         # Head
-        head_w, head_h = 8, 8
-        hx = (sx + W - 4) if chicken.facing == 1 else (sx - head_w + 4)
-        hy = sy - 2
-        pygame.draw.ellipse(self.screen, (235, 235, 210), (hx, hy, head_w, head_h))
-        # Beak
-        beak_x = (hx + head_w - 1) if chicken.facing == 1 else (hx - 3)
-        pygame.draw.rect(self.screen, (220, 160, 30), (beak_x, hy + 3, 3, 2))
-        # Eye
-        eye_x = (hx + head_w - 3) if chicken.facing == 1 else (hx + 1)
-        pygame.draw.rect(self.screen, (20, 20, 20), (eye_x, hy + 2, 2, 2))
-        # Comb
-        pygame.draw.rect(self.screen, (220, 50, 50), (hx + 2, hy - 2, 4, 3))
+        head_w, head_h = int(8 * s), int(8 * s)
+        hx = (sx + W - int(4 * s)) if chicken.facing == 1 else (sx - head_w + int(4 * s))
+        hy = sy - int(2 * s)
+        pygame.draw.ellipse(self.screen, body_color, (hx, hy, head_w, head_h))
+        beak_x = (hx + head_w - max(1, int(1 * s))) if chicken.facing == 1 else (hx - int(3 * s))
+        pygame.draw.rect(self.screen, (220, 160, 30),
+                         (beak_x, hy + int(3 * s), int(3 * s), int(2 * s)))
+        eye_x = (hx + head_w - int(3 * s)) if chicken.facing == 1 else (hx + max(1, int(1 * s)))
+        pygame.draw.rect(self.screen, (20, 20, 20), (eye_x, hy + int(2 * s), 2, 2))
+        pygame.draw.rect(self.screen, (220, 50, 50),
+                         (hx + int(2 * s), hy - int(2 * s), int(4 * s), int(3 * s)))
 
         # Egg indicator
         if chicken.has_egg:
-            pygame.draw.ellipse(self.screen, (245, 235, 200), (sx + W // 2 - 3, sy + H - 10, 6, 5))
+            pygame.draw.ellipse(self.screen, (245, 235, 200),
+                                (sx + W // 2 - int(3 * s), sy + H - int(10 * s), int(6 * s), int(5 * s)))
 
-        # Harvest progress bar
-        if chicken.being_harvested and chicken._harvest_time > 0:
-            progress = chicken._harvest_time / chicken.HARVEST_TIME
-            pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 7, W, 4))
-            pygame.draw.rect(self.screen, (245, 220, 100), (sx, sy - 7, int(W * progress), 4))
+        # Tame indicator
+        if getattr(chicken, 'tamed', False):
+            pygame.draw.circle(self.screen, (255, 80, 120), (sx + W // 2, sy - 10), 4)
+
+        # Attack / harvest progress bar
+        if chicken.being_harvested:
+            if chicken._kill_timer > 0:
+                progress = chicken._kill_timer / 0.5
+                pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 7, W, 4))
+                pygame.draw.rect(self.screen, (220, 60, 60), (sx, sy - 7, int(W * progress), 4))
+            elif chicken._harvest_time > 0:
+                progress = chicken._harvest_time / chicken.HARVEST_TIME
+                pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 7, W, 4))
+                pygame.draw.rect(self.screen, (245, 220, 100), (sx, sy - 7, int(W * progress), 4))
+
+        # Health bar when damaged
+        if chicken.health < 3:
+            pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 13, W, 3))
+            pygame.draw.rect(self.screen, (220, 50, 50),
+                             (sx, sy - 13, int(W * chicken.health / 3), 3))
 
     # ------------------------------------------------------------------
     # Mining highlight
@@ -1582,7 +1768,7 @@ class Renderer:
             {AIR, GRASS, DIRT, STONE, OBSIDIAN, BEDROCK, WATER, GRAVEL,
              GATE_MID, GATE_DEEP, GATE_CORE,
              CRACKED_STONE, STALACTITE, STALAGMITE, CAVE_MOSS,
-             HOUSE_WALL, HOUSE_ROOF, SNOW}
+             HOUSE_WALL, HOUSE_ROOF, SNOW, SAND}
             | ALL_LOGS | ALL_LEAVES
         )
         stone_col = BLOCKS[STONE]["color"]

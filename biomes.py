@@ -6,6 +6,7 @@ BIODOME_TYPES = [
     "alpine_mountain", "rocky_mountain",
     "rolling_hills", "steep_hills",
     "steppe", "arid_steppe",
+    "desert", "tundra", "swamp", "beach", "canyon",
 ]
 
 # (height_bias, noise_amplitude_scale) per biodome.
@@ -19,6 +20,11 @@ BIODOME_TERRAIN_MODS = {
     "steep_hills":     ( -2, 1.8),
     "steppe":          (  3, 0.35),
     "arid_steppe":     (  2, 0.45),
+    "desert":          (  1, 0.55),
+    "tundra":          (  1, 0.40),
+    "swamp":           (  5, 0.20),
+    "beach":           (  7, 0.15),
+    "canyon":          ( -5, 2.50),
 }
 
 BIOME_STONE_COLORS = {

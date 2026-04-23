@@ -10,7 +10,8 @@ from renderer import Renderer
 from ui import UI
 from research import ResearchTree
 from constants import SCREEN_W, SCREEN_H, FPS
-from automations import Automation, AUTOMATION_DEFS
+from automations import Automation, AUTOMATION_DEFS, Backhoe
+from constants import PLAYER_W
 from save_manager import SaveManager
 from blocks import GEM_CUTTER_BLOCK
 
@@ -402,6 +403,8 @@ def main():
 
     t0 = _t("total after choice", t0)
 
+    world._player_ref = player
+
     renderer.cam_x = player.x - SCREEN_W // 2
     renderer.cam_y = player.y - SCREEN_H // 2
 
@@ -413,6 +416,8 @@ def main():
         ui.active_automation = None
         ui.farm_bot_open = False
         ui.active_farm_bot = None
+        ui.backhoe_open = False
+        ui.active_backhoe = None
         if hasattr(ui, 'equipment_crafting_open'):
             ui.equipment_crafting_open = False
         ui.active_npc = None
@@ -424,7 +429,8 @@ def main():
     def _any_ui_open():
         return any([ui.pause_open, ui.research_open, ui.inventory_open, ui.crafting_open,
                     ui.collection_open, ui.refinery_open, ui.npc_open,
-                    ui.automation_open, ui.farm_bot_open, ui.chest_open])
+                    ui.automation_open, ui.farm_bot_open, ui.chest_open,
+                    ui.backhoe_open])
 
     def _find_nearby_npc(world, player):
         from cities import NPC
@@ -475,6 +481,10 @@ def main():
         return f"!Unknown command: {verb}"
 
     def _save_and_notify(w, p, res):
+        if p.mounted_machine is not None:
+            bh = p.mounted_machine
+            bh.take_all(p)
+            p.mounted_machine = None
         newly = save_mgr.save(w, p, res)
         ui.achievements_data, ui.global_collection = save_mgr.load_achievements()
         for ach in newly:
@@ -525,6 +535,31 @@ def main():
                     else:
                         ui.pause_open = True
 
+                # Backhoe UI: SPACE mounts the machine
+                if event.key == pygame.K_SPACE and ui.backhoe_open and ui.active_backhoe is not None:
+                    bh = ui.active_backhoe
+                    ui.close_backhoe()
+                    player.mounted_machine = bh
+                    player.x = bh.x + (bh.W - PLAYER_W) / 2
+                    player.y = bh.y
+
+                # Backhoe arm movement while mounted (arrow keys)
+                if player.mounted_machine is not None and not _any_ui_open():
+                    bh = player.mounted_machine
+                    _arm_r_sq = Backhoe.ARM_REACH ** 2
+                    _candidate = None
+                    if event.key == pygame.K_LEFT:
+                        _candidate = (bh.arm_dx - 1, bh.arm_dy)
+                    elif event.key == pygame.K_RIGHT:
+                        _candidate = (bh.arm_dx + 1, bh.arm_dy)
+                    elif event.key == pygame.K_UP:
+                        _candidate = (bh.arm_dx, bh.arm_dy - 1)
+                    elif event.key == pygame.K_DOWN:
+                        _candidate = (bh.arm_dx, bh.arm_dy + 1)
+                    if _candidate is not None and _candidate[0] ** 2 + _candidate[1] ** 2 <= _arm_r_sq:
+                        if _candidate != (0, 0):
+                            bh.arm_dx, bh.arm_dy = _candidate
+
                 if event.key == pygame.K_BACKQUOTE:
                     ui.cheat_open = True
                     ui.cheat_text = ""
@@ -554,11 +589,26 @@ def main():
                     ui.equipment_crafting_open = ui.refinery_open = False
 
                 if event.key == pygame.K_e:
+                    # Dismount backhoe if currently riding
+                    if player.mounted_machine is not None:
+                        bh = player.mounted_machine
+                        bh.take_all(player)
+                        player.x = bh.x + bh.W + 4
+                        player.y = bh.y
+                        player.mounted_machine = None
+                        # Then open the backhoe UI so player can manage fuel
+                        _close_all_ui()
+                        ui.open_backhoe(bh)
+                        continue
+
                     nearby_auto = next(
                         (a for a in world.automations if a.in_range(player)), None
                     )
                     nearby_fb = next(
                         (fb for fb in world.farm_bots if fb.in_range(player)), None
+                    )
+                    nearby_bh = next(
+                        (bh for bh in world.backhoes if bh.in_range(player)), None
                     )
                     nearby_npc = _find_nearby_npc(world, player)
                     nearby_bed = player.get_nearby_bed()
@@ -578,6 +628,12 @@ def main():
                             _close_all_ui()
                             ui.farm_bot_open = True
                             ui.active_farm_bot = nearby_fb
+                    elif nearby_bh is not None:
+                        if ui.backhoe_open and ui.active_backhoe is nearby_bh:
+                            ui.close_backhoe()
+                        else:
+                            _close_all_ui()
+                            ui.open_backhoe(nearby_bh)
                     elif nearby_npc is not None:
                         if ui.npc_open and ui.active_npc is nearby_npc:
                             ui.npc_open = False
@@ -654,6 +710,14 @@ def main():
                     ui.handle_automation_click(event.pos, player)
                 elif ui.farm_bot_open:
                     ui.handle_farm_bot_click(event.pos, player)
+                elif ui.backhoe_open:
+                    result = ui.handle_backhoe_click(event.pos, player)
+                    if result == "ride":
+                        bh = ui.active_backhoe
+                        ui.close_backhoe()
+                        player.mounted_machine = bh
+                        player.x = bh.x + (bh.W - PLAYER_W) / 2
+                        player.y = bh.y
                 elif ui.npc_open:
                     ui.handle_npc_click(event.pos, player)
                 elif ui.research_open:
@@ -689,6 +753,7 @@ def main():
             renderer.draw_entities(world.entities)
             renderer.draw_automations(world.automations)
             renderer.draw_farm_bots(world.farm_bots)
+            renderer.draw_backhoes(world.backhoes, player)
             ui.draw(player, research, dt)
             pygame.display.flip()
             continue
@@ -702,6 +767,20 @@ def main():
             renderer.draw_minimap(world, player, dt)
             pygame.display.flip()
             continue
+
+        # Backhoe mounted controls
+        _BACKHOE_SPEED = 2
+        if player.mounted_machine is not None and not _any_ui_open() and not ui.cheat_open:
+            bh = player.mounted_machine
+            if keys[pygame.K_a]:
+                bh.move(-_BACKHOE_SPEED, world)
+            if keys[pygame.K_d]:
+                bh.move(_BACKHOE_SPEED, world)
+            if keys[pygame.K_z]:
+                bh.dig(dt, world)
+            bh.apply_gravity(world)
+            player.x = bh.x + (bh.W - PLAYER_W) / 2
+            player.y = bh.y
 
         if not _any_ui_open() and not ui.cheat_open:
             player.handle_input(keys, mouse_btns, mouse_world, dt)
@@ -717,6 +796,9 @@ def main():
             automation.update(dt, world)
         for farm_bot in world.farm_bots:
             farm_bot.update(dt, world)
+        for bh in world.backhoes:
+            if player.mounted_machine is not bh:
+                bh.apply_gravity(world)
         world.update_physics(dt, player)
         world.update_water(dt, player)
         world.update_saplings(dt)
@@ -730,6 +812,7 @@ def main():
         renderer.draw_entities(world.entities)
         renderer.draw_automations(world.automations)
         renderer.draw_farm_bots(world.farm_bots)
+        renderer.draw_backhoes(world.backhoes, player)
         renderer.draw_dropped_items(world.dropped_items)
         renderer.draw_farm_sense(player, world)
         renderer.draw_mining_indicator(player)

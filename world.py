@@ -19,6 +19,7 @@ class World:
         self.entities = []
         self.automations = []
         self.farm_bots = []
+        self.backhoes = []
         self.dropped_items = []
         self.chest_data = {}     # (bx, by) -> {item_id: count}
         self._water_level = {}   # (x,y) -> int 1-8; 8 = world-gen source block
@@ -27,13 +28,6 @@ class World:
         _rng = random.Random(self.seed)
         self._surf_octaves = [(0.015, 6.0), (0.04, 3.0), (0.10, 1.5), (0.22, 0.6)]
         self._surf_phases  = [_rng.uniform(0, 6.28) for _ in self._surf_octaves]
-        self._physics_timer = 0.0
-        self._physics_interval = 0.5
-        self._fall_chance = 0.25
-        self._physics_rng = random.Random(seed + 77)
-        self.pending_physics = set()
-        self._physics_tick = 0
-        self._physics_grace = {}
         if preloaded:
             self._load_from(preloaded, player_x)
         else:
@@ -42,8 +36,6 @@ class World:
             self._spawn_animals()
             from cities import generate_cities
             generate_cities(self, self.seed)
-        if preloaded:
-            self._seed_physics()
         # Water simulation
         self._water_timer = 0.0
         self._water_interval = 0.12
@@ -82,14 +74,18 @@ class World:
     # Deterministic terrain queries (replace fixed arrays)
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _zone_seed(world_seed, z, purpose):
+        return (world_seed * 1000003 + z * 31337 + purpose) & 0x7FFFFFFF
+
     def _biodome_terrain_mod(self, x: int):
         """Return (height_bias, amplitude_scale) blended from the two nearest biodome zones."""
         zone = x // 200
         data = []
         for z in range(zone - 1, zone + 2):
-            rng_c = random.Random(hash((self.seed, z, 'bdc')) & 0x7FFFFFFF)
+            rng_c = random.Random(self._zone_seed(self.seed, z, 2))
             cx = z * 200 + rng_c.randint(-40, 40)
-            rng_t = random.Random(hash((self.seed, z, 'bdt')) & 0x7FFFFFFF)
+            rng_t = random.Random(self._zone_seed(self.seed, z, 3))
             biodome = rng_t.choice(BIODOME_TYPES)
             bias, scale = BIODOME_TERRAIN_MODS.get(biodome, (0, 1.0))
             data.append((abs(x - cx), bias, scale))
@@ -107,18 +103,18 @@ class World:
         h = SURFACE_Y + bias
         for (freq, amp), phase in zip(self._surf_octaves, self._surf_phases):
             h += amp * scale * math.sin(x * freq + phase)
-        return max(5, round(h))
+        return max(30, round(h))
 
     def biome_at(self, x: int) -> str:
         zone = x // 150
         nearest_biome, nearest_dist = BIOMES[0], float('inf')
         for z in (zone - 1, zone, zone + 1):
-            rng = random.Random(hash((self.seed, z, 'bc')) & 0x7FFFFFFF)
+            rng = random.Random(self._zone_seed(self.seed, z, 0))
             cx = z * 150 + rng.randint(-25, 25)
             dist = abs(x - cx)
             if dist < nearest_dist:
                 nearest_dist = dist
-                brng = random.Random(hash((self.seed, z, 'bt')) & 0x7FFFFFFF)
+                brng = random.Random(self._zone_seed(self.seed, z, 1))
                 nearest_biome = brng.choice(BIOMES)
         return nearest_biome
 
@@ -126,12 +122,12 @@ class World:
         zone = x // 200
         nearest, nearest_dist = BIODOME_TYPES[0], float('inf')
         for z in (zone - 1, zone, zone + 1):
-            rng = random.Random(hash((self.seed, z, 'bdc')) & 0x7FFFFFFF)
+            rng = random.Random(self._zone_seed(self.seed, z, 2))
             cxz = z * 200 + rng.randint(-40, 40)
             dist = abs(x - cxz)
             if dist < nearest_dist:
                 nearest_dist = dist
-                brng = random.Random(hash((self.seed, z, 'bdt')) & 0x7FFFFFFF)
+                brng = random.Random(self._zone_seed(self.seed, z, 3))
                 nearest = brng.choice(BIODOME_TYPES)
         return nearest
 
@@ -241,21 +237,24 @@ class World:
         for cx in range(player_cx - CHUNK_LOAD_RADIUS, player_cx + CHUNK_LOAD_RADIUS + 1):
             self.load_chunk(cx)
 
-        from automations import Automation, FarmBot
+        from automations import Automation, FarmBot, Backhoe
         for a_data in data["automations"]:
             a = Automation(a_data["x"], a_data["y"], a_data["auto_type"], a_data["direction"])
             a.fuel = a_data["fuel"]
-            a.supports = a_data["supports"]
             a.stored = a_data["stored"]
             a._state = a_data["state"]
             a._halt_reason = a_data["halt_reason"]
-            a._blocks_since_support = a_data["blocks_since_support"]
+            if a._halt_reason == "no_supports":
+                a._halt_reason = ""
+                a._state = "moving"
             self.automations.append(a)
         for fb_data in data.get("farm_bots", []):
             fb = FarmBot(fb_data["x"], fb_data["y"], fb_data["bot_type"],
                          fuel=fb_data["fuel"], seeds=fb_data["seeds"],
                          stored=fb_data["stored"], state=fb_data["state"])
             self.farm_bots.append(fb)
+        for bh_data in data.get("backhoes", []):
+            self.backhoes.append(Backhoe.from_dict(bh_data))
 
         from animals import Sheep, Cow, Chicken
         _CLASS_MAP = {"Sheep": Sheep, "Cow": Cow, "Chicken": Chicken}
@@ -272,6 +271,22 @@ class World:
                 entity.has_milk = extra["has_milk"]
             elif isinstance(entity, Chicken) and "has_egg" in extra:
                 entity.has_egg = extra["has_egg"]
+            # Genetics / new state fields (fallback defaults keep old saves working)
+            if "uid" in extra:
+                entity.uid = extra["uid"]
+            entity.parent_a_uid = extra.get("parent_a_uid", None)
+            entity.parent_b_uid = extra.get("parent_b_uid", None)
+            if "traits" in extra:
+                raw = extra["traits"]
+                entity.traits = {
+                    "color_shift": tuple(raw.get("color_shift", [0, 0, 0])),
+                    "size":        raw.get("size", 1.0),
+                }
+            entity.health          = extra.get("health", 3)
+            entity.dead            = extra.get("dead", False)
+            entity._breed_cooldown = extra.get("_breed_cooldown", 60.0)
+            entity.tamed           = extra.get("tamed", False)
+            entity.tame_progress   = extra.get("tame_progress", 0)
             self.entities.append(entity)
 
         from cities import generate_cities
@@ -297,18 +312,31 @@ class World:
             sy = self.surface_height(x)
             biome = self.biome_at(x)
             biodome = self.biodome_at(x)
-            rocky = biodome in ("alpine_mountain", "rocky_mountain")
+            rocky = biodome in ("alpine_mountain", "rocky_mountain", "tundra", "canyon")
+            sandy = biodome in ("desert", "beach")
             for y in range(WORLD_H):
                 if y < sy:
                     chunk[y][lx] = AIR
                 elif y == sy:
-                    chunk[y][lx] = SNOW if biodome == "alpine_mountain" else GRASS
+                    if biodome in ("alpine_mountain", "tundra"):
+                        chunk[y][lx] = SNOW
+                    elif sandy:
+                        chunk[y][lx] = SAND
+                    elif biodome == "canyon":
+                        chunk[y][lx] = STONE
+                    else:
+                        chunk[y][lx] = GRASS
                 elif y < sy + 6:
-                    chunk[y][lx] = STONE if rocky else DIRT
+                    if rocky:
+                        chunk[y][lx] = STONE
+                    elif sandy:
+                        chunk[y][lx] = SAND
+                    else:
+                        chunk[y][lx] = DIRT
                 elif y >= WORLD_H - 1:
                     chunk[y][lx] = BEDROCK
                 else:
-                    chunk[y][lx] = self._pick_block(y - sy, ore_rng, biome)
+                    chunk[y][lx] = self._pick_block(y - sy, ore_rng, biome, x, y)
 
         # Bedrock bottom
         for lx in range(CHUNK_W):
@@ -338,6 +366,9 @@ class World:
                 "alpine_mountain": (14, 22),"rocky_mountain": (12, 20),
                 "rolling_hills":   (5, 11), "steep_hills":    (5, 10),
                 "steppe":          (13, 22),"arid_steppe":    (18, 30),
+                "desert":          (18, 32),"tundra":         (16, 28),
+                "swamp":           (3, 7),  "beach":          (9, 16),
+                "canyon":          (12, 22),
             }.get(biodome, (5, 10))
             lx += tree_rng.randint(lo, hi)
 
@@ -352,8 +383,26 @@ class World:
                     PUMPKIN_BUSH, APPLE_BUSH, RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH,
                     GARLIC_BUSH, SCALLION_BUSH, CHILI_BUSH, PEPPER_BUSH, ONION_BUSH,
                     POTATO_BUSH, EGGPLANT_BUSH, CABBAGE_BUSH,
+                    BEET_BUSH, TURNIP_BUSH, LEEK_BUSH, ZUCCHINI_BUSH, SWEET_POTATO_BUSH,
+                    WATERMELON_BUSH, RADISH_BUSH, PEA_BUSH, CELERY_BUSH, BROCCOLI_BUSH,
                 ])
             lx += bush_rng.randint(7, 15)
+
+        # Desert surface flora — spawns on SAND in desert/arid biomes
+        desert_rng = random.Random(hash((self.seed, cx, 'desert')) & 0x7FFFFFFF)
+        lx = 4
+        while lx < CHUNK_W - 4:
+            x = cx * CHUNK_W + lx
+            sy = self.surface_height(x)
+            biodome = self.biodome_at(x)
+            if biodome in ("desert", "arid_steppe") and 0 < sy < WORLD_H \
+                    and chunk[sy - 1][lx] == AIR and chunk[sy][lx] == SAND:
+                chunk[sy - 1][lx] = desert_rng.choice([
+                    CACTUS_YOUNG, CACTUS_YOUNG, CACTUS_YOUNG,
+                    DATE_PALM_BUSH, DATE_PALM_BUSH,
+                    AGAVE_BUSH, AGAVE_BUSH,
+                ])
+            lx += desert_rng.randint(9, 20)
 
         # Wildflowers
         flower_rng = random.Random(hash((self.seed, cx, 'flowers')) & 0x7FFFFFFF)
@@ -373,11 +422,15 @@ class World:
                 "alpine_mountain": (18, 35), "rocky_mountain": (14, 28),
                 "rolling_hills": (4, 9), "steep_hills": (5, 10),
                 "steppe": (9, 18), "arid_steppe": (15, 30),
+                "desert": (22, 45), "tundra": (18, 35),
+                "swamp": (2, 5), "beach": (12, 22),
+                "canyon": (12, 24),
             }.get(biodome, (5, 10))
             lx += flower_rng.randint(lo, hi)
 
         # Lakes (chunk-local)
         self._gen_chunk_lakes(cx, chunk)
+        self._gen_chunk_oil_pockets(cx, chunk)
 
     def _gen_chunk_lakes(self, cx: int, chunk: list):
         """Carve small lakes within this chunk."""
@@ -409,6 +462,26 @@ class World:
                         world_x = cx * CHUNK_W + lx
                         self._water_level[(world_x, ly)] = 8
                         self._lake_cells.append((ly, world_x))
+
+    def _gen_chunk_oil_pockets(self, cx: int, chunk: list):
+        """Carve small static oil pockets within this chunk (no flow)."""
+        rng = random.Random(hash((self.seed, cx, 'oil')) & 0x7FFFFFFF)
+        _impassable = {BEDROCK, GATE_MID, GATE_DEEP, GATE_CORE, WATER}
+        if rng.random() > 0.30:
+            return
+        center_lx = rng.randint(4, CHUNK_W - 5)
+        depth = rng.randint(40, 150)
+        abs_y = SURFACE_Y + depth
+        w = rng.randint(3, 8)
+        h = rng.randint(2, 4)
+        lx0 = max(0, center_lx - w // 2)
+        lx1 = min(CHUNK_W - 1, center_lx + w // 2)
+        y0  = max(SURFACE_Y + 35, abs_y - h // 2)
+        y1  = min(WORLD_H - 3, abs_y + h // 2)
+        for ly in range(y0, y1 + 1):
+            for lx in range(lx0, lx1 + 1):
+                if chunk[ly][lx] not in _impassable:
+                    chunk[ly][lx] = OIL
 
     # ------------------------------------------------------------------ caves --
 
@@ -756,36 +829,54 @@ class World:
 
     # ---------------------------------------------------------------- /caves --
 
-    def _pick_block(self, depth, rng, biome="igneous"):
+    def _vein_noise(self, bx, by, seed_offset, scale=5):
+        """Smooth value noise [0,1] for vein/cluster placement — nearby blocks return similar values."""
+        fx = bx / scale
+        fy = by / scale
+        ix = math.floor(fx)
+        iy = math.floor(fy)
+        tx = fx - ix
+        ty = fy - iy
+        tx = tx * tx * (3.0 - 2.0 * tx)
+        ty = ty * ty * (3.0 - 2.0 * ty)
+        s = (self.seed + seed_offset) & 0x7FFFFFFF
+        def _h(gx, gy):
+            v = (s ^ (gx * 374761393)) & 0xFFFFFFFF
+            v = (v ^ (gy * 668265263)) & 0xFFFFFFFF
+            v = ((v ^ (v >> 15)) * 2246822519) & 0xFFFFFFFF
+            v = ((v ^ (v >> 13)) * 3266489917) & 0xFFFFFFFF
+            return (v & 0xFFFF) / 65535.0
+        v00 = _h(ix,   iy)
+        v10 = _h(ix+1, iy)
+        v01 = _h(ix,   iy+1)
+        v11 = _h(ix+1, iy+1)
+        return (v00*(1.0-tx) + v10*tx)*(1.0-ty) + (v01*(1.0-tx) + v11*tx)*ty
+
+    def _pick_block(self, depth, rng, biome="igneous", bx=0, by=0):
         r = rng.random()
-        # Rock deposits — checked first, rare pockets of collectible rocks
+        # Rock deposits — cluster in tight pockets (scale 4, threshold 0.58 → ~42% coverage, 2.4x density inside)
         if depth >= 15:
-            if depth >= 120 and r < 0.025:
-                return ROCK_DEPOSIT
-            elif depth >= 50 and r < 0.015:
-                return ROCK_DEPOSIT
-            elif r < 0.008:
-                return ROCK_DEPOSIT
-        # Fossil deposits — only below depth 50, rarer than rocks
+            rock_n = self._vein_noise(bx, by, 0x5A7E3, scale=4)
+            if rock_n >= 0.58:
+                base = 0.025 if depth >= 120 else 0.015 if depth >= 50 else 0.008
+                if r < base * 2.4:
+                    return ROCK_DEPOSIT
+        # Fossil deposits — small groups (scale 4, threshold 0.62)
         if depth >= 50:
             fr = rng.random()
-            if depth >= 150 and fr < 0.004:
-                return FOSSIL_DEPOSIT
-            elif depth >= 100 and fr < 0.002:
-                return FOSSIL_DEPOSIT
-            elif fr < 0.001:
-                return FOSSIL_DEPOSIT
-        # Gem deposits — only below depth 8, rarer than fossils
+            fossil_n = self._vein_noise(bx, by, 0xF0551, scale=4)
+            if fossil_n >= 0.62:
+                base = 0.004 if depth >= 150 else 0.002 if depth >= 100 else 0.001
+                if fr < base * 2.6:
+                    return FOSSIL_DEPOSIT
+        # Gem deposits — tiny pockets (scale 3, threshold 0.66)
         if depth >= 8:
             gr = rng.random()
-            if depth >= 172 and gr < 0.0018:
-                return GEM_DEPOSIT
-            elif depth >= 100 and gr < 0.0012:
-                return GEM_DEPOSIT
-            elif depth >= 50 and gr < 0.0008:
-                return GEM_DEPOSIT
-            elif gr < 0.0004:
-                return GEM_DEPOSIT
+            gem_n = self._vein_noise(bx, by, 0x6E534, scale=3)
+            if gem_n >= 0.66:
+                base = 0.0018 if depth >= 172 else 0.0012 if depth >= 100 else 0.0008 if depth >= 50 else 0.0004
+                if gr < base * 2.9:
+                    return GEM_DEPOSIT
         r = rng.random()  # fresh roll so deposit chance doesn't eat ore slots
         m = BIOME_ORE_MULTIPLIERS.get(biome, {})
         cm = m.get("coal", 1.0)
@@ -794,21 +885,33 @@ class World:
         xm = m.get("crystal", 1.0)
         rm = m.get("ruby", 1.0)
         om = m.get("obsidian", 1.0)
+        # Ore veins: each type has its own noise field (scale 6) so veins are type-specific and independent
         if depth < 40:
-            if r < 0.040 * cm: return COAL_ORE
-            if r < 0.060 * im: return IRON_ORE
+            coal_n = self._vein_noise(bx, by, 0x1C0A1, scale=6)
+            iron_n = self._vein_noise(bx, by, 0x17EA4, scale=6)
+            if coal_n >= 0.55 and r < 0.040 * cm * 2.2: return COAL_ORE
+            if iron_n >= 0.55 and r < 0.060 * im * 2.2: return IRON_ORE
         elif depth < 100:
-            if r < 0.030 * im: return IRON_ORE
-            if r < 0.055 * gm: return GOLD_ORE
-            if r < 0.065 * cm: return COAL_ORE
+            iron_n = self._vein_noise(bx, by, 0x17EA4, scale=6)
+            gold_n = self._vein_noise(bx, by, 0xC01D1, scale=6)
+            coal_n = self._vein_noise(bx, by, 0x1C0A1, scale=6)
+            if iron_n >= 0.55 and r < 0.030 * im * 2.2: return IRON_ORE
+            if gold_n >= 0.55 and r < 0.055 * gm * 2.2: return GOLD_ORE
+            if coal_n >= 0.55 and r < 0.065 * cm * 2.2: return COAL_ORE
         elif depth < 160:
-            if r < 0.025 * gm: return GOLD_ORE
-            if r < 0.045 * xm: return CRYSTAL_ORE
-            if r < 0.055 * rm: return RUBY_ORE
+            gold_n = self._vein_noise(bx, by, 0xC01D1, scale=6)
+            crys_n = self._vein_noise(bx, by, 0xCE750, scale=6)
+            ruby_n = self._vein_noise(bx, by, 0xB4E1D, scale=6)
+            if gold_n >= 0.55 and r < 0.025 * gm * 2.2: return GOLD_ORE
+            if crys_n >= 0.55 and r < 0.045 * xm * 2.2: return CRYSTAL_ORE
+            if ruby_n >= 0.55 and r < 0.055 * rm * 2.2: return RUBY_ORE
         else:
-            if r < 0.150 * om: return OBSIDIAN
-            if r < 0.180 * xm: return CRYSTAL_ORE
-            if r < 0.195 * rm: return RUBY_ORE
+            obsi_n = self._vein_noise(bx, by, 0x0B51D, scale=5)
+            crys_n = self._vein_noise(bx, by, 0xCE750, scale=5)
+            ruby_n = self._vein_noise(bx, by, 0xB4E1D, scale=5)
+            if obsi_n >= 0.55 and r < 0.150 * om * 2.2: return OBSIDIAN
+            if crys_n >= 0.55 and r < 0.180 * xm * 2.2: return CRYSTAL_ORE
+            if ruby_n >= 0.55 and r < 0.195 * rm * 2.2: return RUBY_ORE
         return STONE
 
     def get_block(self, x, y):
@@ -843,20 +946,8 @@ class World:
                 nx, ny = x + ddx, y + ddy
                 if 0 <= ny < WORLD_H:
                     nb = self._chunk_get(nx, ny)
-                    if nb in PHYSICS_BLOCKS:
-                        self.pending_physics.add((nx, ny))
-                        self._physics_grace[(nx, ny)] = self._physics_tick + 3
-                    elif nb == WATER:
+                    if nb == WATER:
                         self._pending_water.add((nx, ny))
-            if old_bid in ALL_SUPPORTS:
-                r = SUPPORT_RANGE[old_bid]
-                for check_y in (y, y - 1):
-                    if 0 <= check_y < WORLD_H:
-                        for ddx in range(-r, r + 1):
-                            nx = x + ddx
-                            if self._chunk_get(nx, check_y) in PHYSICS_BLOCKS:
-                                self.pending_physics.add((nx, check_y))
-                                self._physics_grace[(nx, check_y)] = self._physics_tick + 3
 
     def get_bg_block(self, x, y):
         if y < 0 or y >= WORLD_H or abs(x) > WORLD_MAX_X:
@@ -875,85 +966,10 @@ class World:
 
     def is_solid(self, x, y):
         bid = self.get_block(x, y)
-        return (bid != AIR and bid != LADDER and bid not in ALL_SUPPORTS
-                and bid != WATER and bid != SAPLING
+        return (bid != AIR and bid != LADDER
+                and bid != WATER and bid != OIL and bid != SAPLING
                 and bid not in BUSH_BLOCKS and bid not in CROP_BLOCKS
                 and bid not in OPEN_DOORS)
-
-    def _seed_physics(self):
-        for cx, chunk in self._chunks.items():
-            base_x = cx * CHUNK_W
-            for y in range(WORLD_H - 1):
-                for lx in range(CHUNK_W):
-                    if chunk[y][lx] in PHYSICS_BLOCKS and chunk[y + 1][lx] == AIR:
-                        self.pending_physics.add((base_x + lx, y))
-
-    def _is_supported(self, x, y):
-        for check_y in (y, y + 1):
-            if 0 <= check_y < WORLD_H:
-                for nx in range(x - 10, x + 11):
-                    bid = self._chunk_get(nx, check_y)
-                    if bid in SUPPORT_RANGE and abs(nx - x) <= SUPPORT_RANGE[bid]:
-                        return True
-        return False
-
-    def _hits_player(self, bx, by, player):
-        return (player.x < (bx + 1) * BLOCK_SIZE and
-                player.x + PLAYER_W > bx * BLOCK_SIZE and
-                player.y < (by + 1) * BLOCK_SIZE and
-                player.y + PLAYER_H > by * BLOCK_SIZE)
-
-    def _push_player(self, bx, by, player):
-        by_top = int(player.y // BLOCK_SIZE)
-        by_bot = int((player.y + PLAYER_H - 1) // BLOCK_SIZE)
-        for dx in (-1, 1):
-            nx = bx + dx
-            if all(not self.is_solid(nx, ty) for ty in range(by_top, by_bot + 1)):
-                player.x = float(nx * BLOCK_SIZE + (BLOCK_SIZE - PLAYER_W) // 2)
-                return
-
-    def update_physics(self, dt, player):
-        self._physics_timer += dt
-        if self._physics_timer < self._physics_interval:
-            return
-        self._physics_timer -= self._physics_interval
-
-        self._physics_tick += 1
-        to_check = list(self.pending_physics)
-        self.pending_physics.clear()
-        newly_pending = set()
-
-        for (x, y) in to_check:
-            bid = self._chunk_get(x, y)
-            if bid not in PHYSICS_BLOCKS:
-                self._physics_grace.pop((x, y), None)
-                continue
-            below_y = y + 1
-            if below_y >= WORLD_H:
-                continue
-            if self._chunk_get(x, below_y) != AIR:
-                continue
-            if self._is_supported(x, y):
-                self._physics_grace.pop((x, y), None)
-                continue
-            if self._physics_grace.get((x, y), 0) > self._physics_tick:
-                newly_pending.add((x, y))
-                continue
-            self._physics_grace.pop((x, y), None)
-            if self._physics_rng.random() < self._fall_chance:
-                self._chunk_set(x, y, AIR)
-                self._chunk_set(x, below_y, bid)
-                if self._hits_player(x, below_y, player):
-                    self._push_player(x, below_y, player)
-                    player.health = max(0, player.health - 10)
-                if y - 1 >= 0 and self._chunk_get(x, y - 1) in PHYSICS_BLOCKS:
-                    newly_pending.add((x, y - 1))
-                if below_y + 1 < WORLD_H and self._chunk_get(x, below_y + 1) == AIR:
-                    newly_pending.add((x, below_y))
-            else:
-                newly_pending.add((x, y))
-
-        self.pending_physics.update(newly_pending)
 
     def update_water(self, dt, player):
         self._water_timer += dt
@@ -1228,6 +1244,11 @@ class World:
             "steep_hills":     self._grow_birch,
             "steppe":          self._grow_acacia,
             "arid_steppe":     self._grow_dead,
+            "desert":          self._grow_dead,
+            "tundra":          self._grow_pine,
+            "swamp":           self._grow_willow,
+            "beach":           self._grow_palm,
+            "canyon":          self._grow_dead,
         }.get(biodome, self._grow_oak)(bx, by, rng)
 
     def _grow_tree(self, bx, by):
@@ -1281,7 +1302,7 @@ class World:
                 still_pending.add((x, y))
                 continue
             below = self.get_block(x, y + 1)
-            if below not in (GRASS, DIRT):
+            if below not in (GRASS, DIRT, SAND):
                 still_pending.add((x, y))
                 continue
             if not self._has_sky_view(x, y):
@@ -1305,8 +1326,21 @@ class World:
                     PEPPER_CROP_YOUNG:     PEPPER_CROP_MATURE,
                     ONION_CROP_YOUNG:      ONION_CROP_MATURE,
                     POTATO_CROP_YOUNG:     POTATO_CROP_MATURE,
-                    EGGPLANT_CROP_YOUNG:   EGGPLANT_CROP_MATURE,
-                    CABBAGE_CROP_YOUNG:    CABBAGE_CROP_MATURE,
+                    EGGPLANT_CROP_YOUNG:      EGGPLANT_CROP_MATURE,
+                    CABBAGE_CROP_YOUNG:       CABBAGE_CROP_MATURE,
+                    BEET_CROP_YOUNG:          BEET_CROP_MATURE,
+                    TURNIP_CROP_YOUNG:        TURNIP_CROP_MATURE,
+                    LEEK_CROP_YOUNG:          LEEK_CROP_MATURE,
+                    ZUCCHINI_CROP_YOUNG:      ZUCCHINI_CROP_MATURE,
+                    SWEET_POTATO_CROP_YOUNG:  SWEET_POTATO_CROP_MATURE,
+                    WATERMELON_CROP_YOUNG:    WATERMELON_CROP_MATURE,
+                    RADISH_CROP_YOUNG:        RADISH_CROP_MATURE,
+                    PEA_CROP_YOUNG:           PEA_CROP_MATURE,
+                    CELERY_CROP_YOUNG:        CELERY_CROP_MATURE,
+                    BROCCOLI_CROP_YOUNG:      BROCCOLI_CROP_MATURE,
+                    CACTUS_YOUNG:             CACTUS_MATURE,
+                    DATE_PALM_CROP_YOUNG:     DATE_PALM_CROP_MATURE,
+                    AGAVE_CROP_YOUNG:         AGAVE_CROP_MATURE,
                 }
                 self.set_block(x, y, _crop_mature_map[bid])
             else:

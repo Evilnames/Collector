@@ -24,6 +24,10 @@ BAKERY_RECIPES = [
     {"name": "Moon Cake",      "ingredients": {"wheat": 1, "pumpkin": 1, "egg": 1},        "output_id": "moon_cake",      "output_count": 2},
     {"name": "Hot & Sour Soup","ingredients": {"mushroom": 1, "tomato": 1, "egg": 1},      "output_id": "hot_sour_soup",  "output_count": 1},
     {"name": "Sweet Rice Ball","ingredients": {"rice": 1, "pumpkin": 1},                   "output_id": "sweet_rice_ball","output_count": 2},
+    {"name": "Sweet Potato Pie",   "ingredients": {"sweet_potato": 2, "wheat": 1},         "output_id": "sweet_potato_pie",   "output_count": 1},
+    # --- Desert bakery ---
+    {"name": "Date Cake",     "ingredients": {"date_palm_fruit": 2, "wheat": 1},             "output_id": "date_cake",     "output_count": 1},
+    {"name": "Cactus Candy",  "ingredients": {"cactus_fruit": 2, "agave_syrup": 1},          "output_id": "cactus_candy",  "output_count": 2},
 ]
 
 # ---------------------------------------------------------------------------
@@ -40,6 +44,12 @@ WOK_RECIPES = [
     {"name": "Cooked Egg",       "ingredients": {"egg": 1},                                      "output_id": "cooked_egg",       "output_count": 1},
     {"name": "Omelette",         "ingredients": {"egg": 2},                                      "output_id": "omelette",         "output_count": 1},
     {"name": "Garlic Bok Choy",  "ingredients": {"bok_choy": 2, "garlic": 1},                   "output_id": "garlic_bok_choy",  "output_count": 1},
+    {"name": "Turnip Mash",      "ingredients": {"turnip": 2, "ginger": 1},                      "output_id": "turnip_mash",      "output_count": 1},
+    {"name": "Zucchini Stir Fry","ingredients": {"zucchini": 2, "garlic": 1},                    "output_id": "zucchini_stir_fry","output_count": 1},
+    {"name": "Celery Stir Fry",  "ingredients": {"celery": 2, "scallion": 1},                    "output_id": "celery_stir_fry",  "output_count": 1},
+    {"name": "Broccoli Stir Fry","ingredients": {"broccoli": 2, "garlic": 1},                    "output_id": "broccoli_stir_fry","output_count": 1},
+    # --- Desert wok ---
+    {"name": "Desert Salad",     "ingredients": {"cactus_fruit": 1, "watermelon": 1, "chili": 1}, "output_id": "desert_salad",     "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -66,7 +76,9 @@ NOODLE_POT_RECIPES = [
     {"name": "Noodle Soup",   "ingredients": {"noodles": 1, "bok_choy": 1, "mushroom": 1},      "output_id": "noodle_soup",   "output_count": 1},
     {"name": "Sesame Noodles","ingredients": {"noodles": 1, "ginger": 1},                        "output_id": "sesame_noodles","output_count": 1},
     {"name": "Hot Pot Broth", "ingredients": {"mushroom": 2, "ginger": 1, "chili": 1},          "output_id": "hot_pot_broth", "output_count": 1},
-    {"name": "Scallion Soup", "ingredients": {"scallion": 2, "tofu": 1},                         "output_id": "scallion_soup", "output_count": 1},
+    {"name": "Scallion Soup",     "ingredients": {"scallion": 2, "tofu": 1},                    "output_id": "scallion_soup",    "output_count": 1},
+    {"name": "Leek & Potato Soup","ingredients": {"leek": 1, "potato": 2},                       "output_id": "leek_potato_soup", "output_count": 1},
+    {"name": "Pea Soup",          "ingredients": {"pea": 2, "onion": 1},                         "output_id": "pea_soup",         "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -83,7 +95,16 @@ BBQ_GRILL_RECIPES = [
     {"name": "Corn Ribs",        "ingredients": {"corn": 1, "chili": 1, "garlic": 1},           "output_id": "corn_ribs",        "output_count": 2},
     {"name": "BBQ Tofu",         "ingredients": {"tofu": 1, "pepper": 1, "scallion": 1},        "output_id": "bbq_tofu",         "output_count": 1},
     {"name": "Roast Onion",      "ingredients": {"onion": 2, "garlic": 1},                      "output_id": "roast_onion",      "output_count": 2},
-    {"name": "Grilled Cabbage",  "ingredients": {"cabbage": 2, "garlic": 1},                    "output_id": "grilled_cabbage",  "output_count": 1},
+    {"name": "Grilled Cabbage",   "ingredients": {"cabbage": 2, "garlic": 1},                   "output_id": "grilled_cabbage",   "output_count": 1},
+    {"name": "Sweet Potato Wedges","ingredients": {"sweet_potato": 2},                            "output_id": "sweet_potato_wedges","output_count": 2},
+    {"name": "Grilled Leek",      "ingredients": {"leek": 3},                                    "output_id": "grilled_leek",      "output_count": 2},
+    {"name": "Watermelon Salad",  "ingredients": {"watermelon": 2},                              "output_id": "watermelon_salad",  "output_count": 1},
+    # --- Desert BBQ ---
+    {"name": "Grilled Cactus",   "ingredients": {"cactus_fruit": 2},                             "output_id": "grilled_cactus",    "output_count": 2},
+    # --- Meat ---
+    {"name": "Cooked Mutton",    "ingredients": {"raw_mutton": 1},                                "output_id": "cooked_mutton",     "output_count": 1},
+    {"name": "Cooked Beef",      "ingredients": {"raw_beef": 1},                                  "output_id": "cooked_beef",       "output_count": 1},
+    {"name": "Cooked Chicken",   "ingredients": {"raw_chicken": 1},                               "output_id": "cooked_chicken",    "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -100,7 +121,26 @@ CLAY_POT_RECIPES = [
     {"name": "Stuffed Cabbage",      "ingredients": {"cabbage": 1, "rice": 1, "egg": 1},              "output_id": "stuffed_cabbage",      "output_count": 1},
     {"name": "Braised Tofu",         "ingredients": {"tofu": 1, "bok_choy": 1, "soy_sauce": 1},       "output_id": "braised_tofu",         "output_count": 1},
     {"name": "Pepper Pot",           "ingredients": {"pepper": 2, "chili": 1, "garlic": 1},           "output_id": "pepper_pot",           "output_count": 1},
-    {"name": "Harvest Stew",         "ingredients": {"carrot": 1, "potato": 1, "cabbage": 1},         "output_id": "harvest_stew",         "output_count": 1},
+    {"name": "Harvest Stew",      "ingredients": {"carrot": 1, "potato": 1, "cabbage": 1},          "output_id": "harvest_stew",     "output_count": 1},
+    {"name": "Beet Soup",         "ingredients": {"beet": 2, "onion": 1},                            "output_id": "beet_soup",        "output_count": 1},
+    {"name": "Root Medley",       "ingredients": {"beet": 1, "turnip": 1, "carrot": 1},              "output_id": "root_medley",      "output_count": 1},
+    {"name": "Radish Kimchi",     "ingredients": {"radish": 2, "chili": 1, "garlic": 1},             "output_id": "radish_kimchi",    "output_count": 1},
+    {"name": "Stuffed Zucchini",  "ingredients": {"zucchini": 2, "rice": 1},                         "output_id": "stuffed_zucchini", "output_count": 1},
+    {"name": "Garden Soup",       "ingredients": {"broccoli": 1, "pea": 1, "celery": 1},             "output_id": "garden_soup",      "output_count": 1},
+    # --- Desert clay pot ---
+    {"name": "Date Palm Broth",  "ingredients": {"date_palm_fruit": 2, "onion": 1},                "output_id": "date_palm_broth",  "output_count": 1},
+]
+
+# ---------------------------------------------------------------------------
+# Desert Forge recipes (ingredient dict → output, same pattern as cooking stations)
+# ---------------------------------------------------------------------------
+
+FORGE_RECIPES = [
+    {"name": "Desert Glass",  "ingredients": {"sand_grain": 3},                              "output_id": "desert_glass",  "output_count": 1},
+    {"name": "Sandstone",     "ingredients": {"sand_grain": 4, "stone_chip": 1},             "output_id": "sandstone",     "output_count": 2},
+    {"name": "Tempered Iron", "ingredients": {"iron_chunk": 2, "coal": 3},                   "output_id": "tempered_iron", "output_count": 1},
+    {"name": "Cactus Fiber",  "ingredients": {"cactus_spine": 3},                            "output_id": "cactus_fiber",  "output_count": 2},
+    {"name": "Agave Syrup",   "ingredients": {"agave": 3},                                   "output_id": "agave_syrup",   "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -353,6 +393,37 @@ RECIPES = [
         "output_id":    "clay_pot_item",
         "output_count": 1,
     },
+    {
+        "name": "Desert Forge",
+        "pattern": [
+            ["stone_chip",  "coal",       "stone_chip"],
+            ["stone_chip",  "iron_chunk", "stone_chip"],
+            ["stone_chip",  "coal",       "stone_chip"],
+        ],
+        "output_id":    "desert_forge_item",
+        "output_count": 1,
+    },
+    # --- Tempered tools ---
+    {
+        "name": "Tempered Pickaxe",
+        "pattern": [
+            ["tempered_iron", "tempered_iron", "tempered_iron"],
+            [None,            "lumber",        None           ],
+            [None,            "lumber",        None           ],
+        ],
+        "output_id":    "tempered_pickaxe",
+        "output_count": 1,
+    },
+    {
+        "name": "Tempered Axe",
+        "pattern": [
+            ["tempered_iron", "tempered_iron", None],
+            ["tempered_iron", "lumber",        None],
+            [None,            "lumber",        None],
+        ],
+        "output_id":    "tempered_axe",
+        "output_count": 1,
+    },
     # --- Fences & Doors ---
     {
         "name": "Wood Fence",
@@ -475,6 +546,37 @@ RECIPES = [
             ["crystal_shard", "gold_nugget",    "crystal_shard"],
         ],
         "output_id":    "crystal_farm_bot_item",
+        "output_count": 1,
+    },
+    # --- Construction Equipment ---
+    {
+        "name": "Empty Barrel",
+        "pattern": [
+            ["iron_chunk", None,          "iron_chunk"],
+            ["iron_chunk", None,          "iron_chunk"],
+            ["iron_chunk", "iron_chunk",  "iron_chunk"],
+        ],
+        "output_id":    "empty_barrel",
+        "output_count": 1,
+    },
+    {
+        "name": "Backhoe",
+        "pattern": [
+            ["iron_chunk", "lumber",      "iron_chunk"],
+            ["iron_chunk", "coal",        "iron_chunk"],
+            ["iron_chunk", "iron_chunk",  "iron_chunk"],
+        ],
+        "output_id":    "backhoe_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Hunting Knife",
+        "pattern": [
+            [None, "stone_chip", None],
+            [None, "lumber",     None],
+            [None, None,         None],
+        ],
+        "output_id":    "hunting_knife",
         "output_count": 1,
     },
 ]

@@ -1,6 +1,6 @@
 import random
 import pygame
-from automations import Automation, AUTOMATION_DEFS, FarmBot, FARM_BOT_DEFS, FARM_BOT_TYPES
+from automations import Automation, AUTOMATION_DEFS, FarmBot, FARM_BOT_DEFS, FARM_BOT_TYPES, Backhoe
 from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT, GEM_DEPOSIT, CAVE_MUSHROOMS, EQUIPMENT_BLOCKS, LADDER, SUPPORT, WATER,
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
                     ALL_SUPPORTS, SAPLING, GRASS, DIRT, ALL_LOGS, ALL_LEAVES,
@@ -10,6 +10,8 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, GARLIC_BUSH,
                     SCALLION_BUSH, CHILI_BUSH,
                     PEPPER_BUSH, ONION_BUSH, POTATO_BUSH, EGGPLANT_BUSH, CABBAGE_BUSH,
+                    BEET_BUSH, TURNIP_BUSH, LEEK_BUSH, ZUCCHINI_BUSH, SWEET_POTATO_BUSH,
+                    WATERMELON_BUSH, RADISH_BUSH, PEA_BUSH, CELERY_BUSH, BROCCOLI_BUSH,
                     STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE,
                     CARROT_CROP_MATURE, TOMATO_CROP_MATURE, CORN_CROP_MATURE,
                     PUMPKIN_CROP_MATURE, APPLE_CROP_MATURE,
@@ -18,7 +20,11 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     SCALLION_CROP_MATURE, CHILI_CROP_MATURE,
                     PEPPER_CROP_MATURE, ONION_CROP_MATURE, POTATO_CROP_MATURE,
                     EGGPLANT_CROP_MATURE, CABBAGE_CROP_MATURE,
-                    PERENNIAL_CROP_MATURE, MATURE_TO_YOUNG_CROP, CHEST_BLOCK)
+                    BEET_CROP_MATURE, TURNIP_CROP_MATURE, LEEK_CROP_MATURE,
+                    ZUCCHINI_CROP_MATURE, SWEET_POTATO_CROP_MATURE, WATERMELON_CROP_MATURE,
+                    RADISH_CROP_MATURE, PEA_CROP_MATURE, CELERY_CROP_MATURE, BROCCOLI_CROP_MATURE,
+                    PERENNIAL_CROP_MATURE, MATURE_TO_YOUNG_CROP, CHEST_BLOCK,
+                    OIL)
 from items import ITEMS
 from rocks import RockGenerator, Rock
 from wildflowers import WildflowerGenerator, Wildflower
@@ -103,6 +109,8 @@ class Player:
         self.bg_place_mode = False  # True when Shift held — places in background layer
         # Farm sense: block under mouse (for crop readiness display)
         self.target_block = None
+        # Construction equipment
+        self.mounted_machine = None
 
     def apply_save(self, d):
         self.x, self.y = d["x"], d["y"]
@@ -133,6 +141,8 @@ class Player:
     # ------------------------------------------------------------------
 
     def handle_input(self, keys, mouse_buttons, mouse_world_pos, dt):
+        if self.mounted_machine is not None:
+            return
         self.vx = 0.0
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
             self.vx = -MOVE_SPEED
@@ -192,6 +202,10 @@ class Player:
                     for _ in range(count):
                         self._add_item(item_id)
                     self._consume_tool_use()
+                if getattr(harvest_target, 'dead', False):
+                    if harvest_target in self.world.entities:
+                        self.world.entities.remove(harvest_target)
+                    harvest_target = None
                 self._reset_mine()
             else:
                 # Normal block mining (facing-side check)
@@ -248,8 +262,13 @@ class Player:
                 cx = (self.x + PLAYER_W / 2) / BLOCK_SIZE
                 cy = (self.y + PLAYER_H / 2) / BLOCK_SIZE
                 if ((bx - cx) ** 2 + (by - cy) ** 2) ** 0.5 <= MINE_REACH:
-                    self.place_target = (bx, by)
-                    self._try_place(bx, by, bg=bg_mode)
+                    # Feed animals before block placement
+                    feed_target = self._find_animal_at(mx, my)
+                    if feed_target is not None and not getattr(feed_target, 'dead', False):
+                        feed_target.try_feed(self)
+                    else:
+                        self.place_target = (bx, by)
+                        self._try_place(bx, by, bg=bg_mode)
                 else:
                     self.place_target = None
         else:
@@ -424,6 +443,36 @@ class Player:
                 elif block_id == CABBAGE_CROP_MATURE:
                     for _ in range(random.randint(1, 2)):
                         self._add_item("cabbage_seed")
+                elif block_id == BEET_CROP_MATURE:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("beet_seed")
+                elif block_id == TURNIP_CROP_MATURE:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("turnip_seed")
+                elif block_id == LEEK_CROP_MATURE:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("leek_seed")
+                elif block_id == ZUCCHINI_CROP_MATURE:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("zucchini_seed")
+                elif block_id == SWEET_POTATO_CROP_MATURE:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("sweet_potato_seed")
+                elif block_id == WATERMELON_CROP_MATURE:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("watermelon_seed")
+                elif block_id == RADISH_CROP_MATURE:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("radish_seed")
+                elif block_id == PEA_CROP_MATURE:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("pea_seed")
+                elif block_id == CELERY_CROP_MATURE:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("celery_seed")
+                elif block_id == BROCCOLI_CROP_MATURE:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("broccoli_seed")
                 # Bushes: small chance of food directly
                 elif block_id == STRAWBERRY_BUSH and random.random() < 0.25:
                     self._add_item("strawberry")
@@ -461,6 +510,26 @@ class Player:
                     self._add_item("eggplant")
                 elif block_id == CABBAGE_BUSH and random.random() < 0.30:
                     self._add_item("cabbage")
+                elif block_id == BEET_BUSH and random.random() < 0.25:
+                    self._add_item("beet")
+                elif block_id == TURNIP_BUSH and random.random() < 0.25:
+                    self._add_item("turnip")
+                elif block_id == LEEK_BUSH and random.random() < 0.30:
+                    self._add_item("leek")
+                elif block_id == ZUCCHINI_BUSH and random.random() < 0.20:
+                    self._add_item("zucchini")
+                elif block_id == SWEET_POTATO_BUSH and random.random() < 0.20:
+                    self._add_item("sweet_potato")
+                elif block_id == WATERMELON_BUSH and random.random() < 0.15:
+                    self._add_item("watermelon")
+                elif block_id == RADISH_BUSH and random.random() < 0.30:
+                    self._add_item("radish")
+                elif block_id == PEA_BUSH and random.random() < 0.30:
+                    self._add_item("pea")
+                elif block_id == CELERY_BUSH and random.random() < 0.25:
+                    self._add_item("celery")
+                elif block_id == BROCCOLI_BUSH and random.random() < 0.20:
+                    self._add_item("broccoli")
             if block_id in PERENNIAL_CROP_MATURE and random.random() > 0.33:
                 self.world.set_block(bx, by, MATURE_TO_YOUNG_CROP[block_id])
             else:
@@ -520,6 +589,34 @@ class Player:
                     else:
                         spawn_dir = (0, 1 if ddy >= 0 else -1)
                     self.world.automations.append(Automation(ax, ay, spawn_type, spawn_dir))
+                self.inventory[item_id] -= 1
+                if self.inventory[item_id] <= 0:
+                    del self.inventory[item_id]
+                    for i in range(HOTBAR_SIZE):
+                        if self.hotbar[i] == item_id:
+                            self.hotbar[i] = None
+                            break
+                return
+            # Oil barrel harvesting: use empty_barrel on an OIL block
+            if item_data.get("harvest_oil") and self.world.get_block(bx, by) == OIL:
+                if self.inventory.get(item_id, 0) > 0:
+                    self.world.set_block(bx, by, AIR)
+                    self._add_item("oil_barrel")
+                    self.inventory[item_id] -= 1
+                    if self.inventory[item_id] <= 0:
+                        del self.inventory[item_id]
+                        for i in range(HOTBAR_SIZE):
+                            if self.hotbar[i] == item_id:
+                                self.hotbar[i] = None
+                                break
+                return
+            # Backhoe placement
+            if item_data.get("spawn_backhoe"):
+                if self.inventory.get(item_id, 0) <= 0:
+                    return
+                bh_x = bx * BLOCK_SIZE - (Backhoe.W - BLOCK_SIZE) // 2
+                bh_y = by * BLOCK_SIZE
+                self.world.backhoes.append(Backhoe(bh_x, bh_y))
                 self.inventory[item_id] -= 1
                 if self.inventory[item_id] <= 0:
                     del self.inventory[item_id]
@@ -624,6 +721,8 @@ class Player:
         cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
         for dy in range(-2, 3):
             for dx in range(-2, 3):
+                if dx * self.facing < 0:
+                    continue
                 if self.world.get_block(cx + dx, cy + dy) == BED:
                     return (cx + dx, cy + dy)
         return None
@@ -643,7 +742,9 @@ class Player:
             return False
         if self.inventory.get(item_id, 0) <= 0:
             return False
-        self.hunger = min(100.0, self.hunger + item_data.get("hunger_restore", 0))
+        hunger_restore = item_data.get("hunger_restore", 0)
+        self.hunger = min(100.0, self.hunger + hunger_restore)
+        self.health = min(MAX_HEALTH, self.health + hunger_restore * 0.25)
         self._eat_cooldown = 0.5
         self.inventory[item_id] -= 1
         if self.inventory[item_id] <= 0:
@@ -772,6 +873,8 @@ class Player:
         cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
         for dy in range(-2, 3):
             for dx in range(-2, 3):
+                if dx * self.facing < 0:
+                    continue
                 bid = self.world.get_block(cx + dx, cy + dy)
                 if bid in EQUIPMENT_BLOCKS:
                     return bid
@@ -783,6 +886,8 @@ class Player:
         cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
         for dy in range(-2, 3):
             for dx in range(-2, 3):
+                if dx * self.facing < 0:
+                    continue
                 if self.world.get_block(cx + dx, cy + dy) == CHEST_BLOCK:
                     return (cx + dx, cy + dy)
         return None

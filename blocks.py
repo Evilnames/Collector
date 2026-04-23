@@ -113,6 +113,50 @@ EGGPLANT_CROP_YOUNG  = 104
 EGGPLANT_CROP_MATURE = 105
 CABBAGE_CROP_YOUNG   = 106
 CABBAGE_CROP_MATURE  = 107
+# --- New vegetable crop supply chains ---
+BEET_BUSH              = 154
+TURNIP_BUSH            = 157
+LEEK_BUSH              = 160
+ZUCCHINI_BUSH          = 163
+SWEET_POTATO_BUSH      = 166
+WATERMELON_BUSH        = 169
+RADISH_BUSH            = 172
+PEA_BUSH               = 175
+CELERY_BUSH            = 178
+BROCCOLI_BUSH          = 181
+BEET_CROP_YOUNG        = 155
+BEET_CROP_MATURE       = 156
+TURNIP_CROP_YOUNG      = 158
+TURNIP_CROP_MATURE     = 159
+LEEK_CROP_YOUNG        = 161
+LEEK_CROP_MATURE       = 162
+ZUCCHINI_CROP_YOUNG    = 164
+ZUCCHINI_CROP_MATURE   = 165
+SWEET_POTATO_CROP_YOUNG  = 167
+SWEET_POTATO_CROP_MATURE = 168
+WATERMELON_CROP_YOUNG  = 170
+WATERMELON_CROP_MATURE = 171
+RADISH_CROP_YOUNG      = 173
+RADISH_CROP_MATURE     = 174
+PEA_CROP_YOUNG         = 176
+PEA_CROP_MATURE        = 177
+CELERY_CROP_YOUNG      = 179
+CELERY_CROP_MATURE     = 180
+BROCCOLI_CROP_YOUNG    = 182
+BROCCOLI_CROP_MATURE   = 183
+# --- Desert/cactus supply chain ---
+CACTUS_YOUNG           = 184
+CACTUS_MATURE          = 185
+SANDSTONE_BLOCK        = 186
+DESERT_FORGE_BLOCK     = 187
+DATE_PALM_BUSH         = 188
+DATE_PALM_CROP_YOUNG   = 189
+DATE_PALM_CROP_MATURE  = 190
+AGAVE_BUSH             = 191
+AGAVE_CROP_YOUNG       = 192
+AGAVE_CROP_MATURE      = 193
+OIL                    = 194  # static underground liquid pocket; harvested by empty_barrel
+
 HOUSE_WALL           = 108  # city house wall block; not a physics block so it won't collapse
 HOUSE_ROOF           = 109  # city house roof block
 WILDFLOWER_PATCH     = 110  # surface collectable; interact → generates unique Wildflower object
@@ -160,6 +204,7 @@ CHEST_BLOCK      = 149
 FOSSIL_DEPOSIT   = 150  # special: mine → generates unique Fossil object, no item drop
 GEM_DEPOSIT      = 151  # special: mine → generates unique Gemstone object, no item drop
 SNOW             = 152  # alpine_mountain surface block; falls like grass
+SAND             = 153  # desert/beach surface block; falls like snow
 
 OPEN_DOORS = {WOOD_DOOR_OPEN, IRON_DOOR_OPEN}
 
@@ -189,28 +234,36 @@ LEAF_LOG_MAP = {
 }
 
 EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, BAKERY_BLOCK,
-                    WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK}
+                    WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
+                    DESERT_FORGE_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT}
-PHYSICS_BLOCKS   = {GRASS, DIRT, SNOW, CRACKED_STONE, GRAVEL}  # blocks that can fall when unsupported
-ALL_SUPPORTS     = {SUPPORT, IRON_SUPPORT, DIAMOND_SUPPORT}
-SUPPORT_RANGE    = {SUPPORT: 2, IRON_SUPPORT: 5, DIAMOND_SUPPORT: 10}  # half-width in blocks
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
                      RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, GARLIC_BUSH, SCALLION_BUSH, CHILI_BUSH,
-                     PEPPER_BUSH, ONION_BUSH, POTATO_BUSH, EGGPLANT_BUSH, CABBAGE_BUSH}
+                     PEPPER_BUSH, ONION_BUSH, POTATO_BUSH, EGGPLANT_BUSH, CABBAGE_BUSH,
+                     BEET_BUSH, TURNIP_BUSH, LEEK_BUSH, ZUCCHINI_BUSH, SWEET_POTATO_BUSH,
+                     WATERMELON_BUSH, RADISH_BUSH, PEA_BUSH, CELERY_BUSH, BROCCOLI_BUSH,
+                     DATE_PALM_BUSH, AGAVE_BUSH}
 YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG, TOMATO_CROP_YOUNG, CORN_CROP_YOUNG, PUMPKIN_CROP_YOUNG, APPLE_CROP_YOUNG,
                      RICE_CROP_YOUNG, GINGER_CROP_YOUNG, BOK_CHOY_CROP_YOUNG, GARLIC_CROP_YOUNG,
                      SCALLION_CROP_YOUNG, CHILI_CROP_YOUNG,
-                     PEPPER_CROP_YOUNG, ONION_CROP_YOUNG, POTATO_CROP_YOUNG, EGGPLANT_CROP_YOUNG, CABBAGE_CROP_YOUNG}
+                     PEPPER_CROP_YOUNG, ONION_CROP_YOUNG, POTATO_CROP_YOUNG, EGGPLANT_CROP_YOUNG, CABBAGE_CROP_YOUNG,
+                     BEET_CROP_YOUNG, TURNIP_CROP_YOUNG, LEEK_CROP_YOUNG, ZUCCHINI_CROP_YOUNG, SWEET_POTATO_CROP_YOUNG,
+                     WATERMELON_CROP_YOUNG, RADISH_CROP_YOUNG, PEA_CROP_YOUNG, CELERY_CROP_YOUNG, BROCCOLI_CROP_YOUNG,
+                     CACTUS_YOUNG, DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG}
 MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATURE, TOMATO_CROP_MATURE, CORN_CROP_MATURE, PUMPKIN_CROP_MATURE, APPLE_CROP_MATURE,
                      RICE_CROP_MATURE, GINGER_CROP_MATURE, BOK_CHOY_CROP_MATURE, GARLIC_CROP_MATURE,
                      SCALLION_CROP_MATURE, CHILI_CROP_MATURE,
-                     PEPPER_CROP_MATURE, ONION_CROP_MATURE, POTATO_CROP_MATURE, EGGPLANT_CROP_MATURE, CABBAGE_CROP_MATURE}
+                     PEPPER_CROP_MATURE, ONION_CROP_MATURE, POTATO_CROP_MATURE, EGGPLANT_CROP_MATURE, CABBAGE_CROP_MATURE,
+                     BEET_CROP_MATURE, TURNIP_CROP_MATURE, LEEK_CROP_MATURE, ZUCCHINI_CROP_MATURE, SWEET_POTATO_CROP_MATURE,
+                     WATERMELON_CROP_MATURE, RADISH_CROP_MATURE, PEA_CROP_MATURE, CELERY_CROP_MATURE, BROCCOLI_CROP_MATURE,
+                     CACTUS_MATURE, DATE_PALM_CROP_MATURE, AGAVE_CROP_MATURE}
 CROP_BLOCKS       = YOUNG_CROP_BLOCKS | MATURE_CROP_BLOCKS
 
 # Perennial crops regrow after harvest (each harvest has ~33% chance to die)
 PERENNIAL_CROP_MATURE = {
     STRAWBERRY_CROP_MATURE, APPLE_CROP_MATURE, TOMATO_CROP_MATURE,
     PEPPER_CROP_MATURE, CHILI_CROP_MATURE, EGGPLANT_CROP_MATURE,
+    CACTUS_MATURE,
 }
 
 # Reverse mapping: mature → young, used for perennial regrowth
@@ -232,7 +285,20 @@ MATURE_TO_YOUNG_CROP = {
     ONION_CROP_MATURE:      ONION_CROP_YOUNG,
     POTATO_CROP_MATURE:     POTATO_CROP_YOUNG,
     EGGPLANT_CROP_MATURE:   EGGPLANT_CROP_YOUNG,
-    CABBAGE_CROP_MATURE:    CABBAGE_CROP_YOUNG,
+    CABBAGE_CROP_MATURE:      CABBAGE_CROP_YOUNG,
+    BEET_CROP_MATURE:         BEET_CROP_YOUNG,
+    TURNIP_CROP_MATURE:       TURNIP_CROP_YOUNG,
+    LEEK_CROP_MATURE:         LEEK_CROP_YOUNG,
+    ZUCCHINI_CROP_MATURE:     ZUCCHINI_CROP_YOUNG,
+    SWEET_POTATO_CROP_MATURE: SWEET_POTATO_CROP_YOUNG,
+    WATERMELON_CROP_MATURE:   WATERMELON_CROP_YOUNG,
+    RADISH_CROP_MATURE:       RADISH_CROP_YOUNG,
+    PEA_CROP_MATURE:          PEA_CROP_YOUNG,
+    CELERY_CROP_MATURE:       CELERY_CROP_YOUNG,
+    BROCCOLI_CROP_MATURE:     BROCCOLI_CROP_YOUNG,
+    CACTUS_MATURE:            CACTUS_YOUNG,
+    DATE_PALM_CROP_MATURE:    DATE_PALM_CROP_YOUNG,
+    AGAVE_CROP_MATURE:        AGAVE_CROP_YOUNG,
 }
 
 BLOCKS = {
@@ -260,10 +326,10 @@ BLOCKS = {
     RESONANCE_BLOCK:  {"name": "Resonance Chamber", "hardness": 1, "color": (100, 50, 200),  "drop": "resonance_item"},
     POLISHED_STONE_BLOCK: {"name": "Polished Stone", "hardness": 2,            "color": (200, 200, 215), "drop": "polished_stone"},
     LADDER:               {"name": "Ladder",          "hardness": 1,            "color": (139, 90,  43),  "drop": "ladder_item"},
-    SUPPORT:              {"name": "Support",         "hardness": 1,            "color": (180, 140, 80),  "drop": "support_item"},
+    SUPPORT:              {"name": "Support",         "hardness": 2,            "color": (180, 140, 80),  "drop": None},
     WATER:                {"name": "Water",           "hardness": float('inf'), "color": (40, 110, 220),  "drop": None},
-    IRON_SUPPORT:         {"name": "Iron Support",    "hardness": 2,            "color": (160, 170, 185), "drop": "iron_support_item"},
-    DIAMOND_SUPPORT:      {"name": "Diamond Support", "hardness": 3,            "color": (100, 230, 220), "drop": "diamond_support_item"},
+    IRON_SUPPORT:         {"name": "Iron Support",    "hardness": 2,            "color": (160, 170, 185), "drop": None},
+    DIAMOND_SUPPORT:      {"name": "Diamond Support", "hardness": 3,            "color": (100, 230, 220), "drop": None},
     SAPLING:              {"name": "Sapling",         "hardness": 1,            "color": (60, 180, 60),   "drop": "sapling"},
     STRAWBERRY_BUSH:        {"name": "Strawberry Bush",       "hardness": 0.5, "color": (60, 160, 60),  "drop": "strawberry_seed", "drop_chance": 1.0},
     WHEAT_BUSH:             {"name": "Wheat Bush",            "hardness": 0.5, "color": (180, 160, 60), "drop": "wheat_seed",       "drop_chance": 1.0},
@@ -395,4 +461,48 @@ BLOCKS = {
     FOSSIL_DEPOSIT:   {"name": "Fossil Deposit",    "hardness": 5,   "color": (140, 125, 105), "drop": None},
     GEM_DEPOSIT:      {"name": "Gem Deposit",       "hardness": 6,   "color": (88,  72,  105), "drop": None},
     SNOW:             {"name": "Snow",              "hardness": 1,   "color": (220, 232, 245), "drop": "stone_chip"},
+    SAND:             {"name": "Sand",              "hardness": 1,   "color": (210, 190, 140), "drop": "sand_grain"},
+    # --- New vegetable crops ---
+    BEET_BUSH:              {"name": "Beet Bush",                "hardness": 0.5, "color": (140,  30,  60), "drop": "beet_seed",         "drop_chance": 1.0},
+    BEET_CROP_YOUNG:        {"name": "Beet Crop",                "hardness": 0.5, "color": ( 90, 165,  80), "drop": "beet_seed",         "drop_chance": 1.0},
+    BEET_CROP_MATURE:       {"name": "Beet Crop (Ripe)",         "hardness": 0.5, "color": (140,  30,  60), "drop": "beet",              "drop_chance": 1.0},
+    TURNIP_BUSH:            {"name": "Turnip Bush",              "hardness": 0.5, "color": (210, 190, 215), "drop": "turnip_seed",       "drop_chance": 1.0},
+    TURNIP_CROP_YOUNG:      {"name": "Turnip Crop",              "hardness": 0.5, "color": ( 95, 170,  85), "drop": "turnip_seed",       "drop_chance": 1.0},
+    TURNIP_CROP_MATURE:     {"name": "Turnip Crop (Ripe)",       "hardness": 0.5, "color": (210, 190, 215), "drop": "turnip",            "drop_chance": 1.0},
+    LEEK_BUSH:              {"name": "Leek Bush",                "hardness": 0.5, "color": ( 80, 195,  90), "drop": "leek_seed",         "drop_chance": 1.0},
+    LEEK_CROP_YOUNG:        {"name": "Leek Crop",                "hardness": 0.5, "color": ( 60, 180,  80), "drop": "leek_seed",         "drop_chance": 1.0},
+    LEEK_CROP_MATURE:       {"name": "Leek Crop (Ripe)",         "hardness": 0.5, "color": ( 90, 210, 100), "drop": "leek",              "drop_chance": 1.0},
+    ZUCCHINI_BUSH:          {"name": "Zucchini Bush",            "hardness": 0.5, "color": ( 70, 150,  55), "drop": "zucchini_seed",     "drop_chance": 1.0},
+    ZUCCHINI_CROP_YOUNG:    {"name": "Zucchini Crop",            "hardness": 0.5, "color": ( 85, 175,  70), "drop": "zucchini_seed",     "drop_chance": 1.0},
+    ZUCCHINI_CROP_MATURE:   {"name": "Zucchini Crop (Ripe)",     "hardness": 0.5, "color": ( 65, 145,  50), "drop": "zucchini",          "drop_chance": 1.0},
+    SWEET_POTATO_BUSH:      {"name": "Sweet Potato Bush",        "hardness": 0.5, "color": (195, 100,  50), "drop": "sweet_potato_seed", "drop_chance": 1.0},
+    SWEET_POTATO_CROP_YOUNG:  {"name": "Sweet Potato Crop",      "hardness": 0.5, "color": (100, 175,  85), "drop": "sweet_potato_seed", "drop_chance": 1.0},
+    SWEET_POTATO_CROP_MATURE: {"name": "Sweet Potato Crop (Ripe)","hardness": 0.5,"color": (195, 100,  50), "drop": "sweet_potato",      "drop_chance": 1.0},
+    WATERMELON_BUSH:        {"name": "Watermelon Bush",          "hardness": 0.5, "color": ( 55, 140,  50), "drop": "watermelon_seed",   "drop_chance": 1.0},
+    WATERMELON_CROP_YOUNG:  {"name": "Watermelon Crop",          "hardness": 0.5, "color": ( 70, 160,  65), "drop": "watermelon_seed",   "drop_chance": 1.0},
+    WATERMELON_CROP_MATURE: {"name": "Watermelon Crop (Ripe)",   "hardness": 0.5, "color": ( 55, 140,  50), "drop": "watermelon",        "drop_chance": 1.0},
+    RADISH_BUSH:            {"name": "Radish Bush",              "hardness": 0.5, "color": (220,  60,  80), "drop": "radish_seed",       "drop_chance": 1.0},
+    RADISH_CROP_YOUNG:      {"name": "Radish Crop",              "hardness": 0.5, "color": ( 90, 170,  80), "drop": "radish_seed",       "drop_chance": 1.0},
+    RADISH_CROP_MATURE:     {"name": "Radish Crop (Ripe)",       "hardness": 0.5, "color": (220,  60,  80), "drop": "radish",            "drop_chance": 1.0},
+    PEA_BUSH:               {"name": "Pea Bush",                 "hardness": 0.5, "color": (100, 185,  70), "drop": "pea_seed",          "drop_chance": 1.0},
+    PEA_CROP_YOUNG:         {"name": "Pea Crop",                 "hardness": 0.5, "color": (110, 190,  80), "drop": "pea_seed",          "drop_chance": 1.0},
+    PEA_CROP_MATURE:        {"name": "Pea Crop (Ripe)",          "hardness": 0.5, "color": (110, 185,  65), "drop": "pea",               "drop_chance": 1.0},
+    CELERY_BUSH:            {"name": "Celery Bush",              "hardness": 0.5, "color": ( 95, 185, 100), "drop": "celery_seed",       "drop_chance": 1.0},
+    CELERY_CROP_YOUNG:      {"name": "Celery Crop",              "hardness": 0.5, "color": ( 80, 175,  90), "drop": "celery_seed",       "drop_chance": 1.0},
+    CELERY_CROP_MATURE:     {"name": "Celery Crop (Ripe)",       "hardness": 0.5, "color": (100, 190, 105), "drop": "celery",            "drop_chance": 1.0},
+    BROCCOLI_BUSH:          {"name": "Broccoli Bush",            "hardness": 0.5, "color": ( 45, 120,  55), "drop": "broccoli_seed",     "drop_chance": 1.0},
+    BROCCOLI_CROP_YOUNG:    {"name": "Broccoli Crop",            "hardness": 0.5, "color": ( 65, 155,  70), "drop": "broccoli_seed",     "drop_chance": 1.0},
+    BROCCOLI_CROP_MATURE:   {"name": "Broccoli Crop (Ripe)",     "hardness": 0.5, "color": ( 40, 115,  50), "drop": "broccoli",          "drop_chance": 1.0},
+    # --- Desert/cactus supply chain ---
+    CACTUS_YOUNG:           {"name": "Cactus",                   "hardness": 0.5, "color": ( 65, 155,  60), "drop": "cactus_spine",      "drop_chance": 1.0},
+    CACTUS_MATURE:          {"name": "Cactus (Ripe)",            "hardness": 0.5, "color": ( 45, 135,  40), "drop": "cactus_fruit",      "drop_chance": 1.0},
+    SANDSTONE_BLOCK:        {"name": "Sandstone",                "hardness": 2,   "color": (210, 185, 120), "drop": "sandstone"},
+    DESERT_FORGE_BLOCK:     {"name": "Desert Forge",             "hardness": 1,   "color": (175,  95,  40), "drop": "desert_forge_item"},
+    DATE_PALM_BUSH:         {"name": "Date Palm Bush",           "hardness": 0.5, "color": ( 90, 140,  55), "drop": "date_palm_seed",    "drop_chance": 1.0},
+    DATE_PALM_CROP_YOUNG:   {"name": "Date Palm",                "hardness": 0.5, "color": ( 80, 150,  55), "drop": "date_palm_seed",    "drop_chance": 1.0},
+    DATE_PALM_CROP_MATURE:  {"name": "Date Palm (Ripe)",         "hardness": 0.5, "color": (180, 110,  30), "drop": "date_palm_fruit",   "drop_chance": 1.0},
+    AGAVE_BUSH:             {"name": "Agave Bush",               "hardness": 0.5, "color": ( 80, 155, 100), "drop": "agave_seed",        "drop_chance": 1.0},
+    AGAVE_CROP_YOUNG:       {"name": "Agave Plant",              "hardness": 0.5, "color": ( 70, 165,  90), "drop": "agave_seed",        "drop_chance": 1.0},
+    AGAVE_CROP_MATURE:      {"name": "Agave Plant (Ripe)",       "hardness": 0.5, "color": ( 95, 185, 105), "drop": "agave",             "drop_chance": 1.0},
+    OIL:                    {"name": "Oil",                      "hardness": float('inf'),    "color": ( 30,  22,  10), "drop": None},
 }

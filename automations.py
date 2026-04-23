@@ -1,55 +1,43 @@
 import random
 import pygame
-from blocks import (BLOCKS, AIR, SUPPORT, IRON_SUPPORT, DIAMOND_SUPPORT,
+from blocks import (BLOCKS, AIR,
                     MATURE_CROP_BLOCKS, MATURE_TO_YOUNG_CROP, YOUNG_CROP_BLOCKS,
-                    GRASS, DIRT)
+                    GRASS, DIRT, OIL)
 from constants import BLOCK_SIZE, WORLD_MAX_X, WORLD_H, MINE_REACH, PLAYER_W, PLAYER_H
 
 AUTOMATION_DEFS = {
     "coal_miner": {
-        "name":             "Coal Miner",
-        "fuel_item":        "coal",
-        "fuel_tank":        20,
-        "fuel_rate":        1 / 40.0,
-        "mine_time":        3.0,
-        "max_hardness":     3,
-        "inv_limit":        30,
-        "support_item":     "support_item",
-        "support_block":    SUPPORT,
-        "support_interval": 4,    # place a support every 4 blocks traveled
-        "supports_max":     10,
+        "name":         "Coal Miner",
+        "fuel_item":    "coal",
+        "fuel_tank":    20,
+        "fuel_rate":    1 / 40.0,
+        "mine_time":    3.0,
+        "max_hardness": 3,
+        "inv_limit":    30,
         "w": 20, "h": 20,
-        "color":            (110, 90, 70),
+        "color":        (110, 90, 70),
     },
     "iron_miner": {
-        "name":             "Iron Miner",
-        "fuel_item":        "iron_chunk",
-        "fuel_tank":        10,
-        "fuel_rate":        1 / 64.0,
-        "mine_time":        1.5,
-        "max_hardness":     6,
-        "inv_limit":        50,
-        "support_item":     "iron_support_item",
-        "support_block":    IRON_SUPPORT,
-        "support_interval": 10,   # iron support covers 5-block radius
-        "supports_max":     5,
+        "name":         "Iron Miner",
+        "fuel_item":    "iron_chunk",
+        "fuel_tank":    10,
+        "fuel_rate":    1 / 64.0,
+        "mine_time":    1.5,
+        "max_hardness": 6,
+        "inv_limit":    50,
         "w": 20, "h": 20,
-        "color":            (160, 170, 180),
+        "color":        (160, 170, 180),
     },
     "crystal_miner": {
-        "name":             "Crystal Miner",
-        "fuel_item":        "crystal_shard",
-        "fuel_tank":        5,
-        "fuel_rate":        1 / 96.0,
-        "mine_time":        0.5,
-        "max_hardness":     9,
-        "inv_limit":        80,
-        "support_item":     "diamond_support_item",
-        "support_block":    DIAMOND_SUPPORT,
-        "support_interval": 20,   # diamond support covers 10-block radius
-        "supports_max":     3,
+        "name":         "Crystal Miner",
+        "fuel_item":    "crystal_shard",
+        "fuel_tank":    5,
+        "fuel_rate":    1 / 96.0,
+        "mine_time":    0.5,
+        "max_hardness": 9,
+        "inv_limit":    80,
         "w": 20, "h": 20,
-        "color":            (80, 200, 220),
+        "color":        (80, 200, 220),
     },
 }
 
@@ -106,15 +94,12 @@ class Automation:
         self._def = AUTOMATION_DEFS[auto_type]
 
         self.fuel = 0.0
-        self.supports = 0
         self.stored = {}
 
         self._state = "moving"
         self._halt_reason = ""
         self._mine_timer = 0.0
         self._mining_block_id = 0
-        # Counts blocks traveled since last support was placed
-        self._blocks_since_support = 0
 
     # ------------------------------------------------------------------ props
     @property
@@ -134,10 +119,9 @@ class Automation:
         if self._state != "halted":
             return "active"
         return {
-            "fuel":        "halted_fuel",
-            "full":        "halted_full",
-            "blocked":     "halted_blocked",
-            "no_supports": "halted_supports",
+            "fuel":    "halted_fuel",
+            "full":    "halted_full",
+            "blocked": "halted_blocked",
         }.get(self._halt_reason, "active")
 
     # ------------------------------------------------------------------ logic
@@ -151,25 +135,6 @@ class Automation:
         by = int(self.y // BLOCK_SIZE) + dy
         return bx, by
 
-    def _place_support_if_needed(self, world):
-        """
-        Place a support at the automation's current block if the interval is reached.
-        Returns False and halts if supports are required but unavailable.
-        """
-        adef = self._def
-        if self._blocks_since_support < adef["support_interval"]:
-            return True  # not time yet
-        if self.supports <= 0:
-            self._halt("no_supports")
-            return False
-        cbx = int(self.x // BLOCK_SIZE)
-        cby = int(self.y // BLOCK_SIZE)
-        if world.get_block(cbx, cby) == AIR:
-            world.set_block(cbx, cby, adef["support_block"])
-        self.supports -= 1
-        self._blocks_since_support = 0
-        return True
-
     def update(self, dt, world):
         adef = self._def
 
@@ -179,9 +144,6 @@ class Automation:
                 self._state = "moving"
                 self._halt_reason = ""
             elif self._halt_reason == "full" and self.inv_count < adef["inv_limit"]:
-                self._state = "moving"
-                self._halt_reason = ""
-            elif self._halt_reason == "no_supports" and self.supports > 0:
                 self._state = "moving"
                 self._halt_reason = ""
             elif self._halt_reason == "blocked":
@@ -216,15 +178,10 @@ class Automation:
 
         # --- MOVING state ---
         if self._state == "moving":
-            # Before moving, place a support at current position if interval reached
-            if not self._place_support_if_needed(world):
-                return  # halted for no_supports
-
             if block_id == AIR:
                 dx, dy = self.direction
                 self.x += dx * BLOCK_SIZE
                 self.y += dy * BLOCK_SIZE
-                self._blocks_since_support += 1
                 return
 
             h = BLOCKS[block_id]["hardness"]
@@ -256,7 +213,6 @@ class Automation:
                 dx, dy = self.direction
                 self.x += dx * BLOCK_SIZE
                 self.y += dy * BLOCK_SIZE
-                self._blocks_since_support += 1
                 self._state = "moving"
                 self._mine_timer = 0.0
 
@@ -284,23 +240,6 @@ class Automation:
         if player.inventory[fuel_item] <= 0:
             player.inventory.pop(fuel_item, None)
 
-    def deposit_supports(self, player, amount=None):
-        adef = self._def
-        sup_item = adef["support_item"]
-        available = player.inventory.get(sup_item, 0)
-        if available <= 0:
-            return
-        space = adef["supports_max"] - self.supports
-        if space <= 0:
-            return
-        to_add = min(available, space) if amount is None else min(amount, available, space)
-        if to_add <= 0:
-            return
-        self.supports += to_add
-        player.inventory[sup_item] = player.inventory.get(sup_item, 0) - to_add
-        if player.inventory[sup_item] <= 0:
-            player.inventory.pop(sup_item, None)
-
     def take_all(self, player):
         for item_id, count in self.stored.items():
             for _ in range(count):
@@ -312,6 +251,8 @@ class Automation:
         acy = (self.y + self.H / 2) / BLOCK_SIZE
         pcx = (player.x + PLAYER_W / 2) / BLOCK_SIZE
         pcy = (player.y + PLAYER_H / 2) / BLOCK_SIZE
+        if (acx - pcx) * player.facing < 0:
+            return False
         return ((acx - pcx) ** 2 + (acy - pcy) ** 2) ** 0.5 <= MINE_REACH
 
     # ------------------------------------------------------------------ rendering
@@ -538,6 +479,8 @@ class FarmBot:
         acy = (self.y + self.H / 2) / BLOCK_SIZE
         pcx = (player.x + PLAYER_W / 2) / BLOCK_SIZE
         pcy = (player.y + PLAYER_H / 2) / BLOCK_SIZE
+        if (acx - pcx) * player.facing < 0:
+            return False
         return ((acx - pcx) ** 2 + (acy - pcy) ** 2) ** 0.5 <= MINE_REACH
 
     def draw(self, surface, cam_x, cam_y):
@@ -565,3 +508,150 @@ class FarmBot:
             halt_surf = pygame.Surface((W, H), pygame.SRCALPHA)
             halt_surf.fill((180, 30, 30, 100))
             surface.blit(halt_surf, (sx, sy))
+
+
+class Backhoe:
+    """Player-controlled construction vehicle. Runs on oil barrels, digs fast."""
+
+    W          = 48    # px wide (1.5 blocks)
+    H          = 32    # px tall (1 block)
+    FUEL_TANK  = 10.0  # holds 10 oil barrels
+    MINE_SPEED = 7.0   # blocks/second dig power
+    ARM_REACH  = 4     # max block-distance from body centre to arm tip
+    INV_LIMIT  = 40
+    _FUEL_RATE = 1 / 30.0  # barrels per second consumed while digging
+
+    def __init__(self, x, y):
+        self.x = float(x)
+        self.y = float(y)
+        self.fuel    = 0.0
+        self.stored  = {}
+        self.arm_dx  = 2   # start pointing 2 blocks to the right
+        self.arm_dy  = 0
+        self._mine_timer  = 0.0
+        self._mine_target = None
+        self._mine_block  = 0
+
+    @classmethod
+    def from_dict(cls, d):
+        bh = cls(d["x"], d["y"])
+        bh.fuel    = float(d.get("fuel", 0.0))
+        bh.stored  = dict(d.get("stored", {}))
+        bh.arm_dx  = int(d.get("arm_dx", 2))
+        bh.arm_dy  = int(d.get("arm_dy", 0))
+        return bh
+
+    def to_dict(self):
+        return {
+            "x": self.x, "y": self.y,
+            "fuel":   self.fuel,
+            "stored": self.stored,
+            "arm_dx": self.arm_dx,
+            "arm_dy": self.arm_dy,
+        }
+
+    @property
+    def inv_count(self):
+        return sum(self.stored.values())
+
+    def center_block(self):
+        return (
+            int((self.x + self.W / 2) // BLOCK_SIZE),
+            int((self.y + self.H / 2) // BLOCK_SIZE),
+        )
+
+    def arm_target_block(self):
+        cbx, cby = self.center_block()
+        return (cbx + self.arm_dx, cby + self.arm_dy)
+
+    def in_range(self, player):
+        acx = (self.x + self.W / 2) / BLOCK_SIZE
+        acy = (self.y + self.H / 2) / BLOCK_SIZE
+        pcx = (player.x + PLAYER_W / 2) / BLOCK_SIZE
+        pcy = (player.y + PLAYER_H / 2) / BLOCK_SIZE
+        return ((acx - pcx) ** 2 + (acy - pcy) ** 2) ** 0.5 <= MINE_REACH
+
+    def move(self, dx, world):
+        new_x = self.x + dx
+        bx_left  = int(new_x // BLOCK_SIZE)
+        bx_right = int((new_x + self.W - 1) // BLOCK_SIZE)
+        by_top   = int(self.y // BLOCK_SIZE)
+        by_bot   = int((self.y + self.H - 1) // BLOCK_SIZE)
+        for bx in range(bx_left, bx_right + 1):
+            for by in range(by_top, by_bot + 1):
+                if world.is_solid(bx, by):
+                    return
+        self.x = new_x
+
+    def apply_gravity(self, world):
+        below_y  = int((self.y + self.H) // BLOCK_SIZE)
+        bx_left  = int(self.x // BLOCK_SIZE)
+        bx_right = int((self.x + self.W - 1) // BLOCK_SIZE)
+        grounded = any(world.is_solid(bx, below_y) for bx in range(bx_left, bx_right + 1))
+        if not grounded:
+            self.y += 4.0
+
+    def dig(self, dt, world):
+        if self.fuel <= 0 or self.inv_count >= self.INV_LIMIT:
+            return
+        tbx, tby = self.arm_target_block()
+        block_id = world.get_block(tbx, tby)
+        if block_id == AIR or block_id == OIL:
+            self._mine_timer  = 0.0
+            self._mine_target = None
+            return
+        hardness = BLOCKS[block_id]["hardness"]
+        if hardness == float("inf"):
+            self._mine_timer  = 0.0
+            return
+        if self._mine_target != (tbx, tby) or self._mine_block != block_id:
+            self._mine_target = (tbx, tby)
+            self._mine_block  = block_id
+            self._mine_timer  = 0.0
+        mine_total = hardness / self.MINE_SPEED
+        self._mine_timer += dt
+        self.fuel = max(0.0, self.fuel - self._FUEL_RATE * dt)
+        if self._mine_timer >= mine_total:
+            drop   = BLOCKS[block_id].get("drop")
+            chance = BLOCKS[block_id].get("drop_chance", 1.0)
+            if drop and random.random() < chance:
+                self.stored[drop] = self.stored.get(drop, 0) + 1
+            world.set_block(tbx, tby, AIR)
+            self._mine_timer  = 0.0
+            self._mine_target = None
+            self._mine_block  = 0
+
+    @property
+    def mine_progress(self):
+        if self._mine_target is None or self._mine_block == 0:
+            return 0.0
+        hardness = BLOCKS.get(self._mine_block, {}).get("hardness", 0)
+        if hardness == 0 or hardness == float("inf"):
+            return 0.0
+        mine_total = hardness / self.MINE_SPEED
+        return min(1.0, self._mine_timer / mine_total) if mine_total > 0 else 0.0
+
+    def deposit_fuel(self, player, amount=None):
+        available = player.inventory.get("oil_barrel", 0)
+        if available <= 0:
+            return
+        space  = self.FUEL_TANK - self.fuel
+        if amount is None:
+            to_add = min(available, int(space) + (1 if space % 1 > 0 else 0))
+        else:
+            to_add = min(amount, available)
+        to_add = min(to_add, available)
+        if to_add <= 0:
+            return
+        self.fuel = min(self.FUEL_TANK, self.fuel + to_add)
+        remaining = available - to_add
+        if remaining <= 0:
+            player.inventory.pop("oil_barrel", None)
+        else:
+            player.inventory["oil_barrel"] = remaining
+
+    def take_all(self, player):
+        for item_id, count in list(self.stored.items()):
+            for _ in range(count):
+                player._add_item(item_id)
+        self.stored.clear()

@@ -22,7 +22,7 @@ class SaveManager:
                 self._create_tables(con)
                 for tbl in ("save_meta", "chunks", "bg_chunks", "world_meta", "player",
                             "rocks", "wildflowers", "fossils", "gems", "research", "automations",
-                            "farm_bots", "entities", "dropped_items", "chests"):
+                            "farm_bots", "backhoes", "entities", "dropped_items", "chests"):
                     # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
                 con.commit()
@@ -59,6 +59,7 @@ class SaveManager:
             self._save_research(con, research)
             self._save_automations(con, world)
             self._save_farm_bots(con, world)
+            self._save_backhoes(con, world)
             self._save_entities(con, world)
             self._save_dropped_items(con, world)
             self._save_chests(con, world)
@@ -76,6 +77,7 @@ class SaveManager:
             player_data = self._load_player(con)
             automations = self._load_automations(con)
             farm_bots = self._load_farm_bots(con)
+            backhoes = self._load_backhoes(con)
             entities = self._load_entities(con)
             research = self._load_research(con)
             dropped_items = self._load_dropped_items(con)
@@ -86,6 +88,7 @@ class SaveManager:
             "player": player_data,
             "automations": automations,
             "farm_bots": farm_bots,
+            "backhoes": backhoes,
             "entities": entities,
             "research": research,
             "dropped_items": dropped_items,
@@ -290,6 +293,12 @@ class SaveManager:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             x REAL, y REAL, bot_type TEXT,
             fuel REAL, seeds TEXT, stored TEXT, state TEXT
+        );
+        CREATE TABLE IF NOT EXISTS backhoes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            x REAL, y REAL,
+            fuel REAL, stored TEXT,
+            arm_dx INTEGER, arm_dy INTEGER
         );
         CREATE TABLE IF NOT EXISTS entities (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -627,6 +636,14 @@ class SaveManager:
                  json.dumps(fb.seeds), json.dumps(fb.stored), fb._state)
             )
 
+    def _save_backhoes(self, con, world):
+        con.execute("DELETE FROM backhoes")
+        for bh in world.backhoes:
+            con.execute(
+                "INSERT INTO backhoes (x, y, fuel, stored, arm_dx, arm_dy) VALUES (?,?,?,?,?,?)",
+                (bh.x, bh.y, bh.fuel, json.dumps(bh.stored), bh.arm_dx, bh.arm_dy)
+            )
+
     def _save_entities(self, con, world):
         from animals import Sheep, Cow, Chicken
         from cities import NPC
@@ -634,13 +651,26 @@ class SaveManager:
         for e in world.entities:
             if isinstance(e, NPC):
                 continue
-            extra = {}
+            extra = {
+                "uid":           getattr(e, 'uid', None),
+                "parent_a_uid":  getattr(e, 'parent_a_uid', None),
+                "parent_b_uid":  getattr(e, 'parent_b_uid', None),
+                "traits": {
+                    "color_shift": list(e.traits["color_shift"]),
+                    "size":        e.traits["size"],
+                } if hasattr(e, 'traits') else {},
+                "health":          getattr(e, 'health', 3),
+                "dead":            getattr(e, 'dead', False),
+                "_breed_cooldown": getattr(e, '_breed_cooldown', 60.0),
+                "tamed":           getattr(e, 'tamed', False),
+                "tame_progress":   getattr(e, 'tame_progress', 0),
+            }
             if isinstance(e, Sheep):
-                extra = {"has_wool": e.has_wool}
+                extra["has_wool"] = e.has_wool
             elif isinstance(e, Cow):
-                extra = {"has_milk": e.has_milk}
+                extra["has_milk"] = e.has_milk
             elif isinstance(e, Chicken):
-                extra = {"has_egg": e.has_egg}
+                extra["has_egg"] = e.has_egg
             con.execute(
                 "INSERT INTO entities (entity_type, x, y, facing, animal_id, extra) VALUES (?,?,?,?,?,?)",
                 (type(e).__name__, e.x, e.y, e.facing, e.animal_id, json.dumps(extra))
@@ -829,6 +859,23 @@ class SaveManager:
                 "x": x, "y": y, "bot_type": bot_type, "fuel": fuel,
                 "seeds": json.loads(seeds), "stored": json.loads(stored),
                 "state": state,
+            })
+        return result
+
+    def _load_backhoes(self, con):
+        try:
+            rows = con.execute(
+                "SELECT x, y, fuel, stored, arm_dx, arm_dy FROM backhoes"
+            ).fetchall()
+        except Exception:
+            return []
+        result = []
+        for x, y, fuel, stored, arm_dx, arm_dy in rows:
+            result.append({
+                "x": x, "y": y, "fuel": fuel,
+                "stored": json.loads(stored) if stored else {},
+                "arm_dx": arm_dx if arm_dx is not None else 2,
+                "arm_dy": arm_dy if arm_dy is not None else 0,
             })
         return result
 

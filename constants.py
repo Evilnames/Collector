@@ -3,8 +3,8 @@ SCREEN_W = 1280
 SCREEN_H = 720
 FPS = 60
 
-WORLD_H = 200
-SURFACE_Y = 20
+WORLD_H = 225
+SURFACE_Y = 45
 CHUNK_W = 32           # chunk width in blocks
 CHUNK_LOAD_RADIUS = 10 # chunks to keep loaded on each side of player
 WORLD_MAX_X = 500_000  # hard horizontal limit (±)

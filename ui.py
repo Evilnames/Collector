@@ -3,7 +3,7 @@ from achievements import ACHIEVEMENTS, ACHIEVEMENT_BY_ID, item_display_name, get
 from items import ITEMS
 from item_icons import render_item_icon
 from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOODLE_POT_RECIPES,
-                      BBQ_GRILL_RECIPES, CLAY_POT_RECIPES,
+                      BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES,
                       match_recipe, craft_costs, can_craft)
 from rocks import (render_rock, render_codex_preview, RARITY_COLORS,
                    ROCK_TYPE_ORDER, ROCK_TYPE_DESCRIPTIONS, ROCK_TYPES,
@@ -22,7 +22,7 @@ from gemstones import (render_rough_gem, render_gem, render_gem_codex_preview,
                        invalidate_gem_cache)
 from renderer import render_mushroom_preview
 from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, MAX_HEALTH
-from blocks import (BLOCKS, BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK, GEM_CUTTER_BLOCK,
+from blocks import (BLOCKS, BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK, GEM_CUTTER_BLOCK, DESERT_FORGE_BLOCK,
                     CAVE_MUSHROOMS,
                     CAVE_MUSHROOM, EMBER_CAP, PALE_GHOST, GOLD_CHANTERELLE, COBALT_CAP,
                     MOSSY_CAP, VIOLET_CROWN, BLOOD_CAP, SULFUR_DOME, IVORY_BELL,
@@ -125,7 +125,7 @@ class UI:
         self._rock_rects    = {}
         self._refine_rects  = {}
         self._refine_btn    = None
-        self._collection_tab       = 0   # 0=my rocks, 1=codex, 2=my flowers, 3=flower codex, 4=mushroom codex
+        self._collection_tab       = 0   # 0=collection, 1=encyclopedia, 2=awards
         self._codex_selected_type  = None
         self._tab_rects            = {}
         self._codex_rects          = {}
@@ -158,6 +158,15 @@ class UI:
         self._max_gem_codex_scroll         = 0
         self._my_gems_scroll               = 0
         self._max_my_gems_scroll           = 0
+        # Unified collection view (new 3-tab layout)
+        self._collection_filter       = "all"  # all/rocks/flowers/fossils/gems/mushrooms
+        self._collection_filter_rects = {}
+        self._encyclopedia_cat        = 0      # 0=rocks 1=flowers 2=mushrooms 3=fossils 4=gems
+        self._encyclopedia_cat_rects  = {}
+        self._unified_scroll          = 0
+        self._max_unified_scroll      = 0
+        self._unified_rects           = {}    # (cat, key) → rect
+        self._unified_selected        = None  # (cat, key) or None
         # Gem cutter mini-game state
         self._gc_phase          = "select"  # select | show_seq | player_turn | reveal | choose_cut
         self._gc_gem_idx        = None
@@ -195,6 +204,8 @@ class UI:
         self._bbq_grill_recipe_rects     = {}
         self._clay_pot_selected_recipe   = 0
         self._clay_pot_recipe_rects      = {}
+        self._desert_forge_selected_recipe = 0
+        self._desert_forge_recipe_rects    = {}
         self._cook_station_scroll        = {}
         self._cook_station_max_scroll    = {}
         self.npc_open   = False
@@ -215,6 +226,13 @@ class UI:
         self._fb_seeds_btn       = None
         self._fb_get_seeds_btn   = None
         self._fb_take_btn        = None
+        # Backhoe UI
+        self.backhoe_open    = False
+        self.active_backhoe  = None
+        self._bh_deposit1_btn   = None
+        self._bh_deposit_all_btn = None
+        self._bh_take_btn       = None
+        self._bh_ride_btn       = None
         # Chest UI
         self.chest_open       = False
         self.active_chest_inv = None   # direct reference to world.chest_data[(bx,by)]
@@ -281,6 +299,8 @@ class UI:
             self._draw_automation_panel(player)
         if self.farm_bot_open and self.active_farm_bot is not None:
             self._draw_farm_bot_panel(player)
+        if self.backhoe_open and self.active_backhoe is not None:
+            self._draw_backhoe_panel(player)
         if self.chest_open and self.active_chest_inv is not None:
             self._draw_chest(player)
         if self.cheat_open:
@@ -385,74 +405,81 @@ class UI:
                 player._add_item(out_id)
 
     def handle_collection_click(self, pos, player):
+        # Main tab buttons
         for tab_idx, rect in self._tab_rects.items():
             if rect.collidepoint(pos):
                 self._collection_tab = tab_idx
-                self._selected_rock_idx = None
-                self._codex_selected_type = None
-                self._selected_flower_idx = None
-                self._flower_codex_selected_type = None
-                self._mushroom_codex_selected_bid = None
-                self._selected_fossil_idx = None
-                self._fossil_codex_selected_type = None
+                self._unified_selected = None
+                self._unified_scroll = 0
                 self._codex_scroll = 0
-                self._my_rocks_scroll = 0
                 self._flower_codex_scroll = 0
-                self._my_flowers_scroll = 0
                 self._mushroom_codex_scroll = 0
                 self._fossil_codex_scroll = 0
-                self._my_fossils_scroll = 0
                 self._gem_codex_scroll = 0
-                self._my_gems_scroll = 0
-                self._selected_gem_idx = None
+                self._codex_selected_type = None
+                self._flower_codex_selected_type = None
+                self._mushroom_codex_selected_bid = None
+                self._fossil_codex_selected_type = None
                 self._gem_codex_selected_type = None
                 return
+
         if self._collection_tab == 0:
-            for idx, rect in self._rock_rects.items():
-                if rect.collidepoint(pos):
-                    self._selected_rock_idx = idx if self._selected_rock_idx != idx else None
+            # Filter buttons
+            for fkey, frect in self._collection_filter_rects.items():
+                if frect.collidepoint(pos):
+                    self._collection_filter = fkey
+                    self._unified_selected = None
+                    self._unified_scroll = 0
                     return
+            # Collection item clicks
+            for key, rect in self._unified_rects.items():
+                if rect.collidepoint(pos):
+                    self._unified_selected = key if self._unified_selected != key else None
+                    return
+
         elif self._collection_tab == 1:
-            for type_key, rect in self._codex_rects.items():
-                if rect.collidepoint(pos):
-                    self._codex_selected_type = type_key if self._codex_selected_type != type_key else None
+            # Encyclopedia sub-category buttons
+            for cat_i, erect in self._encyclopedia_cat_rects.items():
+                if erect.collidepoint(pos):
+                    self._encyclopedia_cat = cat_i
+                    self._codex_scroll = 0
+                    self._flower_codex_scroll = 0
+                    self._mushroom_codex_scroll = 0
+                    self._fossil_codex_scroll = 0
+                    self._gem_codex_scroll = 0
+                    self._codex_selected_type = None
+                    self._flower_codex_selected_type = None
+                    self._mushroom_codex_selected_bid = None
+                    self._fossil_codex_selected_type = None
+                    self._gem_codex_selected_type = None
                     return
-        elif self._collection_tab == 2:
-            for idx, rect in self._flower_rects.items():
-                if rect.collidepoint(pos):
-                    self._selected_flower_idx = idx if self._selected_flower_idx != idx else None
-                    return
-        elif self._collection_tab == 3:
-            for type_key, rect in self._flower_codex_rects.items():
-                if rect.collidepoint(pos):
-                    self._flower_codex_selected_type = type_key if self._flower_codex_selected_type != type_key else None
-                    return
-        elif self._collection_tab == 4:
-            for bid, rect in self._mushroom_codex_rects.items():
-                if rect.collidepoint(pos):
-                    self._mushroom_codex_selected_bid = bid if self._mushroom_codex_selected_bid != bid else None
-                    return
-        elif self._collection_tab == 5:
-            for idx, rect in self._fossil_rects.items():
-                if rect.collidepoint(pos):
-                    self._selected_fossil_idx = idx if self._selected_fossil_idx != idx else None
-                    return
-        elif self._collection_tab == 6:
-            for type_key, rect in self._fossil_codex_rects.items():
-                if rect.collidepoint(pos):
-                    self._fossil_codex_selected_type = type_key if self._fossil_codex_selected_type != type_key else None
-                    return
-        elif self._collection_tab == 8:
-            for idx, rect in self._gem_rects.items():
-                if rect.collidepoint(pos):
-                    self._selected_gem_idx = idx if self._selected_gem_idx != idx else None
-                    return
-        elif self._collection_tab == 9:
-            for type_key, rect in self._gem_codex_rects.items():
-                if rect.collidepoint(pos):
-                    self._gem_codex_selected_type = type_key if self._gem_codex_selected_type != type_key else None
-                    return
-        # tab 7 (achievements) has no click-to-select items
+            # Codex item clicks
+            if self._encyclopedia_cat == 0:
+                for type_key, rect in self._codex_rects.items():
+                    if rect.collidepoint(pos):
+                        self._codex_selected_type = type_key if self._codex_selected_type != type_key else None
+                        return
+            elif self._encyclopedia_cat == 1:
+                for type_key, rect in self._flower_codex_rects.items():
+                    if rect.collidepoint(pos):
+                        self._flower_codex_selected_type = type_key if self._flower_codex_selected_type != type_key else None
+                        return
+            elif self._encyclopedia_cat == 2:
+                for bid, rect in self._mushroom_codex_rects.items():
+                    if rect.collidepoint(pos):
+                        self._mushroom_codex_selected_bid = bid if self._mushroom_codex_selected_bid != bid else None
+                        return
+            elif self._encyclopedia_cat == 3:
+                for type_key, rect in self._fossil_codex_rects.items():
+                    if rect.collidepoint(pos):
+                        self._fossil_codex_selected_type = type_key if self._fossil_codex_selected_type != type_key else None
+                        return
+            elif self._encyclopedia_cat == 4:
+                for type_key, rect in self._gem_codex_rects.items():
+                    if rect.collidepoint(pos):
+                        self._gem_codex_selected_type = type_key if self._gem_codex_selected_type != type_key else None
+                        return
+        # tab 2 (awards) has no click-to-select items
 
     def handle_scroll(self, dy):
         if self.inventory_open:
@@ -468,25 +495,20 @@ class UI:
                 0, min(self._cook_station_max_scroll.get(bid, 0), cur - dy))
         elif self.collection_open:
             if self._collection_tab == 0:
-                self._my_rocks_scroll = max(0, min(self._max_my_rocks_scroll, self._my_rocks_scroll - dy))
+                self._unified_scroll = max(0, min(self._max_unified_scroll, self._unified_scroll - dy))
             elif self._collection_tab == 1:
-                self._codex_scroll = max(0, min(self._max_codex_scroll, self._codex_scroll - dy))
+                if self._encyclopedia_cat == 0:
+                    self._codex_scroll = max(0, min(self._max_codex_scroll, self._codex_scroll - dy))
+                elif self._encyclopedia_cat == 1:
+                    self._flower_codex_scroll = max(0, min(self._max_flower_codex_scroll, self._flower_codex_scroll - dy))
+                elif self._encyclopedia_cat == 2:
+                    self._mushroom_codex_scroll = max(0, min(self._max_mushroom_codex_scroll, self._mushroom_codex_scroll - dy))
+                elif self._encyclopedia_cat == 3:
+                    self._fossil_codex_scroll = max(0, min(self._max_fossil_codex_scroll, self._fossil_codex_scroll - dy))
+                elif self._encyclopedia_cat == 4:
+                    self._gem_codex_scroll = max(0, min(self._max_gem_codex_scroll, self._gem_codex_scroll - dy))
             elif self._collection_tab == 2:
-                self._my_flowers_scroll = max(0, min(self._max_my_flowers_scroll, self._my_flowers_scroll - dy))
-            elif self._collection_tab == 3:
-                self._flower_codex_scroll = max(0, min(self._max_flower_codex_scroll, self._flower_codex_scroll - dy))
-            elif self._collection_tab == 4:
-                self._mushroom_codex_scroll = max(0, min(self._max_mushroom_codex_scroll, self._mushroom_codex_scroll - dy))
-            elif self._collection_tab == 5:
-                self._my_fossils_scroll = max(0, min(self._max_my_fossils_scroll, self._my_fossils_scroll - dy))
-            elif self._collection_tab == 6:
-                self._fossil_codex_scroll = max(0, min(self._max_fossil_codex_scroll, self._fossil_codex_scroll - dy))
-            elif self._collection_tab == 7:
                 self._achievement_scroll = max(0, min(self._max_achievement_scroll, self._achievement_scroll - dy))
-            elif self._collection_tab == 8:
-                self._my_gems_scroll = max(0, min(self._max_my_gems_scroll, self._my_gems_scroll - dy))
-            elif self._collection_tab == 9:
-                self._gem_codex_scroll = max(0, min(self._max_gem_codex_scroll, self._gem_codex_scroll - dy))
         elif self.chest_open:
             mouse = pygame.mouse.get_pos()
             PW = 1140
@@ -634,6 +656,14 @@ class UI:
                     return
             if self._refine_btn and self._refine_btn.collidepoint(pos):
                 self._do_cook(player, CLAY_POT_RECIPES, self._clay_pot_selected_recipe)
+            return
+        if self.refinery_block_id == DESERT_FORGE_BLOCK:
+            for i, rect in self._desert_forge_recipe_rects.items():
+                if rect.collidepoint(pos):
+                    self._desert_forge_selected_recipe = i
+                    return
+            if self._refine_btn and self._refine_btn.collidepoint(pos):
+                self._do_cook(player, FORGE_RECIPES, self._desert_forge_selected_recipe)
             return
         for idx, rect in self._refine_rects.items():
             if rect.collidepoint(pos):
@@ -1398,165 +1428,159 @@ class UI:
         overlay.fill((0, 0, 0, 220))
         self.screen.blit(overlay, (0, 0))
 
-        n_rock_disc = len(player.discovered_types)
-        n_rock_total = len(ROCK_TYPE_ORDER)
-        n_fl_disc = len(player.discovered_flower_types)
-        n_fl_total = len(WILDFLOWER_TYPE_ORDER)
-        n_mush_disc = len(player.discovered_mushroom_types)
-        n_mush_total = len(_MUSHROOM_ORDER)
+        n_rock_disc   = len(player.discovered_types)
+        n_rock_total  = len(ROCK_TYPE_ORDER)
+        n_fl_disc     = len(player.discovered_flower_types)
+        n_fl_total    = len(WILDFLOWER_TYPE_ORDER)
+        n_mush_disc   = len(player.discovered_mushroom_types)
+        n_mush_total  = len(_MUSHROOM_ORDER)
         n_fossil_disc = len(player.discovered_fossil_types)
         n_fossil_total = len(FOSSIL_TYPE_ORDER)
-        n_gem_disc = len(player.discovered_gem_types)
-        n_gem_total = len(GEM_TYPE_ORDER)
-
-        is_flowers      = self._collection_tab in (2, 3)
-        is_mushrooms    = self._collection_tab == 4
-        is_fossils      = self._collection_tab in (5, 6)
-        is_achievements = self._collection_tab == 7
-        is_gems         = self._collection_tab in (8, 9)
-        if is_achievements:
-            title_text = "ACHIEVEMENTS"
-            title_col  = (255, 215, 80)
-        elif is_gems:
-            title_text = "GEM COLLECTION"
-            title_col  = (180, 245, 225)
-        elif is_fossils:
-            title_text = "FOSSIL COLLECTION"
-            title_col  = (210, 185, 140)
-        elif is_mushrooms:
-            title_text = "MUSHROOM CODEX"
-            title_col  = (200, 230, 150)
-        elif is_flowers:
-            title_text = "WILDFLOWER COLLECTION"
-            title_col  = (180, 255, 180)
-        else:
-            title_text = "ROCK COLLECTION"
-            title_col  = (180, 220, 255)
-        title = self.font.render(title_text, True, title_col)
-        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 4))
-
+        n_gem_disc    = len(player.discovered_gem_types)
+        n_gem_total   = len(GEM_TYPE_ORDER)
         n_ach_unlocked = sum(1 for v in self.achievements_data.values() if v)
         n_ach_total    = len(ACHIEVEMENTS)
 
-        # Tab buttons — shrink width slightly to fit 8 tabs at 1280px
+        n_mush_owned = sum(1 for b in _MUSHROOM_ORDER if player.mushrooms_found.get(b, 0) > 0)
+        total_collected = (len(player.rocks) + len(player.wildflowers) +
+                           len(player.fossils) + len(player.gems) + n_mush_owned)
+
+        # ---- 3 main tabs ----
         self._tab_rects.clear()
-        TAB_H = 26
-        tab_y = 24
-        tab_labels = [
-            f"MY ROCKS ({len(player.rocks)})",
-            f"ROCK CODEX ({n_rock_disc}/{n_rock_total})",
-            f"MY FLOWERS ({len(player.wildflowers)})",
-            f"FLOWER CODEX ({n_fl_disc}/{n_fl_total})",
-            f"MUSHROOMS ({n_mush_disc}/{n_mush_total})",
-            f"MY FOSSILS ({len(player.fossils)})",
-            f"FOSSIL CODEX ({n_fossil_disc}/{n_fossil_total})",
-            f"AWARDS ({n_ach_unlocked}/{n_ach_total})",
-            f"MY GEMS ({len(player.gems)})",
-            f"GEM CODEX ({n_gem_disc}/{n_gem_total})",
+        TAB_H, TAB_GAP, tab_y = 26, 8, 24
+        tab_defs = [
+            (0, f"COLLECTION  ({total_collected})",           (38, 38, 55), (110, 110, 175), (50, 50, 72), (145, 145, 215), (200, 200, 255)),
+            (1, "ENCYCLOPEDIA",                               (25, 45, 40), (72, 175, 152),  (14, 26, 23), (44, 105, 90),  (148, 228, 208)),
+            (2, f"AWARDS  ({n_ach_unlocked}/{n_ach_total})", (45, 38, 10), (210, 178, 38),  (24, 20, 6),  (108, 88, 20),  (255, 215, 80)),
         ]
-        GAP = 5
-        TAB_W = min(148, (SCREEN_W - 20 - GAP * (len(tab_labels) - 1)) // len(tab_labels))
-        total_tabs_w = len(tab_labels) * TAB_W + (len(tab_labels) - 1) * GAP
-        tab_x0 = SCREEN_W // 2 - total_tabs_w // 2
-        for i, label in enumerate(tab_labels):
-            tx = tab_x0 + i * (TAB_W + GAP)
+        TAB_W = min(240, (SCREEN_W - 20 - TAB_GAP * (len(tab_defs) - 1)) // len(tab_defs))
+        total_tw = len(tab_defs) * TAB_W + (len(tab_defs) - 1) * TAB_GAP
+        tx0 = SCREEN_W // 2 - total_tw // 2
+        for tab_i, label, bg_a, brd_a, bg_i, brd_i, txt_a in tab_defs:
+            tx = tx0 + tab_i * (TAB_W + TAB_GAP)
             rect = pygame.Rect(tx, tab_y, TAB_W, TAB_H)
-            self._tab_rects[i] = rect
-            active  = (i == self._collection_tab)
-            ach_tab = i == 7
-            fossil_tab = i in (5, 6)
-            mush_tab   = i == 4
-            flower_tab = i in (2, 3)
-            gem_tab    = i in (8, 9)
-            if active:
-                if ach_tab:
-                    bg, border = (45, 38, 10), (220, 185, 40)
-                elif gem_tab:
-                    bg, border = (20, 48, 45), (80, 220, 195)
-                elif fossil_tab:
-                    bg, border = (42, 35, 18), (195, 165, 95)
-                elif mush_tab:
-                    bg, border = (38, 42, 18), (165, 150, 65)
-                elif flower_tab:
-                    bg, border = (40, 75, 45), (100, 210, 120)
-                else:
-                    bg, border = (45, 60, 80), (100, 160, 220)
-            else:
-                if ach_tab:
-                    bg, border = (24, 20, 6), (100, 84, 20)
-                elif gem_tab:
-                    bg, border = (10, 25, 24), (38, 95, 85)
-                elif fossil_tab:
-                    bg, border = (25, 20, 10), (90, 75, 38)
-                elif mush_tab:
-                    bg, border = (22, 24, 10), (80, 72, 32)
-                elif flower_tab:
-                    bg, border = (25, 35, 27), (55, 90, 60)
-                else:
-                    bg, border = (25, 30, 40), (55, 65, 80)
-            pygame.draw.rect(self.screen, bg, rect)
-            pygame.draw.rect(self.screen, border, rect, 2)
-            if active and ach_tab:
-                txt_col = (255, 215, 80)
-            elif ach_tab:
-                txt_col = (110, 90, 25)
-            elif active and gem_tab:
-                txt_col = (155, 240, 220)
-            elif gem_tab:
-                txt_col = (45, 105, 92)
-            elif active and fossil_tab:
-                txt_col = (220, 190, 110)
-            elif active and mush_tab:
-                txt_col = (210, 200, 120)
-            elif active and flower_tab:
-                txt_col = (200, 240, 205)
-            elif active:
-                txt_col = (220, 230, 255)
-            elif fossil_tab:
-                txt_col = (105, 88, 40)
-            elif mush_tab:
-                txt_col = (95, 86, 38)
-            elif flower_tab:
-                txt_col = (90, 130, 95)
-            else:
-                txt_col = (110, 120, 135)
-            ls = self.small.render(self._fit_label(label, TAB_W - 6), True, txt_col)
+            self._tab_rects[tab_i] = rect
+            active = (tab_i == self._collection_tab)
+            pygame.draw.rect(self.screen, bg_a if active else bg_i, rect)
+            pygame.draw.rect(self.screen, brd_a if active else brd_i, rect, 2)
+            txt_col = txt_a if active else brd_i
+            ls = self.small.render(self._fit_label(label, TAB_W - 8), True, txt_col)
             self.screen.blit(ls, (tx + TAB_W // 2 - ls.get_width() // 2,
                                    tab_y + TAB_H // 2 - ls.get_height() // 2))
 
-        if is_achievements:
-            hint_text = "G or ESC to close  |  Achievements are global across all games"
-        elif is_gems:
-            hint_text = "G or ESC to close  |  Rough gems must be cut at the Gem Cutter block (E)"
-        elif is_fossils:
-            hint_text = "G or ESC to close  |  Click a fossil to inspect"
-        elif is_mushrooms:
-            hint_text = "G or ESC to close  |  Click a mushroom to inspect"
-        elif is_flowers:
-            hint_text = "G or ESC to close  |  Click a flower to inspect"
-        else:
-            hint_text = "G or ESC to close  |  Click a rock to inspect"
-        hint = self.small.render(hint_text, True, (90, 95, 105))
-        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, tab_y + TAB_H + 2))
-
-        if self._collection_tab == 0:
-            self._draw_my_rocks(player)
+        # Title
+        if self._collection_tab == 2:
+            title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            self._draw_codex(player)
-        elif self._collection_tab == 2:
-            self._draw_my_flowers(player)
-        elif self._collection_tab == 3:
-            self._draw_flower_codex(player)
-        elif self._collection_tab == 4:
-            self._draw_mushroom_codex(player)
-        elif self._collection_tab == 5:
-            self._draw_my_fossils(player)
-        elif self._collection_tab == 6:
-            self._draw_fossil_codex(player)
-        elif self._collection_tab == 8:
-            self._draw_my_gems(player)
-        elif self._collection_tab == 9:
-            self._draw_gem_codex(player)
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225)]
+            title_text = enc_titles[self._encyclopedia_cat]
+            title_col  = enc_cols[self._encyclopedia_cat]
+        else:
+            title_text = "COLLECTION"
+            title_col  = (200, 200, 255)
+        title_s = self.font.render(title_text, True, title_col)
+        self.screen.blit(title_s, (SCREEN_W // 2 - title_s.get_width() // 2, 4))
+
+        SUB_Y = tab_y + TAB_H + 4   # 54
+        SUB_H = 20
+        GY0   = SUB_Y + SUB_H + 6   # 80
+
+        # ---- Sub-button row ----
+        if self._collection_tab == 0:
+            # Filter buttons for the unified collection
+            self._collection_filter_rects.clear()
+            filter_defs = [
+                ("all",       f"ALL ({total_collected})"),
+                ("rocks",     f"ROCKS ({len(player.rocks)})"),
+                ("flowers",   f"FLOWERS ({len(player.wildflowers)})"),
+                ("fossils",   f"FOSSILS ({len(player.fossils)})"),
+                ("gems",      f"GEMS ({len(player.gems)})"),
+                ("mushrooms", f"MUSHROOMS ({n_mush_owned})"),
+            ]
+            FILTER_THEME = {
+                "all":       ((55, 55, 75),  (130, 130, 180), (200, 200, 240)),
+                "rocks":     ((42, 52, 70),  (95,  138, 198), (175, 208, 248)),
+                "flowers":   ((32, 58, 35),  (85,  178, 100), (168, 235, 178)),
+                "fossils":   ((50, 40, 20),  (168, 140, 72),  (215, 182, 112)),
+                "gems":      ((22, 48, 45),  (72,  195, 170), (145, 235, 215)),
+                "mushrooms": ((40, 36, 16),  (148, 132, 56),  (198, 182, 105)),
+            }
+            fGAP = 6
+            fW = min(148, (SCREEN_W - 20 - fGAP * (len(filter_defs) - 1)) // len(filter_defs))
+            total_fw = len(filter_defs) * fW + (len(filter_defs) - 1) * fGAP
+            fx0 = SCREEN_W // 2 - total_fw // 2
+            for fi, (fkey, flabel) in enumerate(filter_defs):
+                fx = fx0 + fi * (fW + fGAP)
+                frect = pygame.Rect(fx, SUB_Y, fW, SUB_H)
+                self._collection_filter_rects[fkey] = frect
+                bg_d, brd_d, txt_d = FILTER_THEME[fkey]
+                is_active_f = (self._collection_filter == fkey)
+                if is_active_f:
+                    fb = (min(255, bg_d[0] + 22), min(255, bg_d[1] + 22), min(255, bg_d[2] + 22))
+                    fb_brd, fb_txt = brd_d, txt_d
+                else:
+                    fb = (bg_d[0] // 2, bg_d[1] // 2, bg_d[2] // 2)
+                    fb_brd = (brd_d[0] // 2, brd_d[1] // 2, brd_d[2] // 2)
+                    fb_txt = fb_brd
+                pygame.draw.rect(self.screen, fb, frect)
+                pygame.draw.rect(self.screen, fb_brd, frect, 2 if is_active_f else 1)
+                fs = self.small.render(self._fit_label(flabel, fW - 6), True, fb_txt)
+                self.screen.blit(fs, (fx + fW // 2 - fs.get_width() // 2,
+                                       SUB_Y + SUB_H // 2 - fs.get_height() // 2))
+
+        elif self._collection_tab == 1:
+            # Encyclopedia sub-category buttons
+            self._encyclopedia_cat_rects.clear()
+            enc_defs = [
+                (0, f"ROCKS ({n_rock_disc}/{n_rock_total})"),
+                (1, f"FLOWERS ({n_fl_disc}/{n_fl_total})"),
+                (2, f"MUSHROOMS ({n_mush_disc}/{n_mush_total})"),
+                (3, f"FOSSILS ({n_fossil_disc}/{n_fossil_total})"),
+                (4, f"GEMS ({n_gem_disc}/{n_gem_total})"),
+            ]
+            ENC_THEME = [
+                ((42, 52, 70),  (95, 138, 198),  (175, 208, 248)),
+                ((32, 58, 35),  (85, 178, 100),  (168, 235, 178)),
+                ((40, 36, 16),  (148, 132, 56),  (198, 182, 105)),
+                ((50, 40, 20),  (168, 140, 72),  (215, 182, 112)),
+                ((22, 48, 45),  (72, 195, 170),  (145, 235, 215)),
+            ]
+            eGAP = 6
+            eW = min(190, (SCREEN_W - 20 - eGAP * (len(enc_defs) - 1)) // len(enc_defs))
+            total_ew = len(enc_defs) * eW + (len(enc_defs) - 1) * eGAP
+            ex0 = SCREEN_W // 2 - total_ew // 2
+            for ei, (cat_i, cat_label) in enumerate(enc_defs):
+                ex = ex0 + ei * (eW + eGAP)
+                erect = pygame.Rect(ex, SUB_Y, eW, SUB_H)
+                self._encyclopedia_cat_rects[cat_i] = erect
+                bg_d, brd_d, txt_d = ENC_THEME[cat_i]
+                is_active_e = (self._encyclopedia_cat == cat_i)
+                if is_active_e:
+                    eb = (min(255, bg_d[0] + 22), min(255, bg_d[1] + 22), min(255, bg_d[2] + 22))
+                    eb_brd, eb_txt = brd_d, txt_d
+                else:
+                    eb = (bg_d[0] // 2, bg_d[1] // 2, bg_d[2] // 2)
+                    eb_brd = (brd_d[0] // 2, brd_d[1] // 2, brd_d[2] // 2)
+                    eb_txt = eb_brd
+                pygame.draw.rect(self.screen, eb, erect)
+                pygame.draw.rect(self.screen, eb_brd, erect, 2 if is_active_e else 1)
+                es = self.small.render(self._fit_label(cat_label, eW - 6), True, eb_txt)
+                self.screen.blit(es, (ex + eW // 2 - es.get_width() // 2,
+                                       SUB_Y + SUB_H // 2 - es.get_height() // 2))
+
+        # ---- Content ----
+        if self._collection_tab == 0:
+            self._draw_collection_unified(player, GY0)
+        elif self._collection_tab == 1:
+            cat_draw = [
+                self._draw_codex,
+                self._draw_flower_codex,
+                self._draw_mushroom_codex,
+                self._draw_fossil_codex,
+                self._draw_gem_codex,
+            ]
+            cat_draw[self._encyclopedia_cat](player, gy0=GY0)
         else:
             self._draw_achievements()
 
@@ -1568,6 +1592,268 @@ class UI:
             if self.small.size(text + "...")[0] <= max_width:
                 return text + "..."
         return "..."
+
+    # ------------------------------------------------------------------
+    # Unified collection tab
+    # ------------------------------------------------------------------
+
+    def _draw_collection_unified(self, player, gy0=80):
+        flt = self._collection_filter
+        items = []
+        if flt in ("all", "rocks"):
+            items.extend(("rock", i) for i in range(len(player.rocks)))
+        if flt in ("all", "flowers"):
+            items.extend(("flower", i) for i in range(len(player.wildflowers)))
+        if flt in ("all", "fossils"):
+            items.extend(("fossil", i) for i in range(len(player.fossils)))
+        if flt in ("all", "gems"):
+            items.extend(("gem", i) for i in range(len(player.gems)))
+        if flt in ("all", "mushrooms"):
+            items.extend(("mushroom", bid) for bid in _MUSHROOM_ORDER
+                         if player.mushrooms_found.get(bid, 0) > 0)
+
+        if not items:
+            msg = self.font.render("Nothing collected yet!", True, (80, 80, 90))
+            self.screen.blit(msg, (SCREEN_W // 2 - msg.get_width() // 2, SCREEN_H // 2))
+            return
+
+        CELL, GAP, COLS = 82, 8, 8
+        gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+
+        # Validate / clear selection if no longer in current filter
+        if self._unified_selected is not None:
+            sel_cat, sel_key = self._unified_selected
+            still_valid = (sel_cat, sel_key) in items
+            if not still_valid:
+                self._unified_selected = None
+
+        detail_x = None
+        if self._unified_selected is not None:
+            detail_x = SCREEN_W - 340
+            COLS = max(1, (detail_x - gx0 - 10) // (CELL + GAP))
+
+        total_rows   = (len(items) + COLS - 1) // COLS
+        visible_rows = (SCREEN_H - gy0 - 8 + GAP) // (CELL + GAP)
+        self._max_unified_scroll = max(0, total_rows - visible_rows)
+        self._unified_scroll = max(0, min(self._max_unified_scroll, self._unified_scroll))
+
+        if self._max_unified_scroll > 0:
+            sb_x  = gx0 + COLS * (CELL + GAP) - GAP + 8
+            sb_h  = SCREEN_H - gy0 - 8
+            sb_th = max(20, sb_h * visible_rows // total_rows)
+            sb_top = gy0 + (sb_h - sb_th) * self._unified_scroll // self._max_unified_scroll
+            pygame.draw.rect(self.screen, (35, 35, 48), (sb_x, gy0, 7, sb_h))
+            pygame.draw.rect(self.screen, (100, 100, 140), (sb_x, sb_top, 7, sb_th))
+
+        self._unified_rects.clear()
+        for pos_idx, (cat, key) in enumerate(items):
+            col = pos_idx % COLS
+            row = pos_idx // COLS
+            display_row = row - self._unified_scroll
+            if display_row < 0:
+                continue
+            x = gx0 + col * (CELL + GAP)
+            y = gy0 + display_row * (CELL + GAP)
+            if y + CELL > SCREEN_H - 8:
+                break
+            rect = pygame.Rect(x, y, CELL, CELL)
+            self._unified_rects[(cat, key)] = rect
+
+            selected = (self._unified_selected == (cat, key))
+
+            if cat == "rock":
+                it = player.rocks[key]
+                rar_col = RARITY_COLORS[it.rarity]
+                pygame.draw.rect(self.screen, (45, 42, 60) if selected else (30, 30, 40), rect)
+                pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
+                img = render_rock(it, 58)
+                label = it.base_type.replace("_", " ")
+                label_col = (160, 160, 160)
+            elif cat == "flower":
+                it = player.wildflowers[key]
+                rar_col = RARITY_COLORS[it.rarity]
+                pygame.draw.rect(self.screen, (35, 50, 35) if selected else (22, 35, 22), rect)
+                pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
+                img = render_wildflower(it, 58)
+                label = it.flower_type.replace("_", " ")
+                label_col = (140, 175, 140)
+            elif cat == "fossil":
+                it = player.fossils[key]
+                rar_col = RARITY_COLORS[it.rarity]
+                pygame.draw.rect(self.screen, (45, 40, 28) if selected else (30, 26, 18), rect)
+                pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
+                img = render_fossil(it, 58)
+                label = it.fossil_type.replace("_", " ")
+                label_col = (175, 155, 115)
+            elif cat == "gem":
+                it = player.gems[key]
+                rar_col = GEM_RARITY_COLORS.get(it.rarity, (120, 120, 120))
+                pygame.draw.rect(self.screen, (28, 42, 40) if selected else (18, 28, 26), rect)
+                pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
+                img = render_rough_gem(it, 58) if it.state == "rough" else render_gem(it, 58)
+                label = ("rough " if it.state == "rough" else "") + it.gem_type.replace("_", " ")
+                label_col = (120, 195, 175)
+            else:  # mushroom
+                count = player.mushrooms_found.get(key, 0)
+                pygame.draw.rect(self.screen, (40, 36, 20) if selected else (25, 22, 12), rect)
+                pygame.draw.rect(self.screen, (175, 158, 68) if selected else (100, 88, 38), rect,
+                                 3 if selected else 2)
+                img = render_mushroom_preview(key, 58)
+                label = _MUSHROOM_NAMES.get(key, BLOCKS[key]["name"])
+                label_col = (195, 178, 108)
+                if count > 1:
+                    cnt_s = self.small.render(f"×{count}", True, (220, 200, 120))
+                    self.screen.blit(cnt_s, (x + CELL - cnt_s.get_width() - 2, y + 2))
+
+            self.screen.blit(img, (x + (CELL - 58) // 2, y + (CELL - 58) // 2 - 6))
+            type_s = self.small.render(self._fit_label(label, CELL - 4), True, label_col)
+            self.screen.blit(type_s, (x + CELL // 2 - type_s.get_width() // 2, y + CELL - 14))
+
+        if detail_x is None:
+            return
+
+        sel_cat, sel_key = self._unified_selected
+        dx, dy2 = detail_x, gy0
+        dw = SCREEN_W - dx - 8
+        dh = SCREEN_H - gy0 - 10
+        iy = [dy2 + 96]
+
+        def dlabel(text, color=(220, 220, 200)):
+            s = self.small.render(text, True, color)
+            self.screen.blit(s, (dx + 8, iy[0]))
+            iy[0] += 15
+
+        def stat_bar(label, val, bar_col, lbl_col=(160, 160, 160)):
+            ls = self.small.render(label, True, lbl_col)
+            self.screen.blit(ls, (dx + 8, iy[0]))
+            bx2 = dx + 80
+            bw = dw - 90
+            pygame.draw.rect(self.screen, (35, 35, 45), (bx2, iy[0] + 2, bw, 8))
+            pygame.draw.rect(self.screen, bar_col, (bx2, iy[0] + 2, int(bw * val), 8))
+            vs = self.small.render(f"{val:.2f}", True, (180, 180, 180))
+            self.screen.blit(vs, (bx2 + bw + 4, iy[0]))
+            iy[0] += 16
+
+        if sel_cat == "rock":
+            rock = player.rocks[sel_key]
+            pygame.draw.rect(self.screen, (22, 22, 32), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, RARITY_COLORS[rock.rarity], (dx, dy2, dw, dh), 2)
+            self.screen.blit(render_rock(rock, 80), (dx + dw // 2 - 40, dy2 + 8))
+            dlabel(rock.base_type.replace("_", " ").title(), (240, 200, 100))
+            dlabel(RARITY_LABEL[rock.rarity], RARITY_COLORS[rock.rarity])
+            dlabel(f"Size: {rock.size.title()}")
+            dlabel(f"Found at: {rock.depth_found}m depth")
+            dlabel(f"Pattern: {rock.pattern}")
+            iy[0] += 4
+            stat_bar("Hardness", rock.hardness / 10, (200, 100, 50))
+            stat_bar("Luster",   rock.luster,         (100, 200, 220))
+            stat_bar("Purity",   rock.purity,         (100, 220, 100))
+            iy[0] += 4
+            if rock.specials:
+                dlabel("Specials:", (200, 180, 100))
+                for sp in rock.specials:
+                    benefit, tradeoff = SPECIAL_DESCS.get(sp, ("", ""))
+                    dlabel(f"  {sp}", (220, 200, 80))
+                    dlabel(f"    + {benefit}", (80, 200, 80))
+                    dlabel(f"    - {tradeoff}", (200, 80, 80))
+            else:
+                dlabel("No specials.", (90, 90, 100))
+            if rock.upgrades:
+                iy[0] += 4
+                dlabel("Upgrades:", (200, 200, 100))
+                if "polished" in rock.upgrades:
+                    dlabel("  Polished  (Luster enhanced)", (80, 220, 220))
+                if "fired" in rock.upgrades:
+                    dlabel("  Fired  (Purity enhanced)", (220, 160, 80))
+
+        elif sel_cat == "flower":
+            flower = player.wildflowers[sel_key]
+            pygame.draw.rect(self.screen, (15, 25, 15), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, RARITY_COLORS[flower.rarity], (dx, dy2, dw, dh), 2)
+            self.screen.blit(render_wildflower(flower, 80), (dx + dw // 2 - 40, dy2 + 8))
+            dlabel(flower.flower_type.replace("_", " ").title(), (200, 255, 160))
+            dlabel(RARITY_LABEL[flower.rarity], RARITY_COLORS[flower.rarity])
+            dlabel(f"Bloom: {flower.bloom_stage.title()}")
+            dlabel(f"Pattern: {flower.petal_pattern.title()}  ({flower.petal_count} petals)")
+            dlabel(f"Fragrance: {flower.fragrance:.2f}")
+            dlabel(f"Vibrancy:  {flower.vibrancy:.2f}")
+            dlabel(f"Biome: {flower.biodome_found.replace('_', ' ').title()}")
+            if flower.specials:
+                iy[0] += 4
+                dlabel("Traits:", (180, 220, 180))
+                for sp in flower.specials:
+                    dlabel(f"  {sp}", (150, 195, 155))
+
+        elif sel_cat == "fossil":
+            fossil = player.fossils[sel_key]
+            pygame.draw.rect(self.screen, (22, 18, 12), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, RARITY_COLORS[fossil.rarity], (dx, dy2, dw, dh), 2)
+            self.screen.blit(render_fossil(fossil, 80), (dx + dw // 2 - 40, dy2 + 8))
+            dlabel(fossil.fossil_type.replace("_", " ").title(), (235, 205, 130))
+            dlabel(RARITY_LABEL[fossil.rarity], RARITY_COLORS[fossil.rarity])
+            dlabel(f"Age: {fossil.age.title()}", FOSSIL_AGE_COLORS.get(fossil.age, (180, 160, 120)))
+            dlabel(f"Size: {fossil.size.title()}")
+            dlabel(f"Found at: {fossil.depth_found}m depth")
+            dlabel(f"Pattern: {fossil.pattern.title()}")
+            iy[0] += 4
+            stat_bar("Clarity", fossil.clarity, (100, 180, 200), (160, 145, 110))
+            stat_bar("Detail",  fossil.detail,  (180, 155, 80),  (160, 145, 110))
+            iy[0] += 4
+            if fossil.specials:
+                dlabel("Traits:", (210, 185, 120))
+                for sp in fossil.specials:
+                    dlabel(f"  {sp.replace('_', ' ').title()}", (220, 195, 105))
+                    dlabel(f"    {FOSSIL_SPECIAL_DESCS.get(sp, '')}", (145, 130, 90))
+            else:
+                dlabel("No special traits.", (90, 82, 60))
+
+        elif sel_cat == "gem":
+            gem = player.gems[sel_key]
+            rar_col = GEM_RARITY_COLORS.get(gem.rarity, (120, 120, 120))
+            pygame.draw.rect(self.screen, (14, 22, 20), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, rar_col, (dx, dy2, dw, dh), 2)
+            preview = render_rough_gem(gem, 100) if gem.state == "rough" else render_gem(gem, 100)
+            self.screen.blit(preview, (dx + dw // 2 - 50, dy2 + 8))
+            ty = dy2 + 116
+            name_s = self.font.render(gem.gem_type.replace("_", " ").title(), True, rar_col)
+            self.screen.blit(name_s, (dx + dw // 2 - name_s.get_width() // 2, ty)); ty += 22
+
+            def grow(lbl, val, col=(155, 200, 185)):
+                nonlocal ty
+                l_s = self.small.render(f"{lbl}:", True, (80, 118, 108))
+                v_s = self.small.render(str(val), True, col)
+                self.screen.blit(l_s, (dx + 10, ty))
+                self.screen.blit(v_s, (dx + dw - v_s.get_width() - 8, ty))
+                ty += 17
+
+            grow("Rarity", gem.rarity.title(), rar_col)
+            grow("Size", gem.size.title())
+            grow("State", gem.state.title(), (255, 200, 80) if gem.state == "rough" else (100, 220, 180))
+            grow("Cut", GEM_CUT_DESCS.get(gem.cut, gem.cut).split(" —")[0])
+            if gem.state == "cut":
+                grow("Clarity", gem.clarity,
+                     (255, 220, 80) if gem.clarity in ("FL", "VVS") else (155, 200, 185))
+                grow("Inclusion", gem.inclusion.replace("_", " ").title())
+                if gem.optical_effect != "none":
+                    grow("Optical", gem.optical_effect.replace("_", " ").title(), (200, 160, 255))
+            else:
+                unk = self.small.render("Hidden until cut at Gem Cutter", True, (80, 100, 95))
+                self.screen.blit(unk, (dx + dw // 2 - unk.get_width() // 2, ty)); ty += 17
+            grow("Crystal", gem.crystal_system.title())
+            grow("Depth", f"{gem.depth_found}m")
+
+        else:  # mushroom
+            bid = sel_key
+            pygame.draw.rect(self.screen, (16, 14, 8), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, (165, 148, 60), (dx, dy2, dw, dh), 2)
+            self.screen.blit(render_mushroom_preview(bid, 80), (dx + dw // 2 - 40, dy2 + 8))
+            dlabel(BLOCKS[bid]["name"], (235, 220, 130))
+            drop = BLOCKS[bid].get("drop", "")
+            dlabel(f"Drop: {drop.replace('_', ' ').title()}",
+                   _MUSHROOM_DROP_COLOR.get(drop, (180, 160, 120)))
+            dlabel(f"Biome: {_MUSHROOM_BIOME.get(bid, 'Any')}", (170, 195, 150))
+            dlabel(f"Shape: {_MUSHROOM_SHAPES.get(bid, '').title()}", (155, 162, 178))
+            dlabel(f"Collected: {player.mushrooms_found.get(bid, 0)}", (160, 205, 160))
 
     def _draw_my_rocks(self, player):
         if not player.rocks:
@@ -1663,10 +1949,9 @@ class UI:
             if "fired" in rock.upgrades:
                 dlabel("  Fired  (Purity enhanced)", (220, 160, 80))
 
-    def _draw_codex(self, player):
+    def _draw_codex(self, player, gy0=58):
         CELL, GAP, COLS = 82, 8, 6
         gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
-        gy0 = 58
 
         detail_x = None
         if self._codex_selected_type is not None:
@@ -1862,10 +2147,9 @@ class UI:
             for sp in flower.specials:
                 dlabel(f"  {sp}", (150, 195, 155))
 
-    def _draw_flower_codex(self, player):
+    def _draw_flower_codex(self, player, gy0=58):
         CELL, GAP, COLS = 82, 8, 6
         gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
-        gy0 = 58
 
         detail_x = None
         if self._flower_codex_selected_type is not None:
@@ -1966,10 +2250,9 @@ class UI:
             dlabel("Not yet discovered.", (75, 105, 78))
             dlabel("Find it on the surface.", (95, 130, 98))
 
-    def _draw_mushroom_codex(self, player):
+    def _draw_mushroom_codex(self, player, gy0=58):
         CELL, GAP, COLS = 82, 8, 5
         gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
-        gy0 = 58
 
         detail_x = None
         if self._mushroom_codex_selected_bid is not None:
@@ -2160,10 +2443,9 @@ class UI:
         else:
             dlabel("No special traits.", (90, 82, 60))
 
-    def _draw_fossil_codex(self, player):
+    def _draw_fossil_codex(self, player, gy0=58):
         CELL, GAP, COLS = 82, 8, 6
         gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
-        gy0 = 58
 
         detail_x = None
         if self._fossil_codex_selected_type is not None:
@@ -2428,10 +2710,9 @@ class UI:
             self.screen.blit(ls, (dx + 8, ty))
             ty += 15
 
-    def _draw_gem_codex(self, player):
+    def _draw_gem_codex(self, player, gy0=58):
         CELL, GAP, COLS = 82, 8, 10
         gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
-        gy0 = 58
 
         detail_x = None
         if self._gem_codex_selected_type is not None:
@@ -3098,6 +3379,12 @@ class UI:
                                        self._clay_pot_recipe_rects, "_clay_pot_selected_recipe",
                                        block_id=CLAY_POT_BLOCK)
             return
+        if self.refinery_block_id == DESERT_FORGE_BLOCK:
+            self._draw_cooking_station(player, FORGE_RECIPES, "DESERT FORGE",
+                                       (175, 95, 40), self._desert_forge_selected_recipe,
+                                       self._desert_forge_recipe_rects, "_desert_forge_selected_recipe",
+                                       block_id=DESERT_FORGE_BLOCK)
+            return
         equip_data = get_refinery_equipment().get(self.refinery_block_id)
         if equip_data is None:
             return
@@ -3605,6 +3892,152 @@ class UI:
 
         key_txt = self._death_font2.render("Press SPACE or ENTER to respawn", True, (180, 180, 220))
         self.screen.blit(key_txt, key_txt.get_rect(center=(SCREEN_W // 2, SCREEN_H // 2 + 90)))
+
+    # ------------------------------------------------------------------
+    # Backhoe UI
+    # ------------------------------------------------------------------
+
+    def open_backhoe(self, bh):
+        self.backhoe_open   = True
+        self.active_backhoe = bh
+
+    def close_backhoe(self):
+        self.backhoe_open   = False
+        self.active_backhoe = None
+
+    def _draw_backhoe_panel(self, player):
+        from automations import Backhoe
+        bh = self.active_backhoe
+        PW, PH = 380, 340
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+
+        panel = pygame.Surface((PW, PH), pygame.SRCALPHA)
+        panel.fill((20, 18, 12, 235))
+        self.screen.blit(panel, (px, py))
+        pygame.draw.rect(self.screen, (120, 90, 30), (px, py, PW, PH), 2)
+
+        # Title
+        title = self.font.render("BACKHOE", True, (230, 190, 60))
+        self.screen.blit(title, (px + 14, py + 10))
+        hint = self.small.render("[E] close", True, (140, 110, 50))
+        self.screen.blit(hint, (px + PW - hint.get_width() - 10, py + 13))
+
+        pygame.draw.line(self.screen, (90, 70, 20), (px + 10, py + 42), (px + PW - 10, py + 42))
+
+        # Fuel bar
+        bar_w = PW - 28
+        fuel_label = self.small.render(
+            f"OIL FUEL  {bh.fuel:.1f} / {bh.FUEL_TANK:.0f}", True, (210, 160, 40)
+        )
+        self.screen.blit(fuel_label, (px + 14, py + 52))
+        pygame.draw.rect(self.screen, (30, 25, 10), (px + 14, py + 68, bar_w, 12))
+        frac = bh.fuel / bh.FUEL_TANK if bh.FUEL_TANK > 0 else 0
+        if frac > 0:
+            pygame.draw.rect(self.screen, (200, 140, 30), (px + 14, py + 68, int(bar_w * frac), 12))
+        pygame.draw.rect(self.screen, (90, 70, 20), (px + 14, py + 68, bar_w, 12), 1)
+
+        # Deposit fuel buttons
+        has_oil = player.inventory.get("oil_barrel", 0) > 0
+        b1c  = (50, 40, 10) if has_oil else (30, 28, 20)
+        b1bc = (160, 120, 30) if has_oil else (70, 60, 30)
+        b1t  = (230, 180, 60) if has_oil else (90, 80, 50)
+        BW, BH_ = 100, 24
+        b1x = px + 14
+        b_y = py + 86
+        self._bh_deposit1_btn = pygame.Rect(b1x, b_y, BW, BH_)
+        pygame.draw.rect(self.screen, b1c, self._bh_deposit1_btn)
+        pygame.draw.rect(self.screen, b1bc, self._bh_deposit1_btn, 1)
+        d1t = self.small.render("Deposit 1", True, b1t)
+        self.screen.blit(d1t, (b1x + BW // 2 - d1t.get_width() // 2,
+                                b_y + BH_ // 2 - d1t.get_height() // 2))
+        b2x = b1x + BW + 8
+        self._bh_deposit_all_btn = pygame.Rect(b2x, b_y, BW, BH_)
+        pygame.draw.rect(self.screen, b1c, self._bh_deposit_all_btn)
+        pygame.draw.rect(self.screen, b1bc, self._bh_deposit_all_btn, 1)
+        d2t = self.small.render("Deposit All", True, b1t)
+        self.screen.blit(d2t, (b2x + BW // 2 - d2t.get_width() // 2,
+                                b_y + BH_ // 2 - d2t.get_height() // 2))
+
+        player_oil = player.inventory.get("oil_barrel", 0)
+        oil_info = self.small.render(f"  (you have: {player_oil})", True, (140, 110, 40))
+        self.screen.blit(oil_info, (b2x + BW + 8, b_y + BH_ // 2 - oil_info.get_height() // 2))
+
+        pygame.draw.line(self.screen, (90, 70, 20), (px + 10, py + 122), (px + PW - 10, py + 122))
+
+        # Stored items
+        inv_count = bh.inv_count
+        inv_label = self.small.render("STORED ITEMS", True, (200, 175, 100))
+        self.screen.blit(inv_label, (px + 14, py + 130))
+        cnt_lbl = self.small.render(f"{inv_count} / {bh.INV_LIMIT}", True, (160, 140, 80))
+        self.screen.blit(cnt_lbl, (px + PW - cnt_lbl.get_width() - 14, py + 130))
+
+        SW, SH_, GAP = 44, 44, 6
+        items_per_row = (PW - 28 + GAP) // (SW + GAP)
+        ix0, iy0 = px + 14, py + 148
+        for idx, (item_id, count) in enumerate(sorted(bh.stored.items())):
+            col_i = idx % items_per_row
+            row_i = idx // items_per_row
+            sx_ = ix0 + col_i * (SW + GAP)
+            sy_ = iy0 + row_i * (SH_ + GAP)
+            if sy_ + SH_ > py + PH - 70:
+                break
+            item_color = ITEMS.get(item_id, {}).get("color", (120, 120, 120))
+            pygame.draw.rect(self.screen, item_color, (sx_, sy_, SW, SH_))
+            pygame.draw.rect(self.screen, (90, 70, 30), (sx_, sy_, SW, SH_), 1)
+            c_surf = self.small.render(str(count), True, (255, 255, 255))
+            self.screen.blit(c_surf, (sx_ + SW - c_surf.get_width() - 2,
+                                       sy_ + SH_ - c_surf.get_height() - 1))
+            name_surf = self.small.render(
+                ITEMS.get(item_id, {}).get("name", item_id)[:6], True, (220, 220, 220)
+            )
+            self.screen.blit(name_surf, (sx_ + 2, sy_ + 2))
+        if inv_count == 0:
+            empty = self.small.render("(empty)", True, (100, 90, 60))
+            self.screen.blit(empty, (ix0, iy0 + 6))
+
+        # Bottom buttons: Take All + Ride
+        BotBW, BotBH = 120, 28
+        take_x = px + 14
+        take_y = py + PH - BotBH - 10
+        has_items = inv_count > 0
+        tc  = (30, 70, 30) if has_items else (25, 30, 25)
+        tbc = (60, 160, 60) if has_items else (50, 55, 50)
+        ttc = (150, 240, 150) if has_items else (70, 80, 70)
+        self._bh_take_btn = pygame.Rect(take_x, take_y, BotBW, BotBH)
+        pygame.draw.rect(self.screen, tc, self._bh_take_btn)
+        pygame.draw.rect(self.screen, tbc, self._bh_take_btn, 1)
+        take_t = self.small.render("TAKE ALL", True, ttc)
+        self.screen.blit(take_t, (take_x + BotBW // 2 - take_t.get_width() // 2,
+                                   take_y + BotBH // 2 - take_t.get_height() // 2))
+
+        ride_x = take_x + BotBW + 10
+        ride_c  = (30, 50, 90)
+        ride_bc = (70, 120, 200)
+        ride_tc = (150, 200, 255)
+        self._bh_ride_btn = pygame.Rect(ride_x, take_y, BotBW, BotBH)
+        pygame.draw.rect(self.screen, ride_c, self._bh_ride_btn)
+        pygame.draw.rect(self.screen, ride_bc, self._bh_ride_btn, 1)
+        ride_t = self.small.render("RIDE  [SPC]", True, ride_tc)
+        self.screen.blit(ride_t, (ride_x + BotBW // 2 - ride_t.get_width() // 2,
+                                   take_y + BotBH // 2 - ride_t.get_height() // 2))
+
+    def handle_backhoe_click(self, pos, player):
+        bh = self.active_backhoe
+        if bh is None:
+            return False
+        if self._bh_deposit1_btn and self._bh_deposit1_btn.collidepoint(pos):
+            bh.deposit_fuel(player, amount=1)
+            return True
+        if self._bh_deposit_all_btn and self._bh_deposit_all_btn.collidepoint(pos):
+            bh.deposit_fuel(player)
+            return True
+        if self._bh_take_btn and self._bh_take_btn.collidepoint(pos):
+            bh.take_all(player)
+            return True
+        if self._bh_ride_btn and self._bh_ride_btn.collidepoint(pos):
+            return "ride"
+        return False
 
     # ------------------------------------------------------------------
     # Cheat console
