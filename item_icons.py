@@ -459,15 +459,6 @@ def _icon_miner(surf, color, s):
     pygame.draw.rect(surf, _darker(color, 60), r, 2)
 
 
-def _icon_support(surf, color, s):
-    pad = s // 6
-    pygame.draw.rect(surf, color, (pad, pad, s - pad * 2, s - pad * 2))
-    dark = _darker(color, 40)
-    pygame.draw.line(surf, dark, (pad, pad), (s - pad, s - pad), 2)
-    pygame.draw.line(surf, dark, (s - pad, pad), (pad, s - pad), 2)
-    pygame.draw.rect(surf, _darker(color, 60), (pad, pad, s - pad * 2, s - pad * 2), 2)
-
-
 # ---------------------------------------------------------------------------
 # Dispatch table
 # ---------------------------------------------------------------------------
@@ -581,9 +572,6 @@ _ICONS = {
     "rock_dust":              _icon_rock_dust,
     "polished_stone":         _slab,
     "ladder_item":            _ladder,
-    "support_item":           _icon_support,
-    "iron_support_item":      _icon_support,
-    "diamond_support_item":   _icon_support,
     "diamond":                _gem,
     "quartz_gem":             _gem,
     "amethyst_gem":           _gem,

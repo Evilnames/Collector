@@ -799,7 +799,6 @@ def main():
         for bh in world.backhoes:
             if player.mounted_machine is not bh:
                 bh.apply_gravity(world)
-        world.update_physics(dt, player)
         world.update_water(dt, player)
         world.update_saplings(dt)
         world.update_crops(dt)

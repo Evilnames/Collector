@@ -34,8 +34,6 @@ class World:
             for cx in range(-CHUNK_LOAD_RADIUS, CHUNK_LOAD_RADIUS + 1):
                 self.load_chunk(cx)
             self._spawn_animals()
-            from cities import generate_cities
-            generate_cities(self, self.seed)
         # Water simulation
         self._water_timer = 0.0
         self._water_interval = 0.12
@@ -54,6 +52,9 @@ class World:
         self._crop_interval = 20.0
         self._crop_rng      = random.Random(seed + 11111)
         self.pending_crops  = set()
+        if not preloaded:
+            from cities import generate_cities
+            generate_cities(self, self.seed)
 
     # ------------------------------------------------------------------
     # Backward-compat properties

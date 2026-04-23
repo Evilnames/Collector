@@ -1,7 +1,7 @@
 import pygame
-from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, SUPPORT, IRON_SUPPORT, DIAMOND_SUPPORT, STONE, WATER,
+from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER,
                     YOUNG_CROP_BLOCKS, MATURE_CROP_BLOCKS,
-                    ALL_SUPPORTS, SUPPORT_RANGE, RESOURCE_BLOCKS, ALL_LOGS, ALL_LEAVES,
+                    RESOURCE_BLOCKS, ALL_LOGS, ALL_LEAVES,
                     STRAWBERRY_BUSH, WHEAT_BUSH,
                     CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
                     STRAWBERRY_CROP_YOUNG, STRAWBERRY_CROP_MATURE,
@@ -183,7 +183,6 @@ class Renderer:
         self._resource_hint_surfs = self._build_resource_hint_surfs()
         self._biome_stone_surfs = self._build_biome_stone_surfs()
         self._biome_resource_hint_surfs = self._build_biome_resource_hint_surfs()
-        self._support_zone_surf = self._build_support_zone_surf()
         self._log_variants  = self._build_log_variants()
         self._leaf_variants = self._build_leaf_variants()
         self._bg_darken_surf = self._build_bg_darken_surf()
@@ -227,47 +226,6 @@ class Renderer:
                 pygame.draw.rect(s, rail, (BLOCK_SIZE - 8,     0, 4, BLOCK_SIZE))
                 for ry in [3, 11, 19, 27]:
                     pygame.draw.rect(s, dark, (4, ry, BLOCK_SIZE - 8, 3))
-                surfs[bid] = s
-                continue
-            if bid == SUPPORT:
-                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
-                base = bdata["color"]
-                dark = _darken(base, 30)
-                s.fill(base)
-                pygame.draw.line(s, dark, (2, 2), (BLOCK_SIZE - 3, BLOCK_SIZE - 3), 3)
-                pygame.draw.line(s, dark, (BLOCK_SIZE - 3, 2), (2, BLOCK_SIZE - 3), 3)
-                pygame.draw.rect(s, dark, s.get_rect(), 1)
-                surfs[bid] = s
-                continue
-            if bid == IRON_SUPPORT:
-                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
-                base = bdata["color"]
-                dark = _darken(base, 40)
-                bright = tuple(min(255, c + 30) for c in base)
-                s.fill(base)
-                # I-beam shape: top/bottom plates + center web
-                pygame.draw.rect(s, dark, (2, 2, BLOCK_SIZE - 4, 5))
-                pygame.draw.rect(s, dark, (2, BLOCK_SIZE - 7, BLOCK_SIZE - 4, 5))
-                pygame.draw.rect(s, dark, (BLOCK_SIZE // 2 - 3, 7, 6, BLOCK_SIZE - 14))
-                pygame.draw.rect(s, bright, (BLOCK_SIZE // 2 - 2, 8, 4, BLOCK_SIZE - 16))
-                pygame.draw.rect(s, dark, s.get_rect(), 1)
-                surfs[bid] = s
-                continue
-            if bid == DIAMOND_SUPPORT:
-                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
-                base = bdata["color"]
-                dark = _darken(base, 40)
-                bright = tuple(min(255, c + 40) for c in base)
-                s.fill(base)
-                # Diamond/gem facet pattern
-                cx, cy = BLOCK_SIZE // 2, BLOCK_SIZE // 2
-                pts = [(cx, 3), (BLOCK_SIZE - 3, cy), (cx, BLOCK_SIZE - 3), (3, cy)]
-                pygame.draw.polygon(s, dark, pts, 0)
-                pygame.draw.polygon(s, bright, [(cx, 5), (BLOCK_SIZE - 5, cy), (cx, cy + 2), (5, cy)], 0)
-                pygame.draw.polygon(s, dark, pts, 2)
-                pygame.draw.line(s, bright, (cx, 5), (BLOCK_SIZE - 5, cy), 1)
-                pygame.draw.line(s, bright, (5, cy), (cx, 5), 1)
-                pygame.draw.rect(s, dark, s.get_rect(), 1)
                 surfs[bid] = s
                 continue
             if bid == STRAWBERRY_BUSH:
@@ -1168,18 +1126,6 @@ class Renderer:
             variants[bid] = surfs
         return variants
 
-    def _build_support_zone_surf(self):
-        s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
-        mid = BLOCK_SIZE // 2
-        # Faint green tint over the cell
-        s.fill((60, 200, 120, 40))
-        # Visible X cross and horizontal bar
-        col = (60, 210, 130, 200)
-        pygame.draw.line(s, col, (mid - 6, mid - 6), (mid + 6, mid + 6), 2)
-        pygame.draw.line(s, col, (mid + 6, mid - 6), (mid - 6, mid + 6), 2)
-        pygame.draw.line(s, col, (mid - 8, mid),     (mid + 8, mid),     1)
-        return s
-
     # ------------------------------------------------------------------
     # Camera
     # ------------------------------------------------------------------
@@ -1284,34 +1230,6 @@ class Renderer:
                                 spy = 1 + (h * (i + 3) * 97) % 28
                                 pygame.draw.rect(self.screen, sc, (sx + spx, sy + spy, 2, 2))
 
-        self._draw_support_zones(world, bx0, bx1, by0, by1, cam_xi, cam_yi)
-
-    def _draw_support_zones(self, world, bx0, bx1, by0, by1, cam_xi, cam_yi):
-        max_r = max(SUPPORT_RANGE.values())
-        ex0 = bx0 - max_r
-        ex1 = bx1 + max_r
-        ey0 = max(0, by0 - 1)
-        ey1 = min(world.height, by1 + 2)
-
-        covered = set()
-        for sy in range(ey0, ey1):
-            for sx in range(ex0, ex1):
-                bid = world.get_block(sx, sy)
-                if bid in ALL_SUPPORTS:
-                    r = SUPPORT_RANGE[bid]
-                    for dx in range(-r, r + 1):
-                        nx = sx + dx
-                        for cy in (sy, sy - 1):
-                            if 0 <= cy < world.height:
-                                covered.add((nx, cy))
-
-        for (cx, cy) in covered:
-            if bx0 <= cx < bx1 and by0 <= cy < by1:
-                if world.get_block(cx, cy) == AIR:
-                    px = cx * BLOCK_SIZE - cam_xi
-                    py = cy * BLOCK_SIZE - cam_yi
-                    self.screen.blit(self._support_zone_surf, (px, py))
-
     # ------------------------------------------------------------------
     # Draw player
     # ------------------------------------------------------------------
@@ -1355,6 +1273,10 @@ class Renderer:
                 self._draw_npc_quest(sx, sy, e)
             elif e.animal_id == "npc_trade":
                 self._draw_npc_trade(sx, sy, e)
+            elif e.animal_id == "npc_herbalist":
+                self._draw_npc_herbalist(sx, sy, e)
+            elif e.animal_id == "npc_jeweler":
+                self._draw_npc_jeweler(sx, sy, e)
 
     @staticmethod
     def _fmt_fuel_time(fuel, fuel_rate):
@@ -1480,6 +1402,41 @@ class Renderer:
         # Dollar marker above head
         txt = self._npc_font.render("$", True, (80, 230, 120))
         self.screen.blit(txt, (sx + 6, sy - 24 + bob))
+
+    def _draw_npc_herbalist(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        # Body — earthy green tunic
+        pygame.draw.rect(self.screen, (60, 140, 70), (sx, sy + bob, 20, 18))
+        # Belt
+        pygame.draw.rect(self.screen, (90, 55, 20), (sx, sy + 11 + bob, 20, 3))
+        # Head
+        pygame.draw.rect(self.screen, (255, 215, 160), (sx + 2, sy - 10 + bob, 16, 12))
+        # Eyes
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4, sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+        # Flower indicator above head (4 petals + centre)
+        fx, fy = sx + 10, sy - 22 + bob
+        for dx, dy in ((0, -4), (0, 4), (-4, 0), (4, 0)):
+            pygame.draw.circle(self.screen, (100, 220, 100), (fx + dx, fy + dy), 2)
+        pygame.draw.circle(self.screen, (255, 230, 50), (fx, fy), 2)
+
+    def _draw_npc_jeweler(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        # Body — deep purple coat
+        pygame.draw.rect(self.screen, (110, 50, 160), (sx, sy + bob, 20, 18))
+        # Coat trim
+        pygame.draw.rect(self.screen, (160, 90, 210), (sx + 8, sy + bob, 4, 18))
+        # Head
+        pygame.draw.rect(self.screen, (255, 215, 160), (sx + 2, sy - 10 + bob, 16, 12))
+        # Eyes
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4, sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+        # Diamond indicator above head
+        gx, gy = sx + 10, sy - 22 + bob
+        pygame.draw.polygon(self.screen, (190, 110, 255),
+                            [(gx, gy - 5), (gx + 4, gy), (gx, gy + 5), (gx - 4, gy)])
+        pygame.draw.polygon(self.screen, (230, 180, 255),
+                            [(gx, gy - 5), (gx + 4, gy), (gx, gy + 5), (gx - 4, gy)], 1)
 
     def _draw_sheep(self, sx, sy, sheep):
         W, H = sheep.W, sheep.H

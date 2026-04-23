@@ -216,8 +216,6 @@ class UI:
         self.active_automation = None
         self._auto_deposit1_btn    = None
         self._auto_deposit_all_btn = None
-        self._auto_support1_btn    = None
-        self._auto_support_all_btn = None
         self._auto_take_btn        = None
         self.farm_bot_open   = False
         self.active_farm_bot = None
@@ -548,7 +546,7 @@ class UI:
                 return
 
     def handle_npc_click(self, pos, player):
-        from cities import RockQuestNPC, TradeNPC
+        from cities import RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC
         npc = self.active_npc
         if isinstance(npc, RockQuestNPC):
             for quest_idx, rect in self._trade_rects.items():
@@ -559,6 +557,16 @@ class UI:
             for i, rect in self._trade_rects.items():
                 if rect.collidepoint(pos):
                     npc.execute_trade(i, player)
+                    break
+        elif isinstance(npc, WildflowerQuestNPC):
+            for quest_idx, rect in self._trade_rects.items():
+                if rect.collidepoint(pos):
+                    npc.complete_quest(player, quest_idx)
+                    break
+        elif isinstance(npc, GemQuestNPC):
+            for quest_idx, rect in self._trade_rects.items():
+                if rect.collidepoint(pos):
+                    npc.complete_quest(player, quest_idx)
                     break
 
     def handle_gem_cutter_click(self, pos, player):
@@ -872,21 +880,29 @@ class UI:
     # ------------------------------------------------------------------
 
     def _draw_npc_panel(self, player):
-        from cities import RockQuestNPC, TradeNPC
-        from rocks import RARITY_COLORS, ROCK_TYPES
+        from cities import RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC
         npc = self.active_npc
 
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 210))
         self.screen.blit(overlay, (0, 0))
 
-        from cities import RockQuestNPC as _RQN
+        is_quest = isinstance(npc, (RockQuestNPC, WildflowerQuestNPC, GemQuestNPC))
         PW = 660
-        PH = 490 if isinstance(npc, _RQN) else 460
+        PH = 490 if is_quest else 460
         px = (SCREEN_W - PW) // 2
         py = (SCREEN_H - PH) // 2
+
+        # Border colour per NPC type
+        if isinstance(npc, WildflowerQuestNPC):
+            border_col = (60, 140, 70)
+        elif isinstance(npc, GemQuestNPC):
+            border_col = (110, 50, 160)
+        else:
+            border_col = (120, 100, 60)
+
         pygame.draw.rect(self.screen, (22, 22, 30), (px, py, PW, PH))
-        pygame.draw.rect(self.screen, (120, 100, 60), (px, py, PW, PH), 2)
+        pygame.draw.rect(self.screen, border_col, (px, py, PW, PH), 2)
 
         hint = self.small.render("E or ESC to close", True, (100, 100, 110))
         self.screen.blit(hint, (px + PW - hint.get_width() - 8, py + 8))
@@ -895,6 +911,10 @@ class UI:
             self._draw_quest_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, TradeNPC):
             self._draw_trade_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, WildflowerQuestNPC):
+            self._draw_wf_quest_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, GemQuestNPC):
+            self._draw_gem_quest_content(player, npc, px, py, PW, PH)
 
     def _draw_quest_content(self, player, npc, px, py, PW, PH):
         from cities import quest_display, quest_hint, RARITY_ORDER
@@ -1027,6 +1047,138 @@ class UI:
             lbl = self.font.render("TRADE", True, (190, 255, 190) if can else (70, 70, 82))
             self.screen.blit(lbl, (rect.right - lbl.get_width() - 10,
                                     y + row_h // 2 - lbl.get_height() // 2))
+            y += row_h + 8
+
+    def _draw_wf_quest_content(self, player, npc, px, py, PW, PH):
+        from cities import wf_quest_display, wf_quest_hint, RARITY_ORDER
+        from rocks import RARITY_COLORS
+
+        DIFF_LABELS = {0: "Apprentice", 1: "Journeyman", 2: "Master"}
+        diff_col    = {0: (100, 200, 110), 1: (80, 190, 140), 2: (60, 180, 80)}
+        title_txt   = f"HERBALIST  [{DIFF_LABELS[npc.difficulty]}]"
+        title = self.font.render(title_txt, True, diff_col[npc.difficulty])
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+
+        if npc._streak > 0:
+            bonus_pct = min(npc._streak - 1, 2) * 25
+            streak_label = f"Streak: {npc._streak}  (+{bonus_pct}% bonus)" if bonus_pct else f"Streak: {npc._streak}"
+            stxt = self.small.render(streak_label, True, (80, 220, 130))
+            self.screen.blit(stxt, (px + PW - stxt.get_width() - 12, py + 32))
+
+        self._trade_rects.clear()
+        y = py + 40
+        for quest_idx, quest in enumerate(npc.quests):
+            row_h   = 150
+            row_rect = pygame.Rect(px + 14, y, PW - 28, row_h)
+            can = npc.can_complete(player, quest_idx)
+            pygame.draw.rect(self.screen, (20, 40, 22) if can else (22, 22, 30), row_rect)
+            pygame.draw.rect(self.screen, (55, 160, 65) if can else (55, 80, 55), row_rect, 2)
+
+            iy = y + 10
+            kind_labels = {"wf_single": "SPECIFIC FLOWER", "wf_quantity": "BULK FLOWERS", "wf_rarity": "RARITY"}
+            badge_col   = {"wf_single": (80, 180, 90), "wf_quantity": (140, 160, 60), "wf_rarity": (60, 180, 130)}
+            badge = self.small.render(kind_labels.get(quest["kind"], "QUEST"), True,
+                                      badge_col.get(quest["kind"], (150, 150, 150)))
+            self.screen.blit(badge, (px + 22, iy)); iy += 18
+
+            rarity_col = RARITY_COLORS.get(quest.get("min_rarity", "common"), (220, 220, 220))
+            self.screen.blit(self.font.render(wf_quest_display(quest), True, rarity_col), (px + 22, iy)); iy += 24
+            self.screen.blit(self.small.render(wf_quest_hint(quest), True, (140, 170, 150)), (px + 22, iy)); iy += 20
+
+            matching = npc.find_matching_flowers(player, quest)
+            needed   = quest.get("count", 1)
+            if len(matching) >= needed:
+                status, sc = f"Ready!  ({len(matching)} matching in collection)", (80, 220, 80)
+            else:
+                status, sc = f"Need {needed}  —  you have {len(matching)}", (180, 90, 90)
+            self.screen.blit(self.small.render(status, True, sc), (px + 22, iy)); iy += 18
+
+            streak_bonus = min(npc._streak, 2) * 25
+            reward_str = f"Reward: {quest['reward']} gold"
+            if streak_bonus:
+                bonus_val = int(quest["reward"] * (1 + streak_bonus / 100)) - quest["reward"]
+                reward_str += f"  (+{bonus_val} streak bonus)"
+            self.screen.blit(self.font.render(reward_str, True, (240, 210, 50)), (px + 22, iy))
+
+            BW, BH = 170, 36
+            bx2, by2 = px + PW - BW - 20, y + row_h // 2 - BH // 2
+            btn_rect = pygame.Rect(bx2, by2, BW, BH)
+            self._trade_rects[quest_idx] = btn_rect
+            if len(matching) >= needed:
+                b_bg, b_bdr, b_tc = (18, 90, 30), (45, 200, 65), (190, 255, 200)
+            else:
+                b_bg, b_bdr, b_tc = (30, 30, 36), (55, 55, 68), (70, 70, 82)
+            pygame.draw.rect(self.screen, b_bg, btn_rect)
+            pygame.draw.rect(self.screen, b_bdr, btn_rect, 2)
+            bl = self.small.render("HAND OVER", True, b_tc)
+            self.screen.blit(bl, (bx2 + BW // 2 - bl.get_width() // 2,
+                                   by2 + BH // 2 - bl.get_height() // 2))
+            y += row_h + 8
+
+    def _draw_gem_quest_content(self, player, npc, px, py, PW, PH):
+        from cities import gem_quest_display, gem_quest_hint, RARITY_ORDER
+        from rocks import RARITY_COLORS
+
+        DIFF_LABELS = {0: "Apprentice", 1: "Journeyman", 2: "Master"}
+        diff_col    = {0: (160, 110, 220), 1: (190, 80, 210), 2: (220, 60, 200)}
+        title_txt   = f"JEWELER  [{DIFF_LABELS[npc.difficulty]}]"
+        title = self.font.render(title_txt, True, diff_col[npc.difficulty])
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+
+        if npc._streak > 0:
+            bonus_pct = min(npc._streak - 1, 2) * 25
+            streak_label = f"Streak: {npc._streak}  (+{bonus_pct}% bonus)" if bonus_pct else f"Streak: {npc._streak}"
+            stxt = self.small.render(streak_label, True, (200, 140, 255))
+            self.screen.blit(stxt, (px + PW - stxt.get_width() - 12, py + 32))
+
+        self._trade_rects.clear()
+        y = py + 40
+        for quest_idx, quest in enumerate(npc.quests):
+            row_h    = 150
+            row_rect = pygame.Rect(px + 14, y, PW - 28, row_h)
+            can = npc.can_complete(player, quest_idx)
+            pygame.draw.rect(self.screen, (25, 18, 40) if can else (22, 22, 30), row_rect)
+            pygame.draw.rect(self.screen, (130, 60, 200) if can else (70, 50, 90), row_rect, 2)
+
+            iy = y + 10
+            kind_labels = {"gem_type": "GEM TYPE", "gem_cut": "CUT GEM", "gem_rarity": "RARITY"}
+            badge_col   = {"gem_type": (160, 100, 220), "gem_cut": (200, 120, 80), "gem_rarity": (120, 80, 210)}
+            badge = self.small.render(kind_labels.get(quest["kind"], "QUEST"), True,
+                                      badge_col.get(quest["kind"], (150, 150, 150)))
+            self.screen.blit(badge, (px + 22, iy)); iy += 18
+
+            rarity_col = RARITY_COLORS.get(quest.get("min_rarity", "common"), (220, 220, 220))
+            self.screen.blit(self.font.render(gem_quest_display(quest), True, rarity_col), (px + 22, iy)); iy += 24
+            self.screen.blit(self.small.render(gem_quest_hint(quest), True, (170, 140, 200)), (px + 22, iy)); iy += 20
+
+            matching = npc.find_matching_gems(player, quest)
+            needed   = quest.get("count", 1)
+            if len(matching) >= needed:
+                status, sc = f"Ready!  ({len(matching)} matching in collection)", (80, 220, 80)
+            else:
+                status, sc = f"Need {needed}  —  you have {len(matching)}", (180, 90, 90)
+            self.screen.blit(self.small.render(status, True, sc), (px + 22, iy)); iy += 18
+
+            streak_bonus = min(npc._streak, 2) * 25
+            reward_str = f"Reward: {quest['reward']} gold"
+            if streak_bonus:
+                bonus_val = int(quest["reward"] * (1 + streak_bonus / 100)) - quest["reward"]
+                reward_str += f"  (+{bonus_val} streak bonus)"
+            self.screen.blit(self.font.render(reward_str, True, (240, 210, 50)), (px + 22, iy))
+
+            BW, BH = 170, 36
+            bx2, by2 = px + PW - BW - 20, y + row_h // 2 - BH // 2
+            btn_rect = pygame.Rect(bx2, by2, BW, BH)
+            self._trade_rects[quest_idx] = btn_rect
+            if len(matching) >= needed:
+                b_bg, b_bdr, b_tc = (40, 18, 80), (140, 60, 220), (220, 180, 255)
+            else:
+                b_bg, b_bdr, b_tc = (30, 30, 36), (55, 55, 68), (70, 70, 82)
+            pygame.draw.rect(self.screen, b_bg, btn_rect)
+            pygame.draw.rect(self.screen, b_bdr, btn_rect, 2)
+            bl = self.small.render("HAND OVER", True, b_tc)
+            self.screen.blit(bl, (bx2 + BW // 2 - bl.get_width() // 2,
+                                   by2 + BH // 2 - bl.get_height() // 2))
             y += row_h + 8
 
     # ------------------------------------------------------------------
@@ -3515,18 +3667,16 @@ class UI:
     # ------------------------------------------------------------------
 
     _STATUS_COLOR = {
-        "active":           (80, 220, 80),
-        "halted_fuel":      (220, 140, 40),
-        "halted_full":      (220, 220, 40),
-        "halted_blocked":   (220, 60, 60),
-        "halted_supports":  (80, 160, 220),
+        "active":         (80, 220, 80),
+        "halted_fuel":    (220, 140, 40),
+        "halted_full":    (220, 220, 40),
+        "halted_blocked": (220, 60, 60),
     }
     _STATUS_LABEL = {
-        "active":           "Active",
-        "halted_fuel":      "Out of Fuel",
-        "halted_full":      "Storage Full",
-        "halted_blocked":   "Blocked",
-        "halted_supports":  "No Supports",
+        "active":         "Active",
+        "halted_fuel":    "Out of Fuel",
+        "halted_full":    "Storage Full",
+        "halted_blocked": "Blocked",
     }
 
     def _draw_resource_row(self, label, value, max_val, item_name, bar_color,
@@ -3562,7 +3712,7 @@ class UI:
     def _draw_automation_panel(self, player):
         auto = self.active_automation
         adef = auto._def
-        PW, PH = 480, 430
+        PW, PH = 480, 358
         px = (SCREEN_W - PW) // 2
         py = (SCREEN_H - PH) // 2
         bar_w = PW - 28
@@ -3600,33 +3750,16 @@ class UI:
 
         pygame.draw.line(self.screen, (70, 60, 90), (px + 10, py + 124), (px + PW - 10, py + 124))
 
-        # --- Supports section ---
-        sup_item_name = ITEMS.get(adef["support_item"], {}).get("name", adef["support_item"])
-        next_support_in = adef["support_interval"] - auto._blocks_since_support
-        sup_detail = self.small.render(
-            f"Next support in {next_support_in} block(s)", True, (120, 130, 160)
-        )
-        self._draw_resource_row(
-            "SUPPORTS", auto.supports, adef["supports_max"], sup_item_name,
-            (80, 160, 220),
-            "_auto_support1_btn", "_auto_support_all_btn",
-            player.inventory.get(adef["support_item"], 0) > 0,
-            py + 130, px, bar_w, py + 162,
-        )
-        self.screen.blit(sup_detail, (px + PW - sup_detail.get_width() - 14, py + 130))
-
-        pygame.draw.line(self.screen, (70, 60, 90), (px + 10, py + 196), (px + PW - 10, py + 196))
-
         # --- Stored items section ---
         inv_count = auto.inv_count
         inv_label = self.small.render("STORED ITEMS", True, (200, 190, 230))
-        self.screen.blit(inv_label, (px + 14, py + 202))
+        self.screen.blit(inv_label, (px + 14, py + 130))
         count_label = self.small.render(f"{inv_count} / {adef['inv_limit']}", True, (160, 150, 200))
-        self.screen.blit(count_label, (px + PW - count_label.get_width() - 14, py + 202))
+        self.screen.blit(count_label, (px + PW - count_label.get_width() - 14, py + 130))
 
         SW, SH, GAP = 44, 44, 6
         items_per_row = (PW - 28 + GAP) // (SW + GAP)
-        ix0, iy0 = px + 14, py + 220
+        ix0, iy0 = px + 14, py + 148
         for idx, (item_id, count) in enumerate(sorted(auto.stored.items())):
             col_i = idx % items_per_row
             row_i = idx // items_per_row
@@ -3677,10 +3810,6 @@ class UI:
             auto.deposit_fuel(player, 1)
         elif self._auto_deposit_all_btn and self._auto_deposit_all_btn.collidepoint(pos):
             auto.deposit_fuel(player)
-        elif self._auto_support1_btn and self._auto_support1_btn.collidepoint(pos):
-            auto.deposit_supports(player, 1)
-        elif self._auto_support_all_btn and self._auto_support_all_btn.collidepoint(pos):
-            auto.deposit_supports(player)
         elif self._auto_take_btn and self._auto_take_btn.collidepoint(pos):
             auto.take_all(player)
 

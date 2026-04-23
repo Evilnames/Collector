@@ -160,26 +160,6 @@ RECIPES = [
         "output_count": 5,
     },
     {
-        "name": "Support",
-        "pattern": [
-            [None,     None, None],
-            [None, "lumber", None],
-            [None,     None, None],
-        ],
-        "output_id":    "support_item",
-        "output_count": 3,
-    },
-    {
-        "name": "Iron Support",
-        "pattern": [
-            [None,          None, None],
-            [None, "iron_chunk", None],
-            [None,          None, None],
-        ],
-        "output_id":    "iron_support_item",
-        "output_count": 2,
-    },
-    {
         "name": "Diamond",
         "pattern": [
             [None,   "ruby", None],
@@ -187,16 +167,6 @@ RECIPES = [
             [None,   "ruby", None],
         ],
         "output_id":    "diamond",
-        "output_count": 1,
-    },
-    {
-        "name": "Diamond Support",
-        "pattern": [
-            [None,       None, None],
-            [None, "diamond", None],
-            [None,       None, None],
-        ],
-        "output_id":    "diamond_support_item",
         "output_count": 1,
     },
     # --- Tools ---

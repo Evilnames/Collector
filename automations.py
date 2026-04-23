@@ -286,11 +286,6 @@ class Automation:
         pygame.draw.rect(surface, (30, 30, 30), (sx, sy - 6, bar_w, 4))
         pygame.draw.rect(surface, (220, 160, 40), (sx, sy - 6, int(bar_w * frac_fuel), 4))
 
-        # Support bar (above fuel bar, 3px tall — blue)
-        frac_sup = self.supports / self._def["supports_max"] if self._def["supports_max"] > 0 else 0
-        pygame.draw.rect(surface, (20, 20, 40), (sx, sy - 11, bar_w, 3))
-        pygame.draw.rect(surface, (80, 160, 220), (sx, sy - 11, int(bar_w * frac_sup), 3))
-
         # Mining progress bar (below, 3px, only while mining)
         if self._state == "mining":
             prog = self._mine_timer / self._def["mine_time"]

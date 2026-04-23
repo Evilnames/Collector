@@ -1,9 +1,9 @@
 import random
 import pygame
 from automations import Automation, AUTOMATION_DEFS, FarmBot, FARM_BOT_DEFS, FARM_BOT_TYPES, Backhoe
-from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT, GEM_DEPOSIT, CAVE_MUSHROOMS, EQUIPMENT_BLOCKS, LADDER, SUPPORT, WATER,
+from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT, GEM_DEPOSIT, CAVE_MUSHROOMS, EQUIPMENT_BLOCKS, LADDER, WATER,
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
-                    ALL_SUPPORTS, SAPLING, GRASS, DIRT, ALL_LOGS, ALL_LEAVES,
+                    SAPLING, GRASS, DIRT, ALL_LOGS, ALL_LEAVES,
                     YOUNG_CROP_BLOCKS, MATURE_CROP_BLOCKS, BUSH_BLOCKS,
                     STRAWBERRY_BUSH, WHEAT_BUSH,
                     CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
@@ -41,7 +41,6 @@ from constants import (
 _BG_DISALLOWED = (
     {WATER, LADDER, SAPLING, CHEST_BLOCK,
      WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN}
-    | ALL_SUPPORTS
     | BUSH_BLOCKS
     | YOUNG_CROP_BLOCKS
     | EQUIPMENT_BLOCKS
@@ -553,13 +552,29 @@ class Player:
         if not bg:
             current = self.world.get_block(bx, by)
             if current == WOOD_DOOR_CLOSED:
-                self.world.set_block(bx, by, WOOD_DOOR_OPEN); return
+                self.world.set_block(bx, by, WOOD_DOOR_OPEN)
+                for dy in (-1, 1):
+                    if self.world.get_block(bx, by + dy) == WOOD_DOOR_CLOSED:
+                        self.world.set_block(bx, by + dy, WOOD_DOOR_OPEN); break
+                return
             if current == WOOD_DOOR_OPEN:
-                self.world.set_block(bx, by, WOOD_DOOR_CLOSED); return
+                self.world.set_block(bx, by, WOOD_DOOR_CLOSED)
+                for dy in (-1, 1):
+                    if self.world.get_block(bx, by + dy) == WOOD_DOOR_OPEN:
+                        self.world.set_block(bx, by + dy, WOOD_DOOR_CLOSED); break
+                return
             if current == IRON_DOOR_CLOSED:
-                self.world.set_block(bx, by, IRON_DOOR_OPEN); return
+                self.world.set_block(bx, by, IRON_DOOR_OPEN)
+                for dy in (-1, 1):
+                    if self.world.get_block(bx, by + dy) == IRON_DOOR_CLOSED:
+                        self.world.set_block(bx, by + dy, IRON_DOOR_OPEN); break
+                return
             if current == IRON_DOOR_OPEN:
-                self.world.set_block(bx, by, IRON_DOOR_CLOSED); return
+                self.world.set_block(bx, by, IRON_DOOR_CLOSED)
+                for dy in (-1, 1):
+                    if self.world.get_block(bx, by + dy) == IRON_DOOR_OPEN:
+                        self.world.set_block(bx, by + dy, IRON_DOOR_CLOSED); break
+                return
         item_id = self.hotbar[self.selected_slot]
         if item_id is None:
             return
@@ -644,7 +659,7 @@ class Player:
                 if self.world.get_block(bx, by + 1) not in (GRASS, DIRT):
                     return
             # Don't place inside the player (passable blocks are exempt)
-            passable = {LADDER, SAPLING} | ALL_SUPPORTS | BUSH_BLOCKS | YOUNG_CROP_BLOCKS
+            passable = {LADDER, SAPLING} | BUSH_BLOCKS | YOUNG_CROP_BLOCKS
             if block_id not in passable:
                 block_px = pygame.Rect(bx * BLOCK_SIZE, by * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
                 if block_px.colliderect(self.rect):

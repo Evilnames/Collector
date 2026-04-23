@@ -2,8 +2,10 @@ import random
 import uuid
 import pygame
 from constants import BLOCK_SIZE, GRAVITY, JUMP_FORCE, MAX_FALL, PLAYER_W, PLAYER_H, MINE_REACH, HOTBAR_SIZE
+from blocks import LADDER
 
 ANIMAL_MOVE_SPEED = 1.2
+ANIMAL_CLIMB_SPEED = 1.5
 
 
 class Animal:
@@ -27,11 +29,11 @@ class Animal:
         self.parent_b_uid = None
         self.traits = {
             "color_shift": (
-                random.uniform(-0.05, 0.05),
-                random.uniform(-0.05, 0.05),
-                random.uniform(-0.05, 0.05),
+                random.uniform(-0.20, 0.20),
+                random.uniform(-0.20, 0.20),
+                random.uniform(-0.20, 0.20),
             ),
-            "size": random.uniform(0.95, 1.05),
+            "size": random.uniform(0.87, 1.13),
         }
 
         # Health / death
@@ -96,6 +98,17 @@ class Animal:
                     return True
         return False
 
+    def _in_ladder(self):
+        left  = int(self.x // BLOCK_SIZE)
+        right = int((self.x + self.W - 1) // BLOCK_SIZE)
+        top   = int(self.y // BLOCK_SIZE)
+        bot   = int((self.y + self.H - 1) // BLOCK_SIZE)
+        for bx in range(left, right + 1):
+            for by in range(top, bot + 1):
+                if self.world.get_block(bx, by) == LADDER:
+                    return True
+        return False
+
     def update(self, dt):
         if self.dead:
             return
@@ -130,7 +143,13 @@ class Animal:
                     self.vx = 0.0
                 if self.vx != 0:
                     self.facing = 1 if self.vx > 0 else -1
-                self.vy = min(self.vy + GRAVITY, MAX_FALL)
+                if self._in_ladder():
+                    if self.vx != 0:
+                        self.vy = -ANIMAL_CLIMB_SPEED
+                    else:
+                        self.vy = 0
+                else:
+                    self.vy = min(self.vy + GRAVITY, MAX_FALL)
                 self._move_x(self.vx)
                 self._move_y(self.vy)
                 return  # skip wander
@@ -145,7 +164,13 @@ class Animal:
         if self.vx != 0:
             self.facing = 1 if self.vx > 0 else -1
 
-        self.vy = min(self.vy + GRAVITY, MAX_FALL)
+        if self._in_ladder():
+            if self.vx != 0:
+                self.vy = -ANIMAL_CLIMB_SPEED
+            else:
+                self.vy = 0
+        else:
+            self.vy = min(self.vy + GRAVITY, MAX_FALL)
         self._move_x(self.vx)
         self._move_y(self.vy)
 

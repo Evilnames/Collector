@@ -620,10 +620,10 @@ class SaveManager:
                    VALUES (?,?,?,?,?,?,?,?,?,?)""",
                 (
                     a.x, a.y, a.auto_type, json.dumps(list(a.direction)),
-                    a.fuel, a.supports,
+                    a.fuel, 0,
                     json.dumps(a.stored),
                     a._state, a._halt_reason,
-                    a._blocks_since_support,
+                    0,
                 )
             )
 
@@ -839,10 +839,9 @@ class SaveManager:
                 direction = tuple(json.loads(raw_dir))
             result.append({
                 "x": x, "y": y, "auto_type": auto_type, "direction": direction,
-                "fuel": fuel, "supports": supports,
+                "fuel": fuel,
                 "stored": json.loads(stored),
                 "state": state, "halt_reason": halt_reason,
-                "blocks_since_support": blocks_since_support,
             })
         return result
 

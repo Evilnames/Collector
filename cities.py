@@ -1,9 +1,8 @@
 import math
 import random
 
-from blocks import (STONE, NPC_QUEST_BLOCK, NPC_TRADE_BLOCK, BEDROCK,
-                    HOUSE_WALL, HOUSE_ROOF, AIR,
-                    ALL_LOGS, ALL_LEAVES, BUSH_BLOCKS, SAPLING)
+from blocks import (STONE, BEDROCK, HOUSE_WALL, HOUSE_ROOF, AIR,
+                    WOOD_DOOR_CLOSED, ALL_LOGS, ALL_LEAVES, BUSH_BLOCKS, SAPLING)
 from constants import BLOCK_SIZE, PLAYER_W, PLAYER_H, CITY_SPACING, CITY_COUNT, NPC_INTERACT_RANGE
 from rocks import ROCK_TYPES
 
@@ -17,7 +16,6 @@ RARITY_REWARD = {
     "legendary": 150,
 }
 
-# Special properties that can appear in quests
 QUEST_SPECIALS = ["luminous", "magnetic", "crystalline", "resonant", "voidtouched"]
 SPECIAL_REWARD = {
     "luminous":    20,
@@ -27,14 +25,12 @@ SPECIAL_REWARD = {
     "voidtouched": 50,
 }
 
-# Per-difficulty: which rarities can be requested
 DIFFICULTY_RARITY = {
     0: ["common", "uncommon"],
     1: ["common", "uncommon", "rare"],
     2: ["uncommon", "rare", "epic", "legendary"],
 }
 
-# Per-difficulty: weighted pool of quest kinds to pick from
 DIFFICULTY_KINDS = {
     0: ["single", "single", "single", "quantity"],
     1: ["single", "single", "any_rarity", "quantity"],
@@ -55,6 +51,229 @@ TRADE_TABLE = [
     ("milk",          2,  4),
 ]
 
+# ---------------------------------------------------------------------------
+# Wildflower quest data
+# ---------------------------------------------------------------------------
+
+_WF_RARITY_REWARD = {
+    "common":    6,
+    "uncommon":  15,
+    "rare":      35,
+    "epic":      80,
+    "legendary": 200,
+}
+
+_WF_QUEST_POOL = {
+    0: ["daisy", "buttercup", "clover", "poppy", "lavender", "chamomile", "forget_me_not"],
+    1: ["lupine", "foxglove", "iris", "orchid", "sunflower", "bleeding_heart", "sweet_pea", "snapdragon"],
+    2: ["edelweiss", "ghost_orchid", "crystal_bloom", "void_petal", "phantom_bloom", "biolume_bell"],
+}
+
+_WF_KINDS_BY_DIFF = {
+    0: ["wf_single", "wf_single", "wf_quantity"],
+    1: ["wf_single", "wf_rarity", "wf_quantity"],
+    2: ["wf_rarity", "wf_rarity", "wf_quantity"],
+}
+
+
+def _build_wf_quest(rng, difficulty):
+    kind = rng.choice(_WF_KINDS_BY_DIFF[difficulty])
+    allowed = DIFFICULTY_RARITY[difficulty]
+
+    if kind == "wf_single":
+        flower_type = rng.choice(_WF_QUEST_POOL[difficulty])
+        reward = int(_WF_RARITY_REWARD["common"] * (1 + difficulty))
+        return {"kind": "wf_single", "flower_type": flower_type, "reward": reward}
+
+    elif kind == "wf_quantity":
+        pool = _WF_QUEST_POOL[min(difficulty, 1)]
+        flower_type = rng.choice(pool)
+        count = rng.randint(2, 3)
+        reward = int(_WF_RARITY_REWARD["common"] * count * (1 + difficulty * 0.5))
+        return {"kind": "wf_quantity", "flower_type": flower_type, "count": count, "reward": reward}
+
+    else:  # wf_rarity
+        upper = allowed[max(0, len(allowed) // 2):]
+        min_rarity = rng.choice(upper)
+        reward = int(_WF_RARITY_REWARD[min_rarity] * 1.4)
+        return {"kind": "wf_rarity", "min_rarity": min_rarity, "reward": reward}
+
+
+def wf_quest_display(quest):
+    if quest["kind"] == "wf_single":
+        return quest["flower_type"].replace("_", " ").title()
+    elif quest["kind"] == "wf_quantity":
+        return f"{quest['count']}x {quest['flower_type'].replace('_', ' ').title()}"
+    elif quest["kind"] == "wf_rarity":
+        from ui import RARITY_LABEL
+        label = RARITY_LABEL.get(quest["min_rarity"], quest["min_rarity"])
+        return f"Any {label}+ wildflower"
+    return "Unknown quest"
+
+
+def wf_quest_hint(quest):
+    if quest["kind"] == "wf_single":
+        return "Found at the surface in various biomes"
+    elif quest["kind"] == "wf_quantity":
+        return "Any rarity accepted"
+    elif quest["kind"] == "wf_rarity":
+        idx = RARITY_ORDER.index(quest["min_rarity"])
+        above = " / ".join(r.title() for r in RARITY_ORDER[idx:])
+        return f"Accepted: {above}"
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# Gem quest data
+# ---------------------------------------------------------------------------
+
+_GEM_RARITY_REWARD = {
+    "common":    10,
+    "uncommon":  25,
+    "rare":      60,
+    "epic":      140,
+    "legendary": 350,
+}
+
+_GEM_QUEST_POOL = {
+    0: ["amber", "garnet", "rose_quartz", "jet"],
+    1: ["spinel", "peridot", "tourmaline", "obsidian"],
+    2: ["alexandrite", "emerald", "ruby", "sapphire", "diamond"],
+}
+
+_GEM_KINDS_BY_DIFF = {
+    0: ["gem_type", "gem_type", "gem_rarity"],
+    1: ["gem_type", "gem_rarity", "gem_cut"],
+    2: ["gem_rarity", "gem_cut", "gem_cut"],
+}
+
+
+def _build_gem_quest(rng, difficulty):
+    kind = rng.choice(_GEM_KINDS_BY_DIFF[difficulty])
+    allowed = DIFFICULTY_RARITY[difficulty]
+
+    if kind == "gem_type":
+        gem_type = rng.choice(_GEM_QUEST_POOL[difficulty])
+        reward = int(_GEM_RARITY_REWARD["common"] * (1 + difficulty * 0.8))
+        return {"kind": "gem_type", "gem_type": gem_type, "reward": reward}
+
+    elif kind == "gem_cut":
+        gem_type = rng.choice(_GEM_QUEST_POOL[min(difficulty, 1)])
+        reward = int(_GEM_RARITY_REWARD["uncommon"] * (1 + difficulty * 0.6))
+        return {"kind": "gem_cut", "gem_type": gem_type, "reward": reward}
+
+    else:  # gem_rarity
+        upper = allowed[max(0, len(allowed) // 2):]
+        min_rarity = rng.choice(upper)
+        reward = int(_GEM_RARITY_REWARD[min_rarity] * 1.3)
+        return {"kind": "gem_rarity", "min_rarity": min_rarity, "reward": reward}
+
+
+def gem_quest_display(quest):
+    if quest["kind"] == "gem_type":
+        return f"Any {quest['gem_type'].replace('_', ' ').title()}"
+    elif quest["kind"] == "gem_cut":
+        return f"Cut {quest['gem_type'].replace('_', ' ').title()}"
+    elif quest["kind"] == "gem_rarity":
+        from ui import RARITY_LABEL
+        label = RARITY_LABEL.get(quest["min_rarity"], quest["min_rarity"])
+        return f"Any {label}+ gemstone"
+    return "Unknown quest"
+
+
+def gem_quest_hint(quest):
+    if quest["kind"] == "gem_type":
+        return "Any rarity, rough or cut accepted"
+    elif quest["kind"] == "gem_cut":
+        return "Must be cut (use the Gem Cutter)"
+    elif quest["kind"] == "gem_rarity":
+        idx = RARITY_ORDER.index(quest["min_rarity"])
+        above = " / ".join(r.title() for r in RARITY_ORDER[idx:])
+        return f"Accepted: {above}"
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# Rock quest helpers (unchanged)
+# ---------------------------------------------------------------------------
+
+def _quest_candidates(rng, difficulty):
+    allowed = set(DIFFICULTY_RARITY[difficulty])
+    max_depth = 40 + difficulty * 50
+    candidates = [
+        k for k, v in ROCK_TYPES.items()
+        if v["min_depth"] <= max_depth and any(r in allowed for r in v["rarity_pool"])
+    ]
+    return candidates if candidates else list(ROCK_TYPES.keys())
+
+
+def _build_quest(rng, difficulty):
+    kind = rng.choice(DIFFICULTY_KINDS[difficulty])
+    allowed = DIFFICULTY_RARITY[difficulty]
+
+    if kind == "single":
+        candidates = _quest_candidates(rng, difficulty)
+        rock_type = rng.choice(candidates)
+        pool = [r for r in ROCK_TYPES[rock_type]["rarity_pool"] if r in allowed]
+        rarity = rng.choice(pool) if pool else rng.choice(allowed)
+        base_reward = RARITY_REWARD[rarity]
+        reward = int(base_reward * (1 + difficulty * 0.3))
+        return {"kind": "single", "rock_type": rock_type, "rarity": rarity, "reward": reward}
+
+    elif kind == "any_rarity":
+        upper = allowed[max(0, len(allowed) // 2):]
+        min_rarity = rng.choice(upper)
+        reward = int(RARITY_REWARD[min_rarity] * 1.5)
+        return {"kind": "any_rarity", "min_rarity": min_rarity, "reward": reward}
+
+    elif kind == "quantity":
+        count = 2 if difficulty == 0 else rng.randint(2, 3)
+        candidates = _quest_candidates(rng, difficulty)
+        rock_type = rng.choice(candidates)
+        reward = int(RARITY_REWARD["common"] * count * (1 + difficulty * 0.5))
+        return {"kind": "quantity", "rock_type": rock_type, "count": count, "reward": reward}
+
+    else:  # special
+        special = rng.choice(QUEST_SPECIALS)
+        reward = int(SPECIAL_REWARD[special] * (1 + difficulty * 0.4))
+        return {"kind": "special", "special": special, "reward": reward}
+
+
+def quest_display(quest):
+    if quest["kind"] == "single":
+        from ui import RARITY_LABEL
+        label = RARITY_LABEL.get(quest["rarity"], quest["rarity"])
+        return f"{label} {quest['rock_type'].replace('_', ' ').title()}"
+    elif quest["kind"] == "any_rarity":
+        from ui import RARITY_LABEL
+        label = RARITY_LABEL.get(quest["min_rarity"], quest["min_rarity"])
+        return f"Any {label}+ rock"
+    elif quest["kind"] == "quantity":
+        return f"{quest['count']}x {quest['rock_type'].replace('_', ' ').title()} (any rarity)"
+    elif quest["kind"] == "special":
+        return f"Any {quest['special'].title()} rock"
+    return "Unknown quest"
+
+
+def quest_hint(quest):
+    if quest["kind"] == "single":
+        depth = ROCK_TYPES[quest["rock_type"]]["min_depth"]
+        return f"Found from depth {depth} m"
+    elif quest["kind"] == "any_rarity":
+        idx = RARITY_ORDER.index(quest["min_rarity"])
+        above = " / ".join(r.title() for r in RARITY_ORDER[idx:])
+        return f"Accepted: {above}"
+    elif quest["kind"] == "quantity":
+        depth = ROCK_TYPES[quest["rock_type"]]["min_depth"]
+        return f"Found from depth {depth} m"
+    elif quest["kind"] == "special":
+        return "Special properties appear randomly on any rock"
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# NPC base class
+# ---------------------------------------------------------------------------
 
 class NPC:
     NPC_W = 20
@@ -91,84 +310,9 @@ class NPC:
         return ((px - ex) ** 2 + (py - ey) ** 2) ** 0.5 <= NPC_INTERACT_RANGE
 
 
-def _quest_candidates(rng, difficulty):
-    """Pick a rock type whose rarity pool overlaps the difficulty's allowed rarities."""
-    allowed = set(DIFFICULTY_RARITY[difficulty])
-    max_depth = 40 + difficulty * 50
-    candidates = [
-        k for k, v in ROCK_TYPES.items()
-        if v["min_depth"] <= max_depth and any(r in allowed for r in v["rarity_pool"])
-    ]
-    return candidates if candidates else list(ROCK_TYPES.keys())
-
-
-def _build_quest(rng, difficulty):
-    """Return a quest dict for the given difficulty tier."""
-    kind = rng.choice(DIFFICULTY_KINDS[difficulty])
-    allowed = DIFFICULTY_RARITY[difficulty]
-
-    if kind == "single":
-        candidates = _quest_candidates(rng, difficulty)
-        rock_type = rng.choice(candidates)
-        pool = [r for r in ROCK_TYPES[rock_type]["rarity_pool"] if r in allowed]
-        rarity = rng.choice(pool) if pool else rng.choice(allowed)
-        base_reward = RARITY_REWARD[rarity]
-        reward = int(base_reward * (1 + difficulty * 0.3))
-        return {"kind": "single", "rock_type": rock_type, "rarity": rarity, "reward": reward}
-
-    elif kind == "any_rarity":
-        # Request the upper half of the difficulty's rarity range
-        upper = allowed[max(0, len(allowed) // 2):]
-        min_rarity = rng.choice(upper)
-        reward = int(RARITY_REWARD[min_rarity] * 1.5)
-        return {"kind": "any_rarity", "min_rarity": min_rarity, "reward": reward}
-
-    elif kind == "quantity":
-        count = 2 if difficulty == 0 else rng.randint(2, 3)
-        candidates = _quest_candidates(rng, difficulty)
-        rock_type = rng.choice(candidates)
-        reward = int(RARITY_REWARD["common"] * count * (1 + difficulty * 0.5))
-        return {"kind": "quantity", "rock_type": rock_type, "count": count, "reward": reward}
-
-    else:  # special
-        special = rng.choice(QUEST_SPECIALS)
-        reward = int(SPECIAL_REWARD[special] * (1 + difficulty * 0.4))
-        return {"kind": "special", "special": special, "reward": reward}
-
-
-def quest_display(quest):
-    """Return a short human-readable description of a quest dict."""
-    if quest["kind"] == "single":
-        from ui import RARITY_LABEL
-        label = RARITY_LABEL.get(quest["rarity"], quest["rarity"])
-        return f"{label} {quest['rock_type'].replace('_', ' ').title()}"
-    elif quest["kind"] == "any_rarity":
-        from ui import RARITY_LABEL
-        label = RARITY_LABEL.get(quest["min_rarity"], quest["min_rarity"])
-        return f"Any {label}+ rock"
-    elif quest["kind"] == "quantity":
-        return f"{quest['count']}x {quest['rock_type'].replace('_', ' ').title()} (any rarity)"
-    elif quest["kind"] == "special":
-        return f"Any {quest['special'].title()} rock"
-    return "Unknown quest"
-
-
-def quest_hint(quest):
-    """Return a secondary hint line for depth/rarity context."""
-    if quest["kind"] == "single":
-        depth = ROCK_TYPES[quest["rock_type"]]["min_depth"]
-        return f"Found from depth {depth} m"
-    elif quest["kind"] == "any_rarity":
-        idx = RARITY_ORDER.index(quest["min_rarity"])
-        above = " / ".join(r.title() for r in RARITY_ORDER[idx:])
-        return f"Accepted: {above}"
-    elif quest["kind"] == "quantity":
-        depth = ROCK_TYPES[quest["rock_type"]]["min_depth"]
-        return f"Found from depth {depth} m"
-    elif quest["kind"] == "special":
-        return "Special properties appear randomly on any rock"
-    return ""
-
+# ---------------------------------------------------------------------------
+# NPC types
+# ---------------------------------------------------------------------------
 
 class RockQuestNPC(NPC):
     def __init__(self, x, y, world, rng, difficulty=0):
@@ -176,10 +320,8 @@ class RockQuestNPC(NPC):
         self._rng = rng
         self.difficulty = difficulty
         self._streak = 0
-        # Two simultaneously active quests
         self.quests = [_build_quest(rng, difficulty), _build_quest(rng, difficulty)]
 
-    # Returns list of player.rocks indices that satisfy the quest
     def find_matching_rocks(self, player, quest):
         if quest["kind"] == "single":
             return [i for i, r in enumerate(player.rocks)
@@ -207,7 +349,6 @@ class RockQuestNPC(NPC):
         matching = self.find_matching_rocks(player, quest)
         if len(matching) < needed:
             return False
-        # Remove oldest-found rocks first (lowest index)
         for i in sorted(matching[:needed], reverse=True):
             player.rocks.pop(i)
         self._streak += 1
@@ -241,89 +382,220 @@ class TradeNPC(NPC):
         return True
 
 
-def _place_house(world, left_x, sy, width, wall_height, facing='right'):
-    """
-    Build a house on the city platform. Walls use HOUSE_WALL (not a physics block),
-    so they won't collapse. A door opening faces inward toward the city centre.
-    """
-    door_col = left_x + width - 2 if facing == 'right' else left_x + 1
+class WildflowerQuestNPC(NPC):
+    def __init__(self, x, y, world, rng, difficulty=0):
+        super().__init__(x, y, world, "npc_herbalist")
+        self._rng = rng
+        self.difficulty = difficulty
+        self._streak = 0
+        self.quests = [_build_wf_quest(rng, difficulty), _build_wf_quest(rng, difficulty)]
 
-    # Walls — solid except for 1-wide, 2-tall door opening
+    def find_matching_flowers(self, player, quest):
+        if quest["kind"] == "wf_single":
+            return [i for i, f in enumerate(player.wildflowers)
+                    if f.flower_type == quest["flower_type"]]
+        elif quest["kind"] == "wf_quantity":
+            return [i for i, f in enumerate(player.wildflowers)
+                    if f.flower_type == quest["flower_type"]]
+        elif quest["kind"] == "wf_rarity":
+            min_idx = RARITY_ORDER.index(quest["min_rarity"])
+            return [i for i, f in enumerate(player.wildflowers)
+                    if RARITY_ORDER.index(f.rarity) >= min_idx]
+        return []
+
+    def can_complete(self, player, quest_idx):
+        quest = self.quests[quest_idx]
+        needed = quest.get("count", 1)
+        return len(self.find_matching_flowers(player, quest)) >= needed
+
+    def complete_quest(self, player, quest_idx=0):
+        quest = self.quests[quest_idx]
+        needed = quest.get("count", 1)
+        matching = self.find_matching_flowers(player, quest)
+        if len(matching) < needed:
+            return False
+        for i in sorted(matching[:needed], reverse=True):
+            player.wildflowers.pop(i)
+        self._streak += 1
+        streak_mult = 1.0 + min(self._streak - 1, 2) * 0.25
+        player.money += int(quest["reward"] * streak_mult)
+        self.quests[quest_idx] = _build_wf_quest(self._rng, self.difficulty)
+        return True
+
+
+class GemQuestNPC(NPC):
+    def __init__(self, x, y, world, rng, difficulty=0):
+        super().__init__(x, y, world, "npc_jeweler")
+        self._rng = rng
+        self.difficulty = difficulty
+        self._streak = 0
+        self.quests = [_build_gem_quest(rng, difficulty), _build_gem_quest(rng, difficulty)]
+
+    def find_matching_gems(self, player, quest):
+        gems = getattr(player, "gems", [])
+        if quest["kind"] == "gem_type":
+            return [i for i, g in enumerate(gems)
+                    if g.gem_type == quest["gem_type"]]
+        elif quest["kind"] == "gem_cut":
+            return [i for i, g in enumerate(gems)
+                    if g.gem_type == quest["gem_type"] and g.state == "cut"]
+        elif quest["kind"] == "gem_rarity":
+            min_idx = RARITY_ORDER.index(quest["min_rarity"])
+            return [i for i, g in enumerate(gems)
+                    if RARITY_ORDER.index(g.rarity) >= min_idx]
+        return []
+
+    def can_complete(self, player, quest_idx):
+        quest = self.quests[quest_idx]
+        needed = quest.get("count", 1)
+        return len(self.find_matching_gems(player, quest)) >= needed
+
+    def complete_quest(self, player, quest_idx=0):
+        quest = self.quests[quest_idx]
+        needed = quest.get("count", 1)
+        matching = self.find_matching_gems(player, quest)
+        if len(matching) < needed:
+            return False
+        for i in sorted(matching[:needed], reverse=True):
+            player.gems.pop(i)
+        self._streak += 1
+        streak_mult = 1.0 + min(self._streak - 1, 2) * 0.25
+        player.money += int(quest["reward"] * streak_mult)
+        self.quests[quest_idx] = _build_gem_quest(self._rng, self.difficulty)
+        return True
+
+
+# ---------------------------------------------------------------------------
+# City generation
+# ---------------------------------------------------------------------------
+
+# Building: (offset_from_cx, width, height, facing)
+# facing='right' → door on right wall (city-center side); 'left' → door on left wall
+CITY_CONFIGS = {
+    "small": {
+        "half_w": 8,
+        "buildings": [
+            (-8, 5, 4, "right"),
+            ( 4, 5, 4, "left"),
+        ],
+        "npc_types": ["quest_rock", "trade"],
+    },
+    "medium": {
+        "half_w": 13,
+        "buildings": [
+            (-13, 5, 4, "right"),
+            ( -7, 5, 4, "right"),
+            (  3, 5, 4, "left"),
+            (  9, 5, 4, "left"),
+        ],
+        "npc_types": ["quest_rock", "trade", "quest_wildflower", "quest_gem"],
+    },
+    "large": {
+        "half_w": 19,
+        "buildings": [
+            (-19, 6, 5, "right"),
+            (-12, 5, 4, "right"),
+            ( -6, 4, 4, "right"),
+            (  3, 4, 4, "left"),
+            (  8, 5, 4, "left"),
+            ( 14, 6, 5, "left"),
+        ],
+        "npc_types": ["quest_rock", "quest_wildflower", "trade", "quest_gem", "trade", "quest_rock"],
+    },
+}
+
+_SIZE_BY_DIFFICULTY = {
+    0: ["small", "small", "medium"],
+    1: ["medium", "medium", "large"],
+    2: ["large", "large", "medium"],
+}
+
+_PLANT_BLOCKS = ALL_LOGS | ALL_LEAVES | BUSH_BLOCKS | {SAPLING}
+
+
+def _place_house(world, left_x, sy, width, wall_height, facing="right"):
+    """
+    Hollow enterable house: solid perimeter on top + two side walls, AIR interior
+    with HOUSE_WALL background for visual depth. Door in the city-facing side wall.
+    """
+    door_col = left_x + width - 1 if facing == "right" else left_x
+
     for wy in range(sy - wall_height, sy):
         for wx in range(left_x, left_x + width):
+            if not (0 <= wy < world.height):
+                continue
+            is_top  = (wy == sy - wall_height)
+            is_side = (wx == left_x or wx == left_x + width - 1)
             is_door = (wx == door_col and wy >= sy - 2)
-            if not is_door and 0 <= wy < world.height:
-                world.set_block(wx, wy, HOUSE_WALL)
 
-    # Flat roof overhang (1 block wider each side, 1 row above walls)
+            if is_door:
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
+            elif is_top or is_side:
+                world.set_block(wx, wy, HOUSE_WALL)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, HOUSE_WALL)
+
+    # Flat roof overhang (1 block wider each side)
     roof_y = sy - wall_height - 1
     for rx in range(left_x - 1, left_x + width + 1):
         if 0 <= roof_y < world.height:
             world.set_block(rx, roof_y, HOUSE_ROOF)
 
-    # Peaked ridge (same width as walls, 1 row above overhang)
+    # Peaked ridge
     peak_y = roof_y - 1
     for rx in range(left_x, left_x + width):
         if 0 <= peak_y < world.height:
             world.set_block(rx, peak_y, HOUSE_ROOF)
 
 
-_CITY_HALF_WIDTH = 7  # platform extends cx±7
-_PLANT_BLOCKS = ALL_LOGS | ALL_LEAVES | BUSH_BLOCKS | {SAPLING}
-
-
 def generate_cities(world, seed):
     rng = random.Random(seed + 77777)
     placed = 0
-    # Centre cities around x=0: e.g. 4 cities → -180, -60, 60, 180
     x = -(CITY_COUNT // 2) * CITY_SPACING + CITY_SPACING // 2
-    world.city_zones = []  # list of (min_x, max_x) used by sapling-grow checks
+    world.city_zones = []
 
     while placed < CITY_COUNT:
         jitter = rng.randint(-6, 6)
         cx = x + jitter
         sy = world.surface_y_at(cx)
 
-        # Difficulty scales with city index: 0→0, 1→0, 2→1, 3→1, 4→2, 5→2
         difficulty = min(placed // 2, 2)
+        city_size  = rng.choice(_SIZE_BY_DIFFICULTY[difficulty])
+        cfg        = CITY_CONFIGS[city_size]
+        half_w     = cfg["half_w"]
 
-        world.city_zones.append((cx - _CITY_HALF_WIDTH, cx + _CITY_HALF_WIDTH))
+        world.city_zones.append((cx - half_w, cx + half_w))
 
-        # Clear all vegetation above the city footprint so no trees poke through
-        _CLEAR_HEIGHT = 25
-        for bx in range(cx - _CITY_HALF_WIDTH, cx + _CITY_HALF_WIDTH + 1):
-            for by in range(max(0, sy - _CLEAR_HEIGHT), sy):
+        # Clear vegetation above city footprint
+        for bx in range(cx - half_w - 2, cx + half_w + 3):
+            for by in range(max(0, sy - 30), sy):
                 if world.get_block(bx, by) in _PLANT_BLOCKS:
                     world.set_block(bx, by, AIR)
 
-        # Stone platform (14 blocks wide)
-        for bx in range(cx - 7, cx + 8):
+        # Stone platform
+        for bx in range(cx - half_w, cx + half_w + 1):
             if world.get_block(bx, sy) != BEDROCK:
                 world.set_block(bx, sy, STONE)
 
-        # Two houses flanking the NPC plaza (doors face the city centre)
-        _place_house(world, cx - 7, sy, width=4, wall_height=3, facing='right')
-        _place_house(world, cx + 4, sy, width=4, wall_height=3, facing='left')
+        # Build houses and place NPCs inside them
+        for (offset, width, height, facing), npc_type in zip(cfg["buildings"], cfg["npc_types"]):
+            left_x = cx + offset
+            _place_house(world, left_x, sy, width, height, facing)
 
-        # NPC marker columns (2 blocks tall): quest on left, trade on right
-        quest_bx = cx - 3
-        trade_bx = cx + 3
-        for dy in [1, 2]:
-            qby = sy - dy
-            if 0 <= qby < world.height:
-                world.set_block(quest_bx, qby, NPC_QUEST_BLOCK)
-            tby = sy - dy
-            if 0 <= tby < world.height:
-                world.set_block(trade_bx, tby, NPC_TRADE_BLOCK)
+            # NPC stands near the back wall, away from the door
+            npc_bx = left_x + 1 if facing == "right" else left_x + width - 2
+            npc_px = npc_bx * BLOCK_SIZE + (BLOCK_SIZE - NPC.NPC_W) // 2
+            npc_py = (sy - 2) * BLOCK_SIZE
 
-        # NPC entities positioned one block above marker columns
-        npc_py = (sy - 3) * BLOCK_SIZE
-
-        qx_px = quest_bx * BLOCK_SIZE + (BLOCK_SIZE - NPC.NPC_W) // 2
-        world.entities.append(RockQuestNPC(qx_px, npc_py, world, rng, difficulty))
-
-        tx_px = trade_bx * BLOCK_SIZE + (BLOCK_SIZE - NPC.NPC_W) // 2
-        world.entities.append(TradeNPC(tx_px, npc_py, world, rng))
+            if npc_type == "quest_rock":
+                world.entities.append(RockQuestNPC(npc_px, npc_py, world, rng, difficulty))
+            elif npc_type == "trade":
+                world.entities.append(TradeNPC(npc_px, npc_py, world, rng))
+            elif npc_type == "quest_wildflower":
+                world.entities.append(WildflowerQuestNPC(npc_px, npc_py, world, rng, difficulty))
+            elif npc_type == "quest_gem":
+                world.entities.append(GemQuestNPC(npc_px, npc_py, world, rng, difficulty))
 
         placed += 1
         x += CITY_SPACING
