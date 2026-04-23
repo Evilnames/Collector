@@ -1562,6 +1562,7 @@ class World:
                     CACTUS_YOUNG:             CACTUS_MATURE,
                     DATE_PALM_CROP_YOUNG:     DATE_PALM_CROP_MATURE,
                     AGAVE_CROP_YOUNG:         AGAVE_CROP_MATURE,
+                    COFFEE_CROP_YOUNG:        COFFEE_CROP_MATURE,
                 }
                 self.set_block(x, y, _crop_mature_map[bid])
             else:
