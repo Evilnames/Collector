@@ -65,6 +65,7 @@ class Player:
         self.fossils = []
         self.discovered_fossil_types = set()
         self._fossil_gen = FossilGenerator(world.seed)
+        self.pending_notifications = []   # (category, name_or_bid, rarity)
         self.known_recipes = set()
         # Water state
         self._drowning_timer = 0.0
@@ -291,17 +292,24 @@ class Player:
                 rock = self._rock_gen.generate(bx, by, self.get_depth(), self.world.get_biome(bx))
                 self.rocks.append(rock)
                 self.discovered_types.add(rock.base_type)
+                self.pending_notifications.append(
+                    ("Rock", rock.base_type.replace("_", " ").title(), rock.rarity))
             elif block_id == WILDFLOWER_PATCH:
                 flower = self._flower_gen.generate(bx, by, self.world.get_biodome(bx))
                 self.wildflowers.append(flower)
                 self.discovered_flower_types.add(flower.flower_type)
+                self.pending_notifications.append(
+                    ("Wildflower", flower.flower_type.replace("_", " ").title(), flower.rarity))
             elif block_id == FOSSIL_DEPOSIT:
                 fossil = self._fossil_gen.generate(bx, by, self.get_depth(), self.world.get_biome(bx))
                 self.fossils.append(fossil)
                 self.discovered_fossil_types.add(fossil.fossil_type)
+                self.pending_notifications.append(
+                    ("Fossil", fossil.fossil_type.replace("_", " ").title(), fossil.rarity))
             elif block_id in CAVE_MUSHROOMS:
                 self.mushrooms_found[block_id] = self.mushrooms_found.get(block_id, 0) + 1
                 self.discovered_mushroom_types.add(block_id)
+                self.pending_notifications.append(("Mushroom", block_id, None))
             else:
                 block_data = BLOCKS[block_id]
                 drop = block_data["drop"]

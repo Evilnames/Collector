@@ -61,7 +61,7 @@ FARM_BOT_DEFS = {
         "name":          "Farm Bot",
         "fuel_item":     "coal",
         "fuel_tank":     60,
-        "fuel_rate":     1 / 40.0,
+        "fuel_rate":     1 / 120.0,
         "scan_radius":   5,
         "scan_interval": 5.0,
         "inv_limit":     60,
@@ -441,8 +441,21 @@ class FarmBot:
             for by in range(cy - r, cy + r + 1):
                 if self.inv_count >= adef["inv_limit"]:
                     return
-                if world.get_block(bx, by) in MATURE_CROP_BLOCKS:
-                    self._harvest(world, bx, by, world.get_block(bx, by), mature_to_seed)
+                bid = world.get_block(bx, by)
+                if bid in MATURE_CROP_BLOCKS:
+                    self._harvest(world, bx, by, bid, mature_to_seed)
+                elif bid == AIR and self.seeds and world.get_block(bx, by + 1) in (GRASS, DIRT):
+                    self._plant(world, bx, by)
+
+    def _plant(self, world, bx, by):
+        from items import ITEMS
+        for seed_id, count in list(self.seeds.items()):
+            if count > 0:
+                world.set_block(bx, by, ITEMS[seed_id]["place_block"])
+                self.seeds[seed_id] -= 1
+                if self.seeds[seed_id] <= 0:
+                    del self.seeds[seed_id]
+                return
 
     def _harvest(self, world, bx, by, block_id, mature_to_seed):
         drop = BLOCKS[block_id].get("drop")

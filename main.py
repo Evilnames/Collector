@@ -362,6 +362,10 @@ def main():
     ui = UI(screen)
     t0 = _t("UI", t0)
 
+    # Load global achievement state (persists across all games)
+    ui.achievements_data, ui.global_collection = save_mgr.load_achievements()
+    t0 = _t("load_achievements", t0)
+
     research = ResearchTree()
     t0 = _t("ResearchTree", t0)
 
@@ -469,6 +473,12 @@ def main():
             return "RIP"
         return f"!Unknown command: {verb}"
 
+    def _save_and_notify(w, p, res):
+        newly = save_mgr.save(w, p, res)
+        ui.achievements_data, ui.global_collection = save_mgr.load_achievements()
+        for ach in newly:
+            p.pending_notifications.append(("Achievement", ach.name, None))
+
     _fps_font = pygame.font.SysFont("consolas", 16)
     _fps_smooth = 60.0
 
@@ -519,7 +529,7 @@ def main():
                     ui.cheat_text = ""
 
                 if event.key == pygame.K_s and (event.mod & pygame.KMOD_CTRL):
-                    save_mgr.save(world, player, research)
+                    _save_and_notify(world, player, research)
                     print("Game saved.")
 
                 if event.key == pygame.K_r:
@@ -634,10 +644,10 @@ def main():
                     if action == "resume":
                         ui.pause_open = False
                     elif action == "save":
-                        save_mgr.save(world, player, research)
+                        _save_and_notify(world, player, research)
                         print("Game saved.")
                     elif action == "quit":
-                        save_mgr.save(world, player, research)
+                        _save_and_notify(world, player, research)
                         running = False
                 elif ui.automation_open:
                     ui.handle_automation_click(event.pos, player)
@@ -733,7 +743,7 @@ def main():
         pygame.display.flip()
 
     print("Auto-saving...")
-    save_mgr.save(world, player, research)
+    save_mgr.save(world, player, research)  # on exit: skip notifications, just save
     pygame.quit()
     sys.exit()
 

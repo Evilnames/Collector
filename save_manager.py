@@ -23,6 +23,7 @@ class SaveManager:
                 for tbl in ("save_meta", "chunks", "world_meta", "player",
                             "rocks", "wildflowers", "fossils", "research", "automations",
                             "farm_bots", "entities", "dropped_items", "chests"):
+                    # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
                 con.commit()
         except Exception:
@@ -44,6 +45,7 @@ class SaveManager:
             return False
 
     def save(self, world, player, research):
+        """Save game state. Returns list of newly unlocked Achievement objects."""
         with sqlite3.connect(self.db_path) as con:
             self._create_tables(con)
             self._save_meta(con, world.seed)
@@ -59,7 +61,10 @@ class SaveManager:
             self._save_entities(con, world)
             self._save_dropped_items(con, world)
             self._save_chests(con, world)
+            self._merge_global_collection(con, player)
+            newly_unlocked = self._check_and_save_achievements(con)
             con.commit()
+        return newly_unlocked
 
     def load(self):
         with sqlite3.connect(self.db_path) as con:
@@ -222,6 +227,16 @@ class SaveManager:
         CREATE TABLE IF NOT EXISTS chests (
             x INTEGER, y INTEGER, contents TEXT
         );
+        CREATE TABLE IF NOT EXISTS global_collection (
+            category TEXT NOT NULL,
+            item_id  TEXT NOT NULL,
+            PRIMARY KEY (category, item_id)
+        );
+        CREATE TABLE IF NOT EXISTS achievements (
+            id           TEXT PRIMARY KEY,
+            unlocked     INTEGER DEFAULT 0,
+            unlocked_date TEXT
+        );
         """)
         for col, default in [("spawn_x", "NULL"), ("spawn_y", "NULL")]:
             try:
@@ -232,6 +247,85 @@ class SaveManager:
             con.execute("ALTER TABLE player ADD COLUMN discovered_fossil_types TEXT DEFAULT '[]'")
         except Exception:
             pass
+
+    # ------------------------------------------------------------------
+    # Achievements (global, cross-save)
+    # ------------------------------------------------------------------
+
+    def _merge_global_collection(self, con, player):
+        """Accumulate this player's discoveries into the global collection table."""
+        for bid in player.discovered_mushroom_types:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("mushroom", str(bid)),
+            )
+        for t in player.discovered_types:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("rock", t),
+            )
+        for t in player.discovered_flower_types:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("wildflower", t),
+            )
+        for t in player.discovered_fossil_types:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("fossil", t),
+            )
+
+    def _check_and_save_achievements(self, con):
+        """Check all achievements against global_collection; persist new unlocks.
+
+        Returns list of newly unlocked Achievement objects.
+        """
+        from achievements import ACHIEVEMENTS
+        rows = con.execute("SELECT category, item_id FROM global_collection").fetchall()
+        global_col = {}
+        for cat, item_id in rows:
+            global_col.setdefault(cat, set()).add(item_id)
+
+        already = {
+            row[0]
+            for row in con.execute("SELECT id FROM achievements WHERE unlocked=1").fetchall()
+        }
+
+        newly_unlocked = []
+        for ach in ACHIEVEMENTS:
+            if ach.id in already:
+                continue
+            cat_items = global_col.get(ach.category, set())
+            if all(str(r) in cat_items for r in ach.required_items):
+                con.execute(
+                    "INSERT OR REPLACE INTO achievements VALUES (?, 1, ?)",
+                    (ach.id, datetime.now().isoformat()),
+                )
+                newly_unlocked.append(ach)
+        return newly_unlocked
+
+    def load_achievements(self):
+        """Return (unlocked_dict, global_collection_dict).
+
+        unlocked_dict: {achievement_id: bool}
+        global_collection_dict: {category: set_of_item_id_strings}
+        """
+        from achievements import ACHIEVEMENTS
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                self._create_tables(con)
+                ach_rows = con.execute("SELECT id, unlocked FROM achievements").fetchall()
+                col_rows = con.execute("SELECT category, item_id FROM global_collection").fetchall()
+        except Exception:
+            ach_rows, col_rows = [], []
+
+        unlocked = {row[0]: bool(row[1]) for row in ach_rows}
+        global_col: dict = {}
+        for cat, item_id in col_rows:
+            global_col.setdefault(cat, set()).add(item_id)
+
+        unlocked_dict = {ach.id: unlocked.get(ach.id, False) for ach in ACHIEVEMENTS}
+        return unlocked_dict, global_col
 
     # ------------------------------------------------------------------
     # Migration: old world_grid BLOB → per-chunk rows

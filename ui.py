@@ -1,4 +1,5 @@
 import pygame
+from achievements import ACHIEVEMENTS, ACHIEVEMENT_BY_ID, item_display_name, get_achievement_progress
 from items import ITEMS
 from item_icons import render_item_icon
 from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOODLE_POT_RECIPES,
@@ -63,6 +64,22 @@ _MUSHROOM_SHAPES = {
     SULFUR_TUFT: "cluster",   HONEY_CLUSTER: "cluster", CORAL_TUFT: "cluster",
     BONE_STALK: "tall bell",  MAGMA_CAP: "dome",     DEEP_INK: "dome",
     BIOLUME: "dome",
+}
+
+_MUSHROOM_NAMES = {
+    CAVE_MUSHROOM: "Cave Mushroom",      EMBER_CAP: "Ember Cap",
+    PALE_GHOST: "Pale Ghost",            GOLD_CHANTERELLE: "Gold Chanterelle",
+    COBALT_CAP: "Cobalt Cap",            MOSSY_CAP: "Mossy Cap",
+    VIOLET_CROWN: "Violet Crown",        BLOOD_CAP: "Blood Cap",
+    SULFUR_DOME: "Sulfur Dome",          IVORY_BELL: "Ivory Bell",
+    ASH_BELL: "Ash Bell",                TEAL_BELL: "Teal Bell",
+    RUST_SHELF: "Rust Shelf",            COPPER_SHELF: "Copper Shelf",
+    OBSIDIAN_SHELF: "Obsidian Shelf",    COAL_PUFF: "Coal Puff",
+    STONE_PUFF: "Stone Puff",            AMBER_PUFF: "Amber Puff",
+    SULFUR_TUFT: "Sulfur Tuft",          HONEY_CLUSTER: "Honey Cluster",
+    CORAL_TUFT: "Coral Tuft",            BONE_STALK: "Bone Stalk",
+    MAGMA_CAP: "Magma Cap",              DEEP_INK: "Deep Ink",
+    BIOLUME: "Biolume",
 }
 
 SPECIAL_DESCS = {
@@ -184,6 +201,9 @@ class UI:
         self.cheat_text    = ""
         self.cheat_message = ""
         self._cheat_msg_timer = 0.0
+        # Toast notifications
+        self._toasts = []
+        self._toast_font = pygame.font.SysFont("consolas", 14)
         self._death_font  = pygame.font.SysFont("Arial Black", 72, bold=True)
         self._death_font2 = pygame.font.SysFont("Arial", 26)
         # Pause menu
@@ -197,6 +217,11 @@ class UI:
         self._drag_pos     = (0, 0)
         self._inv_scroll     = 0
         self._max_inv_scroll = 0
+        # Achievements (populated by main.py after save_mgr.load_achievements())
+        self.achievements_data: dict  = {}   # {achievement_id: bool}
+        self.global_collection: dict  = {}   # {category: set(item_id_str)}
+        self._achievement_scroll     = 0
+        self._max_achievement_scroll = 0
 
     def draw(self, player, research=None, dt=0.0):
         if self._cheat_msg_timer > 0:
@@ -234,6 +259,8 @@ class UI:
         if self.pause_open:
             self._draw_pause_menu()
         self._draw_hotbar(player)
+        self._drain_notifications(player)
+        self._draw_toasts(dt)
         if self._drag_item_id is not None and self.inventory_open:
             self._draw_drag_item()
 
@@ -375,11 +402,12 @@ class UI:
                 if rect.collidepoint(pos):
                     self._selected_fossil_idx = idx if self._selected_fossil_idx != idx else None
                     return
-        else:
+        elif self._collection_tab == 6:
             for type_key, rect in self._fossil_codex_rects.items():
                 if rect.collidepoint(pos):
                     self._fossil_codex_selected_type = type_key if self._fossil_codex_selected_type != type_key else None
                     return
+        # tab 7 (achievements) has no click-to-select items
 
     def handle_scroll(self, dy):
         if self.inventory_open:
@@ -406,8 +434,10 @@ class UI:
                 self._mushroom_codex_scroll = max(0, min(self._max_mushroom_codex_scroll, self._mushroom_codex_scroll - dy))
             elif self._collection_tab == 5:
                 self._my_fossils_scroll = max(0, min(self._max_my_fossils_scroll, self._my_fossils_scroll - dy))
-            else:
+            elif self._collection_tab == 6:
                 self._fossil_codex_scroll = max(0, min(self._max_fossil_codex_scroll, self._fossil_codex_scroll - dy))
+            elif self._collection_tab == 7:
+                self._achievement_scroll = max(0, min(self._max_achievement_scroll, self._achievement_scroll - dy))
         elif self.chest_open:
             mouse = pygame.mouse.get_pos()
             PW = 1140
@@ -1274,10 +1304,14 @@ class UI:
         n_fossil_disc = len(player.discovered_fossil_types)
         n_fossil_total = len(FOSSIL_TYPE_ORDER)
 
-        is_flowers   = self._collection_tab in (2, 3)
-        is_mushrooms = self._collection_tab == 4
-        is_fossils   = self._collection_tab in (5, 6)
-        if is_fossils:
+        is_flowers      = self._collection_tab in (2, 3)
+        is_mushrooms    = self._collection_tab == 4
+        is_fossils      = self._collection_tab in (5, 6)
+        is_achievements = self._collection_tab == 7
+        if is_achievements:
+            title_text = "ACHIEVEMENTS"
+            title_col  = (255, 215, 80)
+        elif is_fossils:
             title_text = "FOSSIL COLLECTION"
             title_col  = (210, 185, 140)
         elif is_mushrooms:
@@ -1292,9 +1326,12 @@ class UI:
         title = self.font.render(title_text, True, title_col)
         self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 4))
 
-        # Tab buttons
+        n_ach_unlocked = sum(1 for v in self.achievements_data.values() if v)
+        n_ach_total    = len(ACHIEVEMENTS)
+
+        # Tab buttons — shrink width slightly to fit 8 tabs at 1280px
         self._tab_rects.clear()
-        TAB_W, TAB_H = 150, 26
+        TAB_H = 26
         tab_y = 24
         tab_labels = [
             f"MY ROCKS ({len(player.rocks)})",
@@ -1304,44 +1341,79 @@ class UI:
             f"MUSHROOMS ({n_mush_disc}/{n_mush_total})",
             f"MY FOSSILS ({len(player.fossils)})",
             f"FOSSIL CODEX ({n_fossil_disc}/{n_fossil_total})",
+            f"AWARDS ({n_ach_unlocked}/{n_ach_total})",
         ]
-        total_tabs_w = len(tab_labels) * TAB_W + (len(tab_labels) - 1) * 6
+        GAP = 5
+        TAB_W = min(148, (SCREEN_W - 20 - GAP * (len(tab_labels) - 1)) // len(tab_labels))
+        total_tabs_w = len(tab_labels) * TAB_W + (len(tab_labels) - 1) * GAP
         tab_x0 = SCREEN_W // 2 - total_tabs_w // 2
         for i, label in enumerate(tab_labels):
-            tx = tab_x0 + i * (TAB_W + 6)
+            tx = tab_x0 + i * (TAB_W + GAP)
             rect = pygame.Rect(tx, tab_y, TAB_W, TAB_H)
             self._tab_rects[i] = rect
-            active = (i == self._collection_tab)
+            active  = (i == self._collection_tab)
+            ach_tab = i == 7
             fossil_tab = i in (5, 6)
             mush_tab   = i == 4
             flower_tab = i in (2, 3)
             if active:
-                bg     = (42, 35, 18) if fossil_tab else (38, 42, 18) if mush_tab else (40, 75, 45) if flower_tab else (45, 60, 80)
-                border = (195, 165, 95) if fossil_tab else (165, 150, 65) if mush_tab else (100, 210, 120) if flower_tab else (100, 160, 220)
+                if ach_tab:
+                    bg, border = (45, 38, 10), (220, 185, 40)
+                elif fossil_tab:
+                    bg, border = (42, 35, 18), (195, 165, 95)
+                elif mush_tab:
+                    bg, border = (38, 42, 18), (165, 150, 65)
+                elif flower_tab:
+                    bg, border = (40, 75, 45), (100, 210, 120)
+                else:
+                    bg, border = (45, 60, 80), (100, 160, 220)
             else:
-                bg     = (25, 20, 10) if fossil_tab else (22, 24, 10) if mush_tab else (25, 35, 27) if flower_tab else (25, 30, 40)
-                border = (90, 75, 38) if fossil_tab else (80, 72, 32) if mush_tab else (55, 90, 60) if flower_tab else (55, 65, 80)
+                if ach_tab:
+                    bg, border = (24, 20, 6), (100, 84, 20)
+                elif fossil_tab:
+                    bg, border = (25, 20, 10), (90, 75, 38)
+                elif mush_tab:
+                    bg, border = (22, 24, 10), (80, 72, 32)
+                elif flower_tab:
+                    bg, border = (25, 35, 27), (55, 90, 60)
+                else:
+                    bg, border = (25, 30, 40), (55, 65, 80)
             pygame.draw.rect(self.screen, bg, rect)
             pygame.draw.rect(self.screen, border, rect, 2)
-            ls = self.small.render(label, True,
-                                   (220, 190, 110) if (active and fossil_tab)
-                                   else (210, 200, 120) if (active and mush_tab)
-                                   else (200, 240, 205) if (active and flower_tab)
-                                   else (220, 230, 255) if active
-                                   else (105, 88, 40) if fossil_tab
-                                   else (95, 86, 38) if mush_tab
-                                   else (90, 130, 95) if flower_tab
-                                   else (110, 120, 135))
+            if active and ach_tab:
+                txt_col = (255, 215, 80)
+            elif ach_tab:
+                txt_col = (110, 90, 25)
+            elif active and fossil_tab:
+                txt_col = (220, 190, 110)
+            elif active and mush_tab:
+                txt_col = (210, 200, 120)
+            elif active and flower_tab:
+                txt_col = (200, 240, 205)
+            elif active:
+                txt_col = (220, 230, 255)
+            elif fossil_tab:
+                txt_col = (105, 88, 40)
+            elif mush_tab:
+                txt_col = (95, 86, 38)
+            elif flower_tab:
+                txt_col = (90, 130, 95)
+            else:
+                txt_col = (110, 120, 135)
+            ls = self.small.render(self._fit_label(label, TAB_W - 6), True, txt_col)
             self.screen.blit(ls, (tx + TAB_W // 2 - ls.get_width() // 2,
                                    tab_y + TAB_H // 2 - ls.get_height() // 2))
 
-        hint_text = ("G or ESC to close  |  Click a fossil to inspect"
-                     if is_fossils else
-                     "G or ESC to close  |  Click a mushroom to inspect"
-                     if is_mushrooms else
-                     "G or ESC to close  |  Click a flower to inspect"
-                     if is_flowers else
-                     "G or ESC to close  |  Click a rock to inspect")
+        if is_achievements:
+            hint_text = "G or ESC to close  |  Achievements are global across all games"
+        elif is_fossils:
+            hint_text = "G or ESC to close  |  Click a fossil to inspect"
+        elif is_mushrooms:
+            hint_text = "G or ESC to close  |  Click a mushroom to inspect"
+        elif is_flowers:
+            hint_text = "G or ESC to close  |  Click a flower to inspect"
+        else:
+            hint_text = "G or ESC to close  |  Click a rock to inspect"
         hint = self.small.render(hint_text, True, (90, 95, 105))
         self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, tab_y + TAB_H + 2))
 
@@ -1357,8 +1429,19 @@ class UI:
             self._draw_mushroom_codex(player)
         elif self._collection_tab == 5:
             self._draw_my_fossils(player)
-        else:
+        elif self._collection_tab == 6:
             self._draw_fossil_codex(player)
+        else:
+            self._draw_achievements()
+
+    def _fit_label(self, text, max_width):
+        if self.small.size(text)[0] <= max_width:
+            return text
+        while text:
+            text = text[:-1]
+            if self.small.size(text + "...")[0] <= max_width:
+                return text + "..."
+        return "..."
 
     def _draw_my_rocks(self, player):
         if not player.rocks:
@@ -1392,7 +1475,7 @@ class UI:
             pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
             img = render_rock(rock, 58)
             self.screen.blit(img, (x + (CELL - 58) // 2, y + (CELL - 58) // 2 - 6))
-            type_s = self.small.render(rock.base_type.replace("_", " "), True, (160, 160, 160))
+            type_s = self.small.render(self._fit_label(rock.base_type.replace("_", " "), CELL - 4), True, (160, 160, 160))
             self.screen.blit(type_s, (x + CELL // 2 - type_s.get_width() // 2, y + CELL - 14))
 
         if detail_x is None:
@@ -1513,7 +1596,7 @@ class UI:
                                       y + CELL // 2 - qs.get_height() // 2 - 6))
                 label = f">{min_d}m"
 
-            ls = self.small.render(label, True, (160, 165, 175) if discovered else (55, 58, 68))
+            ls = self.small.render(self._fit_label(label, CELL - 4), True, (160, 165, 175) if discovered else (55, 58, 68))
             self.screen.blit(ls, (x + CELL // 2 - ls.get_width() // 2, y + CELL - 14))
 
         if detail_x is None:
@@ -1619,7 +1702,7 @@ class UI:
             pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
             img = render_wildflower(flower, 58)
             self.screen.blit(img, (x + (CELL - 58) // 2, y + (CELL - 58) // 2 - 6))
-            type_s = self.small.render(flower.flower_type.replace("_", " "), True, (140, 175, 140))
+            type_s = self.small.render(self._fit_label(flower.flower_type.replace("_", " "), CELL - 4), True, (140, 175, 140))
             self.screen.blit(type_s, (x + CELL // 2 - type_s.get_width() // 2, y + CELL - 14))
 
         if detail_x is None:
@@ -1709,7 +1792,7 @@ class UI:
                                       y + CELL // 2 - qs.get_height() // 2 - 6))
                 label = "???"
 
-            ls = self.small.render(label, True, (140, 185, 145) if discovered else (40, 65, 42))
+            ls = self.small.render(self._fit_label(label, CELL - 4), True, (140, 185, 145) if discovered else (40, 65, 42))
             self.screen.blit(ls, (x + CELL // 2 - ls.get_width() // 2, y + CELL - 14))
 
         if detail_x is None:
@@ -1813,7 +1896,7 @@ class UI:
                                       y + CELL // 2 - qs.get_height() // 2 - 6))
                 label = "???"
 
-            ls = self.small.render(label, True, (200, 180, 100) if discovered else (52, 46, 20))
+            ls = self.small.render(self._fit_label(label, CELL - 4), True, (200, 180, 100) if discovered else (52, 46, 20))
             self.screen.blit(ls, (x + CELL // 2 - ls.get_width() // 2, y + CELL - 14))
 
         if detail_x is None:
@@ -1898,7 +1981,7 @@ class UI:
             pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
             img = render_fossil(fossil, 58)
             self.screen.blit(img, (x + (CELL - 58) // 2, y + (CELL - 58) // 2 - 6))
-            type_s = self.small.render(fossil.fossil_type.replace("_", " "), True, (175, 155, 115))
+            type_s = self.small.render(self._fit_label(fossil.fossil_type.replace("_", " "), CELL - 4), True, (175, 155, 115))
             self.screen.blit(type_s, (x + CELL // 2 - type_s.get_width() // 2, y + CELL - 14))
 
         if detail_x is None:
@@ -2009,7 +2092,7 @@ class UI:
                                       y + CELL // 2 - qs.get_height() // 2 - 6))
                 label = f">{min_d}m"
 
-            ls = self.small.render(label, True, (185, 162, 108) if discovered else (58, 48, 24))
+            ls = self.small.render(self._fit_label(label, CELL - 4), True, (185, 162, 108) if discovered else (58, 48, 24))
             self.screen.blit(ls, (x + CELL // 2 - ls.get_width() // 2, y + CELL - 14))
 
         if detail_x is None:
@@ -2074,6 +2157,135 @@ class UI:
             self.screen.blit(qs, (dx + dw // 2 - qs.get_width() // 2, dy + 8))
             dlabel("Not yet discovered.", (82, 70, 38))
             dlabel(f"Find it below {tdef['min_depth']}m depth.", (105, 90, 50))
+
+    # ------------------------------------------------------------------
+    # Achievements tab
+    # ------------------------------------------------------------------
+
+    _ACH_CATEGORY_COLORS = {
+        "mushroom":   (170, 210, 110),
+        "rock":       (160, 200, 240),
+        "wildflower": (200, 240, 180),
+        "fossil":     (220, 185, 110),
+    }
+    _ACH_CATEGORY_LABELS = {
+        "mushroom":   "MUSHROOM",
+        "rock":       "ROCK",
+        "wildflower": "WILDFLOWER",
+        "fossil":     "FOSSIL",
+    }
+
+    def _draw_achievements(self):
+        CARD_W, CARD_H = 360, 118
+        COLS            = 3
+        COL_GAP         = 18
+        ROW_GAP         = 14
+        START_Y         = 58
+        grid_w          = COLS * CARD_W + (COLS - 1) * COL_GAP
+        START_X         = (SCREEN_W - grid_w) // 2
+
+        # Separate into groups (mushroom, rock, wildflower) — display in row order
+        all_achs = ACHIEVEMENTS  # imported at module level
+
+        # Scrollable virtual canvas — calculate total height
+        rows      = (len(all_achs) + COLS - 1) // COLS
+        total_h   = rows * (CARD_H + ROW_GAP)
+        visible_h = SCREEN_H - START_Y - 8
+        self._max_achievement_scroll = max(0, total_h - visible_h)
+
+        clip_rect = pygame.Rect(0, START_Y, SCREEN_W, visible_h)
+        self.screen.set_clip(clip_rect)
+
+        for idx, ach in enumerate(all_achs):
+            col = idx % COLS
+            row = idx // COLS
+            cx  = START_X + col * (CARD_W + COL_GAP)
+            cy  = START_Y + row * (CARD_H + ROW_GAP) - self._achievement_scroll
+
+            if cy + CARD_H < START_Y or cy > SCREEN_H:
+                continue
+
+            unlocked  = self.achievements_data.get(ach.id, False)
+            found, total = get_achievement_progress(ach, self.global_collection)
+            cat_col   = self._ACH_CATEGORY_COLORS.get(ach.category, (200, 200, 200))
+
+            # Card background
+            if unlocked:
+                bg_col     = (50, 44, 18)
+                border_col = (200, 170, 40)
+            else:
+                bg_col     = (22, 22, 28)
+                border_col = (55, 58, 70)
+            card_surf = pygame.Surface((CARD_W, CARD_H), pygame.SRCALPHA)
+            card_surf.fill((*bg_col, 230))
+            pygame.draw.rect(card_surf, border_col, (0, 0, CARD_W, CARD_H), 2, border_radius=6)
+
+            # Left accent stripe (category colour)
+            pygame.draw.rect(card_surf, cat_col, (0, 0, 5, CARD_H), border_radius=3)
+
+            # Category badge
+            badge_lbl = self._ACH_CATEGORY_LABELS.get(ach.category, "")
+            bs = self.small.render(badge_lbl, True, cat_col)
+            card_surf.blit(bs, (12, 6))
+
+            # UNLOCKED banner (top-right)
+            if unlocked:
+                ul_s = self.small.render("UNLOCKED", True, (255, 215, 80))
+                card_surf.blit(ul_s, (CARD_W - ul_s.get_width() - 8, 6))
+
+            # Achievement name
+            name_s = self.font.render(ach.name, True, (255, 215, 80) if unlocked else (210, 210, 220))
+            card_surf.blit(name_s, (12, 22))
+
+            # Description
+            desc_s = self.small.render(ach.description, True, (140, 140, 155))
+            card_surf.blit(desc_s, (12, 44))
+
+            # Progress bar (full width minus padding)
+            bar_x, bar_y = 12, 62
+            bar_w        = CARD_W - 24
+            bar_h        = 8
+            pygame.draw.rect(card_surf, (40, 40, 48), (bar_x, bar_y, bar_w, bar_h), border_radius=4)
+            fill_w = int(bar_w * found / max(total, 1))
+            bar_fill_col = (200, 170, 40) if unlocked else cat_col
+            if fill_w > 0:
+                pygame.draw.rect(card_surf, bar_fill_col,
+                                 (bar_x, bar_y, fill_w, bar_h), border_radius=4)
+            progress_lbl = f"{found}/{total}"
+            ps = self.small.render(progress_lbl, True, (180, 180, 190))
+            card_surf.blit(ps, (bar_x + bar_w - ps.get_width(), bar_y - ps.get_height() - 1))
+
+            # Item checklist — 2 rows of 3 for ≤6 items; 1 row of 5 + overflow for larger
+            large = len(ach.required_items) > 6
+            items_per_row = 5 if large else 3
+            label_max_w   = 55 if large else 90
+            display_items = ach.required_items[:5] if large else ach.required_items
+            overflow      = max(0, len(ach.required_items) - len(display_items))
+
+            for i, req in enumerate(display_items):
+                item_col_i = i % items_per_row
+                item_row_i = i // items_per_row
+                ix = 12 + item_col_i * (CARD_W // items_per_row - 4)
+                iy = 76 + item_row_i * 17
+                item_found = str(req) in self.global_collection.get(ach.category, set())
+                tick  = "✓" if item_found else "–"
+                t_col = (130, 210, 110) if item_found else (80, 80, 90)
+                n_col = (190, 190, 200) if item_found else (80, 80, 90)
+                tk_s  = self.small.render(tick, True, t_col)
+                nm_s  = self.small.render(
+                    self._fit_label(item_display_name(ach.category, req), label_max_w),
+                    True, n_col,
+                )
+                card_surf.blit(tk_s, (ix, iy))
+                card_surf.blit(nm_s, (ix + 12, iy))
+
+            if overflow > 0:
+                ov_s = self.small.render(f"…and {overflow} more", True, (80, 80, 90))
+                card_surf.blit(ov_s, (12, 93))
+
+            self.screen.blit(card_surf, (cx, cy))
+
+        self.screen.set_clip(None)
 
     # ------------------------------------------------------------------
     # Refinery overlay (E key near equipment block)
@@ -2933,3 +3145,72 @@ class UI:
             msg_col = (255, 80, 80) if self.cheat_message.startswith("!") else (200, 230, 100)
             msg = self._cheat_font.render(self.cheat_message.lstrip("!"), True, msg_col)
             self.screen.blit(msg, (W - msg.get_width() - 10, 10))
+
+    _RARITY_COLORS = {
+        "common":    (140, 140, 140),
+        "uncommon":  (50,  180,  50),
+        "rare":      (60,  100, 220),
+        "epic":      (150,  50, 220),
+        "legendary": (240, 180,   0),
+    }
+
+    def _drain_notifications(self, player):
+        while getattr(player, "pending_notifications", None):
+            category, name_or_bid, rarity = player.pending_notifications.pop(0)
+            if category == "Mushroom":
+                display = _MUSHROOM_NAMES.get(name_or_bid, "Mushroom")
+                color = (200, 170, 110)
+            elif category == "Achievement":
+                display = name_or_bid
+                color = (255, 215, 80)
+            else:
+                display = name_or_bid
+                color = self._RARITY_COLORS.get(rarity, (200, 200, 200))
+            duration = 5.0 if category == "Achievement" else 3.5
+            if len(self._toasts) < 6:
+                self._toasts.append({
+                    "category": category,
+                    "name": display,
+                    "color": color,
+                    "timer": duration,
+                    "total": duration,
+                })
+
+    def _draw_toasts(self, dt):
+        self._toasts = [t for t in self._toasts if t["timer"] > 0]
+        if not self._toasts:
+            return
+
+        tw, th = 200, 44
+        margin = 12
+        gap = 5
+
+        for i, toast in enumerate(self._toasts):
+            toast["timer"] -= dt
+            remaining = toast["timer"]
+            elapsed = toast["total"] - remaining
+            if elapsed < 0.15:
+                alpha = int(255 * elapsed / 0.15)
+            elif remaining < 0.5:
+                alpha = int(255 * remaining / 0.5)
+            else:
+                alpha = 255
+
+            x = SCREEN_W - tw - margin
+            y = SCREEN_H - margin - th - i * (th + gap)
+
+            surf = pygame.Surface((tw, th), pygame.SRCALPHA)
+            surf.fill((18, 18, 18, int(210 * alpha / 255)))
+
+            rc = toast["color"]
+            pygame.draw.rect(surf, (*rc, alpha), (0, 0, 4, th))
+
+            cat_surf = self._toast_font.render(toast["category"], True, (160, 160, 160))
+            cat_surf.set_alpha(alpha)
+            surf.blit(cat_surf, (10, 4))
+
+            name_surf = self._toast_font.render(toast["name"], True, rc)
+            name_surf.set_alpha(alpha)
+            surf.blit(name_surf, (10, 22))
+
+            self.screen.blit(surf, (x, y))

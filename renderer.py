@@ -1257,13 +1257,36 @@ class Renderer:
             elif e.animal_id == "npc_trade":
                 self._draw_npc_trade(sx, sy, e)
 
+    @staticmethod
+    def _fmt_fuel_time(fuel, fuel_rate):
+        if fuel <= 0 or fuel_rate <= 0:
+            return None
+        secs = fuel / fuel_rate
+        if secs >= 3600:
+            return f"{int(secs // 3600)}h{int((secs % 3600) // 60):02d}m"
+        if secs >= 60:
+            return f"{int(secs // 60)}m"
+        return f"{int(secs)}s"
+
     def draw_automations(self, automations):
         for a in automations:
             a.draw(self.screen, self.cam_x, self.cam_y)
+            label = self._fmt_fuel_time(a.fuel, a._def["fuel_rate"])
+            if label:
+                sx = int(a.x - self.cam_x)
+                sy = int(a.y - self.cam_y)
+                txt = self._npc_font.render(label, True, (220, 160, 40))
+                self.screen.blit(txt, (sx + a.W // 2 - txt.get_width() // 2, sy - 27))
 
     def draw_farm_bots(self, farm_bots):
         for fb in farm_bots:
             fb.draw(self.screen, self.cam_x, self.cam_y)
+            label = self._fmt_fuel_time(fb.fuel, fb._def["fuel_rate"])
+            if label:
+                sx = int(fb.x - self.cam_x)
+                sy = int(fb.y - self.cam_y)
+                txt = self._npc_font.render(label, True, (220, 160, 40))
+                self.screen.blit(txt, (sx + fb.W // 2 - txt.get_width() // 2, sy - 22))
 
     def _draw_npc_quest(self, sx, sy, npc):
         bob = int(npc._bob_offset)
