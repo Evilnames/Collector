@@ -393,34 +393,37 @@ class World:
                                BEET_BUSH, PUMPKIN_BUSH, PEA_BUSH, BROCCOLI_BUSH],
             "jungle":         [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
                                PEPPER_BUSH, EGGPLANT_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH,
-                               CHILI_BUSH],
+                               CHILI_BUSH, COFFEE_BUSH],
             "wetland":        [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, LEEK_BUSH,
                                CELERY_BUSH, SCALLION_BUSH, PUMPKIN_BUSH, TOMATO_BUSH,
-                               WATERMELON_BUSH],
+                               WATERMELON_BUSH, COFFEE_BUSH],
             "redwood":        [STRAWBERRY_BUSH, APPLE_BUSH, POTATO_BUSH, CARROT_BUSH,
                                BEET_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH],
             "tropical":       [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
                                CORN_BUSH, PEPPER_BUSH, CHILI_BUSH, EGGPLANT_BUSH,
-                               WATERMELON_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH, ZUCCHINI_BUSH],
+                               WATERMELON_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH, ZUCCHINI_BUSH,
+                               COFFEE_BUSH, COFFEE_BUSH],
             "savanna":        [CORN_BUSH, CHILI_BUSH, PEPPER_BUSH, EGGPLANT_BUSH,
-                               SWEET_POTATO_BUSH, WATERMELON_BUSH, ONION_BUSH, PUMPKIN_BUSH],
+                               SWEET_POTATO_BUSH, WATERMELON_BUSH, ONION_BUSH, PUMPKIN_BUSH,
+                               COFFEE_BUSH],
             "wasteland":      [BEET_BUSH, TURNIP_BUSH, RADISH_BUSH, ONION_BUSH],
             "fungal":         [],
-            "alpine_mountain":[BEET_BUSH, TURNIP_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH, POTATO_BUSH],
-            "rocky_mountain": [BEET_BUSH, TURNIP_BUSH, POTATO_BUSH, CARROT_BUSH],
+            "alpine_mountain":[BEET_BUSH, TURNIP_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH, POTATO_BUSH, COFFEE_BUSH],
+            "rocky_mountain": [BEET_BUSH, TURNIP_BUSH, POTATO_BUSH, CARROT_BUSH, COFFEE_BUSH],
             "rolling_hills":  [STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, CORN_BUSH,
                                POTATO_BUSH, APPLE_BUSH, PUMPKIN_BUSH, GARLIC_BUSH,
-                               RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, CABBAGE_BUSH, ONION_BUSH],
+                               RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, CABBAGE_BUSH, ONION_BUSH,
+                               COFFEE_BUSH],
             "steep_hills":    [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
                                APPLE_BUSH, CABBAGE_BUSH, BROCCOLI_BUSH],
             "steppe":         [WHEAT_BUSH, CORN_BUSH, RADISH_BUSH, ONION_BUSH,
                                GARLIC_BUSH, TURNIP_BUSH],
             "arid_steppe":    [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, RADISH_BUSH,
-                               SWEET_POTATO_BUSH],
-            "tundra":         [BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, RADISH_BUSH],
-            "swamp":          [RICE_BUSH, CELERY_BUSH, LEEK_BUSH, SCALLION_BUSH],
-            "beach":          [WATERMELON_BUSH, SWEET_POTATO_BUSH, CORN_BUSH],
-            "canyon":         [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, TOMATO_BUSH, CORN_BUSH],
+                               SWEET_POTATO_BUSH, COFFEE_BUSH],
+            "tundra":         [BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, RADISH_BUSH, COFFEE_BUSH],
+            "swamp":          [RICE_BUSH, CELERY_BUSH, LEEK_BUSH, SCALLION_BUSH, COFFEE_BUSH],
+            "beach":          [WATERMELON_BUSH, SWEET_POTATO_BUSH, CORN_BUSH, COFFEE_BUSH],
+            "canyon":         [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, TOMATO_BUSH, CORN_BUSH, COFFEE_BUSH],
         }
         bush_rng = random.Random(hash((self.seed, cx, 'bushes')) & 0x7FFFFFFF)
         lx = 5
@@ -1522,7 +1525,9 @@ class World:
             if not self._has_sky_view(x, y):
                 still_pending.add((x, y))
                 continue
-            if self._crop_rng.random() < 0.15:
+            _player = getattr(self, '_player_ref', None)
+            _grow_chance = 0.15 + (getattr(_player, 'crop_grow_bonus', 0.0) if _player else 0.0)
+            if self._crop_rng.random() < _grow_chance:
                 _crop_mature_map = {
                     STRAWBERRY_CROP_YOUNG: STRAWBERRY_CROP_MATURE,
                     WHEAT_CROP_YOUNG:      WHEAT_CROP_MATURE,

@@ -7,7 +7,8 @@ from fish import (render_fish, FISH_TYPES, FISH_TYPE_ORDER, FISH_BIOME_GROUPS,
                   FISH_RARITY_COLORS, RARITY_LABEL as FISH_RARITY_LABEL)
 from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOODLE_POT_RECIPES,
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES,
-                      match_recipe, craft_costs, can_craft)
+                      match_recipe, craft_costs, can_craft,
+                      RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
 from rocks import (render_rock, render_codex_preview, RARITY_COLORS,
                    ROCK_TYPE_ORDER, ROCK_TYPE_DESCRIPTIONS, ROCK_TYPES,
                    get_refinery_equipment)
@@ -26,7 +27,13 @@ from gemstones import (render_rough_gem, render_gem, render_gem_codex_preview,
 from renderer import render_mushroom_preview
 from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, MAX_HEALTH
 from automations import AUTOMATION_ITEM
+from coffee import (CoffeeBean, make_blend, apply_roast_result, apply_processing,
+                    get_brew_output_id, get_brew_duration_multiplier, get_brew_quality_bonus,
+                    BREW_METHODS, BUFF_DESCS, BIOME_DISPLAY_NAMES,
+                    ROAST_LEVEL_DESCS, ROAST_COLORS, COFFEE_TYPE_ORDER,
+                    PROCESSING_METHODS, GRIND_SIZES, WATER_QUALITIES)
 from blocks import (BLOCKS, BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK, GEM_CUTTER_BLOCK, DESERT_FORGE_BLOCK,
+                    ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK,
                     CAVE_MUSHROOMS,
                     CAVE_MUSHROOM, EMBER_CAP, PALE_GHOST, GOLD_CHANTERELLE, COBALT_CAP,
                     MOSSY_CAP, VIOLET_CROWN, BLOOD_CAP, SULFUR_DOME, IVORY_BELL,
@@ -230,6 +237,7 @@ class UI:
         self._fb_seeds_btn       = None
         self._fb_get_seeds_btn   = None
         self._fb_take_btn        = None
+        self._fb_pickup_btn      = None
         # Backhoe UI
         self.backhoe_open    = False
         self.active_backhoe  = None
@@ -237,6 +245,7 @@ class UI:
         self._bh_deposit_all_btn = None
         self._bh_take_btn       = None
         self._bh_ride_btn       = None
+        self._bh_pickup_btn     = None
         # Chest UI
         self.chest_open       = False
         self.active_chest_inv = None   # direct reference to world.chest_data[(bx,by)]
@@ -252,10 +261,52 @@ class UI:
         self.cheat_text    = ""
         self.cheat_message = ""
         self._cheat_msg_timer = 0.0
+        # Bird codex UI state
+        self._bird_codex_scroll        = 0
+        self._max_bird_codex_scroll    = 0
         # Fish codex UI state
         self._fish_codex_rects         = {}
         self._fish_codex_scroll        = 0
         self._max_fish_codex_scroll    = 0
+        # Coffee codex UI state
+        self._coffee_codex_scroll      = 0
+        self._max_coffee_codex_scroll  = 0
+        self._coffee_codex_selected    = None   # "biome_roast" string or None
+        self._coffee_codex_rects       = {}
+        # Roaster mini-game state
+        self._roast_phase          = "select_bean"  # "select_bean" | "select_processing" | "roasting" | "result"
+        self._roast_bean_idx       = None
+        self._roast_time           = 0.0
+        self._roast_total_time     = 30.0
+        self._roast_temp           = 0.0
+        self._roast_temp_vel       = 0.0
+        self._roast_heat_held      = False
+        self._roast_time_in_band   = 0.0
+        self._roast_first_crack_hit  = False
+        self._roast_second_crack_hit = False
+        self._roast_penalties        = 0
+        self._roast_event_flash      = None   # (text, color, timer) or None
+        self._roast_stop_btn         = None
+        self._roast_select_rects     = {}
+        self._roast_result_done_btn  = None
+        self._roast_proc_rects       = {}   # processing phase button rects
+        # Blend station state
+        self._blend_slots        = [None, None, None]  # bean indices or None
+        self._blend_slot_rects   = []
+        self._blend_list_rects   = {}  # bean_idx → Rect
+        self._blend_btn          = None
+        self._blend_result_bean  = None
+        self._blend_phase        = "select"  # "select" | "result"
+        self._blend_result_done_btn = None
+        # Brew station state
+        self._brew_bean_idx      = None
+        self._brew_bean_rects    = {}  # bean_idx → Rect
+        self._brew_method_rects  = {}  # method_key → Rect
+        self._brew_btn           = None
+        self._brew_water_quality = "soft"
+        self._brew_grind_size    = "medium"
+        self._brew_water_rects   = {}
+        self._brew_grind_rects   = {}
         # Fishing overlay fonts
         self._fish_bite_font = pygame.font.SysFont("Arial Black", 34, bold=True)
         # Toast notifications
@@ -423,6 +474,7 @@ class UI:
         self._draw_hotbar(player)
         if getattr(player, 'bg_place_mode', False):
             self._draw_bg_mode_indicator()
+        self._draw_coffee_buffs(player)
         self._drain_notifications(player)
         self._draw_toasts(dt)
         if self._drag_item_id is not None and self.inventory_open:
@@ -477,7 +529,7 @@ class UI:
                 return True
         return False
 
-    def handle_crafting_click(self, pos, player, button=1):
+    def handle_crafting_click(self, pos, player, button=1, research=None):
         for (r, c), rect in self._cell_rects.items():
             if rect.collidepoint(pos):
                 if button == 3:
@@ -486,7 +538,7 @@ class UI:
                     self._craft_grid[r][c] = self._cycle_craft_item(r, c, player)
                 return
         if button == 1 and self._craft_btn and self._craft_btn.collidepoint(pos):
-            self._do_grid_craft(player)
+            self._do_grid_craft(player, research)
             return
         if button == 1:
             for ridx, rect in self._recipe_rects.items():
@@ -503,9 +555,9 @@ class UI:
         idx = choices.index(cur) if cur in choices else -1
         return choices[(idx + 1) % len(choices)]
 
-    def _do_grid_craft(self, player):
+    def _do_grid_craft(self, player, research=None):
         out_id, out_count = match_recipe(self._craft_grid)
-        if out_id and can_craft(self._craft_grid, player.inventory):
+        if out_id and can_craft_with_research(self._craft_grid, player.inventory, research):
             costs = craft_costs(self._craft_grid)
             for iid, needed in costs.items():
                 player.inventory[iid] = player.inventory.get(iid, 0) - needed
@@ -529,12 +581,15 @@ class UI:
                 self._mushroom_codex_scroll = 0
                 self._fossil_codex_scroll = 0
                 self._gem_codex_scroll = 0
+                self._bird_codex_scroll = 0
                 self._fish_codex_scroll = 0
+                self._coffee_codex_scroll = 0
                 self._codex_selected_type = None
                 self._flower_codex_selected_type = None
                 self._mushroom_codex_selected_bid = None
                 self._fossil_codex_selected_type = None
                 self._gem_codex_selected_type = None
+                self._coffee_codex_selected = None
                 return
 
         if self._collection_tab == 0:
@@ -561,12 +616,15 @@ class UI:
                     self._mushroom_codex_scroll = 0
                     self._fossil_codex_scroll = 0
                     self._gem_codex_scroll = 0
+                    self._bird_codex_scroll = 0
                     self._fish_codex_scroll = 0
+                    self._coffee_codex_scroll = 0
                     self._codex_selected_type = None
                     self._flower_codex_selected_type = None
                     self._mushroom_codex_selected_bid = None
                     self._fossil_codex_selected_type = None
                     self._gem_codex_selected_type = None
+                    self._coffee_codex_selected = None
                     return
             # Codex item clicks
             if self._encyclopedia_cat == 0:
@@ -593,6 +651,11 @@ class UI:
                 for type_key, rect in self._gem_codex_rects.items():
                     if rect.collidepoint(pos):
                         self._gem_codex_selected_type = type_key if self._gem_codex_selected_type != type_key else None
+                        return
+            elif self._encyclopedia_cat == 7:
+                for key, rect in self._coffee_codex_rects.items():
+                    if rect.collidepoint(pos):
+                        self._coffee_codex_selected = key if self._coffee_codex_selected != key else None
                         return
             # cat 5 = bird codex (view only, no selection needed)
         # tab 2 (awards) has no click-to-select items
@@ -623,8 +686,12 @@ class UI:
                     self._fossil_codex_scroll = max(0, min(self._max_fossil_codex_scroll, self._fossil_codex_scroll - dy))
                 elif self._encyclopedia_cat == 4:
                     self._gem_codex_scroll = max(0, min(self._max_gem_codex_scroll, self._gem_codex_scroll - dy))
+                elif self._encyclopedia_cat == 5:
+                    self._bird_codex_scroll = max(0, min(self._max_bird_codex_scroll, self._bird_codex_scroll - dy * 80))
                 elif self._encyclopedia_cat == 6:
                     self._fish_codex_scroll = max(0, min(self._max_fish_codex_scroll, self._fish_codex_scroll - dy * 80))
+                elif self._encyclopedia_cat == 7:
+                    self._coffee_codex_scroll = max(0, min(self._max_coffee_codex_scroll, self._coffee_codex_scroll - dy * 60))
             elif self._collection_tab == 2:
                 self._achievement_scroll = max(0, min(self._max_achievement_scroll, self._achievement_scroll - dy))
         elif self.breeding_open:
@@ -739,6 +806,15 @@ class UI:
                     return
 
     def handle_refinery_click(self, pos, player):
+        if self.refinery_block_id == ROASTER_BLOCK:
+            self._handle_roaster_click(pos, player)
+            return
+        if self.refinery_block_id == BLEND_STATION_BLOCK:
+            self._handle_blend_click(pos, player)
+            return
+        if self.refinery_block_id == BREW_STATION_BLOCK:
+            self._handle_brew_click(pos, player)
+            return
         if self.refinery_block_id == BAKERY_BLOCK:
             for i, rect in self._bakery_recipe_rects.items():
                 if rect.collidepoint(pos):
@@ -1320,8 +1396,8 @@ class UI:
         self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 26))
 
         n_cols = len(research.COLUMNS)
-        CARD_W, CARD_H = 260, 92
-        COL_GAP, ROW_GAP = 18, 7
+        CARD_W, CARD_H = 210, 92
+        COL_GAP, ROW_GAP = 12, 7
         total_w = n_cols * CARD_W + (n_cols - 1) * COL_GAP
         col_x = [(SCREEN_W - total_w) // 2 + c * (CARD_W + COL_GAP) for c in range(n_cols)]
         header_y = 46
@@ -1532,17 +1608,27 @@ class UI:
         OUT = 76
         ox, oy = gx + GW + 46, gy + (GW - OUT) // 2
         out_id, out_count = match_recipe(self._craft_grid)
-        craftable = can_craft(self._craft_grid, player.inventory)
+        res_locked = is_research_locked(out_id, research) if out_id else False
+        craftable = can_craft_with_research(self._craft_grid, player.inventory, research)
 
         if out_id and out_id in ITEMS:
             out_item = ITEMS[out_id]
-            pygame.draw.rect(self.screen, (20, 50, 20) if craftable else (42, 28, 28), (ox, oy, OUT, OUT))
-            pygame.draw.rect(self.screen, (55, 200, 55) if craftable else (140, 75, 75), (ox, oy, OUT, OUT), 2)
+            if res_locked:
+                bg_col, br_col = (45, 20, 20), (160, 60, 60)
+            elif craftable:
+                bg_col, br_col = (20, 50, 20), (55, 200, 55)
+            else:
+                bg_col, br_col = (42, 28, 28), (140, 75, 75)
+            pygame.draw.rect(self.screen, bg_col, (ox, oy, OUT, OUT))
+            pygame.draw.rect(self.screen, br_col, (ox, oy, OUT, OUT), 2)
             sw = OUT - 14
             icon = render_item_icon(out_id, out_item["color"], sw)
             self.screen.blit(icon, (ox + 5, oy + 5))
             cnt_s = self.small.render(f"x{out_count}", True, (200, 200, 200))
             self.screen.blit(cnt_s, (ox + OUT - cnt_s.get_width() - 4, oy + OUT - 14))
+            if res_locked:
+                lock_s = self.small.render("LOCKED", True, (210, 80, 80))
+                self.screen.blit(lock_s, (ox + OUT // 2 - lock_s.get_width() // 2, oy + 2))
         else:
             pygame.draw.rect(self.screen, (25, 25, 33), (ox, oy, OUT, OUT))
             pygame.draw.rect(self.screen, (52, 52, 66), (ox, oy, OUT, OUT), 1)
@@ -1569,6 +1655,13 @@ class UI:
 
         info_x, info_y = ox + OUT + 12, gy
         if out_id:
+            if res_locked:
+                req_node_id = RESEARCH_LOCKED_RECIPES.get(out_id, "")
+                req_node = research.nodes.get(req_node_id) if research else None
+                req_name = req_node.name if req_node else req_node_id
+                ls = self.small.render(f"Needs research: {req_name}", True, (210, 100, 100))
+                self.screen.blit(ls, (info_x, info_y))
+                info_y += 18
             self.screen.blit(self.small.render("Materials:", True, (150, 150, 150)),
                              (info_x, info_y))
             info_y += 18
@@ -1648,9 +1741,17 @@ class UI:
             self._recipe_rects[ridx] = rect
 
             out_id = recipe["output_id"]
-            craftable_r = can_craft(recipe["pattern"], player.inventory)
-            bg = (20, 45, 20) if craftable_r else (24, 24, 32)
-            border = (50, 180, 50) if craftable_r else (52, 52, 68)
+            locked_r = is_research_locked(out_id, research)
+            craftable_r = (not locked_r) and can_craft(recipe["pattern"], player.inventory)
+            if locked_r:
+                bg = (38, 18, 18)
+                border = (130, 50, 50)
+            elif craftable_r:
+                bg = (20, 45, 20)
+                border = (50, 180, 50)
+            else:
+                bg = (24, 24, 32)
+                border = (52, 52, 68)
             pygame.draw.rect(self.screen, bg, rect)
             pygame.draw.rect(self.screen, border, rect, 1)
 
@@ -1682,16 +1783,26 @@ class UI:
 
             # Name + cost summary
             name_x = out_x + sw + 8
-            nm_s = self.small.render(recipe["name"], True, (220, 210, 170) if craftable_r else (140, 140, 150))
+            if locked_r:
+                req_nid = RESEARCH_LOCKED_RECIPES.get(out_id, "")
+                req_node = research.nodes.get(req_nid) if research else None
+                nm_col = (180, 80, 80)
+                lock_label = f"[R] {req_node.name if req_node else req_nid}"
+                lk_s = self.small.render(lock_label, True, (160, 65, 65))
+                self.screen.blit(lk_s, (name_x, ry + 4 + 14))
+            else:
+                nm_col = (220, 210, 170) if craftable_r else (140, 140, 150)
+            nm_s = self.small.render(recipe["name"], True, nm_col)
             self.screen.blit(nm_s, (name_x, ry + 4))
-            costs = craft_costs(recipe["pattern"])
-            cost_parts = []
-            for iid, cnt in costs.items():
-                have = player.inventory.get(iid, 0)
-                col_c = (70, 200, 70) if have >= cnt else (190, 70, 70)
-                cs = self.small.render(f"{ITEMS.get(iid,{}).get('name',iid)} {have}/{cnt}", True, col_c)
-                self.screen.blit(cs, (name_x, ry + 4 + 14 * (len(cost_parts) + 1)))
-                cost_parts.append(iid)
+            if not locked_r:
+                costs = craft_costs(recipe["pattern"])
+                cost_parts = []
+                for iid, cnt in costs.items():
+                    have = player.inventory.get(iid, 0)
+                    col_c = (70, 200, 70) if have >= cnt else (190, 70, 70)
+                    cs = self.small.render(f"{ITEMS.get(iid,{}).get('name',iid)} {have}/{cnt}", True, col_c)
+                    self.screen.blit(cs, (name_x, ry + 4 + 14 * (len(cost_parts) + 1)))
+                    cost_parts.append(iid)
 
 
     # ------------------------------------------------------------------
@@ -1719,8 +1830,9 @@ class UI:
         n_mush_owned = sum(1 for b in _MUSHROOM_ORDER if player.mushrooms_found.get(b, 0) > 0)
         n_fish_disc  = len(player.discovered_fish_species)
         n_fish_total = len(FISH_TYPE_ORDER)
+        n_coffee_owned = len(player.coffee_beans)
         total_collected = (len(player.rocks) + len(player.wildflowers) +
-                           len(player.fossils) + len(player.gems) + n_mush_owned)
+                           len(player.fossils) + len(player.gems) + n_mush_owned + n_coffee_owned)
 
         # ---- 3 main tabs ----
         self._tab_rects.clear()
@@ -1749,8 +1861,8 @@ class UI:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -1774,6 +1886,7 @@ class UI:
                 ("fossils",   f"FOSSILS ({len(player.fossils)})"),
                 ("gems",      f"GEMS ({len(player.gems)})"),
                 ("mushrooms", f"MUSHROOMS ({n_mush_owned})"),
+                ("coffee",    f"COFFEE ({n_coffee_owned})"),
             ]
             FILTER_THEME = {
                 "all":       ((55, 55, 75),  (130, 130, 180), (200, 200, 240)),
@@ -1782,6 +1895,7 @@ class UI:
                 "fossils":   ((50, 40, 20),  (168, 140, 72),  (215, 182, 112)),
                 "gems":      ((22, 48, 45),  (72,  195, 170), (145, 235, 215)),
                 "mushrooms": ((40, 36, 16),  (148, 132, 56),  (198, 182, 105)),
+                "coffee":    ((40, 25, 10),  (140,  90,  35), (210, 150,  70)),
             }
             fGAP = 6
             fW = min(148, (SCREEN_W - 20 - fGAP * (len(filter_defs) - 1)) // len(filter_defs))
@@ -1811,6 +1925,8 @@ class UI:
             self._encyclopedia_cat_rects.clear()
             n_bird_disc  = len(player.birds_observed)
             n_bird_total = 85
+            n_coffee_disc  = len(player.discovered_coffee_origins)
+            n_coffee_total = len(COFFEE_TYPE_ORDER)
             enc_defs = [
                 (0, f"ROCKS ({n_rock_disc}/{n_rock_total})"),
                 (1, f"FLOWERS ({n_fl_disc}/{n_fl_total})"),
@@ -1819,6 +1935,7 @@ class UI:
                 (4, f"GEMS ({n_gem_disc}/{n_gem_total})"),
                 (5, f"BIRDS ({n_bird_disc}/{n_bird_total})"),
                 (6, f"FISH ({n_fish_disc}/{n_fish_total})"),
+                (7, f"COFFEE ({n_coffee_disc}/{n_coffee_total})"),
             ]
             ENC_THEME = [
                 ((42, 52, 70),  (95, 138, 198),  (175, 208, 248)),
@@ -1828,6 +1945,7 @@ class UI:
                 ((22, 48, 45),  (72, 195, 170),  (145, 235, 215)),
                 ((18, 40, 58),  (70, 150, 220),  (140, 210, 255)),
                 ((18, 32, 50),  (55, 110, 185),  (120, 185, 240)),
+                ((35, 22,  8),  (140,  90,  30), (210, 145,  60)),
             ]
             eGAP = 6
             eW = min(190, (SCREEN_W - 20 - eGAP * (len(enc_defs) - 1)) // len(enc_defs))
@@ -1864,6 +1982,7 @@ class UI:
                 self._draw_gem_codex,
                 self._draw_bird_codex,
                 self._draw_fish_codex,
+                self._draw_coffee_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0)
@@ -1897,6 +2016,8 @@ class UI:
         if flt in ("all", "mushrooms"):
             items.extend(("mushroom", bid) for bid in _MUSHROOM_ORDER
                          if player.mushrooms_found.get(bid, 0) > 0)
+        if flt in ("all", "coffee"):
+            items.extend(("coffee", i) for i in range(len(player.coffee_beans)))
 
         if not items:
             msg = self.font.render("Nothing collected yet!", True, (80, 80, 90))
@@ -2011,6 +2132,24 @@ class UI:
                 img = render_fish(it, 58)
                 label = FISH_TYPES.get(it.species, {}).get("name", it.species.replace("_", " ").title())
                 label_col = (100, 165, 215)
+            elif cat == "coffee":
+                it = player.coffee_beans[key]
+                roast_col = ROAST_COLORS.get(it.roast_level, (80, 50, 20))
+                bg_col = (40, 25, 10) if selected else (25, 15, 5)
+                pygame.draw.rect(self.screen, bg_col, rect)
+                pygame.draw.rect(self.screen, roast_col, rect, 3 if selected else 2)
+                # Draw a simple coffee bean icon
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                cx2, cy2 = 29, 29
+                pygame.draw.ellipse(img, roast_col, (cx2 - 16, cy2 - 22, 32, 44))
+                line_col = (max(0, roast_col[0] - 40), max(0, roast_col[1] - 40), max(0, roast_col[2] - 40))
+                pygame.draw.line(img, line_col, (cx2, cy2 - 18), (cx2, cy2 + 18), 2)
+                state_char = {"raw": "R", "roasted": "✓", "blended": "B"}.get(it.state, "?")
+                sc_s = self.small.render(state_char, True, (220, 180, 100))
+                img.blit(sc_s, (cx2 - sc_s.get_width() // 2, 2))
+                label = BIOME_DISPLAY_NAMES.get(it.origin_biome, it.origin_biome)
+                label_col = (210, 150, 70)
             else:  # mushroom
                 count = player.mushrooms_found.get(key, 0)
                 pygame.draw.rect(self.screen, (40, 36, 20) if selected else (25, 22, 12), rect)
@@ -2220,6 +2359,34 @@ class UI:
                         line = w
                 if line:
                     dlabel(line, (140, 150, 165))
+        elif sel_cat == "coffee":
+            bean = player.coffee_beans[sel_key]
+            roast_col = ROAST_COLORS.get(bean.roast_level, (80, 50, 20))
+            pygame.draw.rect(self.screen, (20, 12, 5), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, roast_col, (dx, dy2, dw, dh), 2)
+            # Draw bean preview
+            bean_surf = pygame.Surface((80, 80), pygame.SRCALPHA)
+            bean_surf.fill((0, 0, 0, 0))
+            pygame.draw.ellipse(bean_surf, roast_col, (10, 5, 60, 70))
+            lc = (max(0, roast_col[0] - 50), max(0, roast_col[1] - 50), max(0, roast_col[2] - 50))
+            pygame.draw.line(bean_surf, lc, (40, 8), (40, 72), 3)
+            self.screen.blit(bean_surf, (dx + dw // 2 - 40, dy2 + 6))
+            dlabel(BIOME_DISPLAY_NAMES.get(bean.origin_biome, bean.origin_biome) + " " + bean.variety.title(), (220, 160, 80))
+            dlabel(f"State: {bean.state.title()}", roast_col)
+            dlabel(f"Roast: {ROAST_LEVEL_DESCS.get(bean.roast_level, bean.roast_level)}", roast_col)
+            if bean.roast_quality > 0:
+                stars = "★" * round(bean.roast_quality * 5)
+                dlabel(f"Quality: {stars}", (220, 190, 60))
+            if bean.flavor_notes:
+                dlabel(f"Flavour Notes:", (180, 140, 80))
+                for note in bean.flavor_notes:
+                    dlabel(f"  • {note.title()}", (210, 175, 110))
+            iy[0] += 4
+            stat_bar("Acidity",   bean.acidity,   (180, 220, 80))
+            stat_bar("Body",      bean.body,       (140, 90,  40))
+            stat_bar("Sweetness", bean.sweetness,  (220, 180, 60))
+            stat_bar("Earthiness",bean.earthiness, (130, 100, 50))
+            stat_bar("Brightness",bean.brightness, (230, 200, 80))
         else:  # mushroom
             bid = sel_key
             pygame.draw.rect(self.screen, (16, 14, 8), (dx, dy2, dw, dh))
@@ -3393,16 +3560,30 @@ class UI:
                             "rare": (180, 120, 230)}
 
         CELL, GAP, COLS = 120, 10, 6
+        ROW_H = CELL + GAP
         gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        visible_h = SCREEN_H - gy0 - 8
+
+        num_rows = (len(ALL_SPECIES) + COLS - 1) // COLS
+        total_h = num_rows * ROW_H
+        self._max_bird_codex_scroll = max(0, total_h - visible_h)
+        self._bird_codex_scroll = max(0, min(self._max_bird_codex_scroll, self._bird_codex_scroll))
+
+        if self._max_bird_codex_scroll > 0:
+            sb_x = gx0 + COLS * (CELL + GAP) - GAP + 8
+            sb_th = max(20, visible_h * visible_h // total_h)
+            sb_top = gy0 + (visible_h - sb_th) * self._bird_codex_scroll // self._max_bird_codex_scroll
+            pygame.draw.rect(self.screen, (35, 35, 48), (sb_x, gy0, 7, visible_h))
+            pygame.draw.rect(self.screen, (100, 100, 140), (sb_x, sb_top, 7, sb_th))
 
         self._bird_codex_rects.clear()
         for idx, sp_cls in enumerate(ALL_SPECIES):
             col = idx % COLS
             row = idx // COLS
             x = gx0 + col * (CELL + GAP)
-            y = gy0 + row * (CELL + GAP)
-            if y + CELL > SCREEN_H - 8:
-                break
+            y = gy0 + row * ROW_H - self._bird_codex_scroll
+            if y + CELL <= gy0 or y >= SCREEN_H - 8:
+                continue
             rect = pygame.Rect(x, y, CELL, CELL)
             self._bird_codex_rects[sp_cls.SPECIES] = rect
 
@@ -3533,6 +3714,699 @@ class UI:
                         self.screen.blit(name_s,
                                          (x + CELL // 2 - name_s.get_width() // 2, y + CELL - 14))
                 cy += ROW_H
+
+    # ------------------------------------------------------------------
+    # Coffee codex
+    # ------------------------------------------------------------------
+
+    def _draw_coffee_codex(self, player, gy0=58):
+        BIOMES = ["tropical", "jungle", "savanna", "wetland", "arid_steppe", "canyon", "beach"]
+        ROASTS = ["light", "medium", "dark", "charred", "green"]
+        COLS   = len(ROASTS)
+        CELL_W, CELL_H, GAP = 110, 68, 6
+        HDR_H  = 22
+        gx0    = (SCREEN_W - (COLS * CELL_W + (COLS - 1) * GAP)) // 2
+
+        # Column header (roast names)
+        hdr_y = gy0
+        for ci, roast in enumerate(ROASTS):
+            hx = gx0 + ci * (CELL_W + GAP)
+            rc = ROAST_COLORS.get(roast, (100, 60, 20))
+            lbl = self.small.render(roast.upper(), True, rc)
+            self.screen.blit(lbl, (hx + CELL_W // 2 - lbl.get_width() // 2, hdr_y + 4))
+
+        self._coffee_codex_rects.clear()
+        cy = hdr_y + HDR_H
+        for biome in BIOMES:
+            # Biome row header
+            bnm = BIOME_DISPLAY_NAMES.get(biome, biome)
+            bl  = self.font.render(bnm.upper(), True, (200, 160, 80))
+            self.screen.blit(bl, (10, cy + (CELL_H - bl.get_height()) // 2))
+            for ci, roast in enumerate(ROASTS):
+                hx = gx0 + ci * (CELL_W + GAP)
+                key = f"{biome}_{roast}"
+                discovered = key in player.discovered_coffee_origins
+                rect = pygame.Rect(hx, cy, CELL_W, CELL_H)
+                self._coffee_codex_rects[key] = rect
+                rc = ROAST_COLORS.get(roast, (100, 60, 20))
+                selected = (self._coffee_codex_selected == key)
+
+                if discovered:
+                    pygame.draw.rect(self.screen, (35, 22, 8), rect)
+                    pygame.draw.rect(self.screen, rc, rect, 3 if selected else 1)
+                    # Best quality for this origin+roast
+                    best_q = max(
+                        (b.roast_quality for b in player.coffee_beans
+                         if b.origin_biome == biome and b.roast_level == roast), default=0.0)
+                    stars = "★" * round(best_q * 5) if best_q > 0 else ""
+                    name_s = self.small.render(ROAST_LEVEL_DESCS.get(roast, roast).split("—")[0].strip(), True, rc)
+                    self.screen.blit(name_s, (hx + 4, cy + 4))
+                    if stars:
+                        qs = self.small.render(stars, True, (220, 190, 60))
+                        self.screen.blit(qs, (hx + 4, cy + CELL_H - qs.get_height() - 4))
+                else:
+                    pygame.draw.rect(self.screen, (15, 9, 3), rect)
+                    pygame.draw.rect(self.screen, (40, 25, 10), rect, 1)
+                    lock = self.small.render("?", True, (50, 30, 10))
+                    self.screen.blit(lock, (hx + CELL_W // 2 - lock.get_width() // 2,
+                                            cy + CELL_H // 2 - lock.get_height() // 2))
+
+            cy += CELL_H + GAP
+
+        # Detail panel for selected
+        if self._coffee_codex_selected:
+            key = self._coffee_codex_selected
+            if key in player.discovered_coffee_origins:
+                biome, roast = key.rsplit("_", 1)
+                beans_matching = [b for b in player.coffee_beans
+                                  if b.origin_biome == biome and b.roast_level == roast]
+                if beans_matching:
+                    best = max(beans_matching, key=lambda b: b.roast_quality)
+                    dx2 = gx0 + COLS * (CELL_W + GAP) + 10
+                    dpw = SCREEN_W - dx2 - 8
+                    pygame.draw.rect(self.screen, (25, 15, 5), (dx2, gy0, dpw, SCREEN_H - gy0 - 10))
+                    pygame.draw.rect(self.screen, ROAST_COLORS.get(roast, (100, 60, 20)),
+                                     (dx2, gy0, dpw, SCREEN_H - gy0 - 10), 2)
+                    iy2 = gy0 + 8
+
+                    def dline(txt, col=(210, 160, 80)):
+                        nonlocal iy2
+                        s = self.small.render(txt, True, col)
+                        self.screen.blit(s, (dx2 + 6, iy2))
+                        iy2 += 15
+
+                    dline(f"{BIOME_DISPLAY_NAMES.get(biome, biome)} {best.variety.title()}", (220, 170, 90))
+                    dline(ROAST_LEVEL_DESCS.get(roast, roast), ROAST_COLORS.get(roast, (180, 120, 60)))
+                    stars = "★" * round(best.roast_quality * 5)
+                    dline(f"Best quality: {stars}", (220, 190, 60))
+                    dline(f"Flavour Notes:", (180, 140, 60))
+                    for note in best.flavor_notes:
+                        dline(f"  • {note.title()}", (210, 175, 100))
+
+    # ------------------------------------------------------------------
+    # Coffee equipment UIs
+    # ------------------------------------------------------------------
+
+    def _draw_roaster(self, player, dt=0.0):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 215))
+        self.screen.blit(overlay, (0, 0))
+
+        title = self.font.render("COFFEE ROASTER", True, (210, 145, 60))
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 6))
+
+        hint = self.small.render("ESC to close", True, (100, 80, 50))
+        self.screen.blit(hint, (SCREEN_W - hint.get_width() - 8, 6))
+
+        if self._roast_phase == "select_bean":
+            self._roast_select_rects.clear()
+            raw_beans = [(i, b) for i, b in enumerate(player.coffee_beans) if b.state == "raw"]
+            if not raw_beans:
+                msg = self.font.render("No raw coffee beans! Harvest mature coffee plants.", True, (130, 100, 60))
+                self.screen.blit(msg, (SCREEN_W // 2 - msg.get_width() // 2, SCREEN_H // 2))
+                return
+            sub = self.small.render("Select a raw bean to roast:", True, (180, 140, 60))
+            self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 32))
+            CELL_W, CELL_H, GAP, COLS = 200, 56, 8, 5
+            gx0 = (SCREEN_W - (COLS * CELL_W + (COLS - 1) * GAP)) // 2
+            for li, (bi, bean) in enumerate(raw_beans[:20]):
+                col_i = li % COLS
+                row_i = li // COLS
+                rx = gx0 + col_i * (CELL_W + GAP)
+                ry = 55 + row_i * (CELL_H + GAP)
+                rect = pygame.Rect(rx, ry, CELL_W, CELL_H)
+                self._roast_select_rects[bi] = rect
+                pygame.draw.rect(self.screen, (45, 28, 10), rect)
+                pygame.draw.rect(self.screen, (140, 90, 35), rect, 2)
+                nm = BIOME_DISPLAY_NAMES.get(bean.origin_biome, bean.origin_biome)
+                ns = self.small.render(nm + " " + bean.variety.title(), True, (220, 170, 80))
+                self.screen.blit(ns, (rx + 6, ry + 8))
+                hint2 = self.small.render("Click to roast", True, (110, 80, 40))
+                self.screen.blit(hint2, (rx + 6, ry + 26))
+
+        elif self._roast_phase == "select_processing":
+            self._roast_proc_rects.clear()
+            sub = self.small.render("Choose a processing method:", True, (180, 140, 60))
+            self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 32))
+            BTN_W, BTN_H, BTN_GAP = 320, 80, 14
+            total_w = len(PROCESSING_METHODS) * BTN_W + (len(PROCESSING_METHODS) - 1) * BTN_GAP
+            gx0 = (SCREEN_W - total_w) // 2
+            for pi, (pkey, pdata) in enumerate(PROCESSING_METHODS.items()):
+                px = gx0 + pi * (BTN_W + BTN_GAP)
+                py = SCREEN_H // 2 - BTN_H // 2
+                prect = pygame.Rect(px, py, BTN_W, BTN_H)
+                self._roast_proc_rects[pkey] = prect
+                pygame.draw.rect(self.screen, (40, 25, 8), prect)
+                pygame.draw.rect(self.screen, (170, 115, 45), prect, 2)
+                lbl = self.font.render(pdata["label"], True, (230, 180, 80))
+                self.screen.blit(lbl, (px + BTN_W // 2 - lbl.get_width() // 2, py + 10))
+                desc_lines = pdata["desc"].split(". ")
+                for di, dl in enumerate(desc_lines[:2]):
+                    ds = self.small.render(dl, True, (160, 125, 60))
+                    self.screen.blit(ds, (px + 8, py + 38 + di * 16))
+
+        elif self._roast_phase == "roasting":
+            # Update physics
+            if self._roast_heat_held:
+                self._roast_temp_vel = min(1.0, self._roast_temp_vel + 0.020)
+            else:
+                self._roast_temp_vel = max(-0.5, self._roast_temp_vel - 0.010)
+            self._roast_temp = max(0.0, min(1.0, self._roast_temp + self._roast_temp_vel * dt))
+            self._roast_time += dt
+
+            if 0.30 <= self._roast_temp <= 0.80:
+                self._roast_time_in_band += dt
+
+            if not self._roast_first_crack_hit and self._roast_time >= 10.0:
+                self._roast_first_crack_hit = True
+                self._roast_event_flash = ("FIRST CRACK!", (240, 220, 80), 2.0)
+            if not self._roast_second_crack_hit and self._roast_time >= 22.0:
+                self._roast_second_crack_hit = True
+                self._roast_event_flash = ("SECOND CRACK!", (240, 80, 60), 2.0)
+            if self._roast_second_crack_hit and self._roast_temp > 0.80:
+                self._roast_penalties = min(5, self._roast_penalties + int(dt))
+            if self._roast_event_flash:
+                txt, col, timer = self._roast_event_flash
+                timer -= dt
+                if timer <= 0:
+                    self._roast_event_flash = None
+                else:
+                    self._roast_event_flash = (txt, col, timer)
+
+            # Draw temperature bar
+            BAR_X, BAR_Y, BAR_W, BAR_H = 80, 60, 30, SCREEN_H - 120
+            pygame.draw.rect(self.screen, (25, 15, 5), (BAR_X, BAR_Y, BAR_W, BAR_H))
+            pygame.draw.rect(self.screen, (60, 40, 20), (BAR_X, BAR_Y, BAR_W, BAR_H), 2)
+            # Zone bands
+            def _zone_y(v): return BAR_Y + BAR_H - int(BAR_H * v)
+            pygame.draw.rect(self.screen, (30, 70, 30),
+                             (BAR_X, _zone_y(0.65), BAR_W, _zone_y(0.40) - _zone_y(0.65)))  # green
+            pygame.draw.rect(self.screen, (70, 70, 20),
+                             (BAR_X, _zone_y(0.80), BAR_W, _zone_y(0.65) - _zone_y(0.80)))  # yellow
+            pygame.draw.rect(self.screen, (80, 20, 10),
+                             (BAR_X, _zone_y(1.00), BAR_W, _zone_y(0.80) - _zone_y(1.00)))  # red
+            # Temp marker
+            marker_y = _zone_y(self._roast_temp)
+            marker_col = (255, 120, 40) if self._roast_temp > 0 else (80, 80, 80)
+            pygame.draw.rect(self.screen, marker_col, (BAR_X - 6, marker_y - 4, BAR_W + 12, 8))
+            temp_lbl = self.small.render(f"{self._roast_temp:.0%}", True, marker_col)
+            self.screen.blit(temp_lbl, (BAR_X + BAR_W + 4, marker_y - 6))
+
+            # Labels
+            for v, lbl in [(0.25, "Light"), (0.45, "Medium"), (0.65, "Dark"), (0.80, "Charred")]:
+                yl = _zone_y(v)
+                s = self.small.render(lbl, True, (140, 100, 60))
+                self.screen.blit(s, (BAR_X - s.get_width() - 4, yl - 6))
+                pygame.draw.line(self.screen, (60, 40, 20), (BAR_X, yl), (BAR_X + BAR_W, yl), 1)
+
+            # Time bar
+            TIME_X, TIME_Y = 130, SCREEN_H - 50
+            TIME_W = SCREEN_W - 260
+            pygame.draw.rect(self.screen, (25, 15, 5), (TIME_X, TIME_Y, TIME_W, 18))
+            pygame.draw.rect(self.screen, (60, 40, 20), (TIME_X, TIME_Y, TIME_W, 18), 2)
+            prog = min(1.0, self._roast_time / self._roast_total_time)
+            progress_col = (180, 120, 40)
+            pygame.draw.rect(self.screen, progress_col, (TIME_X, TIME_Y, int(TIME_W * prog), 18))
+            for t_mark, t_lbl in [(10, "1st crack"), (22, "2nd crack")]:
+                tx = TIME_X + int(TIME_W * t_mark / self._roast_total_time)
+                pygame.draw.line(self.screen, (220, 180, 80), (tx, TIME_Y - 4), (tx, TIME_Y + 22), 2)
+                ms = self.small.render(t_lbl, True, (200, 160, 60))
+                self.screen.blit(ms, (tx - ms.get_width() // 2, TIME_Y - 18))
+            ts = self.small.render(f"{self._roast_time:.1f}s / {self._roast_total_time:.0f}s", True, (180, 140, 60))
+            self.screen.blit(ts, (TIME_X + TIME_W // 2 - ts.get_width() // 2, TIME_Y + 22))
+
+            # Event flash
+            if self._roast_event_flash:
+                txt, col, _ = self._roast_event_flash
+                ef = self.font.render(txt, True, col)
+                self.screen.blit(ef, (SCREEN_W // 2 - ef.get_width() // 2, SCREEN_H // 2 - 20))
+
+            # Instruction
+            inst = self.small.render("Hold SPACE / click HEAT to raise temp.  Press ENTER / click STOP to finish.", True, (140, 110, 60))
+            self.screen.blit(inst, (SCREEN_W // 2 - inst.get_width() // 2, TIME_Y - 36))
+
+            # STOP button
+            stop_rect = pygame.Rect(SCREEN_W - 150, SCREEN_H - 50, 130, 32)
+            pygame.draw.rect(self.screen, (80, 35, 10), stop_rect)
+            pygame.draw.rect(self.screen, (200, 100, 40), stop_rect, 2)
+            stop_lbl = self.font.render("STOP", True, (240, 160, 60))
+            self.screen.blit(stop_lbl, (stop_rect.centerx - stop_lbl.get_width() // 2,
+                                        stop_rect.centery - stop_lbl.get_height() // 2))
+            self._roast_stop_btn = stop_rect
+
+            # HEAT button
+            heat_rect = pygame.Rect(SCREEN_W - 150, SCREEN_H - 90, 130, 32)
+            hcol = (120, 50, 15) if not self._roast_heat_held else (180, 80, 20)
+            pygame.draw.rect(self.screen, hcol, heat_rect)
+            pygame.draw.rect(self.screen, (220, 120, 50), heat_rect, 2)
+            hl = self.font.render("HEAT", True, (255, 200, 80))
+            self.screen.blit(hl, (heat_rect.centerx - hl.get_width() // 2,
+                                  heat_rect.centery - hl.get_height() // 2))
+            self._roast_heat_btn = heat_rect
+
+        elif self._roast_phase == "result":
+            bean = player.coffee_beans[self._roast_bean_idx]
+            roast_col = ROAST_COLORS.get(bean.roast_level, (140, 80, 30))
+            cx2, cy2 = SCREEN_W // 2, 80
+            # Bean preview
+            bean_surf = pygame.Surface((100, 100), pygame.SRCALPHA)
+            bean_surf.fill((0, 0, 0, 0))
+            pygame.draw.ellipse(bean_surf, roast_col, (10, 5, 80, 90))
+            lc = (max(0, roast_col[0] - 50), max(0, roast_col[1] - 50), max(0, roast_col[2] - 50))
+            pygame.draw.line(bean_surf, lc, (50, 8), (50, 92), 4)
+            self.screen.blit(bean_surf, (cx2 - 50, cy2))
+
+            iy2 = cy2 + 115
+            def rline(txt, col=(210, 160, 80)):
+                nonlocal iy2
+                s = self.font.render(txt, True, col)
+                self.screen.blit(s, (cx2 - s.get_width() // 2, iy2))
+                iy2 += 26
+
+            rline(BIOME_DISPLAY_NAMES.get(bean.origin_biome, bean.origin_biome) + " " + bean.variety.title(), (230, 175, 90))
+            if bean.processing_method:
+                pm = PROCESSING_METHODS.get(bean.processing_method, {})
+                rline(pm.get("label", bean.processing_method) + " Process", (170, 195, 120))
+            rline(ROAST_LEVEL_DESCS.get(bean.roast_level, bean.roast_level), roast_col)
+            stars = "★" * round(bean.roast_quality * 5) + "☆" * (5 - round(bean.roast_quality * 5))
+            rline(stars, (220, 190, 60))
+            if bean.flavor_notes:
+                rline("Flavour Notes:", (180, 140, 70))
+                for note in bean.flavor_notes:
+                    rline(f"  • {note.title()}", (210, 175, 100))
+
+            done_rect = pygame.Rect(cx2 - 70, iy2 + 20, 140, 34)
+            pygame.draw.rect(self.screen, (50, 35, 10), done_rect)
+            pygame.draw.rect(self.screen, (180, 130, 50), done_rect, 2)
+            dl = self.font.render("DONE", True, (220, 180, 80))
+            self.screen.blit(dl, (done_rect.centerx - dl.get_width() // 2,
+                                  done_rect.centery - dl.get_height() // 2))
+            self._roast_result_done_btn = done_rect
+
+    def _handle_roaster_click(self, pos, player):
+        keys = pygame.key.get_pressed()
+        if self._roast_phase == "select_bean":
+            for bi, rect in self._roast_select_rects.items():
+                if rect.collidepoint(pos):
+                    bean = player.coffee_beans[bi]
+                    if bean.state == "raw":
+                        self._roast_bean_idx = bi
+                        self._roast_phase = "select_processing"
+                    return
+        elif self._roast_phase == "select_processing":
+            for pkey, prect in self._roast_proc_rects.items():
+                if prect.collidepoint(pos):
+                    bi = self._roast_bean_idx
+                    if bi is not None and bi < len(player.coffee_beans):
+                        bean = player.coffee_beans[bi]
+                        apply_processing(bean, pkey)
+                        self._roast_time = 0.0
+                        self._roast_temp = 0.0
+                        self._roast_temp_vel = 0.0
+                        self._roast_time_in_band = 0.0
+                        self._roast_first_crack_hit = False
+                        self._roast_second_crack_hit = False
+                        self._roast_penalties = 0
+                        self._roast_event_flash = None
+                        self._roast_heat_held = False
+                        self._roast_phase = "roasting"
+                    return
+        elif self._roast_phase == "roasting":
+            if hasattr(self, '_roast_stop_btn') and self._roast_stop_btn and self._roast_stop_btn.collidepoint(pos):
+                self._finish_roast(player)
+                return
+            if hasattr(self, '_roast_heat_btn') and self._roast_heat_btn and self._roast_heat_btn.collidepoint(pos):
+                self._roast_heat_held = True
+                return
+        elif self._roast_phase == "result":
+            if self._roast_result_done_btn and self._roast_result_done_btn.collidepoint(pos):
+                self._roast_phase = "select_bean"
+                self._roast_bean_idx = None
+                return
+
+    def handle_roaster_keydown(self, key, player):
+        if self.refinery_block_id != ROASTER_BLOCK:
+            return
+        if self._roast_phase == "roasting":
+            if key == pygame.K_RETURN or key == pygame.K_KP_ENTER:
+                self._finish_roast(player)
+
+    def handle_roaster_keys(self, keys):
+        if self.refinery_block_id != ROASTER_BLOCK:
+            return
+        if self._roast_phase == "roasting":
+            self._roast_heat_held = bool(keys[pygame.K_SPACE])
+
+    def _finish_roast(self, player):
+        idx = self._roast_bean_idx
+        if idx is None or idx >= len(player.coffee_beans):
+            self._roast_phase = "select_bean"
+            return
+        bean = player.coffee_beans[idx]
+        timing_score = min(1.0, self._roast_time_in_band / max(0.1, self._roast_time))
+        temp_ctrl    = self._roast_time_in_band / max(0.1, self._roast_total_time)
+        apply_roast_result(bean, self._roast_temp, timing_score, temp_ctrl, self._roast_penalties)
+        if getattr(player, 'roast_quality_bonus', 0.0) > 0:
+            bean.roast_quality = min(1.0, bean.roast_quality * (1.0 + player.roast_quality_bonus))
+        player.discovered_coffee_origins.add(f"{bean.origin_biome}_{bean.roast_level}")
+        self._roast_phase = "result"
+
+    # ------------------------------------------------------------------
+
+    def _draw_blend_station(self, player):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 215))
+        self.screen.blit(overlay, (0, 0))
+
+        title = self.font.render("BLEND STATION", True, (200, 155, 80))
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 6))
+        hint = self.small.render("ESC to close", True, (100, 80, 50))
+        self.screen.blit(hint, (SCREEN_W - hint.get_width() - 8, 6))
+
+        if self._blend_phase == "result":
+            bean = self._blend_result_bean
+            if bean:
+                roast_col = ROAST_COLORS.get(bean.roast_level, (140, 80, 30))
+                cx2, cy2 = SCREEN_W // 2, 60
+                bean_surf = pygame.Surface((90, 90), pygame.SRCALPHA)
+                bean_surf.fill((0, 0, 0, 0))
+                pygame.draw.ellipse(bean_surf, roast_col, (8, 5, 74, 80))
+                pygame.draw.line(bean_surf, (20, 10, 5), (45, 8), (45, 82), 3)
+                self.screen.blit(bean_surf, (cx2 - 45, cy2))
+                iy2 = cy2 + 100
+                def bline(txt, col=(210, 160, 80)):
+                    nonlocal iy2
+                    s = self.font.render(txt, True, col)
+                    self.screen.blit(s, (cx2 - s.get_width() // 2, iy2))
+                    iy2 += 26
+                bline("Blend Created!", (220, 180, 90))
+                bline(f"Roast: {bean.roast_level.title()}", roast_col)
+                if bean.flavor_notes:
+                    bline("Flavour Notes:", (180, 140, 70))
+                    for note in bean.flavor_notes:
+                        bline(f"  {note.title()}", (210, 175, 100))
+                done_rect = pygame.Rect(cx2 - 70, iy2 + 15, 140, 34)
+                pygame.draw.rect(self.screen, (50, 35, 10), done_rect)
+                pygame.draw.rect(self.screen, (180, 130, 50), done_rect, 2)
+                dl = self.font.render("DONE", True, (220, 180, 80))
+                self.screen.blit(dl, (done_rect.centerx - dl.get_width() // 2,
+                                      done_rect.centery - dl.get_height() // 2))
+                self._blend_result_done_btn = done_rect
+            return
+
+        roasted = [(i, b) for i, b in enumerate(player.coffee_beans) if b.state in ("roasted",)]
+        # Left panel: bean list
+        LIST_X, LIST_Y, LIST_W = 20, 36, 260
+        pygame.draw.rect(self.screen, (20, 12, 5), (LIST_X, LIST_Y, LIST_W, SCREEN_H - LIST_Y - 10))
+        pygame.draw.rect(self.screen, (80, 55, 25), (LIST_X, LIST_Y, LIST_W, SCREEN_H - LIST_Y - 10), 1)
+        hdr = self.small.render("BEANS (click to fill slot):", True, (160, 120, 50))
+        self.screen.blit(hdr, (LIST_X + 4, LIST_Y + 4))
+        self._blend_list_rects.clear()
+        for li, (bi, bean) in enumerate(roasted[:16]):
+            ry = LIST_Y + 24 + li * 28
+            rect = pygame.Rect(LIST_X + 4, ry, LIST_W - 8, 24)
+            in_slot = bi in self._blend_slots
+            pygame.draw.rect(self.screen, (50, 30, 12) if in_slot else (35, 20, 8), rect)
+            pygame.draw.rect(self.screen, ROAST_COLORS.get(bean.roast_level, (120, 80, 30)), rect, 1)
+            nm = BIOME_DISPLAY_NAMES.get(bean.origin_biome, bean.origin_biome)[:12]
+            ns = self.small.render(f"{nm} {bean.roast_level[:3]}", True, (200, 155, 70))
+            self.screen.blit(ns, (LIST_X + 8, ry + 4))
+            self._blend_list_rects[bi] = rect
+
+        # Right: 3 slots
+        SLOT_X0 = LIST_X + LIST_W + 20
+        SLOT_W, SLOT_H, SLOT_GAP = 220, 80, 14
+        self._blend_slot_rects = []
+        sub = self.small.render("BLEND SLOTS (2 required, 3rd optional):", True, (160, 120, 50))
+        self.screen.blit(sub, (SLOT_X0, LIST_Y + 4))
+        for si in range(3):
+            sy = LIST_Y + 28 + si * (SLOT_H + SLOT_GAP)
+            srect = pygame.Rect(SLOT_X0, sy, SLOT_W, SLOT_H)
+            self._blend_slot_rects.append(srect)
+            bi = self._blend_slots[si]
+            if bi is not None and bi < len(player.coffee_beans):
+                bean = player.coffee_beans[bi]
+                rc = ROAST_COLORS.get(bean.roast_level, (120, 80, 30))
+                pygame.draw.rect(self.screen, (45, 28, 10), srect)
+                pygame.draw.rect(self.screen, rc, srect, 2)
+                nm = BIOME_DISPLAY_NAMES.get(bean.origin_biome, bean.origin_biome)
+                ns = self.small.render(f"{nm} {bean.variety.title()}", True, (220, 170, 80))
+                self.screen.blit(ns, (SLOT_X0 + 6, sy + 8))
+                rs = self.small.render(f"Roast: {bean.roast_level.title()}", True, rc)
+                self.screen.blit(rs, (SLOT_X0 + 6, sy + 26))
+                if bean.flavor_notes:
+                    fn = self.small.render(", ".join(bean.flavor_notes[:2]), True, (170, 130, 60))
+                    self.screen.blit(fn, (SLOT_X0 + 6, sy + 44))
+                clear_s = self.small.render("[X]", True, (180, 80, 60))
+                self.screen.blit(clear_s, (SLOT_X0 + SLOT_W - 24, sy + 4))
+            else:
+                pygame.draw.rect(self.screen, (18, 10, 4), srect)
+                pygame.draw.rect(self.screen, (60, 40, 15), srect, 1)
+                es = self.small.render(f"Slot {si + 1}  (empty)", True, (80, 55, 25))
+                self.screen.blit(es, (SLOT_X0 + 6, sy + 30))
+
+        can_blend = sum(1 for s in self._blend_slots if s is not None) >= 2
+        btn_col = (60, 40, 12) if can_blend else (30, 20, 8)
+        brd_col = (180, 130, 50) if can_blend else (60, 40, 15)
+        blend_btn_rect = pygame.Rect(SLOT_X0, LIST_Y + 28 + 3 * (SLOT_H + SLOT_GAP) + 10, 120, 36)
+        pygame.draw.rect(self.screen, btn_col, blend_btn_rect)
+        pygame.draw.rect(self.screen, brd_col, blend_btn_rect, 2)
+        bl = self.font.render("BLEND", True, (220, 175, 80) if can_blend else (80, 55, 25))
+        self.screen.blit(bl, (blend_btn_rect.centerx - bl.get_width() // 2,
+                               blend_btn_rect.centery - bl.get_height() // 2))
+        self._blend_btn = blend_btn_rect
+
+    def _handle_blend_click(self, pos, player):
+        if self._blend_phase == "result":
+            if self._blend_result_done_btn and self._blend_result_done_btn.collidepoint(pos):
+                self._blend_phase = "select"
+                self._blend_result_bean = None
+                self._blend_slots = [None, None, None]
+            return
+        for bi, rect in self._blend_list_rects.items():
+            if rect.collidepoint(pos):
+                if bi in self._blend_slots:
+                    idx = self._blend_slots.index(bi)
+                    self._blend_slots[idx] = None
+                else:
+                    for si in range(3):
+                        if self._blend_slots[si] is None:
+                            self._blend_slots[si] = bi
+                            break
+                return
+        for si, srect in enumerate(self._blend_slot_rects):
+            if srect.collidepoint(pos):
+                self._blend_slots[si] = None
+                return
+        if self._blend_btn and self._blend_btn.collidepoint(pos):
+            filled = [s for s in self._blend_slots if s is not None]
+            if len(filled) >= 2:
+                components = [player.coffee_beans[bi] for bi in filled
+                              if bi < len(player.coffee_beans)]
+                if len(components) >= 2:
+                    blended = make_blend(components)
+                    for bi in sorted(filled, reverse=True):
+                        player.coffee_beans.pop(bi)
+                    player.coffee_beans.append(blended)
+                    player.discovered_coffee_origins.add(f"blend_{blended.roast_level}")
+                    self._blend_result_bean = blended
+                    self._blend_phase = "result"
+                    self._blend_slots = [None, None, None]
+
+    # ------------------------------------------------------------------
+
+    def _draw_brew_station(self, player):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 215))
+        self.screen.blit(overlay, (0, 0))
+
+        title = self.font.render("BREW STATION", True, (180, 130, 60))
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 6))
+        hint = self.small.render("ESC to close", True, (100, 80, 50))
+        self.screen.blit(hint, (SCREEN_W - hint.get_width() - 8, 6))
+
+        brewable = [(i, b) for i, b in enumerate(player.coffee_beans)
+                    if b.state in ("roasted", "blended")]
+
+        # Left panel: bean list
+        LIST_X, LIST_Y, LIST_W = 20, 36, 220
+        pygame.draw.rect(self.screen, (18, 10, 4), (LIST_X, LIST_Y, LIST_W, SCREEN_H - LIST_Y - 10))
+        pygame.draw.rect(self.screen, (70, 50, 20), (LIST_X, LIST_Y, LIST_W, SCREEN_H - LIST_Y - 10), 1)
+        hdr = self.small.render("ROASTED BEANS:", True, (150, 110, 45))
+        self.screen.blit(hdr, (LIST_X + 4, LIST_Y + 4))
+        self._brew_bean_rects.clear()
+        for li, (bi, bean) in enumerate(brewable[:16]):
+            ry = LIST_Y + 24 + li * 28
+            rect = pygame.Rect(LIST_X + 4, ry, LIST_W - 8, 24)
+            selected = (self._brew_bean_idx == bi)
+            rc = ROAST_COLORS.get(bean.roast_level, (120, 80, 30))
+            pygame.draw.rect(self.screen, (55, 35, 12) if selected else (32, 18, 6), rect)
+            pygame.draw.rect(self.screen, rc, rect, 2 if selected else 1)
+            nm = BIOME_DISPLAY_NAMES.get(bean.origin_biome, bean.origin_biome)[:11]
+            proc = f" [{bean.processing_method[:3]}]" if bean.processing_method else ""
+            ns = self.small.render(f"{nm} {bean.roast_level[:3]}{proc}", True, (200, 155, 70))
+            self.screen.blit(ns, (LIST_X + 8, ry + 4))
+            self._brew_bean_rects[bi] = rect
+
+        # Middle: method buttons
+        METHOD_X = LIST_X + LIST_W + 12
+        METHOD_W, METHOD_H, METHOD_GAP = 220, 66, 8
+        self._brew_method_rects.clear()
+        for mi, (mkey, mdata) in enumerate(BREW_METHODS.items()):
+            my = LIST_Y + 4 + mi * (METHOD_H + METHOD_GAP)
+            mrect = pygame.Rect(METHOD_X, my, METHOD_W, METHOD_H)
+            self._brew_method_rects[mkey] = mrect
+            is_sel = getattr(self, '_brew_selected_method', None) == mkey
+            pygame.draw.rect(self.screen, (45, 28, 10) if is_sel else (28, 18, 8), mrect)
+            pygame.draw.rect(self.screen, (200, 140, 50) if is_sel else (120, 80, 30), mrect, 2 if is_sel else 1)
+            ml = self.font.render(mdata["label"], True, (230, 175, 80) if is_sel else (180, 135, 60))
+            self.screen.blit(ml, (METHOD_X + 6, my + 6))
+            bs = self.small.render(BUFF_DESCS.get(mdata["buff"], ""), True, (160, 130, 60))
+            self.screen.blit(bs, (METHOD_X + 6, my + 28))
+            amp = " + ".join(mdata.get("amplifies", ()))
+            if amp:
+                as2 = self.small.render(f"↑ {amp}", True, (120, 100, 45))
+                self.screen.blit(as2, (METHOD_X + 6, my + 46))
+
+        # Grind size selector
+        PARAM_X = METHOD_X + METHOD_W + 12
+        PARAM_W = 130
+        gy = LIST_Y + 4
+        gl = self.small.render("GRIND:", True, (150, 115, 50))
+        self.screen.blit(gl, (PARAM_X, gy))
+        gy += 16
+        self._brew_grind_rects.clear()
+        for gkey, gdata in GRIND_SIZES.items():
+            gr = pygame.Rect(PARAM_X, gy, PARAM_W, 26)
+            self._brew_grind_rects[gkey] = gr
+            is_sel = self._brew_grind_size == gkey
+            pygame.draw.rect(self.screen, (45, 28, 10) if is_sel else (25, 15, 5), gr)
+            pygame.draw.rect(self.screen, (180, 130, 50) if is_sel else (80, 55, 20), gr, 2 if is_sel else 1)
+            gtxt = self.small.render(gdata["label"], True, (220, 175, 80) if is_sel else (140, 105, 45))
+            self.screen.blit(gtxt, (PARAM_X + 6, gy + 5))
+            gy += 30
+
+        gy += 8
+        wl = self.small.render("WATER:", True, (150, 115, 50))
+        self.screen.blit(wl, (PARAM_X, gy))
+        gy += 16
+        self._brew_water_rects.clear()
+        for wkey, wdata in WATER_QUALITIES.items():
+            wr = pygame.Rect(PARAM_X, gy, PARAM_W, 26)
+            self._brew_water_rects[wkey] = wr
+            is_sel = self._brew_water_quality == wkey
+            pygame.draw.rect(self.screen, (10, 25, 45) if is_sel else (5, 15, 25), wr)
+            pygame.draw.rect(self.screen, (80, 160, 220) if is_sel else (40, 80, 120), wr, 2 if is_sel else 1)
+            wtxt = self.small.render(wdata["label"], True, (160, 210, 240) if is_sel else (80, 130, 170))
+            self.screen.blit(wtxt, (PARAM_X + 6, gy + 5))
+            gy += 30
+
+        # Duration preview
+        dm = get_brew_duration_multiplier(self._brew_water_quality, self._brew_grind_size)
+        gy += 6
+        prev = self.small.render(f"Duration: ×{dm:.2f}", True, (140, 170, 140))
+        self.screen.blit(prev, (PARAM_X, gy))
+
+        # BREW button
+        can_brew = self._brew_bean_idx is not None and hasattr(self, '_brew_selected_method') and self._brew_selected_method
+        brew_y = gy + 26
+        brew_rect = pygame.Rect(PARAM_X, brew_y, PARAM_W, 36)
+        pygame.draw.rect(self.screen, (55, 35, 10) if can_brew else (25, 15, 5), brew_rect)
+        pygame.draw.rect(self.screen, (180, 130, 50) if can_brew else (60, 40, 15), brew_rect, 2)
+        bwl = self.font.render("BREW", True, (220, 175, 80) if can_brew else (80, 55, 25))
+        self.screen.blit(bwl, (brew_rect.centerx - bwl.get_width() // 2,
+                                brew_rect.centery - bwl.get_height() // 2))
+        self._brew_btn = brew_rect
+
+        # Far right: selected bean details
+        DX = PARAM_X + PARAM_W + 12
+        DW = SCREEN_W - DX - 8
+        if DW > 60 and self._brew_bean_idx is not None and self._brew_bean_idx < len(player.coffee_beans):
+            bean = player.coffee_beans[self._brew_bean_idx]
+            pygame.draw.rect(self.screen, (20, 12, 5), (DX, LIST_Y, DW, SCREEN_H - LIST_Y - 10))
+            pygame.draw.rect(self.screen, ROAST_COLORS.get(bean.roast_level, (100, 60, 20)),
+                             (DX, LIST_Y, DW, SCREEN_H - LIST_Y - 10), 1)
+            iy2 = LIST_Y + 8
+            def dline2(txt, col=(200, 155, 70)):
+                nonlocal iy2
+                s = self.small.render(txt, True, col)
+                self.screen.blit(s, (DX + 4, iy2))
+                iy2 += 14
+            dline2(BIOME_DISPLAY_NAMES.get(bean.origin_biome, bean.origin_biome), (220, 170, 80))
+            if bean.processing_method:
+                pm = PROCESSING_METHODS.get(bean.processing_method, {})
+                dline2(pm.get("label", bean.processing_method) + " Process", (160, 195, 120))
+            dline2(bean.roast_level.title(), ROAST_COLORS.get(bean.roast_level, (140, 90, 40)))
+            stars = "★" * round(bean.roast_quality * 5)
+            dline2(stars, (220, 190, 60))
+            for note in bean.flavor_notes:
+                dline2(f"• {note.title()}", (200, 160, 80))
+
+    def _handle_brew_click(self, pos, player):
+        for bi, rect in self._brew_bean_rects.items():
+            if rect.collidepoint(pos):
+                self._brew_bean_idx = bi if self._brew_bean_idx != bi else None
+                return
+        for gkey, grect in self._brew_grind_rects.items():
+            if grect.collidepoint(pos):
+                self._brew_grind_size = gkey
+                return
+        for wkey, wrect in self._brew_water_rects.items():
+            if wrect.collidepoint(pos):
+                self._brew_water_quality = wkey
+                return
+        for mkey, mrect in self._brew_method_rects.items():
+            if mrect.collidepoint(pos):
+                self._brew_selected_method = mkey
+                return
+        if self._brew_btn and self._brew_btn.collidepoint(pos):
+            mkey = getattr(self, '_brew_selected_method', None)
+            if mkey and self._brew_bean_idx is not None and self._brew_bean_idx < len(player.coffee_beans):
+                bean = player.coffee_beans[self._brew_bean_idx]
+                quality_bonus = get_brew_quality_bonus(self._brew_water_quality)
+                effective_quality = min(1.0, bean.roast_quality + quality_bonus)
+                output_id = get_brew_output_id(mkey, effective_quality)
+                dur_mult = get_brew_duration_multiplier(self._brew_water_quality, self._brew_grind_size)
+                player.coffee_beans.pop(self._brew_bean_idx)
+                self._brew_bean_idx = None
+                from items import ITEMS
+                base_dur = ITEMS.get(output_id, {}).get("coffee_buff_duration", 60.0)
+                final_dur = base_dur * dur_mult
+                item_data = ITEMS.get(output_id, {})
+                player._add_item(output_id)
+                if item_data.get("coffee_buff"):
+                    player.active_buffs[item_data["coffee_buff"]] = {
+                        "duration": final_dur, "intensity": 1.0
+                    }
+
+    # ------------------------------------------------------------------
+    # Coffee buff HUD
+    # ------------------------------------------------------------------
+
+    def _draw_coffee_buffs(self, player):
+        if not player.active_buffs:
+            return
+        BUFF_COLORS = {
+            "focus":     (80,  180, 80),
+            "rush":      (80,  120, 220),
+            "clarity":   (180, 220, 80),
+            "endurance": (80,  200, 160),
+            "strength":  (220, 80,  80),
+        }
+        bx = SCREEN_W - 8
+        by = 60
+        for buff, data in player.active_buffs.items():
+            dur = data["duration"]
+            col = BUFF_COLORS.get(buff, (180, 180, 80))
+            label = f"{buff.upper()} {dur:.0f}s"
+            s = self.small.render(label, True, col)
+            bx2 = bx - s.get_width() - 4
+            pygame.draw.rect(self.screen, (15, 15, 20),
+                             (bx2 - 4, by - 2, s.get_width() + 8, s.get_height() + 4))
+            pygame.draw.rect(self.screen, col,
+                             (bx2 - 4, by - 2, s.get_width() + 8, s.get_height() + 4), 1)
+            self.screen.blit(s, (bx2, by))
+            by += s.get_height() + 6
 
     def _draw_achievements(self):
         CARD_W, CARD_H = 360, 118
@@ -3872,6 +4746,15 @@ class UI:
         self._refine_btn = btn_rect
 
     def _draw_refinery(self, player, dt=0.0):
+        if self.refinery_block_id == ROASTER_BLOCK:
+            self._draw_roaster(player, dt)
+            return
+        if self.refinery_block_id == BLEND_STATION_BLOCK:
+            self._draw_blend_station(player)
+            return
+        if self.refinery_block_id == BREW_STATION_BLOCK:
+            self._draw_brew_station(player)
+            return
         if self.refinery_block_id == GEM_CUTTER_BLOCK:
             self._draw_gem_cutter(player, dt)
             return
@@ -4367,6 +5250,17 @@ class UI:
         self.screen.blit(take_t, (tx + TW // 2 - take_t.get_width() // 2,
                                    ty + TH // 2 - take_t.get_height() // 2))
 
+        # Pick Up button
+        PUW, PUH = 100, 28
+        pux = px + 14
+        puy = py + PH - PUH - 10
+        self._fb_pickup_btn = pygame.Rect(pux, puy, PUW, PUH)
+        pygame.draw.rect(self.screen, (50, 30, 70), self._fb_pickup_btn)
+        pygame.draw.rect(self.screen, (140, 80, 200), self._fb_pickup_btn, 1)
+        pu_t = self.small.render("PICK UP", True, (200, 160, 255))
+        self.screen.blit(pu_t, (pux + PUW // 2 - pu_t.get_width() // 2,
+                                 puy + PUH // 2 - pu_t.get_height() // 2))
+
     def handle_farm_bot_click(self, pos, player):
         fb = self.active_farm_bot
         if fb is None:
@@ -4381,6 +5275,8 @@ class UI:
             fb.get_seeds(player)
         elif self._fb_take_btn and self._fb_take_btn.collidepoint(pos):
             fb.take_all(player)
+        elif self._fb_pickup_btn and self._fb_pickup_btn.collidepoint(pos):
+            return "pickup"
 
     # ------------------------------------------------------------------
     # Death screen
@@ -4544,8 +5440,8 @@ class UI:
             empty = self.small.render("(empty)", True, (100, 90, 60))
             self.screen.blit(empty, (ix0, iy0 + 6))
 
-        # Bottom buttons: Take All + Ride
-        BotBW, BotBH = 120, 28
+        # Bottom buttons: Take All + Ride + Pick Up
+        BotBW, BotBH = 110, 28
         take_x = px + 14
         take_y = py + PH - BotBH - 10
         has_items = inv_count > 0
@@ -4559,7 +5455,7 @@ class UI:
         self.screen.blit(take_t, (take_x + BotBW // 2 - take_t.get_width() // 2,
                                    take_y + BotBH // 2 - take_t.get_height() // 2))
 
-        ride_x = take_x + BotBW + 10
+        ride_x = take_x + BotBW + 8
         ride_c  = (30, 50, 90)
         ride_bc = (70, 120, 200)
         ride_tc = (150, 200, 255)
@@ -4569,6 +5465,14 @@ class UI:
         ride_t = self.small.render("RIDE  [SPC]", True, ride_tc)
         self.screen.blit(ride_t, (ride_x + BotBW // 2 - ride_t.get_width() // 2,
                                    take_y + BotBH // 2 - ride_t.get_height() // 2))
+
+        pickup_x = ride_x + BotBW + 8
+        self._bh_pickup_btn = pygame.Rect(pickup_x, take_y, BotBW, BotBH)
+        pygame.draw.rect(self.screen, (60, 30, 10), self._bh_pickup_btn)
+        pygame.draw.rect(self.screen, (160, 80, 30), self._bh_pickup_btn, 1)
+        pickup_t = self.small.render("PICK UP", True, (230, 160, 80))
+        self.screen.blit(pickup_t, (pickup_x + BotBW // 2 - pickup_t.get_width() // 2,
+                                    take_y + BotBH // 2 - pickup_t.get_height() // 2))
 
     def handle_backhoe_click(self, pos, player):
         bh = self.active_backhoe
@@ -4585,6 +5489,8 @@ class UI:
             return True
         if self._bh_ride_btn and self._bh_ride_btn.collidepoint(pos):
             return "ride"
+        if self._bh_pickup_btn and self._bh_pickup_btn.collidepoint(pos):
+            return "pickup"
         return False
 
     # ------------------------------------------------------------------

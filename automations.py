@@ -48,6 +48,12 @@ AUTOMATION_ITEM = {
     "crystal_miner": "crystal_miner_item",
 }
 
+FARM_BOT_ITEM = {
+    "farm_bot":         "farm_bot_item",
+    "iron_farm_bot":    "iron_farm_bot_item",
+    "crystal_farm_bot": "crystal_farm_bot_item",
+}
+
 FARM_BOT_TYPES = {"farm_bot", "iron_farm_bot", "crystal_farm_bot"}
 
 FARM_BOT_DEFS = {

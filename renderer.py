@@ -37,7 +37,7 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER,
                     TEAL_BELL, RUST_SHELF, COPPER_SHELF, OBSIDIAN_SHELF, COAL_PUFF,
                     STONE_PUFF, AMBER_PUFF, SULFUR_TUFT, HONEY_CLUSTER, CORAL_TUFT,
                     BONE_STALK, MAGMA_CAP, DEEP_INK, BIOLUME,
-                    WOOD_FENCE, IRON_FENCE,
+                    WOOD_FENCE, IRON_FENCE, WOOD_FENCE_OPEN, IRON_FENCE_OPEN,
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN,
                     IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
                     CHEST_BLOCK, SNOW, SAND,
@@ -918,6 +918,33 @@ class Renderer:
                 pygame.draw.rect(s, gray,  (0, 10, 32, 4))
                 pygame.draw.rect(s, gray,  (0, 20, 32, 4))
                 pygame.draw.polygon(s, dgray, [(16, 0), (13, 5), (19, 5)])
+                surfs[bid] = s
+                continue
+            if bid == WOOD_FENCE_OPEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                brown = (139, 90, 43)
+                dbrown = (100, 65, 30)
+                # Post (left side, gate swung open along the wall)
+                pygame.draw.rect(s, brown,  (0, 0, 8, 32))
+                pygame.draw.rect(s, dbrown, (0, 0, 9, 3))
+                # Gate rails drawn horizontally (rotated 90° open)
+                pygame.draw.rect(s, brown,  (0, 8,  20, 4))
+                pygame.draw.rect(s, brown,  (0, 18, 20, 4))
+                surfs[bid] = s
+                continue
+            if bid == IRON_FENCE_OPEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                gray = (160, 160, 165)
+                dgray = (110, 110, 118)
+                # Post (left side, gate swung open along the wall)
+                pygame.draw.rect(s, gray,  (0, 0, 8, 32))
+                pygame.draw.rect(s, dgray, (0, 0, 9, 3))
+                # Gate rails drawn horizontally (rotated 90° open)
+                pygame.draw.rect(s, gray,  (0, 8,  20, 4))
+                pygame.draw.rect(s, gray,  (0, 18, 20, 4))
+                pygame.draw.polygon(s, dgray, [(4, 0), (1, 5), (7, 5)])
                 surfs[bid] = s
                 continue
             if bid == WOOD_DOOR_CLOSED:

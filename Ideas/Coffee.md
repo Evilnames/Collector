@@ -1,16 +1,14 @@
-Ready for review
-Select text to add comments on the plan
-Coffee Bean Mini-Game — Implementation Plan
-Context
+## Coffee Bean Mini-Game — Implementation Plan
+### Context
 Add a deep, multi-layered coffee system. The player finds and grows coffee in specific biomes, roasts it via a timing-based mini-game, blends different regional origins together, brews the blend using one of five methods, and drinks the result for a temporary buff. Flavor profiles are procedurally generated from origin biome × roast level × brew method, giving 35+ discoverable codex entries.
 
-Architecture Overview
-Coffee Bush (biome-specific) 
-  → harvest → CoffeeBean object (state="raw", origin biome encoded)
-  → Roaster mini-game → CoffeeBean (state="roasted", roast_level, roast_quality, flavor_notes set)
-  → Blend Station → CoffeeBean (state="blended", merged flavor profile, component uids)
-  → Brew Station + method → drinkable item (drip_coffee / espresso / etc.) → player buff
-CoffeeBean objects are stored in player.coffee_beans (never the item inventory), identical pattern to Gemstone objects.
+### Architecture Overview
+#### Coffee Bush (biome-specific) 
+- harvest → CoffeeBean object (state="raw", origin biome encoded)
+- Roaster mini-game → CoffeeBean (state="roasted", roast_level, roast_quality, flavor_notes set)
+- Blend Station → CoffeeBean (state="blended", merged flavor profile, component uids)
+- Brew Station + method → drinkable item (drip_coffee / espresso / etc.) → player buff
+- CoffeeBean objects are stored in player.coffee_beans (never the item inventory), identical pattern to Gemstone objects.
 
 New File: coffee.py
 CoffeeBean dataclass:

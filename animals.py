@@ -2,7 +2,7 @@ import random
 import uuid
 import pygame
 from constants import BLOCK_SIZE, GRAVITY, JUMP_FORCE, MAX_FALL, PLAYER_W, PLAYER_H, MINE_REACH, HOTBAR_SIZE
-from blocks import LADDER
+from blocks import LADDER, WOOD_FENCE, IRON_FENCE
 
 ANIMAL_MOVE_SPEED = 1.2
 ANIMAL_CLIMB_SPEED = 1.5
@@ -69,9 +69,10 @@ class Animal:
     def _move_x(self, dx):
         self.x += dx
         if self._collides():
+            hit_fence = self._collides_with_fence()
             self.x -= dx
             self.vx = 0.0
-            if self.on_ground:
+            if self.on_ground and not hit_fence:
                 self.vy = JUMP_FORCE
             else:
                 self._wander_dir = -self._wander_dir
@@ -98,6 +99,24 @@ class Animal:
                     return True
         return False
 
+    def _collides_with_fence(self):
+        left  = int(self.x // BLOCK_SIZE)
+        right = int((self.x + self.W - 1) // BLOCK_SIZE)
+        top   = int(self.y // BLOCK_SIZE)
+        bot   = int((self.y + self.H - 1) // BLOCK_SIZE)
+        for bx in range(left, right + 1):
+            for by in range(top, bot + 1):
+                bid = self.world.get_block(bx, by)
+                if bid in (WOOD_FENCE, IRON_FENCE):
+                    return True
+        return False
+
+    def _fence_in_direction(self, direction):
+        self.x += direction
+        result = self._collides_with_fence()
+        self.x -= direction
+        return result
+
     def _in_ladder(self):
         left  = int(self.x // BLOCK_SIZE)
         right = int((self.x + self.W - 1) // BLOCK_SIZE)
@@ -120,7 +139,7 @@ class Animal:
                 and not self.being_harvested):
             same = [e for e in self.world.entities
                     if type(e) is type(self) and not e.dead]
-            if len(same) < 8:
+            if len(same) < 500:
                 for other in same:
                     if other is self or other._breed_cooldown > 0:
                         continue
@@ -138,7 +157,11 @@ class Animal:
                 pdy = (player.y + PLAYER_H / 2) - (self.y + self.H / 2)
                 dist = ((pdx / BLOCK_SIZE) ** 2 + (pdy / BLOCK_SIZE) ** 2) ** 0.5
                 if dist > 2.5:
-                    self.vx = ANIMAL_MOVE_SPEED * (1 if pdx > 0 else -1)
+                    desired_dir = 1 if pdx > 0 else -1
+                    if self._fence_in_direction(desired_dir):
+                        self.vx = 0.0
+                    else:
+                        self.vx = ANIMAL_MOVE_SPEED * desired_dir
                 else:
                     self.vx = 0.0
                 if self.vx != 0:
@@ -188,10 +211,29 @@ class Animal:
         offspring.traits["size"] = max(0.85, min(1.15, sz))
         offspring.parent_a_uid = self.uid
         offspring.parent_b_uid = other.uid
+        offspring.tamed = True
         offspring._breed_cooldown = 120.0
         self._breed_cooldown = 120.0
         other._breed_cooldown = 120.0
         world.entities.append(offspring)
+
+        # Remove the most distant un-tamed animal of this type so the
+        # population doesn't grow unboundedly and crowded areas stay playable.
+        player = getattr(world, '_player_ref', None)
+        if player is not None:
+            pcx = player.x + PLAYER_W / 2
+            pcy = player.y + PLAYER_H / 2
+            candidates = [
+                e for e in world.entities
+                if type(e) is type(self) and not e.dead and not e.tamed
+                and e is not offspring
+            ]
+            if candidates:
+                farthest = max(
+                    candidates,
+                    key=lambda e: (e.x + e.W / 2 - pcx) ** 2 + (e.y + e.H / 2 - pcy) ** 2
+                )
+                farthest.dead = True
 
     def in_range(self, player):
         acx = (self.x + self.W / 2) / BLOCK_SIZE

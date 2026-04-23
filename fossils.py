@@ -21,6 +21,7 @@ class Fossil:
     depth_found: int
     seed: int
     upgrades: list = field(default_factory=list)
+    prepared: bool = False
 
 
 # ---------------------------------------------------------------------------

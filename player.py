@@ -3,6 +3,7 @@ import pygame
 from automations import Automation, AUTOMATION_DEFS, FarmBot, FARM_BOT_DEFS, FARM_BOT_TYPES, Backhoe
 from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT, GEM_DEPOSIT, CAVE_MUSHROOMS, EQUIPMENT_BLOCKS, LADDER, WATER,
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
+                    WOOD_FENCE, IRON_FENCE, WOOD_FENCE_OPEN, IRON_FENCE_OPEN,
                     SAPLING, GRASS, DIRT, ALL_LOGS, ALL_LEAVES,
                     YOUNG_CROP_BLOCKS, MATURE_CROP_BLOCKS, BUSH_BLOCKS,
                     STRAWBERRY_BUSH, WHEAT_BUSH,
@@ -24,13 +25,15 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     ZUCCHINI_CROP_MATURE, SWEET_POTATO_CROP_MATURE, WATERMELON_CROP_MATURE,
                     RADISH_CROP_MATURE, PEA_CROP_MATURE, CELERY_CROP_MATURE, BROCCOLI_CROP_MATURE,
                     PERENNIAL_CROP_MATURE, MATURE_TO_YOUNG_CROP, CHEST_BLOCK,
-                    OIL, BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK)
+                    OIL, BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK,
+                    COFFEE_CROP_MATURE)
 from items import ITEMS
 from rocks import RockGenerator, Rock
 from wildflowers import WildflowerGenerator, Wildflower
 from fossils import FossilGenerator, Fossil
 from gemstones import GemGenerator, Gemstone
 from fish import FishGenerator, Fish
+from coffee import CoffeeGenerator, CoffeeBean
 from constants import (
     BLOCK_SIZE, PLAYER_W, PLAYER_H,
     GRAVITY, JUMP_FORCE, MOVE_SPEED, MAX_FALL,
@@ -91,6 +94,12 @@ class Player:
         self.fish_caught = []
         self.discovered_fish_species = set()
         self._fish_gen = FishGenerator(world.seed)
+        # Coffee collection
+        self.coffee_beans = []
+        self.discovered_coffee_origins = set()  # "biome_roastlevel" strings
+        self._coffee_gen = CoffeeGenerator(world.seed)
+        # Active buffs from drinking coffee
+        self.active_buffs = {}  # buff_name -> {"duration": float}
         # Fishing mini-game state
         self.fishing_state = None     # None | "casting" | "biting" | "result"
         self._fishing_timer = 0.0
@@ -126,6 +135,14 @@ class Player:
         self.mounted_machine = None
         # Doors the player auto-opened by walking into them
         self._auto_opened_doors = set()  # set of (bx, by)
+        # Research-derived bonuses (computed by ResearchTree.apply_bonuses)
+        self.crop_grow_bonus            = 0.0   # added to 0.15 crop-mature chance
+        self.harvest_bonus              = 0     # extra drops per crop harvest
+        self.roast_quality_bonus        = 0.0   # multiplied onto roast quality result
+        self.coffee_buff_duration_bonus = 0.0   # fraction added to buff duration
+        self.bird_spook_reduction       = 0.0   # fraction of spook radius removed
+        self.bird_feeder_bonus          = 1.0   # multiplier on feeder attraction chance
+        self.avian_mastery              = False # enables larger flocks
 
     def apply_save(self, d):
         self.x, self.y = d["x"], d["y"]
@@ -143,6 +160,8 @@ class Player:
         self.fossils = [Fossil(**f) for f in d.get("fossils", [])]
         self.gems = [Gemstone(**g) for g in d.get("gems", [])]
         self.fish_caught = [Fish(**f) for f in d.get("fish", [])]
+        self.coffee_beans = [CoffeeBean(**cb) for cb in d.get("coffee_beans", [])]
+        self.discovered_coffee_origins = set(d.get("discovered_coffee_origins", []))
         self.birds_observed = d.get("birds_observed", {})
         self.discovered_bird_types = set(d.get("discovered_bird_types", []))
         self.discovered_types = set(d["discovered_types"])
@@ -163,11 +182,12 @@ class Player:
         if self.mounted_machine is not None:
             return
         self.vx = 0.0
+        speed = MOVE_SPEED * (1.25 if "rush" in self.active_buffs else 1.0)
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            self.vx = -MOVE_SPEED
+            self.vx = -speed
             self.facing = -1
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            self.vx = MOVE_SPEED
+            self.vx = speed
             self.facing = 1
 
         if self._in_ladder():
@@ -392,6 +412,12 @@ class Player:
                 self.discovered_gem_types.add(gem.gem_type)
                 self.pending_notifications.append(
                     ("Gem", gem.gem_type.replace("_", " ").title(), gem.rarity))
+            elif block_id == COFFEE_CROP_MATURE:
+                biodome = self.world.get_biodome(bx)
+                bean = self._coffee_gen.generate(biodome)
+                self.coffee_beans.append(bean)
+                self._add_item("coffee_seed")
+                self.pending_notifications.append(("Coffee", "Coffee Cherry", None))
             elif block_id in CAVE_MUSHROOMS:
                 self.mushrooms_found[block_id] = self.mushrooms_found.get(block_id, 0) + 1
                 self.discovered_mushroom_types.add(block_id)
@@ -402,6 +428,8 @@ class Player:
                 if drop:
                     chance = block_data.get("drop_chance", 1.0)
                     if random.random() < chance:
+                        self._add_item(drop)
+                    if self.harvest_bonus >= 1 and block_id in MATURE_CROP_BLOCKS:
                         self._add_item(drop)
                 if block_id == CHEST_BLOCK:
                     for item_id, count in self.world.chest_data.pop((bx, by), {}).items():
@@ -594,6 +622,18 @@ class Player:
                 for dy in (-1, 1):
                     if self.world.get_block(bx, by + dy) == IRON_DOOR_OPEN:
                         self.world.set_block(bx, by + dy, IRON_DOOR_CLOSED); break
+                return
+            if current == WOOD_FENCE:
+                self.world.set_block(bx, by, WOOD_FENCE_OPEN)
+                return
+            if current == WOOD_FENCE_OPEN:
+                self.world.set_block(bx, by, WOOD_FENCE)
+                return
+            if current == IRON_FENCE:
+                self.world.set_block(bx, by, IRON_FENCE_OPEN)
+                return
+            if current == IRON_FENCE_OPEN:
+                self.world.set_block(bx, by, IRON_FENCE)
                 return
         item_id = self.hotbar[self.selected_slot]
         if item_id is None:
@@ -869,6 +909,11 @@ class Player:
         self.hunger = min(100.0, self.hunger + hunger_restore)
         self.health = min(MAX_HEALTH, self.health + hunger_restore * 0.25)
         self._eat_cooldown = 0.5
+        if item_data.get("coffee_buff"):
+            buff = item_data["coffee_buff"]
+            duration = item_data.get("coffee_buff_duration", 60.0)
+            duration *= 1.0 + self.coffee_buff_duration_bonus
+            self.active_buffs[buff] = {"duration": duration}
         self.inventory[item_id] -= 1
         if self.inventory[item_id] <= 0:
             del self.inventory[item_id]
@@ -912,8 +957,14 @@ class Player:
         # Hunger drain and starvation damage
         if self._eat_cooldown > 0:
             self._eat_cooldown -= dt
+        # Tick active coffee buffs
+        for buff in list(self.active_buffs):
+            self.active_buffs[buff]["duration"] -= dt
+            if self.active_buffs[buff]["duration"] <= 0:
+                del self.active_buffs[buff]
         if not self.god_mode:
-            self.hunger = max(0.0, self.hunger - self._hunger_drain_rate * dt)
+            drain_mult = 0.6 if "endurance" in self.active_buffs else 1.0
+            self.hunger = max(0.0, self.hunger - self._hunger_drain_rate * drain_mult * dt)
             if self.hunger == 0.0:
                 self.health = max(0, self.health - 3 * dt)
         # Death detection
@@ -1069,7 +1120,8 @@ class Player:
     def effective_pick_power(self):
         item_id = self.hotbar[self.selected_slot]
         tool_power = ITEMS.get(item_id, {}).get("pick_power", 0) if item_id else 0
-        return max(self.pick_power, tool_power)
+        bonus = 1 if "strength" in self.active_buffs else 0
+        return max(self.pick_power, tool_power) + bonus
 
     @property
     def effective_axe_power(self):

@@ -177,6 +177,15 @@ BAOBAB_LEAVES  = 208
 BIRD_FEEDER_BLOCK = 209
 BIRD_BATH_BLOCK   = 210
 
+COFFEE_BUSH           = 211
+COFFEE_CROP_YOUNG     = 212
+COFFEE_CROP_MATURE    = 213   # special: mine → CoffeeBean object + coffee_seed drop
+ROASTER_BLOCK         = 214
+BLEND_STATION_BLOCK   = 215
+BREW_STATION_BLOCK    = 216
+WOOD_FENCE_OPEN      = 217
+IRON_FENCE_OPEN      = 218
+
 HOUSE_WALL           = 108  # city house wall block
 HOUSE_ROOF           = 109  # city house roof block
 WILDFLOWER_PATCH     = 110  # surface collectable; interact → generates unique Wildflower object
@@ -226,7 +235,7 @@ GEM_DEPOSIT      = 151  # special: mine → generates unique Gemstone object, no
 SNOW             = 152  # alpine_mountain surface block; falls like grass
 SAND             = 153  # desert/beach surface block; falls like snow
 
-OPEN_DOORS = {WOOD_DOOR_OPEN, IRON_DOOR_OPEN}
+OPEN_DOORS = {WOOD_DOOR_OPEN, IRON_DOOR_OPEN, WOOD_FENCE_OPEN, IRON_FENCE_OPEN}
 
 CAVE_MUSHROOMS = {
     CAVE_MUSHROOM, EMBER_CAP, PALE_GHOST, GOLD_CHANTERELLE, COBALT_CAP,
@@ -261,35 +270,39 @@ LEAF_LOG_MAP = {
 
 EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, BAKERY_BLOCK,
                     WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
-                    DESERT_FORGE_BLOCK}
+                    DESERT_FORGE_BLOCK,
+                    ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT}
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
                      RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, GARLIC_BUSH, SCALLION_BUSH, CHILI_BUSH,
                      PEPPER_BUSH, ONION_BUSH, POTATO_BUSH, EGGPLANT_BUSH, CABBAGE_BUSH,
                      BEET_BUSH, TURNIP_BUSH, LEEK_BUSH, ZUCCHINI_BUSH, SWEET_POTATO_BUSH,
                      WATERMELON_BUSH, RADISH_BUSH, PEA_BUSH, CELERY_BUSH, BROCCOLI_BUSH,
-                     DATE_PALM_BUSH, AGAVE_BUSH}
+                     DATE_PALM_BUSH, AGAVE_BUSH,
+                     COFFEE_BUSH}
 YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG, TOMATO_CROP_YOUNG, CORN_CROP_YOUNG, PUMPKIN_CROP_YOUNG, APPLE_CROP_YOUNG,
                      RICE_CROP_YOUNG, GINGER_CROP_YOUNG, BOK_CHOY_CROP_YOUNG, GARLIC_CROP_YOUNG,
                      SCALLION_CROP_YOUNG, CHILI_CROP_YOUNG,
                      PEPPER_CROP_YOUNG, ONION_CROP_YOUNG, POTATO_CROP_YOUNG, EGGPLANT_CROP_YOUNG, CABBAGE_CROP_YOUNG,
                      BEET_CROP_YOUNG, TURNIP_CROP_YOUNG, LEEK_CROP_YOUNG, ZUCCHINI_CROP_YOUNG, SWEET_POTATO_CROP_YOUNG,
                      WATERMELON_CROP_YOUNG, RADISH_CROP_YOUNG, PEA_CROP_YOUNG, CELERY_CROP_YOUNG, BROCCOLI_CROP_YOUNG,
-                     CACTUS_YOUNG, DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG}
+                     CACTUS_YOUNG, DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG,
+                     COFFEE_CROP_YOUNG}
 MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATURE, TOMATO_CROP_MATURE, CORN_CROP_MATURE, PUMPKIN_CROP_MATURE, APPLE_CROP_MATURE,
                      RICE_CROP_MATURE, GINGER_CROP_MATURE, BOK_CHOY_CROP_MATURE, GARLIC_CROP_MATURE,
                      SCALLION_CROP_MATURE, CHILI_CROP_MATURE,
                      PEPPER_CROP_MATURE, ONION_CROP_MATURE, POTATO_CROP_MATURE, EGGPLANT_CROP_MATURE, CABBAGE_CROP_MATURE,
                      BEET_CROP_MATURE, TURNIP_CROP_MATURE, LEEK_CROP_MATURE, ZUCCHINI_CROP_MATURE, SWEET_POTATO_CROP_MATURE,
                      WATERMELON_CROP_MATURE, RADISH_CROP_MATURE, PEA_CROP_MATURE, CELERY_CROP_MATURE, BROCCOLI_CROP_MATURE,
-                     CACTUS_MATURE, DATE_PALM_CROP_MATURE, AGAVE_CROP_MATURE}
+                     CACTUS_MATURE, DATE_PALM_CROP_MATURE, AGAVE_CROP_MATURE,
+                     COFFEE_CROP_MATURE}
 CROP_BLOCKS       = YOUNG_CROP_BLOCKS | MATURE_CROP_BLOCKS
 
 # Perennial crops regrow after harvest (each harvest has ~33% chance to die)
 PERENNIAL_CROP_MATURE = {
     STRAWBERRY_CROP_MATURE, APPLE_CROP_MATURE, TOMATO_CROP_MATURE,
     PEPPER_CROP_MATURE, CHILI_CROP_MATURE, EGGPLANT_CROP_MATURE,
-    CACTUS_MATURE,
+    CACTUS_MATURE, COFFEE_CROP_MATURE,
 }
 
 # Reverse mapping: mature → young, used for perennial regrowth
@@ -325,6 +338,7 @@ MATURE_TO_YOUNG_CROP = {
     CACTUS_MATURE:            CACTUS_YOUNG,
     DATE_PALM_CROP_MATURE:    DATE_PALM_CROP_YOUNG,
     AGAVE_CROP_MATURE:        AGAVE_CROP_YOUNG,
+    COFFEE_CROP_MATURE:       COFFEE_CROP_YOUNG,
 }
 
 BLOCKS = {
@@ -490,8 +504,10 @@ BLOCKS = {
     MAGMA_CAP:        {"name": "Magma Cap",          "hardness": 0.3, "color": ( 85,  20,  15), "drop": "rare_mushroom",  "drop_chance": 1.0},
     DEEP_INK:         {"name": "Deep Ink",           "hardness": 0.3, "color": ( 40,  20,  60), "drop": "rare_mushroom",  "drop_chance": 1.0},
     BIOLUME:          {"name": "Biolume",            "hardness": 0.3, "color": ( 30, 210, 195), "drop": "glowing_spore",  "drop_chance": 1.0},
-    WOOD_FENCE:       {"name": "Wood Fence",       "hardness": 2,   "color": (139, 90,  43),  "drop": "wood_fence"},
-    IRON_FENCE:       {"name": "Iron Fence",        "hardness": 4,   "color": (160, 160, 165), "drop": "iron_fence"},
+    WOOD_FENCE:       {"name": "Wood Fence",         "hardness": 2,   "color": (139, 90,  43),  "drop": "wood_fence"},
+    IRON_FENCE:       {"name": "Iron Fence",          "hardness": 4,   "color": (160, 160, 165), "drop": "iron_fence"},
+    WOOD_FENCE_OPEN:  {"name": "Wood Fence (Open)",   "hardness": 2,   "color": (139, 90,  43),  "drop": "wood_fence"},
+    IRON_FENCE_OPEN:  {"name": "Iron Fence (Open)",   "hardness": 4,   "color": (160, 160, 165), "drop": "iron_fence"},
     WOOD_DOOR_CLOSED: {"name": "Wood Door",         "hardness": 2,   "color": (139, 90,  43),  "drop": "wood_door"},
     WOOD_DOOR_OPEN:   {"name": "Wood Door (Open)",  "hardness": 2,   "color": (139, 90,  43),  "drop": "wood_door"},
     IRON_DOOR_CLOSED: {"name": "Iron Door",         "hardness": 4,   "color": (160, 160, 165), "drop": "iron_door"},
@@ -547,4 +563,11 @@ BLOCKS = {
     OIL:                    {"name": "Oil",                      "hardness": float('inf'),    "color": ( 30,  22,  10), "drop": None},
     BIRD_FEEDER_BLOCK:      {"name": "Bird Feeder",              "hardness": 1.5,             "color": (160, 115,  65), "drop": "bird_feeder"},
     BIRD_BATH_BLOCK:        {"name": "Bird Bath",                "hardness": 2.0,             "color": (185, 180, 172), "drop": "bird_bath"},
+    # --- Coffee supply chain ---
+    COFFEE_BUSH:            {"name": "Coffee Bush",              "hardness": 0.5, "color": ( 60, 100,  40), "drop": "coffee_seed",    "drop_chance": 1.0},
+    COFFEE_CROP_YOUNG:      {"name": "Coffee Plant",             "hardness": 0.5, "color": ( 75, 140,  60), "drop": "coffee_seed",    "drop_chance": 1.0},
+    COFFEE_CROP_MATURE:     {"name": "Coffee Plant (Ripe)",      "hardness": 0.5, "color": (160,  45,  30), "drop": None},
+    ROASTER_BLOCK:          {"name": "Coffee Roaster",           "hardness": 1.5, "color": ( 95,  55,  25), "drop": "roaster_item"},
+    BLEND_STATION_BLOCK:    {"name": "Blend Station",            "hardness": 1.5, "color": (110,  75,  40), "drop": "blend_station_item"},
+    BREW_STATION_BLOCK:     {"name": "Brew Station",             "hardness": 1.5, "color": ( 75,  60,  45), "drop": "brew_station_item"},
 }

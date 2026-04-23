@@ -891,6 +891,39 @@ def _icon_farm_bot(surf, color, s):
     pygame.draw.rect(surf, _darker(color, 60), r, 2)
 
 
+def _icon_coffee_seed(surf, color, s):
+    cx, cy = s // 2, s // 2
+    pygame.draw.ellipse(surf, color, (cx - s * 5 // 20, cy - s * 7 // 20, s * 10 // 20, s * 14 // 20))
+    pygame.draw.ellipse(surf, _darker(color, 40), (cx - s * 5 // 20, cy - s * 7 // 20, s * 10 // 20, s * 14 // 20), 1)
+    pygame.draw.line(surf, _darker(color, 60), (cx, cy - s * 7 // 20), (cx, cy + s * 7 // 20), 1)
+
+
+def _icon_coffee_cherry(surf, color, s):
+    cx, cy = s // 2, s // 2 + 2
+    pygame.draw.circle(surf, color, (cx, cy), s * 7 // 20)
+    pygame.draw.circle(surf, _lighter(color, 60), (cx - 3, cy - 3), s * 2 // 20)
+    pygame.draw.line(surf, (60, 100, 40), (cx, cy - s * 7 // 20), (cx + 4, cy - s * 7 // 20 - 6), 2)
+
+
+def _icon_coffee_cup(surf, color, s):
+    cx = s // 2
+    cup_y = s * 5 // 14
+    cup_h = s * 7 // 14
+    cup_w = s * 9 // 14
+    pygame.draw.rect(surf, color, (cx - cup_w // 2, cup_y, cup_w, cup_h))
+    pygame.draw.rect(surf, _darker(color, 30), (cx - cup_w // 2, cup_y, cup_w, cup_h), 1)
+    pygame.draw.line(surf, _lighter(color, 40),
+                     (cx + cup_w // 2, cup_y + cup_h // 4),
+                     (cx + cup_w // 2 + s // 8, cup_y + cup_h // 2), 2)
+    steam_c = _lighter(color, 100)
+    for ox in (-4, 0, 4):
+        for i in range(2):
+            y0 = cup_y - s // 8 - i * (s // 10)
+            pygame.draw.arc(surf, steam_c,
+                            pygame.Rect(cx + ox - 3, y0 - s // 12, 6, s // 12),
+                            0, math.pi, 1)
+
+
 # ---------------------------------------------------------------------------
 # Dispatch table
 # ---------------------------------------------------------------------------
@@ -1130,6 +1163,28 @@ _ICONS = {
     "cactus_candy":    _round_food,
     "desert_salad":    _bowl,
     "date_palm_broth": _bowl,
+
+    # Coffee supply chain
+    "coffee_seed":           _icon_coffee_seed,
+    "coffee_cherry":         _icon_coffee_cherry,
+    "roaster_item":          _machine,
+    "blend_station_item":    _machine,
+    "brew_station_item":     _machine,
+    "drip_coffee":           _icon_coffee_cup,
+    "espresso":              _icon_coffee_cup,
+    "pour_over":             _icon_coffee_cup,
+    "cold_brew":             _icon_coffee_cup,
+    "french_press":          _icon_coffee_cup,
+    "drip_coffee_fine":      _icon_coffee_cup,
+    "espresso_fine":         _icon_coffee_cup,
+    "pour_over_fine":        _icon_coffee_cup,
+    "cold_brew_fine":        _icon_coffee_cup,
+    "french_press_fine":     _icon_coffee_cup,
+    "drip_coffee_superior":  _icon_coffee_cup,
+    "espresso_superior":     _icon_coffee_cup,
+    "pour_over_superior":    _icon_coffee_cup,
+    "cold_brew_superior":    _icon_coffee_cup,
+    "french_press_superior": _icon_coffee_cup,
 }
 
 

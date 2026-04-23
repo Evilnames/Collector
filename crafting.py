@@ -581,7 +581,51 @@ RECIPES = [
         "output_id":    "bird_bath",
         "output_count": 1,
     },
+    # --- Coffee equipment ---
+    {
+        "name": "Coffee Roaster",
+        "pattern": [
+            ["stone_chip",  "iron_chunk",  "stone_chip"],
+            ["iron_chunk",  "coal",        "iron_chunk"],
+            ["stone_chip",  "lumber",      "stone_chip"],
+        ],
+        "output_id":    "roaster_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Blend Station",
+        "pattern": [
+            ["lumber",     "lumber",     "lumber"    ],
+            ["iron_chunk", None,         "iron_chunk"],
+            ["stone_chip", "stone_chip", "stone_chip"],
+        ],
+        "output_id":    "blend_station_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Brew Station",
+        "pattern": [
+            ["iron_chunk", "lumber",     "iron_chunk"],
+            ["lumber",     None,         "lumber"    ],
+            ["stone_chip", "iron_chunk", "stone_chip"],
+        ],
+        "output_id":    "brew_station_item",
+        "output_count": 1,
+    },
 ]
+
+
+# Maps output_id -> research node_id required before that recipe is available.
+RESEARCH_LOCKED_RECIPES = {
+    "farm_bot_item":         "soil_prep",
+    "iron_farm_bot_item":    "selective_breeding",
+    "crystal_farm_bot_item": "agri_automation",
+    "roaster_item":          "coffee_basics",
+    "blend_station_item":    "blend_arts",
+    "brew_station_item":     "brew_expertise",
+    "bird_feeder":           "bird_watching",
+    "bird_bath":             "bird_sanctuary",
+}
 
 
 def match_recipe(grid):
@@ -607,6 +651,25 @@ def can_craft(grid, inventory):
     """Return True if grid matches a recipe and inventory has the required items."""
     out_id, _ = match_recipe(grid)
     if not out_id:
+        return False
+    return all(inventory.get(iid, 0) >= needed
+               for iid, needed in craft_costs(grid).items())
+
+
+def is_research_locked(out_id, research):
+    """Return True if out_id requires research that hasn't been unlocked."""
+    if research is None or out_id not in RESEARCH_LOCKED_RECIPES:
+        return False
+    node = research.nodes.get(RESEARCH_LOCKED_RECIPES[out_id])
+    return node is None or not node.unlocked
+
+
+def can_craft_with_research(grid, inventory, research=None):
+    """Like can_craft but also checks research locks."""
+    out_id, _ = match_recipe(grid)
+    if not out_id:
+        return False
+    if is_research_locked(out_id, research):
         return False
     return all(inventory.get(iid, 0) >= needed
                for iid, needed in craft_costs(grid).items())

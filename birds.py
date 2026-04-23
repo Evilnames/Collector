@@ -93,8 +93,10 @@ class Bird:
     def _pick_flight_target(self, rng=None):
         """Pick a new (target_x, target_y) roughly ±30–100 blocks away."""
         rng = rng or random
-        # 40% chance to head toward a feeder or bath if one exists nearby
-        if rng.random() < 0.40:
+        # 40% base chance to head toward a feeder or bath if one exists nearby
+        _player = getattr(self.world, '_player_ref', None)
+        _feeder_mult = getattr(_player, 'bird_feeder_bonus', 1.0) if _player else 1.0
+        if rng.random() < min(0.90, 0.40 * _feeder_mult):
             fb = self._find_feeder_bath()
             if fb:
                 bx, by, _ = fb
@@ -165,6 +167,9 @@ class Bird:
             spook_radius = 12
         else:
             spook_radius = SPOOK_RADIUS_BLOCKS
+        player = getattr(self.world, '_player_ref', None)
+        reduction = getattr(player, 'bird_spook_reduction', 0.0) if player else 0.0
+        spook_radius = spook_radius * (1.0 - reduction)
         if (self._player_dist_blocks() < spook_radius and self._player_moving()):
             self.spook()
             return

@@ -22,7 +22,7 @@ class SaveManager:
                 self._create_tables(con)
                 for tbl in ("save_meta", "chunks", "bg_chunks", "world_meta", "player",
                             "rocks", "wildflowers", "fossils", "gems", "bird_observations",
-                            "fish",
+                            "fish", "coffee_beans",
                             "research", "automations",
                             "farm_bots", "backhoes", "entities", "dropped_items", "chests"):
                     # global_collection and achievements are intentionally preserved
@@ -59,6 +59,7 @@ class SaveManager:
             self._save_fossils(con, player)
             self._save_gems(con, player)
             self._save_fish(con, player)
+            self._save_coffee_beans(con, player)
             self._save_bird_observations(con, player)
             self._save_research(con, research)
             self._save_automations(con, world)
@@ -326,6 +327,23 @@ class SaveManager:
         CREATE TABLE IF NOT EXISTS chests (
             x INTEGER, y INTEGER, contents TEXT
         );
+        CREATE TABLE IF NOT EXISTS coffee_beans (
+            uid                TEXT PRIMARY KEY,
+            origin_biome       TEXT,
+            variety            TEXT,
+            state              TEXT,
+            roast_level        TEXT,
+            roast_quality      REAL,
+            acidity            REAL,
+            body               REAL,
+            sweetness          REAL,
+            earthiness         REAL,
+            brightness         REAL,
+            flavor_notes       TEXT,
+            seed               INTEGER,
+            blend_components   TEXT,
+            processing_method  TEXT DEFAULT ''
+        );
         CREATE TABLE IF NOT EXISTS global_collection (
             category TEXT NOT NULL,
             item_id  TEXT NOT NULL,
@@ -382,6 +400,11 @@ class SaveManager:
             con.execute(
                 "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
                 ("fish", t),
+            )
+        for t in player.discovered_coffee_origins:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("coffee", t),
             )
 
     def _check_and_save_achievements(self, con):
@@ -637,6 +660,24 @@ class SaveManager:
                 )
             )
 
+    def _save_coffee_beans(self, con, player):
+        try:
+            con.execute("ALTER TABLE coffee_beans ADD COLUMN processing_method TEXT DEFAULT ''")
+        except Exception:
+            pass
+        con.execute("DELETE FROM coffee_beans")
+        for b in player.coffee_beans:
+            con.execute(
+                "INSERT OR REPLACE INTO coffee_beans VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    b.uid, b.origin_biome, b.variety, b.state, b.roast_level,
+                    b.roast_quality, b.acidity, b.body, b.sweetness, b.earthiness, b.brightness,
+                    json.dumps(b.flavor_notes), b.seed,
+                    json.dumps(b.blend_components),
+                    getattr(b, "processing_method", ""),
+                )
+            )
+
     def _save_bird_observations(self, con, player):
         con.execute("DELETE FROM bird_observations")
         for species_id, data in player.birds_observed.items():
@@ -866,6 +907,26 @@ class SaveManager:
                 "habitat": f[8], "biome_found": f[9] or "", "seed": f[10],
             })
 
+        coffee_rows = con.execute("""
+            SELECT uid, origin_biome, variety, state, roast_level, roast_quality,
+                   acidity, body, sweetness, earthiness, brightness,
+                   flavor_notes, seed, blend_components,
+                   COALESCE(processing_method, '')
+            FROM coffee_beans
+        """).fetchall()
+        coffee_data = []
+        for c in coffee_rows:
+            coffee_data.append({
+                "uid": c[0], "origin_biome": c[1], "variety": c[2], "state": c[3],
+                "roast_level": c[4], "roast_quality": c[5],
+                "acidity": c[6], "body": c[7], "sweetness": c[8],
+                "earthiness": c[9], "brightness": c[10],
+                "flavor_notes": json.loads(c[11]) if c[11] else [],
+                "seed": c[12],
+                "blend_components": json.loads(c[13]) if c[13] else [],
+                "processing_method": c[14] or "",
+            })
+
         return {
             "x": x, "y": y, "vx": vx, "vy": vy, "facing": facing,
             "health": health, "hunger": hunger, "pick_power": pick_power,
@@ -888,6 +949,11 @@ class SaveManager:
             "discovered_bird_types": list((bird_obs or {}).keys()),
             "fish": fish_data,
             "discovered_fish_species": list({f["species"] for f in fish_data}),
+            "coffee_beans": coffee_data,
+            "discovered_coffee_origins": list({
+                f"{c['origin_biome']}_{c['roast_level']}"
+                for c in coffee_data if c["state"] != "raw"
+            }),
             "spawn_x": spawn_x,
             "spawn_y": spawn_y,
         }

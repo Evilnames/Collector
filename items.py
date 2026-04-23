@@ -18,7 +18,8 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     RADISH_CROP_YOUNG, PEA_CROP_YOUNG, CELERY_CROP_YOUNG, BROCCOLI_CROP_YOUNG,
                     CACTUS_YOUNG, SANDSTONE_BLOCK, DESERT_FORGE_BLOCK, SAND,
                     DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG,
-                    BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK)
+                    BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK,
+                    COFFEE_CROP_YOUNG, ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK)
 
 ITEMS = {
     # --- Natural resources ---
@@ -267,4 +268,29 @@ ITEMS = {
     # --- Fishing ---
     "fishing_pole": {"name": "Fishing Pole", "color": (139, 90,  43),  "place_block": None, "fishing_tool": True, "max_uses": 60},
     "fish":         {"name": "Fish",         "color": (100, 160, 200), "place_block": None, "edible": True, "hunger_restore": 30},
+    # --- Coffee supply chain ---
+    "coffee_seed":          {"name": "Coffee Seed",       "color": ( 80, 105,  55), "place_block": COFFEE_CROP_YOUNG},
+    "coffee_cherry":        {"name": "Coffee Cherry",     "color": (170,  40,  30), "place_block": None, "edible": True, "hunger_restore": 4},
+    # Coffee equipment
+    "roaster_item":         {"name": "Coffee Roaster",    "color": ( 95,  55,  25), "place_block": ROASTER_BLOCK},
+    "blend_station_item":   {"name": "Blend Station",     "color": (110,  75,  40), "place_block": BLEND_STATION_BLOCK},
+    "brew_station_item":    {"name": "Brew Station",      "color": ( 75,  60,  45), "place_block": BREW_STATION_BLOCK},
+    # Brewed coffee — base quality
+    "drip_coffee":          {"name": "Drip Coffee",       "color": ( 55,  35,  18), "place_block": None, "edible": True, "hunger_restore": 8,  "coffee_buff": "focus",     "coffee_buff_duration": 90.0},
+    "espresso":             {"name": "Espresso",          "color": ( 30,  18,   8), "place_block": None, "edible": True, "hunger_restore": 5,  "coffee_buff": "rush",      "coffee_buff_duration": 45.0},
+    "pour_over":            {"name": "Pour Over",         "color": ( 60,  40,  22), "place_block": None, "edible": True, "hunger_restore": 8,  "coffee_buff": "clarity",   "coffee_buff_duration": 60.0},
+    "cold_brew":            {"name": "Cold Brew",         "color": ( 40,  25,  12), "place_block": None, "edible": True, "hunger_restore": 10, "coffee_buff": "endurance", "coffee_buff_duration": 120.0},
+    "french_press":         {"name": "French Press",      "color": ( 45,  28,  14), "place_block": None, "edible": True, "hunger_restore": 10, "coffee_buff": "strength",  "coffee_buff_duration": 75.0},
+    # Brewed coffee — fine quality (+25% duration)
+    "drip_coffee_fine":     {"name": "Drip Coffee (Fine)",    "color": ( 65,  42,  20), "place_block": None, "edible": True, "hunger_restore": 10, "coffee_buff": "focus",     "coffee_buff_duration": 112.0},
+    "espresso_fine":        {"name": "Espresso (Fine)",       "color": ( 38,  22,  10), "place_block": None, "edible": True, "hunger_restore": 7,  "coffee_buff": "rush",      "coffee_buff_duration": 56.0},
+    "pour_over_fine":       {"name": "Pour Over (Fine)",      "color": ( 70,  48,  26), "place_block": None, "edible": True, "hunger_restore": 10, "coffee_buff": "clarity",   "coffee_buff_duration": 75.0},
+    "cold_brew_fine":       {"name": "Cold Brew (Fine)",      "color": ( 48,  30,  14), "place_block": None, "edible": True, "hunger_restore": 12, "coffee_buff": "endurance", "coffee_buff_duration": 150.0},
+    "french_press_fine":    {"name": "French Press (Fine)",   "color": ( 55,  34,  17), "place_block": None, "edible": True, "hunger_restore": 12, "coffee_buff": "strength",  "coffee_buff_duration": 94.0},
+    # Brewed coffee — superior quality (+50% duration)
+    "drip_coffee_superior": {"name": "Drip Coffee (Superior)",    "color": ( 78,  52,  25), "place_block": None, "edible": True, "hunger_restore": 12, "coffee_buff": "focus",     "coffee_buff_duration": 135.0},
+    "espresso_superior":    {"name": "Espresso (Superior)",       "color": ( 48,  28,  12), "place_block": None, "edible": True, "hunger_restore": 9,  "coffee_buff": "rush",      "coffee_buff_duration": 68.0},
+    "pour_over_superior":   {"name": "Pour Over (Superior)",      "color": ( 82,  58,  30), "place_block": None, "edible": True, "hunger_restore": 12, "coffee_buff": "clarity",   "coffee_buff_duration": 90.0},
+    "cold_brew_superior":   {"name": "Cold Brew (Superior)",      "color": ( 58,  36,  18), "place_block": None, "edible": True, "hunger_restore": 15, "coffee_buff": "endurance", "coffee_buff_duration": 180.0},
+    "french_press_superior":{"name": "French Press (Superior)",   "color": ( 65,  42,  20), "place_block": None, "edible": True, "hunger_restore": 15, "coffee_buff": "strength",  "coffee_buff_duration": 112.0},
 }

@@ -10,10 +10,10 @@ from renderer import Renderer
 from ui import UI
 from research import ResearchTree
 from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
-from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, Backhoe
+from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK
 
 SETTINGS_PATH = Path(__file__).parent / "settings.json"
 
@@ -387,6 +387,7 @@ def main():
             return w, p, data["research"]
         world, player, research_data = _run_with_loading_screen(screen, "Loading", _do_load)
         research.apply_save(research_data)
+        research.apply_bonuses(player)
         t0 = _t("research.apply_save", t0)
     else:
         seed = random.randint(0, 2**31 - 1)
@@ -529,6 +530,10 @@ def main():
                         _close_all_ui()
                     continue
 
+                # Roaster: ENTER to stop roasting
+                if ui.refinery_open and ui.refinery_block_id == ROASTER_BLOCK:
+                    ui.handle_roaster_keydown(event.key, player)
+
                 if event.key == pygame.K_ESCAPE:
                     if player.fishing_state in ("casting", "biting"):
                         player.fishing_state = None
@@ -563,10 +568,7 @@ def main():
                         _candidate = (bh.arm_dx, bh.arm_dy + 1)
                     if _candidate is not None and _candidate[0] ** 2 + _candidate[1] ** 2 <= _arm_r_sq:
                         if _candidate != (0, 0):
-                            _cbx, _cby = bh.center_block()
-                            _tbx, _tby = _cbx + _candidate[0], _cby + _candidate[1]
-                            if not world.is_solid(_tbx, _tby):
-                                bh.arm_dx, bh.arm_dy = _candidate
+                            bh.arm_dx, bh.arm_dy = _candidate
 
                 if event.key == pygame.K_BACKQUOTE:
                     ui.cheat_open = True
@@ -727,6 +729,11 @@ def main():
                     if action == "pickup":
                         auto = ui.active_automation
                         auto.take_all(player)
+                        fuel_back = int(auto.fuel)
+                        if fuel_back > 0:
+                            fuel_item = AUTOMATION_DEFS[auto.auto_type]["fuel_item"]
+                            for _ in range(fuel_back):
+                                player._add_item(fuel_item)
                         world.automations.remove(auto)
                         item_id = AUTOMATION_ITEM.get(auto.auto_type)
                         if item_id:
@@ -734,7 +741,22 @@ def main():
                         ui.automation_open = False
                         ui.active_automation = None
                 elif ui.farm_bot_open:
-                    ui.handle_farm_bot_click(event.pos, player)
+                    result = ui.handle_farm_bot_click(event.pos, player)
+                    if result == "pickup":
+                        fb = ui.active_farm_bot
+                        fb.take_all(player)
+                        fb.get_seeds(player)
+                        fuel_back = int(fb.fuel)
+                        if fuel_back > 0:
+                            fuel_item = fb._def["fuel_item"]
+                            for _ in range(fuel_back):
+                                player._add_item(fuel_item)
+                        world.farm_bots.remove(fb)
+                        item_id = FARM_BOT_ITEM.get(fb.bot_type)
+                        if item_id:
+                            player._add_item(item_id)
+                        ui.farm_bot_open = False
+                        ui.active_farm_bot = None
                 elif ui.backhoe_open:
                     result = ui.handle_backhoe_click(event.pos, player)
                     if result == "ride":
@@ -743,6 +765,15 @@ def main():
                         player.mounted_machine = bh
                         player.x = bh.x + (bh.W - PLAYER_W) / 2
                         player.y = bh.y
+                    elif result == "pickup":
+                        bh = ui.active_backhoe
+                        bh.take_all(player)
+                        fuel_back = int(bh.fuel)
+                        for _ in range(fuel_back):
+                            player._add_item("oil_barrel")
+                        world.backhoes.remove(bh)
+                        player._add_item("backhoe_item")
+                        ui.close_backhoe()
                 elif ui.npc_open:
                     ui.handle_npc_click(event.pos, player)
                 elif ui.research_open:
@@ -750,7 +781,7 @@ def main():
                 elif ui.inventory_open:
                     ui.handle_inventory_click(event.pos, player)
                 elif ui.crafting_open:
-                    ui.handle_crafting_click(event.pos, player, event.button)
+                    ui.handle_crafting_click(event.pos, player, event.button, research)
                 elif ui.collection_open:
                     ui.handle_collection_click(event.pos, player)
                 elif ui.breeding_open:
@@ -760,6 +791,10 @@ def main():
                         ui.handle_gem_cutter_click(event.pos, player)
                     else:
                         ui.handle_refinery_click(event.pos, player)
+                        # Roaster heat button also responds to mouse down
+                        if ui.refinery_block_id == ROASTER_BLOCK:
+                            if hasattr(ui, '_roast_heat_btn') and ui._roast_heat_btn and ui._roast_heat_btn.collidepoint(event.pos):
+                                ui._roast_heat_held = True
                 elif ui.chest_open:
                     ui.handle_chest_click(event.pos, player, event.button)
                 else:
@@ -781,6 +816,10 @@ def main():
             mouse_scr_pos[0] + renderer.cam_x,
             mouse_scr_pos[1] + renderer.cam_y,
         )
+
+        # Roaster: poll SPACE for heat
+        if ui.refinery_open and ui.refinery_block_id == ROASTER_BLOCK:
+            ui.handle_roaster_keys(keys)
 
         if ui.pause_open:
             renderer.draw_world(world, player)
