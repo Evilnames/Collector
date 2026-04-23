@@ -353,6 +353,47 @@ RECIPES = [
         "output_id":    "clay_pot_item",
         "output_count": 1,
     },
+    # --- Fences & Doors ---
+    {
+        "name": "Wood Fence",
+        "pattern": [
+            ["lumber", "lumber", None],
+            ["lumber", "lumber", None],
+            [None,     None,     None],
+        ],
+        "output_id":    "wood_fence",
+        "output_count": 4,
+    },
+    {
+        "name": "Iron Fence",
+        "pattern": [
+            ["iron_chunk", "iron_chunk", None],
+            ["iron_chunk", "iron_chunk", None],
+            [None,         None,         None],
+        ],
+        "output_id":    "iron_fence",
+        "output_count": 4,
+    },
+    {
+        "name": "Wood Door",
+        "pattern": [
+            ["lumber", "lumber", None],
+            ["lumber", "lumber", None],
+            ["lumber", "lumber", None],
+        ],
+        "output_id":    "wood_door",
+        "output_count": 1,
+    },
+    {
+        "name": "Iron Door",
+        "pattern": [
+            ["iron_chunk", "iron_chunk", None],
+            ["iron_chunk", "iron_chunk", None],
+            ["iron_chunk", "iron_chunk", None],
+        ],
+        "output_id":    "iron_door",
+        "output_count": 1,
+    },
     # --- Furniture ---
     {
         "name": "Bed",

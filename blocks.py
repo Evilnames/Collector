@@ -158,6 +158,8 @@ IRON_DOOR_OPEN   = 147
 BED              = 148
 CHEST_BLOCK      = 149
 FOSSIL_DEPOSIT   = 150  # special: mine → generates unique Fossil object, no item drop
+GEM_DEPOSIT      = 151  # special: mine → generates unique Gemstone object, no item drop
+SNOW             = 152  # alpine_mountain surface block; falls like grass
 
 OPEN_DOORS = {WOOD_DOOR_OPEN, IRON_DOOR_OPEN}
 
@@ -188,8 +190,8 @@ LEAF_LOG_MAP = {
 
 EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, BAKERY_BLOCK,
                     WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK}
-RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT}
-PHYSICS_BLOCKS   = {GRASS, DIRT, CRACKED_STONE, GRAVEL}  # blocks that can fall when unsupported
+RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT}
+PHYSICS_BLOCKS   = {GRASS, DIRT, SNOW, CRACKED_STONE, GRAVEL}  # blocks that can fall when unsupported
 ALL_SUPPORTS     = {SUPPORT, IRON_SUPPORT, DIAMOND_SUPPORT}
 SUPPORT_RANGE    = {SUPPORT: 2, IRON_SUPPORT: 5, DIAMOND_SUPPORT: 10}  # half-width in blocks
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
@@ -391,4 +393,6 @@ BLOCKS = {
     BED:              {"name": "Bed",               "hardness": 1.0, "color": (200, 80,  110), "drop": "bed"},
     CHEST_BLOCK:      {"name": "Chest",             "hardness": 1.5, "color": (160, 110, 55),  "drop": "chest_item"},
     FOSSIL_DEPOSIT:   {"name": "Fossil Deposit",    "hardness": 5,   "color": (140, 125, 105), "drop": None},
+    GEM_DEPOSIT:      {"name": "Gem Deposit",       "hardness": 6,   "color": (88,  72,  105), "drop": None},
+    SNOW:             {"name": "Snow",              "hardness": 1,   "color": (220, 232, 245), "drop": "stone_chip"},
 }

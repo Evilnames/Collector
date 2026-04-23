@@ -1,7 +1,7 @@
 import random
 import pygame
 from automations import Automation, AUTOMATION_DEFS, FarmBot, FARM_BOT_DEFS, FARM_BOT_TYPES
-from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT, CAVE_MUSHROOMS, EQUIPMENT_BLOCKS, LADDER, SUPPORT, WATER,
+from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT, GEM_DEPOSIT, CAVE_MUSHROOMS, EQUIPMENT_BLOCKS, LADDER, SUPPORT, WATER,
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
                     ALL_SUPPORTS, SAPLING, GRASS, DIRT, ALL_LOGS, ALL_LEAVES,
                     YOUNG_CROP_BLOCKS, MATURE_CROP_BLOCKS, BUSH_BLOCKS,
@@ -23,11 +23,22 @@ from items import ITEMS
 from rocks import RockGenerator, Rock
 from wildflowers import WildflowerGenerator, Wildflower
 from fossils import FossilGenerator, Fossil
+from gemstones import GemGenerator, Gemstone
 from constants import (
     BLOCK_SIZE, PLAYER_W, PLAYER_H,
     GRAVITY, JUMP_FORCE, MOVE_SPEED, MAX_FALL,
     MINE_REACH, MAX_HEALTH, HOTBAR_SIZE,
     ROCK_DETECT_RANGE,
+)
+
+# Blocks that cannot be placed in the background layer
+_BG_DISALLOWED = (
+    {WATER, LADDER, SAPLING, CHEST_BLOCK,
+     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN}
+    | ALL_SUPPORTS
+    | BUSH_BLOCKS
+    | YOUNG_CROP_BLOCKS
+    | EQUIPMENT_BLOCKS
 )
 
 
@@ -65,6 +76,10 @@ class Player:
         self.fossils = []
         self.discovered_fossil_types = set()
         self._fossil_gen = FossilGenerator(world.seed)
+        # Gem collection
+        self.gems = []
+        self.discovered_gem_types = set()
+        self._gem_gen = GemGenerator(world.seed)
         self.pending_notifications = []   # (category, name_or_bid, rarity)
         self.known_recipes = set()
         # Water state
@@ -85,6 +100,7 @@ class Player:
         self._mine_total = 0.0
         # Placement state
         self.place_target = None  # (bx, by) ghost shown by renderer
+        self.bg_place_mode = False  # True when Shift held — places in background layer
         # Farm sense: block under mouse (for crop readiness display)
         self.target_block = None
 
@@ -102,9 +118,11 @@ class Player:
         self.rocks = [Rock(**r) for r in d["rocks"]]
         self.wildflowers = [Wildflower(**wf) for wf in d["wildflowers"]]
         self.fossils = [Fossil(**f) for f in d.get("fossils", [])]
+        self.gems = [Gemstone(**g) for g in d.get("gems", [])]
         self.discovered_types = set(d["discovered_types"])
         self.discovered_flower_types = set(d["discovered_flower_types"])
         self.discovered_fossil_types = set(d.get("discovered_fossil_types", []))
+        self.discovered_gem_types = set(d.get("discovered_gem_types", []))
         self.mushrooms_found = {int(k): v for k, v in d["mushrooms_found"].items()}
         self.discovered_mushroom_types = set(int(x) for x in d["discovered_mushroom_types"])
         self.spawn_x = d.get("spawn_x")
@@ -208,6 +226,9 @@ class Player:
                 entity.reset_harvest()
 
         # Block placement: right-click = mouse target, Ctrl = block in facing direction
+        # Hold Shift to place in background layer instead of foreground
+        bg_mode = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+        self.bg_place_mode = bool(bg_mode)
         placing = mouse_buttons[2] or keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]
         if placing:
             if keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]:
@@ -218,7 +239,7 @@ class Player:
                 else:
                     bx = int(self.x // BLOCK_SIZE) - 1
                 self.place_target = (bx, by)
-                self._try_place(bx, by)
+                self._try_place(bx, by, bg=bg_mode)
             else:
                 # Right-click: place at cursor
                 mx, my = mouse_world_pos
@@ -228,7 +249,7 @@ class Player:
                 cy = (self.y + PLAYER_H / 2) / BLOCK_SIZE
                 if ((bx - cx) ** 2 + (by - cy) ** 2) ** 0.5 <= MINE_REACH:
                     self.place_target = (bx, by)
-                    self._try_place(bx, by)
+                    self._try_place(bx, by, bg=bg_mode)
                 else:
                     self.place_target = None
         else:
@@ -269,7 +290,28 @@ class Player:
     def _mine_at(self, bx, by, dt):
         block_id = self.world.get_block(bx, by)
         if block_id == AIR:
-            self._reset_mine()
+            bg_bid = self.world.get_bg_block(bx, by)
+            if bg_bid == AIR:
+                self._reset_mine()
+                return
+            hardness = BLOCKS[bg_bid]["hardness"]
+            if hardness == float('inf'):
+                return
+            if self.mining_block != (bx, by):
+                self.mining_block = (bx, by)
+                self._mine_time = 0.0
+                self._mine_total = max(0.05, hardness / self._mining_power_for(bg_bid))
+            self._mine_time += dt
+            self.mine_progress = min(1.0, self._mine_time / self._mine_total)
+            if self.mine_progress >= 1.0:
+                block_data = BLOCKS[bg_bid]
+                drop = block_data["drop"]
+                if drop:
+                    chance = block_data.get("drop_chance", 1.0)
+                    if random.random() < chance:
+                        self._add_item(drop)
+                self.world.set_bg_block(bx, by, AIR)
+                self._reset_mine()
             return
         if block_id in YOUNG_CROP_BLOCKS:
             self._reset_mine()
@@ -306,6 +348,12 @@ class Player:
                 self.discovered_fossil_types.add(fossil.fossil_type)
                 self.pending_notifications.append(
                     ("Fossil", fossil.fossil_type.replace("_", " ").title(), fossil.rarity))
+            elif block_id == GEM_DEPOSIT:
+                gem = self._gem_gen.generate(bx, by, self.get_depth(), self.world.get_biome(bx))
+                self.gems.append(gem)
+                self.discovered_gem_types.add(gem.gem_type)
+                self.pending_notifications.append(
+                    ("Gem", gem.gem_type.replace("_", " ").title(), gem.rarity))
             elif block_id in CAVE_MUSHROOMS:
                 self.mushrooms_found[block_id] = self.mushrooms_found.get(block_id, 0) + 1
                 self.discovered_mushroom_types.add(block_id)
@@ -432,16 +480,17 @@ class Player:
             return None, None
         return item_id, block_id
 
-    def _try_place(self, bx, by):
-        current = self.world.get_block(bx, by)
-        if current == WOOD_DOOR_CLOSED:
-            self.world.set_block(bx, by, WOOD_DOOR_OPEN); return
-        if current == WOOD_DOOR_OPEN:
-            self.world.set_block(bx, by, WOOD_DOOR_CLOSED); return
-        if current == IRON_DOOR_CLOSED:
-            self.world.set_block(bx, by, IRON_DOOR_OPEN); return
-        if current == IRON_DOOR_OPEN:
-            self.world.set_block(bx, by, IRON_DOOR_CLOSED); return
+    def _try_place(self, bx, by, bg=False):
+        if not bg:
+            current = self.world.get_block(bx, by)
+            if current == WOOD_DOOR_CLOSED:
+                self.world.set_block(bx, by, WOOD_DOOR_OPEN); return
+            if current == WOOD_DOOR_OPEN:
+                self.world.set_block(bx, by, WOOD_DOOR_CLOSED); return
+            if current == IRON_DOOR_CLOSED:
+                self.world.set_block(bx, by, IRON_DOOR_OPEN); return
+            if current == IRON_DOOR_OPEN:
+                self.world.set_block(bx, by, IRON_DOOR_CLOSED); return
         item_id = self.hotbar[self.selected_slot]
         if item_id is None:
             return
@@ -449,53 +498,61 @@ class Player:
         if item_data.get("edible", False):
             self._try_eat()
             return
-        spawn_type = item_data.get("spawn_automation")
-        if spawn_type:
-            if self.inventory.get(item_id, 0) <= 0:
-                return
-            if spawn_type in FARM_BOT_TYPES:
-                adef = FARM_BOT_DEFS[spawn_type]
-                ax = bx * BLOCK_SIZE + (BLOCK_SIZE - adef["w"]) // 2
-                ay = by * BLOCK_SIZE + (BLOCK_SIZE - adef["h"]) // 2
-                self.world.farm_bots.append(FarmBot(ax, ay, spawn_type))
-            else:
-                adef = AUTOMATION_DEFS[spawn_type]
-                ax = bx * BLOCK_SIZE + (BLOCK_SIZE - adef["w"]) // 2
-                ay = by * BLOCK_SIZE + (BLOCK_SIZE - adef["h"]) // 2
-                pcx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
-                pcy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
-                ddx, ddy = bx - pcx, by - pcy
-                if abs(ddx) >= abs(ddy):
-                    spawn_dir = (1 if ddx >= 0 else -1, 0)
+        if not bg:
+            spawn_type = item_data.get("spawn_automation")
+            if spawn_type:
+                if self.inventory.get(item_id, 0) <= 0:
+                    return
+                if spawn_type in FARM_BOT_TYPES:
+                    adef = FARM_BOT_DEFS[spawn_type]
+                    ax = bx * BLOCK_SIZE + (BLOCK_SIZE - adef["w"]) // 2
+                    ay = by * BLOCK_SIZE + (BLOCK_SIZE - adef["h"]) // 2
+                    self.world.farm_bots.append(FarmBot(ax, ay, spawn_type))
                 else:
-                    spawn_dir = (0, 1 if ddy >= 0 else -1)
-                self.world.automations.append(Automation(ax, ay, spawn_type, spawn_dir))
-            self.inventory[item_id] -= 1
-            if self.inventory[item_id] <= 0:
-                del self.inventory[item_id]
-                for i in range(HOTBAR_SIZE):
-                    if self.hotbar[i] == item_id:
-                        self.hotbar[i] = None
-                        break
-            return
+                    adef = AUTOMATION_DEFS[spawn_type]
+                    ax = bx * BLOCK_SIZE + (BLOCK_SIZE - adef["w"]) // 2
+                    ay = by * BLOCK_SIZE + (BLOCK_SIZE - adef["h"]) // 2
+                    pcx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+                    pcy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+                    ddx, ddy = bx - pcx, by - pcy
+                    if abs(ddx) >= abs(ddy):
+                        spawn_dir = (1 if ddx >= 0 else -1, 0)
+                    else:
+                        spawn_dir = (0, 1 if ddy >= 0 else -1)
+                    self.world.automations.append(Automation(ax, ay, spawn_type, spawn_dir))
+                self.inventory[item_id] -= 1
+                if self.inventory[item_id] <= 0:
+                    del self.inventory[item_id]
+                    for i in range(HOTBAR_SIZE):
+                        if self.hotbar[i] == item_id:
+                            self.hotbar[i] = None
+                            break
+                return
         block_id = item_data.get("place_block")
         if block_id is None:
             return
         if self.inventory.get(item_id, 0) <= 0:
             return
-        if self.world.get_block(bx, by) != AIR:
-            return
-        # Seeds must be planted on grass or dirt
-        if block_id in YOUNG_CROP_BLOCKS:
-            if self.world.get_block(bx, by + 1) not in (GRASS, DIRT):
+        if bg:
+            if block_id in _BG_DISALLOWED:
                 return
-        # Don't place inside the player (passable blocks are exempt)
-        passable = {LADDER, SAPLING} | ALL_SUPPORTS | BUSH_BLOCKS | YOUNG_CROP_BLOCKS
-        if block_id not in passable:
-            block_px = pygame.Rect(bx * BLOCK_SIZE, by * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
-            if block_px.colliderect(self.rect):
+            if self.world.get_bg_block(bx, by) != AIR:
                 return
-        self.world.set_block(bx, by, block_id)
+            self.world.set_bg_block(bx, by, block_id)
+        else:
+            if self.world.get_block(bx, by) != AIR:
+                return
+            # Seeds must be planted on grass or dirt
+            if block_id in YOUNG_CROP_BLOCKS:
+                if self.world.get_block(bx, by + 1) not in (GRASS, DIRT):
+                    return
+            # Don't place inside the player (passable blocks are exempt)
+            passable = {LADDER, SAPLING} | ALL_SUPPORTS | BUSH_BLOCKS | YOUNG_CROP_BLOCKS
+            if block_id not in passable:
+                block_px = pygame.Rect(bx * BLOCK_SIZE, by * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
+                if block_px.colliderect(self.rect):
+                    return
+            self.world.set_block(bx, by, block_id)
         self.inventory[item_id] -= 1
         if self.inventory[item_id] <= 0:
             del self.inventory[item_id]

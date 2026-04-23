@@ -12,6 +12,7 @@ from research import ResearchTree
 from constants import SCREEN_W, SCREEN_H, FPS
 from automations import Automation, AUTOMATION_DEFS
 from save_manager import SaveManager
+from blocks import GEM_CUTTER_BLOCK
 
 SETTINGS_PATH = Path(__file__).parent / "settings.json"
 
@@ -664,7 +665,10 @@ def main():
                 elif ui.collection_open:
                     ui.handle_collection_click(event.pos, player)
                 elif ui.refinery_open:
-                    ui.handle_refinery_click(event.pos, player)
+                    if ui.refinery_block_id == GEM_CUTTER_BLOCK:
+                        ui.handle_gem_cutter_click(event.pos, player)
+                    else:
+                        ui.handle_refinery_click(event.pos, player)
                 elif ui.chest_open:
                     ui.handle_chest_click(event.pos, player, event.button)
                 else:

@@ -20,8 +20,8 @@ class SaveManager:
         try:
             with sqlite3.connect(self.db_path) as con:
                 self._create_tables(con)
-                for tbl in ("save_meta", "chunks", "world_meta", "player",
-                            "rocks", "wildflowers", "fossils", "research", "automations",
+                for tbl in ("save_meta", "chunks", "bg_chunks", "world_meta", "player",
+                            "rocks", "wildflowers", "fossils", "gems", "research", "automations",
                             "farm_bots", "entities", "dropped_items", "chests"):
                     # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
@@ -55,6 +55,7 @@ class SaveManager:
             self._save_rocks(con, player)
             self._save_wildflowers(con, player)
             self._save_fossils(con, player)
+            self._save_gems(con, player)
             self._save_research(con, research)
             self._save_automations(con, world)
             self._save_farm_bots(con, world)
@@ -155,6 +156,70 @@ class SaveManager:
                           for y in range(WORLD_H)]
         return result
 
+    def load_bg_chunk(self, chunk_x):
+        """Load a single background chunk from DB. Returns 2-D list or None."""
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                row = con.execute(
+                    "SELECT data FROM bg_chunks WHERE chunk_x=?", (chunk_x,)
+                ).fetchone()
+        except Exception:
+            return None
+        if row is None:
+            return None
+        flat = struct.unpack(f"<{CHUNK_W * WORLD_H}H", zlib.decompress(row[0]))
+        return [[flat[y * CHUNK_W + lx] for lx in range(CHUNK_W)]
+                for y in range(WORLD_H)]
+
+    def save_bg_chunk(self, chunk_x, chunk):
+        """Immediately persist a single background chunk to DB."""
+        raw = struct.pack(
+            f"<{CHUNK_W * WORLD_H}H",
+            *[chunk[y][lx] for y in range(WORLD_H) for lx in range(CHUNK_W)],
+        )
+        data = zlib.compress(raw, level=1)
+        with sqlite3.connect(self.db_path) as con:
+            con.execute("CREATE TABLE IF NOT EXISTS bg_chunks "
+                        "(chunk_x INTEGER PRIMARY KEY, data BLOB NOT NULL)")
+            con.execute("INSERT OR REPLACE INTO bg_chunks VALUES (?,?)", (chunk_x, data))
+            con.commit()
+
+    def load_bg_chunks_batch(self, chunk_xs):
+        """Load multiple background chunks from DB in one query."""
+        if not chunk_xs:
+            return {}
+        placeholders = ",".join("?" * len(chunk_xs))
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                rows = con.execute(
+                    f"SELECT chunk_x, data FROM bg_chunks WHERE chunk_x IN ({placeholders})",
+                    list(chunk_xs),
+                ).fetchall()
+        except Exception:
+            return {}
+        result = {}
+        for cx, data in rows:
+            flat = struct.unpack(f"<{CHUNK_W * WORLD_H}H", zlib.decompress(data))
+            result[cx] = [[flat[y * CHUNK_W + lx] for lx in range(CHUNK_W)]
+                          for y in range(WORLD_H)]
+        return result
+
+    def save_bg_chunks_batch(self, chunks_dict):
+        """Persist multiple background chunks in a single transaction."""
+        if not chunks_dict:
+            return
+        with sqlite3.connect(self.db_path) as con:
+            con.execute("CREATE TABLE IF NOT EXISTS bg_chunks "
+                        "(chunk_x INTEGER PRIMARY KEY, data BLOB NOT NULL)")
+            for cx, chunk in chunks_dict.items():
+                raw = struct.pack(
+                    f"<{CHUNK_W * WORLD_H}H",
+                    *[chunk[y][lx] for y in range(WORLD_H) for lx in range(CHUNK_W)],
+                )
+                con.execute("INSERT OR REPLACE INTO bg_chunks VALUES (?,?)",
+                            (cx, zlib.compress(raw, level=1)))
+            con.commit()
+
     # ------------------------------------------------------------------
     # Schema
     # ------------------------------------------------------------------
@@ -165,6 +230,10 @@ class SaveManager:
             seed INTEGER, save_version INTEGER DEFAULT 2, last_saved TEXT
         );
         CREATE TABLE IF NOT EXISTS chunks (
+            chunk_x INTEGER PRIMARY KEY,
+            data    BLOB NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS bg_chunks (
             chunk_x INTEGER PRIMARY KEY,
             data    BLOB NOT NULL
         );
@@ -199,6 +268,13 @@ class SaveManager:
             pattern TEXT, pattern_density REAL, age TEXT,
             clarity REAL, detail REAL, specials TEXT,
             depth_found INTEGER, seed INTEGER, upgrades TEXT
+        );
+        CREATE TABLE IF NOT EXISTS gems (
+            uid TEXT PRIMARY KEY, gem_type TEXT, rarity TEXT, size TEXT,
+            state TEXT, cut TEXT, clarity TEXT, color_saturation REAL,
+            optical_effect TEXT, inclusion TEXT, crystal_system TEXT,
+            primary_color TEXT, secondary_color TEXT,
+            depth_found INTEGER, seed INTEGER, biome TEXT, upgrades TEXT
         );
         CREATE TABLE IF NOT EXISTS research (
             node_id TEXT PRIMARY KEY, unlocked INTEGER
@@ -273,6 +349,11 @@ class SaveManager:
             con.execute(
                 "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
                 ("fossil", t),
+            )
+        for t in player.discovered_gem_types:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("gem", t),
             )
 
     def _check_and_save_achievements(self, con):
@@ -402,6 +483,17 @@ class SaveManager:
             data = zlib.compress(raw, level=1)
             con.execute("INSERT OR REPLACE INTO chunks VALUES (?,?)", (cx, data))
         world._dirty_chunks.clear()
+        for cx in list(world._dirty_bg_chunks):
+            if cx not in world._bg_chunks:
+                continue
+            chunk = world._bg_chunks[cx]
+            raw = struct.pack(
+                f"<{CHUNK_W * WORLD_H}H",
+                *[chunk[y][lx] for y in range(WORLD_H) for lx in range(CHUNK_W)],
+            )
+            data = zlib.compress(raw, level=1)
+            con.execute("INSERT OR REPLACE INTO bg_chunks VALUES (?,?)", (cx, data))
+        world._dirty_bg_chunks.clear()
 
     def _save_world_meta(self, con, world):
         water = {f"{x},{y}": lvl for (x, y), lvl in world._water_level.items()}
@@ -484,6 +576,22 @@ class SaveManager:
                     json.dumps(f.specials),
                     f.depth_found, f.seed,
                     json.dumps(f.upgrades),
+                )
+            )
+
+    def _save_gems(self, con, player):
+        con.execute("DELETE FROM gems")
+        for g in player.gems:
+            con.execute(
+                "INSERT OR REPLACE INTO gems VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    g.uid, g.gem_type, g.rarity, g.size,
+                    g.state, g.cut, g.clarity,
+                    g.color_saturation, g.optical_effect, g.inclusion, g.crystal_system,
+                    json.dumps(list(g.primary_color)),
+                    json.dumps(list(g.secondary_color)),
+                    g.depth_found, g.seed, g.biome,
+                    json.dumps(g.upgrades),
                 )
             )
 
@@ -643,6 +751,26 @@ class SaveManager:
                 "upgrades": json.loads(f[14]),
             })
 
+        gem_rows = con.execute("""
+            SELECT uid, gem_type, rarity, size, state, cut, clarity,
+                   color_saturation, optical_effect, inclusion, crystal_system,
+                   primary_color, secondary_color, depth_found, seed, biome, upgrades
+            FROM gems
+        """).fetchall()
+        gems_data = []
+        for g in gem_rows:
+            gems_data.append({
+                "uid": g[0], "gem_type": g[1], "rarity": g[2], "size": g[3],
+                "state": g[4], "cut": g[5], "clarity": g[6],
+                "color_saturation": g[7], "optical_effect": g[8],
+                "inclusion": g[9], "crystal_system": g[10],
+                "primary_color": tuple(json.loads(g[11])),
+                "secondary_color": tuple(json.loads(g[12])),
+                "depth_found": g[13], "seed": g[14],
+                "biome": g[15] or "",
+                "upgrades": json.loads(g[16]) if g[16] else [],
+            })
+
         return {
             "x": x, "y": y, "vx": vx, "vy": vy, "facing": facing,
             "health": health, "hunger": hunger, "pick_power": pick_power,
@@ -658,7 +786,9 @@ class SaveManager:
             "rocks": rocks_data,
             "wildflowers": wf_data,
             "fossils": fossils_data,
+            "gems": gems_data,
             "discovered_fossil_types": json.loads(discovered_fossil_types or "[]"),
+            "discovered_gem_types": list({g["gem_type"] for g in gems_data}),
             "spawn_x": spawn_x,
             "spawn_y": spawn_y,
         }

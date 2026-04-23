@@ -3,7 +3,23 @@ BIOMES = ["igneous", "sedimentary", "crystal", "ferrous", "void"]
 BIODOME_TYPES = [
     "temperate", "boreal", "birch_forest", "jungle", "wetland",
     "redwood", "tropical", "savanna", "wasteland", "fungal",
+    "alpine_mountain", "rocky_mountain",
+    "rolling_hills", "steep_hills",
+    "steppe", "arid_steppe",
 ]
+
+# (height_bias, noise_amplitude_scale) per biodome.
+# height_bias: added to SURFACE_Y before noise (negative = higher terrain).
+# noise_amplitude_scale: multiplies existing sine octave amplitudes.
+# Missing entries default to (0, 1.0).
+BIODOME_TERRAIN_MODS = {
+    "alpine_mountain": (-12, 2.4),
+    "rocky_mountain":  ( -7, 2.0),
+    "rolling_hills":   ( -3, 1.5),
+    "steep_hills":     ( -2, 1.8),
+    "steppe":          (  3, 0.35),
+    "arid_steppe":     (  2, 0.45),
+}
 
 BIOME_STONE_COLORS = {
     "igneous":     (90,  85,  88),

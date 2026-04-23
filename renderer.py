@@ -1,5 +1,5 @@
 import pygame
-from blocks import (BLOCKS, AIR, LADDER, SUPPORT, IRON_SUPPORT, DIAMOND_SUPPORT, STONE, WATER,
+from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, SUPPORT, IRON_SUPPORT, DIAMOND_SUPPORT, STONE, WATER,
                     YOUNG_CROP_BLOCKS, MATURE_CROP_BLOCKS,
                     ALL_SUPPORTS, SUPPORT_RANGE, RESOURCE_BLOCKS, ALL_LOGS, ALL_LEAVES,
                     STRAWBERRY_BUSH, WHEAT_BUSH,
@@ -39,7 +39,7 @@ from blocks import (BLOCKS, AIR, LADDER, SUPPORT, IRON_SUPPORT, DIAMOND_SUPPORT,
                     WOOD_FENCE, IRON_FENCE,
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN,
                     IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
-                    CHEST_BLOCK)
+                    CHEST_BLOCK, SNOW)
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE
 from biomes import BIOME_STONE_COLORS
 
@@ -146,6 +146,8 @@ class Renderer:
         self._support_zone_surf = self._build_support_zone_surf()
         self._log_variants  = self._build_log_variants()
         self._leaf_variants = self._build_leaf_variants()
+        self._bg_darken_surf = self._build_bg_darken_surf()
+        self._cave_wall_surf = self._build_cave_wall_surf()
         self._light_surf = pygame.Surface((SCREEN_W, SCREEN_H)).convert()
         self._light_gradient = None
         self._light_cache_key = None
@@ -159,6 +161,17 @@ class Renderer:
         self._minimap_timer = 0.0
         self.minimap_visible = False
         self._mm_ctable     = self._build_mm_color_table()
+
+    def _build_bg_darken_surf(self):
+        s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+        s.fill((0, 0, 0, 110))
+        return s
+
+    def _build_cave_wall_surf(self):
+        s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+        s.fill((55, 47, 40))
+        pygame.draw.rect(s, (45, 38, 32), (0, 0, BLOCK_SIZE, BLOCK_SIZE), 1)
+        return s
 
     def _build_block_surfs(self):
         surfs = {}
@@ -946,6 +959,21 @@ class Renderer:
                 continue
             if bid == WATER:
                 continue   # rendered per-level via _water_surfs
+            if bid == COAL_ORE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                stone_base = (118, 112, 108)
+                s.fill(stone_base)
+                coal = (22, 20, 18)
+                coal_light = (40, 37, 34)
+                # Scattered coal chunks — irregular rectangles
+                for rx, ry, rw, rh in [(3, 4, 7, 5), (14, 2, 6, 8), (22, 8, 7, 4),
+                                        (5, 15, 8, 6), (17, 18, 9, 7), (6, 25, 5, 4),
+                                        (21, 25, 7, 5)]:
+                    pygame.draw.rect(s, coal, (rx, ry, rw, rh))
+                    pygame.draw.rect(s, coal_light, (rx, ry, rw, rh), 1)
+                pygame.draw.rect(s, _darken(stone_base, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
             s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
             s.fill(bdata["color"])
             pygame.draw.rect(s, _darken(bdata["color"]), s.get_rect(), 1)
@@ -1149,10 +1177,23 @@ class Renderer:
         else:
             px_blk = py_blk = detect = warm = None
 
+        # Precompute surface heights for underground detection
+        surface_ys = {bx: world.surface_height(bx) for bx in range(bx0, bx1)}
+
         for by in range(by0, by1):
             for bx in range(bx0, bx1):
                 bid = world.get_block(bx, by)
                 if bid == AIR:
+                    sx = bx * BLOCK_SIZE - cam_xi
+                    sy = by * BLOCK_SIZE - cam_yi
+                    bg_bid = world.get_bg_block(bx, by)
+                    if bg_bid != AIR:
+                        bg_surf = self._block_surfs.get(bg_bid)
+                        if bg_surf:
+                            self.screen.blit(bg_surf, (sx, sy))
+                            self.screen.blit(self._bg_darken_surf, (sx, sy))
+                    elif by > surface_ys.get(bx, 100):
+                        self.screen.blit(self._cave_wall_surf, (sx, sy))
                     continue
                 if bid == WATER:
                     level = world._water_level.get((bx, by), 8)
@@ -1444,16 +1485,26 @@ class Renderer:
         bx, by = player.place_target
         sx = bx * BLOCK_SIZE - int(self.cam_x)
         sy = by * BLOCK_SIZE - int(self.cam_y)
-        # Semi-transparent fill using the block's colour
         from blocks import BLOCKS
         color = BLOCKS.get(block_id, {}).get("color")
-        if color:
-            if self._ghost_color_key != color:
-                self._ghost_color_key = color
+        bg_mode = getattr(player, 'bg_place_mode', False)
+        if bg_mode:
+            ghost_color = (max(0, color[0] - 30), max(0, color[1] - 10), min(255, color[2] + 60)) if color else (60, 80, 180)
+            key = ("bg", ghost_color)
+            if self._ghost_color_key != key:
+                self._ghost_color_key = key
                 self._ghost_surf.fill((0, 0, 0, 0))
-                self._ghost_surf.fill((*color, 120))
+                self._ghost_surf.fill((*ghost_color, 100))
             self.screen.blit(self._ghost_surf, (sx, sy))
-        pygame.draw.rect(self.screen, (255, 255, 255), (sx, sy, BLOCK_SIZE, BLOCK_SIZE), 2)
+            pygame.draw.rect(self.screen, (100, 160, 255), (sx, sy, BLOCK_SIZE, BLOCK_SIZE), 2)
+        else:
+            if color:
+                if self._ghost_color_key != color:
+                    self._ghost_color_key = color
+                    self._ghost_surf.fill((0, 0, 0, 0))
+                    self._ghost_surf.fill((*color, 120))
+                self.screen.blit(self._ghost_surf, (sx, sy))
+            pygame.draw.rect(self.screen, (255, 255, 255), (sx, sy, BLOCK_SIZE, BLOCK_SIZE), 2)
 
     # ------------------------------------------------------------------
     # Farm sense: readiness indicator on targeted crop blocks
@@ -1531,7 +1582,7 @@ class Renderer:
             {AIR, GRASS, DIRT, STONE, OBSIDIAN, BEDROCK, WATER, GRAVEL,
              GATE_MID, GATE_DEEP, GATE_CORE,
              CRACKED_STONE, STALACTITE, STALAGMITE, CAVE_MOSS,
-             HOUSE_WALL, HOUSE_ROOF}
+             HOUSE_WALL, HOUSE_ROOF, SNOW}
             | ALL_LOGS | ALL_LEAVES
         )
         stone_col = BLOCKS[STONE]["color"]

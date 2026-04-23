@@ -14,9 +14,15 @@ from wildflowers import (render_wildflower, get_flower_preview,
 from fossils import (render_fossil, render_fossil_codex_preview,
                      FOSSIL_TYPE_ORDER, FOSSIL_TYPES,
                      FOSSIL_SPECIAL_DESCS, FOSSIL_TYPE_DESCRIPTIONS, FOSSIL_AGE_COLORS)
+from gemstones import (render_rough_gem, render_gem, render_gem_codex_preview,
+                       GEM_TYPE_ORDER, GEM_TYPES, RARITY_COLORS as GEM_RARITY_COLORS,
+                       GEM_TYPE_DESCRIPTIONS, GEM_CLARITY_DESCS, GEM_INCLUSION_DESCS,
+                       GEM_OPTICAL_DESCS, GEM_CUT_DESCS,
+                       get_fault_points, apply_cracking_result, resolve_optical_effect,
+                       invalidate_gem_cache)
 from renderer import render_mushroom_preview
 from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, MAX_HEALTH
-from blocks import (BLOCKS, BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
+from blocks import (BLOCKS, BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK, GEM_CUTTER_BLOCK,
                     CAVE_MUSHROOMS,
                     CAVE_MUSHROOM, EMBER_CAP, PALE_GHOST, GOLD_CHANTERELLE, COBALT_CAP,
                     MOSSY_CAP, VIOLET_CROWN, BLOOD_CAP, SULFUR_DOME, IVORY_BELL,
@@ -143,6 +149,28 @@ class UI:
         self._max_fossil_codex_scroll      = 0
         self._my_fossils_scroll            = 0
         self._max_my_fossils_scroll        = 0
+        # Gem collection
+        self._selected_gem_idx             = None
+        self._gem_rects                    = {}
+        self._gem_codex_selected_type      = None
+        self._gem_codex_rects              = {}
+        self._gem_codex_scroll             = 0
+        self._max_gem_codex_scroll         = 0
+        self._my_gems_scroll               = 0
+        self._max_my_gems_scroll           = 0
+        # Gem cutter mini-game state
+        self._gc_phase          = "select"  # select | show_seq | player_turn | reveal | choose_cut
+        self._gc_gem_idx        = None
+        self._gc_fault_pts      = []
+        self._gc_seq_idx        = 0         # which point is currently highlighted in preview
+        self._gc_seq_timer      = 0.0
+        self._gc_seq_clicks     = []        # player's clicks so far
+        self._gc_mistakes       = 0
+        self._gc_fault_rects    = []        # list of pygame.Rect for clickable fault points
+        self._gc_fault_lit      = -1        # index lit during preview (-1 = none)
+        self._gc_reveal_timer   = 0.0
+        self._gc_cut_rects      = {}        # cut_name → pygame.Rect
+        self._gc_select_rects   = {}        # gem_idx → pygame.Rect
         self._craft_btn     = None
         self._craft_grid    = [[None] * 3 for _ in range(3)]
         self._cell_rects    = {}
@@ -185,6 +213,7 @@ class UI:
         self._fb_deposit1_btn    = None
         self._fb_deposit_all_btn = None
         self._fb_seeds_btn       = None
+        self._fb_get_seeds_btn   = None
         self._fb_take_btn        = None
         # Chest UI
         self.chest_open       = False
@@ -245,7 +274,7 @@ class UI:
         if self.collection_open:
             self._draw_collection(player)
         if self.refinery_open and self.refinery_block_id is not None:
-            self._draw_refinery(player)
+            self._draw_refinery(player, dt)
         if self.npc_open and self.active_npc is not None:
             self._draw_npc_panel(player)
         if self.automation_open and self.active_automation is not None:
@@ -259,6 +288,8 @@ class UI:
         if self.pause_open:
             self._draw_pause_menu()
         self._draw_hotbar(player)
+        if getattr(player, 'bg_place_mode', False):
+            self._draw_bg_mode_indicator()
         self._drain_notifications(player)
         self._draw_toasts(dt)
         if self._drag_item_id is not None and self.inventory_open:
@@ -371,6 +402,10 @@ class UI:
                 self._mushroom_codex_scroll = 0
                 self._fossil_codex_scroll = 0
                 self._my_fossils_scroll = 0
+                self._gem_codex_scroll = 0
+                self._my_gems_scroll = 0
+                self._selected_gem_idx = None
+                self._gem_codex_selected_type = None
                 return
         if self._collection_tab == 0:
             for idx, rect in self._rock_rects.items():
@@ -407,6 +442,16 @@ class UI:
                 if rect.collidepoint(pos):
                     self._fossil_codex_selected_type = type_key if self._fossil_codex_selected_type != type_key else None
                     return
+        elif self._collection_tab == 8:
+            for idx, rect in self._gem_rects.items():
+                if rect.collidepoint(pos):
+                    self._selected_gem_idx = idx if self._selected_gem_idx != idx else None
+                    return
+        elif self._collection_tab == 9:
+            for type_key, rect in self._gem_codex_rects.items():
+                if rect.collidepoint(pos):
+                    self._gem_codex_selected_type = type_key if self._gem_codex_selected_type != type_key else None
+                    return
         # tab 7 (achievements) has no click-to-select items
 
     def handle_scroll(self, dy):
@@ -438,6 +483,10 @@ class UI:
                 self._fossil_codex_scroll = max(0, min(self._max_fossil_codex_scroll, self._fossil_codex_scroll - dy))
             elif self._collection_tab == 7:
                 self._achievement_scroll = max(0, min(self._max_achievement_scroll, self._achievement_scroll - dy))
+            elif self._collection_tab == 8:
+                self._my_gems_scroll = max(0, min(self._max_my_gems_scroll, self._my_gems_scroll - dy))
+            elif self._collection_tab == 9:
+                self._gem_codex_scroll = max(0, min(self._max_gem_codex_scroll, self._gem_codex_scroll - dy))
         elif self.chest_open:
             mouse = pygame.mouse.get_pos()
             PW = 1140
@@ -489,6 +538,53 @@ class UI:
                 if rect.collidepoint(pos):
                     npc.execute_trade(i, player)
                     break
+
+    def handle_gem_cutter_click(self, pos, player):
+        """Handle clicks inside the gem cutter mini-game overlay."""
+        phase = self._gc_phase
+
+        if phase == "select":
+            for idx, rect in self._gc_select_rects.items():
+                if rect.collidepoint(pos):
+                    gem = player.gems[idx]
+                    if gem.state == "rough":
+                        self._gc_gem_idx = idx
+                        self._gc_fault_pts = get_fault_points(gem, area_size=220)
+                        self._gc_seq_idx = 0
+                        self._gc_seq_timer = 0.6
+                        self._gc_seq_clicks = []
+                        self._gc_mistakes = 0
+                        self._gc_fault_lit = 0
+                        self._gc_phase = "show_seq"
+            return
+
+        if phase == "player_turn":
+            for i, rect in enumerate(self._gc_fault_rects):
+                if rect.collidepoint(pos):
+                    expected = self._gc_seq_clicks.__len__()
+                    if i == expected:
+                        self._gc_seq_clicks.append(i)
+                        if len(self._gc_seq_clicks) == len(self._gc_fault_pts):
+                            # All tapped correctly — begin reveal
+                            self._gc_phase = "reveal"
+                            self._gc_reveal_timer = 1.2
+                    else:
+                        self._gc_mistakes = min(3, self._gc_mistakes + 1)
+                        # Allow them to still click the right one
+                    return
+
+        if phase == "choose_cut":
+            for cut_name, rect in self._gc_cut_rects.items():
+                if rect.collidepoint(pos):
+                    gem = player.gems[self._gc_gem_idx]
+                    gem.cut = cut_name
+                    gem.state = "cut"
+                    apply_cracking_result(gem, self._gc_mistakes)
+                    invalidate_gem_cache(gem.uid)
+                    player.discovered_gem_types.add(gem.gem_type)
+                    self._gc_phase = "select"
+                    self._gc_gem_idx = None
+                    return
 
     def handle_refinery_click(self, pos, player):
         if self.refinery_block_id == BAKERY_BLOCK:
@@ -689,6 +785,13 @@ class UI:
                     name_txt = self.small.render(item["name"], True, (200, 200, 200))
                     nx = (SCREEN_W - name_txt.get_width()) // 2
                     self.screen.blit(name_txt, (nx, y - 18))
+
+    def _draw_bg_mode_indicator(self):
+        slot_sz = 48
+        y = SCREEN_H - slot_sz - 10
+        txt = self.small.render("[ BG MODE ]", True, (120, 180, 255))
+        x = (SCREEN_W - txt.get_width()) // 2
+        self.screen.blit(txt, (x, y - txt.get_height() - 6))
 
     def _draw_mine_bar(self, player):
         if not player.mining_block or player.mine_progress <= 0:
@@ -1303,14 +1406,20 @@ class UI:
         n_mush_total = len(_MUSHROOM_ORDER)
         n_fossil_disc = len(player.discovered_fossil_types)
         n_fossil_total = len(FOSSIL_TYPE_ORDER)
+        n_gem_disc = len(player.discovered_gem_types)
+        n_gem_total = len(GEM_TYPE_ORDER)
 
         is_flowers      = self._collection_tab in (2, 3)
         is_mushrooms    = self._collection_tab == 4
         is_fossils      = self._collection_tab in (5, 6)
         is_achievements = self._collection_tab == 7
+        is_gems         = self._collection_tab in (8, 9)
         if is_achievements:
             title_text = "ACHIEVEMENTS"
             title_col  = (255, 215, 80)
+        elif is_gems:
+            title_text = "GEM COLLECTION"
+            title_col  = (180, 245, 225)
         elif is_fossils:
             title_text = "FOSSIL COLLECTION"
             title_col  = (210, 185, 140)
@@ -1342,6 +1451,8 @@ class UI:
             f"MY FOSSILS ({len(player.fossils)})",
             f"FOSSIL CODEX ({n_fossil_disc}/{n_fossil_total})",
             f"AWARDS ({n_ach_unlocked}/{n_ach_total})",
+            f"MY GEMS ({len(player.gems)})",
+            f"GEM CODEX ({n_gem_disc}/{n_gem_total})",
         ]
         GAP = 5
         TAB_W = min(148, (SCREEN_W - 20 - GAP * (len(tab_labels) - 1)) // len(tab_labels))
@@ -1356,9 +1467,12 @@ class UI:
             fossil_tab = i in (5, 6)
             mush_tab   = i == 4
             flower_tab = i in (2, 3)
+            gem_tab    = i in (8, 9)
             if active:
                 if ach_tab:
                     bg, border = (45, 38, 10), (220, 185, 40)
+                elif gem_tab:
+                    bg, border = (20, 48, 45), (80, 220, 195)
                 elif fossil_tab:
                     bg, border = (42, 35, 18), (195, 165, 95)
                 elif mush_tab:
@@ -1370,6 +1484,8 @@ class UI:
             else:
                 if ach_tab:
                     bg, border = (24, 20, 6), (100, 84, 20)
+                elif gem_tab:
+                    bg, border = (10, 25, 24), (38, 95, 85)
                 elif fossil_tab:
                     bg, border = (25, 20, 10), (90, 75, 38)
                 elif mush_tab:
@@ -1384,6 +1500,10 @@ class UI:
                 txt_col = (255, 215, 80)
             elif ach_tab:
                 txt_col = (110, 90, 25)
+            elif active and gem_tab:
+                txt_col = (155, 240, 220)
+            elif gem_tab:
+                txt_col = (45, 105, 92)
             elif active and fossil_tab:
                 txt_col = (220, 190, 110)
             elif active and mush_tab:
@@ -1406,6 +1526,8 @@ class UI:
 
         if is_achievements:
             hint_text = "G or ESC to close  |  Achievements are global across all games"
+        elif is_gems:
+            hint_text = "G or ESC to close  |  Rough gems must be cut at the Gem Cutter block (E)"
         elif is_fossils:
             hint_text = "G or ESC to close  |  Click a fossil to inspect"
         elif is_mushrooms:
@@ -1431,6 +1553,10 @@ class UI:
             self._draw_my_fossils(player)
         elif self._collection_tab == 6:
             self._draw_fossil_codex(player)
+        elif self._collection_tab == 8:
+            self._draw_my_gems(player)
+        elif self._collection_tab == 9:
+            self._draw_gem_codex(player)
         else:
             self._draw_achievements()
 
@@ -2175,6 +2301,429 @@ class UI:
         "fossil":     "FOSSIL",
     }
 
+    # ------------------------------------------------------------------
+    # Gem collection tabs
+    # ------------------------------------------------------------------
+
+    def _draw_my_gems(self, player):
+        if not player.gems:
+            msg = self.font.render("No gems yet.  Mine Gem Deposits deep underground!", True, (70, 130, 115))
+            self.screen.blit(msg, (SCREEN_W // 2 - msg.get_width() // 2, SCREEN_H // 2 - 10))
+            hint = self.small.render("Approach the Gem Cutter block and press E to cut rough gems.", True, (60, 110, 98))
+            self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, SCREEN_H // 2 + 14))
+            return
+
+        CELL, GAP, COLS = 82, 8, 8
+        gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        gy0 = 58
+
+        detail_x = None
+        if self._selected_gem_idx is not None and self._selected_gem_idx < len(player.gems):
+            detail_x = SCREEN_W - 340
+            COLS = max(1, (detail_x - gx0 - 10) // (CELL + GAP))
+
+        total_rows = (len(player.gems) + COLS - 1) // COLS
+        visible_rows = (SCREEN_H - gy0 - 8 + GAP) // (CELL + GAP)
+        self._max_my_gems_scroll = max(0, total_rows - visible_rows)
+        self._my_gems_scroll = max(0, min(self._max_my_gems_scroll, self._my_gems_scroll))
+
+        self._gem_rects.clear()
+        for idx, gem in enumerate(player.gems):
+            col = idx % COLS
+            row = idx // COLS
+            display_row = row - self._my_gems_scroll
+            if display_row < 0:
+                continue
+            x = gx0 + col * (CELL + GAP)
+            y = gy0 + display_row * (CELL + GAP)
+            if y + CELL > SCREEN_H - 8:
+                break
+            rect = pygame.Rect(x, y, CELL, CELL)
+            self._gem_rects[idx] = rect
+
+            selected = (idx == self._selected_gem_idx)
+            rar_col = GEM_RARITY_COLORS.get(gem.rarity, (120, 120, 120))
+            pygame.draw.rect(self.screen, (28, 42, 40) if selected else (18, 28, 26), rect)
+            pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
+
+            if gem.state == "rough":
+                img = render_rough_gem(gem, 58)
+            else:
+                img = render_gem(gem, 58)
+            self.screen.blit(img, (x + (CELL - 58) // 2, y + (CELL - 58) // 2 - 6))
+
+            label = gem.gem_type.replace("_", " ")
+            if gem.state == "rough":
+                label = "rough " + label
+            type_s = self.small.render(self._fit_label(label, CELL - 4), True, (120, 195, 175))
+            self.screen.blit(type_s, (x + CELL // 2 - type_s.get_width() // 2, y + CELL - 14))
+
+        if detail_x is None:
+            return
+
+        gem = player.gems[self._selected_gem_idx]
+        dx, dy = detail_x, gy0
+        dw, dh = SCREEN_W - dx - 8, SCREEN_H - gy0 - 10
+        pygame.draw.rect(self.screen, (14, 22, 20), (dx, dy, dw, dh))
+        rar_col = GEM_RARITY_COLORS.get(gem.rarity, (120, 120, 120))
+        pygame.draw.rect(self.screen, rar_col, (dx, dy, dw, dh), 2)
+
+        # Render gem image
+        preview_size = 100
+        if gem.state == "rough":
+            preview = render_rough_gem(gem, preview_size)
+        else:
+            preview = render_gem(gem, preview_size)
+        self.screen.blit(preview, (dx + dw // 2 - preview_size // 2, dy + 8))
+
+        ty = dy + preview_size + 16
+        def detail_row(label, value, col=(155, 200, 185)):
+            nonlocal ty
+            lbl = self.small.render(f"{label}:", True, (80, 118, 108))
+            val = self.small.render(str(value), True, col)
+            self.screen.blit(lbl, (dx + 10, ty))
+            self.screen.blit(val, (dx + dw - val.get_width() - 8, ty))
+            ty += 17
+
+        name = gem.gem_type.replace("_", " ").title()
+        title_s = self.font.render(name, True, rar_col)
+        self.screen.blit(title_s, (dx + dw // 2 - title_s.get_width() // 2, ty))
+        ty += 22
+
+        detail_row("Rarity", gem.rarity.title(), rar_col)
+        detail_row("Size", gem.size.title())
+        detail_row("State", gem.state.title(), (255, 200, 80) if gem.state == "rough" else (100, 220, 180))
+        detail_row("Cut", GEM_CUT_DESCS.get(gem.cut, gem.cut).split(" —")[0])
+
+        if gem.state == "cut":
+            detail_row("Clarity", gem.clarity,
+                       (255, 220, 80) if gem.clarity in ("FL", "VVS") else (155, 200, 185))
+            detail_row("Inclusion", gem.inclusion.replace("_", " ").title())
+            if gem.optical_effect != "none":
+                detail_row("Optical", gem.optical_effect.replace("_", " ").title(), (200, 160, 255))
+        else:
+            ty += 4
+            unknown = self.small.render("Hidden until cut at Gem Cutter", True, (80, 100, 95))
+            self.screen.blit(unknown, (dx + dw // 2 - unknown.get_width() // 2, ty))
+            ty += 17
+
+        detail_row("Crystal", gem.crystal_system.title())
+        detail_row("Depth", f"{gem.depth_found}m")
+
+        ty += 6
+        desc_text = GEM_TYPE_DESCRIPTIONS.get(gem.gem_type, "")
+        words = desc_text.split()
+        line, lines = [], []
+        for w in words:
+            test = " ".join(line + [w])
+            if self.small.size(test)[0] > dw - 18:
+                lines.append(" ".join(line))
+                line = [w]
+            else:
+                line.append(w)
+        if line:
+            lines.append(" ".join(line))
+        for l in lines[:4]:
+            ls = self.small.render(l, True, (72, 100, 90))
+            self.screen.blit(ls, (dx + 8, ty))
+            ty += 15
+
+    def _draw_gem_codex(self, player):
+        CELL, GAP, COLS = 82, 8, 10
+        gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        gy0 = 58
+
+        detail_x = None
+        if self._gem_codex_selected_type is not None:
+            detail_x = SCREEN_W - 340
+            COLS = max(1, (detail_x - gx0 - 10) // (CELL + GAP))
+
+        total_rows = (len(GEM_TYPE_ORDER) + COLS - 1) // COLS
+        visible_rows = (SCREEN_H - gy0 - 8 + GAP) // (CELL + GAP)
+        self._max_gem_codex_scroll = max(0, total_rows - visible_rows)
+        self._gem_codex_scroll = max(0, min(self._max_gem_codex_scroll, self._gem_codex_scroll))
+
+        self._gem_codex_rects.clear()
+        for i, type_key in enumerate(GEM_TYPE_ORDER):
+            col = i % COLS
+            row = i // COLS
+            display_row = row - self._gem_codex_scroll
+            if display_row < 0:
+                continue
+            x = gx0 + col * (CELL + GAP)
+            y = gy0 + display_row * (CELL + GAP)
+            if y + CELL > SCREEN_H - 8:
+                break
+            rect = pygame.Rect(x, y, CELL, CELL)
+            self._gem_codex_rects[type_key] = rect
+
+            discovered = type_key in player.discovered_gem_types
+            selected = (type_key == self._gem_codex_selected_type)
+
+            if discovered:
+                tdef = GEM_TYPES[type_key]
+                sample_rarity = tdef["rarity_pool"][0]
+                rar_col = GEM_RARITY_COLORS.get(sample_rarity, (120, 120, 120))
+                pygame.draw.rect(self.screen, (28, 42, 40) if selected else (18, 28, 26), rect)
+                pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
+                img = render_gem_codex_preview(type_key, 58)
+                self.screen.blit(img, (x + (CELL - 58) // 2, y + (CELL - 58) // 2 - 6))
+                name_s = self.small.render(self._fit_label(type_key.replace("_", " "), CELL - 4), True, (120, 195, 175))
+            else:
+                pygame.draw.rect(self.screen, (14, 18, 16), rect)
+                pygame.draw.rect(self.screen, (40, 55, 50), rect, 2)
+                q = self.font.render("?", True, (38, 55, 50))
+                self.screen.blit(q, (x + CELL // 2 - q.get_width() // 2, y + CELL // 2 - q.get_height() // 2 - 8))
+                name_s = self.small.render("???", True, (38, 55, 50))
+            self.screen.blit(name_s, (x + CELL // 2 - name_s.get_width() // 2, y + CELL - 14))
+
+        if detail_x is None:
+            return
+
+        type_key = self._gem_codex_selected_type
+        discovered = type_key in player.discovered_gem_types
+        dx, dy = detail_x, gy0
+        dw, dh = SCREEN_W - dx - 8, SCREEN_H - gy0 - 10
+        pygame.draw.rect(self.screen, (14, 22, 20), (dx, dy, dw, dh))
+
+        if discovered:
+            tdef = GEM_TYPES[type_key]
+            sample_rarity = tdef["rarity_pool"][0]
+            rar_col = GEM_RARITY_COLORS.get(sample_rarity, (120, 120, 120))
+            pygame.draw.rect(self.screen, rar_col, (dx, dy, dw, dh), 2)
+
+            preview = render_gem_codex_preview(type_key, 100)
+            self.screen.blit(preview, (dx + dw // 2 - 50, dy + 8))
+
+            ty = dy + 116
+            name_s = self.font.render(type_key.replace("_", " ").title(), True, rar_col)
+            self.screen.blit(name_s, (dx + dw // 2 - name_s.get_width() // 2, ty))
+            ty += 24
+
+            crys_s = self.small.render(f"Crystal system: {tdef['crystal_system'].title()}", True, (95, 145, 132))
+            self.screen.blit(crys_s, (dx + 10, ty)); ty += 17
+            depth_s = self.small.render(f"Found from depth: {tdef['min_depth']}m", True, (95, 145, 132))
+            self.screen.blit(depth_s, (dx + 10, ty)); ty += 17
+            cuts_s = self.small.render("Cuts: " + ", ".join(tdef["available_cuts"]), True, (95, 145, 132))
+            self.screen.blit(cuts_s, (dx + 10, ty)); ty += 20
+
+            desc_text = GEM_TYPE_DESCRIPTIONS.get(type_key, "")
+            words = desc_text.split()
+            line, lines = [], []
+            for w in words:
+                test = " ".join(line + [w])
+                if self.small.size(test)[0] > dw - 18:
+                    lines.append(" ".join(line))
+                    line = [w]
+                else:
+                    line.append(w)
+            if line:
+                lines.append(" ".join(line))
+            for l in lines[:5]:
+                ls = self.small.render(l, True, (72, 108, 96))
+                self.screen.blit(ls, (dx + 8, ty))
+                ty += 15
+        else:
+            pygame.draw.rect(self.screen, (40, 55, 50), (dx, dy, dw, dh), 2)
+            unk = self.font.render("Not Yet Discovered", True, (50, 75, 65))
+            self.screen.blit(unk, (dx + dw // 2 - unk.get_width() // 2, dy + dh // 2 - 10))
+
+    # ------------------------------------------------------------------
+    # Gem Cutter mini-game
+    # ------------------------------------------------------------------
+
+    def _draw_gem_cutter(self, player, dt=0.0):
+        import math as _math
+
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 225))
+        self.screen.blit(overlay, (0, 0))
+
+        title = self.font.render("GEM CUTTER", True, (110, 230, 205))
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 6))
+
+        rough_gems = [(i, g) for i, g in enumerate(player.gems) if g.state == "rough"]
+        phase = self._gc_phase
+
+        # ---- SEQUENCE ANIMATION ----
+        if phase == "show_seq":
+            self._gc_seq_timer -= dt
+            if self._gc_seq_timer <= 0:
+                self._gc_seq_idx += 1
+                if self._gc_seq_idx >= len(self._gc_fault_pts):
+                    self._gc_phase = "player_turn"
+                    self._gc_fault_lit = -1
+                else:
+                    self._gc_fault_lit = self._gc_seq_idx
+                    self._gc_seq_timer = 0.6
+            else:
+                self._gc_fault_lit = self._gc_seq_idx
+
+        # ---- REVEAL ANIMATION ----
+        if phase == "reveal":
+            self._gc_reveal_timer -= dt
+            if self._gc_reveal_timer <= 0:
+                self._gc_phase = "choose_cut"
+                self._gc_reveal_timer = 0.0
+
+        # ---- SELECT PHASE ----
+        if phase == "select":
+            hint = self.small.render("ESC to close  |  Select a rough gem to begin cracking", True, (75, 130, 115))
+            self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 26))
+
+            if not rough_gems:
+                msg = self.font.render("No rough gems to cut.  Mine Gem Deposits!", True, (70, 120, 105))
+                self.screen.blit(msg, (SCREEN_W // 2 - msg.get_width() // 2, SCREEN_H // 2))
+                return
+
+            CELL, GAP, COLS = 90, 10, 8
+            gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+            gy0 = 48
+            self._gc_select_rects.clear()
+            for j, (idx, gem) in enumerate(rough_gems):
+                col = j % COLS
+                row = j // COLS
+                x = gx0 + col * (CELL + GAP)
+                y = gy0 + row * (CELL + GAP)
+                if y + CELL > SCREEN_H - 40:
+                    break
+                rect = pygame.Rect(x, y, CELL, CELL)
+                self._gc_select_rects[idx] = rect
+                rar_col = GEM_RARITY_COLORS.get(gem.rarity, (120, 120, 120))
+                pygame.draw.rect(self.screen, (22, 35, 32), rect)
+                pygame.draw.rect(self.screen, rar_col, rect, 2)
+                img = render_rough_gem(gem, 68)
+                self.screen.blit(img, (x + (CELL - 68) // 2, y + (CELL - 68) // 2 - 5))
+                ns = self.small.render(self._fit_label(gem.gem_type.replace("_", " "), CELL - 4), True, (105, 175, 155))
+                self.screen.blit(ns, (x + CELL // 2 - ns.get_width() // 2, y + CELL - 14))
+            return
+
+        # ---- CRACKING PHASES ----
+        gem = player.gems[self._gc_gem_idx]
+        cx_gem = SCREEN_W // 2
+        cy_gem = SCREEN_H // 2 - 30
+
+        # Left panel: gem preview
+        preview_size = 200
+        if phase in ("show_seq", "player_turn"):
+            img = render_rough_gem(gem, preview_size)
+        elif phase == "reveal":
+            # Blend between rough and cut as reveal progresses
+            img = render_rough_gem(gem, preview_size)
+        else:
+            img = render_gem(gem, preview_size)
+        self.screen.blit(img, (cx_gem - preview_size // 2, cy_gem - preview_size // 2))
+
+        # Draw fault points on top of gem image
+        pts_offset_x = cx_gem - 110
+        pts_offset_y = cy_gem - 110
+        fault_pts_screen = [
+            (pts_offset_x + px, pts_offset_y + py)
+            for px, py in self._gc_fault_pts
+        ]
+
+        if phase in ("show_seq", "player_turn"):
+            self._gc_fault_rects = []
+            for i, (fx, fy) in enumerate(fault_pts_screen):
+                r = 14
+                rect = pygame.Rect(fx - r, fy - r, r * 2, r * 2)
+                self._gc_fault_rects.append(rect)
+
+                already_clicked = i < len(self._gc_seq_clicks)
+                is_lit = (i == self._gc_fault_lit)
+                is_next = (i == len(self._gc_seq_clicks) and phase == "player_turn")
+
+                if already_clicked:
+                    col = (50, 200, 120)
+                    alpha = 220
+                elif is_lit:
+                    col = (255, 240, 80)
+                    alpha = 255
+                elif is_next:
+                    col = (80, 180, 255)
+                    alpha = 200
+                else:
+                    col = (160, 140, 120)
+                    alpha = 140
+
+                # Glow ring
+                glow_surf = pygame.Surface((r * 4, r * 4), pygame.SRCALPHA)
+                pygame.draw.circle(glow_surf, col + (60,), (r * 2, r * 2), r * 2)
+                self.screen.blit(glow_surf, (fx - r * 2, fy - r * 2))
+                pygame.draw.circle(self.screen, col, (fx, fy), r)
+
+                # Show number during preview sequence, or when already clicked
+                if is_lit or already_clicked:
+                    num_s = self.font.render(str(i + 1), True, (20, 20, 20))
+                    self.screen.blit(num_s, (fx - num_s.get_width() // 2, fy - num_s.get_height() // 2))
+
+            # Status text
+            if phase == "show_seq":
+                status = self.font.render("MEMORISE THE ORDER!", True, (255, 230, 80))
+            else:
+                expected = len(self._gc_seq_clicks)
+                status = self.font.render(
+                    f"Tap point {expected + 1} of {len(self._gc_fault_pts)}  —  Mistakes: {self._gc_mistakes}",
+                    True, (160, 220, 200)
+                )
+            self.screen.blit(status, (SCREEN_W // 2 - status.get_width() // 2, cy_gem + preview_size // 2 + 18))
+
+        elif phase == "reveal":
+            prog = 1.0 - self._gc_reveal_timer / 1.2
+            # Sparkle burst
+            import random as _rnd
+            rng2 = _rnd.Random(gem.seed ^ 0xABC)
+            n_sparks = int(prog * 24)
+            for _ in range(n_sparks):
+                a = rng2.uniform(0, 2 * _math.pi)
+                d = rng2.uniform(10, int(preview_size * 0.7 * prog))
+                sx = int(cx_gem + d * _math.cos(a))
+                sy = int(cy_gem - 30 + d * _math.sin(a))
+                sc_spark = rng2.choice([gem.primary_color, gem.secondary_color, (255, 255, 200)])
+                pygame.draw.circle(self.screen, sc_spark, (sx, sy), rng2.randint(2, 5))
+
+            pct_s = self.font.render("Cracking open...", True, (200, 230, 210))
+            self.screen.blit(pct_s, (SCREEN_W // 2 - pct_s.get_width() // 2, cy_gem + preview_size // 2 + 18))
+
+        elif phase == "choose_cut":
+            # Show revealed properties
+            header = self.font.render("GEM REVEALED!", True, (140, 255, 200))
+            self.screen.blit(header, (SCREEN_W // 2 - header.get_width() // 2, cy_gem - preview_size // 2 - 30))
+
+            info_y = cy_gem + preview_size // 2 + 10
+            rar_col = GEM_RARITY_COLORS.get(gem.rarity, (120, 120, 120))
+            clarity_s = self.small.render(f"Clarity: {gem.clarity}  |  Inclusion: {gem.inclusion.replace('_', ' ')}",
+                                          True, (145, 210, 185))
+            self.screen.blit(clarity_s, (SCREEN_W // 2 - clarity_s.get_width() // 2, info_y))
+            info_y += 18
+            if gem.optical_effect != "none":
+                opt_s = self.small.render(f"Optical effect hidden in this gem: {gem.optical_effect.replace('_', ' ')}",
+                                          True, (200, 155, 255))
+                self.screen.blit(opt_s, (SCREEN_W // 2 - opt_s.get_width() // 2, info_y))
+                info_y += 18
+
+            cut_label = self.font.render("Choose a cut:", True, (110, 200, 180))
+            self.screen.blit(cut_label, (SCREEN_W // 2 - cut_label.get_width() // 2, info_y + 4))
+            info_y += 32
+
+            tdef = GEM_TYPES[gem.gem_type]
+            cuts = tdef["available_cuts"]
+            BTN_W, BTN_H, BTN_GAP = 160, 48, 12
+            total_w = len(cuts) * BTN_W + (len(cuts) - 1) * BTN_GAP
+            bx0 = SCREEN_W // 2 - total_w // 2
+            self._gc_cut_rects.clear()
+            for ci, cut_name in enumerate(cuts):
+                bx = bx0 + ci * (BTN_W + BTN_GAP)
+                br = pygame.Rect(bx, info_y, BTN_W, BTN_H)
+                self._gc_cut_rects[cut_name] = br
+                pygame.draw.rect(self.screen, (22, 48, 44), br)
+                pygame.draw.rect(self.screen, (80, 195, 165), br, 2)
+                cut_title = self.small.render(cut_name.replace("_", " ").title(), True, (130, 215, 195))
+                self.screen.blit(cut_title, (bx + BTN_W // 2 - cut_title.get_width() // 2, info_y + 8))
+                cut_desc_short = GEM_CUT_DESCS.get(cut_name, "").split(" —")[0]
+                cd = self.small.render(self._fit_label(cut_desc_short, BTN_W - 8), True, (72, 140, 122))
+                self.screen.blit(cd, (bx + BTN_W // 2 - cd.get_width() // 2, info_y + 26))
+
     def _draw_achievements(self):
         CARD_W, CARD_H = 360, 118
         COLS            = 3
@@ -2512,7 +3061,10 @@ class UI:
                                    btn_rect.centery - btn_txt.get_height() // 2))
         self._refine_btn = btn_rect
 
-    def _draw_refinery(self, player):
+    def _draw_refinery(self, player, dt=0.0):
+        if self.refinery_block_id == GEM_CUTTER_BLOCK:
+            self._draw_gem_cutter(player, dt)
+            return
         if self.refinery_block_id == BAKERY_BLOCK:
             self._draw_bakery(player)
             return
@@ -2895,7 +3447,9 @@ class UI:
             and player.inventory.get(iid, 0) > 0
             for iid, idata in ITEMS.items()
         )
-        BW, BH = 160, 22
+        has_seeds_in_bot = bool(fb.seeds)
+        BW, BH = 152, 22
+        # Deposit All Seeds button (right side)
         btn_col    = (20, 60, 25) if has_seeds_in_inv else (25, 30, 25)
         btn_border = (60, 180, 80) if has_seeds_in_inv else (50, 60, 50)
         btn_tc     = (140, 255, 160) if has_seeds_in_inv else (60, 70, 60)
@@ -2905,6 +3459,16 @@ class UI:
         bt = self.small.render("Deposit All Seeds", True, btn_tc)
         self.screen.blit(bt, (self._fb_seeds_btn.x + BW // 2 - bt.get_width() // 2,
                                self._fb_seeds_btn.y + BH // 2 - bt.get_height() // 2))
+        # Get Seeds button (left of deposit button)
+        gs_col    = (20, 50, 60) if has_seeds_in_bot else (25, 28, 30)
+        gs_border = (60, 160, 200) if has_seeds_in_bot else (40, 50, 55)
+        gs_tc     = (120, 220, 255) if has_seeds_in_bot else (50, 60, 65)
+        self._fb_get_seeds_btn = pygame.Rect(px + PW - BW * 2 - 20, py + 127, BW, BH)
+        pygame.draw.rect(self.screen, gs_col, self._fb_get_seeds_btn)
+        pygame.draw.rect(self.screen, gs_border, self._fb_get_seeds_btn, 1)
+        gs_t = self.small.render("Get Seeds", True, gs_tc)
+        self.screen.blit(gs_t, (self._fb_get_seeds_btn.x + BW // 2 - gs_t.get_width() // 2,
+                                 self._fb_get_seeds_btn.y + BH // 2 - gs_t.get_height() // 2))
 
         # Show loaded seeds as small items
         SW2, GAP2 = 36, 4
@@ -2978,6 +3542,8 @@ class UI:
             fb.deposit_fuel(player)
         elif self._fb_seeds_btn and self._fb_seeds_btn.collidepoint(pos):
             fb.deposit_all_seeds(player)
+        elif self._fb_get_seeds_btn and self._fb_get_seeds_btn.collidepoint(pos):
+            fb.get_seeds(player)
         elif self._fb_take_btn and self._fb_take_btn.collidepoint(pos):
             fb.take_all(player)
 
@@ -3192,7 +3758,7 @@ class UI:
             if elapsed < 0.15:
                 alpha = int(255 * elapsed / 0.15)
             elif remaining < 0.5:
-                alpha = int(255 * remaining / 0.5)
+                alpha = int(255 * max(0.0, remaining) / 0.5)
             else:
                 alpha = 255
 

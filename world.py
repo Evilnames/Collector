@@ -4,7 +4,7 @@ import time as _time
 from math import cos, sin, pi
 from blocks import *  # noqa: F401,F403
 from constants import CHUNK_W, CHUNK_LOAD_RADIUS, WORLD_MAX_X, WORLD_H, SURFACE_Y, BLOCK_SIZE, PLAYER_W, PLAYER_H
-from biomes import BIOMES, BIOME_ORE_MULTIPLIERS, BIODOME_TYPES
+from biomes import BIOMES, BIOME_ORE_MULTIPLIERS, BIODOME_TYPES, BIODOME_TERRAIN_MODS
 
 
 class World:
@@ -14,6 +14,8 @@ class World:
         self._save_mgr = save_mgr
         self._chunks = {}           # chunk_x -> [[block_id]*CHUNK_W]*WORLD_H
         self._dirty_chunks = set()
+        self._bg_chunks = {}        # background layer: chunk_x -> [[block_id]*CHUNK_W]*WORLD_H
+        self._dirty_bg_chunks = set()
         self.entities = []
         self.automations = []
         self.farm_bots = []
@@ -80,11 +82,32 @@ class World:
     # Deterministic terrain queries (replace fixed arrays)
     # ------------------------------------------------------------------
 
+    def _biodome_terrain_mod(self, x: int):
+        """Return (height_bias, amplitude_scale) blended from the two nearest biodome zones."""
+        zone = x // 200
+        data = []
+        for z in range(zone - 1, zone + 2):
+            rng_c = random.Random(hash((self.seed, z, 'bdc')) & 0x7FFFFFFF)
+            cx = z * 200 + rng_c.randint(-40, 40)
+            rng_t = random.Random(hash((self.seed, z, 'bdt')) & 0x7FFFFFFF)
+            biodome = rng_t.choice(BIODOME_TYPES)
+            bias, scale = BIODOME_TERRAIN_MODS.get(biodome, (0, 1.0))
+            data.append((abs(x - cx), bias, scale))
+        data.sort()
+        d0, b0, s0 = data[0]
+        d1, b1, s1 = data[1]
+        if d0 == 0:
+            return b0, s0
+        w0, w1 = 1.0 / d0, 1.0 / d1
+        total = w0 + w1
+        return (w0 * b0 + w1 * b1) / total, (w0 * s0 + w1 * s1) / total
+
     def surface_height(self, x: int) -> int:
-        h = SURFACE_Y
+        bias, scale = self._biodome_terrain_mod(x)
+        h = SURFACE_Y + bias
         for (freq, amp), phase in zip(self._surf_octaves, self._surf_phases):
-            h += amp * math.sin(x * freq + phase)
-        return round(h)
+            h += amp * scale * math.sin(x * freq + phase)
+        return max(5, round(h))
 
     def biome_at(self, x: int) -> str:
         zone = x // 150
@@ -133,6 +156,9 @@ class World:
         self._chunks[cx] = data if data is not None else [[AIR] * CHUNK_W for _ in range(WORLD_H)]
         if data is None:
             self._fill_chunk(cx)
+        bg_data = self._save_mgr.load_bg_chunk(cx) if self._save_mgr else None
+        if bg_data is not None:
+            self._bg_chunks[cx] = bg_data
 
     def unload_chunk(self, cx: int):
         """Save dirty chunk to DB and evict from memory."""
@@ -141,7 +167,11 @@ class World:
         if self._save_mgr and cx in self._dirty_chunks:
             self._save_mgr.save_chunk(cx, self._chunks[cx])
             self._dirty_chunks.discard(cx)
+        if self._save_mgr and cx in self._dirty_bg_chunks and cx in self._bg_chunks:
+            self._save_mgr.save_bg_chunk(cx, self._bg_chunks[cx])
+            self._dirty_bg_chunks.discard(cx)
         del self._chunks[cx]
+        self._bg_chunks.pop(cx, None)
 
     def update_loaded_chunks(self, player_x_pixels: float):
         """Call each frame to stream chunks in and out around the player."""
@@ -160,18 +190,27 @@ class World:
             if dirty:
                 self._save_mgr.save_chunks_batch(dirty)
                 self._dirty_chunks -= set(dirty.keys())
+            dirty_bg = {cx: self._bg_chunks[cx] for cx in to_unload
+                        if cx in self._dirty_bg_chunks and cx in self._bg_chunks}
+            if dirty_bg:
+                self._save_mgr.save_bg_chunks_batch(dirty_bg)
+                self._dirty_bg_chunks -= set(dirty_bg.keys())
         for cx in to_unload:
             del self._chunks[cx]
+            self._bg_chunks.pop(cx, None)
 
         # Load all needed chunks from DB in one query, generate any that are new
         if to_load:
             db_data = self._save_mgr.load_chunks_batch(to_load) if self._save_mgr else {}
+            bg_db_data = self._save_mgr.load_bg_chunks_batch(to_load) if self._save_mgr else {}
             for cx in to_load:
                 if cx in db_data:
                     self._chunks[cx] = db_data[cx]
                 else:
                     self._chunks[cx] = [[AIR] * CHUNK_W for _ in range(WORLD_H)]
                     self._fill_chunk(cx)
+                if cx in bg_db_data:
+                    self._bg_chunks[cx] = bg_db_data[cx]
 
     def _chunk_get(self, x: int, y: int) -> int:
         """Raw chunk read — no side effects. Returns BEDROCK for unloaded/OOB."""
@@ -257,13 +296,15 @@ class World:
             x = cx * CHUNK_W + lx
             sy = self.surface_height(x)
             biome = self.biome_at(x)
+            biodome = self.biodome_at(x)
+            rocky = biodome in ("alpine_mountain", "rocky_mountain")
             for y in range(WORLD_H):
                 if y < sy:
                     chunk[y][lx] = AIR
                 elif y == sy:
-                    chunk[y][lx] = GRASS
+                    chunk[y][lx] = SNOW if biodome == "alpine_mountain" else GRASS
                 elif y < sy + 6:
-                    chunk[y][lx] = DIRT
+                    chunk[y][lx] = STONE if rocky else DIRT
                 elif y >= WORLD_H - 1:
                     chunk[y][lx] = BEDROCK
                 else:
@@ -291,8 +332,12 @@ class World:
             biodome = self.biodome_at(x)
             self._dispatch_grow(x, sy - 1, biodome, tree_rng)
             lo, hi = {
-                "jungle":    (3, 6), "fungal":    (3, 7), "boreal":    (4, 8),
-                "wetland":   (4, 8), "wasteland": (9, 16), "savanna":  (7, 13),
+                "jungle":          (3, 6),  "fungal":         (3, 7),
+                "boreal":          (4, 8),  "wetland":        (4, 8),
+                "wasteland":       (9, 16), "savanna":        (7, 13),
+                "alpine_mountain": (14, 22),"rocky_mountain": (12, 20),
+                "rolling_hills":   (5, 11), "steep_hills":    (5, 10),
+                "steppe":          (13, 22),"arid_steppe":    (18, 30),
             }.get(biodome, (5, 10))
             lx += tree_rng.randint(lo, hi)
 
@@ -325,6 +370,9 @@ class World:
                 "temperate": (4, 9), "boreal": (5, 10), "birch_forest": (4, 9),
                 "redwood": (5, 11), "savanna": (6, 13), "wasteland": (12, 25),
                 "fungal": (4, 10),
+                "alpine_mountain": (18, 35), "rocky_mountain": (14, 28),
+                "rolling_hills": (4, 9), "steep_hills": (5, 10),
+                "steppe": (9, 18), "arid_steppe": (15, 30),
             }.get(biodome, (5, 10))
             lx += flower_rng.randint(lo, hi)
 
@@ -727,6 +775,17 @@ class World:
                 return FOSSIL_DEPOSIT
             elif fr < 0.001:
                 return FOSSIL_DEPOSIT
+        # Gem deposits — only below depth 8, rarer than fossils
+        if depth >= 8:
+            gr = rng.random()
+            if depth >= 172 and gr < 0.0018:
+                return GEM_DEPOSIT
+            elif depth >= 100 and gr < 0.0012:
+                return GEM_DEPOSIT
+            elif depth >= 50 and gr < 0.0008:
+                return GEM_DEPOSIT
+            elif gr < 0.0004:
+                return GEM_DEPOSIT
         r = rng.random()  # fresh roll so deposit chance doesn't eat ore slots
         m = BIOME_ORE_MULTIPLIERS.get(biome, {})
         cm = m.get("coal", 1.0)
@@ -798,6 +857,21 @@ class World:
                             if self._chunk_get(nx, check_y) in PHYSICS_BLOCKS:
                                 self.pending_physics.add((nx, check_y))
                                 self._physics_grace[(nx, check_y)] = self._physics_tick + 3
+
+    def get_bg_block(self, x, y):
+        if y < 0 or y >= WORLD_H or abs(x) > WORLD_MAX_X:
+            return AIR
+        chunk = self._bg_chunks.get(x // CHUNK_W)
+        return chunk[y][x % CHUNK_W] if chunk is not None else AIR
+
+    def set_bg_block(self, x, y, block_id):
+        if y < 0 or y >= WORLD_H or abs(x) > WORLD_MAX_X:
+            return
+        cx = x // CHUNK_W
+        if cx not in self._bg_chunks:
+            self._bg_chunks[cx] = [[AIR] * CHUNK_W for _ in range(WORLD_H)]
+        self._bg_chunks[cx][y][x % CHUNK_W] = block_id
+        self._dirty_bg_chunks.add(cx)
 
     def is_solid(self, x, y):
         bid = self.get_block(x, y)
@@ -1138,16 +1212,22 @@ class World:
 
     def _dispatch_grow(self, bx, by, biodome, rng=None):
         {
-            "temperate":    self._grow_oak,
-            "boreal":       self._grow_pine,
-            "birch_forest": self._grow_birch,
-            "jungle":       self._grow_jungle,
-            "wetland":      self._grow_willow,
-            "redwood":      self._grow_redwood,
-            "tropical":     self._grow_palm,
-            "savanna":      self._grow_acacia,
-            "wasteland":    self._grow_dead,
-            "fungal":       self._grow_mushroom,
+            "temperate":       self._grow_oak,
+            "boreal":          self._grow_pine,
+            "birch_forest":    self._grow_birch,
+            "jungle":          self._grow_jungle,
+            "wetland":         self._grow_willow,
+            "redwood":         self._grow_redwood,
+            "tropical":        self._grow_palm,
+            "savanna":         self._grow_acacia,
+            "wasteland":       self._grow_dead,
+            "fungal":          self._grow_mushroom,
+            "alpine_mountain": self._grow_pine,
+            "rocky_mountain":  self._grow_pine,
+            "rolling_hills":   self._grow_oak,
+            "steep_hills":     self._grow_birch,
+            "steppe":          self._grow_acacia,
+            "arid_steppe":     self._grow_dead,
         }.get(biodome, self._grow_oak)(bx, by, rng)
 
     def _grow_tree(self, bx, by):

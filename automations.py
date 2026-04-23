@@ -433,6 +433,11 @@ class FarmBot:
             self._state = "halted"
             self._halt_reason = "full"
             return
+        # Auto-cycle: any seed items that landed in stored produce get moved to seeds slot
+        from items import ITEMS
+        for item_id in list(self.stored.keys()):
+            if ITEMS.get(item_id, {}).get("place_block") in YOUNG_CROP_BLOCKS:
+                self.seeds[item_id] = self.seeds.get(item_id, 0) + self.stored.pop(item_id)
         cx = int((self.x + self.W / 2) // BLOCK_SIZE)
         cy = int((self.y + self.H / 2) // BLOCK_SIZE)
         r = adef["scan_radius"]
@@ -462,15 +467,22 @@ class FarmBot:
         if drop:
             if random.random() < BLOCKS[block_id].get("drop_chance", 1.0):
                 self.stored[drop] = self.stored.get(drop, 0) + 1
+        seed_drop = mature_to_seed.get(block_id)
+        if seed_drop:
+            count = random.randint(1, 2)
+            self.stored[seed_drop] = self.stored.get(seed_drop, 0) + count
         world.set_block(bx, by, AIR)
+        if world.get_block(bx, by + 1) not in (GRASS, DIRT):
+            return
         seed_id = mature_to_seed.get(block_id)
+        # Prefer exact seed match, fall back to any available seed
         if seed_id and self.seeds.get(seed_id, 0) > 0:
-            if world.get_block(bx, by + 1) in (GRASS, DIRT):
-                young_block = MATURE_TO_YOUNG_CROP[block_id]
-                world.set_block(bx, by, young_block)
-                self.seeds[seed_id] -= 1
-                if self.seeds[seed_id] <= 0:
-                    del self.seeds[seed_id]
+            world.set_block(bx, by, MATURE_TO_YOUNG_CROP[block_id])
+            self.seeds[seed_id] -= 1
+            if self.seeds[seed_id] <= 0:
+                del self.seeds[seed_id]
+        elif self.seeds:
+            self._plant(world, bx, by)
 
     def deposit_fuel(self, player, amount=None):
         adef = self._def
@@ -508,6 +520,12 @@ class FarmBot:
                     and player.inventory.get(iid, 0) > 0]
         for seed_id in seed_ids:
             self.deposit_seeds(player, seed_id)
+
+    def get_seeds(self, player):
+        for seed_id, count in list(self.seeds.items()):
+            for _ in range(count):
+                player._add_item(seed_id)
+        self.seeds.clear()
 
     def take_all(self, player):
         for item_id, count in self.stored.items():
