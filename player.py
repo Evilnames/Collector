@@ -237,9 +237,9 @@ class Player:
             if harvest_target is not None:
                 result = harvest_target.try_harvest(self, dt)
                 if result is not None:
-                    item_id, count = result
-                    for _ in range(count):
-                        self._add_item(item_id)
+                    for item_id, count in result:
+                        for _ in range(count):
+                            self._add_item(item_id)
                     self._consume_tool_use()
                 if getattr(harvest_target, 'dead', False):
                     if harvest_target in self.world.entities:
@@ -403,9 +403,8 @@ class Player:
             elif block_id == FOSSIL_DEPOSIT:
                 fossil = self._fossil_gen.generate(bx, by, self.get_depth(), self.world.get_biome(bx))
                 self.fossils.append(fossil)
-                self.discovered_fossil_types.add(fossil.fossil_type)
                 self.pending_notifications.append(
-                    ("Fossil", fossil.fossil_type.replace("_", " ").title(), fossil.rarity))
+                    ("Raw Fossil", "Prepare at Fossil Table", "common"))
             elif block_id == GEM_DEPOSIT:
                 gem = self._gem_gen.generate(bx, by, self.get_depth(), self.world.get_biome(bx))
                 self.gems.append(gem)

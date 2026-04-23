@@ -185,6 +185,7 @@ BLEND_STATION_BLOCK   = 215
 BREW_STATION_BLOCK    = 216
 WOOD_FENCE_OPEN      = 217
 IRON_FENCE_OPEN      = 218
+FOSSIL_TABLE_BLOCK   = 219  # placed Fossil Prep Table equipment
 
 HOUSE_WALL           = 108  # city house wall block
 HOUSE_ROOF           = 109  # city house roof block
@@ -271,7 +272,8 @@ LEAF_LOG_MAP = {
 EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, BAKERY_BLOCK,
                     WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
                     DESERT_FORGE_BLOCK,
-                    ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK}
+                    ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK,
+                    FOSSIL_TABLE_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT}
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
                      RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, GARLIC_BUSH, SCALLION_BUSH, CHILI_BUSH,
@@ -570,4 +572,5 @@ BLOCKS = {
     ROASTER_BLOCK:          {"name": "Coffee Roaster",           "hardness": 1.5, "color": ( 95,  55,  25), "drop": "roaster_item"},
     BLEND_STATION_BLOCK:    {"name": "Blend Station",            "hardness": 1.5, "color": (110,  75,  40), "drop": "blend_station_item"},
     BREW_STATION_BLOCK:     {"name": "Brew Station",             "hardness": 1.5, "color": ( 75,  60,  45), "drop": "brew_station_item"},
+    FOSSIL_TABLE_BLOCK:     {"name": "Fossil Prep Table",        "hardness": 2,   "color": (110,  88,  62), "drop": "fossil_table_item"},
 }

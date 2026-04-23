@@ -19,7 +19,8 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     CACTUS_YOUNG, SANDSTONE_BLOCK, DESERT_FORGE_BLOCK, SAND,
                     DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG,
                     BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK,
-                    COFFEE_CROP_YOUNG, ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK)
+                    COFFEE_CROP_YOUNG, ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK,
+                    FOSSIL_TABLE_BLOCK)
 
 ITEMS = {
     # --- Natural resources ---
@@ -113,6 +114,9 @@ ITEMS = {
     # --- Animal products ---
     "wool":           {"name": "Wool",           "color": (235, 235, 235), "place_block": None},
     "milk":           {"name": "Milk",           "color": (245, 245, 255), "place_block": None},
+    "golden_wool":    {"name": "Golden Wool",    "color": (230, 195,  60), "place_block": None},
+    "golden_milk":    {"name": "Golden Milk",    "color": (240, 210,  80), "place_block": None},
+    "golden_egg":     {"name": "Golden Egg",     "color": (240, 200,  40), "place_block": None},
     "raw_mutton":     {"name": "Raw Mutton",     "color": (210, 130, 110), "place_block": None, "edible": True, "hunger_restore":  6},
     "raw_beef":       {"name": "Raw Beef",       "color": (190,  90,  80), "place_block": None, "edible": True, "hunger_restore":  6},
     "raw_chicken":    {"name": "Raw Chicken",    "color": (225, 195, 155), "place_block": None, "edible": True, "hunger_restore":  6},
@@ -275,6 +279,7 @@ ITEMS = {
     "roaster_item":         {"name": "Coffee Roaster",    "color": ( 95,  55,  25), "place_block": ROASTER_BLOCK},
     "blend_station_item":   {"name": "Blend Station",     "color": (110,  75,  40), "place_block": BLEND_STATION_BLOCK},
     "brew_station_item":    {"name": "Brew Station",      "color": ( 75,  60,  45), "place_block": BREW_STATION_BLOCK},
+    "fossil_table_item":    {"name": "Fossil Prep Table", "color": (110,  88,  62), "place_block": FOSSIL_TABLE_BLOCK},
     # Brewed coffee — base quality
     "drip_coffee":          {"name": "Drip Coffee",       "color": ( 55,  35,  18), "place_block": None, "edible": True, "hunger_restore": 8,  "coffee_buff": "focus",     "coffee_buff_duration": 90.0},
     "espresso":             {"name": "Espresso",          "color": ( 30,  18,   8), "place_block": None, "edible": True, "hunger_restore": 5,  "coffee_buff": "rush",      "coffee_buff_duration": 45.0},

@@ -7,7 +7,7 @@ import pygame
 from world import World
 from player import Player
 from renderer import Renderer
-from ui import UI
+from UI import UI
 from research import ResearchTree
 from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe

@@ -612,6 +612,16 @@ RECIPES = [
         "output_id":    "brew_station_item",
         "output_count": 1,
     },
+    {
+        "name": "Fossil Prep Table",
+        "pattern": [
+            ["stone_chip", "stone_chip", "stone_chip"],
+            ["lumber",     "lumber",     "lumber"    ],
+            ["lumber",     "lumber",     "lumber"    ],
+        ],
+        "output_id":    "fossil_table_item",
+        "output_count": 1,
+    },
 ]
 
 

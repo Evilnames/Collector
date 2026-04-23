@@ -276,7 +276,8 @@ class SaveManager:
             primary_color TEXT, secondary_color TEXT,
             pattern TEXT, pattern_density REAL, age TEXT,
             clarity REAL, detail REAL, specials TEXT,
-            depth_found INTEGER, seed INTEGER, upgrades TEXT
+            depth_found INTEGER, seed INTEGER, upgrades TEXT,
+            prepared INTEGER DEFAULT 0
         );
         CREATE TABLE IF NOT EXISTS gems (
             uid TEXT PRIMARY KEY, gem_type TEXT, rarity TEXT, size TEXT,
@@ -614,10 +615,14 @@ class SaveManager:
             )
 
     def _save_fossils(self, con, player):
+        try:
+            con.execute("ALTER TABLE fossils ADD COLUMN prepared INTEGER DEFAULT 0")
+        except Exception:
+            pass
         con.execute("DELETE FROM fossils")
         for f in player.fossils:
             con.execute(
-                "INSERT OR REPLACE INTO fossils VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT OR REPLACE INTO fossils VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     f.uid, f.fossil_type, f.rarity, f.size,
                     json.dumps(list(f.primary_color)),
@@ -627,6 +632,7 @@ class SaveManager:
                     json.dumps(f.specials),
                     f.depth_found, f.seed,
                     json.dumps(f.upgrades),
+                    1 if f.prepared else 0,
                 )
             )
 
@@ -853,6 +859,8 @@ class SaveManager:
                 "biodome_found": wf[12], "seed": wf[13],
             })
 
+        fossil_cols = [row[1] for row in con.execute("PRAGMA table_info(fossils)").fetchall()]
+        has_prepared_col = "prepared" in fossil_cols
         fossil_rows = con.execute("""
             SELECT uid, fossil_type, rarity, size, primary_color, secondary_color,
                    pattern, pattern_density, age, clarity, detail, specials,
@@ -870,7 +878,13 @@ class SaveManager:
                 "specials": json.loads(f[11]),
                 "depth_found": f[12], "seed": f[13],
                 "upgrades": json.loads(f[14]),
+                "prepared": not has_prepared_col,  # grandfather old saves as prepared
             })
+        if has_prepared_col:
+            prepared_rows = con.execute("SELECT uid, prepared FROM fossils").fetchall()
+            prepared_map = {row[0]: bool(row[1]) for row in prepared_rows}
+            for fd in fossils_data:
+                fd["prepared"] = prepared_map.get(fd["uid"], False)
 
         gem_rows = con.execute("""
             SELECT uid, gem_type, rarity, size, state, cut, clarity,

@@ -1622,6 +1622,56 @@ def _weighted_choice(rng, weights_dict):
     return keys[-1]
 
 
+_SIZE_TO_GRID_N = {"fragment": 4, "small": 5, "medium": 6, "large": 7, "complete": 8}
+
+
+def generate_prep_grid(fossil):
+    """Return (grid, n) where grid is a list-of-lists of cell dicts.
+
+    Cell dict keys:
+      type         – "hard" | "soft" | "fragile"
+      hits_brush   – brush clicks needed to clear
+      chisel_damage – integrity damage if chisel used
+    """
+    n = _SIZE_TO_GRID_N.get(fossil.size, 5)
+    rng = random.Random(fossil.seed ^ 0xBEEF0F)
+    cx = (n - 1) / 2.0
+    cy = (n - 1) / 2.0
+    max_d = math.sqrt(cx * cx + cy * cy) or 1.0
+    grid = []
+    for row in range(n):
+        row_cells = []
+        for col in range(n):
+            dx = col - cx
+            dy = row - cy
+            d = math.sqrt(dx * dx + dy * dy) / max_d
+            d += rng.uniform(-0.12, 0.12)
+            if d < 0.35:
+                row_cells.append({"type": "fragile", "hits_brush": 2, "chisel_damage": 20})
+            elif d < 0.65:
+                row_cells.append({"type": "soft",    "hits_brush": 1, "chisel_damage": 8})
+            else:
+                row_cells.append({"type": "hard",    "hits_brush": 3, "chisel_damage": 0})
+        grid.append(row_cells)
+    return grid, n
+
+
+def apply_preparation_result(fossil, damage_pct):
+    """Reduce clarity and detail based on accumulated damage percentage (0–100)."""
+    if damage_pct <= 0:
+        return
+    if damage_pct <= 25:
+        reduction = 0.10 * (damage_pct / 25)
+    elif damage_pct <= 50:
+        reduction = 0.10 + 0.15 * ((damage_pct - 25) / 25)
+    elif damage_pct <= 75:
+        reduction = 0.25 + 0.15 * ((damage_pct - 50) / 25)
+    else:
+        reduction = 0.40 + 0.20 * ((damage_pct - 75) / 25)
+    fossil.clarity = max(0.05, round(fossil.clarity - reduction, 2))
+    fossil.detail  = max(0.05, round(fossil.detail  - reduction, 2))
+
+
 class FossilGenerator:
     def __init__(self, world_seed):
         self._world_seed = world_seed

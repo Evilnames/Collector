@@ -108,7 +108,7 @@ def wf_quest_display(quest):
     elif quest["kind"] == "wf_quantity":
         return f"{quest['count']}x {quest['flower_type'].replace('_', ' ').title()}"
     elif quest["kind"] == "wf_rarity":
-        from ui import RARITY_LABEL
+        from UI import RARITY_LABEL
         label = RARITY_LABEL.get(quest["min_rarity"], quest["min_rarity"])
         return f"Any {label}+ wildflower"
     return "Unknown quest"
@@ -178,7 +178,7 @@ def gem_quest_display(quest):
     elif quest["kind"] == "gem_cut":
         return f"Cut {quest['gem_type'].replace('_', ' ').title()}"
     elif quest["kind"] == "gem_rarity":
-        from ui import RARITY_LABEL
+        from UI import RARITY_LABEL
         label = RARITY_LABEL.get(quest["min_rarity"], quest["min_rarity"])
         return f"Any {label}+ gemstone"
     return "Unknown quest"
@@ -244,11 +244,11 @@ def _build_quest(rng, difficulty):
 
 def quest_display(quest):
     if quest["kind"] == "single":
-        from ui import RARITY_LABEL
+        from UI import RARITY_LABEL
         label = RARITY_LABEL.get(quest["rarity"], quest["rarity"])
         return f"{label} {quest['rock_type'].replace('_', ' ').title()}"
     elif quest["kind"] == "any_rarity":
-        from ui import RARITY_LABEL
+        from UI import RARITY_LABEL
         label = RARITY_LABEL.get(quest["min_rarity"], quest["min_rarity"])
         return f"Any {label}+ rock"
     elif quest["kind"] == "quantity":

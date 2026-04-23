@@ -7,6 +7,11 @@ from blocks import LADDER, WOOD_FENCE, IRON_FENCE
 ANIMAL_MOVE_SPEED = 1.2
 ANIMAL_CLIMB_SPEED = 1.5
 
+MUTATION_TYPES = ["albino", "giant", "miniature", "golden"]
+MUTATION_CHANCE = 0.03
+MUTATION_INHERIT_ONE = 0.50
+MUTATION_INHERIT_BOTH = 0.85
+
 
 class Animal:
     def __init__(self, x, y, world, animal_id):
@@ -34,6 +39,8 @@ class Animal:
                 random.uniform(-0.20, 0.20),
             ),
             "size": random.uniform(0.87, 1.13),
+            "productivity": random.uniform(0.80, 1.20),
+            "mutation": None,
         }
 
         # Health / death
@@ -56,11 +63,25 @@ class Animal:
 
     @property
     def W(self):
-        return int(self.ANIMAL_W * self.traits.get("size", 1.0))
+        mut = self.traits.get("mutation")
+        if mut == "giant":
+            s = 1.4
+        elif mut == "miniature":
+            s = 0.6
+        else:
+            s = self.traits.get("size", 1.0)
+        return int(self.ANIMAL_W * s)
 
     @property
     def H(self):
-        return int(self.ANIMAL_H * self.traits.get("size", 1.0))
+        mut = self.traits.get("mutation")
+        if mut == "giant":
+            s = 1.4
+        elif mut == "miniature":
+            s = 0.6
+        else:
+            s = self.traits.get("size", 1.0)
+        return int(self.ANIMAL_H * s)
 
     @property
     def rect(self):
@@ -209,10 +230,36 @@ class Animal:
         )
         sz = (self.traits["size"] + other.traits["size"]) / 2 + random.uniform(-0.02, 0.02)
         offspring.traits["size"] = max(0.85, min(1.15, sz))
+
+        prod = (self.traits.get("productivity", 1.0) + other.traits.get("productivity", 1.0)) / 2
+        prod += random.uniform(-0.03, 0.03)
+        offspring.traits["productivity"] = max(0.7, min(1.3, prod))
+
+        mut_a = self.traits.get("mutation")
+        mut_b = other.traits.get("mutation")
+        offspring_mutation = None
+        if mut_a is not None and mut_a == mut_b:
+            if random.random() < MUTATION_INHERIT_BOTH:
+                offspring_mutation = mut_a
+        elif mut_a is not None or mut_b is not None:
+            source = mut_a if mut_a is not None else mut_b
+            if random.random() < MUTATION_INHERIT_ONE:
+                offspring_mutation = source
+        if offspring_mutation is None and random.random() < MUTATION_CHANCE:
+            offspring_mutation = random.choice(MUTATION_TYPES)
+        offspring.traits["mutation"] = offspring_mutation
+
+        if offspring_mutation == "albino":
+            offspring.traits["color_shift"] = (
+                random.uniform(0.20, 0.25),
+                random.uniform(0.20, 0.25),
+                random.uniform(0.20, 0.25),
+            )
+
         offspring.parent_a_uid = self.uid
         offspring.parent_b_uid = other.uid
         offspring.tamed = True
-        offspring._breed_cooldown = 120.0
+        offspring._breed_cooldown = 60.0 if offspring_mutation == "miniature" else 120.0
         self._breed_cooldown = 120.0
         other._breed_cooldown = 120.0
         world.entities.append(offspring)
@@ -256,8 +303,9 @@ class Animal:
                 if self.health <= 0:
                     self.dead = True
                     self.reset_harvest()
-                    item_id, count = self.MEAT_DROP
-                    return (item_id, count)
+                    item_id, base_count = self.MEAT_DROP
+                    count = base_count + (1 if self.traits.get("mutation") == "giant" else 0)
+                    return [(item_id, count)]
             return None
         return self._try_harvest_resource(player, dt)
 
@@ -279,8 +327,9 @@ class Animal:
                 if player.hotbar[i] == item_id:
                     player.hotbar[i] = None
                     break
+        threshold = 2 if self.traits.get("mutation") == "albino" else 3
         self.tame_progress += 1
-        if self.tame_progress >= 3:
+        if self.tame_progress >= threshold:
             self.tamed = True
         return True
 
@@ -327,7 +376,15 @@ class Sheep(Animal):
             self.reset_harvest()
             self.has_wool = False
             self._regrow_timer = self.REGROW_TIME
-            return ("wool", random.randint(1, 3))
+            prod = self.traits.get("productivity", 1.0)
+            mut = self.traits.get("mutation")
+            count = max(1, round(random.randint(1, 3) * prod))
+            if mut == "giant":
+                count += 1
+            drops = [("wool", count)]
+            if mut == "golden":
+                drops.append(("golden_wool", 1))
+            return drops
         return None
 
 
@@ -368,7 +425,15 @@ class Cow(Animal):
             self.reset_harvest()
             self.has_milk = False
             self._refill_timer = self.REFILL_TIME
-            return ("milk", 1)
+            prod = self.traits.get("productivity", 1.0)
+            mut = self.traits.get("mutation")
+            count = max(1, round(prod))
+            if mut == "giant":
+                count += 1
+            drops = [("milk", count)]
+            if mut == "golden":
+                drops.append(("golden_milk", 1))
+            return drops
         return None
 
 
@@ -405,7 +470,15 @@ class Chicken(Animal):
             self.reset_harvest()
             self.has_egg = False
             self._refill_timer = self.REFILL_TIME
-            return ("egg", 1)
+            prod = self.traits.get("productivity", 1.0)
+            mut = self.traits.get("mutation")
+            count = max(1, round(prod))
+            if mut == "giant":
+                count += 1
+            drops = [("egg", count)]
+            if mut == "golden":
+                drops.append(("golden_egg", 1))
+            return drops
         return None
 
 

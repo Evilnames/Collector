@@ -284,8 +284,10 @@ class World:
             if "traits" in extra:
                 raw = extra["traits"]
                 entity.traits = {
-                    "color_shift": tuple(raw.get("color_shift", [0, 0, 0])),
-                    "size":        raw.get("size", 1.0),
+                    "color_shift":  tuple(raw.get("color_shift", [0, 0, 0])),
+                    "size":         raw.get("size", 1.0),
+                    "productivity": raw.get("productivity", 1.0),
+                    "mutation":     raw.get("mutation", None),
                 }
             entity.health          = extra.get("health", 3)
             entity.dead            = extra.get("dead", False)
