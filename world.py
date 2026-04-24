@@ -1645,6 +1645,7 @@ class World:
                         self.entities.append(MountainLion(ax, ay, self))
                 x += cat_rng.randint(25, 55)
 
+
     def _spawn_birds(self):
         from birds import ALL_SPECIES
         self.birds.clear()
