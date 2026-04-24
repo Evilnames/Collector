@@ -56,6 +56,7 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER,
                     DATE_PALM_BUSH, DATE_PALM_CROP_YOUNG, DATE_PALM_CROP_MATURE,
                     AGAVE_BUSH, AGAVE_CROP_YOUNG, AGAVE_CROP_MATURE,
                     COFFEE_BUSH, COFFEE_CROP_YOUNG, COFFEE_CROP_MATURE,
+                    GRAPEVINE_BUSH, GRAPEVINE_CROP_YOUNG, GRAPEVINE_CROP_MATURE,
                     BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK,
                     TILLED_SOIL,
                     POLISHED_GRANITE, POLISHED_MARBLE, SLATE_TILE, TERRACOTTA_BLOCK,
@@ -1535,6 +1536,45 @@ class Renderer:
                                (8, 23), (12, 24), (20, 20), (24, 20)]:
                     pygame.draw.circle(s, (180, 38, 28), (cx, cy), 2)
                     pygame.draw.circle(s, (225, 90, 55), (cx - 1, cy - 1), 1)
+                surfs[bid] = s
+                continue
+            if bid == GRAPEVINE_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                pygame.draw.rect(s, (90, 58, 30), (15, 18, 2, 14))
+                for lx, ly in [(3, 14), (19, 12), (7, 7), (17, 5), (10, 18)]:
+                    pygame.draw.ellipse(s, (45, 110, 40), (lx, ly, 10, 6))
+                    pygame.draw.ellipse(s, (70, 145, 60), (lx + 2, ly + 1, 6, 3))
+                for cx, cy in [(10, 17), (13, 15), (20, 19), (18, 16)]:
+                    pygame.draw.circle(s, (90, 30, 100), (cx, cy), 2)
+                    pygame.draw.circle(s, (135, 70, 148), (cx - 1, cy - 1), 1)
+                surfs[bid] = s
+                continue
+            if bid == GRAPEVINE_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                pygame.draw.rect(s, (100, 68, 38), (15, 10, 2, 22))
+                pygame.draw.ellipse(s, (55, 135, 55), (5, 16, 10, 6))
+                pygame.draw.ellipse(s, (55, 135, 55), (17, 13, 10, 6))
+                pygame.draw.ellipse(s, (85, 170, 80), (7, 17, 6, 2))
+                pygame.draw.ellipse(s, (85, 170, 80), (19, 14, 6, 2))
+                surfs[bid] = s
+                continue
+            if bid == GRAPEVINE_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                pygame.draw.rect(s, (100, 68, 38), (15, 3, 2, 29))
+                pygame.draw.rect(s, (70, 50, 30), (5, 9, 10, 1))
+                pygame.draw.rect(s, (70, 50, 30), (17, 12, 10, 1))
+                for lx, ly in [(2, 4), (18, 2), (3, 13), (19, 9), (4, 21), (19, 19)]:
+                    pygame.draw.ellipse(s, (38, 100, 42), (lx, ly, 10, 6))
+                    pygame.draw.ellipse(s, (62, 135, 62), (lx + 2, ly + 1, 6, 2))
+                for cx, cy in [(6, 14), (9, 14), (12, 14), (7, 18), (10, 18), (8, 22)]:
+                    pygame.draw.circle(s, (95, 28, 105), (cx, cy), 2)
+                    pygame.draw.circle(s, (140, 70, 150), (cx - 1, cy - 1), 1)
+                for cx, cy in [(19, 17), (22, 17), (25, 17), (20, 21), (23, 21), (21, 25)]:
+                    pygame.draw.circle(s, (95, 28, 105), (cx, cy), 2)
+                    pygame.draw.circle(s, (140, 70, 150), (cx - 1, cy - 1), 1)
                 surfs[bid] = s
                 continue
             # -- artisan bench decorative blocks --
