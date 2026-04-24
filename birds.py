@@ -5,7 +5,7 @@ from constants import BLOCK_SIZE
 from blocks import (
     TREE_LEAVES, PINE_LEAVES, BIRCH_LEAVES, JUNGLE_LEAVES, WILLOW_LEAVES,
     REDWOOD_LEAVES, PALM_LEAVES, ACACIA_LEAVES, MAPLE_LEAVES, CHERRY_LEAVES,
-    BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK,
+    BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK, WATER,
 )
 
 LEAF_BLOCKS = frozenset({
@@ -162,9 +162,11 @@ class Bird:
         self._state_timer -= dt
         self.vx = 0.0
         self.vy = 0.0
-        # Birds at feeders/baths are calmer — larger spook distance needed
+        # Birds at feeders/baths are calmer; water perches are slightly skittish
         if self._perch_type in ("feeder", "bath"):
             spook_radius = 12
+        elif self._perch_type == "water":
+            spook_radius = SPOOK_RADIUS_BLOCKS + 2
         else:
             spook_radius = SPOOK_RADIUS_BLOCKS
         player = getattr(self.world, '_player_ref', None)
@@ -280,7 +282,32 @@ class Bird:
         leaf_by = self._find_leaf_above(tx_bx)
 
         if leaf_by is None:
-            # No tree here — fly somewhere else
+            # Check if this is a water surface — birds can float on water
+            sy = self._surface_y_at(tx_bx)
+            if self.world.get_block(int(tx_bx), sy) == WATER:
+                perch_y = float(sy * BLOCK_SIZE)
+                dx = self._target_x - self.x
+                dy = perch_y - self.y
+                dist = (dx * dx + dy * dy) ** 0.5
+                if dist < 8:
+                    self.x            = self._target_x
+                    self.y            = perch_y
+                    self.vx           = 0.0
+                    self.vy           = 0.0
+                    self._perch_bx    = int(tx_bx)
+                    self._perch_by    = sy
+                    self._perch_type  = "water"
+                    self._state_timer = random.uniform(5, 15)
+                    self.state        = "perching"
+                    return
+                spd = self.SPEED * 0.5
+                if dist > 0.1:
+                    self.vx = (dx / dist) * spd
+                    self.vy = (dy / dist) * spd
+                self.x += self.vx * dt
+                self.y += self.vy * dt
+                return
+            # No tree or water here — fly somewhere else
             self._pick_flight_target()
             self.state = "flying"
             return
@@ -2022,3 +2049,7 @@ ALL_SPECIES = [
 ]
 
 SPECIES_BY_ID = {cls.SPECIES: cls for cls in ALL_SPECIES}
+
+# Opportunistic birds that spawn in any biome not covered by ALL_SPECIES entries.
+# Add to this list when adding a new biome if no existing species cover it.
+COMMON_SPECIES = [Crow, Vulture, Raven]

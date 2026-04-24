@@ -52,9 +52,14 @@ class CollectionsMixin:
         n_coffee_owned  = len(player.coffee_beans)
         n_wine_owned    = len(getattr(player, "wine_grapes", []))
         n_spirits_owned = len(getattr(player, "spirits", []))
+        n_tea_owned     = len(getattr(player, "tea_leaves", []))
+        from herbalism import ALL_POTION_IDS
+        n_potions_owned = sum(player.inventory.get(k, 0) for k in ALL_POTION_IDS)
+        n_textiles_owned = len(getattr(player, "textiles", []))
         total_collected = (len(player.rocks) + len(player.wildflowers) +
                            len(player.fossils) + len(player.gems) + n_mush_owned +
-                           n_coffee_owned + n_wine_owned + n_spirits_owned)
+                           n_coffee_owned + n_wine_owned + n_spirits_owned + n_tea_owned +
+                           n_potions_owned + n_textiles_owned)
 
         # ---- 3 main tabs ----
         self._tab_rects.clear()
@@ -83,8 +88,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -110,6 +115,9 @@ class CollectionsMixin:
                 ("coffee",    f"COFFEE ({n_coffee_owned})",        (40, 25, 10),  (140,  90,  35), (210, 150,  70)),
                 ("wine",      f"WINE ({n_wine_owned})",            (40, 15, 22),  (175,  85, 110), (235, 155, 175)),
                 ("spirits",   f"SPIRITS ({n_spirits_owned})",      (30, 22,  8),  (175, 115,  45), (230, 170,  80)),
+                ("tea",       f"TEA ({n_tea_owned})",              (25, 45, 20),  ( 65, 160,  75), (130, 215, 140)),
+                ("herbs",     f"POTIONS ({n_potions_owned})",      (10, 28, 24),  ( 70, 175, 140), (140, 235, 200)),
+                ("textiles",  f"TEXTILES ({n_textiles_owned})",    (25, 12, 32),  (160,  90, 190), (220, 160, 250)),
             ]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._collection_filter_rects.clear()
@@ -147,9 +155,12 @@ class CollectionsMixin:
                 ((20, 40, 22),  (70,  170,  80), (140, 230, 150)),
                 ((38, 24, 12),  (175, 105,  45), (235, 175, 105)),
                 ((38, 28, 14),  (160, 120,  55), (210, 175, 100)),
+                ((25, 45, 20),  ( 65, 160,  75), (130, 215, 140)),
+                ((10, 28, 24),  ( 70, 175, 140), (140, 235, 200)),
+                ((25, 12, 32),  (160,  90, 190), (220, 160, 250)),
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
-                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES"]
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
             for cat_i, cat_label in enumerate(enc_labels):
@@ -185,6 +196,9 @@ class CollectionsMixin:
                 self._draw_insect_codex,
                 self._draw_food_codex,
                 self._draw_horse_codex,
+                self._draw_tea_codex,
+                self._draw_herb_codex,
+                self._draw_textile_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)
@@ -224,6 +238,15 @@ class CollectionsMixin:
             items.extend(("wine", i) for i in range(len(getattr(player, "wine_grapes", []))))
         if flt in ("all", "spirits"):
             items.extend(("spirit", i) for i in range(len(getattr(player, "spirits", []))))
+        if flt in ("all", "tea"):
+            items.extend(("tea", i) for i in range(len(getattr(player, "tea_leaves", []))))
+        if flt in ("all", "herbs"):
+            from herbalism import ALL_POTION_IDS
+            for pkey in ALL_POTION_IDS:
+                for _ in range(player.inventory.get(pkey, 0)):
+                    items.append(("herb", pkey))
+        if flt in ("all", "textiles"):
+            items.extend(("textile", i) for i in range(len(getattr(player, "textiles", []))))
 
         if not items:
             msg = self.font.render("Nothing collected yet!", True, (80, 80, 90))
@@ -389,6 +412,54 @@ class CollectionsMixin:
                 img.blit(sc_s3, (img.get_width() - sc_s3.get_width() - 2, 2))
                 label = SBIOME.get(it.origin_biome, it.origin_biome)
                 label_col = (215, 170, 80)
+            elif cat == "herb":
+                from herbalism import POTION_COLORS as _HCOL
+                from items import ITEMS as _HITEMS
+                p_col3 = _HCOL.get(key, (70, 175, 140))
+                pygame.draw.rect(self.screen, (10, 28, 24) if selected else (8, 18, 15), rect)
+                pygame.draw.rect(self.screen, p_col3, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                pygame.draw.circle(img, p_col3, (29, 34), 18)
+                pygame.draw.rect(img, p_col3, (25, 8, 8, 16))
+                pygame.draw.rect(img, (min(255, p_col3[0]+60), min(255, p_col3[1]+60), min(255, p_col3[2]+60)), (26, 28, 6, 8))
+                label     = _HITEMS.get(key, {}).get("name", key)
+                label_col = p_col3
+            elif cat == "textile":
+                from textiles import DYE_FAMILY_COLORS as _TDFC, DYE_FAMILY_DISPLAY as _TDFD
+                it = getattr(player, "textiles", [])[key]
+                dye_col = tuple(_TDFC.get(it.dye_family, _TDFC["natural"]))
+                bg_col = (28, 16, 35) if selected else (18, 10, 22)
+                pygame.draw.rect(self.screen, bg_col, rect)
+                pygame.draw.rect(self.screen, dye_col, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                # Simple fabric swatch icon
+                pygame.draw.rect(img, dye_col, (6, 6, 46, 46))
+                pygame.draw.rect(img, (min(255, dye_col[0]+50), min(255, dye_col[1]+50), min(255, dye_col[2]+50)), (6, 6, 46, 46), 2)
+                sc = {"thread": "T", "dyed": "D", "woven": "W"}.get(it.state, "?")
+                sc_s = self.small.render(sc, True, (255, 255, 255))
+                img.blit(sc_s, (img.get_width() - sc_s.get_width() - 2, 2))
+                label = _TDFD.get(it.dye_family, it.dye_family)
+                label_col = dye_col
+            elif cat == "tea":
+                from tea import TEA_TYPE_COLORS as _TTC, BIOME_DISPLAY_NAMES as _TBDN
+                it = getattr(player, "tea_leaves", [])[key]
+                tc3 = _TTC.get(it.tea_type, (65, 160, 75)) if it.tea_type else (65, 120, 55)
+                bg_col = (18, 38, 18) if selected else (10, 24, 12)
+                pygame.draw.rect(self.screen, bg_col, rect)
+                pygame.draw.rect(self.screen, tc3, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                # Simple leaf icon
+                pygame.draw.ellipse(img, tc3, (8, 12, 42, 34))
+                pygame.draw.line(img, (min(255, tc3[0]+40), min(255, tc3[1]+40), min(255, tc3[2]+40)),
+                                 (29, 14), (29, 44), 2)
+                state_char = {"raw": "R", "withered": "W", "oxidized": "O", "brewed": "B", "blended": "X"}.get(it.state, "?")
+                sc_s = self.small.render(state_char, True, (200, 240, 180))
+                img.blit(sc_s, (img.get_width() - sc_s.get_width() - 2, 2))
+                label = _TBDN.get(it.origin_biome, it.origin_biome)
+                label_col = (130, 215, 140)
             else:  # mushroom
                 count = player.mushrooms_found.get(key, 0)
                 pygame.draw.rect(self.screen, (40, 36, 20) if selected else (25, 22, 12), rect)
@@ -712,6 +783,96 @@ class CollectionsMixin:
             stat_bar("Spice",        spirit.spice,            (220, 120, 60))
             stat_bar("Smokiness",    spirit.smokiness,        (140, 130, 120))
             stat_bar("Smoothness",   spirit.smoothness,       (200, 200, 240))
+        elif sel_cat == "tea":
+            from tea import TEA_TYPE_COLORS as _TTC2, TEA_TYPE_DESCS, TEA_TYPE_BUFFS
+            from tea import BUFF_DESCS as TEA_BUFF_DESCS, BIOME_DISPLAY_NAMES as _TBN2
+            from tea import WITHER_METHODS, VARIETY_DISPLAY_NAMES, AGE_DURATIONS
+            leaf = getattr(player, "tea_leaves", [])[sel_key]
+            tc2 = _TTC2.get(leaf.tea_type, (65, 160, 75)) if leaf.tea_type else (65, 120, 55)
+            pygame.draw.rect(self.screen, (10, 24, 12), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, tc2, (dx, dy2, dw, dh), 2)
+            # Leaf icon
+            leaf_surf = pygame.Surface((80, 80), pygame.SRCALPHA)
+            leaf_surf.fill((0, 0, 0, 0))
+            pygame.draw.ellipse(leaf_surf, tc2, (8, 16, 64, 48))
+            pygame.draw.line(leaf_surf, (min(255, tc2[0]+50), min(255, tc2[1]+50), min(255, tc2[2]+50)),
+                             (40, 18), (40, 62), 2)
+            self.screen.blit(leaf_surf, (dx + dw // 2 - 40, dy2 + 4))
+            bm_leaf = _TBN2.get(leaf.origin_biome, leaf.origin_biome.replace("_", " ").title())
+            var_leaf = VARIETY_DISPLAY_NAMES.get(leaf.variety, leaf.variety)
+            dlabel(f"{bm_leaf} — {var_leaf}", tc2)
+            dlabel(f"State: {leaf.state.title()}", tc2)
+            if leaf.tea_type:
+                dlabel(TEA_TYPE_DESCS.get(leaf.tea_type, leaf.tea_type), (180, 230, 160))
+                buff_k = TEA_TYPE_BUFFS.get(leaf.tea_type)
+                if buff_k:
+                    dlabel(f"Buff: {TEA_BUFF_DESCS.get(buff_k, buff_k)}", (130, 215, 140))
+            if leaf.wither_method:
+                wm = WITHER_METHODS.get(leaf.wither_method, {})
+                dlabel(f"Wither: {wm.get('label', leaf.wither_method)}", (190, 210, 160))
+            if leaf.age_duration:
+                ad = AGE_DURATIONS.get(leaf.age_duration, {})
+                dlabel(f"Aged: {ad.get('label', leaf.age_duration)}", (175, 155, 70))
+            if leaf.steep_quality > 0:
+                stars = "★" * round(leaf.steep_quality * 5)
+                dlabel(f"Quality: {stars}", (220, 200, 80))
+            if leaf.flavor_notes:
+                dlabel("Notes:", (160, 210, 130))
+                for note in leaf.flavor_notes:
+                    dlabel(f"  • {note.title()}", (190, 235, 170))
+            iy[0] += 4
+            stat_bar("Astringency", leaf.astringency, (180, 120,  60))
+            stat_bar("Floral",      leaf.floral,      (220, 180, 230))
+            stat_bar("Vegetal",     leaf.vegetal,     (120, 195,  90))
+            stat_bar("Earthiness",  leaf.earthiness,  (140, 110,  70))
+            stat_bar("Sweetness",   leaf.sweetness,   (210, 185,  80))
+        elif sel_cat == "herb":
+            from herbalism import POTION_COLORS as _PC2, POTION_DESCS as _PD2, RECIPES as _PR2
+            from herbalism import TIER_LABELS, INGREDIENT_DISPLAY_NAMES
+            from items import ITEMS as _HI2
+            p_col4 = _PC2.get(sel_key, (70, 175, 140))
+            pygame.draw.rect(self.screen, (10, 24, 20), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, p_col4, (dx, dy2, dw, dh), 2)
+            potion_surf = pygame.Surface((80, 80), pygame.SRCALPHA)
+            potion_surf.fill((0, 0, 0, 0))
+            pygame.draw.circle(potion_surf, p_col4, (40, 48), 26)
+            pygame.draw.rect(potion_surf, p_col4, (34, 12, 12, 20))
+            pygame.draw.circle(potion_surf, (min(255,p_col4[0]+60), min(255,p_col4[1]+60), min(255,p_col4[2]+60)), (40, 38), 8)
+            self.screen.blit(potion_surf, (dx + dw // 2 - 40, dy2 + 4))
+            p_name = _HI2.get(sel_key, {}).get("name", sel_key)
+            dlabel(p_name, p_col4)
+            dlabel(_PD2.get(sel_key, ""), (180, 230, 200))
+            recipe4 = _PR2.get(sel_key)
+            if recipe4:
+                dlabel(f"Tier: {TIER_LABELS.get(recipe4['tier'], recipe4['tier'])}", (160, 210, 170))
+                dlabel("Recipe:", (130, 185, 150))
+                for ing_k, ing_v in recipe4["ingredients"].items():
+                    dlabel(f"  {INGREDIENT_DISPLAY_NAMES.get(ing_k, ing_k)} ×{ing_v}", (140, 235, 200))
+            qty = player.inventory.get(sel_key, 0)
+            dlabel(f"In inventory: ×{qty}", (100, 160, 130))
+        elif sel_cat == "textile":
+            from textiles import DYE_FAMILY_COLORS as _TDFC2, DYE_FAMILY_DISPLAY as _TDFD2, OUTPUT_DISPLAY as _TOD2
+            from textiles import GARMENT_BUFFS as _TGB2, GARMENT_BUFF_DESCS as _TGBD2, get_garment_bonus as _tgb_fn
+            it = getattr(player, "textiles", [])[sel_key]
+            dye_col2 = tuple(_TDFC2.get(it.dye_family, _TDFC2["natural"]))
+            pygame.draw.rect(self.screen, (18, 10, 22), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, dye_col2, (dx, dy2, dw, dh), 2)
+            swatch = pygame.Surface((64, 64))
+            swatch.fill(dye_col2)
+            pygame.draw.rect(swatch, (0, 0, 0), (0, 0, 64, 64), 2)
+            self.screen.blit(swatch, (dx + dw // 2 - 32, dy2 + 6))
+            dlabel(_TOD2.get(it.output_type, it.output_type), dye_col2)
+            dlabel(f"{it.fiber_type.title()} · {_TDFD2.get(it.dye_family,'Natural')}", (200, 180, 215))
+            dlabel(f"Texture: {it.texture.title()}", (175, 155, 200))
+            dlabel(f"State: {it.state.title()}", (150, 130, 175))
+            dlabel(f"Quality: {it.quality:.0%}", (180, 235, 190))
+            dlabel(f"Softness: {it.softness:.0%}  Luster: {it.luster:.0%}", (160, 215, 175))
+            if it.state == "woven":
+                dlabel(f"Pattern: {it.pattern_quality:.0%}", (160, 215, 175))
+                stat = _TGB2.get(it.output_type)
+                if stat:
+                    bonus = _tgb_fn(it)
+                    dlabel(_TGBD2[stat].format(bonus * 100), (120, 220, 140))
         else:  # mushroom
             bid = sel_key
             pygame.draw.rect(self.screen, (16, 14, 8), (dx, dy2, dw, dh))
@@ -2457,3 +2618,77 @@ class CollectionsMixin:
                 unk = self.small.render("???", True, (60, 50, 32))
                 self.screen.blit(unk, (bx_ + cell_w // 2 - unk.get_width() // 2,
                                         by_ + cell_h // 2 - unk.get_height() // 2))
+
+    def _draw_textile_codex(self, player, gy0=58, gx_off=130):
+        from textiles import (DYE_FAMILY_COLORS, DYE_FAMILY_DISPLAY, OUTPUT_DISPLAY,
+                               _FIBERS, _DYE_FAMILIES, _OUTPUT_TYPES, TOTAL_TEXTILE_TYPES)
+        disc = getattr(player, "discovered_textiles", set())
+        n_disc = len(disc)
+        sub = self.small.render(
+            f"{n_disc} / {TOTAL_TEXTILE_TYPES} textile combinations discovered", True, (180, 140, 210))
+        self.screen.blit(sub, (gx_off + 8, gy0))
+
+        CELL_W, CELL_H, GAP = 56, 42, 4
+        COLS = len(_DYE_FAMILIES) + 1  # +1 for fiber label
+        ROW_H = CELL_H + GAP
+        content_w = SCREEN_W - gx_off
+        grid_x = gx_off + (content_w - (COLS * (CELL_W + GAP))) // 2
+        gy = gy0 + 22
+        self._textile_codex_rects = {}
+
+        for fi, ftype in enumerate(_FIBERS):
+            row_y = gy + fi * len(_OUTPUT_TYPES) * ROW_H
+            for oi, otype in enumerate(_OUTPUT_TYPES):
+                cy = row_y + oi * ROW_H
+                # Fiber+output label
+                lbl_s = self.small.render(f"{ftype[:3].upper()}·{otype[:3].upper()}", True, (155, 135, 185))
+                self.screen.blit(lbl_s, (grid_x, cy + CELL_H // 2 - lbl_s.get_height() // 2))
+                for di, dye in enumerate(_DYE_FAMILIES):
+                    cx = grid_x + (di + 1) * (CELL_W + GAP)
+                    key = f"{ftype}_{dye}_{otype}"
+                    discovered = key in disc
+                    dye_col = tuple(DYE_FAMILY_COLORS[dye])
+                    rect = pygame.Rect(cx, cy, CELL_W, CELL_H)
+                    self._textile_codex_rects[key] = rect
+                    if discovered:
+                        pygame.draw.rect(self.screen, dye_col, rect)
+                        pygame.draw.rect(self.screen, (0, 0, 0), rect, 1)
+                        if self._textile_codex_selected == key:
+                            pygame.draw.rect(self.screen, (255, 255, 255), rect, 2)
+                    else:
+                        pygame.draw.rect(self.screen, (20, 12, 26), rect)
+                        pygame.draw.rect(self.screen, (50, 35, 60), rect, 1)
+                        unk = self.small.render("?", True, (55, 40, 65))
+                        self.screen.blit(unk, (cx + CELL_W // 2 - unk.get_width() // 2,
+                                               cy + CELL_H // 2 - unk.get_height() // 2))
+
+        # Dye family column headers
+        for di, dye in enumerate(_DYE_FAMILIES):
+            hx = grid_x + (di + 1) * (CELL_W + GAP)
+            dye_col = tuple(DYE_FAMILY_COLORS[dye])
+            hs = self.small.render(DYE_FAMILY_DISPLAY[dye][:4].upper(), True, dye_col)
+            self.screen.blit(hs, (hx + CELL_W // 2 - hs.get_width() // 2, gy0 + 8))
+
+        # Detail panel for selected cell
+        sel = self._textile_codex_selected
+        if sel and sel in disc:
+            parts = sel.split("_", 2)
+            if len(parts) == 3:
+                ftype, dye, otype = parts[0], parts[1], parts[2]
+                dye_col = tuple(DYE_FAMILY_COLORS.get(dye, DYE_FAMILY_COLORS["natural"]))
+                dpx = SCREEN_W - 230
+                dpy = gy0 + 30
+                dpw, dph = 220, 160
+                pygame.draw.rect(self.screen, (22, 12, 30), (dpx, dpy, dpw, dph))
+                pygame.draw.rect(self.screen, dye_col, (dpx, dpy, dpw, dph), 2)
+                iy = dpy + 8
+
+                def dline(txt, col=(220, 190, 250)):
+                    nonlocal iy
+                    s = self.small.render(txt, True, col)
+                    self.screen.blit(s, (dpx + 8, iy))
+                    iy += 18
+
+                dline(OUTPUT_DISPLAY.get(otype, otype), dye_col)
+                dline(f"{ftype.title()} · {DYE_FAMILY_DISPLAY.get(dye,'Natural')}", (200, 175, 220))
+                dline("Discovered!", (120, 220, 140))

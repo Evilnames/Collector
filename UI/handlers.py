@@ -3,6 +3,7 @@ from items import ITEMS
 from item_icons import render_item_icon
 from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOODLE_POT_RECIPES,
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
+                      BAIT_STATION_RECIPES,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
 from rocks import get_refinery_equipment
@@ -13,7 +14,11 @@ from blocks import (BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BB
                     ARTISAN_BENCH_BLOCK,
                     GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
                     STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
-                    COMPOST_BIN_BLOCK, GARDEN_BLOCK)
+                    COMPOST_BIN_BLOCK, GARDEN_BLOCK,
+                    WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK,
+                    DRYING_RACK_BLOCK, KILN_BLOCK, RESONANCE_BLOCK,
+                    BAIT_STATION_BLOCK,
+                    SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK)
 from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, BLOCK_SIZE
 
 
@@ -139,6 +144,8 @@ class HandlersMixin:
                 self._insect_codex_scroll = 0
                 self._food_codex_scroll = 0
                 self._horse_codex_scroll = 0
+                self._tea_codex_scroll = 0
+                self._herb_codex_scroll = 0
                 self._codex_selected_type = None
                 self._flower_codex_selected_type = None
                 self._mushroom_codex_selected_bid = None
@@ -178,6 +185,7 @@ class HandlersMixin:
                     self._coffee_codex_scroll = 0
                     self._wine_codex_scroll = 0
                     self._spirits_codex_scroll = 0
+                    self._tea_codex_scroll = 0
                     self._codex_selected_type = None
                     self._flower_codex_selected_type = None
                     self._mushroom_codex_selected_bid = None
@@ -228,6 +236,21 @@ class HandlersMixin:
                     if rect.collidepoint(pos):
                         self._spirits_codex_selected = key if self._spirits_codex_selected != key else None
                         return
+            elif self._encyclopedia_cat == 13:
+                for key, rect in self._tea_codex_rects.items():
+                    if rect.collidepoint(pos):
+                        self._tea_codex_selected = key if self._tea_codex_selected != key else None
+                        return
+            elif self._encyclopedia_cat == 14:
+                for key, rect in self._herb_codex_rects.items():
+                    if rect.collidepoint(pos):
+                        self._herb_codex_selected = key if self._herb_codex_selected != key else None
+                        return
+            elif self._encyclopedia_cat == 15:
+                for key, rect in self._textile_codex_rects.items():
+                    if rect.collidepoint(pos):
+                        self._textile_codex_selected = key if self._textile_codex_selected != key else None
+                        return
             # cat 5 = bird codex (view only, no selection needed)
         # tab 2 (awards) has no click-to-select items
 
@@ -235,7 +258,7 @@ class HandlersMixin:
         if self.inventory_open:
             self._inv_scroll = max(0, min(self._max_inv_scroll, self._inv_scroll - dy))
         elif self.crafting_open:
-            self._recipe_scroll = max(0, min(self._max_recipe_scroll, self._recipe_scroll - dy))
+            self._recipe_scroll = max(0, min(self._max_recipe_scroll, self._recipe_scroll - dy * 58))
         elif self.refinery_open and self.refinery_block_id == BAKERY_BLOCK:
             self._bakery_scroll = max(0, min(self._max_bakery_scroll, self._bakery_scroll - dy))
         elif self.refinery_open:
@@ -273,6 +296,10 @@ class HandlersMixin:
                     self._food_codex_scroll = max(0, min(self._max_food_codex_scroll, self._food_codex_scroll - dy * 60))
                 elif self._encyclopedia_cat == 12:
                     self._horse_codex_scroll = max(0, min(self._max_horse_codex_scroll, self._horse_codex_scroll - dy * 60))
+                elif self._encyclopedia_cat == 13:
+                    self._tea_codex_scroll = max(0, min(self._max_tea_codex_scroll, self._tea_codex_scroll - dy * 60))
+                elif self._encyclopedia_cat == 14:
+                    self._herb_codex_scroll = max(0, min(self._max_herb_codex_scroll, self._herb_codex_scroll - dy * 60))
             elif self._collection_tab == 2:
                 self._achievement_scroll = max(0, min(self._max_achievement_scroll, self._achievement_scroll - dy))
         elif self.breeding_open:
@@ -353,7 +380,8 @@ class HandlersMixin:
                         return
 
     def handle_npc_click(self, pos, player):
-        from cities import RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC
+        from cities import (RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC,
+                            MerchantNPC, RestaurantNPC, ShrineKeeperNPC)
         npc = self.active_npc
         if isinstance(npc, RockQuestNPC):
             for quest_idx, rect in self._trade_rects.items():
@@ -375,6 +403,19 @@ class HandlersMixin:
                 if rect.collidepoint(pos):
                     npc.complete_quest(player, quest_idx)
                     break
+        elif isinstance(npc, MerchantNPC):
+            for i, rect in self._trade_rects.items():
+                if rect.collidepoint(pos):
+                    npc.execute_purchase(i, player)
+                    break
+        elif isinstance(npc, RestaurantNPC):
+            for i, rect in self._trade_rects.items():
+                if rect.collidepoint(pos):
+                    npc.execute_purchase(i, player)
+                    break
+        elif isinstance(npc, ShrineKeeperNPC):
+            if self._trade_rects.get(0) and self._trade_rects[0].collidepoint(pos):
+                npc.give_blessing(player)
 
     def handle_gem_cutter_click(self, pos, player):
         """Handle clicks inside the gem cutter mini-game overlay."""
@@ -454,6 +495,33 @@ class HandlersMixin:
         if self.refinery_block_id == BOTTLING_BLOCK:
             self._handle_bottling_click(pos, player)
             return
+        if self.refinery_block_id == WITHERING_RACK_BLOCK:
+            self._handle_withering_rack_click(pos, player)
+            return
+        if self.refinery_block_id == OXIDATION_STATION_BLOCK:
+            self._handle_oxidation_station_click(pos, player)
+            return
+        if self.refinery_block_id == TEA_CELLAR_BLOCK:
+            self._handle_tea_cellar_click(pos, player)
+            return
+        if self.refinery_block_id == DRYING_RACK_BLOCK:
+            self._handle_drying_rack_click(pos, player)
+            return
+        if self.refinery_block_id == KILN_BLOCK:
+            self._handle_kiln_click(pos, player, getattr(self, "_research", None))
+            return
+        if self.refinery_block_id == RESONANCE_BLOCK:
+            self._handle_resonance_click(pos, player, getattr(self, "_research", None))
+            return
+        if self.refinery_block_id == SPINNING_WHEEL_BLOCK:
+            self._handle_spinning_wheel_click(pos, player)
+            return
+        if self.refinery_block_id == DYE_VAT_BLOCK:
+            self._handle_dye_vat_click(pos, player)
+            return
+        if self.refinery_block_id == LOOM_BLOCK:
+            self._handle_loom_click(pos, player)
+            return
         if self.refinery_block_id == BAKERY_BLOCK:
             for i, rect in self._bakery_recipe_rects.items():
                 if rect.collidepoint(pos):
@@ -517,6 +585,14 @@ class HandlersMixin:
                     return
             if self._refine_btn and self._refine_btn.collidepoint(pos):
                 self._do_cook(player, ARTISAN_RECIPES, self._artisan_selected_recipe)
+            return
+        if self.refinery_block_id == BAIT_STATION_BLOCK:
+            for i, rect in self._bait_station_recipe_rects.items():
+                if rect.collidepoint(pos):
+                    self._bait_station_selected_recipe = i
+                    return
+            if self._refine_btn and self._refine_btn.collidepoint(pos):
+                self._do_cook(player, BAIT_STATION_RECIPES, self._bait_station_selected_recipe)
             return
         if self.refinery_block_id == COMPOST_BIN_BLOCK:
             self._handle_compost_bin_click(pos, player)

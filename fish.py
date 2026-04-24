@@ -1290,36 +1290,613 @@ FISH_TYPES = {
         ],
         "description": "Named for its large, glinting golden eye. A prized smoked fish of the Canadian prairies.",
     },
+
+    # ------------------------------------------------------------------
+    # US Freshwater Lakes (batch 2)
+    # ------------------------------------------------------------------
+    "black_bullhead": {
+        "name": "Black Bullhead",
+        "rarity_pool": ["common", "common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills", "wetland", "swamp"],
+        "weight_range": (0.10, 1.20),
+        "length_range": (14, 32),
+        "pattern_pool": ["plain", "mottled"],
+        "colors": [
+            ((55, 55, 48), (175, 168, 120)),
+            ((65, 62, 55), (188, 180, 130)),
+        ],
+        "description": "The darkest of the bullheads. Thrives in warm, turbid ponds where other fish struggle.",
+    },
+    "sunshine_bass": {
+        "name": "Sunshine Bass",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills"],
+        "weight_range": (0.50, 8.00),
+        "length_range": (28, 65),
+        "pattern_pool": ["striped", "plain"],
+        "colors": [
+            ((205, 208, 215), (38, 40, 45)),
+            ((192, 196, 204), (32, 34, 40)),
+        ],
+        "description": "A hybrid of striped and white bass. Grows faster than either parent and hits like a freight train.",
+    },
+    "saugeye": {
+        "name": "Saugeye",
+        "rarity_pool": ["rare", "epic"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills"],
+        "weight_range": (0.40, 4.50),
+        "length_range": (28, 62),
+        "pattern_pool": ["mottled", "spotted"],
+        "colors": [
+            ((175, 148, 80), (88, 95, 68)),
+            ((160, 135, 72), (78, 85, 60)),
+        ],
+        "description": "A walleye × sauger hybrid stocked in turbid reservoirs. Inherits the best of both parents.",
+    },
+    "mooneye": {
+        "name": "Mooneye",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "boreal"],
+        "weight_range": (0.15, 0.90),
+        "length_range": (18, 40),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((192, 198, 210), (155, 162, 178)),
+            ((180, 186, 198), (142, 150, 165)),
+        ],
+        "description": "A close relative of the goldeye with a large silver eye. Leaps acrobatically when hooked.",
+    },
+    "emerald_shiner": {
+        "name": "Emerald Shiner",
+        "rarity_pool": ["common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills", "boreal"],
+        "weight_range": (0.005, 0.04),
+        "length_range": (5, 12),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((175, 210, 175), (120, 188, 145)),
+            ((165, 200, 165), (110, 175, 135)),
+        ],
+        "description": "A slender, sparkling minnow with a vivid emerald-green lateral stripe. Vast schools in open water.",
+    },
+    "fathead_minnow": {
+        "name": "Fathead Minnow",
+        "rarity_pool": ["common", "common", "common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": [],
+        "weight_range": (0.005, 0.05),
+        "length_range": (4, 10),
+        "pattern_pool": ["plain", "banded"],
+        "colors": [
+            ((148, 130, 95), (88, 78, 58)),
+            ((40, 38, 32), (155, 138, 100)),
+        ],
+        "description": "The most abundant minnow in North America. Breeding males turn jet-black with a spongy pad on their snout.",
+    },
+    "rainbow_darter": {
+        "name": "Rainbow Darter",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills"],
+        "weight_range": (0.005, 0.025),
+        "length_range": (4, 8),
+        "pattern_pool": ["banded", "striped"],
+        "colors": [
+            ((45, 115, 200), (225, 118, 35)),
+            ((38, 105, 185), (210, 108, 30)),
+        ],
+        "description": "A jewel-sized bottom fish with electric-blue and orange banding. Males are among the most vivid US fish.",
+    },
+    "logperch": {
+        "name": "Logperch",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills"],
+        "weight_range": (0.01, 0.09),
+        "length_range": (8, 18),
+        "pattern_pool": ["banded", "striped"],
+        "colors": [
+            ((185, 172, 120), (55, 58, 48)),
+            ((172, 160, 110), (48, 50, 42)),
+        ],
+        "description": "The largest darter. Flips pebbles with its pig-like snout to find the insects hiding beneath.",
+    },
+    "quillback": {
+        "name": "Quillback",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills", "wetland"],
+        "weight_range": (0.30, 4.00),
+        "length_range": (25, 60),
+        "pattern_pool": ["scaled", "plain"],
+        "colors": [
+            ((155, 145, 90), (100, 120, 65)),
+            ((142, 132, 80), (90, 108, 58)),
+        ],
+        "description": "A deep-bodied carpsucker with a long, quill-like first dorsal ray. Rooting along silty bottoms.",
+    },
+    "shorthead_redhorse": {
+        "name": "Shorthead Redhorse",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills", "boreal"],
+        "weight_range": (0.30, 3.00),
+        "length_range": (25, 55),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((185, 170, 120), (215, 85, 45)),
+            ((172, 158, 110), (200, 75, 38)),
+        ],
+        "description": "A sucker with brilliant red-orange fins. Spawns in river rapids in spring.",
+    },
+    "northern_hogsucker": {
+        "name": "Northern Hogsucker",
+        "rarity_pool": ["common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills"],
+        "weight_range": (0.15, 2.00),
+        "length_range": (20, 50),
+        "pattern_pool": ["banded", "mottled"],
+        "colors": [
+            ((155, 138, 85), (62, 58, 42)),
+            ((142, 126, 75), (55, 52, 38)),
+        ],
+        "description": "Has a large, shovel-like head and distinctive dark saddles. Constantly roots through gravel for insect larvae.",
+    },
+    "smallmouth_buffalo": {
+        "name": "Smallmouth Buffalo",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills", "wetland"],
+        "weight_range": (1.00, 15.00),
+        "length_range": (35, 85),
+        "pattern_pool": ["scaled", "plain"],
+        "colors": [
+            ((70, 88, 58), (120, 118, 82)),
+            ((62, 80, 52), (110, 108, 74)),
+        ],
+        "description": "A smaller, more slender buffalo than its bigmouth cousin. A bottom-filter feeder of still waters.",
+    },
+    "threadfin_shad": {
+        "name": "Threadfin Shad",
+        "rarity_pool": ["common", "common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills", "wetland"],
+        "weight_range": (0.01, 0.06),
+        "length_range": (6, 18),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((195, 205, 218), (195, 185, 55)),
+            ((182, 192, 206), (180, 170, 48)),
+        ],
+        "description": "A delicate silver shad with a yellow-tipped tail. Named for the thread-like extension on its dorsal fin.",
+    },
+    "redfin_pickerel": {
+        "name": "Redfin Pickerel",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["wetland", "swamp"],
+        "weight_range": (0.05, 0.55),
+        "length_range": (15, 40),
+        "pattern_pool": ["mottled", "striped"],
+        "colors": [
+            ((65, 120, 58), (195, 178, 70)),
+            ((58, 108, 52), (180, 165, 62)),
+        ],
+        "description": "The smallest pickerel. Lurks in dense aquatic vegetation with vivid red-orange fins.",
+    },
+    "pirate_perch": {
+        "name": "Pirate Perch",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["wetland", "swamp"],
+        "weight_range": (0.03, 0.18),
+        "length_range": (8, 18),
+        "pattern_pool": ["plain", "mottled"],
+        "colors": [
+            ((75, 58, 88), (48, 38, 60)),
+            ((88, 68, 100), (55, 44, 72)),
+        ],
+        "description": "A bizarre little predator whose anus migrates to just behind its head as it matures. Unique among US fish.",
+    },
+    "alewife": {
+        "name": "Alewife",
+        "rarity_pool": ["common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["boreal", "temperate"],
+        "weight_range": (0.03, 0.25),
+        "length_range": (10, 25),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((155, 175, 205), (88, 112, 148)),
+            ((142, 162, 192), (78, 102, 135)),
+        ],
+        "description": "A landlocked herring that exploded in the Great Lakes. An essential forage fish for salmon and trout.",
+    },
+    "rainbow_smelt": {
+        "name": "Rainbow Smelt",
+        "rarity_pool": ["common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["boreal", "tundra"],
+        "weight_range": (0.02, 0.15),
+        "length_range": (10, 25),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((175, 205, 195), (115, 148, 165)),
+            ((162, 192, 182), (105, 135, 152)),
+        ],
+        "description": "A translucent cold-water fish with a faint iridescent stripe. Runs into streams by the millions in spring.",
+    },
+    "trout_perch": {
+        "name": "Trout-Perch",
+        "rarity_pool": ["common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["boreal", "temperate"],
+        "weight_range": (0.02, 0.12),
+        "length_range": (8, 18),
+        "pattern_pool": ["spotted", "plain"],
+        "colors": [
+            ((185, 178, 148), (95, 105, 75)),
+            ((172, 165, 136), (85, 95, 68)),
+        ],
+        "description": "A relict species that bridges trout and perch. Found in deep cold lakes, seldom seen by anglers.",
+    },
+    "ruffe": {
+        "name": "Ruffe",
+        "rarity_pool": ["common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["boreal", "temperate"],
+        "weight_range": (0.02, 0.20),
+        "length_range": (8, 22),
+        "pattern_pool": ["spotted", "mottled"],
+        "colors": [
+            ((145, 128, 80), (78, 82, 55)),
+            ((132, 116, 72), (68, 72, 48)),
+        ],
+        "description": "An invasive Eurasian perch now established in the Great Lakes. Spiny, prolific, and hard to eradicate.",
+    },
+    "round_goby": {
+        "name": "Round Goby",
+        "rarity_pool": ["common", "common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["boreal", "temperate"],
+        "weight_range": (0.01, 0.15),
+        "length_range": (7, 25),
+        "pattern_pool": ["mottled", "spotted"],
+        "colors": [
+            ((118, 112, 98), (58, 55, 48)),
+            ((105, 100, 86), (50, 48, 42)),
+        ],
+        "description": "An invasive bottom-dweller from the Black Sea. Spreads through ballast water. Uses a suction disc to cling to rocks.",
+    },
+
+    # ------------------------------------------------------------------
+    # US Freshwater Lakes (batch 3)
+    # ------------------------------------------------------------------
+    "cutthroat_trout": {
+        "name": "Cutthroat Trout",
+        "rarity_pool": ["uncommon", "uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["boreal", "tundra"],
+        "weight_range": (0.20, 4.50),
+        "length_range": (20, 65),
+        "pattern_pool": ["spotted", "plain"],
+        "colors": [
+            ((145, 155, 110), (215, 75, 55)),
+            ((132, 142, 100), (200, 65, 48)),
+        ],
+        "description": "Named for the vivid red-orange slash marks under its jaw. A prize of western mountain lakes.",
+    },
+    "kokanee": {
+        "name": "Kokanee",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["boreal", "tundra"],
+        "weight_range": (0.30, 3.00),
+        "length_range": (25, 55),
+        "pattern_pool": ["plain", "spotted"],
+        "colors": [
+            ((170, 192, 210), (95, 118, 145)),
+            ((210, 60, 55),   (80, 42, 38)),
+        ],
+        "description": "The landlocked sockeye salmon. Silver and sleek in the lake; blood-red at spawning time.",
+    },
+    "splake": {
+        "name": "Splake",
+        "rarity_pool": ["rare", "epic"],
+        "habitat": "lake",
+        "biome_affinity": ["boreal", "tundra"],
+        "weight_range": (0.50, 6.00),
+        "length_range": (30, 72),
+        "pattern_pool": ["spotted", "mottled"],
+        "colors": [
+            ((85, 108, 72), (215, 138, 65)),
+            ((75, 98, 62), (200, 125, 58)),
+        ],
+        "description": "A lake trout × brook trout hybrid. Combines both parents' hardiness in one hard-hitting fish.",
+    },
+    "tiger_trout": {
+        "name": "Tiger Trout",
+        "rarity_pool": ["epic", "legendary"],
+        "habitat": "lake",
+        "biome_affinity": ["boreal", "birch_forest"],
+        "weight_range": (0.20, 3.50),
+        "length_range": (20, 58),
+        "pattern_pool": ["mottled", "striped"],
+        "colors": [
+            ((175, 135, 55), (42, 38, 28)),
+            ((162, 124, 48), (35, 32, 22)),
+        ],
+        "description": "A brown × brook trout hybrid with wild, marble-like vermiculate markings. Almost never found naturally.",
+    },
+    "bull_trout": {
+        "name": "Bull Trout",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["boreal", "tundra"],
+        "weight_range": (0.30, 7.00),
+        "length_range": (25, 72),
+        "pattern_pool": ["spotted", "plain"],
+        "colors": [
+            ((80, 108, 72), (230, 195, 80)),
+            ((70, 98, 62), (215, 180, 70)),
+        ],
+        "description": "A char of icy mountain lakes. Requires the coldest, cleanest water — its presence signals pristine habitat.",
+    },
+    "coho_salmon": {
+        "name": "Coho Salmon",
+        "rarity_pool": ["rare", "rare", "epic"],
+        "habitat": "lake",
+        "biome_affinity": ["boreal", "tundra"],
+        "weight_range": (1.50, 9.00),
+        "length_range": (45, 90),
+        "pattern_pool": ["spotted", "plain"],
+        "colors": [
+            ((185, 198, 212), (42, 44, 48)),
+            ((195, 65, 55),   (80, 38, 34)),
+        ],
+        "description": "A Pacific salmon stocked throughout the Great Lakes. Chrome bright one season, crimson the next.",
+    },
+    "longnose_sucker": {
+        "name": "Longnose Sucker",
+        "rarity_pool": ["common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["boreal", "tundra"],
+        "weight_range": (0.30, 3.50),
+        "length_range": (25, 62),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((95, 105, 80), (195, 165, 100)),
+            ((85, 95, 72), (180, 152, 90)),
+        ],
+        "description": "A cold-water sucker with a distinctly long snout. Abundant in northern lakes and glacial streams.",
+    },
+    "bluntnose_minnow": {
+        "name": "Bluntnose Minnow",
+        "rarity_pool": ["common", "common", "common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": [],
+        "weight_range": (0.005, 0.04),
+        "length_range": (5, 10),
+        "pattern_pool": ["plain", "striped"],
+        "colors": [
+            ((162, 165, 148), (88, 92, 72)),
+            ((148, 152, 135), (78, 82, 62)),
+        ],
+        "description": "Possibly the most abundant minnow in the eastern US. A blunt snout and a dark lateral stripe.",
+    },
+    "spottail_shiner": {
+        "name": "Spottail Shiner",
+        "rarity_pool": ["common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills", "boreal"],
+        "weight_range": (0.005, 0.04),
+        "length_range": (5, 12),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((192, 198, 205), (30, 30, 32)),
+            ((180, 186, 194), (25, 25, 28)),
+        ],
+        "description": "A slender silver shiner with a distinctive black spot at the base of its tail. Schools in open lake water.",
+    },
+    "hornyhead_chub": {
+        "name": "Hornyhead Chub",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills"],
+        "weight_range": (0.05, 0.30),
+        "length_range": (10, 25),
+        "pattern_pool": ["plain", "spotted"],
+        "colors": [
+            ((165, 148, 88), (218, 115, 55)),
+            ((152, 136, 78), (205, 105, 48)),
+        ],
+        "description": "Breeding males sprout a crown of tubercles and flush orange on the cheeks. Builds pebble nests.",
+    },
+    "fallfish": {
+        "name": "Fallfish",
+        "rarity_pool": ["common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills", "birch_forest"],
+        "weight_range": (0.10, 1.00),
+        "length_range": (15, 45),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((185, 182, 162), (110, 118, 90)),
+            ((172, 170, 150), (100, 108, 82)),
+        ],
+        "description": "The largest native minnow in the eastern US. Builds boulder nests up to a meter tall.",
+    },
+    "mosquitofish": {
+        "name": "Mosquitofish",
+        "rarity_pool": ["common", "common", "common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills", "wetland", "swamp"],
+        "weight_range": (0.001, 0.012),
+        "length_range": (2, 6),
+        "pattern_pool": ["plain", "spotted"],
+        "colors": [
+            ((128, 125, 105), (88, 85, 70)),
+            ((115, 112, 95), (78, 75, 62)),
+        ],
+        "description": "A live-bearing minnow that can eat its weight in mosquito larvae daily. Introduced worldwide.",
+    },
+    "johnny_darter": {
+        "name": "Johnny Darter",
+        "rarity_pool": ["common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills", "boreal"],
+        "weight_range": (0.003, 0.015),
+        "length_range": (4, 7),
+        "pattern_pool": ["mottled", "spotted"],
+        "colors": [
+            ((175, 158, 108), (55, 52, 38)),
+            ((162, 145, 98), (48, 45, 32)),
+        ],
+        "description": "A tiny darter covered in W-shaped zigzag marks. Scoots across the bottom in short dashes.",
+    },
+    "iowa_darter": {
+        "name": "Iowa Darter",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills", "wetland"],
+        "weight_range": (0.003, 0.020),
+        "length_range": (4, 8),
+        "pattern_pool": ["banded", "spotted"],
+        "colors": [
+            ((65, 118, 188), (215, 105, 42)),
+            ((55, 108, 175), (200, 95, 36)),
+        ],
+        "description": "A small, prairie-lake darter with blue and orange breeding colors. Clings to aquatic vegetation.",
+    },
+    "orangethroat_darter": {
+        "name": "Orangethroat Darter",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills"],
+        "weight_range": (0.003, 0.020),
+        "length_range": (4, 8),
+        "pattern_pool": ["banded", "striped"],
+        "colors": [
+            ((52, 125, 172), (225, 112, 38)),
+            ((44, 112, 158), (210, 102, 32)),
+        ],
+        "description": "The male blazes blue-green with a vivid orange throat in breeding season. A tiny jewel of riffle habitat.",
+    },
+    "least_darter": {
+        "name": "Least Darter",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills", "wetland"],
+        "weight_range": (0.001, 0.006),
+        "length_range": (2, 5),
+        "pattern_pool": ["spotted", "plain"],
+        "colors": [
+            ((105, 148, 105), (55, 80, 55)),
+            ((95, 135, 95), (48, 72, 48)),
+        ],
+        "description": "The world's smallest perch — barely the length of a thumbnail. Darts among aquatic mosses.",
+    },
+    "crystal_darter": {
+        "name": "Crystal Darter",
+        "rarity_pool": ["rare", "epic"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills"],
+        "weight_range": (0.005, 0.028),
+        "length_range": (6, 12),
+        "pattern_pool": ["plain", "spotted"],
+        "colors": [
+            ((205, 210, 215), (48, 50, 42)),
+            ((192, 198, 204), (40, 42, 36)),
+        ],
+        "description": "A nearly transparent sand-dwelling darter. Four dark saddle bands are visible through its translucent body.",
+    },
+    "blue_sucker": {
+        "name": "Blue Sucker",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["temperate", "rolling_hills", "wetland"],
+        "weight_range": (1.00, 6.50),
+        "length_range": (45, 90),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((88, 108, 142), (55, 70, 95)),
+            ((78, 98, 130), (48, 62, 85)),
+        ],
+        "description": "A streamlined slate-blue sucker built for fast current. Declining across much of its range.",
+    },
+    "dollar_sunfish": {
+        "name": "Dollar Sunfish",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["wetland", "swamp"],
+        "weight_range": (0.02, 0.15),
+        "length_range": (6, 14),
+        "pattern_pool": ["spotted", "plain"],
+        "colors": [
+            ((55, 118, 88), (192, 185, 52)),
+            ((48, 108, 78), (178, 172, 45)),
+        ],
+        "description": "A tiny, coin-shaped sunfish of cypress swamps with iridescent blue-green spots on an olive body.",
+    },
+    "spotted_bullhead": {
+        "name": "Spotted Bullhead",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["wetland", "swamp"],
+        "weight_range": (0.15, 1.50),
+        "length_range": (18, 40),
+        "pattern_pool": ["spotted", "plain"],
+        "colors": [
+            ((55, 48, 38), (218, 215, 205)),
+            ((62, 55, 44), (205, 200, 190)),
+        ],
+        "description": "A rarely seen catfish with bold white spots on a dark body. Restricted to a few southeastern rivers.",
+    },
 }
 
 # Order for display in the fish codex (roughly by biome group, then rarity)
 FISH_TYPE_ORDER = [
     # Universal
-    "minnow", "dace", "stone_loach",
+    "minnow", "dace", "stone_loach", "fathead_minnow", "bluntnose_minnow",
     # Temperate
     "perch", "yellow_perch", "bass", "smallmouth_bass", "white_bass", "striped_bass",
-    "spotted_bass", "yellow_bass", "white_perch",
+    "spotted_bass", "yellow_bass", "sunshine_bass", "white_perch",
     "bluegill", "sunfish", "pumpkinseed", "rock_bass", "redear_sunfish",
     "green_sunfish", "longear_sunfish", "redbreast_sunfish",
-    "crappie", "white_crappie", "walleye", "sauger",
+    "crappie", "white_crappie", "walleye", "sauger", "saugeye",
     "carp", "tench", "roach", "rudd", "chub", "bream",
-    "bigmouth_buffalo", "white_sucker", "golden_shiner", "gizzard_shad",
-    "channel_catfish", "yellow_bullhead", "brown_bullhead",
-    "freshwater_drum", "american_eel", "muskie", "tiger_muskie", "golden_koi",
+    "bigmouth_buffalo", "smallmouth_buffalo", "white_sucker", "northern_hogsucker",
+    "quillback", "shorthead_redhorse", "blue_sucker",
+    "golden_shiner", "emerald_shiner", "spottail_shiner", "gizzard_shad", "threadfin_shad",
+    "hornyhead_chub", "fallfish", "mosquitofish",
+    "channel_catfish", "yellow_bullhead", "brown_bullhead", "black_bullhead",
+    "freshwater_drum", "mooneye",
+    "johnny_darter", "iowa_darter", "orangethroat_darter", "least_darter", "crystal_darter",
+    "rainbow_darter", "logperch",
+    "american_eel", "muskie", "tiger_muskie", "golden_koi",
     # Cold
     "trout", "brown_trout", "brook_trout", "lake_trout", "arctic_char", "dolly_varden",
+    "cutthroat_trout", "bull_trout", "splake", "tiger_trout",
     "grayling", "golden_trout",
-    "cisco", "lake_whitefish", "round_whitefish", "burbot", "goldeye",
-    "salmon", "steelhead", "pike", "sturgeon",
+    "kokanee", "coho_salmon", "salmon", "steelhead",
+    "cisco", "lake_whitefish", "round_whitefish", "longnose_sucker", "burbot", "goldeye",
+    "alewife", "rainbow_smelt", "trout_perch", "ruffe", "round_goby",
+    "pike", "sturgeon",
     # Jungle/Tropical
     "tilapia", "cichlid", "discus", "oscar", "peacock_bass",
     "piranha", "tambaqui", "pacu", "catfish",
     "redtail_catfish", "electric_eel", "payara", "arapaima",
     # Wetland/Swamp
-    "warmouth", "flier", "mudskipper", "bowfin", "walking_catfish",
-    "pickerel", "spotted_gar", "snakehead", "longnose_gar", "grass_carp",
-    "flathead_catfish", "blue_catfish", "paddlefish",
-    "gar", "alligator_gar",
+    "warmouth", "flier", "dollar_sunfish", "pirate_perch", "mudskipper", "bowfin",
+    "walking_catfish", "pickerel", "redfin_pickerel", "spotted_gar", "snakehead",
+    "longnose_gar", "grass_carp", "flathead_catfish", "blue_catfish",
+    "spotted_bullhead", "paddlefish", "gar", "alligator_gar",
 ]
 
 FISH_RARITY_COLORS = {
@@ -1337,28 +1914,79 @@ RARITY_LABEL = {
 
 # Biome group labels used in the fish codex header rows
 FISH_BIOME_GROUPS = [
-    ("Universal",       ["minnow", "dace", "stone_loach"]),
+    ("Universal",       ["minnow", "dace", "stone_loach", "fathead_minnow", "bluntnose_minnow"]),
     ("Temperate",       ["perch", "yellow_perch", "bass", "smallmouth_bass", "white_bass", "striped_bass",
-                         "spotted_bass", "yellow_bass", "white_perch",
+                         "spotted_bass", "yellow_bass", "sunshine_bass", "white_perch",
                          "bluegill", "sunfish", "pumpkinseed", "rock_bass", "redear_sunfish",
                          "green_sunfish", "longear_sunfish", "redbreast_sunfish",
-                         "crappie", "white_crappie", "walleye", "sauger",
+                         "crappie", "white_crappie", "walleye", "sauger", "saugeye",
                          "carp", "tench", "roach", "rudd", "chub", "bream",
-                         "bigmouth_buffalo", "white_sucker", "golden_shiner", "gizzard_shad",
-                         "channel_catfish", "yellow_bullhead", "brown_bullhead",
-                         "freshwater_drum", "american_eel", "muskie", "tiger_muskie", "golden_koi"]),
+                         "bigmouth_buffalo", "smallmouth_buffalo", "white_sucker", "northern_hogsucker",
+                         "quillback", "shorthead_redhorse", "blue_sucker",
+                         "golden_shiner", "emerald_shiner", "spottail_shiner", "gizzard_shad", "threadfin_shad",
+                         "hornyhead_chub", "fallfish", "mosquitofish",
+                         "channel_catfish", "yellow_bullhead", "brown_bullhead", "black_bullhead",
+                         "freshwater_drum", "mooneye",
+                         "johnny_darter", "iowa_darter", "orangethroat_darter", "least_darter",
+                         "crystal_darter", "rainbow_darter", "logperch",
+                         "american_eel", "muskie", "tiger_muskie", "golden_koi"]),
     ("Cold / Boreal",   ["trout", "brown_trout", "brook_trout", "lake_trout", "arctic_char", "dolly_varden",
+                         "cutthroat_trout", "bull_trout", "splake", "tiger_trout",
                          "grayling", "golden_trout",
-                         "cisco", "lake_whitefish", "round_whitefish", "burbot", "goldeye",
-                         "salmon", "steelhead", "pike", "sturgeon"]),
+                         "kokanee", "coho_salmon", "salmon", "steelhead",
+                         "cisco", "lake_whitefish", "round_whitefish", "longnose_sucker", "burbot", "goldeye",
+                         "alewife", "rainbow_smelt", "trout_perch", "ruffe", "round_goby",
+                         "pike", "sturgeon"]),
     ("Jungle / Tropical", ["tilapia", "cichlid", "discus", "oscar", "peacock_bass",
                             "piranha", "tambaqui", "pacu", "catfish",
                             "redtail_catfish", "electric_eel", "payara", "arapaima"]),
-    ("Wetland / Swamp", ["warmouth", "flier", "mudskipper", "bowfin", "walking_catfish",
-                         "pickerel", "spotted_gar", "snakehead", "longnose_gar", "grass_carp",
-                         "flathead_catfish", "blue_catfish", "paddlefish",
-                         "gar", "alligator_gar"]),
+    ("Wetland / Swamp", ["warmouth", "flier", "dollar_sunfish", "pirate_perch", "mudskipper", "bowfin",
+                         "walking_catfish", "pickerel", "redfin_pickerel", "spotted_gar", "snakehead",
+                         "longnose_gar", "grass_carp", "flathead_catfish", "blue_catfish",
+                         "spotted_bullhead", "paddlefish", "gar", "alligator_gar"]),
 ]
+
+# Maps bait item_id → set of fish species that prefer it.
+# Fish absent from every set are "universal" — catchable without bait or with any bait.
+BAIT_AFFINITIES = {
+    "worm_bait": {
+        "minnow", "dace", "chub", "roach", "bream", "gudgeon",
+        "loach", "stone_loach", "barbel", "nase", "spined_loach",
+        "ruffe", "tench", "crucian_carp", "carp", "common_carp",
+        "white_bream", "silver_bream", "bronze_bream",
+        "bullhead", "river_bullhead", "stone_loach",
+    },
+    "insect_bait": {
+        "trout", "rainbow_trout", "brown_trout", "brook_trout", "lake_trout",
+        "grayling", "arctic_grayling", "bleak", "asp", "ide", "rudd",
+        "arapaima", "piranha", "red_piranha", "discus", "tiger_fish",
+        "arowana", "silver_arowana", "peacock_bass", "oscar",
+        "tigerfish", "african_tigerfish",
+    },
+    "grain_bait": {
+        "mirror_carp", "grass_carp", "bighead_carp", "silver_carp",
+        "crucian_carp", "leather_carp", "koi",
+        "tench", "bream", "white_bream", "silver_bream",
+        "ide", "chub", "roach", "rudd",
+    },
+    "berry_bait": {
+        "perch", "yellow_perch", "pumpkinseed", "bluegill", "sunfish",
+        "bowfin", "mudfish", "weatherfish", "longnose_gar", "spotted_gar",
+        "crappie", "black_crappie", "white_crappie",
+        "rock_bass", "warmouth",
+    },
+    "meat_bait": {
+        "pike", "northern_pike", "walleye", "zander", "pikeperch",
+        "largemouth_bass", "smallmouth_bass", "striped_bass", "spotted_bass",
+        "muskie", "tiger_muskie", "muskellunge",
+        "taimen", "huchen", "wels_catfish", "flathead_catfish",
+        "channel_catfish", "blue_catfish", "electric_eel",
+        "alligator_gar", "gar", "snakehead",
+    },
+}
+
+# Pre-computed set for O(1) lookup — fish in this set require specific bait
+_ALL_BAIT_FISH = {s for lst in BAIT_AFFINITIES.values() for s in lst}
 
 # Weight toward rarer rarity pools
 _RARITY_WEIGHT = {
@@ -1371,20 +1999,38 @@ class FishGenerator:
         self._world_seed = world_seed
         self._counter = 0
 
-    def generate(self, bx, by, biome):
+    def generate(self, bx, by, biome, bait=None):
         self._counter += 1
         seed = (self._world_seed * 31337 + bx * 7919 + by * 4481 + self._counter) & 0x7FFFFFFF
         rng = random.Random(seed)
 
-        # Build weighted species list filtered to this biome.
-        # biome_affinity=[] means the fish can appear in any biome.
+        bait_preferred = BAIT_AFFINITIES.get(bait, set()) if bait else set()
+
+        # Build weighted species list filtered by biome and bait preference.
+        # Without bait only universal fish (not in _ALL_BAIT_FISH) are eligible.
+        # With bait, preferred fish get full weight; universal fish get 1/3 weight;
+        # fish that prefer a different bait are excluded entirely.
         eligible = []
         for species, fdata in FISH_TYPES.items():
             affinity = fdata["biome_affinity"]
-            if not affinity or biome in affinity:
-                base_rarity = fdata["rarity_pool"][0]
-                w = _RARITY_WEIGHT.get(base_rarity, 10)
-                eligible.extend([species] * w)
+            if affinity and biome not in affinity:
+                continue
+
+            is_universal = species not in _ALL_BAIT_FISH
+            is_preferred = species in bait_preferred
+
+            if not bait:
+                if not is_universal:
+                    continue
+            else:
+                if not is_preferred and not is_universal:
+                    continue
+
+            base_rarity = fdata["rarity_pool"][0]
+            w = _RARITY_WEIGHT.get(base_rarity, 10)
+            if is_universal and bait:
+                w = max(1, w // 3)
+            eligible.extend([species] * w)
 
         # Fallback: if the biome has no specific fish, use universal-only fish
         if not eligible:

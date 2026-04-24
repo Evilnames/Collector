@@ -76,6 +76,8 @@ class SaveManager:
             self._save_coffee_beans(con, player)
             self._save_wine_grapes(con, player)
             self._save_spirits(con, player)
+            self._save_tea_leaves(con, player)
+            self._save_textiles(con, player)
             self._save_bird_observations(con, player)
             self._save_insect_observations(con, player)
             self._save_research(con, research)
@@ -420,6 +422,41 @@ class SaveManager:
             barrel_type       TEXT DEFAULT '',
             age_duration      TEXT DEFAULT ''
         );
+        CREATE TABLE IF NOT EXISTS tea_leaves (
+            uid               TEXT PRIMARY KEY,
+            origin_biome      TEXT,
+            variety           TEXT,
+            state             TEXT,
+            tea_type          TEXT,
+            oxidation         REAL,
+            astringency       REAL,
+            floral            REAL,
+            vegetal           REAL,
+            earthiness        REAL,
+            sweetness         REAL,
+            steep_quality     REAL,
+            complexity        REAL,
+            flavor_notes      TEXT,
+            seed              INTEGER,
+            blend_components  TEXT,
+            wither_method     TEXT DEFAULT '',
+            herbal_additions  TEXT DEFAULT '[]',
+            age_duration      TEXT DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS textiles (
+            uid            TEXT PRIMARY KEY,
+            fiber_type     TEXT,
+            state          TEXT,
+            output_type    TEXT,
+            texture        TEXT,
+            dye_family     TEXT,
+            dye_color      TEXT,
+            quality        REAL,
+            softness       REAL,
+            luster         REAL,
+            pattern_quality REAL,
+            seed           INTEGER
+        );
         CREATE TABLE IF NOT EXISTS global_collection (
             category TEXT NOT NULL,
             item_id  TEXT NOT NULL,
@@ -452,6 +489,10 @@ class SaveManager:
             con.execute("ALTER TABLE player ADD COLUMN foods_cooked TEXT DEFAULT '{}'")
         except Exception:
             pass
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN worn TEXT DEFAULT '{}'")
+        except Exception:
+            pass
         for col in ("water_reservoir", "compost_slot"):
             try:
                 con.execute(f"ALTER TABLE farm_bots ADD COLUMN {col} REAL DEFAULT 0")
@@ -468,6 +509,7 @@ class SaveManager:
             ("horses_bred", "0"),
             ("horse_records", "'{}'"),
             ("discovered_coat_biomes", "'[]'"),
+            ("discovered_recipes", "'[]'"),
         ]:
             try:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT {default}")
@@ -698,8 +740,9 @@ class SaveManager:
                 discovered_mushroom_types, mushrooms_found,
                 spawn_x, spawn_y, discovered_fossil_types, known_crops,
                 discovered_foods, foods_cooked,
-                horses_tamed, horses_bred, horse_records, discovered_coat_biomes)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                horses_tamed, horses_bred, horse_records, discovered_coat_biomes,
+                discovered_recipes)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 player.x, player.y, player.vx, player.vy, player.facing,
                 player.health, player.hunger, player.pick_power, player.money,
@@ -721,6 +764,7 @@ class SaveManager:
                 getattr(player, "horses_bred", 0),
                 json.dumps(getattr(player, "horse_records", {})),
                 json.dumps(list(getattr(player, "discovered_coat_biomes", set()))),
+                json.dumps(list(getattr(player, "discovered_recipes", set()))),
             )
         )
 
@@ -860,6 +904,40 @@ class SaveManager:
                     getattr(s, "age_duration", ""),
                 )
             )
+
+    def _save_tea_leaves(self, con, player):
+        con.execute("DELETE FROM tea_leaves")
+        for x in player.tea_leaves:
+            con.execute(
+                "INSERT OR REPLACE INTO tea_leaves VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    x.uid, x.origin_biome, x.variety, x.state, x.tea_type,
+                    x.oxidation, x.astringency, x.floral, x.vegetal,
+                    x.earthiness, x.sweetness, x.steep_quality, x.complexity,
+                    json.dumps(x.flavor_notes), x.seed,
+                    json.dumps(x.blend_components),
+                    getattr(x, "wither_method", ""),
+                    json.dumps(getattr(x, "herbal_additions", [])),
+                    getattr(x, "age_duration", ""),
+                )
+            )
+
+    def _save_textiles(self, con, player):
+        con.execute("DELETE FROM textiles")
+        for t in player.textiles:
+            con.execute(
+                "INSERT OR REPLACE INTO textiles VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    t.uid, t.fiber_type, t.state, t.output_type, t.texture,
+                    t.dye_family, json.dumps(t.dye_color),
+                    t.quality, t.softness, t.luster, t.pattern_quality, t.seed,
+                )
+            )
+        # Save worn slots as JSON in player table
+        con.execute(
+            "UPDATE player SET worn = ?",
+            (json.dumps(player.worn),)
+        )
 
     def _save_bird_observations(self, con, player):
         con.execute("DELETE FROM bird_observations")
@@ -1073,7 +1151,9 @@ class SaveManager:
                    discovered_mushroom_types, mushrooms_found,
                    spawn_x, spawn_y, discovered_fossil_types, known_crops,
                    discovered_foods, foods_cooked,
-                   horses_tamed, horses_bred, horse_records, discovered_coat_biomes
+                   horses_tamed, horses_bred, horse_records, discovered_coat_biomes,
+                   COALESCE(discovered_recipes, '[]'),
+                   COALESCE(worn, '{}')
             FROM player LIMIT 1
         """).fetchone()
 
@@ -1083,7 +1163,8 @@ class SaveManager:
          discovered_mushroom_types, mushrooms_found,
          spawn_x, spawn_y, discovered_fossil_types, known_crops,
          discovered_foods, foods_cooked,
-         horses_tamed, horses_bred, horse_records_raw, discovered_coat_biomes_raw) = row
+         horses_tamed, horses_bred, horse_records_raw, discovered_coat_biomes_raw,
+         discovered_recipes_raw, worn_raw) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -1236,6 +1317,34 @@ class SaveManager:
             })
 
         try:
+            tea_rows = con.execute("""
+                SELECT uid, origin_biome, variety, state, tea_type,
+                       oxidation, astringency, floral, vegetal,
+                       earthiness, sweetness, steep_quality, complexity,
+                       flavor_notes, seed, blend_components,
+                       COALESCE(wither_method, ''),
+                       COALESCE(herbal_additions, '[]'),
+                       COALESCE(age_duration, '')
+                FROM tea_leaves
+            """).fetchall()
+        except Exception:
+            tea_rows = []
+        tea_data = []
+        for t in tea_rows:
+            tea_data.append({
+                "uid": t[0], "origin_biome": t[1], "variety": t[2], "state": t[3],
+                "tea_type": t[4],
+                "oxidation": t[5], "astringency": t[6], "floral": t[7], "vegetal": t[8],
+                "earthiness": t[9], "sweetness": t[10], "steep_quality": t[11], "complexity": t[12],
+                "flavor_notes": json.loads(t[13]) if t[13] else [],
+                "seed": t[14],
+                "blend_components": json.loads(t[15]) if t[15] else [],
+                "wither_method": t[16] or "",
+                "herbal_additions": json.loads(t[17]) if t[17] else [],
+                "age_duration": t[18] or "",
+            })
+
+        try:
             spirit_rows = con.execute("""
                 SELECT uid, origin_biome, grain_type, spirit_type, state,
                        cut_quality, proof, grain_character, sweetness, spice,
@@ -1260,6 +1369,24 @@ class SaveManager:
                 "barrel_type": s[16] or "",
                 "age_duration": s[17] or "",
             })
+
+        try:
+            textile_rows = con.execute(
+                "SELECT uid, fiber_type, state, output_type, texture, dye_family, "
+                "dye_color, quality, softness, luster, pattern_quality, seed FROM textiles"
+            ).fetchall()
+        except Exception:
+            textile_rows = []
+        textile_data = [
+            {
+                "uid": r[0], "fiber_type": r[1], "state": r[2], "output_type": r[3],
+                "texture": r[4], "dye_family": r[5],
+                "dye_color": json.loads(r[6]) if r[6] else [230, 215, 185],
+                "quality": r[7], "softness": r[8], "luster": r[9],
+                "pattern_quality": r[10], "seed": r[11],
+            }
+            for r in textile_rows
+        ]
 
         return {
             "x": x, "y": y, "vx": vx, "vy": vy, "facing": facing,
@@ -1291,6 +1418,11 @@ class SaveManager:
                 for c in coffee_data if c["state"] != "raw"
             }),
             "wine_grapes": wine_data,
+            "tea_leaves": tea_data,
+            "discovered_tea_origins": list({
+                f"{t['origin_biome']}_{t['tea_type']}"
+                for t in tea_data if t["tea_type"]
+            }),
             "discovered_wine_origins": list({
                 f"{w['origin_biome']}_{w['style']}"
                 for w in wine_data if w["state"] not in ("raw", "crushed") and w["style"]
@@ -1300,6 +1432,12 @@ class SaveManager:
                 f"{s['origin_biome']}_{('reserve' if s['age_quality'] >= 0.70 else 'aged' if s['age_quality'] >= 0.40 else 'young')}"
                 for s in spirit_data if s["state"] in ("aged", "blended")
             }),
+            "textiles": textile_data,
+            "discovered_textiles": list({
+                f"{t['fiber_type']}_{t['dye_family']}_{t['output_type']}"
+                for t in textile_data if t["state"] == "woven"
+            }),
+            "worn": json.loads(worn_raw or "{}") or {"head": None, "chest": None, "feet": None},
             "spawn_x": spawn_x,
             "spawn_y": spawn_y,
             "known_crops": json.loads(known_crops or "[]"),
@@ -1309,6 +1447,7 @@ class SaveManager:
             "horses_bred": int(horses_bred or 0),
             "horse_records": json.loads(horse_records_raw or "{}"),
             "discovered_coat_biomes": json.loads(discovered_coat_biomes_raw or "[]"),
+            "discovered_recipes": json.loads(discovered_recipes_raw or "[]"),
         }
 
     def _load_automations(self, con):

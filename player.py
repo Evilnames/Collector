@@ -3,6 +3,10 @@ import pygame
 from automations import Automation, AUTOMATION_DEFS, FarmBot, FARM_BOT_DEFS, FARM_BOT_TYPES, Backhoe
 from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT, GEM_DEPOSIT, CAVE_MUSHROOMS, EQUIPMENT_BLOCKS, LADDER, WATER,
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
+                    COBALT_DOOR_CLOSED, COBALT_DOOR_OPEN,
+                    CRIMSON_CEDAR_DOOR_CLOSED, CRIMSON_CEDAR_DOOR_OPEN,
+                    TEAL_DOOR_CLOSED, TEAL_DOOR_OPEN,
+                    SAFFRON_DOOR_CLOSED, SAFFRON_DOOR_OPEN,
                     WOOD_FENCE, IRON_FENCE, WOOD_FENCE_OPEN, IRON_FENCE_OPEN,
                     SAPLING, GRASS, DIRT, ALL_LOGS, ALL_LEAVES,
                     YOUNG_CROP_BLOCKS, MATURE_CROP_BLOCKS, BUSH_BLOCKS,
@@ -28,7 +32,10 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P, WATERMELON_CROP_MATURE_P,
                     CORN_CROP_MATURE_P, RICE_CROP_MATURE_P,
                     OIL, BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK,
-                    COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE,
+                    COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE,
+                    FLAX_CROP_MATURE,
+                    CHAMOMILE_BUSH, LAVENDER_BUSH, MINT_BUSH, ROSEMARY_BUSH,
+                    CHAMOMILE_CROP_MATURE, LAVENDER_CROP_MATURE, MINT_CROP_MATURE, ROSEMARY_CROP_MATURE,
                     SKY_OPENING, STONE, TILLED_SOIL, SAND, COMPOST_BIN_BLOCK, WELL_BLOCK,
                     STAIRS_RIGHT, STAIRS_LEFT, STAIR_BLOCKS,
                     GARDEN_BLOCK)
@@ -42,6 +49,8 @@ from fish import FishGenerator, Fish
 from coffee import CoffeeGenerator, CoffeeBean
 from wine import WineGenerator, Grape
 from spirits import SpiritGenerator, Spirit
+from tea import TeaGenerator, TeaLeaf
+from textiles import TextileGenerator, Textile
 from constants import (
     BLOCK_SIZE, PLAYER_W, PLAYER_H,
     GRAVITY, JUMP_FORCE, MOVE_SPEED, MAX_FALL,
@@ -53,6 +62,10 @@ from constants import (
 _BG_DISALLOWED = (
     {WATER, LADDER, SAPLING, CHEST_BLOCK, GARDEN_BLOCK,
      WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
+     COBALT_DOOR_CLOSED, COBALT_DOOR_OPEN,
+     CRIMSON_CEDAR_DOOR_CLOSED, CRIMSON_CEDAR_DOOR_OPEN,
+     TEAL_DOOR_CLOSED, TEAL_DOOR_OPEN,
+     SAFFRON_DOOR_CLOSED, SAFFRON_DOOR_OPEN,
      BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK}
     | BUSH_BLOCKS
     | YOUNG_CROP_BLOCKS
@@ -79,6 +92,8 @@ class Player:
         self.hotbar_uses = [None] * HOTBAR_SIZE
         self.selected_slot = 0
         self.money = 0
+        self.blessing_timer = 0.0
+        self.blessing_mult  = 1.0
         # Rock collection
         self.rocks = []
         self.discovered_types = set()
@@ -115,12 +130,26 @@ class Player:
         self._wine_gen = WineGenerator(world.seed)
         # Active buffs from drinking wine (separate pool, stacks with coffee)
         self.wine_buffs = {}  # buff_name -> {"duration": float}
+        # Tea collection
+        self.tea_leaves = []
+        self.discovered_tea_origins = set()   # "biome_teatype" strings
+        self._tea_gen = TeaGenerator(world.seed)
+        # Active buffs from drinking tea (separate pool, stacks with coffee/wine)
+        self.tea_buffs = {}   # buff_name -> {"duration": float}
+        # Herbalism
+        self.discovered_recipes = set()  # output_id strings of discovered recipes
+        self.herb_buffs         = {}     # buff_name -> {"duration": float}
         # Spirits collection
         self.spirits = []
         self.discovered_spirit_types = set()  # "biome_tier" strings e.g. "canyon_aged"
         self._spirit_gen = SpiritGenerator(world.seed)
         # Active buffs from drinking spirits (separate pool, stacks with coffee/wine)
         self.spirit_buffs = {}  # buff_name -> {"duration": float}
+        # Textile collection
+        self.textiles = []
+        self.discovered_textiles = set()         # "fiber_dye_output" strings
+        self.worn = {"head": None, "chest": None, "feet": None}  # Textile UIDs
+        self._textile_gen = TextileGenerator(world.seed)
         # Fishing mini-game state
         self.fishing_state = None     # None | "casting" | "biting" | "result"
         self._fishing_timer = 0.0
@@ -211,8 +240,14 @@ class Player:
         self.discovered_coffee_origins = set(d.get("discovered_coffee_origins", []))
         self.wine_grapes = [Grape(**g) for g in d.get("wine_grapes", [])]
         self.discovered_wine_origins = set(d.get("discovered_wine_origins", []))
+        self.tea_leaves = [TeaLeaf(**x) for x in d.get("tea_leaves", [])]
+        self.discovered_tea_origins = set(d.get("discovered_tea_origins", []))
+        self.discovered_recipes = set(d.get("discovered_recipes", []))
         self.spirits = [Spirit(**s) for s in d.get("spirits", [])]
         self.discovered_spirit_types = set(d.get("discovered_spirit_types", []))
+        self.textiles = [Textile(**x) for x in d.get("textiles", [])]
+        self.discovered_textiles = set(d.get("discovered_textiles", []))
+        self.worn = d.get("worn", {"head": None, "chest": None, "feet": None})
         self.birds_observed = d.get("birds_observed", {})
         self.discovered_bird_types = set(d.get("discovered_bird_types", []))
         self.insects_observed = d.get("insects_observed", {})
@@ -245,6 +280,13 @@ class Player:
             return
         self.vx = 0.0
         speed = MOVE_SPEED * (1.25 if "rush" in self.active_buffs else 1.0)
+        if "swiftness" in self.herb_buffs:
+            speed *= 1.50
+        elif "haste" in self.herb_buffs:
+            speed *= 1.35
+        textile_swift = self.get_textile_bonus("swiftness")
+        if textile_swift > 0:
+            speed *= (1.0 + textile_swift)
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
             self.vx = -speed
             self.facing = -1
@@ -549,9 +591,22 @@ class Player:
                 self.spirits.append(spirit)
                 self._add_item("grain_seed")
                 self.pending_notifications.append(("Spirits", "Grain Harvest", None))
+            elif block_id == TEA_CROP_MATURE:
+                biodome = self.world.get_biodome(bx)
+                leaf = self._tea_gen.generate(biodome)
+                self.tea_leaves.append(leaf)
+                self._add_item("tea_seed")
+                self.pending_notifications.append(("Tea", "Tea Leaf", None))
+            elif block_id == FLAX_CROP_MATURE:
+                self._add_item("flax_fiber")
+                self._add_item("flax_seed")
+                self.pending_notifications.append(("Textile", "Flax Harvested", None))
             elif block_id in CAVE_MUSHROOMS:
                 self.mushrooms_found[block_id] = self.mushrooms_found.get(block_id, 0) + 1
                 self.discovered_mushroom_types.add(block_id)
+                drop = BLOCKS[block_id].get("drop")
+                if drop in ("cave_mushroom", "rare_mushroom"):
+                    self._add_item(drop)
                 self.pending_notifications.append(("Mushroom", block_id, None))
             else:
                 block_data = BLOCKS[block_id]
@@ -748,6 +803,14 @@ class Player:
                     self._add_item("celery")
                 elif block_id == BROCCOLI_BUSH and random.random() < 0.20:
                     self._add_item("broccoli")
+                elif block_id == CHAMOMILE_BUSH and random.random() < 0.25:
+                    self._add_item("chamomile_item")
+                elif block_id == LAVENDER_BUSH and random.random() < 0.25:
+                    self._add_item("lavender")
+                elif block_id == MINT_BUSH and random.random() < 0.30:
+                    self._add_item("mint")
+                elif block_id == ROSEMARY_BUSH and random.random() < 0.20:
+                    self._add_item("rosemary")
             if block_id in PERENNIAL_CROP_MATURE and random.random() > 0.33:
                 self.world.set_block(bx, by, MATURE_TO_YOUNG_CROP[block_id])
             else:
@@ -794,6 +857,24 @@ class Player:
                     if self.world.get_block(bx, by + dy) == IRON_DOOR_OPEN:
                         self.world.set_block(bx, by + dy, IRON_DOOR_CLOSED); break
                 return
+            for closed, opened in (
+                (COBALT_DOOR_CLOSED,        COBALT_DOOR_OPEN),
+                (CRIMSON_CEDAR_DOOR_CLOSED, CRIMSON_CEDAR_DOOR_OPEN),
+                (TEAL_DOOR_CLOSED,          TEAL_DOOR_OPEN),
+                (SAFFRON_DOOR_CLOSED,       SAFFRON_DOOR_OPEN),
+            ):
+                if current == closed:
+                    self.world.set_block(bx, by, opened)
+                    for dy in (-1, 1):
+                        if self.world.get_block(bx, by + dy) == closed:
+                            self.world.set_block(bx, by + dy, opened); break
+                    return
+                if current == opened:
+                    self.world.set_block(bx, by, closed)
+                    for dy in (-1, 1):
+                        if self.world.get_block(bx, by + dy) == opened:
+                            self.world.set_block(bx, by + dy, closed); break
+                    return
             if current == WOOD_FENCE:
                 self.world.set_block(bx, by, WOOD_FENCE_OPEN)
                 return
@@ -1030,6 +1111,23 @@ class Player:
         self.dead = False
         self._drowning_timer = 0.0
 
+    def get_worn_textile(self, slot):
+        uid = self.worn.get(slot)
+        if uid:
+            return next((t for t in self.textiles if t.uid == uid), None)
+        return None
+
+    def get_textile_bonus(self, stat):
+        """Return passive bonus fraction (0.0–max) from the equipped garment for stat."""
+        from textiles import GARMENT_BUFFS, GARMENT_MAX_BONUS
+        for slot, uid in self.worn.items():
+            if uid is None:
+                continue
+            t = next((x for x in self.textiles if x.uid == uid), None)
+            if t and GARMENT_BUFFS.get(t.output_type) == stat:
+                return t.quality * GARMENT_MAX_BONUS[stat]
+        return 0.0
+
     def get_nearby_bed(self):
         from blocks import BED
         cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
@@ -1053,6 +1151,16 @@ class Player:
     def has_fishing_pole(self):
         item_id = self.hotbar[self.selected_slot]
         return item_id is not None and ITEMS.get(item_id, {}).get("fishing_tool", False)
+
+    def get_active_bait(self):
+        """Return bait item_id from the hotbar slot immediately right of the fishing rod, else None."""
+        bait_slot = self.selected_slot + 1
+        if bait_slot >= HOTBAR_SIZE:
+            return None
+        item_id = self.hotbar[bait_slot]
+        if item_id and ITEMS.get(item_id, {}).get("bait", False):
+            return item_id
+        return None
 
     def get_nearby_water_biome(self):
         """Return biome string if water is within 3 blocks and player is not in water, else None."""
@@ -1094,11 +1202,19 @@ class Player:
     def _catch_fish(self):
         cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
         cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
-        fish = self._fish_gen.generate(cx, cy, self._fishing_biome or "")
+        bait = self.get_active_bait()
+        fish = self._fish_gen.generate(cx, cy, self._fishing_biome or "", bait=bait)
         self.fish_caught.append(fish)
         self.discovered_fish_species.add(fish.species)
         self._add_item("fish")
         self._consume_tool_use()
+        if bait:
+            self.inventory[bait] -= 1
+            if self.inventory[bait] <= 0:
+                del self.inventory[bait]
+                bait_slot = self.selected_slot + 1
+                if bait_slot < HOTBAR_SIZE and self.hotbar[bait_slot] == bait:
+                    self.hotbar[bait_slot] = None
         self.pending_notifications.append(
             ("Fish", fish.species.replace("_", " ").title(), fish.rarity))
         self.fishing_state = "result"
@@ -1158,6 +1274,16 @@ class Player:
             buff = item_data["wine_buff"]
             duration = item_data.get("wine_buff_duration", 120.0)
             self.wine_buffs[buff] = {"duration": duration}
+        if item_data.get("tea_buff"):
+            buff = item_data["tea_buff"]
+            duration = item_data.get("tea_buff_duration", 90.0)
+            self.tea_buffs[buff] = {"duration": duration}
+        if item_data.get("herb_heal"):
+            self.health = min(MAX_HEALTH, self.health + item_data["herb_heal"])
+        if item_data.get("herb_buff"):
+            buff = item_data["herb_buff"]
+            duration = item_data.get("herb_buff_duration", 90.0)
+            self.herb_buffs[buff] = {"duration": duration}
         self.inventory[item_id] -= 1
         if self.inventory[item_id] <= 0:
             del self.inventory[item_id]
@@ -1171,6 +1297,11 @@ class Player:
     # ------------------------------------------------------------------
 
     def update(self, dt):
+        if self.blessing_timer > 0:
+            self.blessing_timer -= dt
+            if self.blessing_timer <= 0:
+                self.blessing_timer = 0.0
+                self.blessing_mult  = 1.0
         in_water = self._in_water()
         if self._in_ladder():
             self.vy = min(self.vy, 2)  # suppress gravity; allow slow drift but not free-fall
@@ -1186,12 +1317,19 @@ class Player:
             # Fall damage only applies outside water (wine "vivacity" negates it)
             if landed and prev_vy > 10 and not in_water and "vivacity" not in self.wine_buffs:
                 dmg = int((prev_vy - 10) * 5)
+                if "tranquility" in self.tea_buffs:
+                    dmg = int(dmg * 0.7)
+                resilience = self.get_textile_bonus("resilience")
+                if resilience > 0:
+                    dmg = int(dmg * (1.0 - resilience))
                 self.health = max(0, self.health - dmg)
             # Drowning: after 5 s with head submerged, 5 HP/s damage
             if self._head_in_water():
                 self._drowning_timer += dt
                 if self._drowning_timer > 5.0:
-                    self.health = max(0, self.health - 5 * dt)
+                    resilience = self.get_textile_bonus("resilience")
+                    drown_dmg = 5 * dt * (1.0 - resilience)
+                    self.health = max(0, self.health - drown_dmg)
             else:
                 self._drowning_timer = max(0.0, self._drowning_timer - dt * 2)
         else:
@@ -1210,12 +1348,22 @@ class Player:
             self.wine_buffs[buff]["duration"] -= dt
             if self.wine_buffs[buff]["duration"] <= 0:
                 del self.wine_buffs[buff]
+        for buff in list(self.tea_buffs):
+            self.tea_buffs[buff]["duration"] -= dt
+            if self.tea_buffs[buff]["duration"] <= 0:
+                del self.tea_buffs[buff]
+        for buff in list(self.herb_buffs):
+            self.herb_buffs[buff]["duration"] -= dt
+            if self.herb_buffs[buff]["duration"] <= 0:
+                del self.herb_buffs[buff]
         if not self.god_mode:
             drain_mult = 1.0
             if "endurance" in self.active_buffs:
                 drain_mult *= 0.6
             if "serenity" in self.wine_buffs:
                 drain_mult *= 0.4
+            if "longevity" in self.tea_buffs:
+                drain_mult *= 0.45
             self.hunger = max(0.0, self.hunger - self._hunger_drain_rate * drain_mult * dt)
             if self.hunger == 0.0:
                 self.health = max(0, self.health - 3 * dt)
@@ -1415,7 +1563,17 @@ class Player:
         item_id = self.hotbar[self.selected_slot]
         tool_power = ITEMS.get(item_id, {}).get("pick_power", 0) if item_id else 0
         bonus = 1 if "strength" in self.active_buffs else 0
-        return max(self.pick_power, tool_power) + bonus
+        base = max(self.pick_power, tool_power) + bonus
+        # Focus buffs (coffee, herb potions, woven hat) multiply effective power
+        mult = 1.0
+        if "focus" in self.active_buffs:
+            mult *= 1.20
+        if "focus" in self.herb_buffs:
+            mult *= 1.20
+        if "mastery" in self.herb_buffs:
+            mult *= 1.40
+        mult += self.get_textile_bonus("focus")
+        return base * mult
 
     @property
     def effective_axe_power(self):

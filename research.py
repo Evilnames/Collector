@@ -40,7 +40,7 @@ def _noop(player, world):
 
 
 class ResearchTree:
-    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship"]
+    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship", "Tea Cultivation", "Herbalism", "Textile Arts"]
 
     def __init__(self):
         self.nodes = {}    # id -> ResearchNode
@@ -313,6 +313,81 @@ class ResearchTree:
             "Stamina drains 30% slower while sprinting on horseback",
             {"gold_nugget": 1, "wheat": 8}, ["speed_training"],
             _noop, money_cost=80), 8, 4)
+
+        # --- Tea Cultivation (column 9) ---
+        self._add(ResearchNode(
+            "tea_cultivation", "Tea Cultivation",
+            "Learn to cultivate tea — unlocks Withering Rack crafting",
+            {"lumber": 6, "coal": 4}, [],
+            _noop, money_cost=20), 9, 0)
+
+        self._add(ResearchNode(
+            "tea_processing_arts", "Processing Arts",
+            "Master tea oxidation — unlocks Oxidation Station crafting",
+            {"iron_chunk": 3, "coal": 6}, ["tea_cultivation"],
+            _noop, money_cost=35), 9, 1)
+
+        self._add(ResearchNode(
+            "tea_blending", "Blending",
+            "Learn herbal blending — unlocks herbal additions in Tea Cellar",
+            {"lumber": 4, "ginger": 5}, ["tea_processing_arts"],
+            _noop, money_cost=50), 9, 2)
+
+        self._add(ResearchNode(
+            "tea_ceremony", "Tea Ceremony",
+            "Perfect the art of tea — unlocks Tea Cellar crafting and fine/aged quality tier",
+            {"gold_nugget": 2, "iron_chunk": 3}, ["tea_blending"],
+            _noop, money_cost=70), 9, 3)
+
+        # --- Herbalism (column 10) ---
+        self._add(ResearchNode(
+            "herbalism_basics", "Herbalism Basics",
+            "Learn to dry herbs — unlocks Drying Rack crafting",
+            {"lumber": 4, "coal": 2}, [],
+            _noop, money_cost=15), 10, 0)
+
+        self._add(ResearchNode(
+            "tincture_crafting", "Tincture Crafting",
+            "Brew basic potions in the Alchemical Kiln",
+            {"coal": 4, "crystal_shard": 2}, ["herbalism_basics"],
+            _noop, money_cost=30), 10, 1)
+
+        self._add(ResearchNode(
+            "alchemy", "Alchemy",
+            "Unlock fine-tier potions — more complex ingredient combinations",
+            {"crystal_shard": 4, "iron_chunk": 2}, ["tincture_crafting"],
+            _noop, money_cost=50), 10, 2)
+
+        self._add(ResearchNode(
+            "resonance_mastery", "Resonance Mastery",
+            "Unlock the Resonance Chamber — elixirs with gem-infused power",
+            {"ruby": 2, "crystal_shard": 4}, ["alchemy"],
+            _noop, money_cost=80), 10, 3)
+
+        # --- Textile Arts (column 11) ---
+        self._add(ResearchNode(
+            "fiber_arts", "Fiber Arts Basics",
+            "Learn to spin fiber — unlocks Spinning Wheel crafting",
+            {"iron_chunk": 3, "coal": 2}, [],
+            _noop, money_cost=25), 11, 0)
+
+        self._add(ResearchNode(
+            "natural_dyes", "Natural Dyeing",
+            "Extract pigment from wildflowers — unlocks Dye Vat crafting",
+            {"iron_chunk": 2, "crystal_shard": 1}, ["fiber_arts"],
+            _noop, money_cost=40), 11, 1)
+
+        self._add(ResearchNode(
+            "loom_mastery", "Loom Mastery",
+            "Weave cloth into rugs, tapestries, and garments — unlocks Loom crafting",
+            {"iron_chunk": 3, "gold_nugget": 1}, ["natural_dyes"],
+            _noop, money_cost=55), 11, 2)
+
+        self._add(ResearchNode(
+            "master_weaver", "Master Weaver",
+            "Advanced weaving patterns — unlocks diamond texture and tapestry output",
+            {"gold_nugget": 2, "ruby": 1}, ["loom_mastery"],
+            _noop, money_cost=70), 11, 3)
 
     def prereqs_met(self, node_id):
         return all(self.nodes[p].unlocked for p in self.nodes[node_id].prerequisites)

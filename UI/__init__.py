@@ -16,12 +16,15 @@ from .minigames import MinigamesMixin
 from .collections import CollectionsMixin
 from .help import HelpMixin
 from .horses_ui import HorseMixin
+from .tea import TeaMixin
+from .herbalism import HerbalismMixin
+from .textiles import TextileMixin
 
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
-    CraftingMixin, CoffeeMixin, WineMixin, SpiritsMixin, MinigamesMixin, CollectionsMixin,
-    HelpMixin, HorseMixin,
+    CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, MinigamesMixin, CollectionsMixin,
+    HelpMixin, HorseMixin, TextileMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -130,6 +133,8 @@ class UI(
         self._desert_forge_recipe_rects    = {}
         self._artisan_selected_recipe      = 0
         self._artisan_recipe_rects         = {}
+        self._bait_station_selected_recipe = 0
+        self._bait_station_recipe_rects    = {}
         self._cook_station_scroll        = {}
         self._cook_station_max_scroll    = {}
         self.npc_open   = False
@@ -439,6 +444,59 @@ class UI(
         # Horse codex scroll
         self._horse_codex_scroll      = 0
         self._max_horse_codex_scroll  = 0
+        # ----- Tea UI state -----
+        self._wither_phase        = "select_leaf"
+        self._wither_leaf_idx     = None
+        self._wither_select_rects = {}
+        self._wither_method_rects = {}
+        self._wither_result_btn   = None
+        self._oxidation_phase       = "select_leaf"
+        self._oxidation_leaf_idx    = None
+        self._oxidation_time        = 0.0
+        self._oxidation_total_time  = 30.0
+        self._oxidation_level       = 0.0
+        self._oxidation_held        = False
+        self._oxidation_locked      = False
+        self._oxidation_quality     = 0.0
+        self._oxidation_event_flash = None
+        self._oxidation_select_rects= {}
+        self._oxidation_result_btn  = None
+        self._oxidation_lock_btn    = None
+        self._oxidation_slow_btn    = None
+        self._tea_cellar_tab          = "brew"
+        self._tea_cellar_leaf_idx     = None
+        self._tea_cellar_select_rects = {}
+        self._tea_cellar_age_rects    = {}
+        self._tea_cellar_tab_rects    = {}
+        self._tea_herbal_rects        = {}
+        self._tea_codex_scroll        = 0
+        self._max_tea_codex_scroll    = 0
+        self._tea_codex_selected      = None
+        self._tea_codex_rects         = {}
+        # ----- Herbalism UI state -----
+        self._research           = None   # set each frame in draw(); used by kiln/resonance
+        self._dry_select_rects   = {}
+        self._dry_flower_btns    = {}
+        self._kiln_slots         = [{} for _ in range(4)]
+        self._kiln_slot_rects    = []
+        self._kiln_active_slot   = None
+        self._kiln_brew_btn      = None
+        self._kiln_result        = None
+        self._kiln_result_btn    = None
+        self._kiln_inv_rects     = {}
+        self._kiln_inv_scroll    = 0
+        self._res_slots          = [{} for _ in range(3)]
+        self._res_slot_rects     = []
+        self._res_active_slot    = None
+        self._res_brew_btn       = None
+        self._res_result         = None
+        self._res_result_btn     = None
+        self._res_inv_rects      = {}
+        self._res_inv_scroll     = 0
+        self._herb_codex_scroll      = 0
+        self._max_herb_codex_scroll  = 0
+        self._herb_codex_selected    = None
+        self._herb_codex_rects       = {}
         # Bird observation mini-game overlay
         self._bird_obs_active    = False
         self._bird_obs_bird      = None
@@ -455,9 +513,47 @@ class UI(
         self._bird_journal_rects  = {}
         self._bird_journal_scroll = 0
         self._bird_codex_rects    = {}
+        # ----- Textile UI state -----
+        self._spin_phase        = "select_fiber"
+        self._spin_fiber_type   = "wool"
+        self._spin_time         = 0.0
+        self._spin_tension      = 0.0
+        self._spin_quality      = 0.0
+        self._spin_held         = False
+        self._spin_fiber_rects  = {}
+        self._spin_result_btn   = None
+        self._dye_tab           = "extract"
+        self._dye_tab_rects     = {}
+        self._dye_flower_rects  = {}
+        self._dye_flower_scroll = 0
+        self._dye_thread_idx    = None
+        self._dye_thread_rects  = {}
+        self._dye_extract_rects = {}
+        self._dye_selected_extract = None
+        self._dye_result_btn    = None
+        self._loom_phase        = "select_thread"
+        self._loom_thread_idx   = None
+        self._loom_texture      = "plain"
+        self._loom_output_type  = "cloth"
+        self._loom_thread_rects = {}
+        self._loom_texture_rects= {}
+        self._loom_output_rects = {}
+        self._loom_grid_rects   = []
+        self._loom_active_cell  = 0
+        self._loom_cell_timer   = 1.2
+        self._loom_pattern_score= 0.0
+        self._loom_clicked_cells= set()
+        self._loom_result_btn   = None
+        self.wardrobe_open      = False
+        self._wardrobe_slot_rects = {}
+        self._wardrobe_item_rects = {}
+        self._textile_codex_scroll   = 0
+        self._textile_codex_selected = None
+        self._textile_codex_rects    = {}
 
 
     def draw(self, player, research=None, dt=0.0):
+        self._research = research   # store so click handlers can access it
         if self._cheat_msg_timer > 0:
             self._cheat_msg_timer -= dt
         if player.dead:
@@ -505,6 +601,8 @@ class UI(
             self._draw_bg_mode_indicator()
         self._draw_coffee_buffs(player)
         self._draw_wine_buffs(player)
+        self._draw_tea_buffs(player)
+        self._draw_herb_buffs(player)
         self._drain_notifications(player)
         self._draw_toasts(dt)
         if self._drag_item_id is not None and self.inventory_open:
@@ -514,4 +612,6 @@ class UI(
         if self.horse_breeding_open:
             self._draw_horse_breeding_panel(player)
         self._draw_horse_stamina_hud(player)
+        if self.wardrobe_open:
+            self._draw_wardrobe(player)
 

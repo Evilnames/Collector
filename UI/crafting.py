@@ -3,6 +3,7 @@ from items import ITEMS
 from item_icons import render_item_icon
 from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOODLE_POT_RECIPES,
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
+                      BAIT_STATION_RECIPES, RECIPE_GROUPS, RECIPE_GROUPS_ORDER,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
 from rocks import get_refinery_equipment, RARITY_COLORS
@@ -170,96 +171,144 @@ class CraftingMixin:
         RCARD_W = PW - 510 - 10
         rx0 = div_vx + 10
         ry0 = py + 28
-
         RCARD_STEP = RCARD_H + 5
+        HEADER_STEP = 20
         panel_bottom = py + PH - 6
-        visible_count = (panel_bottom - ry0) // RCARD_STEP
-        self._max_recipe_scroll = max(0, len(RECIPES) - visible_count)
+
+        # Build grouped display list
+        rid_by_output = {r["output_id"]: i for i, r in enumerate(RECIPES)}
+        display_list = []
+        seen = set()
+        for group_name in RECIPE_GROUPS_ORDER:
+            group_items = [rid_by_output[oid] for oid in RECIPE_GROUPS.get(group_name, [])
+                           if oid in rid_by_output]
+            if group_items:
+                display_list.append(("header", group_name))
+                for ridx in group_items:
+                    display_list.append(("recipe", ridx))
+                    seen.add(ridx)
+        ungrouped = [i for i in range(len(RECIPES)) if i not in seen]
+        if ungrouped:
+            display_list.append(("header", "Other"))
+            for ridx in ungrouped:
+                display_list.append(("recipe", ridx))
+
+        # Pixel-based scroll
+        total_h = sum(HEADER_STEP if e[0] == "header" else RCARD_STEP for e in display_list)
+        visible_h = panel_bottom - ry0
+        self._max_recipe_scroll = max(0, total_h - visible_h)
         self._recipe_scroll = max(0, min(self._max_recipe_scroll, self._recipe_scroll))
 
         # Scrollbar
         if self._max_recipe_scroll > 0:
             sb_x = px + PW - 10
             sb_h = panel_bottom - ry0
-            sb_th = max(20, sb_h * visible_count // len(RECIPES))
+            sb_th = max(20, sb_h * visible_h // total_h)
             sb_top = ry0 + (sb_h - sb_th) * self._recipe_scroll // self._max_recipe_scroll
             pygame.draw.rect(self.screen, (35, 35, 48), (sb_x, ry0, 7, sb_h))
             pygame.draw.rect(self.screen, (100, 100, 140), (sb_x, sb_top, 7, sb_th))
 
         self._recipe_rects.clear()
-        for ridx, recipe in enumerate(RECIPES):
-            display_idx = ridx - self._recipe_scroll
-            if display_idx < 0:
+        cur_y = ry0 - self._recipe_scroll
+        panel_clip = pygame.Rect(rx0, ry0, RCARD_W + 12, panel_bottom - ry0)
+        old_panel_clip = self.screen.get_clip()
+        self.screen.set_clip(panel_clip)
+
+        for entry in display_list:
+            is_header = entry[0] == "header"
+            step = HEADER_STEP if is_header else RCARD_STEP
+            item_h = HEADER_STEP if is_header else RCARD_H
+            ry = cur_y
+            cur_y += step
+
+            if ry + item_h <= ry0:
                 continue
-            ry = ry0 + display_idx * RCARD_STEP
-            if ry + RCARD_H > panel_bottom:
+            if ry >= panel_bottom:
                 break
-            rect = pygame.Rect(rx0, ry, RCARD_W, RCARD_H)
-            self._recipe_rects[ridx] = rect
 
-            out_id = recipe["output_id"]
-            locked_r = is_research_locked(out_id, research)
-            craftable_r = (not locked_r) and can_craft(recipe["pattern"], player.inventory)
-            if locked_r:
-                bg = (38, 18, 18)
-                border = (130, 50, 50)
-            elif craftable_r:
-                bg = (20, 45, 20)
-                border = (50, 180, 50)
+            if is_header:
+                _, group_name = entry
+                line_y = ry + HEADER_STEP // 2
+                pygame.draw.line(self.screen, (65, 60, 42),
+                                 (rx0, line_y), (rx0 + RCARD_W - 10, line_y), 1)
+                lbl = self.small.render(group_name.upper(), True, (155, 140, 85))
+                lbg_x, lbg_y = rx0 + 4, ry + (HEADER_STEP - lbl.get_height()) // 2
+                pygame.draw.rect(self.screen, (22, 22, 30),
+                                 (lbg_x - 2, lbg_y - 1, lbl.get_width() + 6, lbl.get_height() + 2))
+                self.screen.blit(lbl, (lbg_x, lbg_y))
             else:
-                bg = (24, 24, 32)
-                border = (52, 52, 68)
-            pygame.draw.rect(self.screen, bg, rect)
-            pygame.draw.rect(self.screen, border, rect, 1)
+                _, ridx = entry
+                recipe = RECIPES[ridx]
+                rect = pygame.Rect(rx0, ry, RCARD_W, RCARD_H)
+                self._recipe_rects[ridx] = rect
 
-            # Mini 3x3 pattern
-            for mr in range(3):
-                for mc in range(3):
-                    cell_item = recipe["pattern"][mr][mc]
-                    mcx = rx0 + 4 + mc * (MINI + MINIGAP)
-                    mcy = ry + 4 + mr * (MINI + MINIGAP)
-                    if cell_item and cell_item in ITEMS:
-                        pygame.draw.rect(self.screen, ITEMS[cell_item]["color"],
-                                         (mcx, mcy, MINI, MINI))
-                    else:
-                        pygame.draw.rect(self.screen, (30, 30, 40), (mcx, mcy, MINI, MINI))
-                    pygame.draw.rect(self.screen, (55, 55, 70), (mcx, mcy, MINI, MINI), 1)
+                out_id = recipe["output_id"]
+                locked_r = is_research_locked(out_id, research)
+                craftable_r = (not locked_r) and can_craft(recipe["pattern"], player.inventory)
+                if locked_r:
+                    bg = (38, 18, 18)
+                    border = (130, 50, 50)
+                elif craftable_r:
+                    bg = (20, 45, 20)
+                    border = (50, 180, 50)
+                else:
+                    bg = (24, 24, 32)
+                    border = (52, 52, 68)
+                pygame.draw.rect(self.screen, bg, rect)
+                pygame.draw.rect(self.screen, border, rect, 1)
 
-            # Arrow
-            arr_x = rx0 + 4 + MINIGW + 6
-            arr_s = self.small.render("->", True, (100, 100, 100))
-            self.screen.blit(arr_s, (arr_x, ry + RCARD_H // 2 - arr_s.get_height() // 2))
+                # Mini 3x3 pattern
+                for mr in range(3):
+                    for mc in range(3):
+                        cell_item = recipe["pattern"][mr][mc]
+                        mcx = rx0 + 4 + mc * (MINI + MINIGAP)
+                        mcy = ry + 4 + mr * (MINI + MINIGAP)
+                        if cell_item and cell_item in ITEMS:
+                            pygame.draw.rect(self.screen, ITEMS[cell_item]["color"],
+                                             (mcx, mcy, MINI, MINI))
+                        else:
+                            pygame.draw.rect(self.screen, (30, 30, 40), (mcx, mcy, MINI, MINI))
+                        pygame.draw.rect(self.screen, (55, 55, 70), (mcx, mcy, MINI, MINI), 1)
 
-            # Output swatch
-            sw = MINI * 2 + MINIGAP
-            out_x = arr_x + arr_s.get_width() + 6
-            out_y = ry + (RCARD_H - sw) // 2
-            out_item = ITEMS.get(out_id, {})
-            icon = render_item_icon(out_id, out_item.get("color", (80, 80, 80)), sw)
-            self.screen.blit(icon, (out_x, out_y))
+                # Arrow
+                arr_x = rx0 + 4 + MINIGW + 6
+                arr_s = self.small.render("->", True, (100, 100, 100))
+                self.screen.blit(arr_s, (arr_x, ry + RCARD_H // 2 - arr_s.get_height() // 2))
 
-            # Name + cost summary
-            name_x = out_x + sw + 8
-            if locked_r:
-                req_nid = RESEARCH_LOCKED_RECIPES.get(out_id, "")
-                req_node = research.nodes.get(req_nid) if research else None
-                nm_col = (180, 80, 80)
-                lock_label = f"[R] {req_node.name if req_node else req_nid}"
-                lk_s = self.small.render(lock_label, True, (160, 65, 65))
-                self.screen.blit(lk_s, (name_x, ry + 4 + 14))
-            else:
-                nm_col = (220, 210, 170) if craftable_r else (140, 140, 150)
-            nm_s = self.small.render(recipe["name"], True, nm_col)
-            self.screen.blit(nm_s, (name_x, ry + 4))
-            if not locked_r:
-                costs = craft_costs(recipe["pattern"])
-                cost_parts = []
-                for iid, cnt in costs.items():
-                    have = player.inventory.get(iid, 0)
-                    col_c = (70, 200, 70) if have >= cnt else (190, 70, 70)
-                    cs = self.small.render(f"{ITEMS.get(iid,{}).get('name',iid)} {have}/{cnt}", True, col_c)
-                    self.screen.blit(cs, (name_x, ry + 4 + 14 * (len(cost_parts) + 1)))
-                    cost_parts.append(iid)
+                # Output swatch
+                sw = MINI * 2 + MINIGAP
+                out_x = arr_x + arr_s.get_width() + 6
+                out_y = ry + (RCARD_H - sw) // 2
+                out_item = ITEMS.get(out_id, {})
+                icon = render_item_icon(out_id, out_item.get("color", (80, 80, 80)), sw)
+                self.screen.blit(icon, (out_x, out_y))
+
+                # Name + cost (clipped to card bounds)
+                old_clip = self.screen.get_clip()
+                self.screen.set_clip(rect)
+                name_x = out_x + sw + 8
+                if locked_r:
+                    req_nid = RESEARCH_LOCKED_RECIPES.get(out_id, "")
+                    req_node = research.nodes.get(req_nid) if research else None
+                    lk_s = self.small.render(
+                        f"[R] {req_node.name if req_node else req_nid}", True, (160, 65, 65))
+                    self.screen.blit(lk_s, (name_x, ry + 4 + 14))
+                    nm_col = (180, 80, 80)
+                else:
+                    nm_col = (220, 210, 170) if craftable_r else (140, 140, 150)
+                nm_s = self.small.render(recipe["name"], True, nm_col)
+                self.screen.blit(nm_s, (name_x, ry + 4))
+                if not locked_r:
+                    costs = craft_costs(recipe["pattern"])
+                    for line_i, (iid, cnt) in enumerate(costs.items()):
+                        have = player.inventory.get(iid, 0)
+                        col_c = (70, 200, 70) if have >= cnt else (190, 70, 70)
+                        cs = self.small.render(
+                            f"{ITEMS.get(iid, {}).get('name', iid)} {have}/{cnt}", True, col_c)
+                        self.screen.blit(cs, (name_x, ry + 4 + 14 * (line_i + 1)))
+                self.screen.set_clip(old_clip)
+
+        self.screen.set_clip(old_panel_clip)
 
     def _draw_bakery(self, player):
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
@@ -483,6 +532,21 @@ class CraftingMixin:
                                    btn_rect.centery - btn_txt.get_height() // 2))
         self._refine_btn = btn_rect
 
+        # Block preview: show the actual in-world tile when the output is placeable
+        place_block = out_data.get("place_block")
+        block_surfs = getattr(self, '_block_surfs', None)
+        if place_block is not None and block_surfs is not None:
+            surf = block_surfs.get(place_block)
+            if surf is not None:
+                PREVIEW_SZ = 96
+                preview = pygame.transform.scale(surf, (PREVIEW_SZ, PREVIEW_SZ))
+                px = DX
+                py = btn_rect.bottom + 16
+                lbl = self.small.render("In-world:", True, (110, 110, 110))
+                self.screen.blit(lbl, (px, py))
+                self.screen.blit(preview, (px, py + 14))
+                pygame.draw.rect(self.screen, (70, 70, 70), (px, py + 14, PREVIEW_SZ, PREVIEW_SZ), 1)
+
     def _draw_refinery(self, player, dt=0.0):
         from blocks import (FOSSIL_TABLE_BLOCK, ROASTER_BLOCK, BLEND_STATION_BLOCK,
                             BREW_STATION_BLOCK, GEM_CUTTER_BLOCK, BAKERY_BLOCK,
@@ -491,7 +555,11 @@ class CraftingMixin:
                             ARTISAN_BENCH_BLOCK,
                             GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
                             STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
-                            COMPOST_BIN_BLOCK)
+                            COMPOST_BIN_BLOCK,
+                            WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK,
+                            DRYING_RACK_BLOCK, KILN_BLOCK, RESONANCE_BLOCK,
+                            BAIT_STATION_BLOCK,
+                            SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK)
         if self.refinery_block_id == FOSSIL_TABLE_BLOCK:
             self._draw_fossil_table(player, dt)
             return
@@ -521,6 +589,33 @@ class CraftingMixin:
             return
         if self.refinery_block_id == BOTTLING_BLOCK:
             self._draw_bottling_station(player, dt)
+            return
+        if self.refinery_block_id == WITHERING_RACK_BLOCK:
+            self._draw_withering_rack(player, dt)
+            return
+        if self.refinery_block_id == OXIDATION_STATION_BLOCK:
+            self._draw_oxidation_station(player, dt)
+            return
+        if self.refinery_block_id == TEA_CELLAR_BLOCK:
+            self._draw_tea_cellar(player, dt)
+            return
+        if self.refinery_block_id == DRYING_RACK_BLOCK:
+            self._draw_drying_rack(player, dt)
+            return
+        if self.refinery_block_id == KILN_BLOCK:
+            self._draw_kiln(player, dt, getattr(self, "_research", None))
+            return
+        if self.refinery_block_id == RESONANCE_BLOCK:
+            self._draw_resonance_chamber(player, dt, getattr(self, "_research", None))
+            return
+        if self.refinery_block_id == SPINNING_WHEEL_BLOCK:
+            self._draw_spinning_wheel(player, dt)
+            return
+        if self.refinery_block_id == DYE_VAT_BLOCK:
+            self._draw_dye_vat(player, dt)
+            return
+        if self.refinery_block_id == LOOM_BLOCK:
+            self._draw_loom(player, dt)
             return
         if self.refinery_block_id == GEM_CUTTER_BLOCK:
             self._draw_gem_cutter(player, dt)
@@ -569,6 +664,13 @@ class CraftingMixin:
                                        (210, 180, 130), self._artisan_selected_recipe,
                                        self._artisan_recipe_rects, "_artisan_selected_recipe",
                                        block_id=ARTISAN_BENCH_BLOCK,
+                                       action_label="CRAFT")
+            return
+        if self.refinery_block_id == BAIT_STATION_BLOCK:
+            self._draw_cooking_station(player, BAIT_STATION_RECIPES, "BAIT STATION",
+                                       (100, 70, 40), self._bait_station_selected_recipe,
+                                       self._bait_station_recipe_rects, "_bait_station_selected_recipe",
+                                       block_id=BAIT_STATION_BLOCK,
                                        action_label="CRAFT")
             return
         if self.refinery_block_id == COMPOST_BIN_BLOCK:

@@ -13,7 +13,7 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK
 
 SETTINGS_PATH = Path(__file__).parent / "settings.json"
 
@@ -371,6 +371,7 @@ def main():
     t0 = _t("Renderer", t0)
 
     ui = UI(screen)
+    ui._block_surfs = renderer._block_surfs
     t0 = _t("UI", t0)
 
     # Load global achievement state (persists across all games)
@@ -441,13 +442,14 @@ def main():
         ui.garden_open = False
         ui.active_garden_flowers = None
         ui.active_garden_pos = None
+        ui.wardrobe_open = False
 
     def _any_ui_open():
         return any([ui.pause_open, ui.help_open, ui.research_open, ui.inventory_open, ui.crafting_open,
                     ui.collection_open, ui.refinery_open, ui.npc_open,
                     ui.automation_open, ui.farm_bot_open, ui.chest_open,
                     ui.backhoe_open, ui.breeding_open, ui.garden_open,
-                    ui.horse_breeding_open, ui._hb_active])
+                    ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open])
 
     def _find_nearby_npc(world, player):
         from cities import NPC
@@ -561,6 +563,27 @@ def main():
                 # Copper Still: ENTER to make cuts
                 if ui.refinery_open and ui.refinery_block_id == STILL_BLOCK:
                     ui.handle_still_keydown(event.key, player)
+
+                # Oxidation Station: ENTER to lock oxidation level
+                if ui.refinery_open and ui.refinery_block_id == OXIDATION_STATION_BLOCK:
+                    ui.handle_oxidation_keydown(event.key, player)
+
+                # Spinning Wheel: SPACE for tension, ESC to close
+                if ui.refinery_open and ui.refinery_block_id == SPINNING_WHEEL_BLOCK:
+                    ui.handle_spinning_wheel_keydown(event.key, player)
+
+                # Loom: ESC to close
+                if ui.refinery_open and ui.refinery_block_id == LOOM_BLOCK:
+                    ui.handle_loom_keydown(event.key, player)
+
+                # Wardrobe toggle (T = Textiles/Tailoring)
+                if event.key == pygame.K_t:
+                    if ui.wardrobe_open:
+                        ui.wardrobe_open = False
+                    elif not _any_ui_open():
+                        ui.wardrobe_open = True
+                if event.key == pygame.K_ESCAPE and ui.wardrobe_open:
+                    ui.wardrobe_open = False
 
                 if event.key == pygame.K_ESCAPE:
                     if player.fishing_state in ("casting", "biting"):
@@ -880,6 +903,8 @@ def main():
                                 ui._ferm_nut_held = True
                 elif ui.horse_breeding_open:
                     ui.handle_horse_breeding_click(event.pos, player, world)
+                elif ui.wardrobe_open:
+                    ui.handle_wardrobe_click(event.pos, player)
                 elif ui.chest_open:
                     ui.handle_chest_click(event.pos, player, event.button)
                 elif ui.garden_open:
@@ -929,6 +954,12 @@ def main():
         # Copper Still: poll SPACE for heat
         if ui.refinery_open and ui.refinery_block_id == STILL_BLOCK:
             ui.handle_still_keys(keys)
+        # Oxidation Station: poll SPACE to slow oxidation
+        if ui.refinery_open and ui.refinery_block_id == OXIDATION_STATION_BLOCK:
+            ui.handle_oxidation_keys(keys, dt, player)
+        # Spinning Wheel: poll SPACE for fiber tension
+        if ui.refinery_open and ui.refinery_block_id == SPINNING_WHEEL_BLOCK:
+            ui.handle_spinning_wheel_keys(keys, dt, player)
 
         if ui.pause_open:
             renderer.draw_world(world, player)

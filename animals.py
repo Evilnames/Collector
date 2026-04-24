@@ -2,7 +2,7 @@ import random
 import uuid
 import pygame
 from constants import BLOCK_SIZE, GRAVITY, JUMP_FORCE, MAX_FALL, PLAYER_W, PLAYER_H, MINE_REACH, HOTBAR_SIZE
-from blocks import LADDER, WOOD_FENCE, IRON_FENCE
+from blocks import LADDER, WOOD_FENCE, IRON_FENCE, WATER
 
 ANIMAL_MOVE_SPEED = 1.2
 ANIMAL_CLIMB_SPEED = 1.5
@@ -100,7 +100,7 @@ class Animal:
 
     def _move_y(self, dy):
         self.y += dy
-        if self._collides():
+        if self._collides() or (dy > 0 and self._feet_in_water()):
             self.y -= dy
             self.vy = 0.0
             if dy > 0:
@@ -149,6 +149,26 @@ class Animal:
                     return True
         return False
 
+    def _feet_in_water(self):
+        left = int(self.x // BLOCK_SIZE)
+        right = int((self.x + self.W - 1) // BLOCK_SIZE)
+        bot = int((self.y + self.H - 1) // BLOCK_SIZE)
+        for bx in range(left, right + 1):
+            if self.world.get_block(bx, bot) == WATER:
+                return True
+        return False
+
+    def _in_water(self):
+        left  = int(self.x // BLOCK_SIZE)
+        right = int((self.x + self.W - 1) // BLOCK_SIZE)
+        top   = int(self.y // BLOCK_SIZE)
+        bot   = int((self.y + self.H - 1) // BLOCK_SIZE)
+        for bx in range(left, right + 1):
+            for by in range(top, bot + 1):
+                if self.world.get_block(bx, by) == WATER:
+                    return True
+        return False
+
     def update(self, dt):
         if self.dead:
             return
@@ -192,6 +212,9 @@ class Animal:
                         self.vy = -ANIMAL_CLIMB_SPEED
                     else:
                         self.vy = 0
+                elif self._in_water():
+                    self.vy = min(self.vy + GRAVITY * 0.2, 2.5)
+                    self.vx *= 0.8
                 else:
                     self.vy = min(self.vy + GRAVITY, MAX_FALL)
                 self._move_x(self.vx)
@@ -213,6 +236,9 @@ class Animal:
                 self.vy = -ANIMAL_CLIMB_SPEED
             else:
                 self.vy = 0
+        elif self._in_water():
+            self.vy = min(self.vy + GRAVITY * 0.2, 2.5)
+            self.vx *= 0.8
         else:
             self.vy = min(self.vy + GRAVITY, MAX_FALL)
         self._move_x(self.vx)

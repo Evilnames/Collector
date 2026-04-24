@@ -40,10 +40,17 @@ _CROP_MATURE_MAP = {
     CELERY_CROP_YOUNG:       CELERY_CROP_MATURE,
     BROCCOLI_CROP_YOUNG:     BROCCOLI_CROP_MATURE,
     CACTUS_YOUNG:            CACTUS_MATURE,
+    SAGUARO_YOUNG:           SAGUARO_MATURE,
+    BARREL_CACTUS_YOUNG:     BARREL_CACTUS_MATURE,
+    OCOTILLO_YOUNG:          OCOTILLO_MATURE,
+    PRICKLY_PEAR_YOUNG:      PRICKLY_PEAR_MATURE,
+    CHOLLA_YOUNG:            CHOLLA_MATURE,
+    PALO_VERDE_YOUNG:        PALO_VERDE_MATURE,
     DATE_PALM_CROP_YOUNG:    DATE_PALM_CROP_MATURE,
     AGAVE_CROP_YOUNG:        AGAVE_CROP_MATURE,
     COFFEE_CROP_YOUNG:       COFFEE_CROP_MATURE,
     GRAPEVINE_CROP_YOUNG:    GRAPEVINE_CROP_MATURE,
+    FLAX_CROP_YOUNG:         FLAX_CROP_MATURE,
 }
 
 
@@ -301,18 +308,25 @@ class World:
 
         # Load all needed chunks from DB in one query, generate any that are new
         if to_load:
+            from cities import generate_city_for_chunk
             db_data = self._save_mgr.load_chunks_batch(to_load) if self._save_mgr else {}
             bg_db_data = self._save_mgr.load_bg_chunks_batch(to_load) if self._save_mgr else {}
+            newly_generated = []
             for cx in to_load:
                 if cx in db_data:
                     self._chunks[cx] = db_data[cx]
                 else:
                     self._chunks[cx] = [[AIR] * CHUNK_W for _ in range(WORLD_H)]
                     self._fill_chunk(cx)
+                    newly_generated.append(cx)
                 if cx in bg_db_data:
                     self._bg_chunks[cx] = bg_db_data[cx]
                 self._spawn_insects_for_chunk(cx)
                 self._spawn_garden_insects_in_chunk(cx)
+            for cx in newly_generated:
+                self._spawn_animals_for_chunk(cx)
+                self._spawn_birds_for_chunk(cx)
+                generate_city_for_chunk(self, self.seed, cx)
 
     def _chunk_get(self, x: int, y: int) -> int:
         """Raw chunk read — no side effects. Returns BEDROCK for unloaded/OOB."""
@@ -532,46 +546,57 @@ class World:
                                BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, LEEK_BUSH, CORN_BUSH,
                                PUMPKIN_BUSH, GARLIC_BUSH, SCALLION_BUSH, APPLE_BUSH,
                                RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, BROCCOLI_BUSH,
-                               GRAPEVINE_BUSH, GRAPEVINE_BUSH],
+                               GRAPEVINE_BUSH, GRAPEVINE_BUSH,
+                               CHAMOMILE_BUSH, LAVENDER_BUSH, MINT_BUSH, FLAX_BUSH, FLAX_BUSH],
             "boreal":         [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
                                TURNIP_BUSH, CABBAGE_BUSH, LEEK_BUSH, APPLE_BUSH,
-                               RADISH_BUSH, PEA_BUSH, BROCCOLI_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
+                               RADISH_BUSH, PEA_BUSH, BROCCOLI_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
+                               CHAMOMILE_BUSH, LAVENDER_BUSH],
             "birch_forest":   [STRAWBERRY_BUSH, CARROT_BUSH, APPLE_BUSH, POTATO_BUSH,
                                BEET_BUSH, PUMPKIN_BUSH, PEA_BUSH, BROCCOLI_BUSH,
-                               COFFEE_BUSH, GRAPEVINE_BUSH],
+                               COFFEE_BUSH, GRAPEVINE_BUSH,
+                               CHAMOMILE_BUSH, LAVENDER_BUSH],
             "jungle":         [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
                                PEPPER_BUSH, EGGPLANT_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH,
-                               CHILI_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
+                               CHILI_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
+                               TEA_BUSH, TEA_BUSH, MINT_BUSH],
             "wetland":        [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, LEEK_BUSH,
                                CELERY_BUSH, SCALLION_BUSH, PUMPKIN_BUSH, TOMATO_BUSH,
-                               WATERMELON_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
+                               WATERMELON_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
+                               MINT_BUSH, MINT_BUSH],
             "redwood":        [STRAWBERRY_BUSH, APPLE_BUSH, POTATO_BUSH, CARROT_BUSH,
                                BEET_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH],
             "tropical":       [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
                                CORN_BUSH, PEPPER_BUSH, CHILI_BUSH, EGGPLANT_BUSH,
                                WATERMELON_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH, ZUCCHINI_BUSH,
-                               COFFEE_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
+                               COFFEE_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
+                               TEA_BUSH, TEA_BUSH, TEA_BUSH, MINT_BUSH],
             "savanna":        [CORN_BUSH, CHILI_BUSH, PEPPER_BUSH, EGGPLANT_BUSH,
                                SWEET_POTATO_BUSH, WATERMELON_BUSH, ONION_BUSH, PUMPKIN_BUSH,
-                               COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
-            "wasteland":      [BEET_BUSH, TURNIP_BUSH, RADISH_BUSH, ONION_BUSH],
+                               COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH],
+            "wasteland":      [BEET_BUSH, TURNIP_BUSH, RADISH_BUSH, ONION_BUSH, ROSEMARY_BUSH],
             "fungal":         [],
-            "alpine_mountain":[BEET_BUSH, TURNIP_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH, POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
-            "rocky_mountain": [BEET_BUSH, TURNIP_BUSH, POTATO_BUSH, CARROT_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
+            "alpine_mountain":[BEET_BUSH, TURNIP_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH, POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
+                               TEA_BUSH, TEA_BUSH, CHAMOMILE_BUSH, LAVENDER_BUSH],
+            "rocky_mountain": [BEET_BUSH, TURNIP_BUSH, POTATO_BUSH, CARROT_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH],
             "rolling_hills":  [STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, CORN_BUSH,
                                POTATO_BUSH, APPLE_BUSH, PUMPKIN_BUSH, GARLIC_BUSH,
                                RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, CABBAGE_BUSH, ONION_BUSH,
-                               COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH],
+                               COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH,
+                               TEA_BUSH, CHAMOMILE_BUSH, LAVENDER_BUSH, ROSEMARY_BUSH,
+                               FLAX_BUSH, FLAX_BUSH],
             "steep_hills":    [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
-                               APPLE_BUSH, CABBAGE_BUSH, BROCCOLI_BUSH, GRAPEVINE_BUSH],
+                               APPLE_BUSH, CABBAGE_BUSH, BROCCOLI_BUSH, GRAPEVINE_BUSH,
+                               LAVENDER_BUSH, ROSEMARY_BUSH],
             "steppe":         [WHEAT_BUSH, CORN_BUSH, RADISH_BUSH, ONION_BUSH,
-                               GARLIC_BUSH, TURNIP_BUSH, GRAPEVINE_BUSH],
+                               GARLIC_BUSH, TURNIP_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
+                               FLAX_BUSH],
             "arid_steppe":    [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, RADISH_BUSH,
-                               SWEET_POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
-            "tundra":         [BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, RADISH_BUSH, COFFEE_BUSH],
-            "swamp":          [RICE_BUSH, CELERY_BUSH, LEEK_BUSH, SCALLION_BUSH, COFFEE_BUSH],
+                               SWEET_POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH],
+            "tundra":         [BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, RADISH_BUSH, COFFEE_BUSH, TEA_BUSH, CHAMOMILE_BUSH],
+            "swamp":          [RICE_BUSH, CELERY_BUSH, LEEK_BUSH, SCALLION_BUSH, COFFEE_BUSH, MINT_BUSH, MINT_BUSH],
             "beach":          [WATERMELON_BUSH, SWEET_POTATO_BUSH, CORN_BUSH, COFFEE_BUSH],
-            "canyon":         [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, TOMATO_BUSH, CORN_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH],
+            "canyon":         [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, TOMATO_BUSH, CORN_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH],
         }
         bush_rng = random.Random(hash((self.seed, cx, 'bushes')) & 0x7FFFFFFF)
         lx = 5
@@ -597,6 +622,12 @@ class World:
                     CACTUS_YOUNG, CACTUS_YOUNG, CACTUS_YOUNG,
                     DATE_PALM_BUSH, DATE_PALM_BUSH,
                     AGAVE_BUSH, AGAVE_BUSH,
+                    SAGUARO_YOUNG, SAGUARO_YOUNG,
+                    BARREL_CACTUS_YOUNG, BARREL_CACTUS_YOUNG,
+                    OCOTILLO_YOUNG,
+                    PRICKLY_PEAR_YOUNG, PRICKLY_PEAR_YOUNG,
+                    CHOLLA_YOUNG,
+                    PALO_VERDE_YOUNG,
                 ])
             lx += desert_rng.randint(9, 20)
 
@@ -1157,6 +1188,16 @@ class World:
 
     def _pick_block(self, depth, rng, biome="igneous", bx=0, by=0):
         r = rng.random()
+        # Clay deposits — shallow pockets in sedimentary/temperate zones
+        if depth < 30 and biome in ("sedimentary", "temperate"):
+            clay_n = self._vein_noise(bx, by, 0x3C1A2, scale=5)
+            if clay_n >= 0.60 and r < 0.07:
+                return CLAY_DEPOSIT
+        # Limestone layers — shallow to mid depth in sedimentary zones
+        if 4 <= depth < 55 and biome in ("sedimentary", "temperate", "igneous"):
+            lime_n = self._vein_noise(bx, by, 0xA7E23, scale=7)
+            if lime_n >= 0.57 and r < (0.05 if biome == "sedimentary" else 0.025):
+                return LIMESTONE_DEPOSIT
         # Rock deposits — cluster in tight pockets (scale 4, threshold 0.58 → ~42% coverage, 2.4x density inside)
         if depth >= 15:
             rock_n = self._vein_noise(bx, by, 0x5A7E3, scale=4)
@@ -1901,7 +1942,7 @@ class World:
                         and chunk[sy][lx] == GRASS
                         and chunk[sy - 1][lx] == AIR
                         and biodome in HORSE_BIOMES
-                        and horse_rng.random() < 0.18):
+                        and horse_rng.random() < 0.08):
                     herd_size = horse_rng.randint(2, 4)
                     for _ in range(herd_size):
                         hx_off = horse_rng.randint(-3, 3)
@@ -1915,7 +1956,7 @@ class World:
                 x += horse_rng.randint(8, 16)
 
     def _spawn_birds(self):
-        from birds import ALL_SPECIES
+        from birds import ALL_SPECIES, COMMON_SPECIES
         self.birds.clear()
         rng = random.Random(self.seed + 77777)
         max_birds = 150
@@ -1929,6 +1970,8 @@ class World:
                     return
                 biodome = self.biodome_at(x)
                 candidates = [cls for cls in ALL_SPECIES if not cls.BIOMES or biodome in cls.BIOMES]
+                if not candidates:
+                    candidates = COMMON_SPECIES
                 if not candidates:
                     x += rng.randint(spacing, spacing * 2)
                     continue
@@ -1964,6 +2007,106 @@ class World:
                     self.birds.append(bird)
 
                 x += rng.randint(spacing, spacing * 2)
+
+    def _spawn_animals_for_chunk(self, cx: int):
+        from animals import Sheep, Cow, Chicken, SnowLeopard, MountainLion
+        chunk = self._chunks.get(cx)
+        if chunk is None:
+            return
+        base_x = cx * CHUNK_W
+
+        rng = random.Random(self.seed + 12345 + cx * 6271)
+        x = base_x + 5
+        while x < base_x + CHUNK_W - 5:
+            lx = x - base_x
+            sy = self.surface_height(x)
+            if 0 < sy < WORLD_H and chunk[sy][lx] == GRASS and chunk[sy - 1][lx] == AIR:
+                animal_cls = rng.choice([Sheep, Sheep, Cow, Chicken])
+                ax = x * BLOCK_SIZE + (BLOCK_SIZE - animal_cls.ANIMAL_W) // 2
+                ay = sy * BLOCK_SIZE - animal_cls.ANIMAL_H
+                self.entities.append(animal_cls(ax, ay, self))
+            x += rng.randint(8, 20)
+
+        cat_rng = random.Random(self.seed + 99991 + cx * 3571)
+        x = base_x + 3
+        while x < base_x + CHUNK_W - 3:
+            lx = x - base_x
+            sy = self.surface_height(x)
+            if 0 < sy < WORLD_H and chunk[sy - 1][lx] == AIR:
+                surf = chunk[sy][lx]
+                biodome = self.biodome_at(x)
+                if surf == SNOW and biodome in ("alpine_mountain", "tundra") and cat_rng.random() < 0.05:
+                    ax = x * BLOCK_SIZE + (BLOCK_SIZE - SnowLeopard.ANIMAL_W) // 2
+                    ay = sy * BLOCK_SIZE - SnowLeopard.ANIMAL_H
+                    self.entities.append(SnowLeopard(ax, ay, self))
+                elif surf == GRASS and biodome == "rocky_mountain" and cat_rng.random() < 0.05:
+                    ax = x * BLOCK_SIZE + (BLOCK_SIZE - MountainLion.ANIMAL_W) // 2
+                    ay = sy * BLOCK_SIZE - MountainLion.ANIMAL_H
+                    self.entities.append(MountainLion(ax, ay, self))
+            x += cat_rng.randint(25, 55)
+
+        from horses import Horse, HORSE_BIOMES
+        horse_rng = random.Random(self.seed + 55551 + cx * 4987)
+        x = base_x + 5
+        while x < base_x + CHUNK_W - 5:
+            lx = x - base_x
+            sy = self.surface_height(x)
+            biodome = self.biodome_at(x)
+            if (0 < sy < WORLD_H
+                    and chunk[sy][lx] == GRASS
+                    and chunk[sy - 1][lx] == AIR
+                    and biodome in HORSE_BIOMES
+                    and horse_rng.random() < 0.08):
+                herd_size = horse_rng.randint(2, 4)
+                for _ in range(herd_size):
+                    hx_off = horse_rng.randint(-3, 3)
+                    hx_bx = max(base_x, min(base_x + CHUNK_W - 1, x + hx_off))
+                    hsy = self.surface_height(hx_bx)
+                    hx = hx_bx * BLOCK_SIZE + (BLOCK_SIZE - Horse.ANIMAL_W) // 2
+                    hy = hsy * BLOCK_SIZE - Horse.ANIMAL_H
+                    self.entities.append(Horse(hx, hy, self))
+                x += 55
+                continue
+            x += horse_rng.randint(8, 16)
+
+    def _spawn_birds_for_chunk(self, cx: int):
+        from birds import ALL_SPECIES, COMMON_SPECIES
+        base_x = cx * CHUNK_W
+        rng = random.Random(self.seed + 77777 + cx * 5381)
+        spacing = 15
+        x = base_x + 2
+        while x < base_x + CHUNK_W - 2:
+            biodome = self.biodome_at(x)
+            candidates = [cls for cls in ALL_SPECIES if not cls.BIOMES or biodome in cls.BIOMES]
+            if not candidates:
+                candidates = COMMON_SPECIES
+            if not candidates:
+                x += rng.randint(spacing, spacing * 2)
+                continue
+            species_cls = rng.choice(candidates)
+            alt_px = rng.randint(*species_cls.ALTITUDE_BLOCKS) * BLOCK_SIZE
+            sy = self.surface_height(x)
+            spawn_x = float(x * BLOCK_SIZE)
+            spawn_y = float(sy * BLOCK_SIZE - alt_px)
+            if species_cls.IS_FLOCK:
+                n = rng.randint(*species_cls.FLOCK_SIZE_RANGE)
+                leader = species_cls(spawn_x, spawn_y, self)
+                leader._pick_flight_target(rng)
+                self.birds.append(leader)
+                for _ in range(n - 1):
+                    follower = species_cls(
+                        spawn_x + rng.uniform(-20, 20),
+                        spawn_y + rng.uniform(-10, 10),
+                        self,
+                    )
+                    follower._flock_leader = leader
+                    follower._flock_offset = (rng.uniform(-28, 28), rng.uniform(-12, 12))
+                    self.birds.append(follower)
+            else:
+                bird = species_cls(spawn_x, spawn_y, self)
+                bird._pick_flight_target(rng)
+                self.birds.append(bird)
+            x += rng.randint(spacing, spacing * 2)
 
     def _spawn_insects_for_chunk(self, cx):
         from insects import ALL_INSECT_SPECIES

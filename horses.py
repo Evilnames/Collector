@@ -56,7 +56,7 @@ _FALLBACK_COAT = [(160, 115, 65), (190, 145, 90), (80, 55, 30)]
 HORSE_BIOMES = {
     "temperate", "boreal", "birch_forest", "rolling_hills", "steep_hills",
     "steppe", "arid_steppe", "savanna", "wasteland", "redwood",
-    "alpine_mountain", "rocky_mountain", "tundra", "canyon",
+    "rocky_mountain",
 }
 
 STABLE_SEARCH_RADIUS = 6   # blocks from each horse to look for STABLE_BLOCK
@@ -291,7 +291,11 @@ class Horse(Animal):
         if self._flee_timer > 0:
             self._flee_timer -= dt
             self.vx = self.facing * HORSE_FLEE_SPEED
-            self.vy = min(self.vy + GRAVITY, MAX_FALL)
+            if self._in_water():
+                self.vy = min(self.vy + GRAVITY * 0.2, 2.5)
+                self.vx *= 0.8
+            else:
+                self.vy = min(self.vy + GRAVITY, MAX_FALL)
             self._move_x(self.vx)
             self._move_y(self.vy)
             return
@@ -306,7 +310,11 @@ class Horse(Animal):
                 if dist < HORSE_FLEE_RADIUS:
                     self.vx = (-1 if pdx > 0 else 1) * HORSE_FLEE_SPEED
                     self.facing = 1 if self.vx > 0 else -1
-                    self.vy = min(self.vy + GRAVITY, MAX_FALL)
+                    if self._in_water():
+                        self.vy = min(self.vy + GRAVITY * 0.2, 2.5)
+                        self.vx *= 0.8
+                    else:
+                        self.vy = min(self.vy + GRAVITY, MAX_FALL)
                     self._move_x(self.vx)
                     self._move_y(self.vy)
                     return
@@ -323,7 +331,11 @@ class Horse(Animal):
                     self.facing = 1 if self.vx > 0 else -1
                 else:
                     self.vx = 0.0
-                self.vy = min(self.vy + GRAVITY, MAX_FALL)
+                if self._in_water():
+                    self.vy = min(self.vy + GRAVITY * 0.2, 2.5)
+                    self.vx *= 0.8
+                else:
+                    self.vy = min(self.vy + GRAVITY, MAX_FALL)
                 self._move_x(self.vx)
                 self._move_y(self.vy)
                 return
@@ -338,6 +350,10 @@ class Horse(Animal):
         if self.vx != 0:
             self.facing = 1 if self.vx > 0 else -1
 
-        self.vy = min(self.vy + GRAVITY, MAX_FALL)
+        if self._in_water():
+            self.vy = min(self.vy + GRAVITY * 0.2, 2.5)
+            self.vx *= 0.8
+        else:
+            self.vy = min(self.vy + GRAVITY, MAX_FALL)
         self._move_x(self.vx)
         self._move_y(self.vy)

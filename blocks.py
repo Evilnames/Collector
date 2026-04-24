@@ -277,6 +277,263 @@ GARDEN_BLOCK = 290  # placed garden bed; attracts insects when wildflowers are s
 STABLE_BLOCK       = 291  # placed stable; triggers breeding UI; required for Horse._breed
 HORSE_TROUGH_BLOCK = 292  # placed trough; passively speeds up taming when horse is nearby
 
+# --- Tea supply chain ---
+TEA_BUSH                = 293  # surface bush; drops tea_seed
+TEA_CROP_YOUNG          = 294
+TEA_CROP_MATURE         = 295  # special: mine → TeaLeaf object + tea_seed drop
+WITHERING_RACK_BLOCK    = 296  # placed Withering Rack (wither method choice)
+OXIDATION_STATION_BLOCK = 297  # placed Oxidation Station (oxidation timing mini-game)
+TEA_CELLAR_BLOCK        = 298  # placed Tea Cellar (brew, blend, age)
+RESTAURANT_WALL         = 299  # city restaurant wall (warm terracotta)
+RESTAURANT_AWNING       = 300  # city restaurant awning/roof (deep crimson)
+
+# --- Herbalism supply chain ---
+DRYING_RACK_BLOCK       = 301  # placed Drying Rack; converts raw herbs/mushrooms → dried ingredients
+
+# --- Herb bushes (surface-growing crafting plants) ---
+CHAMOMILE_BUSH          = 302  # surface bush; drops chamomile_seed
+CHAMOMILE_CROP_YOUNG    = 303
+CHAMOMILE_CROP_MATURE   = 304  # harvest → chamomile_item + seed; perennial
+LAVENDER_BUSH           = 305  # surface bush; drops lavender_seed
+LAVENDER_CROP_YOUNG     = 306
+LAVENDER_CROP_MATURE    = 307  # harvest → lavender + seed; perennial
+MINT_BUSH               = 308  # surface bush; drops mint_seed
+MINT_CROP_YOUNG         = 309
+MINT_CROP_MATURE        = 310  # harvest → mint + seed; perennial
+ROSEMARY_BUSH           = 311  # surface bush; drops rosemary_seed
+ROSEMARY_CROP_YOUNG     = 312
+ROSEMARY_CROP_MATURE    = 313  # harvest → rosemary + seed; perennial
+BAIT_STATION_BLOCK      = 314  # placed Bait Station; crafts fishing bait
+CHICKPEA_CROP_YOUNG     = 315
+CHICKPEA_CROP_MATURE    = 316
+LENTIL_CROP_YOUNG       = 317
+LENTIL_CROP_MATURE      = 318
+SESAME_CROP_YOUNG       = 319
+SESAME_CROP_MATURE      = 320
+POMEGRANATE_TREE_YOUNG  = 321
+POMEGRANATE_TREE_MATURE = 322
+OLIVE_TREE_YOUNG        = 323
+OLIVE_TREE_MATURE       = 324
+SAFFRON_CROP_YOUNG      = 325
+SAFFRON_CROP_MATURE     = 326
+
+# --- Islamic architecture blocks (Artisan Bench) ---
+# --- Mineable natural deposits ---
+CLAY_DEPOSIT      = 329  # natural clay bed; shallow sedimentary/temperate zones
+LIMESTONE_DEPOSIT = 330  # natural limestone layer; shallow-mid sedimentary zones
+
+# --- Islamic architecture blocks (Artisan Bench) ---
+WHITE_PLASTER_WALL = 323  # smooth white plaster wall
+CARVED_PLASTER     = 324  # white plaster with gold arabesque geometric inlay
+MUQARNAS_BLOCK     = 325  # stepped stalactite/honeycomb overhang element
+MASHRABIYA         = 326  # carved wooden diamond-lattice screen
+ZELLIGE_TILE       = 327  # colorful geometric mosaic tile (Moroccan style)
+ARABESQUE_PANEL    = 328  # sandstone panel with interlaced geometric carving
+
+# --- Spanish architecture blocks (Artisan Bench) ---
+ADOBE_BRICK        = 331  # sun-dried mud brick; warm tan with straw texture
+SPANISH_ROOF_TILE  = 332  # curved barrel roof tile in terracotta red
+WROUGHT_IRON_GRILLE= 333  # decorative forged-iron scrollwork panel
+TALAVERA_TILE      = 334  # blue-and-white hand-painted ceramic tile
+SALTILLO_TILE      = 335  # unglazed terracotta floor tile
+
+# --- Middle Eastern decorative doors (Artisan Bench) ---
+COBALT_DOOR_CLOSED       = 336  # royal blue lacquered door with gold arabesque
+COBALT_DOOR_OPEN         = 337
+CRIMSON_CEDAR_DOOR_CLOSED= 338  # deep red cedar with carved diamond geometry
+CRIMSON_CEDAR_DOOR_OPEN  = 339
+TEAL_DOOR_CLOSED         = 340  # rich teal lacquered door with gold trim
+TEAL_DOOR_OPEN           = 341
+SAFFRON_DOOR_CLOSED      = 342  # warm golden-yellow with dark carved panels
+SAFFRON_DOOR_OPEN        = 343
+
+# --- European architecture blocks (Artisan Bench) ---
+HALF_TIMBER_WALL  = 344  # Tudor black timber framing on white plaster
+ASHLAR_BLOCK      = 345  # precisely dressed stone with tight regular joints
+GOTHIC_TRACERY    = 346  # pointed lancet arch tracery panel
+FLUTED_COLUMN     = 347  # classical column shaft with vertical flute grooves
+CORNICE_BLOCK     = 348  # classical stepped projecting molding
+ROSE_WINDOW       = 349  # Gothic circular window tracery
+HERRINGBONE_BRICK = 350  # diagonal herringbone brick floor
+BAROQUE_TRIM      = 351  # elaborate carved stone scrollwork panel
+TUDOR_BEAM        = 352  # dark exposed structural timber
+VENETIAN_FLOOR    = 353  # pale stone with diamond inlay accents
+FLEMISH_BRICK     = 354  # two-tone Flemish bond brick
+PILASTER          = 355  # classical flat wall column with capital and base
+DENTIL_TRIM       = 356  # classical tooth-molding band
+WATTLE_DAUB       = 357  # medieval woven-straw plaster wall
+NORDIC_PLANK      = 358  # dark weathered Nordic timber
+MANSARD_SLATE     = 359  # French fish-scale roof slate
+ROMAN_MOSAIC      = 360  # small square tiles in warm geometric pattern
+SETT_STONE        = 361  # European granite street sett
+ROMANESQUE_ARCH   = 362  # warm sandstone rounded arch voussoir panel
+DARK_SLATE_ROOF   = 363  # overlapping dark grey-blue slate shingles
+KEYSTONE          = 364  # arch keystone wedge block
+PLINTH_BLOCK      = 365  # classical column base with recessed panel
+IRON_LANTERN      = 366  # Victorian iron lantern frame with warm glow
+SANDSTONE_ASHLAR  = 367  # warm sandstone with precise rectangular joints
+GARGOYLE_BLOCK    = 368  # Gothic grotesque carved stone panel
+OGEE_ARCH         = 369  # S-curved ogee arch with finial (Gothic/Venetian)
+RUSTICATED_STONE  = 370  # Renaissance rough-faced stone with deep V-joints
+CHEVRON_STONE     = 371  # Norman zigzag carved stone
+TRIGLYPH_PANEL    = 372  # Doric frieze with vertical channels and guttae
+MARBLE_INLAY      = 373  # Italian white marble with coloured geometric inlay
+BRICK_NOGGING     = 374  # brick infill between timber frame panels
+CRENELLATION      = 375  # castle battlement with merlons and crenels
+FAN_VAULT         = 376  # Gothic fan vaulting panel with radiating ribs
+ACANTHUS_PANEL    = 377  # Corinthian carved acanthus leaf panel
+PEBBLE_DASH       = 378  # rough exterior render with embedded pebbles
+ENCAUSTIC_TILE    = 379  # medieval inlaid terracotta floor tile
+CHEQUERBOARD_MARBLE = 380  # alternating black and white marble squares
+WROUGHT_IRON_BALUSTRADE = 381  # decorative iron balcony balustrade
+OPUS_INCERTUM     = 382  # Roman irregular polygon stone facing
+GROTESQUE_FRIEZE  = 383  # carved stone frieze with foliage and faces
+BARREL_VAULT      = 384  # Romanesque semicircular vault section
+POINTED_ARCH      = 385  # clean Gothic pointed arch
+ENGLISH_BOND      = 386  # alternating header/stretcher brick courses
+RELIEF_PANEL      = 387  # Classical carved stone relief
+DIAGONAL_TILE     = 388  # European diagonal square floor tile
+# --- Sonoran desert plants ---
+SAGUARO_YOUNG       = 389
+SAGUARO_MATURE      = 390
+BARREL_CACTUS_YOUNG = 391
+BARREL_CACTUS_MATURE= 392
+OCOTILLO_YOUNG      = 393
+OCOTILLO_MATURE     = 394
+PRICKLY_PEAR_YOUNG  = 395
+PRICKLY_PEAR_MATURE = 396
+CHOLLA_YOUNG        = 397
+CHOLLA_MATURE       = 398
+PALO_VERDE_YOUNG    = 399
+PALO_VERDE_MATURE   = 400
+
+# --- More decorative/architectural blocks (Artisan Bench) ---
+TAPESTRY_BLOCK    = 401  # woven textile wall hanging with colour bands
+WOVEN_RUG         = 402  # geometric medallion floor rug
+CELTIC_KNOTWORK   = 403  # interlaced Celtic knot carved stone
+BYZANTINE_MOSAIC  = 404  # gold-ground tessera mosaic panel
+JAPANESE_SHOJI    = 405  # rice-paper and wood grid screen
+OTTOMAN_TILE      = 406  # Iznik white ceramic with deep-blue tulip
+LEADLIGHT_WINDOW  = 407  # leaded diamond-pane window
+TUDOR_ROSE        = 408  # heraldic rose carved stone panel
+GREEK_KEY         = 409  # classical meander/fret border tile
+VENETIAN_PLASTER  = 410  # burnished smooth marmorino plaster
+SCOTTISH_RUBBLE   = 411  # random coursed rubble stone wall
+ART_NOUVEAU_PANEL = 412  # sinuous organic carved panel
+DUTCH_GABLE       = 413  # curved stepped gable element
+STRIPED_ARCH      = 414  # alternating dark/light voussoir arch
+TIMBER_TRUSS      = 415  # exposed structural A-frame truss
+HEARTH_STONE      = 416  # decorative fireplace arch surround
+LINEN_FOLD        = 417  # Gothic carved draped fabric panel
+PARQUET_FLOOR     = 418  # French herringbone parquet
+COFFERED_CEILING  = 419  # classical sunken panel ceiling block
+OPUS_SIGNINUM     = 420  # Roman pink mortar with white tessera chips
+
+# --- Textile supply chain ---
+FLAX_BUSH           = 421  # surface bush; drops flax_seed
+FLAX_CROP_YOUNG     = 422
+FLAX_CROP_MATURE    = 423  # harvest → flax_fiber + flax_seed
+SPINNING_WHEEL_BLOCK= 424  # placed Spinning Wheel (spinning mini-game)
+DYE_VAT_BLOCK       = 425  # placed Dye Vat (wildflower extract → dye)
+LOOM_BLOCK          = 426  # placed Loom (weaving mini-game)
+# Textile rug blocks (9 dye families, placeable floor piece)
+TEXTILE_RUG_NATURAL = 427
+TEXTILE_RUG_GOLDEN  = 428
+TEXTILE_RUG_CRIMSON = 429
+TEXTILE_RUG_ROSE    = 430
+TEXTILE_RUG_COBALT  = 431
+TEXTILE_RUG_VIOLET  = 432
+TEXTILE_RUG_VERDANT = 433
+TEXTILE_RUG_AMBER   = 434
+TEXTILE_RUG_IVORY   = 435
+# Textile tapestry blocks (9 dye families, placeable wall piece)
+TEXTILE_TAPESTRY_NATURAL = 436
+TEXTILE_TAPESTRY_GOLDEN  = 437
+TEXTILE_TAPESTRY_CRIMSON = 438
+TEXTILE_TAPESTRY_ROSE    = 439
+TEXTILE_TAPESTRY_COBALT  = 440
+TEXTILE_TAPESTRY_VIOLET  = 441
+TEXTILE_TAPESTRY_VERDANT = 442
+TEXTILE_TAPESTRY_AMBER   = 443
+TEXTILE_TAPESTRY_IVORY   = 444
+
+# --- Chinese architecture blocks (Artisan Bench) ---
+GLAZED_ROOF_TILE  = 445  # imperial green-glazed curved ceramic roof tile
+LATTICE_SCREEN    = 446  # carved geometric wooden lattice window
+MOON_GATE         = 447  # circular archway panel (round garden gate)
+PAINTED_BEAM      = 448  # red lacquered structural beam with gold accents
+DOUGONG           = 449  # stacked bracket-set corbel (classic Chinese joinery)
+CERAMIC_PLANTER   = 450  # blue-and-white porcelain garden planter
+STONE_LANTERN     = 451  # tiered stone garden lantern
+LACQUER_PANEL     = 452  # deep red lacquered decorative wall panel
+PAPER_LANTERN     = 453  # red paper lantern with tassel
+DRAGON_TILE       = 454  # celadon tile with carved dragon scale motif
+HAN_BRICK         = 455  # traditional grey Han fired brick
+PAVILION_FLOOR    = 456  # smooth large-cut stone pavilion floor
+BAMBOO_SCREEN     = 457  # woven split-bamboo screen
+CLOUD_MOTIF       = 458  # stone panel with auspicious ruyi cloud carving
+COIN_TILE         = 459  # floor tile with four cash-coin roundels
+BLUE_WHITE_TILE   = 460  # blue-and-white porcelain willow tile
+GARDEN_ROCK       = 461  # Taihu scholar's rock with natural voids
+STEPPED_WALL      = 462  # rammed earth/grey brick wall
+PAGODA_EAVE       = 463  # upturned pagoda roof eave element
+CINNABAR_WALL     = 464  # deep red cinnabar wall with gilt nail-heads
+
+# --- Himalayan / Snow-city architecture (used by city generator) ---
+WHITEWASHED_WALL  = 465  # white plastered Tibetan-style wall with dark trim band
+MONASTERY_ROOF    = 466  # dark maroon stepped monastery roof tile
+MANI_STONE        = 467  # carved prayer-stone block for fortress bases and walls
+PRAYER_FLAG_BLOCK = 468  # colorful prayer flags strung on a cord
+
+# --- World architecture blocks — batch 4 (Artisan Bench) ---
+MUGHAL_ARCH       = 469  # Mughal cusped multi-foil arch
+PIETRA_DURA       = 470  # Mughal inlaid stone floral panel (Taj Mahal style)
+EGYPTIAN_FRIEZE   = 471  # lotus-and-papyrus hieroglyphic border
+SANDSTONE_COLUMN  = 472  # Egyptian papyrus-bundle column with spreading capital
+AZTEC_SUNSTONE    = 473  # Aztec solar calendar carved stone disc
+MAYA_RELIEF       = 474  # Maya stepped geometric relief panel
+VIKING_CARVING    = 475  # Norse interlaced dragon/serpent wood carving
+RUNE_STONE        = 476  # carved runestone with Elder Futhark symbols
+PERSIAN_IWAN      = 477  # Persian pointed arch with muqarnas vault interior
+KILIM_TILE        = 478  # Persian kilim carpet geometric tile
+AFRICAN_MUD_BRICK = 479  # West African banco mud brick with timber-end studs
+KENTE_PANEL       = 480  # West African kente woven-strip geometric block
+WAT_FINIAL        = 481  # Thai Buddhist temple chofa spire element
+KHMER_STONE       = 482  # Cambodian Angkor devata carved stone
+HANJI_SCREEN      = 483  # Korean hanji paper flower-lattice screen
+DANCHEONG         = 484  # Korean dancheong painted bracket (multicolour)
+ART_DECO_PANEL    = 485  # Art Deco geometric sunburst fan panel
+OBSIDIAN_CUT      = 486  # Aztec polished obsidian architectural block
+OTTOMAN_ARCH      = 487  # Ottoman pointed arch with geometric spandrel
+LOTUS_CAPITAL     = 488  # Buddhist lotus-petal column capital
+
+# --- World architecture blocks — batch 5 (Artisan Bench) ---
+AZULEJO_TILE       = 489  # Portuguese blue-and-white pictorial tile
+MANUELINE_PANEL    = 490  # Portuguese Manueline twisted rope/armillary carving
+TORII_PANEL        = 491  # Japanese red torii gate element
+INCA_ASHLAR        = 492  # Incan precisely fitted polygonal stone
+RUSSIAN_KOKOSHNIK  = 493  # Russian kokoshnik decorative arch/gable
+ONION_DOME_TILE    = 494  # Russian onion dome metallic surface tile
+GEORGIAN_FANLIGHT  = 495  # Georgian semi-circular fanlight window
+PALLADIAN_WINDOW   = 496  # Palladian triple-arch window panel
+STAVE_PLANK        = 497  # Norwegian stave church dragon-carved plank
+IONIC_CAPITAL      = 498  # Greek Ionic volute column capital
+MOORISH_STAR_TILE  = 499  # Moorish eight-pointed star-and-cross tile
+CRAFTSMAN_PANEL    = 500  # Arts & Crafts stylised floral carved panel
+BRUTALIST_PANEL    = 501  # Brutalist board-formed concrete
+METOPE             = 502  # Greek Doric carved metope panel
+ARMENIAN_KHACHKAR  = 503  # Armenian khachkar cross-stone
+BENIN_RELIEF       = 504  # Benin Kingdom cast-bronze relief
+MAORI_CARVING      = 505  # Māori koru spiral wood carving
+MUGHAL_JALI        = 506  # Mughal pierced-stone jali screen
+PERSIAN_TILE       = 507  # Persian turquoise glazed geometric tile
+SWISS_CHALET       = 508  # Swiss chalet carved and painted wood panel
+ANDEAN_TEXTILE     = 509  # Andean stepped-fret woven pattern block
+BAROQUE_ORNAMENT   = 510  # German/Austrian Baroque gilded ornament
+POLYNESIAN_CARVED  = 511  # Polynesian tapa/carved tiki pattern
+MOORISH_COLUMN     = 512  # Slender Moorish column with muqarnas capital
+PORTUGUESE_CORK    = 513  # Portuguese cork-board wall panel
+
 HOUSE_WALL           = 108  # city house wall block
 HOUSE_ROOF           = 109  # city house roof block
 WILDFLOWER_PATCH     = 110  # surface collectable; interact → generates unique Wildflower object
@@ -326,7 +583,8 @@ GEM_DEPOSIT      = 151  # special: mine → generates unique Gemstone object, no
 SNOW             = 152  # alpine_mountain surface block; falls like grass
 SAND             = 153  # desert/beach surface block; falls like snow
 
-OPEN_DOORS   = {WOOD_DOOR_OPEN, IRON_DOOR_OPEN, WOOD_FENCE_OPEN, IRON_FENCE_OPEN}
+OPEN_DOORS   = {WOOD_DOOR_OPEN, IRON_DOOR_OPEN, WOOD_FENCE_OPEN, IRON_FENCE_OPEN,
+                COBALT_DOOR_OPEN, CRIMSON_CEDAR_DOOR_OPEN, TEAL_DOOR_OPEN, SAFFRON_DOOR_OPEN}
 STAIR_BLOCKS = {STAIRS_RIGHT, STAIRS_LEFT}
 
 CAVE_MUSHROOMS = {
@@ -367,15 +625,22 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
                     STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
                     FOSSIL_TABLE_BLOCK, ARTISAN_BENCH_BLOCK, COMPOST_BIN_BLOCK,
-                    STABLE_BLOCK, HORSE_TROUGH_BLOCK}
-RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT}
+                    STABLE_BLOCK, HORSE_TROUGH_BLOCK,
+                    WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK,
+                    DRYING_RACK_BLOCK, BAIT_STATION_BLOCK,
+                    SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK}
+RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
+                    CLAY_DEPOSIT, LIMESTONE_DEPOSIT}
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
                      RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, GARLIC_BUSH, SCALLION_BUSH, CHILI_BUSH,
                      PEPPER_BUSH, ONION_BUSH, POTATO_BUSH, EGGPLANT_BUSH, CABBAGE_BUSH,
                      BEET_BUSH, TURNIP_BUSH, LEEK_BUSH, ZUCCHINI_BUSH, SWEET_POTATO_BUSH,
                      WATERMELON_BUSH, RADISH_BUSH, PEA_BUSH, CELERY_BUSH, BROCCOLI_BUSH,
                      DATE_PALM_BUSH, AGAVE_BUSH,
-                     COFFEE_BUSH, GRAPEVINE_BUSH, GRAIN_CROP_BUSH}
+                     COFFEE_BUSH, GRAPEVINE_BUSH, GRAIN_CROP_BUSH,
+                     TEA_BUSH,
+                     CHAMOMILE_BUSH, LAVENDER_BUSH, MINT_BUSH, ROSEMARY_BUSH,
+                     FLAX_BUSH}
 YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG, TOMATO_CROP_YOUNG, CORN_CROP_YOUNG, PUMPKIN_CROP_YOUNG, APPLE_CROP_YOUNG,
                      RICE_CROP_YOUNG, GINGER_CROP_YOUNG, BOK_CHOY_CROP_YOUNG, GARLIC_CROP_YOUNG,
                      SCALLION_CROP_YOUNG, CHILI_CROP_YOUNG,
@@ -383,9 +648,15 @@ YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG,
                      BEET_CROP_YOUNG, TURNIP_CROP_YOUNG, LEEK_CROP_YOUNG, ZUCCHINI_CROP_YOUNG, SWEET_POTATO_CROP_YOUNG,
                      WATERMELON_CROP_YOUNG, RADISH_CROP_YOUNG, PEA_CROP_YOUNG, CELERY_CROP_YOUNG, BROCCOLI_CROP_YOUNG,
                      CACTUS_YOUNG, DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG,
-                     COFFEE_CROP_YOUNG, GRAPEVINE_CROP_YOUNG, GRAIN_CROP_YOUNG,
+                     COFFEE_CROP_YOUNG, GRAPEVINE_CROP_YOUNG, GRAIN_CROP_YOUNG, TEA_CROP_YOUNG,
+                     CHAMOMILE_CROP_YOUNG, LAVENDER_CROP_YOUNG, MINT_CROP_YOUNG, ROSEMARY_CROP_YOUNG,
+                     CHICKPEA_CROP_YOUNG, LENTIL_CROP_YOUNG, SESAME_CROP_YOUNG, POMEGRANATE_TREE_YOUNG,
+                     OLIVE_TREE_YOUNG, SAFFRON_CROP_YOUNG,
+                     SAGUARO_YOUNG, BARREL_CACTUS_YOUNG, OCOTILLO_YOUNG,
+                     PRICKLY_PEAR_YOUNG, CHOLLA_YOUNG, PALO_VERDE_YOUNG,
                      STRAWBERRY_CROP_YOUNG_P, TOMATO_CROP_YOUNG_P, WATERMELON_CROP_YOUNG_P,
-                     CORN_CROP_YOUNG_P, RICE_CROP_YOUNG_P}
+                     CORN_CROP_YOUNG_P, RICE_CROP_YOUNG_P,
+                     FLAX_CROP_YOUNG}
 MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATURE, TOMATO_CROP_MATURE, CORN_CROP_MATURE, PUMPKIN_CROP_MATURE, APPLE_CROP_MATURE,
                      RICE_CROP_MATURE, GINGER_CROP_MATURE, BOK_CHOY_CROP_MATURE, GARLIC_CROP_MATURE,
                      SCALLION_CROP_MATURE, CHILI_CROP_MATURE,
@@ -393,17 +664,27 @@ MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATU
                      BEET_CROP_MATURE, TURNIP_CROP_MATURE, LEEK_CROP_MATURE, ZUCCHINI_CROP_MATURE, SWEET_POTATO_CROP_MATURE,
                      WATERMELON_CROP_MATURE, RADISH_CROP_MATURE, PEA_CROP_MATURE, CELERY_CROP_MATURE, BROCCOLI_CROP_MATURE,
                      CACTUS_MATURE, DATE_PALM_CROP_MATURE, AGAVE_CROP_MATURE,
-                     COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE,
+                     COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE,
+                     CHAMOMILE_CROP_MATURE, LAVENDER_CROP_MATURE, MINT_CROP_MATURE, ROSEMARY_CROP_MATURE,
+                     CHICKPEA_CROP_MATURE, LENTIL_CROP_MATURE, SESAME_CROP_MATURE, POMEGRANATE_TREE_MATURE,
+                     OLIVE_TREE_MATURE, SAFFRON_CROP_MATURE,
+                     SAGUARO_MATURE, BARREL_CACTUS_MATURE, OCOTILLO_MATURE,
+                     PRICKLY_PEAR_MATURE, CHOLLA_MATURE, PALO_VERDE_MATURE,
                      STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P, WATERMELON_CROP_MATURE_P,
-                     CORN_CROP_MATURE_P, RICE_CROP_MATURE_P}
+                     CORN_CROP_MATURE_P, RICE_CROP_MATURE_P,
+                     FLAX_CROP_MATURE}
 CROP_BLOCKS       = YOUNG_CROP_BLOCKS | MATURE_CROP_BLOCKS
 
 # Perennial crops regrow after harvest (each harvest has ~33% chance to die)
 PERENNIAL_CROP_MATURE = {
     STRAWBERRY_CROP_MATURE, APPLE_CROP_MATURE, TOMATO_CROP_MATURE,
     PEPPER_CROP_MATURE, CHILI_CROP_MATURE, EGGPLANT_CROP_MATURE,
-    CACTUS_MATURE, COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE,
+    CACTUS_MATURE, COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE,
+    CHAMOMILE_CROP_MATURE, LAVENDER_CROP_MATURE, MINT_CROP_MATURE, ROSEMARY_CROP_MATURE,
+    SAGUARO_MATURE, BARREL_CACTUS_MATURE, OCOTILLO_MATURE,
+    PRICKLY_PEAR_MATURE, CHOLLA_MATURE, PALO_VERDE_MATURE,
     STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P,
+    FLAX_CROP_MATURE,
 }
 
 # Reverse mapping: mature → young, used for perennial regrowth
@@ -442,11 +723,29 @@ MATURE_TO_YOUNG_CROP = {
     COFFEE_CROP_MATURE:       COFFEE_CROP_YOUNG,
     GRAPEVINE_CROP_MATURE:    GRAPEVINE_CROP_YOUNG,
     GRAIN_CROP_MATURE:        GRAIN_CROP_YOUNG,
+    TEA_CROP_MATURE:          TEA_CROP_YOUNG,
+    CHAMOMILE_CROP_MATURE:    CHAMOMILE_CROP_YOUNG,
+    LAVENDER_CROP_MATURE:     LAVENDER_CROP_YOUNG,
+    MINT_CROP_MATURE:         MINT_CROP_YOUNG,
+    ROSEMARY_CROP_MATURE:     ROSEMARY_CROP_YOUNG,
+    CHICKPEA_CROP_MATURE:     CHICKPEA_CROP_YOUNG,
+    LENTIL_CROP_MATURE:       LENTIL_CROP_YOUNG,
+    SESAME_CROP_MATURE:       SESAME_CROP_YOUNG,
+    POMEGRANATE_TREE_MATURE:  POMEGRANATE_TREE_YOUNG,
+    OLIVE_TREE_MATURE:        OLIVE_TREE_YOUNG,
+    SAFFRON_CROP_MATURE:      SAFFRON_CROP_YOUNG,
+    SAGUARO_MATURE:           SAGUARO_YOUNG,
+    BARREL_CACTUS_MATURE:     BARREL_CACTUS_YOUNG,
+    OCOTILLO_MATURE:          OCOTILLO_YOUNG,
+    PRICKLY_PEAR_MATURE:      PRICKLY_PEAR_YOUNG,
+    CHOLLA_MATURE:            CHOLLA_YOUNG,
+    PALO_VERDE_MATURE:        PALO_VERDE_YOUNG,
     STRAWBERRY_CROP_MATURE_P: STRAWBERRY_CROP_YOUNG_P,
     TOMATO_CROP_MATURE_P:     TOMATO_CROP_YOUNG_P,
     WATERMELON_CROP_MATURE_P: WATERMELON_CROP_YOUNG_P,
     CORN_CROP_MATURE_P:       CORN_CROP_YOUNG_P,
     RICE_CROP_MATURE_P:       RICE_CROP_YOUNG_P,
+    FLAX_CROP_MATURE:         FLAX_CROP_YOUNG,
 }
 
 BLOCKS = {
@@ -580,6 +879,8 @@ BLOCKS = {
     HOUSE_ROOF_BRICK:      {"name": "Brick Roof",              "hardness": 2,   "color": (110,  50,  40), "drop": "lumber"},
     HOUSE_WALL_DARK:       {"name": "Dark Timber Wall",        "hardness": 2,   "color": ( 90,  55,  35), "drop": "lumber"},
     HOUSE_ROOF_DARK:       {"name": "Dark Timber Roof",        "hardness": 2,   "color": ( 50,  25,  15), "drop": "lumber"},
+    RESTAURANT_WALL:       {"name": "Restaurant Wall",         "hardness": 2,   "color": (195, 110,  75), "drop": "lumber"},
+    RESTAURANT_AWNING:     {"name": "Restaurant Awning",       "hardness": 2,   "color": (145,  30,  30), "drop": "lumber"},
     WILDFLOWER_PATCH:      {"name": "Wildflower",              "hardness": 0.3, "color": (180, 220, 120), "drop": None},
     CRACKED_STONE:         {"name": "Cracked Stone",           "hardness": 2,   "color": (105, 100, 95),  "drop": "stone_chip"},
     STALACTITE:            {"name": "Stalactite",              "hardness": 2,   "color": (110, 108, 112), "drop": "stone_chip"},
@@ -759,4 +1060,245 @@ BLOCKS = {
     GARDEN_BLOCK:              {"name": "Garden Block",              "hardness": 1.0, "color": ( 80, 140,  60), "drop": "garden_block"},
     STABLE_BLOCK:              {"name": "Stable",                   "hardness": 2.0, "color": (120,  85,  45), "drop": "stable_item"},
     HORSE_TROUGH_BLOCK:        {"name": "Horse Trough",             "hardness": 1.5, "color": ( 60, 100, 130), "drop": "horse_trough_item"},
+    # --- Herbalism supply chain ---
+    DRYING_RACK_BLOCK:         {"name": "Drying Rack",            "hardness": 1.5, "color": (175, 145,  85), "drop": "drying_rack_item"},
+    # --- Fishing supply chain ---
+    BAIT_STATION_BLOCK:        {"name": "Bait Station",           "hardness": 1.5, "color": (100,  70,  40), "drop": "bait_station_item"},
+    # --- Tea supply chain ---
+    TEA_BUSH:                  {"name": "Tea Bush",                 "hardness": 0.5, "color": ( 60, 120,  50), "drop": "tea_seed",              "drop_chance": 1.0},
+    TEA_CROP_YOUNG:            {"name": "Tea Plant",                "hardness": 0.5, "color": ( 75, 145,  65), "drop": "tea_seed",              "drop_chance": 1.0},
+    TEA_CROP_MATURE:           {"name": "Tea Plant (Ripe)",         "hardness": 0.5, "color": (140, 185,  80), "drop": None},
+    WITHERING_RACK_BLOCK:      {"name": "Withering Rack",           "hardness": 1.5, "color": (165, 130,  70), "drop": "withering_rack_item"},
+    OXIDATION_STATION_BLOCK:   {"name": "Oxidation Station",        "hardness": 1.5, "color": ( 95,  75,  50), "drop": "oxidation_station_item"},
+    TEA_CELLAR_BLOCK:          {"name": "Tea Cellar",               "hardness": 1.5, "color": ( 55,  45,  35), "drop": "tea_cellar_item"},
+    # --- Herb bushes ---
+    CHAMOMILE_BUSH:            {"name": "Chamomile Bush",           "hardness": 0.5, "color": (230, 215, 140), "drop": "chamomile_seed",  "drop_chance": 1.0},
+    CHAMOMILE_CROP_YOUNG:      {"name": "Chamomile Plant",          "hardness": 0.5, "color": (130, 185,  90), "drop": "chamomile_seed",  "drop_chance": 1.0},
+    CHAMOMILE_CROP_MATURE:     {"name": "Chamomile (Ripe)",         "hardness": 0.5, "color": (240, 230, 160), "drop": "chamomile_item",  "drop_chance": 1.0},
+    LAVENDER_BUSH:             {"name": "Lavender Bush",            "hardness": 0.5, "color": (170, 130, 210), "drop": "lavender_seed",   "drop_chance": 1.0},
+    LAVENDER_CROP_YOUNG:       {"name": "Lavender Plant",           "hardness": 0.5, "color": (120, 160, 100), "drop": "lavender_seed",   "drop_chance": 1.0},
+    LAVENDER_CROP_MATURE:      {"name": "Lavender (Ripe)",          "hardness": 0.5, "color": (190, 150, 230), "drop": "lavender",        "drop_chance": 1.0},
+    MINT_BUSH:                 {"name": "Mint Bush",                "hardness": 0.5, "color": ( 70, 200, 140), "drop": "mint_seed",       "drop_chance": 1.0},
+    MINT_CROP_YOUNG:           {"name": "Mint Plant",               "hardness": 0.5, "color": ( 80, 185, 110), "drop": "mint_seed",       "drop_chance": 1.0},
+    MINT_CROP_MATURE:          {"name": "Mint (Ripe)",              "hardness": 0.5, "color": ( 60, 210, 150), "drop": "mint",            "drop_chance": 1.0},
+    ROSEMARY_BUSH:             {"name": "Rosemary Bush",            "hardness": 0.5, "color": (145, 165, 105), "drop": "rosemary_seed",   "drop_chance": 1.0},
+    ROSEMARY_CROP_YOUNG:       {"name": "Rosemary Plant",           "hardness": 0.5, "color": (120, 155,  90), "drop": "rosemary_seed",   "drop_chance": 1.0},
+    ROSEMARY_CROP_MATURE:      {"name": "Rosemary (Ripe)",          "hardness": 0.5, "color": (155, 175, 115), "drop": "rosemary",        "drop_chance": 1.0},
+    # --- Middle Eastern crops ---
+    CHICKPEA_CROP_YOUNG:       {"name": "Chickpea Crop",            "hardness": 0.5, "color": ( 90, 165,  80), "drop": "chickpea_seed",   "drop_chance": 1.0},
+    CHICKPEA_CROP_MATURE:      {"name": "Chickpea Crop (Ripe)",     "hardness": 0.5, "color": (215, 195, 145), "drop": "chickpea",        "drop_chance": 1.0},
+    LENTIL_CROP_YOUNG:         {"name": "Lentil Crop",              "hardness": 0.5, "color": ( 85, 155,  75), "drop": "lentil_seed",     "drop_chance": 1.0},
+    LENTIL_CROP_MATURE:        {"name": "Lentil Crop (Ripe)",       "hardness": 0.5, "color": (185, 105,  65), "drop": "lentil",          "drop_chance": 1.0},
+    SESAME_CROP_YOUNG:         {"name": "Sesame Crop",              "hardness": 0.5, "color": ( 80, 160,  85), "drop": "sesame_seed",       "drop_chance": 1.0},
+    SESAME_CROP_MATURE:        {"name": "Sesame Crop (Ripe)",       "hardness": 0.5, "color": (240, 225, 180), "drop": "sesame_seeds",      "drop_chance": 1.0},
+    POMEGRANATE_TREE_YOUNG:    {"name": "Pomegranate Tree",         "hardness": 0.5, "color": ( 55, 130,  55), "drop": "pomegranate_seed",  "drop_chance": 1.0},
+    POMEGRANATE_TREE_MATURE:   {"name": "Pomegranate Tree (Ripe)",  "hardness": 0.5, "color": (175,  35,  55), "drop": "pomegranate",       "drop_chance": 1.0},
+    # --- Spanish crops ---
+    OLIVE_TREE_YOUNG:          {"name": "Olive Tree",               "hardness": 0.5, "color": ( 90, 140,  70), "drop": "olive_seed",        "drop_chance": 1.0},
+    OLIVE_TREE_MATURE:         {"name": "Olive Tree (Ripe)",        "hardness": 0.5, "color": ( 60,  80,  45), "drop": "olive",             "drop_chance": 1.0},
+    SAFFRON_CROP_YOUNG:        {"name": "Saffron Crop",             "hardness": 0.5, "color": ( 85, 160,  90), "drop": "saffron_seed",      "drop_chance": 1.0},
+    SAFFRON_CROP_MATURE:       {"name": "Saffron Crop (Ripe)",      "hardness": 0.5, "color": (215, 130,  30), "drop": "saffron",           "drop_chance": 1.0},
+    # --- Sonoran desert plants ---
+    SAGUARO_YOUNG:             {"name": "Saguaro",                  "hardness": 0.5, "color": ( 52, 142,  48), "drop": "saguaro_seed",       "drop_chance": 1.0},
+    SAGUARO_MATURE:            {"name": "Saguaro (Ripe)",           "hardness": 0.5, "color": ( 48, 130,  44), "drop": "saguaro_fruit",      "drop_chance": 1.0},
+    BARREL_CACTUS_YOUNG:       {"name": "Barrel Cactus",           "hardness": 0.5, "color": ( 62, 148,  55), "drop": "barrel_cactus_seed", "drop_chance": 1.0},
+    BARREL_CACTUS_MATURE:      {"name": "Barrel Cactus (Ripe)",    "hardness": 0.5, "color": ( 58, 142,  52), "drop": "barrel_cactus_pulp", "drop_chance": 1.0},
+    OCOTILLO_YOUNG:            {"name": "Ocotillo",                 "hardness": 0.5, "color": (148,  82,  38), "drop": "ocotillo_seed",      "drop_chance": 1.0},
+    OCOTILLO_MATURE:           {"name": "Ocotillo (Blooming)",      "hardness": 0.5, "color": (215,  52,  38), "drop": "ocotillo_flower",    "drop_chance": 1.0},
+    PRICKLY_PEAR_YOUNG:        {"name": "Prickly Pear",             "hardness": 0.5, "color": ( 68, 155,  62), "drop": "prickly_pear_pad",   "drop_chance": 1.0},
+    PRICKLY_PEAR_MATURE:       {"name": "Prickly Pear (Ripe)",      "hardness": 0.5, "color": (178,  42,  98), "drop": "prickly_pear_fruit", "drop_chance": 1.0},
+    CHOLLA_YOUNG:              {"name": "Cholla",                   "hardness": 0.5, "color": ( 82, 155,  72), "drop": "cholla_segment",     "drop_chance": 1.0},
+    CHOLLA_MATURE:             {"name": "Cholla (Mature)",          "hardness": 0.5, "color": ( 78, 150,  68), "drop": "cholla_joint",       "drop_chance": 1.0},
+    PALO_VERDE_YOUNG:          {"name": "Palo Verde",               "hardness": 0.5, "color": ( 95, 148,  72), "drop": "palo_verde_seed",    "drop_chance": 1.0},
+    PALO_VERDE_MATURE:         {"name": "Palo Verde (Flowering)",   "hardness": 0.5, "color": (225, 195,  45), "drop": "palo_verde_pod",     "drop_chance": 1.0},
+    # --- Islamic architecture blocks ---
+    WHITE_PLASTER_WALL: {"name": "White Plaster Wall", "hardness": 2, "color": (245, 240, 228), "drop": "white_plaster_wall"},
+    CARVED_PLASTER:     {"name": "Carved Plaster",     "hardness": 2, "color": (245, 240, 228), "drop": "carved_plaster"},
+    MUQARNAS_BLOCK:     {"name": "Muqarnas",           "hardness": 2, "color": (235, 228, 215), "drop": "muqarnas_block"},
+    MASHRABIYA:         {"name": "Mashrabiya",          "hardness": 2, "color": (155, 105,  60), "drop": "mashrabiya"},
+    ZELLIGE_TILE:       {"name": "Zellige Tile",        "hardness": 2, "color": ( 55, 130, 175), "drop": "zellige_tile"},
+    ARABESQUE_PANEL:    {"name": "Arabesque Panel",     "hardness": 2, "color": (215, 195, 165), "drop": "arabesque_panel"},
+    # --- Natural deposits ---
+    CLAY_DEPOSIT:      {"name": "Clay Deposit",  "hardness": 0.8, "color": (165, 120,  85), "drop": "clay"},
+    LIMESTONE_DEPOSIT: {"name": "Limestone Bed", "hardness": 1.5, "color": (210, 200, 180), "drop": "limestone_block"},
+    # --- Spanish architecture blocks ---
+    ADOBE_BRICK:         {"name": "Adobe Brick",          "hardness": 2, "color": (180, 155, 110), "drop": "adobe_brick"},
+    SPANISH_ROOF_TILE:   {"name": "Spanish Roof Tile",    "hardness": 2, "color": (190,  90,  55), "drop": "spanish_roof_tile"},
+    WROUGHT_IRON_GRILLE: {"name": "Wrought Iron Grille",  "hardness": 2, "color": ( 45,  38,  35), "drop": "wrought_iron_grille"},
+    TALAVERA_TILE:       {"name": "Talavera Tile",         "hardness": 2, "color": (235, 240, 245), "drop": "talavera_tile"},
+    SALTILLO_TILE:       {"name": "Saltillo Tile",         "hardness": 2, "color": (205, 130,  75), "drop": "saltillo_tile"},
+    # --- Middle Eastern decorative doors ---
+    COBALT_DOOR_CLOSED:        {"name": "Cobalt Door",           "hardness": 2, "color": ( 40,  75, 165), "drop": "cobalt_door"},
+    COBALT_DOOR_OPEN:          {"name": "Cobalt Door (Open)",    "hardness": 2, "color": ( 40,  75, 165), "drop": "cobalt_door"},
+    CRIMSON_CEDAR_DOOR_CLOSED: {"name": "Crimson Cedar Door",           "hardness": 2, "color": (140,  35,  40), "drop": "crimson_cedar_door"},
+    CRIMSON_CEDAR_DOOR_OPEN:   {"name": "Crimson Cedar Door (Open)",    "hardness": 2, "color": (140,  35,  40), "drop": "crimson_cedar_door"},
+    TEAL_DOOR_CLOSED:          {"name": "Teal Door",             "hardness": 2, "color": ( 45, 140, 135), "drop": "teal_door"},
+    TEAL_DOOR_OPEN:            {"name": "Teal Door (Open)",      "hardness": 2, "color": ( 45, 140, 135), "drop": "teal_door"},
+    SAFFRON_DOOR_CLOSED:       {"name": "Saffron Door",          "hardness": 2, "color": (200, 155,  30), "drop": "saffron_door"},
+    SAFFRON_DOOR_OPEN:         {"name": "Saffron Door (Open)",   "hardness": 2, "color": (200, 155,  30), "drop": "saffron_door"},
+    # --- European architecture blocks ---
+    HALF_TIMBER_WALL:  {"name": "Half-Timber Wall",   "hardness": 2, "color": (240, 235, 220), "drop": "half_timber_wall"},
+    ASHLAR_BLOCK:      {"name": "Ashlar Block",        "hardness": 2, "color": (175, 170, 162), "drop": "ashlar_block"},
+    GOTHIC_TRACERY:    {"name": "Gothic Tracery",      "hardness": 2, "color": ( 85,  82,  92), "drop": "gothic_tracery"},
+    FLUTED_COLUMN:     {"name": "Fluted Column",       "hardness": 2, "color": (225, 218, 208), "drop": "fluted_column"},
+    CORNICE_BLOCK:     {"name": "Cornice",             "hardness": 2, "color": (212, 206, 192), "drop": "cornice_block"},
+    ROSE_WINDOW:       {"name": "Rose Window",         "hardness": 2, "color": ( 78,  75,  88), "drop": "rose_window"},
+    HERRINGBONE_BRICK: {"name": "Herringbone Brick",   "hardness": 2, "color": (170,  82,  52), "drop": "herringbone_brick"},
+    BAROQUE_TRIM:      {"name": "Baroque Trim",        "hardness": 2, "color": (232, 220, 193), "drop": "baroque_trim"},
+    TUDOR_BEAM:        {"name": "Tudor Beam",          "hardness": 2, "color": ( 52,  36,  20), "drop": "tudor_beam"},
+    VENETIAN_FLOOR:    {"name": "Venetian Floor",      "hardness": 2, "color": (228, 218, 198), "drop": "venetian_floor"},
+    FLEMISH_BRICK:     {"name": "Flemish Brick",       "hardness": 2, "color": (158,  65,  42), "drop": "flemish_brick"},
+    PILASTER:          {"name": "Pilaster",            "hardness": 2, "color": (200, 194, 182), "drop": "pilaster"},
+    DENTIL_TRIM:       {"name": "Dentil Trim",         "hardness": 2, "color": (230, 225, 210), "drop": "dentil_trim"},
+    WATTLE_DAUB:       {"name": "Wattle & Daub",       "hardness": 2, "color": (202, 178, 138), "drop": "wattle_daub"},
+    NORDIC_PLANK:      {"name": "Nordic Plank",        "hardness": 2, "color": ( 58,  48,  40), "drop": "nordic_plank"},
+    MANSARD_SLATE:     {"name": "Mansard Slate",       "hardness": 2, "color": ( 62,  67,  78), "drop": "mansard_slate"},
+    ROMAN_MOSAIC:      {"name": "Roman Mosaic",        "hardness": 2, "color": (178, 162, 128), "drop": "roman_mosaic"},
+    SETT_STONE:        {"name": "Sett Stone",          "hardness": 2, "color": (125, 120, 115), "drop": "sett_stone"},
+    ROMANESQUE_ARCH:   {"name": "Romanesque Arch",     "hardness": 2, "color": (188, 178, 158), "drop": "romanesque_arch"},
+    DARK_SLATE_ROOF:   {"name": "Dark Slate Roof",     "hardness": 2, "color": ( 55,  58,  68), "drop": "dark_slate_roof"},
+    KEYSTONE:          {"name": "Keystone",            "hardness": 2, "color": (195, 188, 168), "drop": "keystone"},
+    PLINTH_BLOCK:      {"name": "Plinth Block",        "hardness": 2, "color": (185, 182, 172), "drop": "plinth_block"},
+    IRON_LANTERN:      {"name": "Iron Lantern",        "hardness": 2, "color": ( 42,  40,  36), "drop": "iron_lantern"},
+    SANDSTONE_ASHLAR:  {"name": "Sandstone Ashlar",    "hardness": 2, "color": (215, 188, 142), "drop": "sandstone_ashlar"},
+    GARGOYLE_BLOCK:    {"name": "Gargoyle Block",      "hardness": 2, "color": ( 82,  78,  88), "drop": "gargoyle_block"},
+    OGEE_ARCH:               {"name": "Ogee Arch",             "hardness": 2, "color": ( 88,  82,  95), "drop": "ogee_arch"},
+    RUSTICATED_STONE:        {"name": "Rusticated Stone",      "hardness": 2, "color": (158, 152, 140), "drop": "rusticated_stone"},
+    CHEVRON_STONE:           {"name": "Chevron Stone",         "hardness": 2, "color": (178, 170, 158), "drop": "chevron_stone"},
+    TRIGLYPH_PANEL:          {"name": "Triglyph Panel",        "hardness": 2, "color": (200, 195, 182), "drop": "triglyph_panel"},
+    MARBLE_INLAY:            {"name": "Marble Inlay",          "hardness": 2, "color": (228, 222, 218), "drop": "marble_inlay"},
+    BRICK_NOGGING:           {"name": "Brick Nogging",         "hardness": 2, "color": (162,  78,  52), "drop": "brick_nogging"},
+    CRENELLATION:            {"name": "Crenellation",          "hardness": 2, "color": (168, 162, 150), "drop": "crenellation"},
+    FAN_VAULT:               {"name": "Fan Vault",             "hardness": 2, "color": (205, 198, 185), "drop": "fan_vault"},
+    ACANTHUS_PANEL:          {"name": "Acanthus Panel",        "hardness": 2, "color": (210, 202, 188), "drop": "acanthus_panel"},
+    PEBBLE_DASH:             {"name": "Pebble Dash",           "hardness": 2, "color": (185, 175, 158), "drop": "pebble_dash"},
+    ENCAUSTIC_TILE:          {"name": "Encaustic Tile",        "hardness": 2, "color": (142,  90,  50), "drop": "encaustic_tile"},
+    CHEQUERBOARD_MARBLE:     {"name": "Chequerboard Marble",   "hardness": 2, "color": (218, 215, 212), "drop": "chequerboard_marble"},
+    WROUGHT_IRON_BALUSTRADE: {"name": "Iron Balustrade",       "hardness": 2, "color": ( 42,  38,  35), "drop": "wrought_iron_balustrade"},
+    OPUS_INCERTUM:           {"name": "Opus Incertum",         "hardness": 2, "color": (148, 142, 132), "drop": "opus_incertum"},
+    GROTESQUE_FRIEZE:        {"name": "Grotesque Frieze",      "hardness": 2, "color": (190, 182, 165), "drop": "grotesque_frieze"},
+    BARREL_VAULT:            {"name": "Barrel Vault",          "hardness": 2, "color": (198, 192, 178), "drop": "barrel_vault"},
+    POINTED_ARCH:            {"name": "Pointed Arch",          "hardness": 2, "color": (180, 175, 165), "drop": "pointed_arch"},
+    ENGLISH_BOND:            {"name": "English Bond",          "hardness": 2, "color": (155,  62,  42), "drop": "english_bond"},
+    RELIEF_PANEL:            {"name": "Relief Panel",          "hardness": 2, "color": (205, 198, 182), "drop": "relief_panel"},
+    DIAGONAL_TILE:           {"name": "Diagonal Tile",         "hardness": 2, "color": (215, 200, 172), "drop": "diagonal_tile"},
+    TAPESTRY_BLOCK:    {"name": "Tapestry",          "hardness": 1, "color": (175,  88,  52), "drop": "tapestry_block"},
+    WOVEN_RUG:         {"name": "Woven Rug",          "hardness": 1, "color": (138,  42,  42), "drop": "woven_rug"},
+    CELTIC_KNOTWORK:   {"name": "Celtic Knotwork",    "hardness": 2, "color": ( 88,  88,  95), "drop": "celtic_knotwork"},
+    BYZANTINE_MOSAIC:  {"name": "Byzantine Mosaic",   "hardness": 2, "color": (195, 165,  55), "drop": "byzantine_mosaic"},
+    JAPANESE_SHOJI:    {"name": "Japanese Shoji",     "hardness": 1, "color": (240, 235, 225), "drop": "japanese_shoji"},
+    OTTOMAN_TILE:      {"name": "Ottoman Tile",        "hardness": 2, "color": (240, 238, 235), "drop": "ottoman_tile"},
+    LEADLIGHT_WINDOW:  {"name": "Leadlight Window",   "hardness": 2, "color": ( 62,  58,  52), "drop": "leadlight_window"},
+    TUDOR_ROSE:        {"name": "Tudor Rose",          "hardness": 2, "color": (198, 188, 172), "drop": "tudor_rose"},
+    GREEK_KEY:         {"name": "Greek Key",           "hardness": 2, "color": (215, 208, 192), "drop": "greek_key"},
+    VENETIAN_PLASTER:  {"name": "Venetian Plaster",   "hardness": 2, "color": (235, 228, 215), "drop": "venetian_plaster"},
+    SCOTTISH_RUBBLE:   {"name": "Scottish Rubble",    "hardness": 2, "color": (138, 132, 122), "drop": "scottish_rubble"},
+    ART_NOUVEAU_PANEL: {"name": "Art Nouveau Panel",  "hardness": 2, "color": (222, 215, 195), "drop": "art_nouveau_panel"},
+    DUTCH_GABLE:       {"name": "Dutch Gable",         "hardness": 2, "color": (162,  65,  45), "drop": "dutch_gable"},
+    STRIPED_ARCH:      {"name": "Striped Arch",        "hardness": 2, "color": (182, 165, 142), "drop": "striped_arch"},
+    TIMBER_TRUSS:      {"name": "Timber Truss",        "hardness": 2, "color": ( 70,  48,  28), "drop": "timber_truss"},
+    HEARTH_STONE:      {"name": "Hearth Stone",        "hardness": 2, "color": (178, 162, 145), "drop": "hearth_stone"},
+    LINEN_FOLD:        {"name": "Linen Fold",          "hardness": 2, "color": (155, 128,  90), "drop": "linen_fold"},
+    PARQUET_FLOOR:     {"name": "Parquet Floor",       "hardness": 2, "color": (175, 130,  72), "drop": "parquet_floor"},
+    COFFERED_CEILING:  {"name": "Coffered Ceiling",    "hardness": 2, "color": (205, 198, 182), "drop": "coffered_ceiling"},
+    OPUS_SIGNINUM:     {"name": "Opus Signinum",       "hardness": 2, "color": (185, 115,  90), "drop": "opus_signinum"},
+    # --- Textile supply chain ---
+    FLAX_BUSH:                {"name": "Flax Bush",           "hardness": 0.5, "color": (170, 185, 210), "drop": "flax_seed",       "drop_chance": 1.0},
+    FLAX_CROP_YOUNG:          {"name": "Flax Plant",          "hardness": 0.5, "color": (140, 185, 155), "drop": "flax_seed",       "drop_chance": 1.0},
+    FLAX_CROP_MATURE:         {"name": "Flax Plant (Ripe)",   "hardness": 0.5, "color": (155, 185, 215), "drop": None},
+    SPINNING_WHEEL_BLOCK:     {"name": "Spinning Wheel",      "hardness": 1.5, "color": (165, 130,  75), "drop": "spinning_wheel_item"},
+    DYE_VAT_BLOCK:            {"name": "Dye Vat",             "hardness": 1.5, "color": ( 85, 110, 155), "drop": "dye_vat_item"},
+    LOOM_BLOCK:               {"name": "Loom",                "hardness": 1.5, "color": (140, 100,  55), "drop": "loom_item"},
+    # Rug blocks (placeable floor pieces)
+    TEXTILE_RUG_NATURAL:  {"name": "Rug (Natural)",  "hardness": 0.2, "color": (230, 215, 185), "drop": "textile_rug_natural"},
+    TEXTILE_RUG_GOLDEN:   {"name": "Rug (Golden)",   "hardness": 0.2, "color": (215, 175,  40), "drop": "textile_rug_golden"},
+    TEXTILE_RUG_CRIMSON:  {"name": "Rug (Crimson)",  "hardness": 0.2, "color": (185,  35,  45), "drop": "textile_rug_crimson"},
+    TEXTILE_RUG_ROSE:     {"name": "Rug (Rose)",     "hardness": 0.2, "color": (220, 110, 155), "drop": "textile_rug_rose"},
+    TEXTILE_RUG_COBALT:   {"name": "Rug (Cobalt)",   "hardness": 0.2, "color": ( 55,  90, 185), "drop": "textile_rug_cobalt"},
+    TEXTILE_RUG_VIOLET:   {"name": "Rug (Violet)",   "hardness": 0.2, "color": (130,  65, 195), "drop": "textile_rug_violet"},
+    TEXTILE_RUG_VERDANT:  {"name": "Rug (Verdant)",  "hardness": 0.2, "color": ( 60, 148,  75), "drop": "textile_rug_verdant"},
+    TEXTILE_RUG_AMBER:    {"name": "Rug (Amber)",    "hardness": 0.2, "color": (200, 115,  35), "drop": "textile_rug_amber"},
+    TEXTILE_RUG_IVORY:    {"name": "Rug (Ivory)",    "hardness": 0.2, "color": (245, 240, 220), "drop": "textile_rug_ivory"},
+    # Tapestry blocks (placeable wall pieces)
+    TEXTILE_TAPESTRY_NATURAL: {"name": "Tapestry (Natural)", "hardness": 0.2, "color": (210, 195, 165), "drop": "textile_tapestry_natural"},
+    TEXTILE_TAPESTRY_GOLDEN:  {"name": "Tapestry (Golden)",  "hardness": 0.2, "color": (195, 155,  30), "drop": "textile_tapestry_golden"},
+    TEXTILE_TAPESTRY_CRIMSON: {"name": "Tapestry (Crimson)", "hardness": 0.2, "color": (165,  25,  35), "drop": "textile_tapestry_crimson"},
+    TEXTILE_TAPESTRY_ROSE:    {"name": "Tapestry (Rose)",    "hardness": 0.2, "color": (200,  90, 135), "drop": "textile_tapestry_rose"},
+    TEXTILE_TAPESTRY_COBALT:  {"name": "Tapestry (Cobalt)",  "hardness": 0.2, "color": ( 40,  70, 165), "drop": "textile_tapestry_cobalt"},
+    TEXTILE_TAPESTRY_VIOLET:  {"name": "Tapestry (Violet)",  "hardness": 0.2, "color": (110,  50, 175), "drop": "textile_tapestry_violet"},
+    TEXTILE_TAPESTRY_VERDANT: {"name": "Tapestry (Verdant)", "hardness": 0.2, "color": ( 45, 128,  58), "drop": "textile_tapestry_verdant"},
+    TEXTILE_TAPESTRY_AMBER:   {"name": "Tapestry (Amber)",   "hardness": 0.2, "color": (180,  95,  20), "drop": "textile_tapestry_amber"},
+    TEXTILE_TAPESTRY_IVORY:   {"name": "Tapestry (Ivory)",   "hardness": 0.2, "color": (225, 220, 200), "drop": "textile_tapestry_ivory"},
+    # --- Chinese architecture blocks ---
+    GLAZED_ROOF_TILE: {"name": "Glazed Roof Tile",  "hardness": 2, "color": ( 78, 138,  75), "drop": "glazed_roof_tile"},
+    LATTICE_SCREEN:   {"name": "Lattice Screen",    "hardness": 2, "color": (148,  98,  44), "drop": "lattice_screen"},
+    MOON_GATE:        {"name": "Moon Gate",          "hardness": 2, "color": (185, 178, 165), "drop": "moon_gate"},
+    PAINTED_BEAM:     {"name": "Painted Beam",       "hardness": 2, "color": (182,  32,  32), "drop": "painted_beam"},
+    DOUGONG:          {"name": "Dougong",             "hardness": 2, "color": (162,  48,  36), "drop": "dougong"},
+    CERAMIC_PLANTER:  {"name": "Ceramic Planter",    "hardness": 2, "color": ( 52,  92, 162), "drop": "ceramic_planter"},
+    STONE_LANTERN:    {"name": "Stone Lantern",      "hardness": 2, "color": (158, 152, 142), "drop": "stone_lantern"},
+    LACQUER_PANEL:    {"name": "Lacquer Panel",      "hardness": 2, "color": (162,  20,  20), "drop": "lacquer_panel"},
+    PAPER_LANTERN:    {"name": "Paper Lantern",      "hardness": 1, "color": (215,  75,  48), "drop": "paper_lantern"},
+    DRAGON_TILE:      {"name": "Dragon Tile",         "hardness": 2, "color": ( 60, 102,  65), "drop": "dragon_tile"},
+    HAN_BRICK:        {"name": "Han Brick",           "hardness": 2, "color": ( 92,  88,  85), "drop": "han_brick"},
+    PAVILION_FLOOR:   {"name": "Pavilion Floor",     "hardness": 2, "color": (188, 185, 178), "drop": "pavilion_floor"},
+    BAMBOO_SCREEN:    {"name": "Bamboo Screen",      "hardness": 2, "color": (100, 138,  58), "drop": "bamboo_screen"},
+    CLOUD_MOTIF:      {"name": "Cloud Motif",         "hardness": 2, "color": (215, 210, 198), "drop": "cloud_motif"},
+    COIN_TILE:        {"name": "Coin Tile",           "hardness": 2, "color": ( 52,  98, 152), "drop": "coin_tile"},
+    BLUE_WHITE_TILE:  {"name": "Blue & White Tile",  "hardness": 2, "color": (238, 236, 233), "drop": "blue_white_tile"},
+    GARDEN_ROCK:      {"name": "Garden Rock",         "hardness": 2, "color": ( 98,  95, 105), "drop": "garden_rock_block"},
+    STEPPED_WALL:     {"name": "Stepped Wall",        "hardness": 2, "color": (140, 132, 120), "drop": "stepped_wall"},
+    PAGODA_EAVE:      {"name": "Pagoda Eave",         "hardness": 2, "color": (178,  32,  32), "drop": "pagoda_eave"},
+    CINNABAR_WALL:    {"name": "Cinnabar Wall",       "hardness": 2, "color": (172,  32,  25), "drop": "cinnabar_wall"},
+    # --- World architecture blocks — batch 4 ---
+    MUGHAL_ARCH:       {"name": "Mughal Arch",        "hardness": 2, "color": (178, 168, 158), "drop": "mughal_arch"},
+    PIETRA_DURA:       {"name": "Pietra Dura",        "hardness": 2, "color": (232, 228, 222), "drop": "pietra_dura"},
+    EGYPTIAN_FRIEZE:   {"name": "Egyptian Frieze",    "hardness": 2, "color": (205, 180, 120), "drop": "egyptian_frieze"},
+    SANDSTONE_COLUMN:  {"name": "Sandstone Column",   "hardness": 2, "color": (215, 185, 135), "drop": "sandstone_column"},
+    AZTEC_SUNSTONE:    {"name": "Aztec Sunstone",     "hardness": 2, "color": ( 88,  82,  75), "drop": "aztec_sunstone"},
+    MAYA_RELIEF:       {"name": "Maya Relief",        "hardness": 2, "color": (155, 148, 135), "drop": "maya_relief"},
+    VIKING_CARVING:    {"name": "Viking Carving",     "hardness": 2, "color": ( 95,  68,  42), "drop": "viking_carving"},
+    RUNE_STONE:        {"name": "Rune Stone",         "hardness": 2, "color": (148, 142, 132), "drop": "rune_stone"},
+    PERSIAN_IWAN:      {"name": "Persian Iwan",       "hardness": 2, "color": (188, 168, 138), "drop": "persian_iwan"},
+    KILIM_TILE:        {"name": "Kilim Tile",         "hardness": 2, "color": (168,  52,  42), "drop": "kilim_tile"},
+    AFRICAN_MUD_BRICK: {"name": "African Mud Brick",  "hardness": 2, "color": (175, 118,  72), "drop": "african_mud_brick"},
+    KENTE_PANEL:       {"name": "Kente Panel",        "hardness": 2, "color": (185, 148,  30), "drop": "kente_panel"},
+    WAT_FINIAL:        {"name": "Wat Finial",         "hardness": 2, "color": (195, 162,  35), "drop": "wat_finial"},
+    KHMER_STONE:       {"name": "Khmer Stone",        "hardness": 2, "color": (132, 128, 118), "drop": "khmer_stone"},
+    HANJI_SCREEN:      {"name": "Hanji Screen",       "hardness": 2, "color": (238, 232, 222), "drop": "hanji_screen"},
+    DANCHEONG:         {"name": "Dancheong",           "hardness": 2, "color": ( 55,  95, 158), "drop": "dancheong"},
+    ART_DECO_PANEL:    {"name": "Art Deco Panel",     "hardness": 2, "color": (225, 215, 188), "drop": "art_deco_panel"},
+    OBSIDIAN_CUT:      {"name": "Obsidian Cut",       "hardness": 2, "color": ( 28,  24,  32), "drop": "obsidian_cut"},
+    OTTOMAN_ARCH:      {"name": "Ottoman Arch",       "hardness": 2, "color": (182, 172, 155), "drop": "ottoman_arch"},
+    LOTUS_CAPITAL:     {"name": "Lotus Capital",      "hardness": 2, "color": (208, 188, 152), "drop": "lotus_capital"},
+    # --- World architecture batch 5 ---
+    AZULEJO_TILE:      {"name": "Azulejo Tile",       "hardness": 2, "color": (235, 240, 248), "drop": "azulejo_tile"},
+    MANUELINE_PANEL:   {"name": "Manueline Panel",    "hardness": 2, "color": (195, 182, 162), "drop": "manueline_panel"},
+    TORII_PANEL:       {"name": "Torii Panel",         "hardness": 2, "color": (195,  45,  32), "drop": "torii_panel"},
+    INCA_ASHLAR:       {"name": "Inca Ashlar",         "hardness": 2, "color": (162, 148, 128), "drop": "inca_ashlar"},
+    RUSSIAN_KOKOSHNIK: {"name": "Russian Kokoshnik",  "hardness": 2, "color": (215, 180, 145), "drop": "russian_kokoshnik"},
+    ONION_DOME_TILE:   {"name": "Onion Dome Tile",    "hardness": 2, "color": ( 72, 130, 185), "drop": "onion_dome_tile"},
+    GEORGIAN_FANLIGHT: {"name": "Georgian Fanlight",  "hardness": 2, "color": (215, 225, 240), "drop": "georgian_fanlight"},
+    PALLADIAN_WINDOW:  {"name": "Palladian Window",   "hardness": 2, "color": (200, 195, 182), "drop": "palladian_window"},
+    STAVE_PLANK:       {"name": "Stave Plank",         "hardness": 2, "color": ( 68,  48,  28), "drop": "stave_plank"},
+    IONIC_CAPITAL:     {"name": "Ionic Capital",       "hardness": 2, "color": (222, 215, 202), "drop": "ionic_capital"},
+    MOORISH_STAR_TILE: {"name": "Moorish Star Tile",  "hardness": 2, "color": ( 45,  85, 162), "drop": "moorish_star_tile"},
+    CRAFTSMAN_PANEL:   {"name": "Craftsman Panel",    "hardness": 2, "color": (148, 105,  55), "drop": "craftsman_panel"},
+    BRUTALIST_PANEL:   {"name": "Brutalist Panel",    "hardness": 2, "color": (155, 150, 145), "drop": "brutalist_panel"},
+    METOPE:            {"name": "Metope",              "hardness": 2, "color": (210, 202, 188), "drop": "metope"},
+    ARMENIAN_KHACHKAR: {"name": "Armenian Khachkar",  "hardness": 2, "color": (175, 165, 148), "drop": "armenian_khachkar"},
+    BENIN_RELIEF:      {"name": "Benin Relief",        "hardness": 2, "color": (168, 128,  55), "drop": "benin_relief"},
+    MAORI_CARVING:     {"name": "Māori Carving",       "hardness": 2, "color": ( 80,  55,  32), "drop": "maori_carving"},
+    MUGHAL_JALI:       {"name": "Mughal Jali",         "hardness": 2, "color": (215, 208, 195), "drop": "mughal_jali"},
+    PERSIAN_TILE:      {"name": "Persian Tile",        "hardness": 2, "color": ( 58, 148, 162), "drop": "persian_tile"},
+    SWISS_CHALET:      {"name": "Swiss Chalet Panel",  "hardness": 2, "color": (165, 115,  55), "drop": "swiss_chalet"},
+    ANDEAN_TEXTILE:    {"name": "Andean Textile",      "hardness": 2, "color": (168,  45,  42), "drop": "andean_textile"},
+    BAROQUE_ORNAMENT:  {"name": "Baroque Ornament",    "hardness": 2, "color": (225, 205, 158), "drop": "baroque_ornament"},
+    POLYNESIAN_CARVED: {"name": "Polynesian Carved",  "hardness": 2, "color": (105,  72,  42), "drop": "polynesian_carved"},
+    MOORISH_COLUMN:    {"name": "Moorish Column",      "hardness": 2, "color": (198, 188, 172), "drop": "moorish_column"},
+    PORTUGUESE_CORK:   {"name": "Portuguese Cork",    "hardness": 2, "color": (168, 128,  72), "drop": "portuguese_cork"},
+    WHITEWASHED_WALL: {"name": "Whitewashed Wall",    "hardness": 2, "color": (238, 232, 218), "drop": "stone_chip"},
+    MONASTERY_ROOF:   {"name": "Monastery Roof",      "hardness": 2, "color": ( 88,  22,  18), "drop": "lumber"},
+    MANI_STONE:       {"name": "Mani Stone",           "hardness": 3, "color": (152, 144, 135), "drop": "stone_chip"},
+    PRAYER_FLAG_BLOCK:{"name": "Prayer Flags",         "hardness": 1, "color": ( 60, 100, 175), "drop": None},
 }

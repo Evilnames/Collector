@@ -27,7 +27,8 @@ def _wrap_text(text, font, max_w):
 class PanelsMixin:
 
     def _draw_npc_panel(self, player):
-        from cities import RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC
+        from cities import (RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC,
+                            MerchantNPC, RestaurantNPC, ShrineKeeperNPC)
         npc = self.active_npc
 
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
@@ -45,6 +46,12 @@ class PanelsMixin:
             border_col = (60, 140, 70)
         elif isinstance(npc, GemQuestNPC):
             border_col = (110, 50, 160)
+        elif isinstance(npc, MerchantNPC):
+            border_col = (180, 140, 40)
+        elif isinstance(npc, RestaurantNPC):
+            border_col = (200, 90, 30)
+        elif isinstance(npc, ShrineKeeperNPC):
+            border_col = (160, 130, 60)
         else:
             border_col = (120, 100, 60)
 
@@ -62,6 +69,12 @@ class PanelsMixin:
             self._draw_wf_quest_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, GemQuestNPC):
             self._draw_gem_quest_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, MerchantNPC):
+            self._draw_merchant_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, RestaurantNPC):
+            self._draw_restaurant_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, ShrineKeeperNPC):
+            self._draw_shrine_content(player, npc, px, py, PW, PH)
 
     def _draw_quest_content(self, player, npc, px, py, PW, PH):
         from cities import quest_display, quest_hint, RARITY_ORDER
@@ -1164,6 +1177,37 @@ class PanelsMixin:
             pygame.draw.rect(self.screen, (220, 50, 50),
                              (hx + int(2 * s), hy - max(1, int(2 * s)),
                               max(1, int(4 * s)), max(1, int(3 * s))))
+        elif aid == "horse":
+            coat  = traits.get("coat_color", (160, 115, 65))
+            sh    = traits.get("color_shift", (0, 0, 0))
+            body_color = _t(coat, sh)
+            dark_coat  = tuple(max(0, c - 40) for c in body_color)
+            mane_color = tuple(max(0, c - 60) for c in body_color)
+            BW, BH = int(40 * s), int(26 * s)
+            sx2, sy2 = cx - BW // 2, cy - BH // 2
+            body_h = int(BH * 0.65)
+            leg_h  = BH - body_h
+            leg_y  = sy2 + body_h
+            leg_w  = max(1, int(4 * s))
+            for lx_off in [3, 9, 22, 28]:
+                pygame.draw.rect(self.screen, dark_coat,
+                                 (sx2 + int(lx_off * s), leg_y, leg_w, leg_h))
+                pygame.draw.rect(self.screen, (30, 25, 20),
+                                 (sx2 + int(lx_off * s), leg_y + leg_h - max(1, int(2 * s)), leg_w, max(1, int(2 * s))))
+            pygame.draw.rect(self.screen, body_color, (sx2, sy2, BW, body_h))
+            pygame.draw.rect(self.screen, mane_color,
+                             (sx2 + int(4 * s), sy2, int((BW - 8) * s), max(2, int(4 * s))))
+            pygame.draw.rect(self.screen, mane_color,
+                             (sx2, sy2 + int(4 * s), max(2, int(4 * s)), int(body_h * 0.6)))
+            head_w = int(12 * s)
+            head_h = int(12 * s)
+            hx2 = sx2 + BW - int(2 * s)
+            hy2 = sy2 - int(4 * s)
+            pygame.draw.rect(self.screen, body_color, (hx2, hy2, head_w, head_h))
+            pygame.draw.rect(self.screen, _t((200, 175, 145), sh),
+                             (hx2 + head_w - int(5 * s), hy2 + int(6 * s), int(5 * s), int(5 * s)))
+            pygame.draw.rect(self.screen, (15, 10, 5),
+                             (hx2 + head_w - int(5 * s), hy2 + int(3 * s), max(1, int(2 * s)), max(1, int(2 * s))))
 
     def handle_breeding_click(self, pos, player):
         for tab_idx, rect in self._breed_tab_rects.items():
@@ -1207,7 +1251,7 @@ class PanelsMixin:
             type_ctr[aid] = type_ctr.get(aid, 0) + 1
             animal_numbers[e.uid] = type_ctr[aid]
 
-        TYPE_LABELS = {"sheep": "Sheep", "cow": "Cow", "chicken": "Chicken"}
+        TYPE_LABELS = {"sheep": "Sheep", "cow": "Cow", "chicken": "Chicken", "horse": "Horse"}
 
         # ── LEFT LIST COLUMN ──────────────────────────────────────────
         LW = 295
@@ -1218,7 +1262,7 @@ class PanelsMixin:
         self.screen.blit(title_s, (lx0 + LW // 2 - title_s.get_width() // 2, py + 10))
 
         # Species filter tabs
-        tab_defs = [(0, "All"), (1, "Sheep"), (2, "Cow"), (3, "Chicken")]
+        tab_defs = [(0, "All"), (1, "Sheep"), (2, "Cow"), (3, "Chicken"), (4, "Horse")]
         tw = (LW - 6) // len(tab_defs)
         self._breed_tab_rects.clear()
         for ti, (tidx, label) in enumerate(tab_defs):
@@ -1236,7 +1280,7 @@ class PanelsMixin:
         pygame.draw.line(self.screen, (38, 75, 52), (lx1, py), (lx1, py + PH))
 
         # Build filtered list
-        tab_filter = {1: "sheep", 2: "cow", 3: "chicken"}.get(self._breed_tab)
+        tab_filter = {1: "sheep", 2: "cow", 3: "chicken", 4: "horse"}.get(self._breed_tab)
         filtered = [e for e in all_tamed
                     if tab_filter is None or e.animal_id == tab_filter]
 
@@ -1350,9 +1394,17 @@ class PanelsMixin:
             res_parts = [("Milk", getattr(animal, 'has_milk', False))]
         elif animal.animal_id == "chicken":
             res_parts = [("Egg", getattr(animal, 'has_egg', False))]
+        elif animal.animal_id == "horse":
+            broken = getattr(animal, '_broken', False)
+            res_parts = [("Broken", broken)]
         for label, ready in res_parts:
-            col = (120, 220, 140) if ready else (140, 100, 80)
-            rs = self.small.render(f"{label}: {'ready' if ready else 'regrow...'}", True, col)
+            if label == "Broken":
+                col = (120, 180, 255) if ready else (200, 160, 60)
+                txt = "saddle-ready" if ready else "needs breaking"
+            else:
+                col = (120, 220, 140) if ready else (140, 100, 80)
+                txt = "ready" if ready else "regrow..."
+            rs = self.small.render(f"{label}: {txt}", True, col)
             self.screen.blit(rs, (prev_box.x + prev_box.w // 2 - rs.get_width() // 2,
                                   prev_box.bottom + 5))
 
@@ -1365,57 +1417,94 @@ class PanelsMixin:
         sy += 24
 
         traits = animal.traits
-        size_v = traits.get("size", 1.0)
         BAR_W, BAR_H = 180, 10
-        siz_label = self.small.render("Size", True, (150, 195, 165))
-        self.screen.blit(siz_label, (stats_x, sy))
-        fill = int(BAR_W * (size_v - 0.85) / 0.30)
-        pygame.draw.rect(self.screen, (28, 48, 36), (stats_x + 50, sy + 1, BAR_W, BAR_H))
-        pygame.draw.rect(self.screen, (65, 185, 95), (stats_x + 50, sy + 1, fill, BAR_H))
-        sv = self.small.render(f"{size_v:.2f}x", True, (175, 215, 185))
-        self.screen.blit(sv, (stats_x + 50 + BAR_W + 6, sy))
-        sy += 22
 
-        prod_v = traits.get("productivity", 1.0)
-        prod_label = self.small.render("Yield", True, (150, 195, 165))
-        self.screen.blit(prod_label, (stats_x, sy))
-        prod_fill = max(0, min(BAR_W, int(BAR_W * (prod_v - 0.7) / 0.60)))
-        pygame.draw.rect(self.screen, (28, 48, 36), (stats_x + 50, sy + 1, BAR_W, BAR_H))
-        prod_r = max(60, int(200 - (prod_v - 0.7) / 0.60 * 140))
-        prod_g = int(130 + (prod_v - 0.7) / 0.60 * 85)
-        pygame.draw.rect(self.screen, (prod_r, prod_g, 30), (stats_x + 50, sy + 1, prod_fill, BAR_H))
-        pv = self.small.render(f"{prod_v:.2f}x", True, (175, 215, 185))
-        self.screen.blit(pv, (stats_x + 50 + BAR_W + 6, sy))
-        sy += 22
+        if animal.animal_id == "horse":
+            spd_v = traits.get("speed_rating", 1.0)
+            spd_label = self.small.render("Speed", True, (150, 195, 165))
+            self.screen.blit(spd_label, (stats_x, sy))
+            spd_fill = max(0, min(BAR_W, int(BAR_W * (spd_v - 0.7) / 0.60)))
+            pygame.draw.rect(self.screen, (28, 48, 36), (stats_x + 60, sy + 1, BAR_W, BAR_H))
+            pygame.draw.rect(self.screen, (65, 155, 235), (stats_x + 60, sy + 1, spd_fill, BAR_H))
+            sv = self.small.render(f"{spd_v:.3f}", True, (175, 215, 185))
+            self.screen.blit(sv, (stats_x + 60 + BAR_W + 6, sy))
+            sy += 22
 
-        cs = traits.get("color_shift", (0, 0, 0))
-        cs_label = self.small.render("Color", True, (150, 195, 165))
-        self.screen.blit(cs_label, (stats_x, sy))
-        CB_W = 52
-        for ci, (ch_name, ch_col) in enumerate([("R", (215, 55, 55)),
-                                                 ("G", (55, 195, 75)),
-                                                 ("B", (55, 105, 225))]):
-            cx2 = stats_x + 50 + ci * (CB_W + 4)
-            v   = cs[ci]
-            pygame.draw.rect(self.screen, (28, 48, 36), (cx2, sy + 1, CB_W, BAR_H))
-            mid = cx2 + CB_W // 2
-            fp  = int(CB_W // 2 * abs(v) / 0.25)
-            if v >= 0:
-                pygame.draw.rect(self.screen, ch_col, (mid, sy + 1, fp, BAR_H))
-            else:
-                pygame.draw.rect(self.screen, ch_col, (mid - fp, sy + 1, fp, BAR_H))
-            cl = self.small.render(ch_name, True, ch_col)
-            self.screen.blit(cl, (mid - cl.get_width() // 2, sy + BAR_H + 3))
+            sta_v = traits.get("stamina_max", 1.0)
+            sta_label = self.small.render("Stamina", True, (150, 195, 165))
+            self.screen.blit(sta_label, (stats_x, sy))
+            sta_fill = max(0, min(BAR_W, int(BAR_W * (sta_v - 0.8) / 0.40)))
+            pygame.draw.rect(self.screen, (28, 48, 36), (stats_x + 60, sy + 1, BAR_W, BAR_H))
+            pygame.draw.rect(self.screen, (80, 210, 120), (stats_x + 60, sy + 1, sta_fill, BAR_H))
+            stav = self.small.render(f"{sta_v:.3f}", True, (175, 215, 185))
+            self.screen.blit(stav, (stats_x + 60 + BAR_W + 6, sy))
+            sy += 22
 
-        # Tinted body-colour swatch
-        def _tc(base, sh):
-            return tuple(max(0, min(255, int(base[i] + sh[i] * 255))) for i in range(3))
-        base_colors = {"sheep": (220, 220, 220), "cow": (140, 85, 45), "chicken": (235, 235, 210)}
-        swatch_col = _tc(base_colors.get(animal.animal_id, (200, 200, 200)), cs)
-        sw_x = stats_x + 50 + 3 * (CB_W + 4) + 10
-        pygame.draw.rect(self.screen, swatch_col, (sw_x, sy, 20, 20))
-        pygame.draw.rect(self.screen, (75, 108, 88), (sw_x, sy, 20, 20), 1)
-        sy += 36
+            temp = traits.get("temperament", "spirited")
+            temp_label = self.small.render("Temper", True, (150, 195, 165))
+            self.screen.blit(temp_label, (stats_x, sy))
+            temp_cols = {"calm": (80, 200, 80), "spirited": (220, 180, 40), "wild": (220, 60, 60)}
+            temp_s = self.small.render(temp.capitalize(), True, temp_cols.get(temp, (180, 180, 180)))
+            self.screen.blit(temp_s, (stats_x + 60, sy))
+            sy += 22
+
+            coat = traits.get("coat_color", (160, 115, 65))
+            coat_label = self.small.render("Coat", True, (150, 195, 165))
+            self.screen.blit(coat_label, (stats_x, sy))
+            pygame.draw.rect(self.screen, coat, (stats_x + 60, sy, 24, 14))
+            pygame.draw.rect(self.screen, (75, 108, 88), (stats_x + 60, sy, 24, 14), 1)
+            sy += 22
+        else:
+            size_v = traits.get("size", 1.0)
+            siz_label = self.small.render("Size", True, (150, 195, 165))
+            self.screen.blit(siz_label, (stats_x, sy))
+            fill = int(BAR_W * (size_v - 0.85) / 0.30)
+            pygame.draw.rect(self.screen, (28, 48, 36), (stats_x + 50, sy + 1, BAR_W, BAR_H))
+            pygame.draw.rect(self.screen, (65, 185, 95), (stats_x + 50, sy + 1, fill, BAR_H))
+            sv = self.small.render(f"{size_v:.2f}x", True, (175, 215, 185))
+            self.screen.blit(sv, (stats_x + 50 + BAR_W + 6, sy))
+            sy += 22
+
+            prod_v = traits.get("productivity", 1.0)
+            prod_label = self.small.render("Yield", True, (150, 195, 165))
+            self.screen.blit(prod_label, (stats_x, sy))
+            prod_fill = max(0, min(BAR_W, int(BAR_W * (prod_v - 0.7) / 0.60)))
+            pygame.draw.rect(self.screen, (28, 48, 36), (stats_x + 50, sy + 1, BAR_W, BAR_H))
+            prod_r = max(60, int(200 - (prod_v - 0.7) / 0.60 * 140))
+            prod_g = int(130 + (prod_v - 0.7) / 0.60 * 85)
+            pygame.draw.rect(self.screen, (prod_r, prod_g, 30), (stats_x + 50, sy + 1, prod_fill, BAR_H))
+            pv = self.small.render(f"{prod_v:.2f}x", True, (175, 215, 185))
+            self.screen.blit(pv, (stats_x + 50 + BAR_W + 6, sy))
+            sy += 22
+
+        if animal.animal_id != "horse":
+            cs = traits.get("color_shift", (0, 0, 0))
+            CB_W = 52
+            cs_label = self.small.render("Color", True, (150, 195, 165))
+            self.screen.blit(cs_label, (stats_x, sy))
+            for ci, (ch_name, ch_col) in enumerate([("R", (215, 55, 55)),
+                                                     ("G", (55, 195, 75)),
+                                                     ("B", (55, 105, 225))]):
+                cx2 = stats_x + 50 + ci * (CB_W + 4)
+                v   = cs[ci]
+                pygame.draw.rect(self.screen, (28, 48, 36), (cx2, sy + 1, CB_W, BAR_H))
+                mid = cx2 + CB_W // 2
+                fp  = int(CB_W // 2 * abs(v) / 0.25)
+                if v >= 0:
+                    pygame.draw.rect(self.screen, ch_col, (mid, sy + 1, fp, BAR_H))
+                else:
+                    pygame.draw.rect(self.screen, ch_col, (mid - fp, sy + 1, fp, BAR_H))
+                cl = self.small.render(ch_name, True, ch_col)
+                self.screen.blit(cl, (mid - cl.get_width() // 2, sy + BAR_H + 3))
+
+            def _tc(base, sh):
+                return tuple(max(0, min(255, int(base[i] + sh[i] * 255))) for i in range(3))
+            base_colors = {"sheep": (220, 220, 220), "cow": (140, 85, 45), "chicken": (235, 235, 210)}
+            swatch_col = _tc(base_colors.get(animal.animal_id, (200, 200, 200)), cs)
+            sw_x = stats_x + 50 + 3 * (CB_W + 4) + 10
+            pygame.draw.rect(self.screen, swatch_col, (sw_x, sy, 20, 20))
+            pygame.draw.rect(self.screen, (75, 108, 88), (sw_x, sy, 20, 20), 1)
+            sy += 36
 
         mut = traits.get("mutation")
         _MUT_BADGE = {
@@ -1519,3 +1608,136 @@ class PanelsMixin:
                 ch_s  = self.small.render(ctxt, True, (140, 195, 155))
                 self.screen.blit(ch_s, (stats_x, sy))
                 sy += 14
+
+    # ------------------------------------------------------------------
+    # Merchant / Restaurant / Shrine panels
+    # ------------------------------------------------------------------
+
+    def _draw_merchant_content(self, player, npc, px, py, PW, PH):
+        title = self.font.render("MERCHANT", True, (220, 175, 40))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+
+        gold_txt = self.font.render(f"Your gold: {player.money}", True, (220, 175, 40))
+        self.screen.blit(gold_txt, (px + PW - gold_txt.get_width() - 20, py + 10))
+
+        self._trade_rects.clear()
+        y = py + 52
+
+        for i, (item_id, cost, display) in enumerate(npc.shop):
+            can = npc.can_buy(i, player)
+            row_h = 64
+            rect = pygame.Rect(px + 20, y, PW - 40, row_h)
+            self._trade_rects[i] = rect
+
+            bg  = (30, 25, 10) if can else (26, 26, 34)
+            bdr = (200, 160, 40) if can else (55, 55, 70)
+            pygame.draw.rect(self.screen, bg, rect)
+            pygame.draw.rect(self.screen, bdr, rect, 2)
+
+            item_color = ITEMS.get(item_id, {}).get("color", (128, 128, 128))
+            pygame.draw.rect(self.screen, item_color, (px + 28, y + 16, 30, 30))
+
+            name_col = (240, 220, 130) if can else (130, 120, 90)
+            self.screen.blit(
+                self.font.render(display, True, name_col),
+                (px + 68, y + 10))
+            cost_col = (220, 175, 40) if can else (120, 100, 40)
+            self.screen.blit(
+                self.font.render(f"Cost: {cost} gold", True, cost_col),
+                (px + 68, y + 32))
+
+            lbl = self.font.render("BUY", True, (255, 220, 80) if can else (70, 70, 82))
+            self.screen.blit(lbl, (rect.right - lbl.get_width() - 10,
+                                   y + row_h // 2 - lbl.get_height() // 2))
+            y += row_h + 8
+
+    def _draw_restaurant_content(self, player, npc, px, py, PW, PH):
+        title = self.font.render(npc.cuisine.upper(), True, (240, 120, 30))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+
+        gold_txt = self.font.render(f"Your gold: {player.money}", True, (220, 175, 40))
+        self.screen.blit(gold_txt, (px + PW - gold_txt.get_width() - 20, py + 10))
+
+        self._trade_rects.clear()
+        y = py + 52
+
+        for i, (item_id, cost) in enumerate(npc.menu):
+            can = npc.can_buy(i, player)
+            item_data = ITEMS.get(item_id, {})
+            item_name = item_data.get("name", item_id)
+            hunger    = item_data.get("hunger_restore", 0)
+
+            row_h = 64
+            rect = pygame.Rect(px + 20, y, PW - 40, row_h)
+            self._trade_rects[i] = rect
+
+            bg  = (35, 18, 8) if can else (26, 26, 34)
+            bdr = (210, 100, 30) if can else (55, 55, 70)
+            pygame.draw.rect(self.screen, bg, rect)
+            pygame.draw.rect(self.screen, bdr, rect, 2)
+
+            item_color = item_data.get("color", (128, 128, 128))
+            pygame.draw.rect(self.screen, item_color, (px + 28, y + 16, 30, 30))
+
+            name_col = (245, 200, 140) if can else (130, 110, 80)
+            self.screen.blit(
+                self.font.render(item_name, True, name_col),
+                (px + 68, y + 10))
+            self.screen.blit(
+                self.font.render(f"{cost} gold  •  +{hunger} hunger", True,
+                                 (200, 160, 80) if can else (100, 90, 60)),
+                (px + 68, y + 32))
+
+            lbl = self.font.render("BUY", True, (255, 175, 80) if can else (70, 70, 82))
+            self.screen.blit(lbl, (rect.right - lbl.get_width() - 10,
+                                   y + row_h // 2 - lbl.get_height() // 2))
+            y += row_h + 8
+
+    def _draw_shrine_content(self, player, npc, px, py, PW, PH):
+        title = self.font.render(npc.religion_name.upper(), True, (230, 210, 110))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+
+        # Flavor text
+        fy = py + 52
+        for line in npc.flavor.split("\n"):
+            flavor_s = self.font.render(line, True, (170, 160, 130))
+            self.screen.blit(flavor_s, (px + PW // 2 - flavor_s.get_width() // 2, fy))
+            fy += 28
+
+        # Blessing status
+        blessed = getattr(player, "blessing_timer", 0) > 0
+        if blessed:
+            secs_left = int(player.blessing_timer)
+            status_txt = self.font.render(
+                f"Blessed  ({secs_left}s remaining)", True, (120, 220, 140))
+            self.screen.blit(status_txt,
+                             (px + PW // 2 - status_txt.get_width() // 2, fy + 10))
+
+        # Blessing button
+        self._trade_rects.clear()
+        can = npc.can_bless(player)
+        btn_w, btn_h = 340, 52
+        btn_rect = pygame.Rect(px + PW // 2 - btn_w // 2, py + PH - 80, btn_w, btn_h)
+        self._trade_rects[0] = btn_rect
+
+        bg  = (40, 35, 10) if can and not blessed else (26, 26, 34)
+        bdr = (210, 180, 50) if can and not blessed else (55, 55, 70)
+        pygame.draw.rect(self.screen, bg, btn_rect)
+        pygame.draw.rect(self.screen, bdr, btn_rect, 2)
+
+        if blessed:
+            btn_label = "Already Blessed"
+            btn_col   = (140, 130, 80)
+        elif can:
+            btn_label = f"Receive Blessing  —  {npc.blessing_cost} gold"
+            btn_col   = (255, 230, 80)
+        else:
+            btn_label = f"Receive Blessing  —  {npc.blessing_cost} gold  (need more gold)"
+            btn_col   = (90, 80, 50)
+
+        lbl = self.font.render(btn_label, True, btn_col)
+        self.screen.blit(lbl, (btn_rect.centerx - lbl.get_width() // 2,
+                                btn_rect.centery - lbl.get_height() // 2))
+
+        gold_txt = self.font.render(f"Your gold: {player.money}", True, (220, 175, 40))
+        self.screen.blit(gold_txt, (px + PW - gold_txt.get_width() - 20, py + 10))

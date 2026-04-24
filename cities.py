@@ -5,8 +5,11 @@ from blocks import (STONE, BEDROCK, HOUSE_WALL, HOUSE_ROOF, AIR, LADDER,
                     HOUSE_WALL_STONE, HOUSE_ROOF_STONE,
                     HOUSE_WALL_BRICK, HOUSE_ROOF_BRICK,
                     HOUSE_WALL_DARK,  HOUSE_ROOF_DARK,
+                    RESTAURANT_WALL, RESTAURANT_AWNING,
+                    SANDSTONE_BLOCK, POLISHED_MARBLE,
+                    WHITEWASHED_WALL, MONASTERY_ROOF, MANI_STONE, PRAYER_FLAG_BLOCK,
                     WOOD_DOOR_CLOSED, ALL_LOGS, ALL_LEAVES, BUSH_BLOCKS, SAPLING)
-from constants import BLOCK_SIZE, PLAYER_W, PLAYER_H, CITY_SPACING, CITY_COUNT, NPC_INTERACT_RANGE
+from constants import BLOCK_SIZE, PLAYER_W, PLAYER_H, CITY_SPACING, CITY_COUNT, NPC_INTERACT_RANGE, CHUNK_W
 from rocks import ROCK_TYPES
 
 
@@ -355,7 +358,7 @@ class RockQuestNPC(NPC):
             player.rocks.pop(i)
         self._streak += 1
         streak_mult = 1.0 + min(self._streak - 1, 2) * 0.25
-        player.money += int(quest["reward"] * streak_mult)
+        player.money += int(quest["reward"] * streak_mult * getattr(player, "blessing_mult", 1.0))
         self.quests[quest_idx] = _build_quest(self._rng, self.difficulty)
         return True
 
@@ -420,7 +423,7 @@ class WildflowerQuestNPC(NPC):
             player.wildflowers.pop(i)
         self._streak += 1
         streak_mult = 1.0 + min(self._streak - 1, 2) * 0.25
-        player.money += int(quest["reward"] * streak_mult)
+        player.money += int(quest["reward"] * streak_mult * getattr(player, "blessing_mult", 1.0))
         self.quests[quest_idx] = _build_wf_quest(self._rng, self.difficulty)
         return True
 
@@ -462,14 +465,188 @@ class GemQuestNPC(NPC):
             player.gems.pop(i)
         self._streak += 1
         streak_mult = 1.0 + min(self._streak - 1, 2) * 0.25
-        player.money += int(quest["reward"] * streak_mult)
+        player.money += int(quest["reward"] * streak_mult * getattr(player, "blessing_mult", 1.0))
         self.quests[quest_idx] = _build_gem_quest(self._rng, self.difficulty)
+        return True
+
+
+# ---------------------------------------------------------------------------
+# Merchant / Restaurant / Shrine data
+# ---------------------------------------------------------------------------
+
+MERCHANT_SHOP_TABLE = [
+    ("iron_chunk",       8,  "Iron Chunk"),
+    ("coal",            12,  "Coal"),
+    ("lumber",          10,  "Lumber"),
+    ("wool",            15,  "Wool"),
+    ("crystal_shard",   40,  "Crystal Shard"),
+    ("stone_chip",       5,  "Stone Chip"),
+    ("obsidian_slab",   50,  "Obsidian Slab"),
+    ("ruby",            70,  "Ruby"),
+    ("milk",            18,  "Milk"),
+    ("tempered_iron",   60,  "Tempered Iron"),
+]
+
+CUISINE_MENUS = {
+    "Noodle Shop": [
+        ("beef_noodle_soup",    18),
+        ("chicken_noodle_soup", 15),
+        ("noodle_soup",         12),
+        ("ramen",               20),
+        ("chili_noodles",       16),
+    ],
+    "BBQ Stall": [
+        ("mutton_skewer",       14),
+        ("bbq_beef_ribs",       22),
+        ("grilled_corn",         8),
+        ("stuffed_pepper",      16),
+        ("grilled_mushroom",    12),
+        ("eggplant_skewer",     13),
+    ],
+    "Dim Sum House": [
+        ("steamed_bun",          8),
+        ("veggie_dumplings",    14),
+        ("chicken_bun",         15),
+        ("crystal_rolls",       13),
+        ("rice_noodle_roll",    10),
+    ],
+    "Bakery": [
+        ("bread",                8),
+        ("corn_bread",          10),
+        ("pumpkin_pie",         20),
+        ("apple_pie",           18),
+        ("carrot_cake",         22),
+        ("cheese_bread",        14),
+    ],
+    "Stew House": [
+        ("beef_stew",           22),
+        ("mutton_hotpot",       20),
+        ("chicken_mushroom_pot", 18),
+        ("hot_pot_broth",       15),
+        ("braised_chicken",     17),
+    ],
+    "Tapas Bar": [
+        ("patatas_bravas",      12),
+        ("croquetas",           14),
+        ("gambas_al_ajillo",    18),
+        ("tortilla_espanola",   16),
+        ("pimientos_padron",    10),
+        ("pan_tostado",          8),
+        ("chorizo",             13),
+        ("espetos",             15),
+    ],
+    "Mezze Restaurant": [
+        ("hummus",              10),
+        ("baba_ghanoush",       12),
+        ("falafel",             13),
+        ("shawarma",            20),
+        ("tabbouleh",           11),
+        ("kibbeh",              15),
+        ("fattoush",            12),
+        ("manakish",            14),
+        ("kofte",               16),
+        ("labneh",               9),
+    ],
+}
+
+RELIGION_BY_BIOME = {
+    "alpine_mountain": ("Himalayan Monastery",  "dzong"),
+    "rocky_mountain":  ("Mountain Monastery",   "temple"),
+    "temperate":       ("Forest Chapel",        "chapel"),
+    "boreal":          ("Forest Chapel",        "chapel"),
+    "birch_forest":    ("Woodland Shrine",      "chapel"),
+    "redwood":         ("Grove Sanctuary",      "chapel"),
+    "desert":          ("Desert Sanctum",       "desert_shrine"),
+    "arid_steppe":     ("Desert Sanctum",       "desert_shrine"),
+    "savanna":         ("Savanna Altar",        "desert_shrine"),
+    "jungle":          ("Jungle Altar",         "jungle_shrine"),
+    "tropical":        ("Tropical Shrine",      "jungle_shrine"),
+    "wetland":         ("Swamp Oracle",         "jungle_shrine"),
+    "tundra":          ("Standing Stones",      "standing_stones"),
+    "steppe":          ("Ancestor Circle",      "standing_stones"),
+    "canyon":          ("Cave Sanctum",         "temple"),
+}
+
+SHRINE_FLAVOR = {
+    "dzong":           "Prayer flags snap in the mountain wind.\nThe whitewashed walls glow against dark peaks.\nBells toll somewhere above the clouds.",
+    "temple":          "Incense drifts through stone archways.\nMonks chant in quiet reverence.",
+    "chapel":          "Sunlight filters through the canopy above.\nA small bell hangs in the doorway.\nThe wood is worn smooth by many hands.",
+    "desert_shrine":   "Carved stone glows in the desert heat.\nOld prayers are scratched into the walls.\nA clay bowl holds the remains of an offering.",
+    "jungle_shrine":   "Moss clings to ancient carvings.\nThe air hums with the sound of insects.\nSomething watches from between the stones.",
+    "standing_stones": "Weathered stones stand in a silent row.\nNames are carved in a forgotten tongue.\nThe ground between them never grows grass.",
+}
+
+
+class MerchantNPC(NPC):
+    def __init__(self, x, y, world, rng):
+        super().__init__(x, y, world, "npc_merchant")
+        n = rng.randint(3, 4)
+        self.shop = rng.sample(MERCHANT_SHOP_TABLE, n)
+
+    def can_buy(self, idx, player):
+        _, cost, _ = self.shop[idx]
+        return player.money >= cost
+
+    def execute_purchase(self, idx, player):
+        if not self.can_buy(idx, player):
+            return False
+        item_id, cost, _ = self.shop[idx]
+        player.money -= cost
+        player._add_item(item_id)
+        return True
+
+
+class RestaurantNPC(NPC):
+    def __init__(self, x, y, world, rng):
+        super().__init__(x, y, world, "npc_chef")
+        self.cuisine = rng.choice(list(CUISINE_MENUS.keys()))
+        self.menu = CUISINE_MENUS[self.cuisine]
+
+    def can_buy(self, idx, player):
+        _, cost = self.menu[idx]
+        return player.money >= cost
+
+    def execute_purchase(self, idx, player):
+        if not self.can_buy(idx, player):
+            return False
+        item_id, cost = self.menu[idx]
+        player.money -= cost
+        player._add_item(item_id)
+        return True
+
+
+class ShrineKeeperNPC(NPC):
+    def __init__(self, x, y, world, rng, difficulty=0, biodome="temperate"):
+        super().__init__(x, y, world, "npc_monk")
+        display_name, style = RELIGION_BY_BIOME.get(biodome, ("Forest Chapel", "chapel"))
+        self.religion_name = display_name
+        self.religion_style = style
+        self.flavor = SHRINE_FLAVOR.get(style, SHRINE_FLAVOR["chapel"])
+        self.blessing_cost = 10 + difficulty * 10
+
+    def can_bless(self, player):
+        return player.money >= self.blessing_cost
+
+    def give_blessing(self, player):
+        if not self.can_bless(player):
+            return False
+        player.money -= self.blessing_cost
+        player.blessing_timer = 180.0
+        player.blessing_mult = 1.25
         return True
 
 
 # ---------------------------------------------------------------------------
 # City generation
 # ---------------------------------------------------------------------------
+
+_DESERT_BIOMES    = {"desert", "arid_steppe", "savanna"}
+_DESERT_PALETTE   = (SANDSTONE_BLOCK, POLISHED_MARBLE)
+_DOME_SWAP        = {"house": "dome", "two_story": "dome", "longhouse": "dome"}
+
+_HIMALAYAN_BIOMES = {"alpine_mountain", "tundra"}
+_HIMALAYAN_PALETTE = (WHITEWASHED_WALL, MONASTERY_ROOF)
+_HIMALAYAN_SWAP   = {"house": "himalayan", "two_story": "himalayan", "longhouse": "himalayan"}
 
 # Building style palettes: (wall_block, roof_block)
 BUILDING_PALETTES = [
@@ -482,41 +659,47 @@ BUILDING_PALETTES = [
 # Building slot format: (offset_from_cx, (min_w, max_w), (min_h, max_h), variants)
 # variants is a list sampled uniformly; repeat entries to weight them.
 # Use (offset, None, None, None) for an outdoor NPC slot with no building.
-# Variants: "house", "two_story", "tower", "longhouse", "ruin"
+# Variants: "house", "two_story", "tower", "longhouse", "ruin", "restaurant", "shrine"
 CITY_CONFIGS = {
     "small": {
-        "half_w": 11,
+        "half_w": 16,
         "buildings": [
-            (-10, (4, 6), (3, 5), ["house", "house", "two_story", "tower", "ruin"]),
-            (  4, (4, 6), (3, 5), ["house", "house", "two_story", "longhouse", "ruin"]),
+            (-15, (4, 6), (3, 5), ["house", "house", "two_story", "tower", "ruin"]),
+            ( -3, (4, 5), (3, 4), ["restaurant"]),
+            (  5, (4, 6), (3, 5), ["house", "house", "two_story", "longhouse", "ruin"]),
         ],
-        "npc_types": ["quest_rock", "trade"],
+        "npc_types": ["quest_rock", "restaurant_npc", "merchant"],
     },
     "medium": {
-        "half_w": 18,
-        "buildings": [
-            (-17, (4, 6), (3, 5), ["house", "two_story", "tower", "ruin", "longhouse"]),
-            (-10, (4, 6), (3, 4), ["house", "house", "two_story", "longhouse", "ruin"]),
-            (  0, None,   None,   None),    # outdoor NPC at city center
-            (  4, (4, 6), (3, 4), ["house", "house", "two_story", "ruin", "tower"]),
-            ( 11, (4, 6), (3, 5), ["house", "two_story", "tower", "longhouse", "ruin"]),
-        ],
-        "npc_types": ["quest_rock", "quest_wildflower", "trade", "quest_gem", "trade"],
-    },
-    "large": {
         "half_w": 26,
         "buildings": [
-            (-25, (5, 7), (4, 5), ["house", "two_story", "two_story", "tower", "longhouse"]),
-            (-17, (4, 6), (3, 5), ["house", "house", "ruin", "tower", "two_story"]),
-            (-10, (4, 5), (3, 4), ["house", "house", "two_story", "ruin", "longhouse"]),
-            ( -2, None,   None,   None),    # outdoor NPC — main-street left
-            (  4, (4, 5), (3, 4), ["house", "two_story", "ruin", "tower", "longhouse"]),
-            ( 10, (4, 6), (3, 5), ["house", "house", "tower", "ruin", "two_story"]),
-            ( 17, None,   None,   None),    # outdoor NPC — main-street right
-            ( 20, (5, 7), (4, 5), ["house", "two_story", "two_story", "tower", "longhouse"]),
+            (-25, (4, 6), (3, 5), ["house", "two_story", "tower", "ruin", "longhouse"]),
+            (-17, (4, 6), (3, 4), ["house", "house", "two_story", "longhouse", "ruin"]),
+            ( -8, (4, 5), (3, 4), ["restaurant"]),
+            (  0, None,   None,   None),    # outdoor NPC at city center
+            (  5, (4, 6), (3, 4), ["house", "house", "two_story", "ruin", "tower"]),
+            ( 13, (4, 6), (3, 5), ["house", "two_story", "tower", "longhouse", "ruin"]),
+            ( 19, (6, 7), (5, 7), ["shrine"]),
         ],
-        "npc_types": ["quest_rock", "quest_wildflower", "trade", "trade",
-                      "quest_gem", "trade", "quest_wildflower", "quest_rock"],
+        "npc_types": ["quest_rock", "quest_wildflower", "restaurant_npc",
+                      "merchant", "quest_gem", "trade", "shrine_npc"],
+    },
+    "large": {
+        "half_w": 36,
+        "buildings": [
+            (-35, (5, 7), (4, 5), ["house", "two_story", "two_story", "tower", "longhouse"]),
+            (-27, (4, 6), (3, 5), ["house", "house", "ruin", "tower", "two_story"]),
+            (-19, (4, 5), (3, 4), ["house", "house", "two_story", "ruin", "longhouse"]),
+            (-10, None,   None,   None),    # outdoor NPC — main-street left
+            ( -2, (4, 5), (3, 4), ["house", "two_story", "ruin", "tower", "longhouse"]),
+            (  5, (4, 5), (3, 4), ["restaurant"]),
+            ( 13, None,   None,   None),    # outdoor NPC — main-street right
+            ( 18, (4, 6), (3, 5), ["house", "house", "tower", "ruin", "two_story"]),
+            ( 26, (7, 9), (5, 7), ["shrine"]),
+        ],
+        "npc_types": ["quest_rock", "quest_wildflower", "trade", "merchant",
+                      "quest_gem", "restaurant_npc", "quest_wildflower", "trade",
+                      "shrine_npc"],
     },
 }
 
@@ -629,6 +812,405 @@ def _place_house_two_story(world, left_x, sy, width, floor1_h, floor2_h,
             world.set_block(rx, peak_y, roof_block)
 
 
+def _place_restaurant(world, left_x, sy, width, wall_height):
+    """Restaurant: hollow interior, doors on both sides, flat crimson awning (no peak)."""
+    for wy in range(sy - wall_height, sy):
+        for wx in range(left_x, left_x + width):
+            if not (0 <= wy < world.height):
+                continue
+            is_top        = (wy == sy - wall_height)
+            is_left_side  = (wx == left_x)
+            is_right_side = (wx == left_x + width - 1)
+            is_door_row   = (wy >= sy - 2)
+            is_left_door  = is_left_side  and is_door_row
+            is_right_door = is_right_side and is_door_row
+
+            if is_left_door or is_right_door:
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
+            elif is_top or is_left_side or is_right_side:
+                world.set_block(wx, wy, RESTAURANT_WALL)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, RESTAURANT_WALL)
+
+    # Flat awning overhang (wider than normal, no peak — distinctive canopy look)
+    awning_y = sy - wall_height - 1
+    for rx in range(left_x - 2, left_x + width + 2):
+        if 0 <= awning_y < world.height:
+            world.set_block(rx, awning_y, RESTAURANT_AWNING)
+
+
+def _place_temple(world, left_x, sy, width, wall_height):
+    """Wide stone temple with a 3-tier pagoda-style roof."""
+    # Walls and hollow interior
+    for wy in range(sy - wall_height, sy):
+        for wx in range(left_x, left_x + width):
+            if not (0 <= wy < world.height):
+                continue
+            is_top        = (wy == sy - wall_height)
+            is_left_side  = (wx == left_x)
+            is_right_side = (wx == left_x + width - 1)
+            is_door_row   = (wy >= sy - 2)
+            # Wide double-door entrance on both sides
+            is_left_door  = is_left_side  and is_door_row
+            is_right_door = is_right_side and is_door_row
+            is_left_door2  = (wx == left_x + 1) and is_door_row
+            is_right_door2 = (wx == left_x + width - 2) and is_door_row
+
+            if is_left_door or is_right_door or is_left_door2 or is_right_door2:
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
+            elif is_top or is_left_side or is_right_side:
+                world.set_block(wx, wy, HOUSE_WALL_STONE)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, HOUSE_WALL_STONE)
+
+    # 3-tier pagoda roof — each tier narrows by 1 block per side and adds 1 row
+    base_y = sy - wall_height - 1
+    for tier in range(3):
+        tier_y = base_y - tier * 2
+        shrink = tier
+        for rx in range(left_x - 1 + shrink, left_x + width + 1 - shrink):
+            if 0 <= tier_y < world.height:
+                world.set_block(rx, tier_y, HOUSE_ROOF_STONE)
+        peak_y = tier_y - 1
+        for rx in range(left_x + shrink, left_x + width - shrink):
+            if 0 <= peak_y < world.height:
+                world.set_block(rx, peak_y, HOUSE_ROOF_STONE)
+
+
+def _place_dome_house(world, left_x, sy, width, wall_height,
+                      wall_block=SANDSTONE_BLOCK, dome_block=POLISHED_MARBLE):
+    """Desert dome building: sandstone box walls topped with a white marble semicircle."""
+    center_x = left_x + width // 2
+
+    for wy in range(sy - wall_height, sy):
+        for wx in range(left_x, left_x + width):
+            if not (0 <= wy < world.height):
+                continue
+            is_left       = (wx == left_x)
+            is_right      = (wx == left_x + width - 1)
+            is_door_row   = (wy >= sy - 2)
+            is_left_door  = is_left  and is_door_row
+            is_right_door = is_right and is_door_row
+
+            if is_left_door or is_right_door:
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
+            elif is_left or is_right:
+                world.set_block(wx, wy, wall_block)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, wall_block)
+
+    # Semicircular dome — radius = half of building width
+    radius = width // 2
+    dome_base_y = sy - wall_height - 1
+    for row in range(radius + 1):
+        half_w = int((radius * radius - row * row) ** 0.5)
+        row_y  = dome_base_y - row
+        if not (0 <= row_y < world.height):
+            break
+        for dx in range(-half_w, half_w + 1):
+            rx = center_x + dx
+            if 0 <= rx < world.width:
+                world.set_block(rx, row_y, dome_block)
+
+
+def _place_chapel(world, left_x, sy, width, wall_height):
+    """Wood chapel with a single center door and a tall triangular gabled roof."""
+    center = left_x + width // 2
+    for wy in range(sy - wall_height, sy):
+        for wx in range(left_x, left_x + width):
+            if not (0 <= wy < world.height):
+                continue
+            is_top        = (wy == sy - wall_height)
+            is_left_side  = (wx == left_x)
+            is_right_side = (wx == left_x + width - 1)
+            is_door_row   = (wy >= sy - 2)
+            is_left_door  = is_left_side  and is_door_row
+            is_right_door = is_right_side and is_door_row
+            is_center_door = (wx == center) and is_door_row
+
+            if is_left_door or is_right_door or is_center_door:
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
+            elif is_top or is_left_side or is_right_side:
+                world.set_block(wx, wy, HOUSE_WALL)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, HOUSE_WALL)
+
+    # Tall triangular gabled roof — each row narrows by 1 per side until 1 block wide
+    base_y = sy - wall_height - 1
+    half = width // 2 + 1
+    for row in range(half):
+        row_y = base_y - row
+        if not (0 <= row_y < world.height):
+            break
+        for rx in range(left_x - 1 + row, left_x + width + 1 - row):
+            if 0 <= rx < world.width:
+                world.set_block(rx, row_y, HOUSE_ROOF)
+
+    # Bell tower: one column above the roof peak
+    peak_y = base_y - half
+    for by in range(peak_y - 2, peak_y):
+        if 0 <= by < world.height:
+            world.set_block(center, by, HOUSE_WALL)
+
+
+def _place_desert_shrine(world, left_x, sy, width, wall_height):
+    """Open-sided shrine with stone columns and a wide flat overhanging roof."""
+    col_positions = {left_x, left_x + width // 2, left_x + width - 1}
+    for wy in range(sy - wall_height, sy):
+        for wx in range(left_x, left_x + width):
+            if not (0 <= wy < world.height):
+                continue
+            if wx in col_positions:
+                world.set_block(wx, wy, HOUSE_WALL_BRICK)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, HOUSE_WALL_STONE)
+
+    # Double-layer flat roof with wide overhang
+    for roof_y, overhang in ((sy - wall_height - 1, 1), (sy - wall_height - 2, 2)):
+        if 0 <= roof_y < world.height:
+            for rx in range(left_x - overhang, left_x + width + overhang):
+                if 0 <= rx < world.width:
+                    world.set_block(rx, roof_y, HOUSE_WALL_STONE)
+
+
+def _place_jungle_shrine(world, left_x, sy, width, wall_height):
+    """Solid stone stepped pyramid narrowing toward a single capstone."""
+    steps = min(wall_height, (width // 2) + 1)
+    for step in range(steps):
+        step_y = sy - step - 1
+        if not (0 <= step_y < world.height):
+            break
+        for wx in range(left_x + step, left_x + width - step):
+            if 0 <= wx < world.width:
+                world.set_block(wx, step_y, HOUSE_WALL_STONE)
+
+    # Capstone above pyramid tip
+    cap_y = sy - steps - 1
+    mid   = left_x + width // 2
+    if 0 <= cap_y < world.height:
+        world.set_block(mid, cap_y, HOUSE_ROOF_STONE)
+
+
+def _place_standing_stones(world, left_x, sy, width, wall_height):
+    """Three tall stone pillars — shorter at edges, tallest at center."""
+    positions = [left_x, left_x + width // 2, left_x + width - 1]
+    heights   = [wall_height - 1, wall_height + 1, wall_height - 1]
+    for sx, h in zip(positions, heights):
+        if not (0 <= sx < world.width):
+            continue
+        for wy in range(sy - h, sy):
+            if 0 <= wy < world.height:
+                world.set_block(sx, wy, HOUSE_WALL_STONE)
+        # Flat capstone block
+        cap_y = sy - h - 1
+        if 0 <= cap_y < world.height:
+            world.set_block(sx, cap_y, HOUSE_ROOF_STONE)
+
+
+def _place_himalayan_house(world, left_x, sy, width, wall_height):
+    """Himalayan building: MANI_STONE base, whitewashed walls, flat roof + prayer flags."""
+    stone_rows = min(2, wall_height - 2)
+
+    for wy in range(sy - wall_height, sy):
+        for wx in range(left_x, left_x + width):
+            if not (0 <= wy < world.height):
+                continue
+            is_top        = (wy == sy - wall_height)
+            is_left_side  = (wx == left_x)
+            is_right_side = (wx == left_x + width - 1)
+            is_door_row   = (wy >= sy - 2)
+            is_left_door  = is_left_side  and is_door_row
+            is_right_door = is_right_side and is_door_row
+            is_stone_base = (wy >= sy - stone_rows)
+
+            use_block = MANI_STONE if is_stone_base else WHITEWASHED_WALL
+
+            if is_left_door or is_right_door:
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
+            elif is_top or is_left_side or is_right_side:
+                world.set_block(wx, wy, use_block)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, use_block)
+
+    # Flat roof with slight overhang — characteristic Himalayan silhouette
+    roof_y = sy - wall_height - 1
+    for rx in range(left_x - 1, left_x + width + 1):
+        if 0 <= roof_y < world.height and abs(rx) < world.width:
+            world.set_block(rx, roof_y, MONASTERY_ROOF)
+
+    # Prayer flags along the roof ridge
+    flag_y = roof_y - 1
+    for fx in range(left_x, left_x + width, 2):
+        if 0 <= flag_y < world.height and abs(fx) < world.width:
+            world.set_block(fx, flag_y, PRAYER_FLAG_BLOCK)
+
+
+def _place_dzong(world, left_x, sy, width, wall_height):
+    """Himalayan fortress-monastery (Dzong): battered stone base, white upper walls, tiered roof."""
+    stone_split = wall_height * 2 // 3  # lower portion in MANI_STONE
+
+    for wy in range(sy - wall_height, sy):
+        for wx in range(left_x, left_x + width):
+            if not (0 <= wy < world.height):
+                continue
+            is_stone_half = (wy >= sy - stone_split)
+            wall_blk      = MANI_STONE if is_stone_half else WHITEWASHED_WALL
+            is_left_wall  = (wx <= left_x + 1)
+            is_right_wall = (wx >= left_x + width - 2)
+            is_top        = (wy == sy - wall_height)
+            is_door_row   = (wy >= sy - 2)
+            # Wide double-door entrance on both sides
+            is_left_door  = is_door_row and wx == left_x
+            is_left_door2 = is_door_row and wx == left_x + 1
+            is_right_door  = is_door_row and wx == left_x + width - 1
+            is_right_door2 = is_door_row and wx == left_x + width - 2
+
+            if is_left_door or is_left_door2 or is_right_door or is_right_door2:
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
+            elif is_top or is_left_wall or is_right_wall:
+                world.set_block(wx, wy, wall_blk)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, wall_blk)
+
+    # 3-tier monastery roof — each tier slightly narrower
+    base_y = sy - wall_height - 1
+    for tier in range(3):
+        tier_y = base_y - tier * 2
+        shrink = tier
+        for rx in range(left_x - 1 + shrink, left_x + width + 1 - shrink):
+            if 0 <= tier_y < world.height and abs(rx) < world.width:
+                world.set_block(rx, tier_y, MONASTERY_ROOF)
+        fill_y = tier_y + 1
+        for rx in range(left_x + shrink, left_x + width - shrink):
+            if 0 <= fill_y < world.height and abs(rx) < world.width:
+                world.set_block(rx, fill_y, MONASTERY_ROOF)
+
+    # Prayer flags strung across the top
+    flag_y = base_y - 7
+    for fx in range(left_x, left_x + width):
+        if 0 <= flag_y < world.height and abs(fx) < world.width:
+            world.set_block(fx, flag_y, PRAYER_FLAG_BLOCK)
+
+
+def _place_shrine_for_biome(world, left_x, sy, width, wall_height, biodome):
+    _, style = RELIGION_BY_BIOME.get(biodome, ("Forest Chapel", "chapel"))
+    if style == "dzong":
+        _place_dzong(world, left_x, sy, width, wall_height)
+    elif style == "chapel":
+        _place_chapel(world, left_x, sy, width, wall_height)
+    elif style == "desert_shrine":
+        _place_desert_shrine(world, left_x, sy, width, wall_height)
+    elif style == "jungle_shrine":
+        _place_jungle_shrine(world, left_x, sy, width, wall_height)
+    elif style == "standing_stones":
+        _place_standing_stones(world, left_x, sy, width, wall_height)
+    else:
+        _place_temple(world, left_x, sy, width, wall_height)
+
+
+def _build_single_city(world, rng, city_bx, difficulty):
+    sy = world.surface_y_at(city_bx)
+    biodome = world.biodome_at(city_bx)
+    city_size = rng.choice(_SIZE_BY_DIFFICULTY[difficulty])
+    cfg = CITY_CONFIGS[city_size]
+    half_w = cfg["half_w"]
+
+    world.city_zones.append((city_bx - half_w, city_bx + half_w))
+
+    # Pre-load every chunk the city footprint touches so set_block never silently fails
+    chunk_lo = (city_bx - half_w - 4) // CHUNK_W
+    chunk_hi = (city_bx + half_w + 4) // CHUNK_W
+    for c_idx in range(chunk_lo, chunk_hi + 1):
+        world.load_chunk(c_idx)
+
+    for bx in range(city_bx - half_w - 2, city_bx + half_w + 3):
+        for by in range(max(0, sy - 35), sy):
+            if world.get_block(bx, by) in _PLANT_BLOCKS:
+                world.set_block(bx, by, AIR)
+
+    # Flatten terrain across the city footprint to sy
+    for bx in range(city_bx - half_w, city_bx + half_w + 1):
+        col_sy = world.surface_y_at(bx)
+        # Hill: remove blocks above city floor
+        for by in range(col_sy, sy):
+            blk = world.get_block(bx, by)
+            if blk not in (AIR, BEDROCK):
+                world.set_block(bx, by, AIR)
+        # Valley: fill gaps below city floor with stone
+        for by in range(sy, col_sy + 1):
+            if world.get_block(bx, by) == AIR:
+                world.set_block(bx, by, STONE)
+
+    for bx in range(city_bx - half_w, city_bx + half_w + 1):
+        if world.get_block(bx, sy) != BEDROCK:
+            world.set_block(bx, sy, STONE)
+
+    is_desert    = biodome in _DESERT_BIOMES
+    is_himalayan = biodome in _HIMALAYAN_BIOMES
+
+    for (offset, w_range, h_range, variants), npc_type in zip(cfg["buildings"], cfg["npc_types"]):
+        left_x = city_bx + offset
+        if is_desert:
+            wall_block, roof_block = _DESERT_PALETTE
+            if variants:
+                variants = [_DOME_SWAP.get(v, v) for v in variants]
+        elif is_himalayan:
+            wall_block, roof_block = _HIMALAYAN_PALETTE
+            if variants:
+                variants = [_HIMALAYAN_SWAP.get(v, v) for v in variants]
+        else:
+            wall_block, roof_block = rng.choice(BUILDING_PALETTES)
+
+        if w_range is None:
+            npc_bx = left_x
+        else:
+            width   = rng.randint(*w_range)
+            height  = rng.randint(*h_range)
+            variant = rng.choice(variants) if variants else "house"
+
+            if variant == "dome":
+                _place_dome_house(world, left_x, sy, width, height, wall_block)
+            elif variant == "himalayan":
+                _place_himalayan_house(world, left_x, sy, width, height)
+            elif variant == "two_story":
+                floor2_h = rng.randint(2, 3)
+                _place_house_two_story(world, left_x, sy, width, height, floor2_h,
+                                       wall_block, roof_block)
+            elif variant == "restaurant":
+                _place_restaurant(world, left_x, sy, width, height)
+            elif variant == "shrine":
+                _place_shrine_for_biome(world, left_x, sy, width, height, biodome)
+            else:
+                _place_house(world, left_x, sy, width, height, wall_block, roof_block)
+
+            npc_bx = left_x + 1
+
+        npc_px = npc_bx * BLOCK_SIZE + (BLOCK_SIZE - NPC.NPC_W) // 2
+        npc_py = (sy - 2) * BLOCK_SIZE
+
+        if npc_type == "quest_rock":
+            world.entities.append(RockQuestNPC(npc_px, npc_py, world, rng, difficulty))
+        elif npc_type == "trade":
+            world.entities.append(TradeNPC(npc_px, npc_py, world, rng))
+        elif npc_type == "quest_wildflower":
+            world.entities.append(WildflowerQuestNPC(npc_px, npc_py, world, rng, difficulty))
+        elif npc_type == "quest_gem":
+            world.entities.append(GemQuestNPC(npc_px, npc_py, world, rng, difficulty))
+        elif npc_type == "merchant":
+            world.entities.append(MerchantNPC(npc_px, npc_py, world, rng))
+        elif npc_type == "restaurant_npc":
+            world.entities.append(RestaurantNPC(npc_px, npc_py, world, rng))
+        elif npc_type == "shrine_npc":
+            world.entities.append(ShrineKeeperNPC(npc_px, npc_py, world, rng, difficulty, biodome))
+
+
 def generate_cities(world, seed):
     rng = random.Random(seed + 77777)
     placed = 0
@@ -637,60 +1219,28 @@ def generate_cities(world, seed):
 
     while placed < CITY_COUNT:
         jitter = rng.randint(-6, 6)
-        cx = x + jitter
-        sy = world.surface_y_at(cx)
-
+        city_bx = x + jitter
         difficulty = min(placed // 2, 2)
-        city_size  = rng.choice(_SIZE_BY_DIFFICULTY[difficulty])
-        cfg        = CITY_CONFIGS[city_size]
-        half_w     = cfg["half_w"]
-
-        world.city_zones.append((cx - half_w, cx + half_w))
-
-        # Clear vegetation above city footprint
-        for bx in range(cx - half_w - 2, cx + half_w + 3):
-            for by in range(max(0, sy - 35), sy):
-                if world.get_block(bx, by) in _PLANT_BLOCKS:
-                    world.set_block(bx, by, AIR)
-
-        # Stone platform
-        for bx in range(cx - half_w, cx + half_w + 1):
-            if world.get_block(bx, sy) != BEDROCK:
-                world.set_block(bx, sy, STONE)
-
-        # Build structures and place NPCs
-        for (offset, w_range, h_range, variants), npc_type in zip(cfg["buildings"], cfg["npc_types"]):
-            left_x = cx + offset
-            wall_block, roof_block = rng.choice(BUILDING_PALETTES)
-
-            if w_range is None:
-                # Outdoor NPC — no building
-                npc_bx = left_x
-            else:
-                width   = rng.randint(*w_range)
-                height  = rng.randint(*h_range)
-                variant = rng.choice(variants) if variants else "house"
-
-                if variant == "two_story":
-                    floor2_h = rng.randint(2, 3)
-                    _place_house_two_story(world, left_x, sy, width, height, floor2_h,
-                                           wall_block, roof_block)
-                else:
-                    _place_house(world, left_x, sy, width, height, wall_block, roof_block)
-
-                npc_bx = left_x + 1
-
-            npc_px = npc_bx * BLOCK_SIZE + (BLOCK_SIZE - NPC.NPC_W) // 2
-            npc_py = (sy - 2) * BLOCK_SIZE
-
-            if npc_type == "quest_rock":
-                world.entities.append(RockQuestNPC(npc_px, npc_py, world, rng, difficulty))
-            elif npc_type == "trade":
-                world.entities.append(TradeNPC(npc_px, npc_py, world, rng))
-            elif npc_type == "quest_wildflower":
-                world.entities.append(WildflowerQuestNPC(npc_px, npc_py, world, rng, difficulty))
-            elif npc_type == "quest_gem":
-                world.entities.append(GemQuestNPC(npc_px, npc_py, world, rng, difficulty))
-
+        _build_single_city(world, rng, city_bx, difficulty)
         placed += 1
         x += CITY_SPACING
+
+
+def generate_city_for_chunk(world, seed, cx):
+    """Build a city in newly-generated chunk cx if a city slot falls there."""
+    from constants import CHUNK_W
+    base_x = cx * CHUNK_W
+    half = CITY_SPACING // 2
+    slot_x = None
+    for bx in range(base_x, base_x + CHUNK_W):
+        if ((bx % CITY_SPACING) + CITY_SPACING) % CITY_SPACING == half:
+            slot_x = bx
+            break
+    if slot_x is None:
+        return
+    rng = random.Random(seed + slot_x * 9001 + 33333)
+    jitter = rng.randint(-6, 6)
+    city_bx = slot_x + jitter
+    if any(lo - 10 <= city_bx <= hi + 10 for lo, hi in world.city_zones):
+        return
+    _build_single_city(world, rng, city_bx, 2)
