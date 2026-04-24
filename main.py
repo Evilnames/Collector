@@ -13,7 +13,7 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK
 
 SETTINGS_PATH = Path(__file__).parent / "settings.json"
 
@@ -421,6 +421,7 @@ def main():
 
     def _close_all_ui():
         ui.pause_open = False
+        ui.help_open = False
         ui.research_open = ui.inventory_open = ui.crafting_open = False
         ui.collection_open = ui.refinery_open = ui.npc_open = False
         ui.breeding_open = False
@@ -437,12 +438,16 @@ def main():
         ui.chest_open = False
         ui.active_chest_inv = None
         ui.active_chest_pos = None
+        ui.garden_open = False
+        ui.active_garden_flowers = None
+        ui.active_garden_pos = None
 
     def _any_ui_open():
-        return any([ui.pause_open, ui.research_open, ui.inventory_open, ui.crafting_open,
+        return any([ui.pause_open, ui.help_open, ui.research_open, ui.inventory_open, ui.crafting_open,
                     ui.collection_open, ui.refinery_open, ui.npc_open,
                     ui.automation_open, ui.farm_bot_open, ui.chest_open,
-                    ui.backhoe_open, ui.breeding_open])
+                    ui.backhoe_open, ui.breeding_open, ui.garden_open,
+                    ui.horse_breeding_open, ui._hb_active])
 
     def _find_nearby_npc(world, player):
         from cities import NPC
@@ -504,6 +509,8 @@ def main():
 
     _fps_font = pygame.font.SysFont("consolas", 16)
     _fps_smooth = 60.0
+    _fps_last = -1
+    fps_surf = _fps_font.render("FPS: 60", True, (255, 255, 255))
 
     running = True
     while running:
@@ -550,6 +557,10 @@ def main():
                 # Fermentation Tank: P punchdown, ENTER to finish
                 if ui.refinery_open and ui.refinery_block_id == FERMENTATION_BLOCK:
                     ui.handle_fermenter_keydown(event.key, player)
+
+                # Copper Still: ENTER to make cuts
+                if ui.refinery_open and ui.refinery_block_id == STILL_BLOCK:
+                    ui.handle_still_keydown(event.key, player)
 
                 if event.key == pygame.K_ESCAPE:
                     if player.fishing_state in ("casting", "biting"):
@@ -620,7 +631,22 @@ def main():
                     ui.research_open = ui.inventory_open = ui.crafting_open = False
                     ui.equipment_crafting_open = ui.collection_open = ui.refinery_open = False
 
+                if event.key == pygame.K_h:
+                    ui.help_open = not ui.help_open
+                    if ui.help_open:
+                        ui.research_open = ui.inventory_open = ui.crafting_open = False
+                        ui.collection_open = ui.refinery_open = ui.breeding_open = False
+
                 if event.key == pygame.K_e:
+                    # Dismount horse if currently riding
+                    if player.mounted_horse is not None:
+                        horse = player.mounted_horse
+                        horse.rider = None
+                        player.x = horse.x + horse.W + 4
+                        player.y = horse.y
+                        player.mounted_horse = None
+                        continue
+
                     # Dismount backhoe if currently riding
                     if player.mounted_machine is not None:
                         bh = player.mounted_machine
@@ -681,6 +707,7 @@ def main():
                         ui.npc_open = False
                         ui.active_npc = None
                         nearby_chest = player.get_nearby_chest()
+                        nearby_garden = player.get_nearby_garden()
                         if nearby_chest is not None:
                             if ui.chest_open and ui.active_chest_pos == nearby_chest:
                                 ui.chest_open = False
@@ -692,6 +719,17 @@ def main():
                                 ui.active_chest_inv = world.chest_data.setdefault((bx, by), {})
                                 ui.active_chest_pos = nearby_chest
                                 ui.chest_open = True
+                        elif nearby_garden is not None:
+                            if ui.garden_open and ui.active_garden_pos == nearby_garden:
+                                ui.garden_open = False
+                                ui.active_garden_flowers = None
+                                ui.active_garden_pos = None
+                            else:
+                                _close_all_ui()
+                                bx, by = nearby_garden
+                                ui.active_garden_flowers = world.garden_data.setdefault((bx, by), [])
+                                ui.active_garden_pos = nearby_garden
+                                ui.garden_open = True
                         else:
                             equip = player.get_nearby_equipment()
                             if equip is not None:
@@ -701,6 +739,18 @@ def main():
                                 ui.equipment_crafting_open = ui.collection_open = False
                                 if equip == COMPOST_BIN_BLOCK:
                                     ui.active_compost_bin_pos = player.get_nearby_equipment_pos(COMPOST_BIN_BLOCK)
+                                elif equip == STABLE_BLOCK:
+                                    # Find two nearby tamed horses to populate the breeding panel
+                                    from horses import Horse as _Horse
+                                    tamed_horses = [
+                                        e for e in world.entities
+                                        if isinstance(e, _Horse) and e.tamed and not e.dead
+                                        and e._stable_nearby(world)
+                                    ]
+                                    if len(tamed_horses) >= 2:
+                                        stable_pos = player.get_nearby_equipment_pos(STABLE_BLOCK)
+                                        ui.open_horse_breeding(stable_pos, tamed_horses[0], tamed_horses[1])
+                                        ui.refinery_open = False
                                 else:
                                     ui.active_compost_bin_pos = None
                             else:
@@ -719,7 +769,9 @@ def main():
 
             if event.type == pygame.MOUSEWHEEL:
                 if not player.dead and not ui.cheat_open:
-                    if ui.inventory_open or ui.crafting_open or ui.collection_open or ui.refinery_open or ui.chest_open or ui.breeding_open:
+                    if ui.help_open:
+                        ui._help_scroll = max(0, min(ui._help_max_scroll, ui._help_scroll - event.y * 20))
+                    elif ui.inventory_open or ui.crafting_open or ui.collection_open or ui.refinery_open or ui.chest_open or ui.breeding_open or ui.garden_open or ui.horse_breeding_open:
                         ui.handle_scroll(event.y)
                     elif not _any_ui_open():
                         player.selected_slot = (player.selected_slot - event.y) % 8
@@ -735,6 +787,8 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if player.dead or ui.cheat_open:
                     pass
+                elif ui.help_open:
+                    ui.handle_help_click(event.pos)
                 elif ui.pause_open:
                     action = ui.handle_pause_click(event.pos)
                     if action == "resume":
@@ -824,8 +878,12 @@ def main():
                                 ui._ferm_temp_held = True
                             if getattr(ui, '_ferm_nut_btn', None) and ui._ferm_nut_btn.collidepoint(event.pos):
                                 ui._ferm_nut_held = True
+                elif ui.horse_breeding_open:
+                    ui.handle_horse_breeding_click(event.pos, player, world)
                 elif ui.chest_open:
                     ui.handle_chest_click(event.pos, player, event.button)
+                elif ui.garden_open:
+                    ui.handle_garden_click(event.pos, player)
                 else:
                     # Check for bird clicks before falling through to hotbar/world
                     if event.button == 1 and not ui._bird_obs_active:
@@ -835,6 +893,19 @@ def main():
                             bsy = int(bird.y - renderer.cam_y)
                             if pygame.Rect(bsx - 4, bsy - 4, bird.W + 8, bird.H + 8).collidepoint(mx, my):
                                 ui.open_bird_observation(bird)
+                                break
+                    # Check for insect clicks (requires bug_net equipped)
+                    held = player.hotbar[player.selected_slot]
+                    if (event.button == 1 and not ui._insect_obs_active
+                            and held == "bug_net"):
+                        mx, my = event.pos
+                        for ins in world.insects:
+                            if ins.spooked:
+                                continue
+                            isx = int(ins.x - renderer.cam_x)
+                            isy = int(ins.y - renderer.cam_y)
+                            if pygame.Rect(isx - 4, isy - 4, ins.W + 8, ins.H + 8).collidepoint(mx, my):
+                                ui.open_insect_observation(ins)
                                 break
                     ui.handle_hotbar_click(event.pos, player)
 
@@ -855,6 +926,9 @@ def main():
         # Fermentation Tank: poll SPACE (temp) + N (nutrient)
         if ui.refinery_open and ui.refinery_block_id == FERMENTATION_BLOCK:
             ui.handle_fermenter_keys(keys)
+        # Copper Still: poll SPACE for heat
+        if ui.refinery_open and ui.refinery_block_id == STILL_BLOCK:
+            ui.handle_still_keys(keys)
 
         if ui.pause_open:
             renderer.draw_world(world, player)
@@ -862,6 +936,7 @@ def main():
             renderer.draw_dropped_items(world.dropped_items)
             renderer.draw_entities(world.entities)
             renderer.draw_birds(world.birds)
+            renderer.draw_insects(world.insects)
             renderer.draw_automations(world.automations)
             renderer.draw_farm_bots(world.farm_bots)
             renderer.draw_backhoes(world.backhoes, player)
@@ -893,6 +968,34 @@ def main():
             player.x = bh.x + (bh.W - PLAYER_W) / 2
             player.y = bh.y
 
+        # Horse mounted physics
+        if player.mounted_horse is not None and not _any_ui_open() and not ui.cheat_open:
+            horse = player.mounted_horse
+            from constants import GRAVITY, MAX_FALL
+            horse.vy = min(horse.vy + GRAVITY, MAX_FALL)
+            horse._move_x(horse.vx)
+            horse._move_y(horse.vy)
+            player.on_ground = horse.on_ground
+
+        # Pending horse break minigame trigger
+        if getattr(player, '_pending_horse_break', None) is not None:
+            ui.open_horse_breaking(player._pending_horse_break)
+            player._pending_horse_break = None
+
+        # Horse breaking minigame tick
+        if ui._hb_active:
+            result = ui.update_horse_breaking(keys, dt)
+            if result == "success":
+                horse = ui._hb_horse
+                horse._broken = True
+                player.mounted_horse = horse
+                horse.rider = player
+                ui._hb_horse = None
+            elif result == "fail":
+                if ui._hb_horse is not None:
+                    ui._hb_horse._flee_timer = 5.0
+                    ui._hb_horse = None
+
         if not _any_ui_open() and not ui.cheat_open:
             player.handle_input(keys, mouse_btns, mouse_world, dt)
         player.update(dt)
@@ -909,6 +1012,11 @@ def main():
         world._player_ref = player
         for bird in world.birds:
             bird.update(dt)
+        for ins in world.insects:
+            ins.update(dt)
+        # Prune off-screen spooked insects
+        world.insects = [i for i in world.insects
+                         if not i.spooked or abs(i.x - player.x) < 2000]
         # Bird observation mini-game tick
         if ui._bird_obs_active and ui._bird_obs_bird is not None:
             bird = ui._bird_obs_bird
@@ -937,6 +1045,34 @@ def main():
                 ui._bird_obs_active = False
                 ui._bird_obs_failed = False
                 ui._bird_obs_bird = None
+        # Insect catch mini-game tick
+        if ui._insect_obs_active and ui._insect_obs_insect is not None:
+            ins = ui._insect_obs_insect
+            player_moving = abs(player.vx) > 0.5
+            if ins.spooked:
+                if not ui._insect_obs_failed:
+                    ui._insect_obs_failed = True
+                    ui._insect_obs_fail_timer = 1.5
+                    ui._insect_obs_timer = 0.0
+            elif not player_moving:
+                ui._insect_obs_timer += dt
+            if ui._insect_obs_timer >= 1.5:
+                sp = ins.SPECIES
+                biome = world.biodome_at(int(ins.x // BLOCK_SIZE))
+                player.insects_observed.setdefault(sp, {"count": 0, "biome": biome})
+                player.insects_observed[sp]["count"] += 1
+                player.discovered_insect_types.add(sp)
+                player.pending_notifications.append(
+                    ("Insect", sp.replace("_", " ").title(), ins.RARITY))
+                ins.spook()
+                ui._insect_obs_active = False
+                ui._insect_obs_insect = None
+        if ui._insect_obs_failed:
+            ui._insect_obs_fail_timer -= dt
+            if ui._insect_obs_fail_timer <= 0:
+                ui._insect_obs_active = False
+                ui._insect_obs_failed = False
+                ui._insect_obs_insect = None
         for automation in world.automations:
             automation.update(dt, world)
         for farm_bot in world.farm_bots:
@@ -957,6 +1093,7 @@ def main():
         renderer.draw_player(player)
         renderer.draw_entities(world.entities)
         renderer.draw_birds(world.birds)
+        renderer.draw_insects(world.insects)
         renderer.draw_automations(world.automations)
         renderer.draw_farm_bots(world.farm_bots)
         renderer.draw_backhoes(world.backhoes, player)
@@ -972,13 +1109,18 @@ def main():
         ui.draw(player, research, dt)
         if ui._bird_obs_active:
             ui._draw_bird_observation_overlay(player)
+        if ui._insect_obs_active:
+            ui._draw_insect_observation_overlay(player)
         ui.draw_fishing_overlay(player, dt)
         renderer.draw_minimap(world, player, dt)
 
         if dt > 0:
             _fps_smooth += (1.0 / dt - _fps_smooth) * 0.1
-        fps_surf = _fps_font.render(f"FPS: {_fps_smooth:.0f}", True, (255, 255, 255))
-        screen.blit(fps_surf, (8, 8))
+        _fps_int = int(_fps_smooth)
+        if _fps_int != _fps_last:
+            fps_surf = _fps_font.render(f"FPS: {_fps_int}", True, (255, 255, 255))
+            _fps_last = _fps_int
+        screen.blit(fps_surf, (8, SCREEN_H - fps_surf.get_height() - 8))
 
         pygame.display.flip()
 

@@ -28,6 +28,10 @@ BAKERY_RECIPES = [
     # --- Desert bakery ---
     {"name": "Date Cake",     "ingredients": {"date_palm_fruit": 2, "wheat": 1},             "output_id": "date_cake",     "output_count": 1},
     {"name": "Cactus Candy",  "ingredients": {"cactus_fruit": 2, "agave_syrup": 1},          "output_id": "cactus_candy",  "output_count": 2},
+    # --- Italian ---
+    {"name": "Bruschetta",    "ingredients": {"bread": 1, "tomato": 1, "garlic": 1},           "output_id": "bruschetta",    "output_count": 2},
+    {"name": "Pasta al Forno","ingredients": {"noodles": 1, "tomato": 1, "cheese": 1},         "output_id": "pasta_al_forno","output_count": 1},
+    {"name": "Polenta",       "ingredients": {"corn": 2, "milk": 1},                           "output_id": "polenta",       "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -59,6 +63,11 @@ WOK_RECIPES = [
     {"name": "Fish & Tofu",       "ingredients": {"fish": 1, "tofu": 1, "scallion": 1},           "output_id": "fish_tofu",          "output_count": 1},
     # --- Desert wok ---
     {"name": "Desert Salad",     "ingredients": {"cactus_fruit": 1, "watermelon": 1, "chili": 1}, "output_id": "desert_salad",     "output_count": 1},
+    # --- Italian ---
+    {"name": "Caponata",         "ingredients": {"eggplant": 1, "tomato": 1, "onion": 1},         "output_id": "caponata",         "output_count": 1},
+    {"name": "Frittata",         "ingredients": {"egg": 2, "zucchini": 1, "onion": 1},             "output_id": "frittata",         "output_count": 1},
+    {"name": "Peperonata",       "ingredients": {"pepper": 1, "onion": 1, "tomato": 1},            "output_id": "peperonata",       "output_count": 1},
+    {"name": "Zucchini Fritters","ingredients": {"zucchini": 1, "egg": 1, "wheat": 1},             "output_id": "zucchini_fritters","output_count": 2},
 ]
 
 # ---------------------------------------------------------------------------
@@ -109,6 +118,12 @@ NOODLE_POT_RECIPES = [
     {"name": "Fish Noodle Soup",   "ingredients": {"fish": 1, "noodles": 1, "ginger": 1},       "output_id": "fish_noodle_soup",  "output_count": 1},
     {"name": "Beef Noodle Soup",   "ingredients": {"cooked_beef": 1, "noodles": 1, "scallion": 1}, "output_id": "beef_noodle_soup",  "output_count": 1},
     {"name": "Chicken Noodle Soup","ingredients": {"cooked_chicken": 1, "noodles": 1, "ginger": 1},"output_id": "chicken_noodle_soup","output_count": 1},
+    # --- Italian ---
+    {"name": "Spaghetti Pomodoro","ingredients": {"noodles": 1, "tomato": 1, "garlic": 1},         "output_id": "spaghetti_pomodoro","output_count": 1},
+    {"name": "Pesto Gnocchi",     "ingredients": {"potato": 1, "wheat": 1, "broccoli": 1},         "output_id": "pesto_gnocchi",     "output_count": 1},
+    {"name": "Puttanesca",        "ingredients": {"noodles": 1, "tomato": 1, "chili": 1},           "output_id": "puttanesca",        "output_count": 1},
+    {"name": "Cacio e Pepe",      "ingredients": {"noodles": 1, "cheese": 1, "pepper": 1},          "output_id": "cacio_e_pepe",      "output_count": 1},
+    {"name": "Pasta e Fagioli",   "ingredients": {"noodles": 1, "pea": 1, "carrot": 1},             "output_id": "pasta_e_fagioli",   "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -141,6 +156,9 @@ BBQ_GRILL_RECIPES = [
     {"name": "BBQ Beef Ribs",    "ingredients": {"raw_beef": 1, "pepper": 1, "garlic": 1},       "output_id": "bbq_beef_ribs",     "output_count": 1},
     # --- Fish ---
     {"name": "Grilled Fish",     "ingredients": {"fish": 1, "chili": 1, "scallion": 1},          "output_id": "grilled_fish",      "output_count": 1},
+    # --- Italian ---
+    {"name": "Saltimbocca",      "ingredients": {"raw_chicken": 1, "mushroom": 1, "garlic": 1},   "output_id": "saltimbocca",       "output_count": 1},
+    {"name": "Bistecca",         "ingredients": {"raw_beef": 1, "garlic": 1, "pepper": 1},        "output_id": "bistecca",          "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -173,6 +191,13 @@ CLAY_POT_RECIPES = [
     {"name": "West Lake Fish",      "ingredients": {"fish": 1, "ginger": 1, "mushroom": 1},       "output_id": "west_lake_fish",      "output_count": 1},
     # --- Desert clay pot ---
     {"name": "Date Palm Broth",  "ingredients": {"date_palm_fruit": 2, "onion": 1},                "output_id": "date_palm_broth",  "output_count": 1},
+    # --- Italian ---
+    {"name": "Minestrone",       "ingredients": {"tomato": 1, "carrot": 1, "onion": 1},            "output_id": "minestrone",       "output_count": 1},
+    {"name": "Ossobuco",         "ingredients": {"cooked_beef": 1, "onion": 1, "carrot": 1},       "output_id": "ossobuco",         "output_count": 1},
+    {"name": "Ribollita",        "ingredients": {"cabbage": 1, "potato": 1, "tomato": 1},          "output_id": "ribollita",        "output_count": 1},
+    {"name": "Cacciatore",       "ingredients": {"raw_chicken": 1, "tomato": 1, "mushroom": 1},    "output_id": "cacciatore",       "output_count": 1},
+    {"name": "Zuppa di Pesce",   "ingredients": {"fish": 1, "tomato": 1, "onion": 1},              "output_id": "zuppa_di_pesce",   "output_count": 1},
+    {"name": "Acquacotta",       "ingredients": {"celery": 1, "onion": 1, "egg": 1},               "output_id": "acquacotta",       "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -240,6 +265,16 @@ ARTISAN_RECIPES = [
 
 RECIPES = [
     # --- Utility ---
+    {
+        "name": "Wood Stairs",
+        "pattern": [
+            ["lumber",  None,    None   ],
+            ["lumber",  "lumber", None   ],
+            ["lumber",  "lumber", "lumber"],
+        ],
+        "output_id":    "wood_stairs",
+        "output_count": 4,
+    },
     {
         "name": "Ladder",
         "pattern": [
@@ -714,6 +749,98 @@ RECIPES = [
         "output_id":    "bird_bath",
         "output_count": 1,
     },
+    # --- Insect collecting ---
+    {
+        "name": "Bug Net",
+        "pattern": [
+            [None,     "wool",   None  ],
+            [None,     "wool",   None  ],
+            [None,     "lumber", None  ],
+        ],
+        "output_id":    "bug_net",
+        "output_count": 1,
+    },
+    {
+        "name": "Insect Display Case",
+        "pattern": [
+            ["lumber",        "crystal_shard", "lumber"],
+            [None,            None,            None    ],
+            ["lumber",        "lumber",        "lumber"],
+        ],
+        "output_id":    "insect_display_case",
+        "output_count": 1,
+    },
+    {
+        "name": "Garden Block",
+        "pattern": [
+            [None,          None,          None        ],
+            ["lumber",      "dirt_clump",  "lumber"    ],
+            ["lumber",      "stone_chip",  "lumber"    ],
+        ],
+        "output_id":    "garden_block",
+        "output_count": 1,
+    },
+    # --- Horse items ---
+    {
+        "name": "Saddle",
+        "pattern": [
+            ["wool",        "wool",        "wool"      ],
+            ["wool",        "iron_chunk",  "wool"      ],
+            [None,          "iron_chunk",  None        ],
+        ],
+        "output_id":    "saddle",
+        "output_count": 1,
+    },
+    {
+        "name": "Horse Brush",
+        "pattern": [
+            [None,          "wool",        None        ],
+            ["lumber",      "wool",        "lumber"    ],
+            [None,          "lumber",      None        ],
+        ],
+        "output_id":    "horse_brush",
+        "output_count": 3,
+    },
+    {
+        "name": "Horseshoe",
+        "pattern": [
+            [None,          None,          None        ],
+            ["iron_chunk",  None,          "iron_chunk"],
+            [None,          None,          None        ],
+        ],
+        "output_id":    "horseshoe",
+        "output_count": 2,
+    },
+    {
+        "name": "Sugar Lump",
+        "pattern": [
+            [None,          None,          None        ],
+            [None,          "wheat",       None        ],
+            ["wheat",       "wheat",       "wheat"     ],
+        ],
+        "output_id":    "sugar_lump",
+        "output_count": 4,
+    },
+    {
+        "name": "Stable",
+        "pattern": [
+            ["lumber",      "stone_chip",  "lumber"    ],
+            ["lumber",      "stone_chip",  "lumber"    ],
+            ["lumber",      "lumber",      "lumber"    ],
+        ],
+        "output_id":    "stable_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Horse Trough",
+        "pattern": [
+            [None,          None,          None        ],
+            ["stone_chip",  "lumber",      "stone_chip"],
+            ["stone_chip",  "stone_chip",  "stone_chip"],
+        ],
+        "output_id":    "horse_trough_item",
+        "output_count": 1,
+    },
     # --- Coffee equipment ---
     {
         "name": "Coffee Roaster",
@@ -796,6 +923,37 @@ RECIPES = [
         "output_id":    "wine_cellar_item",
         "output_count": 1,
     },
+    # --- Distillery equipment ---
+    {
+        "name": "Copper Still",
+        "pattern": [
+            ["iron_chunk",  "gold_nugget", "iron_chunk"],
+            ["coal",        "iron_chunk",  "coal"],
+            ["stone_chip",  "iron_chunk",  "stone_chip"],
+        ],
+        "output_id":    "still_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Barrel Room",
+        "pattern": [
+            ["lumber",     "coal",    "lumber"],
+            ["iron_chunk", "lumber",  "iron_chunk"],
+            ["lumber",     "lumber",  "lumber"],
+        ],
+        "output_id":    "barrel_room_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Bottling Station",
+        "pattern": [
+            ["stone_chip", "iron_chunk", "stone_chip"],
+            ["lumber",     "coal",       "lumber"],
+            ["stone_chip", "stone_chip", "stone_chip"],
+        ],
+        "output_id":    "bottling_item",
+        "output_count": 1,
+    },
     # --- Premium seeds (selective_breeding research) ---
     {
         "name": "Premium Strawberry Seed",
@@ -863,8 +1021,15 @@ RESEARCH_LOCKED_RECIPES = {
     "grape_press_item":      "wine_basics",
     "fermentation_item":     "wine_basics",
     "wine_cellar_item":      "wine_basics",
+    "still_item":            "distillation_basics",
+    "barrel_room_item":      "distillation_basics",
+    "bottling_item":         "distillation_basics",
     "bird_feeder":           "bird_watching",
     "bird_bath":             "bird_sanctuary",
+    "bug_net":               "entomology_basics",
+    "insect_display_case":   "entomology_basics",
+    "saddle":                "saddle_craft",
+    "stable_item":           "saddle_craft",
     "strawberry_seed_premium": "selective_breeding",
     "tomato_seed_premium":     "selective_breeding",
     "watermelon_seed_premium": "selective_breeding",

@@ -90,6 +90,93 @@ class MinigamesMixin:
         self.screen.blit(hs, (px + PANEL_W // 2 - hs.get_width() // 2, py + PANEL_H - 38))
 
     # ------------------------------------------------------------------
+    # Insect catch observation
+    # ------------------------------------------------------------------
+
+    def open_insect_observation(self, insect):
+        if self._insect_obs_active:
+            return
+        self._insect_obs_active     = True
+        self._insect_obs_insect     = insect
+        self._insect_obs_timer      = 0.0
+        self._insect_obs_failed     = False
+        self._insect_obs_fail_timer = 0.0
+
+    def _draw_insect_observation_overlay(self, player):
+        import math
+        PANEL_W, PANEL_H = 200, 140
+        px = SCREEN_W - PANEL_W - 12
+        py = SCREEN_H - PANEL_H - 60
+
+        surf = pygame.Surface((PANEL_W, PANEL_H), pygame.SRCALPHA)
+        surf.fill((15, 25, 18, 210))
+        self.screen.blit(surf, (px, py))
+        pygame.draw.rect(self.screen, (70, 170, 90), (px, py, PANEL_W, PANEL_H), 2)
+
+        ins = self._insect_obs_insect
+        already_seen = ins.SPECIES in getattr(player, "insects_observed", {})
+
+        title = "INSECT SPOTTED!" if not self._insect_obs_failed else "INSECT FLEW AWAY!"
+        title_col = (160, 240, 170) if not self._insect_obs_failed else (255, 120, 80)
+        ts = self.small.render(title, True, title_col)
+        self.screen.blit(ts, (px + PANEL_W // 2 - ts.get_width() // 2, py + 6))
+
+        # Draw insect preview
+        iw, ih = ins.W * 3, ins.H * 3
+        ins_surf = pygame.Surface((iw, ih), pygame.SRCALPHA)
+        ins_surf.fill((0, 0, 0, 0))
+        wt = ins.WING_TYPE
+        wc = ins.WING_COLOR if already_seen or self._insect_obs_timer >= 1.5 else (70, 90, 70)
+        bc = ins.BODY_COLOR if already_seen or self._insect_obs_timer >= 1.5 else (50, 65, 50)
+        ac = ins.ACCENT_COLOR if already_seen or self._insect_obs_timer >= 1.5 else (60, 80, 60)
+        if wt in ("butterfly", "moth"):
+            pygame.draw.ellipse(ins_surf, wc, (0, 0, iw // 2, ih))
+            pygame.draw.ellipse(ins_surf, wc, (iw // 2, 0, iw // 2, ih))
+            pygame.draw.ellipse(ins_surf, ac, (2, 2, iw // 2 - 3, ih - 4))
+            pygame.draw.ellipse(ins_surf, bc, (iw // 2 - 1, 1, 3, ih - 2))
+        elif wt == "dragonfly":
+            pygame.draw.ellipse(ins_surf, wc, (0, 0, iw // 2, ih // 3))
+            pygame.draw.ellipse(ins_surf, wc, (iw // 2, 0, iw // 2, ih // 3))
+            pygame.draw.ellipse(ins_surf, bc, (2, ih // 4, iw - 4, ih // 2))
+        elif wt in ("beetle", "firefly"):
+            pygame.draw.ellipse(ins_surf, wc, (0, ih // 4, iw, ih // 2))
+            pygame.draw.ellipse(ins_surf, bc, (2, ih // 4 + 1, iw - 4, ih // 2 - 2))
+            pygame.draw.line(ins_surf, wc, (iw // 2, ih // 4 + 1), (iw // 2, ih // 4 + ih // 2 - 2))
+        else:
+            pygame.draw.ellipse(ins_surf, wc, (0, 0, iw, ih))
+            pygame.draw.ellipse(ins_surf, bc, (iw // 4, 2, iw // 2, ih - 4))
+        self.screen.blit(ins_surf, (px + PANEL_W // 2 - iw // 2, py + 22))
+
+        if already_seen or self._insect_obs_timer >= 1.5:
+            name_str = ins.SPECIES.replace("_", " ").title()
+            name_col = (200, 255, 200)
+        else:
+            full = ins.SPECIES.replace("_", " ").title()
+            chars_shown = max(1, int(len(full) * (self._insect_obs_timer / 1.5)))
+            name_str = full[:chars_shown] + "?" * (len(full) - chars_shown)
+            name_col = (140, 190, 140)
+        ns = self.small.render(name_str, True, name_col)
+        self.screen.blit(ns, (px + PANEL_W // 2 - ns.get_width() // 2, py + 22 + ih + 4))
+
+        rarity_cols = {"common": (160, 210, 160), "uncommon": (100, 220, 130),
+                       "rare": (120, 255, 150)}
+        rc = rarity_cols.get(ins.RARITY, (180, 180, 180))
+        rs = self.small.render(ins.RARITY.upper(), True, rc)
+        self.screen.blit(rs, (px + PANEL_W // 2 - rs.get_width() // 2, py + 22 + ih + 18))
+
+        bar_y = py + PANEL_H - 22
+        bar_w = PANEL_W - 24
+        pygame.draw.rect(self.screen, (20, 35, 22), (px + 12, bar_y, bar_w, 10))
+        fill = int(bar_w * min(1.0, self._insect_obs_timer / 1.5))
+        if not self._insect_obs_failed and fill > 0:
+            pygame.draw.rect(self.screen, (70, 210, 110), (px + 12, bar_y, fill, 10))
+        pygame.draw.rect(self.screen, (70, 170, 90), (px + 12, bar_y, bar_w, 10), 1)
+
+        hint = "Stay still!" if not self._insect_obs_failed else ""
+        hs = self.small.render(hint, True, (120, 190, 130))
+        self.screen.blit(hs, (px + PANEL_W // 2 - hs.get_width() // 2, py + PANEL_H - 38))
+
+    # ------------------------------------------------------------------
     # Gem Cutter mini-game
     # ------------------------------------------------------------------
 

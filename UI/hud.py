@@ -161,6 +161,7 @@ class HUDMixin:
             ("E: Talk",       self.npc_open),
             ("E: Refinery",   self.refinery_open),
             ("E: Chest",      self.chest_open),
+            ("E: Garden",     self.garden_open),
             ("E: Set Spawn",  nearby_bed is not None),
             ("`  Cheats",     self.cheat_open),
         ]

@@ -12,13 +12,26 @@ from blocks import (BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BB
                     ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK, FOSSIL_TABLE_BLOCK,
                     ARTISAN_BENCH_BLOCK,
                     GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
-                    COMPOST_BIN_BLOCK)
-from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE
+                    STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
+                    COMPOST_BIN_BLOCK, GARDEN_BLOCK)
+from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, BLOCK_SIZE
+
+
+def _is_garden_insect(insect, garden_pos):
+    """True if this insect's spawn point is within 3 blocks of the garden block."""
+    gx, gy = garden_pos
+    cx = insect._spawn_x / BLOCK_SIZE
+    cy = insect._spawn_y / BLOCK_SIZE
+    return abs(cx - gx) <= 3 and abs(cy - gy) <= 3
 
 
 class HandlersMixin:
 
     def handle_research_click(self, pos, player, world, research):
+        for ci, rect in self._research_cat_rects.items():
+            if rect.collidepoint(pos):
+                self._research_selected_col = ci
+                return
         for node_id, rect in self._card_rects.items():
             if rect.collidepoint(pos):
                 research.unlock(node_id, player, world)
@@ -40,6 +53,8 @@ class HandlersMixin:
             for i, rect in enumerate(self._hotbar_rects):
                 if rect.collidepoint(pos):
                     player.hotbar[i] = self._drag_item_id
+                    max_uses = ITEMS.get(self._drag_item_id, {}).get("max_uses")
+                    player.hotbar_uses[i] = max_uses
                     break
             self._drag_item_id = None
 
@@ -100,6 +115,7 @@ class HandlersMixin:
                     for i in range(len(player.hotbar)):
                         if player.hotbar[i] == iid:
                             player.hotbar[i] = None
+                            player.hotbar_uses[i] = None
             for _ in range(out_count):
                 player._add_item(out_id)
 
@@ -119,6 +135,10 @@ class HandlersMixin:
                 self._fish_codex_scroll = 0
                 self._coffee_codex_scroll = 0
                 self._wine_codex_scroll = 0
+                self._spirits_codex_scroll = 0
+                self._insect_codex_scroll = 0
+                self._food_codex_scroll = 0
+                self._horse_codex_scroll = 0
                 self._codex_selected_type = None
                 self._flower_codex_selected_type = None
                 self._mushroom_codex_selected_bid = None
@@ -126,6 +146,7 @@ class HandlersMixin:
                 self._gem_codex_selected_type = None
                 self._coffee_codex_selected = None
                 self._wine_codex_selected = None
+                self._spirits_codex_selected = None
                 return
 
         if self._collection_tab == 0:
@@ -156,6 +177,7 @@ class HandlersMixin:
                     self._fish_codex_scroll = 0
                     self._coffee_codex_scroll = 0
                     self._wine_codex_scroll = 0
+                    self._spirits_codex_scroll = 0
                     self._codex_selected_type = None
                     self._flower_codex_selected_type = None
                     self._mushroom_codex_selected_bid = None
@@ -163,6 +185,7 @@ class HandlersMixin:
                     self._gem_codex_selected_type = None
                     self._coffee_codex_selected = None
                     self._wine_codex_selected = None
+                    self._spirits_codex_selected = None
                     return
             # Codex item clicks
             if self._encyclopedia_cat == 0:
@@ -199,6 +222,11 @@ class HandlersMixin:
                 for key, rect in self._wine_codex_rects.items():
                     if rect.collidepoint(pos):
                         self._wine_codex_selected = key if self._wine_codex_selected != key else None
+                        return
+            elif self._encyclopedia_cat == 9:
+                for key, rect in self._spirits_codex_rects.items():
+                    if rect.collidepoint(pos):
+                        self._spirits_codex_selected = key if self._spirits_codex_selected != key else None
                         return
             # cat 5 = bird codex (view only, no selection needed)
         # tab 2 (awards) has no click-to-select items
@@ -237,6 +265,14 @@ class HandlersMixin:
                     self._coffee_codex_scroll = max(0, min(self._max_coffee_codex_scroll, self._coffee_codex_scroll - dy * 60))
                 elif self._encyclopedia_cat == 8:
                     self._wine_codex_scroll = max(0, min(self._max_wine_codex_scroll, self._wine_codex_scroll - dy * 60))
+                elif self._encyclopedia_cat == 9:
+                    self._spirits_codex_scroll = max(0, min(self._max_spirits_codex_scroll, self._spirits_codex_scroll - dy * 40))
+                elif self._encyclopedia_cat == 10:
+                    self._insect_codex_scroll = max(0, min(self._max_insect_codex_scroll, self._insect_codex_scroll - dy * 80))
+                elif self._encyclopedia_cat == 11:
+                    self._food_codex_scroll = max(0, min(self._max_food_codex_scroll, self._food_codex_scroll - dy * 60))
+                elif self._encyclopedia_cat == 12:
+                    self._horse_codex_scroll = max(0, min(self._max_horse_codex_scroll, self._horse_codex_scroll - dy * 60))
             elif self._collection_tab == 2:
                 self._achievement_scroll = max(0, min(self._max_achievement_scroll, self._achievement_scroll - dy))
         elif self.breeding_open:
@@ -249,6 +285,14 @@ class HandlersMixin:
                 self._chest_scroll = max(0, min(self._max_chest_scroll, self._chest_scroll - dy))
             else:
                 self._player_chest_scroll = max(0, min(self._max_player_chest_scroll, self._player_chest_scroll - dy))
+        elif self.garden_open:
+            mouse = pygame.mouse.get_pos()
+            PW = 1140
+            px = (SCREEN_W - PW) // 2
+            if mouse[0] < px + PW // 2:
+                self._garden_scroll = max(0, min(self._max_garden_scroll, self._garden_scroll - dy))
+            else:
+                self._player_garden_scroll = max(0, min(self._max_player_garden_scroll, self._player_garden_scroll - dy))
 
     def handle_chest_click(self, pos, player, button):
         """Left-click transfers whole stack; right-click transfers one."""
@@ -278,6 +322,35 @@ class HandlersMixin:
                         player.hotbar_uses[idx] = None
                 inv[item_id] = inv.get(item_id, 0) + deposit
                 return
+
+    def handle_garden_click(self, pos, player):
+        flowers = self.active_garden_flowers
+        garden_pos = self.active_garden_pos
+        if flowers is None or garden_pos is None:
+            return
+        # Click on a flower in the garden → return to player collection
+        for uid, rect in self._garden_rects.items():
+            if rect.collidepoint(pos):
+                for i, wf in enumerate(flowers):
+                    if wf.uid == uid:
+                        player.wildflowers.append(flowers.pop(i))
+                        # Remove garden insects if now empty
+                        if not flowers:
+                            player.world.insects = [
+                                ins for ins in player.world.insects
+                                if not _is_garden_insect(ins, garden_pos)
+                            ]
+                        return
+        # Click on a wildflower in the player collection → move to garden
+        for uid, rect in self._player_garden_rects.items():
+            if rect.collidepoint(pos):
+                for i, wf in enumerate(player.wildflowers):
+                    if wf.uid == uid:
+                        was_empty = not flowers
+                        flowers.append(player.wildflowers.pop(i))
+                        if was_empty:
+                            player.world.spawn_insects_near_garden(*garden_pos)
+                        return
 
     def handle_npc_click(self, pos, player):
         from cities import RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC
@@ -372,6 +445,15 @@ class HandlersMixin:
         if self.refinery_block_id == WINE_CELLAR_BLOCK:
             self._handle_wine_cellar_click(pos, player)
             return
+        if self.refinery_block_id == STILL_BLOCK:
+            self._handle_still_click(pos, player)
+            return
+        if self.refinery_block_id == BARREL_ROOM_BLOCK:
+            self._handle_barrel_room_click(pos, player)
+            return
+        if self.refinery_block_id == BOTTLING_BLOCK:
+            self._handle_bottling_click(pos, player)
+            return
         if self.refinery_block_id == BAKERY_BLOCK:
             for i, rect in self._bakery_recipe_rects.items():
                 if rect.collidepoint(pos):
@@ -446,6 +528,16 @@ class HandlersMixin:
         if self._refine_btn and self._refine_btn.collidepoint(pos):
             self._do_refine(player)
 
+    def _record_food_discovery(self, player, output_id):
+        from items import ITEMS
+        if not ITEMS.get(output_id, {}).get("edible"):
+            return
+        is_new = output_id not in player.discovered_foods
+        player.discovered_foods.add(output_id)
+        player.foods_cooked[output_id] = player.foods_cooked.get(output_id, 0) + 1
+        if is_new:
+            player.pending_notifications.append(("Food", ITEMS[output_id]["name"], "recipe"))
+
     def _do_bake(self, player):
         recipe = BAKERY_RECIPES[self._bakery_selected_recipe]
         for item_id, needed in recipe["ingredients"].items():
@@ -458,8 +550,10 @@ class HandlersMixin:
                 for i in range(HOTBAR_SIZE):
                     if player.hotbar[i] == item_id:
                         player.hotbar[i] = None
+                        player.hotbar_uses[i] = None
         for _ in range(recipe["output_count"]):
             player._add_item(recipe["output_id"])
+        self._record_food_discovery(player, recipe["output_id"])
 
     def _do_cook(self, player, recipe_list, selected_idx):
         recipe = recipe_list[selected_idx]
@@ -473,8 +567,10 @@ class HandlersMixin:
                 for i in range(HOTBAR_SIZE):
                     if player.hotbar[i] == item_id:
                         player.hotbar[i] = None
+                        player.hotbar_uses[i] = None
         for _ in range(recipe["output_count"]):
             player._add_item(recipe["output_id"])
+        self._record_food_discovery(player, recipe["output_id"])
 
     def _do_refine(self, player):
         equip = get_refinery_equipment().get(self.refinery_block_id)
@@ -514,3 +610,21 @@ class HandlersMixin:
             if bin_data["output"] > 0:
                 player._add_item("compost", bin_data["output"])
                 bin_data["output"] = 0
+
+    def handle_horse_breeding_click(self, pos, player, world):
+        if self._hbr_close_btn and self._hbr_close_btn.collidepoint(pos):
+            self.horse_breeding_open = False
+            self._hbr_horse_a = None
+            self._hbr_horse_b = None
+            return
+
+        if self._hbr_breed_btn and self._hbr_breed_btn.collidepoint(pos):
+            horse_a = self._hbr_horse_a
+            horse_b = self._hbr_horse_b
+            if horse_a is None or horse_b is None:
+                return
+            horse_a.breed_with(horse_b, world, player)
+            # Close the panel after breeding
+            self.horse_breeding_open = False
+            self._hbr_horse_a = None
+            self._hbr_horse_b = None

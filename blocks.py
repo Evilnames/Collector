@@ -261,6 +261,22 @@ RICE_CROP_YOUNG_P         = 278
 RICE_CROP_MATURE_P        = 279
 WELL_BLOCK                = 280  # placeable well; refills watering can
 
+# --- Distillery supply chain ---
+GRAIN_CROP_BUSH    = 281   # surface bush; drops grain_seed
+GRAIN_CROP_YOUNG   = 282
+GRAIN_CROP_MATURE  = 283   # special: mine → Spirit object + grain_seed drop
+STILL_BLOCK        = 284   # placed Copper Still (distillation mini-game)
+BARREL_ROOM_BLOCK  = 285   # placed Barrel Room (aging)
+BOTTLING_BLOCK     = 286   # placed Bottling Station (blend + bottle)
+INSECT_DISPLAY_CASE_BLOCK = 287  # craftable display case furniture
+STAIRS_RIGHT = 288  # wood stairs; player steps up when walking right into them
+STAIRS_LEFT  = 289  # wood stairs; player steps up when walking left into them
+GARDEN_BLOCK = 290  # placed garden bed; attracts insects when wildflowers are stored inside
+
+# --- Horse system ---
+STABLE_BLOCK       = 291  # placed stable; triggers breeding UI; required for Horse._breed
+HORSE_TROUGH_BLOCK = 292  # placed trough; passively speeds up taming when horse is nearby
+
 HOUSE_WALL           = 108  # city house wall block
 HOUSE_ROOF           = 109  # city house roof block
 WILDFLOWER_PATCH     = 110  # surface collectable; interact → generates unique Wildflower object
@@ -310,7 +326,8 @@ GEM_DEPOSIT      = 151  # special: mine → generates unique Gemstone object, no
 SNOW             = 152  # alpine_mountain surface block; falls like grass
 SAND             = 153  # desert/beach surface block; falls like snow
 
-OPEN_DOORS = {WOOD_DOOR_OPEN, IRON_DOOR_OPEN, WOOD_FENCE_OPEN, IRON_FENCE_OPEN}
+OPEN_DOORS   = {WOOD_DOOR_OPEN, IRON_DOOR_OPEN, WOOD_FENCE_OPEN, IRON_FENCE_OPEN}
+STAIR_BLOCKS = {STAIRS_RIGHT, STAIRS_LEFT}
 
 CAVE_MUSHROOMS = {
     CAVE_MUSHROOM, EMBER_CAP, PALE_GHOST, GOLD_CHANTERELLE, COBALT_CAP,
@@ -348,7 +365,9 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     DESERT_FORGE_BLOCK,
                     ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK,
                     GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
-                    FOSSIL_TABLE_BLOCK, ARTISAN_BENCH_BLOCK, COMPOST_BIN_BLOCK}
+                    STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
+                    FOSSIL_TABLE_BLOCK, ARTISAN_BENCH_BLOCK, COMPOST_BIN_BLOCK,
+                    STABLE_BLOCK, HORSE_TROUGH_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT}
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
                      RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, GARLIC_BUSH, SCALLION_BUSH, CHILI_BUSH,
@@ -356,7 +375,7 @@ BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN
                      BEET_BUSH, TURNIP_BUSH, LEEK_BUSH, ZUCCHINI_BUSH, SWEET_POTATO_BUSH,
                      WATERMELON_BUSH, RADISH_BUSH, PEA_BUSH, CELERY_BUSH, BROCCOLI_BUSH,
                      DATE_PALM_BUSH, AGAVE_BUSH,
-                     COFFEE_BUSH, GRAPEVINE_BUSH}
+                     COFFEE_BUSH, GRAPEVINE_BUSH, GRAIN_CROP_BUSH}
 YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG, TOMATO_CROP_YOUNG, CORN_CROP_YOUNG, PUMPKIN_CROP_YOUNG, APPLE_CROP_YOUNG,
                      RICE_CROP_YOUNG, GINGER_CROP_YOUNG, BOK_CHOY_CROP_YOUNG, GARLIC_CROP_YOUNG,
                      SCALLION_CROP_YOUNG, CHILI_CROP_YOUNG,
@@ -364,7 +383,7 @@ YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG,
                      BEET_CROP_YOUNG, TURNIP_CROP_YOUNG, LEEK_CROP_YOUNG, ZUCCHINI_CROP_YOUNG, SWEET_POTATO_CROP_YOUNG,
                      WATERMELON_CROP_YOUNG, RADISH_CROP_YOUNG, PEA_CROP_YOUNG, CELERY_CROP_YOUNG, BROCCOLI_CROP_YOUNG,
                      CACTUS_YOUNG, DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG,
-                     COFFEE_CROP_YOUNG, GRAPEVINE_CROP_YOUNG,
+                     COFFEE_CROP_YOUNG, GRAPEVINE_CROP_YOUNG, GRAIN_CROP_YOUNG,
                      STRAWBERRY_CROP_YOUNG_P, TOMATO_CROP_YOUNG_P, WATERMELON_CROP_YOUNG_P,
                      CORN_CROP_YOUNG_P, RICE_CROP_YOUNG_P}
 MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATURE, TOMATO_CROP_MATURE, CORN_CROP_MATURE, PUMPKIN_CROP_MATURE, APPLE_CROP_MATURE,
@@ -374,7 +393,7 @@ MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATU
                      BEET_CROP_MATURE, TURNIP_CROP_MATURE, LEEK_CROP_MATURE, ZUCCHINI_CROP_MATURE, SWEET_POTATO_CROP_MATURE,
                      WATERMELON_CROP_MATURE, RADISH_CROP_MATURE, PEA_CROP_MATURE, CELERY_CROP_MATURE, BROCCOLI_CROP_MATURE,
                      CACTUS_MATURE, DATE_PALM_CROP_MATURE, AGAVE_CROP_MATURE,
-                     COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE,
+                     COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE,
                      STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P, WATERMELON_CROP_MATURE_P,
                      CORN_CROP_MATURE_P, RICE_CROP_MATURE_P}
 CROP_BLOCKS       = YOUNG_CROP_BLOCKS | MATURE_CROP_BLOCKS
@@ -383,7 +402,7 @@ CROP_BLOCKS       = YOUNG_CROP_BLOCKS | MATURE_CROP_BLOCKS
 PERENNIAL_CROP_MATURE = {
     STRAWBERRY_CROP_MATURE, APPLE_CROP_MATURE, TOMATO_CROP_MATURE,
     PEPPER_CROP_MATURE, CHILI_CROP_MATURE, EGGPLANT_CROP_MATURE,
-    CACTUS_MATURE, COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE,
+    CACTUS_MATURE, COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE,
     STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P,
 }
 
@@ -422,6 +441,7 @@ MATURE_TO_YOUNG_CROP = {
     AGAVE_CROP_MATURE:        AGAVE_CROP_YOUNG,
     COFFEE_CROP_MATURE:       COFFEE_CROP_YOUNG,
     GRAPEVINE_CROP_MATURE:    GRAPEVINE_CROP_YOUNG,
+    GRAIN_CROP_MATURE:        GRAIN_CROP_YOUNG,
     STRAWBERRY_CROP_MATURE_P: STRAWBERRY_CROP_YOUNG_P,
     TOMATO_CROP_MATURE_P:     TOMATO_CROP_YOUNG_P,
     WATERMELON_CROP_MATURE_P: WATERMELON_CROP_YOUNG_P,
@@ -678,6 +698,13 @@ BLOCKS = {
     GRAPE_PRESS_BLOCK:      {"name": "Grape Press",              "hardness": 1.5, "color": (150, 110,  80), "drop": "grape_press_item"},
     FERMENTATION_BLOCK:     {"name": "Fermentation Tank",        "hardness": 1.5, "color": (115,  95,  80), "drop": "fermentation_item"},
     WINE_CELLAR_BLOCK:      {"name": "Wine Cellar",              "hardness": 1.5, "color": ( 75,  45,  55), "drop": "wine_cellar_item"},
+    # --- Distillery supply chain ---
+    GRAIN_CROP_BUSH:        {"name": "Grain Bush",               "hardness": 0.5, "color": (180, 160,  70), "drop": "grain_seed", "drop_chance": 0.4},
+    GRAIN_CROP_YOUNG:       {"name": "Grain Crop (Young)",       "hardness": 0.5, "color": (130, 160,  55), "drop": "grain_seed", "drop_chance": 0.5},
+    GRAIN_CROP_MATURE:      {"name": "Grain Crop (Ripe)",        "hardness": 0.5, "color": (200, 175,  55), "drop": None},
+    STILL_BLOCK:            {"name": "Copper Still",             "hardness": 1.5, "color": (175, 110,  50), "drop": "still_item"},
+    BARREL_ROOM_BLOCK:      {"name": "Barrel Room",              "hardness": 1.5, "color": (110,  70,  35), "drop": "barrel_room_item"},
+    BOTTLING_BLOCK:         {"name": "Bottling Station",         "hardness": 1.5, "color": ( 90,  80,  70), "drop": "bottling_item"},
     # --- Second wave of artisan decorative blocks ---
     OBSIDIAN_TILE:          {"name": "Obsidian Tile",            "hardness": 2,   "color": ( 30,  25,  40), "drop": "obsidian_tile"},
     COBBLESTONE:            {"name": "Cobblestone",              "hardness": 2,   "color": (100,  95,  90), "drop": "cobblestone"},
@@ -726,4 +753,10 @@ BLOCKS = {
     CORN_CROP_MATURE_P:        {"name": "Premium Corn (Ripe)",       "hardness": 0.5, "color": (255, 240, 100), "drop": "corn",                     "drop_chance": 1.0},
     RICE_CROP_YOUNG_P:         {"name": "Premium Rice",              "hardness": 0.5, "color": (200, 235, 180), "drop": "rice_seed_premium",        "drop_chance": 1.0},
     RICE_CROP_MATURE_P:        {"name": "Premium Rice (Ripe)",       "hardness": 0.5, "color": (200, 235, 180), "drop": "rice",                     "drop_chance": 1.0},
+    INSECT_DISPLAY_CASE_BLOCK: {"name": "Insect Display Case",       "hardness": 1.5, "color": (180, 160, 120), "drop": "insect_display_case"},
+    STAIRS_RIGHT:              {"name": "Stairs (Right)",            "hardness": 1.5, "color": (139, 100,  60), "drop": "wood_stairs"},
+    STAIRS_LEFT:               {"name": "Stairs (Left)",             "hardness": 1.5, "color": (139, 100,  60), "drop": "wood_stairs"},
+    GARDEN_BLOCK:              {"name": "Garden Block",              "hardness": 1.0, "color": ( 80, 140,  60), "drop": "garden_block"},
+    STABLE_BLOCK:              {"name": "Stable",                   "hardness": 2.0, "color": (120,  85,  45), "drop": "stable_item"},
+    HORSE_TROUGH_BLOCK:        {"name": "Horse Trough",             "hardness": 1.5, "color": ( 60, 100, 130), "drop": "horse_trough_item"},
 }

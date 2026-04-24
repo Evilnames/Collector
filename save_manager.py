@@ -8,6 +8,19 @@ from pathlib import Path
 from constants import CHUNK_W, WORLD_H
 
 DB_PATH = Path(__file__).parent / "collectorblocks.db"
+
+
+def _wf_to_dict(wf):
+    return {
+        "uid": wf.uid, "flower_type": wf.flower_type, "rarity": wf.rarity,
+        "bloom_stage": wf.bloom_stage,
+        "primary_color": list(wf.primary_color),
+        "secondary_color": list(wf.secondary_color),
+        "center_color": list(wf.center_color),
+        "petal_pattern": wf.petal_pattern, "petal_count": wf.petal_count,
+        "fragrance": wf.fragrance, "vibrancy": wf.vibrancy,
+        "specials": wf.specials, "biodome_found": wf.biodome_found, "seed": wf.seed,
+    }
 SAVE_VERSION = 2
 
 
@@ -22,7 +35,8 @@ class SaveManager:
                 self._create_tables(con)
                 for tbl in ("save_meta", "chunks", "bg_chunks", "world_meta", "player",
                             "rocks", "wildflowers", "fossils", "gems", "bird_observations",
-                            "fish", "coffee_beans", "wine_grapes",
+                            "insect_observations",
+                            "fish", "coffee_beans", "wine_grapes", "spirits",
                             "research", "automations",
                             "farm_bots", "backhoes", "entities", "dropped_items", "chests"):
                     # global_collection and achievements are intentionally preserved
@@ -61,7 +75,9 @@ class SaveManager:
             self._save_fish(con, player)
             self._save_coffee_beans(con, player)
             self._save_wine_grapes(con, player)
+            self._save_spirits(con, player)
             self._save_bird_observations(con, player)
+            self._save_insect_observations(con, player)
             self._save_research(con, research)
             self._save_automations(con, world)
             self._save_farm_bots(con, world)
@@ -81,7 +97,8 @@ class SaveManager:
             seed = con.execute("SELECT seed FROM save_meta LIMIT 1").fetchone()[0]
             world_meta  = self._load_world_meta(con)
             bird_obs    = self._load_bird_observations(con)
-            player_data = self._load_player(con, bird_obs)
+            insect_obs  = self._load_insect_observations(con)
+            player_data = self._load_player(con, bird_obs, insect_obs)
             automations = self._load_automations(con)
             farm_bots = self._load_farm_bots(con)
             backhoes = self._load_backhoes(con)
@@ -97,6 +114,7 @@ class SaveManager:
             "crop_progress":   world_meta["crop_progress"],
             "crop_care_sum":   world_meta["crop_care_sum"],
             "compost_bin_data": world_meta["compost_bin_data"],
+            "garden_data":      world_meta["garden_data"],
             "player": player_data,
             "automations": automations,
             "farm_bots": farm_bots,
@@ -258,7 +276,8 @@ class SaveManager:
             crop_progress TEXT,
             crop_care_sum TEXT,
             soil_fertility TEXT,
-            compost_bin_data TEXT
+            compost_bin_data TEXT,
+            garden_data TEXT
         );
         CREATE TABLE IF NOT EXISTS player (
             x REAL, y REAL, vx REAL, vy REAL, facing INTEGER,
@@ -298,6 +317,9 @@ class SaveManager:
             depth_found INTEGER, seed INTEGER, biome TEXT, upgrades TEXT
         );
         CREATE TABLE IF NOT EXISTS bird_observations (
+            species_id TEXT PRIMARY KEY, count INTEGER, biome TEXT
+        );
+        CREATE TABLE IF NOT EXISTS insect_observations (
             species_id TEXT PRIMARY KEY, count INTEGER, biome TEXT
         );
         CREATE TABLE IF NOT EXISTS fish (
@@ -378,6 +400,26 @@ class SaveManager:
             yeast              TEXT DEFAULT '',
             vessel             TEXT DEFAULT ''
         );
+        CREATE TABLE IF NOT EXISTS spirits (
+            uid               TEXT PRIMARY KEY,
+            origin_biome      TEXT,
+            grain_type        TEXT,
+            spirit_type       TEXT,
+            state             TEXT,
+            cut_quality       REAL,
+            proof             REAL,
+            grain_character   REAL,
+            sweetness         REAL,
+            spice             REAL,
+            smokiness         REAL,
+            smoothness        REAL,
+            age_quality       REAL,
+            flavor_notes      TEXT,
+            seed              INTEGER,
+            blend_components  TEXT,
+            barrel_type       TEXT DEFAULT '',
+            age_duration      TEXT DEFAULT ''
+        );
         CREATE TABLE IF NOT EXISTS global_collection (
             category TEXT NOT NULL,
             item_id  TEXT NOT NULL,
@@ -402,15 +444,33 @@ class SaveManager:
             con.execute("ALTER TABLE player ADD COLUMN known_crops TEXT DEFAULT '[]'")
         except Exception:
             pass
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN discovered_foods TEXT DEFAULT '[]'")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN foods_cooked TEXT DEFAULT '{}'")
+        except Exception:
+            pass
         for col in ("water_reservoir", "compost_slot"):
             try:
                 con.execute(f"ALTER TABLE farm_bots ADD COLUMN {col} REAL DEFAULT 0")
             except Exception:
                 pass
         for col in ("soil_moisture", "crop_progress", "crop_care_sum",
-                    "soil_fertility", "compost_bin_data"):
+                    "soil_fertility", "compost_bin_data", "garden_data"):
             try:
                 con.execute(f"ALTER TABLE world_meta ADD COLUMN {col} TEXT")
+            except Exception:
+                pass
+        for col, default in [
+            ("horses_tamed", "0"),
+            ("horses_bred", "0"),
+            ("horse_records", "'{}'"),
+            ("discovered_coat_biomes", "'[]'"),
+        ]:
+            try:
+                con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT {default}")
             except Exception:
                 pass
 
@@ -459,6 +519,11 @@ class SaveManager:
             con.execute(
                 "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
                 ("wine", t),
+            )
+        for t in player.discovered_spirit_types:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("spirit", t),
             )
 
     def _check_and_save_achievements(self, con):
@@ -607,13 +672,19 @@ class SaveManager:
         progress     = {f"{x},{y}": p      for (x, y), p     in world._crop_progress.items()}
         care_sum     = {f"{x},{y}": [s, c] for (x, y), (s, c) in world._crop_care_sum.items()}
         compost_bins = {f"{x},{y}": d      for (x, y), d     in world.compost_bin_data.items()}
+        garden_flowers = {
+            f"{x},{y}": [_wf_to_dict(wf) for wf in flowers]
+            for (x, y), flowers in world.garden_data.items()
+            if flowers
+        }
         con.execute("DELETE FROM world_meta")
         con.execute(
             "INSERT INTO world_meta "
-            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
+            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
             (json.dumps(water), json.dumps(moisture), json.dumps(progress),
-             json.dumps(care_sum), json.dumps(fertility), json.dumps(compost_bins)),
+             json.dumps(care_sum), json.dumps(fertility), json.dumps(compost_bins),
+             json.dumps(garden_flowers)),
         )
 
     def _save_player(self, con, player):
@@ -625,8 +696,10 @@ class SaveManager:
                 selected_slot, inventory, hotbar, hotbar_uses, known_recipes,
                 discovered_types, discovered_flower_types,
                 discovered_mushroom_types, mushrooms_found,
-                spawn_x, spawn_y, discovered_fossil_types, known_crops)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                spawn_x, spawn_y, discovered_fossil_types, known_crops,
+                discovered_foods, foods_cooked,
+                horses_tamed, horses_bred, horse_records, discovered_coat_biomes)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 player.x, player.y, player.vx, player.vy, player.facing,
                 player.health, player.hunger, player.pick_power, player.money,
@@ -642,6 +715,12 @@ class SaveManager:
                 player.spawn_x, player.spawn_y,
                 json.dumps(list(player.discovered_fossil_types)),
                 json.dumps(list(player.known_crops)),
+                json.dumps(list(player.discovered_foods)),
+                json.dumps(player.foods_cooked),
+                getattr(player, "horses_tamed", 0),
+                getattr(player, "horses_bred", 0),
+                json.dumps(getattr(player, "horse_records", {})),
+                json.dumps(list(getattr(player, "discovered_coat_biomes", set()))),
             )
         )
 
@@ -765,6 +844,23 @@ class SaveManager:
                 )
             )
 
+    def _save_spirits(self, con, player):
+        con.execute("DELETE FROM spirits")
+        for s in player.spirits:
+            con.execute(
+                "INSERT OR REPLACE INTO spirits VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    s.uid, s.origin_biome, s.grain_type, s.spirit_type, s.state,
+                    s.cut_quality, s.proof,
+                    s.grain_character, s.sweetness, s.spice, s.smokiness, s.smoothness,
+                    s.age_quality,
+                    json.dumps(s.flavor_notes), s.seed,
+                    json.dumps(s.blend_components),
+                    getattr(s, "barrel_type", ""),
+                    getattr(s, "age_duration", ""),
+                )
+            )
+
     def _save_bird_observations(self, con, player):
         con.execute("DELETE FROM bird_observations")
         for species_id, data in player.birds_observed.items():
@@ -777,6 +873,23 @@ class SaveManager:
         try:
             rows = con.execute(
                 "SELECT species_id, count, biome FROM bird_observations"
+            ).fetchall()
+        except Exception:
+            return {}
+        return {row[0]: {"count": row[1], "biome": row[2]} for row in rows}
+
+    def _save_insect_observations(self, con, player):
+        con.execute("DELETE FROM insect_observations")
+        for species_id, data in player.insects_observed.items():
+            con.execute(
+                "INSERT INTO insect_observations VALUES (?,?,?)",
+                (species_id, data.get("count", 0), data.get("biome", "")),
+            )
+
+    def _load_insect_observations(self, con):
+        try:
+            rows = con.execute(
+                "SELECT species_id, count, biome FROM insect_observations"
             ).fetchall()
         except Exception:
             return {}
@@ -826,19 +939,31 @@ class SaveManager:
 
     def _save_entities(self, con, world):
         from animals import Sheep, Cow, Chicken, SnowLeopard, MountainLion
+        from horses import Horse
         from cities import NPC
         con.execute("DELETE FROM entities")
         for e in world.entities:
             if isinstance(e, NPC):
                 continue
+            traits_dict = {}
+            if hasattr(e, 'traits'):
+                traits_dict = {
+                    "color_shift": list(e.traits["color_shift"]),
+                    "size":        e.traits["size"],
+                    "productivity": e.traits.get("productivity", 1.0),
+                    "mutation":    e.traits.get("mutation"),
+                }
+                if isinstance(e, Horse):
+                    traits_dict["speed_rating"]     = e.traits["speed_rating"]
+                    traits_dict["stamina_max"]       = e.traits["stamina_max"]
+                    traits_dict["temperament"]       = e.traits["temperament"]
+                    traits_dict["coat_color"]        = list(e.traits["coat_color"])
+                    traits_dict["horseshoe_applied"] = e.traits.get("horseshoe_applied", False)
             extra = {
                 "uid":           getattr(e, 'uid', None),
                 "parent_a_uid":  getattr(e, 'parent_a_uid', None),
                 "parent_b_uid":  getattr(e, 'parent_b_uid', None),
-                "traits": {
-                    "color_shift": list(e.traits["color_shift"]),
-                    "size":        e.traits["size"],
-                } if hasattr(e, 'traits') else {},
+                "traits":        traits_dict,
                 "health":          getattr(e, 'health', 3),
                 "dead":            getattr(e, 'dead', False),
                 "_breed_cooldown": getattr(e, '_breed_cooldown', 60.0),
@@ -851,6 +976,9 @@ class SaveManager:
                 extra["has_milk"] = e.has_milk
             elif isinstance(e, Chicken):
                 extra["has_egg"] = e.has_egg
+            elif isinstance(e, Horse):
+                extra["stamina"] = e.stamina
+                extra["broken"]  = e._broken
             con.execute(
                 "INSERT INTO entities (entity_type, x, y, facing, animal_id, extra) VALUES (?,?,?,?,?,?)",
                 (type(e).__name__, e.x, e.y, e.facing, e.animal_id, json.dumps(extra))
@@ -877,14 +1005,19 @@ class SaveManager:
     # ------------------------------------------------------------------
 
     def _load_world_meta(self, con):
+        try:
+            con.execute("SELECT garden_data FROM world_meta LIMIT 1")
+        except Exception:
+            pass
         row = con.execute(
             "SELECT water_level, soil_moisture, crop_progress, crop_care_sum, "
-            "soil_fertility, compost_bin_data "
+            "soil_fertility, compost_bin_data, garden_data "
             "FROM world_meta LIMIT 1"
         ).fetchone()
         if row is None:
             return {"water_level": {}, "soil_moisture": {}, "crop_progress": {},
-                    "crop_care_sum": {}, "soil_fertility": {}, "compost_bin_data": {}}
+                    "crop_care_sum": {}, "soil_fertility": {}, "compost_bin_data": {},
+                    "garden_data": {}}
 
         def _parse_coord_dict(raw, transform=lambda v: v):
             if raw is None:
@@ -900,6 +1033,28 @@ class SaveManager:
                 return {}
             return json.loads(raw)
 
+        def _parse_garden_data(raw):
+            if not raw:
+                return {}
+            from wildflowers import Wildflower
+            result = {}
+            for key, flowers in json.loads(raw).items():
+                xs, ys = key.split(",")
+                result[(int(xs), int(ys))] = [
+                    Wildflower(
+                        uid=f["uid"], flower_type=f["flower_type"], rarity=f["rarity"],
+                        bloom_stage=f["bloom_stage"],
+                        primary_color=tuple(f["primary_color"]),
+                        secondary_color=tuple(f["secondary_color"]),
+                        center_color=tuple(f["center_color"]),
+                        petal_pattern=f["petal_pattern"], petal_count=f["petal_count"],
+                        fragrance=f["fragrance"], vibrancy=f["vibrancy"],
+                        specials=f["specials"], biodome_found=f["biodome_found"], seed=f["seed"],
+                    )
+                    for f in flowers
+                ]
+            return result
+
         return {
             "water_level":     _parse_coord_dict(row[0]),
             "soil_moisture":   _parse_coord_dict(row[1]),
@@ -907,15 +1062,18 @@ class SaveManager:
             "crop_care_sum":   _parse_coord_dict(row[3], lambda v: (float(v[0]), int(v[1]))),
             "soil_fertility":  _parse_coord_dict(row[4]),
             "compost_bin_data": _parse_bin_data(row[5]),
+            "garden_data":     _parse_garden_data(row[6] if len(row) > 6 else None),
         }
 
-    def _load_player(self, con, bird_obs=None):
+    def _load_player(self, con, bird_obs=None, insect_obs=None):
         row = con.execute("""
             SELECT x, y, vx, vy, facing, health, hunger, pick_power, money,
                    selected_slot, inventory, hotbar, hotbar_uses, known_recipes,
                    discovered_types, discovered_flower_types,
                    discovered_mushroom_types, mushrooms_found,
-                   spawn_x, spawn_y, discovered_fossil_types, known_crops
+                   spawn_x, spawn_y, discovered_fossil_types, known_crops,
+                   discovered_foods, foods_cooked,
+                   horses_tamed, horses_bred, horse_records, discovered_coat_biomes
             FROM player LIMIT 1
         """).fetchone()
 
@@ -923,7 +1081,9 @@ class SaveManager:
          selected_slot, inventory, hotbar, hotbar_uses, known_recipes,
          discovered_types, discovered_flower_types,
          discovered_mushroom_types, mushrooms_found,
-         spawn_x, spawn_y, discovered_fossil_types, known_crops) = row
+         spawn_x, spawn_y, discovered_fossil_types, known_crops,
+         discovered_foods, foods_cooked,
+         horses_tamed, horses_bred, horse_records_raw, discovered_coat_biomes_raw) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -1075,6 +1235,32 @@ class SaveManager:
                 "vessel": w[19] or "",
             })
 
+        try:
+            spirit_rows = con.execute("""
+                SELECT uid, origin_biome, grain_type, spirit_type, state,
+                       cut_quality, proof, grain_character, sweetness, spice,
+                       smokiness, smoothness, age_quality,
+                       flavor_notes, seed, blend_components,
+                       COALESCE(barrel_type, ''), COALESCE(age_duration, '')
+                FROM spirits
+            """).fetchall()
+        except Exception:
+            spirit_rows = []
+        spirit_data = []
+        for s in spirit_rows:
+            spirit_data.append({
+                "uid": s[0], "origin_biome": s[1], "grain_type": s[2],
+                "spirit_type": s[3], "state": s[4],
+                "cut_quality": s[5], "proof": s[6],
+                "grain_character": s[7], "sweetness": s[8], "spice": s[9],
+                "smokiness": s[10], "smoothness": s[11], "age_quality": s[12],
+                "flavor_notes": json.loads(s[13]) if s[13] else [],
+                "seed": s[14],
+                "blend_components": json.loads(s[15]) if s[15] else [],
+                "barrel_type": s[16] or "",
+                "age_duration": s[17] or "",
+            })
+
         return {
             "x": x, "y": y, "vx": vx, "vy": vy, "facing": facing,
             "health": health, "hunger": hunger, "pick_power": pick_power,
@@ -1095,6 +1281,8 @@ class SaveManager:
             "discovered_gem_types": list({g["gem_type"] for g in gems_data}),
             "birds_observed": bird_obs or {},
             "discovered_bird_types": list((bird_obs or {}).keys()),
+            "insects_observed": insect_obs or {},
+            "discovered_insect_types": list((insect_obs or {}).keys()),
             "fish": fish_data,
             "discovered_fish_species": list({f["species"] for f in fish_data}),
             "coffee_beans": coffee_data,
@@ -1107,9 +1295,20 @@ class SaveManager:
                 f"{w['origin_biome']}_{w['style']}"
                 for w in wine_data if w["state"] not in ("raw", "crushed") and w["style"]
             }),
+            "spirits": spirit_data,
+            "discovered_spirit_types": list({
+                f"{s['origin_biome']}_{('reserve' if s['age_quality'] >= 0.70 else 'aged' if s['age_quality'] >= 0.40 else 'young')}"
+                for s in spirit_data if s["state"] in ("aged", "blended")
+            }),
             "spawn_x": spawn_x,
             "spawn_y": spawn_y,
             "known_crops": json.loads(known_crops or "[]"),
+            "discovered_foods": json.loads(discovered_foods or "[]"),
+            "foods_cooked": json.loads(foods_cooked or "{}"),
+            "horses_tamed": int(horses_tamed or 0),
+            "horses_bred": int(horses_bred or 0),
+            "horse_records": json.loads(horse_records_raw or "{}"),
+            "discovered_coat_biomes": json.loads(discovered_coat_biomes_raw or "[]"),
         }
 
     def _load_automations(self, con):

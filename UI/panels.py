@@ -334,34 +334,89 @@ class PanelsMixin:
         self.screen.blit(overlay, (0, 0))
 
         title = self.font.render("RESEARCH TREE", True, (255, 220, 50))
-        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 6))
-        hint = self.small.render("R to close  |  Click an available upgrade to unlock it",
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 8))
+        hint = self.small.render("R to close  |  Select a category, then click a node to unlock",
                                  True, (150, 150, 150))
-        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 26))
+        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 28))
 
-        n_cols = len(research.COLUMNS)
-        CARD_W, CARD_H = 210, 118
-        COL_GAP, ROW_GAP = 12, 8
-        total_w = n_cols * CARD_W + (n_cols - 1) * COL_GAP
-        col_x = [(SCREEN_W - total_w) // 2 + c * (CARD_W + COL_GAP) for c in range(n_cols)]
-        header_y = 46
-        TEXT_PAD = 6
-        TEXT_W = CARD_W - TEXT_PAD * 2
+        # --- Left sidebar: category list ---
+        SIDEBAR_X = 20
+        SIDEBAR_Y = 52
+        CAT_W, CAT_H, CAT_GAP = 175, 52, 6
 
-        for c, label in enumerate(research.COLUMNS):
-            hdr = self.small.render(label, True, (190, 190, 190))
-            self.screen.blit(hdr, (col_x[c], header_y))
+        self._research_cat_rects = {}
+        for ci, col_name in enumerate(research.COLUMNS):
+            col_nodes = [nid for (c, _r, nid) in research.layout if c == ci]
+            available_count = sum(
+                1 for nid in col_nodes
+                if research.can_unlock(nid, player.inventory, player.money)
+            )
+            has_available = available_count > 0
+            is_selected   = (self._research_selected_col == ci)
+
+            cat_rect = pygame.Rect(SIDEBAR_X, SIDEBAR_Y + ci * (CAT_H + CAT_GAP), CAT_W, CAT_H)
+            self._research_cat_rects[ci] = cat_rect
+
+            if has_available:
+                bg_col  = (55, 44, 4)
+                bdr_col = (220, 178, 28)
+            elif is_selected:
+                bg_col  = (22, 32, 68)
+                bdr_col = (75, 115, 215)
+            else:
+                bg_col  = (14, 17, 32)
+                bdr_col = (48, 52, 86)
+
+            pygame.draw.rect(self.screen, bg_col, cat_rect, border_radius=6)
+            pygame.draw.rect(self.screen, bdr_col, cat_rect, 2, border_radius=6)
+
+            if has_available:
+                stripe = pygame.Rect(cat_rect.x, cat_rect.y + 4, 4, cat_rect.height - 8)
+                pygame.draw.rect(self.screen, (255, 200, 0), stripe, border_radius=2)
+
+            if is_selected:
+                tx = cat_rect.right + 5
+                ty = cat_rect.centery
+                pygame.draw.polygon(self.screen, (180, 190, 255),
+                                    [(tx, ty - 6), (tx + 9, ty), (tx, ty + 6)])
+
+            name_col = (255, 210, 0) if has_available else (215, 220, 255) if is_selected else (155, 158, 188)
+            lbl = self.small.render(col_name, True, name_col)
+            lbl_x = cat_rect.x + 10
+            lbl_y = cat_rect.y + (CAT_H - lbl.get_height()) // 2
+            self.screen.blit(lbl, (lbl_x, lbl_y))
+
+            if available_count > 0:
+                badge = self.small.render(str(available_count), True, (10, 10, 10))
+                bw = badge.get_width() + 8
+                bh = badge.get_height() + 4
+                bx = cat_rect.right - bw - 5
+                by = cat_rect.y + (CAT_H - bh) // 2
+                pygame.draw.rect(self.screen, (220, 178, 28), (bx, by, bw, bh), border_radius=4)
+                self.screen.blit(badge, (bx + 4, by + 2))
+
+        # --- Right panel: nodes for selected column ---
+        RIGHT_X  = SIDEBAR_X + CAT_W + 28
+        RIGHT_W  = SCREEN_W - RIGHT_X - 20
+        CARD_W   = RIGHT_W
+        CARD_H   = 115
+        ROW_GAP  = 8
+        TEXT_PAD = 10
+        TEXT_W   = CARD_W - TEXT_PAD * 2
+        NODE_Y   = SIDEBAR_Y
+
+        sel_col       = self._research_selected_col
+        col_node_rows = sorted((r, nid) for (c, r, nid) in research.layout if c == sel_col)
 
         self._card_rects.clear()
-        for col, row, node_id in research.layout:
+        for row, node_id in col_node_rows:
             node = research.nodes[node_id]
-            x = col_x[col]
-            y = header_y + 18 + row * (CARD_H + ROW_GAP)
-            rect = pygame.Rect(x, y, CARD_W, CARD_H)
+            y    = NODE_Y + row * (CARD_H + ROW_GAP)
+            rect = pygame.Rect(RIGHT_X, y, CARD_W, CARD_H)
             self._card_rects[node_id] = rect
 
             prereqs_ok = research.prereqs_met(node_id)
-            can = research.can_unlock(node_id, player.inventory, player.money)
+            can        = research.can_unlock(node_id, player.inventory, player.money)
 
             if node.unlocked:
                 bg, border = (10, 45, 10), (40, 170, 40)
@@ -376,60 +431,56 @@ class PanelsMixin:
                 bg, border = (20, 20, 28), (55, 55, 80)
                 status_txt, status_col = "LOCKED", (90, 90, 120)
 
-            pygame.draw.rect(self.screen, bg, rect)
-            pygame.draw.rect(self.screen, border, rect, 2)
+            pygame.draw.rect(self.screen, bg, rect, border_radius=6)
+            pygame.draw.rect(self.screen, border, rect, 2, border_radius=6)
 
-            # Name row — clip so it doesn't reach the status badge
-            st_surf = self.small.render(status_txt, True, status_col)
-            st_x = x + CARD_W - st_surf.get_width() - TEXT_PAD
-            name_max_w = st_x - (x + TEXT_PAD) - 4
-            name_surf = self.font.render(node.name, True, (255, 255, 220))
+            st_surf    = self.small.render(status_txt, True, status_col)
+            st_x       = rect.right - st_surf.get_width() - TEXT_PAD
+            name_max_w = st_x - (rect.x + TEXT_PAD) - 6
+            name_surf  = self.font.render(node.name, True, (255, 255, 220))
             if name_surf.get_width() > name_max_w:
                 name_surf = name_surf.subsurface((0, 0, name_max_w, name_surf.get_height()))
-            self.screen.blit(name_surf, (x + TEXT_PAD, y + 5))
-            self.screen.blit(st_surf, (st_x, y + 8))
+            self.screen.blit(name_surf, (rect.x + TEXT_PAD, y + 7))
+            self.screen.blit(st_surf,   (st_x, y + 10))
 
-            # Description — wrapped to fit card width
             desc_lines = _wrap_text(node.description, self.small, TEXT_W)
-            dy = y + 26
+            dy = y + 30
             for line in desc_lines[:2]:
-                self.screen.blit(self.small.render(line, True, (150, 150, 150)), (x + TEXT_PAD, dy))
+                self.screen.blit(self.small.render(line, True, (150, 150, 150)), (rect.x + TEXT_PAD, dy))
                 dy += 15
 
-            # Cost / prereq rows below description
-            cost_y = y + 60
+            cost_y = y + 64
             if not node.unlocked:
                 if not prereqs_ok:
-                    blocked = [research.nodes[p].name for p in node.prerequisites
-                               if not research.nodes[p].unlocked]
-                    req_lines = _wrap_text("Requires: " + ", ".join(blocked[:2]),
-                                           self.small, TEXT_W)
+                    blocked   = [research.nodes[p].name for p in node.prerequisites
+                                 if not research.nodes[p].unlocked]
+                    req_lines = _wrap_text("Requires: " + ", ".join(blocked[:2]), self.small, TEXT_W)
                     for line in req_lines[:2]:
                         self.screen.blit(self.small.render(line, True, (160, 80, 80)),
-                                         (x + TEXT_PAD, cost_y))
+                                         (rect.x + TEXT_PAD, cost_y))
                         cost_y += 15
                 else:
-                    cx2 = x + TEXT_PAD
+                    cx2 = rect.x + TEXT_PAD
                     for item_id, needed in node.cost.items():
-                        have = player.inventory.get(item_id, 0)
+                        have  = player.inventory.get(item_id, 0)
                         iname = ITEMS.get(item_id, {}).get("name", item_id)
-                        col_c = (70, 200, 70) if have >= needed else (210, 80, 80)
-                        cs = self.small.render(f"{iname}: {have}/{needed}", True, col_c)
-                        if cx2 + cs.get_width() > x + CARD_W - TEXT_PAD and cx2 > x + TEXT_PAD:
+                        cc    = (70, 200, 70) if have >= needed else (210, 80, 80)
+                        cs    = self.small.render(f"{iname}: {have}/{needed}", True, cc)
+                        if cx2 + cs.get_width() > rect.right - TEXT_PAD and cx2 > rect.x + TEXT_PAD:
                             cost_y += 15
-                            cx2 = x + TEXT_PAD
+                            cx2 = rect.x + TEXT_PAD
                         self.screen.blit(cs, (cx2, cost_y))
-                        cx2 += cs.get_width() + 8
+                        cx2 += cs.get_width() + 12
                     if node.money_cost > 0:
-                        col_m = (70, 200, 70) if player.money >= node.money_cost else (210, 80, 80)
-                        ms = self.small.render(f"Gold: {player.money}/{node.money_cost}", True, col_m)
-                        if cx2 + ms.get_width() > x + CARD_W - TEXT_PAD and cx2 > x + TEXT_PAD:
+                        cm = (70, 200, 70) if player.money >= node.money_cost else (210, 80, 80)
+                        ms = self.small.render(f"Gold: {player.money}/{node.money_cost}", True, cm)
+                        if cx2 + ms.get_width() > rect.right - TEXT_PAD and cx2 > rect.x + TEXT_PAD:
                             cost_y += 15
-                            cx2 = x + TEXT_PAD
+                            cx2 = rect.x + TEXT_PAD
                         self.screen.blit(ms, (cx2, cost_y))
 
             if row > 0 and prereqs_ok and not node.unlocked:
-                mid_x = x + CARD_W // 2
+                mid_x = rect.x + CARD_W // 2
                 pygame.draw.line(self.screen, border, (mid_x, y - ROW_GAP), (mid_x, y), 1)
 
     def _draw_inventory(self, player):
@@ -599,6 +650,98 @@ class PanelsMixin:
             self.screen.blit(empty_s, (lx + half // 2 - empty_s.get_width() // 2, py + 280))
         if not player_items:
             empty_s = self.small.render("Inventory is empty", True, (80, 65, 45))
+            self.screen.blit(empty_s, (rx + half // 2 - empty_s.get_width() // 2, py + 280))
+
+    _RARITY_COLOR = {
+        "common":    (160, 160, 160),
+        "uncommon":  ( 80, 200,  80),
+        "rare":      ( 80, 120, 255),
+        "epic":      (180,  80, 255),
+        "legendary": (255, 180,  40),
+    }
+
+    def _draw_garden(self, player):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 210))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 1140, 580
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (14, 26, 14), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, ( 60, 140, 60), (px, py, PW, PH), 2)
+
+        hint = self.small.render(
+            "Left-click: move flower  |  E or ESC: close",
+            True, (90, 150, 90))
+        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, py + 8))
+
+        has_flowers = bool(self.active_garden_flowers)
+        status_color = (80, 200, 80) if has_flowers else (160, 80, 80)
+        status_text  = "Attracting insects" if has_flowers else "No wildflowers — insects won't visit"
+        status_s = self.small.render(status_text, True, status_color)
+        self.screen.blit(status_s, (SCREEN_W // 2 - status_s.get_width() // 2, py + PH - 24))
+
+        half = (PW - 30) // 2
+        lx = px + 10
+        rx = px + 20 + half
+        pygame.draw.line(self.screen, (40, 90, 40),
+                         (px + half + 15, py + 30), (px + half + 15, py + PH - 30), 1)
+
+        CW, CH, GAP = 520, 52, 6
+        VISIBLE_ROWS = 7
+        AREA_H = VISIBLE_ROWS * (CH + GAP)
+
+        def _draw_section(title, flowers, start_x, scroll, rects_out):
+            title_s = self.font.render(title, True, (140, 220, 100))
+            self.screen.blit(title_s, (start_x + half // 2 - title_s.get_width() // 2, py + 30))
+
+            clip_rect = pygame.Rect(start_x, py + 55, half, AREA_H + 5)
+            self.screen.set_clip(clip_rect)
+            rects_out.clear()
+
+            for idx, wf in enumerate(flowers):
+                row = idx - scroll
+                if row < 0 or row >= VISIBLE_ROWS:
+                    continue
+                y = py + 58 + row * (CH + GAP)
+                rect = pygame.Rect(start_x + 10, y, CW, CH)
+                rects_out[wf.uid] = rect
+                pygame.draw.rect(self.screen, (24, 40, 24), rect)
+                pygame.draw.rect(self.screen, (50, 110, 50), rect, 1)
+
+                # Color swatch
+                swatch = pygame.Rect(start_x + 16, y + 8, 36, 36)
+                pygame.draw.rect(self.screen, wf.primary_color, swatch)
+                pygame.draw.rect(self.screen, wf.secondary_color, swatch, 3)
+
+                # Name and rarity
+                name = wf.flower_type.replace("_", " ").title()
+                rarity_col = self._RARITY_COLOR.get(wf.rarity, (160, 160, 160))
+                self.screen.blit(self.small.render(name, True, (220, 255, 200)),
+                                 (start_x + 60, y + 8))
+                self.screen.blit(self.small.render(wf.rarity.capitalize(), True, rarity_col),
+                                 (start_x + 60, y + 28))
+                biome_s = self.small.render(f"  {wf.biodome_found}", True, (100, 160, 100))
+                self.screen.blit(biome_s, (start_x + 200, y + 28))
+
+            self.screen.set_clip(None)
+            return max(0, len(flowers) - VISIBLE_ROWS)
+
+        self._max_garden_scroll = _draw_section(
+            "IN GARDEN", self.active_garden_flowers, lx, self._garden_scroll, self._garden_rects)
+        self._garden_scroll = min(self._garden_scroll, self._max_garden_scroll)
+
+        self._max_player_garden_scroll = _draw_section(
+            "YOUR WILDFLOWERS", player.wildflowers, rx, self._player_garden_scroll,
+            self._player_garden_rects)
+        self._player_garden_scroll = min(self._player_garden_scroll, self._max_player_garden_scroll)
+
+        if not self.active_garden_flowers:
+            empty_s = self.small.render("Garden is empty", True, (50, 90, 50))
+            self.screen.blit(empty_s, (lx + half // 2 - empty_s.get_width() // 2, py + 280))
+        if not player.wildflowers:
+            empty_s = self.small.render("No wildflowers in collection", True, (50, 90, 50))
             self.screen.blit(empty_s, (rx + half // 2 - empty_s.get_width() // 2, py + 280))
 
     _STATUS_COLOR = {

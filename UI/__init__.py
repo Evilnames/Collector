@@ -11,13 +11,17 @@ from .panels import PanelsMixin
 from .crafting import CraftingMixin
 from .coffee import CoffeeMixin
 from .wine import WineMixin
+from .spirits import SpiritsMixin
 from .minigames import MinigamesMixin
 from .collections import CollectionsMixin
+from .help import HelpMixin
+from .horses_ui import HorseMixin
 
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
-    CraftingMixin, CoffeeMixin, WineMixin, MinigamesMixin, CollectionsMixin,
+    CraftingMixin, CoffeeMixin, WineMixin, SpiritsMixin, MinigamesMixin, CollectionsMixin,
+    HelpMixin, HorseMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -25,6 +29,8 @@ class UI(
         self.font  = pygame.font.SysFont("consolas", 18)
         self.small = pygame.font.SysFont("consolas", 13)
         self.research_open           = False
+        self._research_selected_col  = 0
+        self._research_cat_rects     = {}
         self.inventory_open          = False
         self.crafting_open           = False   # C: crafting panel
         self.collection_open         = False   # G: rock collection
@@ -163,14 +169,37 @@ class UI(
         self._max_chest_scroll = 0
         self._player_chest_scroll = 0
         self._max_player_chest_scroll = 0
+        # Garden UI
+        self.garden_open           = False
+        self.active_garden_flowers = None  # direct reference to world.garden_data[(bx,by)]
+        self.active_garden_pos     = None  # (bx, by)
+        self._garden_rects         = {}    # uid -> Rect  (garden side)
+        self._player_garden_rects  = {}    # uid -> Rect  (player side)
+        self._garden_scroll        = 0
+        self._max_garden_scroll    = 0
+        self._player_garden_scroll = 0
+        self._max_player_garden_scroll = 0
         # Cheat console
         self.cheat_open    = False
         self.cheat_text    = ""
         self.cheat_message = ""
         self._cheat_msg_timer = 0.0
+        # Help screen
+        self.help_open          = False
+        self._help_topic        = "Distilling"
+        self._help_scroll       = 0
+        self._help_max_scroll   = 0
+        self._help_topic_rects  = {}
         # Bird codex UI state
         self._bird_codex_scroll        = 0
         self._max_bird_codex_scroll    = 0
+        # Insect codex UI state
+        self._insect_codex_scroll      = 0
+        self._max_insect_codex_scroll  = 0
+        self._insect_codex_rects       = {}
+        # Food codex UI state
+        self._food_codex_scroll        = 0
+        self._max_food_codex_scroll    = 0
         # Fish codex UI state
         self._fish_codex_rects         = {}
         self._fish_codex_scroll        = 0
@@ -292,6 +321,52 @@ class UI(
         self._bottle_temp            = "cellar"
         self._bottle_temp_rects      = {}
         self._bottle_btn             = None
+        # ----- Copper Still mini-game state -----
+        self._still_phase            = "select_spirit"  # select_spirit | distilling | result
+        self._still_spirit_idx       = None
+        self._still_time             = 0.0
+        self._still_temp             = 0.0
+        self._still_temp_vel         = 0.0
+        self._still_heat_held        = False
+        self._still_heads_time       = 0.0
+        self._still_hearts_time      = 0.0
+        self._still_tails_time       = 0.0
+        self._still_cut1_done        = False
+        self._still_cut2_done        = False
+        self._still_foreshots_hit    = False
+        self._still_hearts_hit       = False
+        self._still_feints_hit       = False
+        self._still_event_flash      = None
+        self._still_penalties        = 0
+        self._still_cut1_btn         = None
+        self._still_cut2_btn         = None
+        self._still_finish_btn       = None
+        self._still_select_rects     = {}
+        self._still_result_spirit    = None
+        self._still_result_done_btn  = None
+        # ----- Barrel Room state -----
+        self._barrel_spirit_idx      = None
+        self._barrel_type_sel        = "charred_oak"
+        self._barrel_duration_sel    = "medium"
+        self._barrel_select_rects    = {}
+        self._barrel_type_rects      = {}
+        self._barrel_duration_rects  = {}
+        self._barrel_age_btn         = None
+        # ----- Bottling Station state -----
+        self._bottle_phase           = "select"  # select | result
+        self._bottle_single_idx      = None
+        self._bottle_blend_slots     = []        # list of spirit indices (up to 3)
+        self._bottle_select_rects    = {}
+        self._bottle_single_btn      = None
+        self._bottle_blend_btn       = None
+        self._bottle_result_id       = None
+        self._bottle_result_spirit   = None
+        self._bottle_result_done_btn = None
+        # ----- Spirits codex UI state -----
+        self._spirits_codex_scroll      = 0
+        self._max_spirits_codex_scroll  = 0
+        self._spirits_codex_selected    = None
+        self._spirits_codex_rects       = {}
         # Fossil prep table mini-game state
         self._fprep_phase      = "select"   # "select" | "prep" | "reveal"
         self._fprep_fossil     = None       # Fossil being prepared
@@ -341,12 +416,41 @@ class UI(
         self._breed_selected_uid  = None
         self._breed_scroll        = 0
         self._max_breed_scroll    = 0
+        # Horse breaking mini-game overlay
+        self._hb_active        = False
+        self._hb_horse         = None
+        self._hb_phase         = "intro"
+        self._hb_intro_timer   = 2.5
+        self._hb_balance       = 50.0
+        self._hb_direction     = 1
+        self._hb_buck_timer    = 0.0
+        self._hb_buck_interval = 1.2
+        self._hb_max_time      = 8.0
+        self._hb_active_timer  = 0.0
+        self._hb_result        = None
+        self._hb_result_timer  = 0.0
+        # Horse breeding panel
+        self.horse_breeding_open      = False
+        self.active_stable_pos        = None   # (bx, by) of the stable block
+        self._hbr_horse_a             = None
+        self._hbr_horse_b             = None
+        self._hbr_breed_btn           = None
+        self._hbr_close_btn           = None
+        # Horse codex scroll
+        self._horse_codex_scroll      = 0
+        self._max_horse_codex_scroll  = 0
         # Bird observation mini-game overlay
         self._bird_obs_active    = False
         self._bird_obs_bird      = None
         self._bird_obs_timer     = 0.0   # 0.0 → 2.0 when complete
         self._bird_obs_failed    = False
         self._bird_obs_fail_timer = 0.0
+        # Insect catch mini-game overlay
+        self._insect_obs_active   = False
+        self._insect_obs_insect   = None
+        self._insect_obs_timer    = 0.0   # 0.0 → 1.5 when complete
+        self._insect_obs_failed   = False
+        self._insect_obs_fail_timer = 0.0
         # Bird collection
         self._bird_journal_rects  = {}
         self._bird_journal_scroll = 0
@@ -388,11 +492,15 @@ class UI(
             self._draw_backhoe_panel(player)
         if self.chest_open and self.active_chest_inv is not None:
             self._draw_chest(player)
+        if self.garden_open and self.active_garden_flowers is not None:
+            self._draw_garden(player)
         if self.cheat_open:
             self._draw_cheat_console()
         if self.pause_open:
             self._draw_pause_menu()
         self._draw_hotbar(player)
+        if self.help_open:
+            self._draw_help()
         if getattr(player, 'bg_place_mode', False):
             self._draw_bg_mode_indicator()
         self._draw_coffee_buffs(player)
@@ -401,4 +509,9 @@ class UI(
         self._draw_toasts(dt)
         if self._drag_item_id is not None and self.inventory_open:
             self._draw_drag_item()
+        if self._hb_active:
+            self._draw_horse_breaking_overlay(player)
+        if self.horse_breeding_open:
+            self._draw_horse_breeding_panel(player)
+        self._draw_horse_stamina_hud(player)
 

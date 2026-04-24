@@ -40,7 +40,7 @@ def _noop(player, world):
 
 
 class ResearchTree:
-    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking"]
+    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship"]
 
     def __init__(self):
         self.nodes = {}    # id -> ResearchNode
@@ -67,6 +67,14 @@ class ResearchTree:
         player.bird_spook_reduction       = 0.4  if u("bird_sanctuary")     else 0.0
         player.bird_feeder_bonus          = 2.0  if u("bird_lure")          else 1.0
         player.avian_mastery              = u("avian_mastery")
+        player.insect_net_reduction       = 0.4  if u("net_mastery")        else 0.0
+        player.insect_pollination_mult    = 1.35 if u("advanced_entomology") else 1.1
+
+        # Horsemanship bonuses
+        player.horse_whisperer_bonus    = 2    if u("horse_whisperer")   else 0
+        player.horse_breeding_mastery   = u("breeding_mastery")
+        player.horse_stamina_drain_mult = 0.7  if u("endurance_riding")  else 1.0
+        player.horse_shoe_bonus         = 0.15 if u("speed_training")    else 0.05
         if world is not None:
             # irrigation: moisture decays half as fast
             world.moisture_decay_chance = (
@@ -224,6 +232,87 @@ class ResearchTree:
             "Wine buffs last 50% longer",
             {"gold_nugget": 2, "iron_chunk": 3}, ["fermentation_arts"],
             _noop, money_cost=60), 5, 2)
+
+        # --- Distillation (column 6) ---
+        self._add(ResearchNode(
+            "distillation_basics", "Distillation Basics",
+            "Learn to distill — unlocks Still, Barrel Room, Bottling Station",
+            {"coal": 8, "iron_chunk": 4}, [],
+            _noop, money_cost=20), 6, 0)
+
+        self._add(ResearchNode(
+            "cut_mastery", "Cut Mastery",
+            "Hearts-cut window +20% wider — easier to nail quality distillation",
+            {"coal": 6, "iron_chunk": 3}, ["distillation_basics"],
+            _noop, money_cost=35), 6, 1)
+
+        self._add(ResearchNode(
+            "barrel_arts", "Barrel Arts",
+            "Aging quality bonus +15% on all barrels",
+            {"lumber": 8, "gold_nugget": 1}, ["cut_mastery"],
+            _noop, money_cost=50), 6, 2)
+
+        self._add(ResearchNode(
+            "master_distiller", "Master Distiller",
+            "Spirit buffs last 50% longer",
+            {"gold_nugget": 3, "iron_chunk": 4}, ["barrel_arts"],
+            _noop, money_cost=80), 6, 3)
+
+        # --- Entomology (column 7) ---
+        self._add(ResearchNode(
+            "entomology_basics", "Entomology Basics",
+            "Learn to catch insects — unlocks Bug Net and Display Case",
+            {"lumber": 3, "wool": 2}, [],
+            _noop, money_cost=8), 7, 0)
+
+        self._add(ResearchNode(
+            "insect_habitats", "Insect Habitats",
+            "Biome hints appear for undiscovered insects in the codex",
+            {"stone_chip": 4, "wheat": 3}, ["entomology_basics"],
+            _noop, money_cost=20), 7, 1)
+
+        self._add(ResearchNode(
+            "net_mastery", "Net Mastery",
+            "Insects spook 40% less easily when approaching",
+            {"lumber": 6, "wool": 4}, ["insect_habitats"],
+            _noop, money_cost=35), 7, 2)
+
+        self._add(ResearchNode(
+            "advanced_entomology", "Advanced Entomology",
+            "Insect pollination bonus increases from 10% to 35% crop growth boost",
+            {"gold_nugget": 1, "lumber": 8}, ["net_mastery"],
+            _noop, money_cost=80), 7, 3)
+
+        # --- Horsemanship (column 8) ---
+        self._add(ResearchNode(
+            "saddle_craft", "Saddle Craft",
+            "Learn to craft saddles and stables — required for riding horses",
+            {"lumber": 3, "wool": 2}, [],
+            _noop, money_cost=10), 8, 0)
+
+        self._add(ResearchNode(
+            "horse_whisperer", "Horse Whisperer",
+            "Taming threshold reduced by 2 for all horse temperaments",
+            {"apple": 5, "wheat": 5}, ["saddle_craft"],
+            _noop, money_cost=22), 8, 1)
+
+        self._add(ResearchNode(
+            "breeding_mastery", "Breeding Mastery",
+            "Offspring temperament skews calmer; stat prediction shown in breeding panel",
+            {"lumber": 6, "iron_chunk": 3}, ["horse_whisperer"],
+            _noop, money_cost=40), 8, 2)
+
+        self._add(ResearchNode(
+            "speed_training", "Speed Training",
+            "Horseshoes grant +15% speed instead of +5%",
+            {"iron_chunk": 5, "coal": 3}, ["breeding_mastery"],
+            _noop, money_cost=55), 8, 3)
+
+        self._add(ResearchNode(
+            "endurance_riding", "Endurance",
+            "Stamina drains 30% slower while sprinting on horseback",
+            {"gold_nugget": 1, "wheat": 8}, ["speed_training"],
+            _noop, money_cost=80), 8, 4)
 
     def prereqs_met(self, node_id):
         return all(self.nodes[p].unlocked for p in self.nodes[node_id].prerequisites)

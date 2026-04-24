@@ -490,6 +490,7 @@ class CraftingMixin:
                             BBQ_GRILL_BLOCK, CLAY_POT_BLOCK, DESERT_FORGE_BLOCK,
                             ARTISAN_BENCH_BLOCK,
                             GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
+                            STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
                             COMPOST_BIN_BLOCK)
         if self.refinery_block_id == FOSSIL_TABLE_BLOCK:
             self._draw_fossil_table(player, dt)
@@ -511,6 +512,15 @@ class CraftingMixin:
             return
         if self.refinery_block_id == WINE_CELLAR_BLOCK:
             self._draw_wine_cellar(player)
+            return
+        if self.refinery_block_id == STILL_BLOCK:
+            self._draw_still(player, dt)
+            return
+        if self.refinery_block_id == BARREL_ROOM_BLOCK:
+            self._draw_barrel_room(player, dt)
+            return
+        if self.refinery_block_id == BOTTLING_BLOCK:
+            self._draw_bottling_station(player, dt)
             return
         if self.refinery_block_id == GEM_CUTTER_BLOCK:
             self._draw_gem_cutter(player, dt)

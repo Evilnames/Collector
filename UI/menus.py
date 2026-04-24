@@ -95,6 +95,9 @@ class MenusMixin:
             elif category == "Achievement":
                 display = name_or_bid
                 color = (255, 215, 80)
+            elif category == "Food":
+                display = name_or_bid
+                color = (235, 165, 80)
             else:
                 display = name_or_bid
                 color = self._RARITY_COLORS.get(rarity, (200, 200, 200))

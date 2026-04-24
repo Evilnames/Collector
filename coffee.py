@@ -38,6 +38,7 @@ BIOME_FLAVOR_PROFILES = {
     "alpine_mountain": {"acidity": 0.90, "body": 0.45, "sweetness": 0.70, "earthiness": 0.20, "brightness": 0.85, "variety": "arabica"},
     "rocky_mountain":  {"acidity": 0.45, "body": 0.80, "sweetness": 0.35, "earthiness": 0.80, "brightness": 0.25, "variety": "liberica"},
     "rolling_hills":   {"acidity": 0.55, "body": 0.60, "sweetness": 0.65, "earthiness": 0.45, "brightness": 0.55, "variety": "arabica"},
+    "boreal":          {"acidity": 0.35, "body": 0.80, "sweetness": 0.40, "earthiness": 0.85, "brightness": 0.25, "variety": "robusta"},
 }
 
 _FLAVOR_POOLS = {
@@ -103,7 +104,7 @@ WATER_QUALITIES = {
 
 # All discoverable codex entries: "biome_roastlevel"
 _CODEX_BIOMES = ["tropical", "jungle", "savanna", "wetland", "arid_steppe", "canyon", "beach",
-                 "tundra", "swamp", "alpine_mountain", "rocky_mountain", "rolling_hills"]
+                 "tundra", "swamp", "alpine_mountain", "rocky_mountain", "rolling_hills", "boreal"]
 COFFEE_TYPE_ORDER = [
     f"{biome}_{roast}"
     for biome in _CODEX_BIOMES
@@ -301,5 +302,6 @@ BIOME_DISPLAY_NAMES = {
     "alpine_mountain": "Alpine",
     "rocky_mountain":  "Rocky Mtn",
     "rolling_hills":   "Rolling Hills",
+    "boreal":          "Boreal",
     "blend":           "Blend",
 }

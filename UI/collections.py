@@ -20,6 +20,7 @@ from coffee import (BIOME_DISPLAY_NAMES, ROAST_LEVEL_DESCS, ROAST_COLORS,
 from wine import (WINE_STYLE_DESCS, WINE_STYLE_COLORS, WINE_TYPE_ORDER,
                   WINE_STYLE_ORDER, VARIETY_DISPLAY_NAMES as WINE_VARIETY_NAMES,
                   BIOME_DISPLAY_NAMES as WINE_BIOME_NAMES)
+from spirits import SPIRIT_TYPE_ORDER
 from constants import SCREEN_W, SCREEN_H
 from ._data import (_MUSHROOM_ORDER, _MUSHROOM_BIOME, _MUSHROOM_DROP_COLOR,
                     _MUSHROOM_SHAPES, _MUSHROOM_NAMES, SPECIAL_DESCS, RARITY_LABEL)
@@ -48,11 +49,12 @@ class CollectionsMixin:
         n_mush_owned = sum(1 for b in _MUSHROOM_ORDER if player.mushrooms_found.get(b, 0) > 0)
         n_fish_disc  = len(player.discovered_fish_species)
         n_fish_total = len(FISH_TYPE_ORDER)
-        n_coffee_owned = len(player.coffee_beans)
-        n_wine_owned   = len(getattr(player, "wine_grapes", []))
+        n_coffee_owned  = len(player.coffee_beans)
+        n_wine_owned    = len(getattr(player, "wine_grapes", []))
+        n_spirits_owned = len(getattr(player, "spirits", []))
         total_collected = (len(player.rocks) + len(player.wildflowers) +
                            len(player.fossils) + len(player.gems) + n_mush_owned +
-                           n_coffee_owned + n_wine_owned)
+                           n_coffee_owned + n_wine_owned + n_spirits_owned)
 
         # ---- 3 main tabs ----
         self._tab_rects.clear()
@@ -81,8 +83,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -92,76 +94,45 @@ class CollectionsMixin:
         self.screen.blit(title_s, (SCREEN_W // 2 - title_s.get_width() // 2, 4))
 
         SUB_Y = tab_y + TAB_H + 4   # 54
-        SUB_H = 20
-        GY0   = SUB_Y + SUB_H + 6   # 80
+        GY0   = SUB_Y
 
-        # ---- Sub-button row ----
+        # ---- Content ----
+        SIDEBAR_W = 130
         if self._collection_tab == 0:
-            # Filter buttons for the unified collection
-            self._collection_filter_rects.clear()
-            filter_defs = [
-                ("all",       f"ALL ({total_collected})"),
-                ("rocks",     f"ROCKS ({len(player.rocks)})"),
-                ("flowers",   f"FLOWERS ({len(player.wildflowers)})"),
-                ("fossils",   f"FOSSILS ({len(player.fossils)})"),
-                ("gems",      f"GEMS ({len(player.gems)})"),
-                ("mushrooms", f"MUSHROOMS ({n_mush_owned})"),
-                ("coffee",    f"COFFEE ({n_coffee_owned})"),
-                ("wine",      f"WINE ({n_wine_owned})"),
+            # Left sidebar: filter list
+            FILTER_DEFS = [
+                ("all",       f"ALL ({total_collected})",          (55, 55, 75),  (130, 130, 180), (200, 200, 240)),
+                ("rocks",     f"ROCKS ({len(player.rocks)})",      (42, 52, 70),  (95,  138, 198), (175, 208, 248)),
+                ("flowers",   f"FLOWERS ({len(player.wildflowers)})",(32, 58, 35),(85,  178, 100), (168, 235, 178)),
+                ("fossils",   f"FOSSILS ({len(player.fossils)})",  (50, 40, 20),  (168, 140, 72),  (215, 182, 112)),
+                ("gems",      f"GEMS ({len(player.gems)})",        (22, 48, 45),  (72,  195, 170), (145, 235, 215)),
+                ("mushrooms", f"MUSHROOMS ({n_mush_owned})",       (40, 36, 16),  (148, 132, 56),  (198, 182, 105)),
+                ("coffee",    f"COFFEE ({n_coffee_owned})",        (40, 25, 10),  (140,  90,  35), (210, 150,  70)),
+                ("wine",      f"WINE ({n_wine_owned})",            (40, 15, 22),  (175,  85, 110), (235, 155, 175)),
+                ("spirits",   f"SPIRITS ({n_spirits_owned})",      (30, 22,  8),  (175, 115,  45), (230, 170,  80)),
             ]
-            FILTER_THEME = {
-                "all":       ((55, 55, 75),  (130, 130, 180), (200, 200, 240)),
-                "rocks":     ((42, 52, 70),  (95,  138, 198), (175, 208, 248)),
-                "flowers":   ((32, 58, 35),  (85,  178, 100), (168, 235, 178)),
-                "fossils":   ((50, 40, 20),  (168, 140, 72),  (215, 182, 112)),
-                "gems":      ((22, 48, 45),  (72,  195, 170), (145, 235, 215)),
-                "mushrooms": ((40, 36, 16),  (148, 132, 56),  (198, 182, 105)),
-                "coffee":    ((40, 25, 10),  (140,  90,  35), (210, 150,  70)),
-                "wine":      ((40, 15, 22),  (175,  85, 110), (235, 155, 175)),
-            }
-            fGAP = 6
-            fW = min(148, (SCREEN_W - 20 - fGAP * (len(filter_defs) - 1)) // len(filter_defs))
-            total_fw = len(filter_defs) * fW + (len(filter_defs) - 1) * fGAP
-            fx0 = SCREEN_W // 2 - total_fw // 2
-            for fi, (fkey, flabel) in enumerate(filter_defs):
-                fx = fx0 + fi * (fW + fGAP)
-                frect = pygame.Rect(fx, SUB_Y, fW, SUB_H)
+            SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
+            self._collection_filter_rects.clear()
+            for fi, (fkey, flabel, bg_d, brd_d, txt_d) in enumerate(FILTER_DEFS):
+                by = GY0 + fi * (SB_BTN_H + SB_GAP)
+                frect = pygame.Rect(SB_X, by, SB_W, SB_BTN_H)
                 self._collection_filter_rects[fkey] = frect
-                bg_d, brd_d, txt_d = FILTER_THEME[fkey]
                 is_active_f = (self._collection_filter == fkey)
                 if is_active_f:
-                    fb = (min(255, bg_d[0] + 22), min(255, bg_d[1] + 22), min(255, bg_d[2] + 22))
+                    fb = (min(255, bg_d[0]+22), min(255, bg_d[1]+22), min(255, bg_d[2]+22))
                     fb_brd, fb_txt = brd_d, txt_d
                 else:
-                    fb = (bg_d[0] // 2, bg_d[1] // 2, bg_d[2] // 2)
-                    fb_brd = (brd_d[0] // 2, brd_d[1] // 2, brd_d[2] // 2)
+                    fb = (bg_d[0]//2, bg_d[1]//2, bg_d[2]//2)
+                    fb_brd = (brd_d[0]//2, brd_d[1]//2, brd_d[2]//2)
                     fb_txt = fb_brd
                 pygame.draw.rect(self.screen, fb, frect)
                 pygame.draw.rect(self.screen, fb_brd, frect, 2 if is_active_f else 1)
-                fs = self.small.render(self._fit_label(flabel, fW - 6), True, fb_txt)
-                self.screen.blit(fs, (fx + fW // 2 - fs.get_width() // 2,
-                                       SUB_Y + SUB_H // 2 - fs.get_height() // 2))
-
+                fs = self.small.render(self._fit_label(flabel, SB_W - 6), True, fb_txt)
+                self.screen.blit(fs, (SB_X + SB_W // 2 - fs.get_width() // 2,
+                                       by + SB_BTN_H // 2 - fs.get_height() // 2))
+            self._draw_collection_unified(player, GY0, gx_off=SIDEBAR_W)
         elif self._collection_tab == 1:
-            # Encyclopedia sub-category buttons
-            self._encyclopedia_cat_rects.clear()
-            n_bird_disc  = len(player.birds_observed)
-            n_bird_total = 85
-            n_coffee_disc  = len(player.discovered_coffee_origins)
-            n_coffee_total = len(COFFEE_TYPE_ORDER)
-            n_wine_disc    = len(getattr(player, "discovered_wine_origins", set()))
-            n_wine_total   = len(WINE_TYPE_ORDER)
-            enc_defs = [
-                (0, f"ROCKS ({n_rock_disc}/{n_rock_total})"),
-                (1, f"FLOWERS ({n_fl_disc}/{n_fl_total})"),
-                (2, f"MUSHROOMS ({n_mush_disc}/{n_mush_total})"),
-                (3, f"FOSSILS ({n_fossil_disc}/{n_fossil_total})"),
-                (4, f"GEMS ({n_gem_disc}/{n_gem_total})"),
-                (5, f"BIRDS ({n_bird_disc}/{n_bird_total})"),
-                (6, f"FISH ({n_fish_disc}/{n_fish_total})"),
-                (7, f"COFFEE ({n_coffee_disc}/{n_coffee_total})"),
-                (8, f"WINE ({n_wine_disc}/{n_wine_total})"),
-            ]
+            # Left sidebar: encyclopedia category list
             ENC_THEME = [
                 ((42, 52, 70),  (95, 138, 198),  (175, 208, 248)),
                 ((32, 58, 35),  (85, 178, 100),  (168, 235, 178)),
@@ -172,34 +143,34 @@ class CollectionsMixin:
                 ((18, 32, 50),  (55, 110, 185),  (120, 185, 240)),
                 ((35, 22,  8),  (140,  90,  30), (210, 145,  60)),
                 ((40, 18, 28),  (175,  90, 115), (235, 160, 180)),
+                ((30, 22,  8),  (175, 115,  45), (230, 170,  80)),
+                ((20, 40, 22),  (70,  170,  80), (140, 230, 150)),
+                ((38, 24, 12),  (175, 105,  45), (235, 175, 105)),
+                ((38, 28, 14),  (160, 120,  55), (210, 175, 100)),
             ]
-            eGAP = 6
-            eW = min(190, (SCREEN_W - 20 - eGAP * (len(enc_defs) - 1)) // len(enc_defs))
-            total_ew = len(enc_defs) * eW + (len(enc_defs) - 1) * eGAP
-            ex0 = SCREEN_W // 2 - total_ew // 2
-            for ei, (cat_i, cat_label) in enumerate(enc_defs):
-                ex = ex0 + ei * (eW + eGAP)
-                erect = pygame.Rect(ex, SUB_Y, eW, SUB_H)
-                self._encyclopedia_cat_rects[cat_i] = erect
+            enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES"]
+            SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
+            self._encyclopedia_cat_rects.clear()
+            for cat_i, cat_label in enumerate(enc_labels):
+                by = GY0 + cat_i * (SB_BTN_H + SB_GAP)
+                brect = pygame.Rect(SB_X, by, SB_W, SB_BTN_H)
+                self._encyclopedia_cat_rects[cat_i] = brect
                 bg_d, brd_d, txt_d = ENC_THEME[cat_i]
-                is_active_e = (self._encyclopedia_cat == cat_i)
-                if is_active_e:
-                    eb = (min(255, bg_d[0] + 22), min(255, bg_d[1] + 22), min(255, bg_d[2] + 22))
+                is_active = (self._encyclopedia_cat == cat_i)
+                if is_active:
+                    eb = (min(255, bg_d[0]+22), min(255, bg_d[1]+22), min(255, bg_d[2]+22))
                     eb_brd, eb_txt = brd_d, txt_d
                 else:
-                    eb = (bg_d[0] // 2, bg_d[1] // 2, bg_d[2] // 2)
-                    eb_brd = (brd_d[0] // 2, brd_d[1] // 2, brd_d[2] // 2)
+                    eb = (bg_d[0]//2, bg_d[1]//2, bg_d[2]//2)
+                    eb_brd = (brd_d[0]//2, brd_d[1]//2, brd_d[2]//2)
                     eb_txt = eb_brd
-                pygame.draw.rect(self.screen, eb, erect)
-                pygame.draw.rect(self.screen, eb_brd, erect, 2 if is_active_e else 1)
-                es = self.small.render(self._fit_label(cat_label, eW - 6), True, eb_txt)
-                self.screen.blit(es, (ex + eW // 2 - es.get_width() // 2,
-                                       SUB_Y + SUB_H // 2 - es.get_height() // 2))
+                pygame.draw.rect(self.screen, eb, brect)
+                pygame.draw.rect(self.screen, eb_brd, brect, 2 if is_active else 1)
+                ls = self.small.render(cat_label, True, eb_txt)
+                self.screen.blit(ls, (SB_X + SB_W // 2 - ls.get_width() // 2,
+                                       by + SB_BTN_H // 2 - ls.get_height() // 2))
 
-        # ---- Content ----
-        if self._collection_tab == 0:
-            self._draw_collection_unified(player, GY0)
-        elif self._collection_tab == 1:
             cat_draw = [
                 self._draw_codex,
                 self._draw_flower_codex,
@@ -210,9 +181,13 @@ class CollectionsMixin:
                 self._draw_fish_codex,
                 self._draw_coffee_codex,
                 self._draw_wine_codex,
+                self._draw_spirits_codex,
+                self._draw_insect_codex,
+                self._draw_food_codex,
+                self._draw_horse_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
-                cat_draw[self._encyclopedia_cat](player, gy0=GY0)
+                cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)
         else:
             self._draw_achievements()
 
@@ -229,7 +204,7 @@ class CollectionsMixin:
     # Unified collection tab
     # ------------------------------------------------------------------
 
-    def _draw_collection_unified(self, player, gy0=80):
+    def _draw_collection_unified(self, player, gy0=80, gx_off=0):
         flt = self._collection_filter
         items = []
         if flt in ("all", "rocks"):
@@ -247,6 +222,8 @@ class CollectionsMixin:
             items.extend(("coffee", i) for i in range(len(player.coffee_beans)))
         if flt in ("all", "wine"):
             items.extend(("wine", i) for i in range(len(getattr(player, "wine_grapes", []))))
+        if flt in ("all", "spirits"):
+            items.extend(("spirit", i) for i in range(len(getattr(player, "spirits", []))))
 
         if not items:
             msg = self.font.render("Nothing collected yet!", True, (80, 80, 90))
@@ -254,7 +231,8 @@ class CollectionsMixin:
             return
 
         CELL, GAP, COLS = 82, 8, 8
-        gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        content_w = SCREEN_W - gx_off
+        gx0 = gx_off + (content_w - (COLS * CELL + (COLS - 1) * GAP)) // 2
 
         # Validate / clear selection if no longer in current filter
         if self._unified_selected is not None:
@@ -394,6 +372,23 @@ class CollectionsMixin:
                 img.blit(sc_s, (img.get_width() - sc_s.get_width() - 2, 2))
                 label = WINE_VARIETY_NAMES.get(it.variety, it.variety.replace("_", " "))
                 label_col = (230, 150, 170)
+            elif cat == "spirit":
+                from spirits import SPIRIT_TYPE_COLORS, BIOME_DISPLAY_NAMES as SBIOME
+                it = getattr(player, "spirits", [])[key]
+                sc3 = SPIRIT_TYPE_COLORS.get(it.spirit_type, (185, 140, 70))
+                bg_col = (35, 24, 10) if selected else (22, 14, 5)
+                pygame.draw.rect(self.screen, bg_col, rect)
+                pygame.draw.rect(self.screen, sc3, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                pygame.draw.rect(img, sc3, (21, 24, 16, 28))
+                pygame.draw.rect(img, sc3, (25, 14, 8, 13))
+                pygame.draw.rect(img, (min(255, sc3[0] + 60), min(255, sc3[1] + 60), min(255, sc3[2] + 60)), (22, 26, 6, 6))
+                state_char = {"raw": "R", "distilled": "D", "aged": "A", "blended": "B"}.get(it.state, "?")
+                sc_s3 = self.small.render(state_char, True, (240, 215, 120))
+                img.blit(sc_s3, (img.get_width() - sc_s3.get_width() - 2, 2))
+                label = SBIOME.get(it.origin_biome, it.origin_biome)
+                label_col = (215, 170, 80)
             else:  # mushroom
                 count = player.mushrooms_found.get(key, 0)
                 pygame.draw.rect(self.screen, (40, 36, 20) if selected else (25, 22, 12), rect)
@@ -674,6 +669,49 @@ class CollectionsMixin:
                 stat_bar("Alcohol",   grape.alcohol,    (220, 100,  60))
             if grape.complexity > 0:
                 stat_bar("Complexity",grape.complexity, (175, 130, 210))
+        elif sel_cat == "spirit":
+            from spirits import SPIRIT_TYPE_COLORS, SPIRIT_TYPE_DESCS, SPIRIT_BUFFS, BUFF_DESCS as SPIRIT_BUFF_DESCS
+            from spirits import BIOME_DISPLAY_NAMES as SPIRIT_BIOME_NAMES
+            spirit = getattr(player, "spirits", [])[sel_key]
+            sc2 = SPIRIT_TYPE_COLORS.get(spirit.spirit_type, (185, 140, 70))
+            pygame.draw.rect(self.screen, (18, 12, 5), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, sc2, (dx, dy2, dw, dh), 2)
+            # Draw simple bottle icon
+            bot_surf = pygame.Surface((80, 80), pygame.SRCALPHA)
+            bot_surf.fill((0, 0, 0, 0))
+            pygame.draw.rect(bot_surf, sc2, (28, 30, 24, 42))
+            pygame.draw.rect(bot_surf, sc2, (34, 18, 12, 16))
+            pygame.draw.rect(bot_surf, (min(255, sc2[0] + 60), min(255, sc2[1] + 60), min(255, sc2[2] + 60)), (30, 32, 8, 8))
+            self.screen.blit(bot_surf, (dx + dw // 2 - 40, dy2 + 4))
+            bm3 = SPIRIT_BIOME_NAMES.get(spirit.origin_biome, spirit.origin_biome.replace("_", " ").title())
+            dlabel(f"{bm3} {spirit.spirit_type.title()}", sc2)
+            dlabel(f"State: {spirit.state.title()}", sc2)
+            dlabel(SPIRIT_TYPE_DESCS.get(spirit.spirit_type, ""), (190, 165, 100))
+            if spirit.grain_type:
+                dlabel(f"Source: {spirit.grain_type.replace('_', ' ').title()}", (170, 145, 80))
+            if spirit.barrel_type:
+                dlabel(f"Barrel: {spirit.barrel_type.replace('_', ' ').title()}", (185, 150, 80))
+            if spirit.age_duration:
+                dlabel(f"Aged: {spirit.age_duration.title()}", (175, 140, 70))
+            if spirit.cut_quality > 0:
+                stars = "★" * round(spirit.cut_quality * 5)
+                dlabel(f"Cut Quality: {stars}", (210, 175, 90))
+            if spirit.age_quality > 0:
+                stars = "★" * round(spirit.age_quality * 5)
+                dlabel(f"Age Quality: {stars}", (220, 185, 100))
+            buff_k = SPIRIT_BUFFS.get(spirit.spirit_type)
+            if buff_k:
+                dlabel(f"Buff: {SPIRIT_BUFF_DESCS.get(buff_k, buff_k)}", (130, 210, 130))
+            if spirit.flavor_notes:
+                dlabel("Notes:", (185, 155, 80))
+                for note in spirit.flavor_notes:
+                    dlabel(f"  • {note.title()}", (215, 180, 110))
+            iy[0] += 4
+            stat_bar("Grain Char.",  spirit.grain_character, (185, 155, 80))
+            stat_bar("Sweetness",    spirit.sweetness,        (220, 180, 60))
+            stat_bar("Spice",        spirit.spice,            (220, 120, 60))
+            stat_bar("Smokiness",    spirit.smokiness,        (140, 130, 120))
+            stat_bar("Smoothness",   spirit.smoothness,       (200, 200, 240))
         else:  # mushroom
             bid = sel_key
             pygame.draw.rect(self.screen, (16, 14, 8), (dx, dy2, dw, dh))
@@ -781,9 +819,9 @@ class CollectionsMixin:
             if "fired" in rock.upgrades:
                 dlabel("  Fired  (Purity enhanced)", (220, 160, 80))
 
-    def _draw_codex(self, player, gy0=58):
+    def _draw_codex(self, player, gy0=58, gx_off=0):
         CELL, GAP, COLS = 82, 8, 6
-        gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        gx0 = gx_off + (SCREEN_W - gx_off - (COLS * CELL + (COLS - 1) * GAP)) // 2
 
         detail_x = None
         if self._codex_selected_type is not None:
@@ -979,9 +1017,9 @@ class CollectionsMixin:
             for sp in flower.specials:
                 dlabel(f"  {sp}", (150, 195, 155))
 
-    def _draw_flower_codex(self, player, gy0=58):
+    def _draw_flower_codex(self, player, gy0=58, gx_off=0):
         CELL, GAP, COLS = 82, 8, 6
-        gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        gx0 = gx_off + (SCREEN_W - gx_off - (COLS * CELL + (COLS - 1) * GAP)) // 2
 
         detail_x = None
         if self._flower_codex_selected_type is not None:
@@ -1082,9 +1120,9 @@ class CollectionsMixin:
             dlabel("Not yet discovered.", (75, 105, 78))
             dlabel("Find it on the surface.", (95, 130, 98))
 
-    def _draw_mushroom_codex(self, player, gy0=58):
+    def _draw_mushroom_codex(self, player, gy0=58, gx_off=0):
         CELL, GAP, COLS = 82, 8, 5
-        gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        gx0 = gx_off + (SCREEN_W - gx_off - (COLS * CELL + (COLS - 1) * GAP)) // 2
 
         detail_x = None
         if self._mushroom_codex_selected_bid is not None:
@@ -1303,9 +1341,9 @@ class CollectionsMixin:
         else:
             dlabel("No special traits.", (90, 82, 60))
 
-    def _draw_fossil_codex(self, player, gy0=58):
+    def _draw_fossil_codex(self, player, gy0=58, gx_off=0):
         CELL, GAP, COLS = 82, 8, 6
-        gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        gx0 = gx_off + (SCREEN_W - gx_off - (COLS * CELL + (COLS - 1) * GAP)) // 2
 
         detail_x = None
         if self._fossil_codex_selected_type is not None:
@@ -1570,9 +1608,9 @@ class CollectionsMixin:
             self.screen.blit(ls, (dx + 8, ty))
             ty += 15
 
-    def _draw_gem_codex(self, player, gy0=58):
+    def _draw_gem_codex(self, player, gy0=58, gx_off=0):
         CELL, GAP, COLS = 82, 8, 10
-        gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        gx0 = gx_off + (SCREEN_W - gx_off - (COLS * CELL + (COLS - 1) * GAP)) // 2
 
         detail_x = None
         if self._gem_codex_selected_type is not None:
@@ -1670,14 +1708,14 @@ class CollectionsMixin:
             self.screen.blit(unk, (dx + dw // 2 - unk.get_width() // 2, dy + dh // 2 - 10))
 
 
-    def _draw_bird_codex(self, player, gy0=58):
+    def _draw_bird_codex(self, player, gy0=58, gx_off=0):
         from birds import ALL_SPECIES
         RARITY_BIRD_COLS = {"common": (120, 170, 120), "uncommon": (100, 170, 220),
                             "rare": (180, 120, 230)}
 
         CELL, GAP, COLS = 120, 10, 6
         ROW_H = CELL + GAP
-        gx0 = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        gx0 = gx_off + (SCREEN_W - gx_off - (COLS * CELL + (COLS - 1) * GAP)) // 2
         visible_h = SCREEN_H - gy0 - 8
 
         num_rows = (len(ALL_SPECIES) + COLS - 1) // COLS
@@ -1754,14 +1792,111 @@ class CollectionsMixin:
                 self.screen.blit(cb, (x + CELL - cb.get_width() - 3, y + 3))
 
     # ------------------------------------------------------------------
+    # Insect codex
+    # ------------------------------------------------------------------
+
+    def _draw_insect_codex(self, player, gy0=58, gx_off=0):
+        from insects import ALL_INSECT_SPECIES
+        RARITY_COLS = {"common": (120, 190, 120), "uncommon": (100, 200, 120),
+                       "rare": (120, 210, 140)}
+
+        CELL, GAP, COLS = 120, 10, 6
+        ROW_H = CELL + GAP
+        gx0 = gx_off + (SCREEN_W - gx_off - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        visible_h = SCREEN_H - gy0 - 8
+
+        num_rows = (len(ALL_INSECT_SPECIES) + COLS - 1) // COLS
+        total_h = num_rows * ROW_H
+        self._max_insect_codex_scroll = max(0, total_h - visible_h)
+        self._insect_codex_scroll = max(0, min(self._max_insect_codex_scroll,
+                                               self._insect_codex_scroll))
+
+        if self._max_insect_codex_scroll > 0:
+            sb_x = gx0 + COLS * (CELL + GAP) - GAP + 8
+            sb_th = max(20, visible_h * visible_h // total_h)
+            sb_top = gy0 + (visible_h - sb_th) * self._insect_codex_scroll // self._max_insect_codex_scroll
+            pygame.draw.rect(self.screen, (35, 35, 48), (sb_x, gy0, 7, visible_h))
+            pygame.draw.rect(self.screen, (80, 140, 80), (sb_x, sb_top, 7, sb_th))
+
+        self._insect_codex_rects.clear()
+        for idx, sp_cls in enumerate(ALL_INSECT_SPECIES):
+            col = idx % COLS
+            row = idx // COLS
+            x = gx0 + col * (CELL + GAP)
+            y = gy0 + row * ROW_H - self._insect_codex_scroll
+            if y + CELL <= gy0 or y >= SCREEN_H - 8:
+                continue
+            rect = pygame.Rect(x, y, CELL, CELL)
+            self._insect_codex_rects[sp_cls.SPECIES] = rect
+
+            discovered = sp_cls.SPECIES in getattr(player, "insects_observed", {})
+            obs = getattr(player, "insects_observed", {}).get(sp_cls.SPECIES, {})
+            rar_col = RARITY_COLS.get(sp_cls.RARITY, (150, 150, 150))
+
+            bg_col = (14, 35, 18) if discovered else (18, 22, 18)
+            pygame.draw.rect(self.screen, bg_col, rect)
+            pygame.draw.rect(self.screen, rar_col if discovered else (40, 55, 40), rect, 2)
+
+            # Insect icon (wing + body preview)
+            iw, ih = sp_cls.W * 3, sp_cls.H * 3
+            ins_surf = pygame.Surface((iw, ih), pygame.SRCALPHA)
+            ins_surf.fill((0, 0, 0, 0))
+            if discovered:
+                wt = sp_cls.WING_TYPE
+                wc = sp_cls.WING_COLOR
+                bc = sp_cls.BODY_COLOR
+                ac = sp_cls.ACCENT_COLOR
+                if wt in ("butterfly", "moth"):
+                    pygame.draw.ellipse(ins_surf, wc, (0, 0, iw // 2, ih))
+                    pygame.draw.ellipse(ins_surf, wc, (iw // 2, 0, iw // 2, ih))
+                    pygame.draw.ellipse(ins_surf, ac, (2, 2, iw // 2 - 3, ih - 4))
+                    pygame.draw.ellipse(ins_surf, bc, (iw // 2 - 1, 1, 3, ih - 2))
+                elif wt == "dragonfly":
+                    pygame.draw.ellipse(ins_surf, wc, (0, 0, iw // 2, ih // 3))
+                    pygame.draw.ellipse(ins_surf, wc, (iw // 2, 0, iw // 2, ih // 3))
+                    pygame.draw.ellipse(ins_surf, bc, (2, ih // 4, iw - 4, ih // 2))
+                    pygame.draw.ellipse(ins_surf, ac, (4, ih // 3, iw - 8, ih // 3))
+                elif wt in ("beetle", "firefly"):
+                    pygame.draw.ellipse(ins_surf, wc, (0, ih // 4, iw, ih // 2))
+                    pygame.draw.ellipse(ins_surf, bc, (2, ih // 4 + 1, iw - 4, ih // 2 - 2))
+                    pygame.draw.line(ins_surf, wc, (iw // 2, ih // 4 + 1), (iw // 2, ih // 4 + ih // 2 - 2))
+                    if wt == "firefly":
+                        pygame.draw.circle(ins_surf, ac, (iw - 3, ih // 2), 2)
+                else:
+                    pygame.draw.ellipse(ins_surf, wc, (0, 0, iw, ih))
+                    pygame.draw.ellipse(ins_surf, bc, (iw // 4, 2, iw // 2, ih - 4))
+            else:
+                pygame.draw.ellipse(ins_surf, (50, 60, 50), (0, 0, iw, ih))
+                pygame.draw.ellipse(ins_surf, (40, 50, 40), (iw // 4, 2, iw // 2, ih - 4))
+            self.screen.blit(ins_surf, (x + CELL // 2 - iw // 2, y + 6))
+
+            if discovered:
+                name = sp_cls.SPECIES.replace("_", " ").title()
+                name_col = (180, 240, 190)
+            else:
+                name = "???"
+                name_col = (55, 70, 55)
+            ns = self.small.render(self._fit_label(name, CELL - 6), True, name_col)
+            self.screen.blit(ns, (x + CELL // 2 - ns.get_width() // 2, y + CELL - 28))
+
+            rs = self.small.render(sp_cls.RARITY.upper(), True,
+                                    rar_col if discovered else (50, 65, 50))
+            self.screen.blit(rs, (x + CELL // 2 - rs.get_width() // 2, y + CELL - 14))
+
+            if discovered:
+                cnt = obs.get("count", 0)
+                cb = self.small.render(f"×{cnt}", True, (150, 230, 160))
+                self.screen.blit(cb, (x + CELL - cb.get_width() - 3, y + 3))
+
+    # ------------------------------------------------------------------
     # Fish codex
     # ------------------------------------------------------------------
 
-    def _draw_fish_codex(self, player, gy0=58):
+    def _draw_fish_codex(self, player, gy0=58, gx_off=0):
         CELL, GAP, COLS = 74, 6, 9
         ROW_H    = CELL + GAP
         HDR_H    = 26
-        gx0      = (SCREEN_W - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        gx0      = gx_off + (SCREEN_W - gx_off - (COLS * CELL + (COLS - 1) * GAP)) // 2
         visible_h = SCREEN_H - gy0 - 8
 
         # Build list of virtual rows: ("header", label) or ("fish", [species...])
@@ -1832,16 +1967,118 @@ class CollectionsMixin:
                 cy += ROW_H
 
     # ------------------------------------------------------------------
+    # Food codex
+    # ------------------------------------------------------------------
+
+    def _draw_food_codex(self, player, gy0=58, gx_off=0):
+        from crafting import (BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES,
+                              NOODLE_POT_RECIPES, BBQ_GRILL_RECIPES, CLAY_POT_RECIPES)
+        from items import ITEMS as _ITEMS
+
+        SECTIONS = [
+            ("Bakery",     BAKERY_RECIPES),
+            ("Wok",        WOK_RECIPES),
+            ("Steamer",    STEAMER_RECIPES),
+            ("Noodle Pot", NOODLE_POT_RECIPES),
+            ("BBQ Grill",  BBQ_GRILL_RECIPES),
+            ("Clay Pot",   CLAY_POT_RECIPES),
+        ]
+
+        discovered = getattr(player, "discovered_foods", set())
+        cooked     = getattr(player, "foods_cooked", {})
+
+        COLS = 5
+        CELL_W, CELL_H, GAP = 148, 50, 6
+        HEADER_H = 24
+        total_w = COLS * CELL_W + (COLS - 1) * GAP
+        gx0 = gx_off + (SCREEN_W - gx_off - total_w) // 2
+        visible_h = SCREEN_H - gy0 - 8
+
+        # Pre-calculate total content height for scrollbar
+        total_h = 0
+        for _, recipes in SECTIONS:
+            total_h += HEADER_H + 6
+            rows = (len(recipes) + COLS - 1) // COLS
+            total_h += rows * (CELL_H + GAP)
+
+        self._max_food_codex_scroll = max(0, total_h - visible_h)
+        self._food_codex_scroll = max(0, min(self._max_food_codex_scroll, self._food_codex_scroll))
+
+        if self._max_food_codex_scroll > 0:
+            sb_x   = gx0 + total_w + 8
+            sb_th  = max(20, visible_h * visible_h // total_h)
+            sb_top = gy0 + (visible_h - sb_th) * self._food_codex_scroll // self._max_food_codex_scroll
+            pygame.draw.rect(self.screen, (38, 28, 18), (sb_x, gy0, 7, visible_h))
+            pygame.draw.rect(self.screen, (175, 105, 45), (sb_x, sb_top, 7, sb_th))
+
+        y = gy0 - self._food_codex_scroll
+
+        for station_name, recipes in SECTIONS:
+            # Section header
+            hy = y
+            y += HEADER_H + 6
+            if hy + HEADER_H > gy0 and hy < SCREEN_H - 8:
+                hs = self.small.render(station_name.upper(), True, (235, 175, 105))
+                self.screen.blit(hs, (gx0, hy + (HEADER_H - hs.get_height()) // 2))
+                pygame.draw.line(self.screen, (100, 65, 30),
+                                 (gx0 + hs.get_width() + 6, hy + HEADER_H // 2),
+                                 (gx0 + total_w, hy + HEADER_H // 2), 1)
+
+            num_rows = (len(recipes) + COLS - 1) // COLS
+            for i, recipe in enumerate(recipes):
+                col = i % COLS
+                row = i // COLS
+                cx = gx0 + col * (CELL_W + GAP)
+                cy = y + row * (CELL_H + GAP)
+
+                if cy + CELL_H <= gy0 or cy >= SCREEN_H - 8:
+                    continue
+
+                food_id     = recipe["output_id"]
+                is_disc     = food_id in discovered
+                item_data   = _ITEMS.get(food_id, {})
+                item_color  = item_data.get("color", (130, 100, 70))
+
+                rect = pygame.Rect(cx, cy, CELL_W, CELL_H)
+                bg     = (42, 26, 12) if is_disc else (24, 20, 16)
+                border = (item_color[0] // 2, item_color[1] // 2, item_color[2] // 2) if is_disc else (50, 40, 30)
+                pygame.draw.rect(self.screen, bg, rect)
+                pygame.draw.rect(self.screen, border, rect, 1)
+
+                DOT_R = 5
+                dot_col = item_color if is_disc else (55, 48, 42)
+                pygame.draw.circle(self.screen, dot_col, (cx + 10, cy + CELL_H // 2), DOT_R)
+
+                if is_disc:
+                    name = item_data.get("name", food_id)
+                    ns = self.small.render(self._fit_label(name, CELL_W - 32), True, (230, 195, 155))
+                    self.screen.blit(ns, (cx + 20, cy + 7))
+
+                    hunger = item_data.get("hunger_restore", 0)
+                    rs = self.small.render(f"+{hunger}", True, (110, 195, 110))
+                    self.screen.blit(rs, (cx + 20, cy + CELL_H - 18))
+
+                    cnt = cooked.get(food_id, 0)
+                    if cnt > 0:
+                        cs = self.small.render(f"×{cnt}", True, (155, 135, 95))
+                        self.screen.blit(cs, (cx + CELL_W - cs.get_width() - 5, cy + 7))
+                else:
+                    qs = self.small.render("???", True, (58, 50, 44))
+                    self.screen.blit(qs, (cx + 20, cy + CELL_H // 2 - qs.get_height() // 2))
+
+            y += num_rows * (CELL_H + GAP)
+
+    # ------------------------------------------------------------------
     # Coffee codex
     # ------------------------------------------------------------------
 
-    def _draw_coffee_codex(self, player, gy0=58):
+    def _draw_coffee_codex(self, player, gy0=58, gx_off=0):
         BIOMES = ["tropical", "jungle", "savanna", "wetland", "arid_steppe", "canyon", "beach"]
         ROASTS = ["light", "medium", "dark", "charred", "green"]
         COLS   = len(ROASTS)
         CELL_W, CELL_H, GAP = 110, 68, 6
         HDR_H  = 22
-        gx0    = (SCREEN_W - (COLS * CELL_W + (COLS - 1) * GAP)) // 2
+        gx0    = gx_off + (SCREEN_W - gx_off - (COLS * CELL_W + (COLS - 1) * GAP)) // 2
 
         # Column header (roast names)
         hdr_y = gy0
@@ -1857,7 +2094,7 @@ class CollectionsMixin:
             # Biome row header
             bnm = BIOME_DISPLAY_NAMES.get(biome, biome)
             bl  = self.font.render(bnm.upper(), True, (200, 160, 80))
-            self.screen.blit(bl, (10, cy + (CELL_H - bl.get_height()) // 2))
+            self.screen.blit(bl, (gx0 - bl.get_width() - 8, cy + (CELL_H - bl.get_height()) // 2))
             for ci, roast in enumerate(ROASTS):
                 hx = gx0 + ci * (CELL_W + GAP)
                 key = f"{biome}_{roast}"
@@ -1919,14 +2156,14 @@ class CollectionsMixin:
                     for note in best.flavor_notes:
                         dline(f"  • {note.title()}", (210, 175, 100))
 
-    def _draw_wine_codex(self, player, gy0=58):
+    def _draw_wine_codex(self, player, gy0=58, gx_off=0):
         BIOMES = ["tropical", "jungle", "savanna", "wetland", "arid_steppe", "canyon", "beach",
                   "tundra", "swamp", "alpine_mountain", "rocky_mountain", "rolling_hills"]
         STYLES = WINE_STYLE_ORDER
         COLS = len(STYLES)
         CELL_W, CELL_H, GAP = 110, 54, 6
         HDR_H = 22
-        gx0 = (SCREEN_W - (COLS * CELL_W + (COLS - 1) * GAP)) // 2
+        gx0 = gx_off + (SCREEN_W - gx_off - (COLS * CELL_W + (COLS - 1) * GAP)) // 2
 
         # Column header
         hdr_y = gy0
@@ -1941,7 +2178,7 @@ class CollectionsMixin:
         for biome in BIOMES:
             bnm = WINE_BIOME_NAMES.get(biome, biome)
             bl = self.font.render(bnm.upper(), True, (210, 160, 180))
-            self.screen.blit(bl, (10, cy + (CELL_H - bl.get_height()) // 2))
+            self.screen.blit(bl, (gx0 - bl.get_width() - 8, cy + (CELL_H - bl.get_height()) // 2))
             for ci, style in enumerate(STYLES):
                 hx = gx0 + ci * (CELL_W + GAP)
                 key = f"{biome}_{style}"
@@ -2120,3 +2357,103 @@ class CollectionsMixin:
             self.screen.blit(card_surf, (cx, cy))
 
         self.screen.set_clip(None)
+
+    # ------------------------------------------------------------------
+    # Horse Codex
+    # ------------------------------------------------------------------
+
+    def _draw_horse_codex(self, player, gy0=58, gx_off=0):
+        from horses import BIOME_COAT_COLORS
+        from constants import SCREEN_W, SCREEN_H
+
+        content_x = gx_off
+        content_w = SCREEN_W - content_x
+        y = gy0 + 8
+
+        title_col = (210, 175, 100)
+
+        # ---- Left panel: stats ----
+        left_w = content_w // 2 - 8
+        lx = content_x + 6
+
+        def stat_line(label, value_str, vy):
+            lbl = self.small.render(label, True, (165, 145, 95))
+            val = self.small.render(value_str, True, (230, 205, 140))
+            self.screen.blit(lbl, (lx, vy))
+            self.screen.blit(val, (lx + 120, vy))
+
+        records = getattr(player, "horse_records", {})
+        horses_tamed = getattr(player, "horses_tamed", 0)
+        horses_bred  = getattr(player, "horses_bred", 0)
+        best_spd = records.get("best_speed", 0.0)
+        best_sta = records.get("best_stamina", 0.0)
+
+        hdr = self.font.render("RECORDS", True, title_col)
+        self.screen.blit(hdr, (lx, y))
+        y2 = y + 22
+        stat_line("Horses Tamed:", str(horses_tamed), y2);       y2 += 16
+        stat_line("Horses Bred:",  str(horses_bred), y2);        y2 += 16
+        stat_line("Best Speed:", f"{best_spd:.3f}" if best_spd else "—", y2); y2 += 16
+        stat_line("Best Stamina:", f"{best_sta:.3f}" if best_sta else "—", y2); y2 += 16
+
+        # Speed mult hint
+        if best_spd:
+            spd_mult = 1.0 + best_spd
+            hint = self.small.render(f"  → {spd_mult:.2f}x move speed", True, (140, 175, 215))
+            self.screen.blit(hint, (lx, y2));  y2 += 14
+
+        y2 += 8
+        hdr2 = self.font.render("HOW TO RIDE", True, title_col)
+        self.screen.blit(hdr2, (lx, y2)); y2 += 20
+        tips = [
+            "• Tame with apples, carrots, wheat, sugar lumps",
+            "• Use Horse Brush for faster taming (+2 progress)",
+            "• Equip Saddle → Right-click tamed horse",
+            "• First ride triggers the breaking minigame",
+            "• Press SPACE to sprint (drains stamina)",
+            "• Press E to dismount",
+            "• Place Stable block to breed two tamed horses",
+        ]
+        for tip in tips:
+            t = self.small.render(tip, True, (170, 152, 108))
+            self.screen.blit(t, (lx, y2));  y2 += 14
+
+        # ---- Right panel: biome coat grid ----
+        disc = getattr(player, "discovered_coat_biomes", set())
+        rx = content_x + left_w + 14
+        ry = gy0 + 8
+
+        hdr3 = self.font.render("COAT COLOURS", True, title_col)
+        self.screen.blit(hdr3, (rx, ry)); ry += 22
+
+        cell_w, cell_h = 56, 40
+        cols_per_row   = max(1, (content_w - left_w - 20) // (cell_w + 6))
+
+        biomes = list(BIOME_COAT_COLORS.keys())
+        for idx, biome in enumerate(biomes):
+            row = idx // cols_per_row
+            col = idx % cols_per_row
+            bx_ = rx + col * (cell_w + 6)
+            by_ = ry + row * (cell_h + 6)
+
+            found = biome in disc
+            # Cell bg
+            bg = (38, 30, 18) if found else (22, 18, 12)
+            pygame.draw.rect(self.screen, bg, (bx_, by_, cell_w, cell_h), border_radius=4)
+            border_c = (140, 110, 55) if found else (55, 45, 28)
+            pygame.draw.rect(self.screen, border_c, (bx_, by_, cell_w, cell_h), 1, border_radius=4)
+
+            if found:
+                # Show the 3 coat swatches
+                coats = BIOME_COAT_COLORS[biome]
+                sw = (cell_w - 8) // 3
+                for si, coat in enumerate(coats):
+                    pygame.draw.rect(self.screen, coat,
+                                     (bx_ + 4 + si * (sw + 1), by_ + 4, sw, 16))
+                biome_short = biome.replace("_", " ").upper()[:8]
+                bl = self.small.render(biome_short, True, (180, 158, 105))
+                self.screen.blit(bl, (bx_ + cell_w // 2 - bl.get_width() // 2, by_ + 24))
+            else:
+                unk = self.small.render("???", True, (60, 50, 32))
+                self.screen.blit(unk, (bx_ + cell_w // 2 - unk.get_width() // 2,
+                                        by_ + cell_h // 2 - unk.get_height() // 2))

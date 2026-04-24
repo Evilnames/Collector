@@ -22,10 +22,10 @@ from blocks import (
 MAX_MOISTURE              = 8      # upper bound for any tilled tile
 MAX_FERTILITY             = 8      # upper bound for fertility (raised to 10 by composting research)
 SOIL_TICK_SECS            = 5.0    # how often update_soil runs
-MOISTURE_DECAY_CHANCE     = 0.5    # per tick chance to lose 1 moisture
+MOISTURE_DECAY_CHANCE     = 0.1    # per tick chance to lose 1 moisture
 WATER_ADJACENT_FLOOR      = 4      # tilled soil adjacent to a WATER block clamps up to this
 TILL_START_MOISTURE       = 2      # moisture applied when a tile is first tilled
-WATERING_AMOUNT           = 3      # moisture added per watering can use
+WATERING_AMOUNT           = 5      # moisture added per watering can use
 WATERING_CAN_CAPACITY     = 8      # uses per full watering can
 REVERT_AFTER_FALLOW_TICKS = 24     # empty tilled soil → DIRT after this many soil ticks
 

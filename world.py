@@ -61,8 +61,11 @@ class World:
         self.farm_bots = []
         self.backhoes = []
         self.birds = []
+        self.insects = []
         self.dropped_items = []
         self.chest_data = {}     # (bx, by) -> {item_id: count}
+        self.garden_data = {}    # (bx, by) -> [Wildflower, ...]
+        self._surface_height_cache = {}
         self._water_level = {}   # (x,y) -> int 1-8; 8 = world-gen source block
         # Soil state (Phases 1-2): parallel dicts keyed by (x,y)
         self._soil_moisture  = {}  # tilled tile -> int 0..MAX_MOISTURE
@@ -119,6 +122,7 @@ class World:
             from cities import generate_cities
             generate_cities(self, self.seed)
         self._spawn_birds()
+        self._spawn_insects()
 
     # ------------------------------------------------------------------
     # Backward-compat properties
@@ -164,11 +168,16 @@ class World:
         return (w0 * b0 + w1 * b1) / total, (w0 * s0 + w1 * s1) / total
 
     def surface_height(self, x: int) -> int:
+        cached = self._surface_height_cache.get(x)
+        if cached is not None:
+            return cached
         bias, scale = self._biodome_terrain_mod(x)
         h = SURFACE_Y + bias
         for (freq, amp), phase in zip(self._surf_octaves, self._surf_phases):
             h += amp * scale * math.sin(x * freq + phase)
-        return max(30, round(h))
+        result = max(30, round(h))
+        self._surface_height_cache[x] = result
+        return result
 
     def biome_at(self, x: int) -> str:
         zone = x // 150
@@ -281,6 +290,11 @@ class World:
             if dirty_bg:
                 self._save_mgr.save_bg_chunks_batch(dirty_bg)
                 self._dirty_bg_chunks -= set(dirty_bg.keys())
+        if to_unload:
+            unload_ranges = [(cx * CHUNK_W * BLOCK_SIZE, (cx + 1) * CHUNK_W * BLOCK_SIZE)
+                             for cx in to_unload]
+            self.insects = [i for i in self.insects
+                            if not any(x0 <= i.x < x1 for x0, x1 in unload_ranges)]
         for cx in to_unload:
             del self._chunks[cx]
             self._bg_chunks.pop(cx, None)
@@ -297,6 +311,8 @@ class World:
                     self._fill_chunk(cx)
                 if cx in bg_db_data:
                     self._bg_chunks[cx] = bg_db_data[cx]
+                self._spawn_insects_for_chunk(cx)
+                self._spawn_garden_insects_in_chunk(cx)
 
     def _chunk_get(self, x: int, y: int) -> int:
         """Raw chunk read — no side effects. Returns BEDROCK for unloaded/OOB."""
@@ -331,6 +347,23 @@ class World:
             tuple(int(v) for v in k.split(",")): inv
             for k, inv in raw_chests.items()
         }
+        from wildflowers import Wildflower
+        def _wf_from_dict(d):
+            return Wildflower(
+                uid=d["uid"], flower_type=d["flower_type"], rarity=d["rarity"],
+                bloom_stage=d["bloom_stage"],
+                primary_color=tuple(d["primary_color"]),
+                secondary_color=tuple(d["secondary_color"]),
+                center_color=tuple(d["center_color"]),
+                petal_pattern=d["petal_pattern"], petal_count=d["petal_count"],
+                fragrance=d["fragrance"], vibrancy=d["vibrancy"],
+                specials=d["specials"], biodome_found=d["biodome_found"], seed=d["seed"],
+            )
+        raw_garden = data.get("garden_data", {})
+        self.garden_data = {
+            tuple(int(v) for v in k.split(",")): [_wf_from_dict(f) for f in flowers]
+            for k, flowers in raw_garden.items()
+        }
         # Load chunks around the player's saved position
         player_cx = int(player_x // BLOCK_SIZE) // CHUNK_W
         for cx in range(player_cx - CHUNK_LOAD_RADIUS, player_cx + CHUNK_LOAD_RADIUS + 1):
@@ -358,8 +391,10 @@ class World:
             self.backhoes.append(Backhoe.from_dict(bh_data))
 
         from animals import Sheep, Cow, Chicken, SnowLeopard, MountainLion
+        from horses import Horse
         _CLASS_MAP = {"Sheep": Sheep, "Cow": Cow, "Chicken": Chicken,
-                      "SnowLeopard": SnowLeopard, "MountainLion": MountainLion}
+                      "SnowLeopard": SnowLeopard, "MountainLion": MountainLion,
+                      "Horse": Horse}
         for e_data in data["entities"]:
             cls = _CLASS_MAP.get(e_data["entity_type"])
             if cls is None:
@@ -373,6 +408,9 @@ class World:
                 entity.has_milk = extra["has_milk"]
             elif isinstance(entity, Chicken) and "has_egg" in extra:
                 entity.has_egg = extra["has_egg"]
+            elif isinstance(entity, Horse):
+                entity.stamina   = extra.get("stamina", 100.0)
+                entity._broken   = extra.get("broken", False)
             # Genetics / new state fields (fallback defaults keep old saves working)
             if "uid" in extra:
                 entity.uid = extra["uid"]
@@ -386,6 +424,12 @@ class World:
                     "productivity": raw.get("productivity", 1.0),
                     "mutation":     raw.get("mutation", None),
                 }
+                if isinstance(entity, Horse):
+                    entity.traits["speed_rating"]      = raw.get("speed_rating", 1.0)
+                    entity.traits["stamina_max"]        = raw.get("stamina_max", 1.0)
+                    entity.traits["temperament"]        = raw.get("temperament", "spirited")
+                    entity.traits["coat_color"]         = tuple(raw.get("coat_color", [160, 115, 65]))
+                    entity.traits["horseshoe_applied"]  = raw.get("horseshoe_applied", False)
             entity.health          = extra.get("health", 3)
             entity.dead            = extra.get("dead", False)
             entity._breed_cooldown = extra.get("_breed_cooldown", 60.0)
@@ -491,10 +535,10 @@ class World:
                                GRAPEVINE_BUSH, GRAPEVINE_BUSH],
             "boreal":         [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
                                TURNIP_BUSH, CABBAGE_BUSH, LEEK_BUSH, APPLE_BUSH,
-                               RADISH_BUSH, PEA_BUSH, BROCCOLI_BUSH, GRAPEVINE_BUSH],
+                               RADISH_BUSH, PEA_BUSH, BROCCOLI_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
             "birch_forest":   [STRAWBERRY_BUSH, CARROT_BUSH, APPLE_BUSH, POTATO_BUSH,
                                BEET_BUSH, PUMPKIN_BUSH, PEA_BUSH, BROCCOLI_BUSH,
-                               GRAPEVINE_BUSH],
+                               COFFEE_BUSH, GRAPEVINE_BUSH],
             "jungle":         [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
                                PEPPER_BUSH, EGGPLANT_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH,
                                CHILI_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
@@ -1656,6 +1700,12 @@ class World:
             if delta <= 0:
                 still_pending.add((x, y))
                 continue
+            # Pollination bonus: nearby non-spooked insects boost growth
+            player = getattr(self, '_player_ref', None)
+            poll_mult = getattr(player, 'insect_pollination_mult', 1.1)
+            if any(abs(ins.x / BLOCK_SIZE - x) < 6 and abs(ins.y / BLOCK_SIZE - y) < 4
+                   for ins in self.insects if not ins.spooked):
+                delta *= poll_mult
             progress = self._crop_progress.get((x, y), 0) + delta
             if progress >= _soil.GROWTH_PROGRESS_MAX:
                 # Drain fertility from soil on maturation
@@ -1835,6 +1885,34 @@ class World:
                         self.entities.append(MountainLion(ax, ay, self))
                 x += cat_rng.randint(25, 55)
 
+        # Horses — biome-specific herds of 2-4
+        from horses import Horse, HORSE_BIOMES
+        horse_rng = random.Random(self.seed + 55551)
+        for cx in sorted(self._chunks.keys()):
+            chunk = self._chunks[cx]
+            base_x = cx * CHUNK_W
+            x = base_x + 5
+            x_end = base_x + CHUNK_W - 5
+            while x < x_end:
+                lx = x - base_x
+                sy = self.surface_height(x)
+                biodome = self.biodome_at(x)
+                if (0 < sy < WORLD_H
+                        and chunk[sy][lx] == GRASS
+                        and chunk[sy - 1][lx] == AIR
+                        and biodome in HORSE_BIOMES
+                        and horse_rng.random() < 0.18):
+                    herd_size = horse_rng.randint(2, 4)
+                    for _ in range(herd_size):
+                        hx_off = horse_rng.randint(-3, 3)
+                        hx_bx = max(base_x, min(base_x + CHUNK_W - 1, x + hx_off))
+                        hsy = self.surface_height(hx_bx)
+                        hx = hx_bx * BLOCK_SIZE + (BLOCK_SIZE - Horse.ANIMAL_W) // 2
+                        hy = hsy * BLOCK_SIZE - Horse.ANIMAL_H
+                        self.entities.append(Horse(hx, hy, self))
+                    x += 55
+                    continue
+                x += horse_rng.randint(8, 16)
 
     def _spawn_birds(self):
         from birds import ALL_SPECIES
@@ -1886,6 +1964,66 @@ class World:
                     self.birds.append(bird)
 
                 x += rng.randint(spacing, spacing * 2)
+
+    def _spawn_insects_for_chunk(self, cx):
+        from insects import ALL_INSECT_SPECIES
+        from blocks import WILDFLOWER_PATCH, WATER
+        rng = random.Random(self.seed + 99991 + cx * 7919)
+        spacing = 6
+        base_x = cx * CHUNK_W
+        x = base_x + 2
+        while x < base_x + CHUNK_W - 2:
+            biodome = self.biodome_at(x)
+            candidates = [cls for cls in ALL_INSECT_SPECIES
+                          if not cls.BIOMES or biodome in cls.BIOMES]
+            if not candidates:
+                x += rng.randint(spacing, spacing * 2)
+                continue
+            sy = self.surface_height(x)
+            near_feature = (
+                self.get_block(x, sy - 1) == WILDFLOWER_PATCH
+                or self.get_block(x, sy) == WATER
+                or self.get_block(x - 1, sy) == WATER
+                or self.get_block(x + 1, sy) == WATER
+            )
+            if not near_feature and rng.random() > 0.4:
+                x += rng.randint(spacing, spacing * 2)
+                continue
+            species_cls = rng.choice(candidates)
+            spawn_x = float(x * BLOCK_SIZE + rng.randint(-8, 8))
+            spawn_y = float(sy * BLOCK_SIZE - rng.randint(8, 24))
+            self.insects.append(species_cls(spawn_x, spawn_y, self))
+            x += rng.randint(spacing, spacing * 2)
+
+    def _spawn_garden_insects_in_chunk(self, cx):
+        base_x = cx * CHUNK_W
+        for (gx, gy), flowers in self.garden_data.items():
+            if base_x <= gx < base_x + CHUNK_W and flowers:
+                self._add_garden_insects(gx, gy)
+
+    def _add_garden_insects(self, bx, by):
+        from insects import ALL_INSECT_SPECIES
+        biodome = self.biodome_at(bx)
+        candidates = [cls for cls in ALL_INSECT_SPECIES
+                      if not cls.BIOMES or biodome in cls.BIOMES]
+        if not candidates:
+            return
+        rng = random.Random(self.seed + 77777 + bx * 31 + by * 97)
+        for _ in range(3):
+            species_cls = rng.choice(candidates)
+            spawn_x = float(bx * BLOCK_SIZE + rng.randint(-16, 16))
+            spawn_y = float(by * BLOCK_SIZE - rng.randint(8, 28))
+            self.insects.append(species_cls(spawn_x, spawn_y, self))
+
+    def spawn_insects_near_garden(self, bx, by):
+        """Dynamically add insects near a garden block when wildflowers are deposited."""
+        self._add_garden_insects(bx, by)
+
+    def _spawn_insects(self):
+        self.insects.clear()
+        for cx in sorted(self._chunks.keys()):
+            self._spawn_insects_for_chunk(cx)
+            self._spawn_garden_insects_in_chunk(cx)
 
     def surface_y_at(self, x: int) -> int:
         return self.surface_height(x)

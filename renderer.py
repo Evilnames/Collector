@@ -70,7 +70,8 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER,
                     FROSTED_GLASS, CRIMSON_BRICK,
                     TERRACOTTA_SHINGLE, THATCH_ROOF, VERDIGRIS_COPPER, SILVER_PANEL,
                     GOLD_LEAF_TRIM, STAINED_GLASS_RED, STAINED_GLASS_BLUE,
-                    STAINED_GLASS_GREEN, QUARTZ_PILLAR, ONYX_INLAY)
+                    STAINED_GLASS_GREEN, QUARTZ_PILLAR, ONYX_INLAY,
+                    STAIRS_RIGHT, STAIRS_LEFT)
 import math
 import soil as _soil
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE
@@ -223,8 +224,9 @@ class Renderer:
         self._log_variants  = self._build_log_variants()
         self._leaf_variants = self._build_leaf_variants()
         self._bg_darken_surf = self._build_bg_darken_surf()
+        self._bg_block_surfs = self._build_bg_block_surfs()
         self._cave_wall_surf = self._build_cave_wall_surf()
-        self._light_surf = pygame.Surface((SCREEN_W, SCREEN_H)).convert()
+        self._light_surf = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         self._light_gradient = None
         self._light_cache_key = None
         self._sky_surf = self._build_sky_surf()
@@ -245,6 +247,17 @@ class Renderer:
         s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
         s.fill((0, 0, 0, 110))
         return s
+
+    def _build_bg_block_surfs(self):
+        """Pre-bake each block surface with the bg darkening already applied.
+        Replaces 2 blits (block + darken overlay) with 1 blit per bg block."""
+        darken = self._bg_darken_surf
+        result = {}
+        for bid, surf in self._block_surfs.items():
+            baked = surf.copy().convert_alpha()
+            baked.blit(darken, (0, 0))
+            result[bid] = baked
+        return result
 
     def _build_cave_wall_surf(self):
         s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
@@ -1017,6 +1030,28 @@ class Renderer:
                 pygame.draw.rect(s, (175, 175, 182), (0, 0, 8, 32))
                 pygame.draw.rect(s, (100, 100, 108), (7, 0, 1, 32))
                 pygame.draw.circle(s, (100, 100, 108), (4, 16), 2)
+                surfs[bid] = s
+                continue
+            if bid in (STAIRS_RIGHT, STAIRS_LEFT):
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                wood  = bdata["color"]
+                dark  = _darken(wood, 40)
+                light = tuple(min(255, c + 30) for c in wood)
+                step_h = BLOCK_SIZE // 3
+                # Three steps rising in the facing direction
+                for i in range(3):
+                    if bid == STAIRS_RIGHT:
+                        sx2 = i * (BLOCK_SIZE // 3)
+                        sw  = BLOCK_SIZE - sx2
+                    else:
+                        sw  = BLOCK_SIZE - i * (BLOCK_SIZE // 3)
+                        sx2 = 0
+                    sy2 = i * step_h
+                    sh  = BLOCK_SIZE - sy2
+                    pygame.draw.rect(s, wood,  (sx2, sy2, sw, sh))
+                    pygame.draw.rect(s, light, (sx2, sy2, sw, 2))
+                    pygame.draw.rect(s, dark,  (sx2, sy2, sw, sh), 1)
                 surfs[bid] = s
                 continue
             if bid == CHEST_BLOCK:
@@ -2196,8 +2231,9 @@ class Renderer:
         else:
             px_blk = py_blk = detect = warm = None
 
-        # Precompute surface heights for underground detection
+        # Precompute per-column values to avoid repeated calls inside the block loop
         surface_ys = {bx: world.surface_height(bx) for bx in range(bx0, bx1)}
+        biomes = {bx: world.get_biome(bx) for bx in range(bx0, bx1)}
 
         for by in range(by0, by1):
             for bx in range(bx0, bx1):
@@ -2207,10 +2243,9 @@ class Renderer:
                     sy = by * BLOCK_SIZE - cam_yi
                     bg_bid = world.get_bg_block(bx, by)
                     if bg_bid != AIR:
-                        bg_surf = self._block_surfs.get(bg_bid)
+                        bg_surf = self._bg_block_surfs.get(bg_bid)
                         if bg_surf:
                             self.screen.blit(bg_surf, (sx, sy))
-                            self.screen.blit(self._bg_darken_surf, (sx, sy))
                     elif by > surface_ys.get(bx, 100):
                         self.screen.blit(self._cave_wall_surf, (sx, sy))
                     continue
@@ -2236,7 +2271,7 @@ class Renderer:
                     var = self._leaf_variants.get(bid)
                     if var:
                         surf = var[(bx * 97 + by * 31 + world.seed) % len(var)]
-                biome = world.get_biome(bx)
+                biome = biomes[bx]
                 biome_stone = self._biome_stone_surfs.get(biome)
                 if bid == STONE and biome_stone:
                     surf = biome_stone
@@ -2311,6 +2346,8 @@ class Renderer:
                 self._draw_snow_leopard(sx, sy, e)
             elif e.animal_id == "mountain_lion":
                 self._draw_mountain_lion(sx, sy, e)
+            elif e.animal_id == "horse":
+                self._draw_horse(sx, sy, e)
             elif e.animal_id == "npc_quest":
                 self._draw_npc_quest(sx, sy, e)
             elif e.animal_id == "npc_trade":
@@ -2640,6 +2677,83 @@ class Renderer:
             pygame.draw.rect(self.screen, (220, 50, 50),
                              (sx, sy - 13, int(W * chicken.health / 3), 3))
 
+    def _draw_horse(self, sx, sy, horse):
+        W, H = horse.W, horse.H
+        traits    = getattr(horse, 'traits', {})
+        s         = traits.get("size", 1.0)
+        shift     = traits.get("color_shift", (0, 0, 0))
+        coat      = traits.get("coat_color", (160, 115, 65))
+        body_color = _tinted(coat, shift)
+        dark_coat  = tuple(max(0, c - 40) for c in body_color)
+        mane_color = tuple(max(0, c - 60) for c in body_color)
+
+        body_h = int(H * 0.65)
+        leg_h  = H - body_h
+        leg_y  = sy + body_h
+
+        # Legs (4 legs)
+        leg_w = max(1, int(4 * s))
+        for lx_off in [3, 9, 22, 28]:
+            pygame.draw.rect(self.screen, dark_coat,
+                             (sx + int(lx_off * s), leg_y, leg_w, leg_h))
+        # Hooves
+        hoof_c = (30, 25, 20)
+        for lx_off in [3, 9, 22, 28]:
+            pygame.draw.rect(self.screen, hoof_c,
+                             (sx + int(lx_off * s), leg_y + leg_h - 2, leg_w, 2))
+
+        # Body
+        pygame.draw.rect(self.screen, body_color, (sx, sy, W, body_h))
+
+        # Mane stripe along top
+        pygame.draw.rect(self.screen, mane_color,
+                         (sx + int(4 * s), sy, int((W - 8) * s), max(2, int(4 * s))))
+
+        # Tail
+        tail_x = sx if horse.facing == 1 else sx + W - int(5 * s)
+        pygame.draw.rect(self.screen, mane_color,
+                         (tail_x, sy + int(4 * s), max(2, int(4 * s)), int(body_h * 0.6)))
+
+        # Head
+        head_w = int(12 * s)
+        head_h = int(12 * s)
+        hx = (sx + W - int(2 * s)) if horse.facing == 1 else (sx - head_w + int(2 * s))
+        hy = sy - int(4 * s)
+        pygame.draw.rect(self.screen, body_color, (hx, hy, head_w, head_h))
+
+        # Muzzle
+        muzzle_w = int(5 * s)
+        muzzle_x = (hx + head_w - muzzle_w) if horse.facing == 1 else hx
+        pygame.draw.rect(self.screen, _tinted((200, 175, 145), shift),
+                         (muzzle_x, hy + int(6 * s), muzzle_w, int(5 * s)))
+
+        # Eye
+        eye_x = (hx + head_w - int(5 * s)) if horse.facing == 1 else (hx + max(1, int(2 * s)))
+        pygame.draw.rect(self.screen, (15, 10, 5), (eye_x, hy + int(3 * s), 2, 2))
+
+        # Ear
+        ear_x = (hx + int(2 * s)) if horse.facing == 1 else (hx + head_w - int(4 * s))
+        pygame.draw.rect(self.screen, dark_coat, (ear_x, hy - int(4 * s), max(2, int(3 * s)), int(4 * s)))
+
+        # Saddle indicator (brown patch on back when tamed and broken)
+        if getattr(horse, 'tamed', False) and getattr(horse, '_broken', False):
+            saddle_x = sx + int(W * 0.3)
+            saddle_w = int(W * 0.4)
+            pygame.draw.rect(self.screen, (110, 65, 25),
+                             (saddle_x, sy, saddle_w, max(2, int(5 * s))))
+
+        # Tame heart indicator (pink dot above)
+        if getattr(horse, 'tamed', False) and not getattr(horse, '_broken', False):
+            pygame.draw.circle(self.screen, (255, 80, 120), (sx + W // 2, sy - 10), 4)
+        elif getattr(horse, 'tamed', False):
+            pygame.draw.circle(self.screen, (80, 180, 255), (sx + W // 2, sy - 10), 4)
+
+        # Temperament color pip (top-left corner)
+        temp = traits.get("temperament", "spirited")
+        temp_colors = {"calm": (80, 200, 80), "spirited": (220, 180, 40), "wild": (220, 60, 60)}
+        pygame.draw.circle(self.screen, temp_colors.get(temp, (180, 180, 180)),
+                           (sx + 4, sy - 6), 3)
+
     def _draw_snow_leopard(self, sx, sy, cat):
         W, H = cat.W, cat.H
         s = cat.traits.get("size", 1.0)
@@ -2881,15 +2995,14 @@ class Renderer:
         if not world._rain_active:
             return
         from constants import SCREEN_W, SCREEN_H
-        import random as _rng
         streak_color = (160, 190, 230, 90)
         surf = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-        # Deterministic streak positions based on camera position so they tile smoothly.
         cx_off = int(self.cam_x) % 18
+        # Time-based Y offset so streaks fall even when the camera is stationary.
+        time_off = (pygame.time.get_ticks() // 25) % SCREEN_H
         for sx in range(-cx_off, SCREEN_W, 18):
-            # Vary streak start and length with a simple hash
             seed_val = (sx + int(self.cam_x) // 18) & 0xFFFF
-            start_y  = (seed_val * 137 % SCREEN_H)
+            start_y  = (seed_val * 137 % SCREEN_H + time_off) % SCREEN_H
             length   = 8 + (seed_val * 53 % 12)
             pygame.draw.line(surf, streak_color, (sx, start_y), (sx - 2, start_y + length), 1)
         self.screen.blit(surf, (0, 0))
@@ -2905,27 +3018,32 @@ class Renderer:
         # ambient brightness: 230 at surface, drops to 10 at depth 110+
         ambient = max(10, 230 - depth * 2)
         radius = max(70, 220 - depth)
+        darkness = 255 - ambient
 
         # Rebuild gradient only when lighting params change (not every frame)
         if self._light_cache_key != (ambient, radius):
             self._light_cache_key = (ambient, radius)
             size = radius * 2 + 1
-            grad = pygame.Surface((size, size)).convert()
-            grad.fill((ambient, ambient, ambient))
+            # Gradient is an SRCALPHA surface: alpha=0 at center (fully bright),
+            # alpha=darkness at edge. BLEND_RGBA_MIN punches this as a hole into
+            # the dark overlay, avoiding a full-screen BLEND_MULT each frame.
+            grad = pygame.Surface((size, size), pygame.SRCALPHA)
+            grad.fill((0, 0, 0, darkness))
             step = 5
             for r in range(radius, 0, -step):
                 ratio = r / radius
                 brightness = int(ambient + (255 - ambient) * (1 - ratio ** 0.6))
-                brightness = min(255, brightness)
-                pygame.draw.circle(grad, (brightness, brightness, brightness), (radius, radius), r)
+                alpha = 255 - min(255, brightness)
+                pygame.draw.circle(grad, (0, 0, 0, alpha), (radius, radius), r)
             self._light_gradient = grad
 
         px = int(player.x - self.cam_x) + PLAYER_W // 2
         py = int(player.y - self.cam_y) + PLAYER_H // 2
 
-        self._light_surf.fill((ambient, ambient, ambient))
-        self._light_surf.blit(self._light_gradient, (px - radius, py - radius))
-        self.screen.blit(self._light_surf, (0, 0), special_flags=pygame.BLEND_MULT)
+        self._light_surf.fill((0, 0, 0, darkness))
+        self._light_surf.blit(self._light_gradient, (px - radius, py - radius),
+                              special_flags=pygame.BLEND_RGBA_MIN)
+        self.screen.blit(self._light_surf, (0, 0))
 
     # ------------------------------------------------------------------
     # Mini-map
@@ -3253,6 +3371,46 @@ class Renderer:
             self._draw_skua(bird, sx, sy, wing_flap, perching)
         elif sp == "firecrest":
             self._draw_firecrest(bird, sx, sy, wing_flap, perching)
+        elif sp == "red_crowned_crane":
+            self._draw_red_crowned_crane(bird, sx, sy, wing_flap, perching)
+        elif sp == "mandarin_duck":
+            self._draw_mandarin_duck(bird, sx, sy, wing_flap, perching)
+        elif sp == "chinese_monal":
+            self._draw_chinese_monal(bird, sx, sy, wing_flap, perching)
+        elif sp == "silver_pheasant":
+            self._draw_silver_pheasant(bird, sx, sy, wing_flap, perching)
+        elif sp == "crested_ibis":
+            self._draw_crested_ibis(bird, sx, sy, wing_flap, perching)
+        elif sp == "chinese_pond_heron":
+            self._draw_chinese_pond_heron(bird, sx, sy, wing_flap, perching)
+        elif sp == "fairy_pitta":
+            self._draw_fairy_pitta(bird, sx, sy, wing_flap, perching)
+        elif sp == "hwamei":
+            self._draw_hwamei(bird, sx, sy, wing_flap, perching)
+        elif sp == "black_drongo":
+            self._draw_black_drongo(bird, sx, sy, wing_flap, perching)
+        elif sp == "red_billed_blue_magpie":
+            self._draw_red_billed_blue_magpie(bird, sx, sy, wing_flap, perching)
+        elif sp == "african_fish_eagle":
+            self._draw_african_fish_eagle(bird, sx, sy, wing_flap, perching)
+        elif sp == "secretary_bird":
+            self._draw_secretary_bird(bird, sx, sy, wing_flap, perching)
+        elif sp == "martial_eagle":
+            self._draw_martial_eagle(bird, sx, sy, wing_flap, perching)
+        elif sp == "marabou_stork":
+            self._draw_marabou_stork(bird, sx, sy, wing_flap, perching)
+        elif sp == "superb_starling":
+            self._draw_superb_starling(bird, sx, sy, wing_flap, perching)
+        elif sp == "cape_weaver":
+            self._draw_cape_weaver(bird, sx, sy, wing_flap, perching)
+        elif sp == "hamerkop":
+            self._draw_hamerkop(bird, sx, sy, wing_flap, perching)
+        elif sp == "african_grey_parrot":
+            self._draw_african_grey_parrot(bird, sx, sy, wing_flap, perching)
+        elif sp == "ground_hornbill":
+            self._draw_ground_hornbill(bird, sx, sy, wing_flap, perching)
+        elif sp == "african_penguin":
+            self._draw_african_penguin(bird, sx, sy, wing_flap, perching)
 
     def _draw_robin(self, bird, sx, sy, wf, perching):
         W, H = bird.W, bird.H
@@ -4988,3 +5146,478 @@ class Renderer:
         bx = hx + 3 if f == 1 else hx - 2
         pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 1, 2, 1))
         pygame.draw.rect(self.screen, (20, 20, 20), (hx + (1 if f == 1 else 0), sy + 1, 1, 1))
+
+    def _draw_red_crowned_crane(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        for lx in [sx + 4, sx + W - 6]:
+            pygame.draw.rect(self.screen, (185, 175, 140), (lx, sy + H - 10, 2, 10))
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx, sy + 4 + int(wf), W, H - 8))
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx, sy + 4 + int(wf), 5, H - 10))
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + W - 5, sy + 4 + int(wf), 5, H - 10))
+        else:
+            pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 1, sy + 5, W - 2, H - 12))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 2, sy + 5, W - 4, H - 12))
+        nx = sx + W - 4 if f == 1 else sx + 2
+        pygame.draw.rect(self.screen, bird.BODY_COLOR, (nx, sy + 1, 3, H - 10))
+        pygame.draw.circle(self.screen, bird.BODY_COLOR, (nx + 1, sy + 1), 3)
+        pygame.draw.rect(self.screen, bird.HEAD_COLOR, (nx - 1, sy - 1, 5, 3))
+        pygame.draw.rect(self.screen, (22, 22, 28), (nx, sy + 2, 3, 2))
+        bx = nx + 3 if f == 1 else nx - 5
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 1, 5, 2))
+        pygame.draw.rect(self.screen, (20, 20, 20), (nx + (2 if f == 1 else 0), sy + 1, 2, 2))
+
+    def _draw_mandarin_duck(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx, sy + int(wf), W, H - 2))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 2, W - 2, H - 4))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 2, sy + 3, W - 4, H - 4))
+        pygame.draw.rect(self.screen, bird.ACCENT_COLOR, (sx + 3, sy + 5, W - 8, 2))
+        hx = sx + W - 5 if f == 1 else sx + 1
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 4)
+        pygame.draw.ellipse(self.screen, bird.ACCENT_COLOR, (hx + (1 if f == 1 else 0), sy + 3, 3, 2))
+        bx = hx + 5 if f == 1 else hx - 2
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 3, 2, 2))
+        pygame.draw.rect(self.screen, (20, 20, 20), (hx + (3 if f == 1 else 1), sy + 1, 2, 2))
+
+    def _draw_chinese_monal(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        tx = sx if f == 1 else sx + W - 7
+        pygame.draw.rect(self.screen, bird.ACCENT_COLOR, (tx, sy + 3, 7, 3))
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 2, sy + 2 + int(wf), W - 4, H - 3))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 2, sy + 2, W - 4, H - 4))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 4, sy + 3, W - 8, H - 4))
+        hx = sx + W - 6 if f == 1 else sx + 2
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 4)
+        bx = hx + 5 if f == 1 else hx - 2
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 3, 2))
+        pygame.draw.rect(self.screen, (230, 190, 50), (hx + (3 if f == 1 else 1), sy + 1, 2, 2))
+        pygame.draw.rect(self.screen, (20, 20, 20), (hx + (3 if f == 1 else 1), sy + 1, 1, 1))
+
+    def _draw_silver_pheasant(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        tx = sx if f == 1 else sx + W - 7
+        pygame.draw.rect(self.screen, bird.BODY_COLOR, (tx, sy + 3, 7, 3))
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 2, sy + 2 + int(wf), W - 4, H - 3))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 2, sy + 2, W - 4, H - 4))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 4, sy + 3, W - 8, H - 4))
+        hx = sx + W - 6 if f == 1 else sx + 2
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 4)
+        pygame.draw.ellipse(self.screen, bird.ACCENT_COLOR, (hx + (2 if f == 1 else 0), sy + 3, 3, 2))
+        bx = hx + 5 if f == 1 else hx - 2
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 3, 2))
+        pygame.draw.rect(self.screen, (220, 195, 50), (hx + (3 if f == 1 else 1), sy + 1, 2, 2))
+        pygame.draw.rect(self.screen, (20, 20, 20), (hx + (3 if f == 1 else 1), sy + 1, 1, 1))
+
+    def _draw_crested_ibis(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        for lx in [sx + 4, sx + W - 6]:
+            pygame.draw.rect(self.screen, (185, 140, 130), (lx, sy + H - 8, 2, 8))
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx, sy + 3 + int(wf), W, H - 6))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 4, W - 2, H - 9))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 2, sy + 4, W - 4, H - 9))
+        nx = sx + W - 4 if f == 1 else sx + 2
+        pygame.draw.rect(self.screen, bird.BODY_COLOR, (nx, sy + 1, 3, H - 7))
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (nx + 1, sy + 2), 3)
+        pygame.draw.rect(self.screen, bird.BODY_COLOR, (nx, sy - 2, 2, 3))
+        bx = nx + 3 if f == 1 else nx - 6
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 4, 2))
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx + (2 if f == 1 else -1), sy + 4, 2, 2))
+        pygame.draw.rect(self.screen, (20, 20, 20), (nx + (2 if f == 1 else 0), sy + 1, 2, 2))
+
+    def _draw_chinese_pond_heron(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        for lx in [sx + 2, sx + W - 4]:
+            pygame.draw.rect(self.screen, (180, 160, 90), (lx, sy + H - 6, 2, 6))
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx, sy + 3 + int(wf), W, H - 7))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 3, W - 2, H - 8))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 1, sy + 3, W - 2, H - 8))
+        nx = sx + W - 3 if f == 1 else sx + 1
+        pygame.draw.rect(self.screen, bird.HEAD_COLOR, (nx, sy + 1, 2, H - 7))
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (nx + 1, sy + 1), 3)
+        bx = nx + 3 if f == 1 else nx - 5
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy, 5, 2))
+        pygame.draw.rect(self.screen, (20, 20, 20), (nx + (1 if f == 1 else 0), sy, 2, 2))
+
+    def _draw_fairy_pitta(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx, sy + int(wf), W, H - 2))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 2, W - 2, H - 3))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 2, sy + 2, W - 4, H - 3))
+        pygame.draw.ellipse(self.screen, bird.ACCENT_COLOR, (sx + 3, sy + 5, W - 7, H - 7))
+        hx = sx + W - 5 if f == 1 else sx + 1
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 4)
+        bx = hx + 5 if f == 1 else hx - 2
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 3, 2))
+        pygame.draw.rect(self.screen, (220, 190, 50), (hx + (3 if f == 1 else 1), sy + 1, 2, 2))
+        pygame.draw.rect(self.screen, (20, 20, 20), (hx + (3 if f == 1 else 1), sy + 1, 1, 1))
+
+    def _draw_hwamei(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx, sy + int(wf), W, H - 1))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 2, W - 2, H - 3))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 1, sy + 2, W - 2, H - 3))
+        pygame.draw.ellipse(self.screen, (210, 185, 140), (sx + 2, sy + 4, W - 5, H - 5))
+        hx = sx + W - 5 if f == 1 else sx + 1
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 4)
+        pygame.draw.rect(self.screen, bird.ACCENT_COLOR, (hx + (1 if f == 1 else 0), sy + 1, 4, 2))
+        pygame.draw.rect(self.screen, (20, 20, 20), (hx + (2 if f == 1 else 1), sy + 1, 2, 2))
+        bx = hx + 5 if f == 1 else hx - 2
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 3, 2))
+
+    def _draw_black_drongo(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        tx = sx + 1 if f == 1 else sx + W - 5
+        pygame.draw.rect(self.screen, bird.BODY_COLOR, (tx, sy + H - 3, 2, 4))
+        pygame.draw.rect(self.screen, bird.BODY_COLOR, (tx + 3, sy + H - 3, 2, 4))
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx, sy + int(wf), W, H - 2))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 2, W - 2, H - 3))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 2, sy + 2, W - 4, H - 3))
+        pygame.draw.ellipse(self.screen, bird.ACCENT_COLOR, (sx + 3, sy + 3, W - 8, H - 6))
+        hx = sx + W - 5 if f == 1 else sx + 1
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 4)
+        bx = hx + 5 if f == 1 else hx - 2
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 3, 2))
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx + (0 if f == 1 else 1), sy + 4, 2, 2))
+        pygame.draw.rect(self.screen, (200, 30, 30), (hx + (3 if f == 1 else 1), sy + 1, 2, 2))
+        pygame.draw.rect(self.screen, (20, 20, 20), (hx + (3 if f == 1 else 1), sy + 1, 1, 1))
+
+    def _draw_red_billed_blue_magpie(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        tx = sx + 1 if f == 1 else sx + W - 5
+        pygame.draw.rect(self.screen, bird.BODY_COLOR, (tx, sy + H - 3, 4, 7))
+        pygame.draw.rect(self.screen, bird.ACCENT_COLOR, (tx + 1, sy + H + 1, 2, 3))
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx, sy + int(wf), W, H - 3))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 2, W - 2, H - 4))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 2, sy + 3, W - 4, H - 5))
+        hx = sx + W - 6 if f == 1 else sx + 2
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 5)
+        pygame.draw.rect(self.screen, bird.HEAD_COLOR, (hx, sy + 3, 6, 4))
+        pygame.draw.rect(self.screen, bird.ACCENT_COLOR, (sx + W // 2 - 2, sy + 3, 4, 2))
+        bx = hx + 6 if f == 1 else hx - 3
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 3, 2))
+        pygame.draw.rect(self.screen, (240, 230, 50), (hx + (4 if f == 1 else 2), sy + 1, 2, 2))
+        pygame.draw.rect(self.screen, (20, 20, 20), (hx + (4 if f == 1 else 2), sy + 1, 1, 1))
+
+    def _draw_african_fish_eagle(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR,
+                                (sx - 2, sy + 2 + int(wf), W + 4, H - 2))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 3, W - 2, H - 4))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 3, sy + 3, W - 6, H - 3))
+        pygame.draw.ellipse(self.screen, bird.ACCENT_COLOR, (sx + 5, sy + 4, W - 12, H - 6))
+        hx = sx + W - 7 if f == 1 else sx + 3
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 3, sy + 2), 5)
+        bx = hx + 7 if f == 1 else hx - 5
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 5, 3))
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx + (2 if f == 1 else 0), sy + 5, 3, 2))
+        pygame.draw.rect(self.screen, (30, 25, 15), (hx + (4 if f == 1 else 2), sy + 1, 2, 2))
+
+    def _draw_secretary_bird(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        for lx in [sx + 4, sx + W - 6]:
+            pygame.draw.rect(self.screen, (215, 165, 130), (lx, sy + H - 10, 2, 10))
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR,
+                                (sx, sy + 4 + int(wf), W, H - 12))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 5, W - 2, H - 14))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 2, sy + 5, W - 4, H - 13))
+        pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 4, sy + H - 14, W - 10, 5))
+        nx = sx + W - 4 if f == 1 else sx + 2
+        pygame.draw.rect(self.screen, bird.BODY_COLOR, (nx, sy + 1, 3, H - 12))
+        pygame.draw.circle(self.screen, bird.BODY_COLOR, (nx + 1, sy + 2), 4)
+        pygame.draw.rect(self.screen, bird.ACCENT_COLOR, (nx, sy + 1, 4, 4))
+        for i in range(3):
+            qx = nx + 1
+            pygame.draw.line(self.screen, bird.WING_COLOR,
+                             (qx, sy + 2), (qx - f * (2 + i), sy - 3 - i), 1)
+        bx = nx + 4 if f == 1 else nx - 5
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 5, 2))
+        pygame.draw.rect(self.screen, (22, 22, 22), (nx + (2 if f == 1 else 1), sy + 1, 2, 2))
+
+    def _draw_martial_eagle(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR,
+                                (sx - 2, sy + 2 + int(wf), W + 4, H - 2))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 3, W - 2, H - 4))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 3, sy + 3, W - 6, H - 3))
+        for i in range(3):
+            pygame.draw.rect(self.screen, bird.ACCENT_COLOR, (sx + 5 + i * 4, sy + 5, 2, 2))
+        hx = sx + W - 7 if f == 1 else sx + 3
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 3, sy + 2), 5)
+        bx = hx + 7 if f == 1 else hx - 4
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 4, 2))
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx + (2 if f == 1 else -1), sy + 4, 2, 2))
+        pygame.draw.rect(self.screen, (235, 230, 215), (hx + (4 if f == 1 else 2), sy + 1, 2, 2))
+
+    def _draw_marabou_stork(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        for lx in [sx + 4, sx + W - 6]:
+            pygame.draw.rect(self.screen, (185, 165, 145), (lx, sy + H - 8, 2, 8))
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR,
+                                (sx, sy + 4 + int(wf), W, H - 10))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 5, W - 2, H - 12))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 2, sy + 5, W - 4, H - 12))
+        nx = sx + W - 4 if f == 1 else sx + 2
+        pygame.draw.rect(self.screen, bird.HEAD_COLOR, (nx, sy + 2, 3, H - 12))
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (nx + 1, sy + 2), 4)
+        pygame.draw.ellipse(self.screen, bird.ACCENT_COLOR, (nx - 1, sy + 5, 5, 4))
+        bx = nx + 4 if f == 1 else nx - 8
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 1, 8, 3))
+        pygame.draw.rect(self.screen, (22, 22, 22), (nx + (2 if f == 1 else 0), sy + 1, 2, 2))
+
+    def _draw_superb_starling(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx, sy + int(wf), W, H - 2))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 1, W - 2, H - 3))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 1, sy + 3, W - 2, H - 4))
+        pygame.draw.rect(self.screen, bird.ACCENT_COLOR, (sx + 2, sy + 3, W - 4, 2))
+        hx = sx + W - 4 if f == 1 else sx + 1
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 3)
+        bx = hx + 4 if f == 1 else hx - 2
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 2, 1))
+        pygame.draw.rect(self.screen, (240, 235, 200), (hx + (2 if f == 1 else 1), sy + 1, 2, 2))
+
+    def _draw_cape_weaver(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx, sy + int(wf), W, H - 2))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 1, W - 2, H - 3))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 1, sy + 2, W - 2, H - 3))
+        hx = sx + W - 4 if f == 1 else sx + 1
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 3)
+        pygame.draw.rect(self.screen, bird.ACCENT_COLOR, (hx + (2 if f == 1 else 1), sy + 1, 2, 2))
+        pygame.draw.rect(self.screen, (22, 22, 22), (hx + (2 if f == 1 else 1), sy + 1, 1, 1))
+        bx = hx + 4 if f == 1 else hx - 2
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 3, 2))
+
+    def _draw_hamerkop(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR,
+                                (sx, sy + 2 + int(wf), W, H - 4))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 3, W - 2, H - 6))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 2, sy + 3, W - 4, H - 5))
+        nx = sx + W - 5 if f == 1 else sx + 2
+        pygame.draw.rect(self.screen, bird.HEAD_COLOR, (nx, sy + 1, 4, H - 6))
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (nx + 2, sy + 2), 4)
+        cx = nx - 3 if f == 1 else nx + 5
+        pygame.draw.rect(self.screen, bird.ACCENT_COLOR, (cx, sy + 1, 5, 3))
+        bx = nx + 5 if f == 1 else nx - 5
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 5, 2))
+        pygame.draw.rect(self.screen, (22, 22, 22), (nx + (3 if f == 1 else 1), sy + 1, 2, 2))
+
+    def _draw_african_grey_parrot(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        tx = sx + 1 if f == 1 else sx + W - 4
+        pygame.draw.rect(self.screen, bird.ACCENT_COLOR, (tx, sy + H - 2, 3, 5))
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx, sy + int(wf), W, H - 2))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 2, W - 2, H - 3))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 2, sy + 2, W - 4, H - 3))
+        hx = sx + W - 5 if f == 1 else sx + 1
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 4)
+        bx = hx + 5 if f == 1 else hx - 3
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 3, 2))
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx + (0 if f == 1 else 1), sy + 4, 2, 2))
+        pygame.draw.rect(self.screen, (245, 240, 230), (hx + (3 if f == 1 else 1), sy + 1, 2, 2))
+        pygame.draw.rect(self.screen, (22, 22, 22), (hx + (3 if f == 1 else 1), sy + 1, 1, 1))
+
+    def _draw_ground_hornbill(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.BODY_COLOR,
+                                (sx - 2, sy + 2 + int(wf), W + 4, H - 2))
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR,
+                                (sx + 3, sy + 3 + int(wf), 8, H - 6))
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR,
+                                (sx + W - 11, sy + 3 + int(wf), 8, H - 6))
+        else:
+            pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 1, sy + 3, W - 2, H - 4))
+        pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 3, sy + 4, W - 6, H - 5))
+        hx = sx + W - 7 if f == 1 else sx + 3
+        pygame.draw.circle(self.screen, bird.BODY_COLOR, (hx + 3, sy + 3), 5)
+        pygame.draw.ellipse(self.screen, bird.HEAD_COLOR, (hx + 1, sy + 2, 6, 5))
+        bx = hx + 7 if f == 1 else hx - 8
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 8, 3))
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx + (2 if f == 1 else -2), sy, 5, 3))
+        pygame.draw.rect(self.screen, (22, 22, 22), (hx + (4 if f == 1 else 2), sy + 2, 2, 2))
+
+    def _draw_african_penguin(self, bird, sx, sy, wf, perching):
+        W, H = bird.W, bird.H
+        f = bird.facing
+        if not perching:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx, sy + int(wf), W, H - 3))
+            pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 2, sy + 2, W - 4, H - 5))
+        else:
+            pygame.draw.ellipse(self.screen, bird.WING_COLOR, (sx + 1, sy + 1, W - 2, H - 2))
+            pygame.draw.ellipse(self.screen, bird.BODY_COLOR, (sx + 2, sy + 2, W - 4, H - 5))
+        hx = sx + W - 4 if f == 1 else sx + 1
+        pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 3)
+        pygame.draw.rect(self.screen, bird.ACCENT_COLOR, (hx + (1 if f == 1 else 0), sy + 2, 3, 2))
+        bx = hx + 4 if f == 1 else hx - 2
+        pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 2, 2))
+        pygame.draw.rect(self.screen, (22, 22, 22), (hx + (2 if f == 1 else 1), sy + 1, 1, 1))
+
+    # ------------------------------------------------------------------
+    # Insects
+    # ------------------------------------------------------------------
+
+    def draw_insects(self, insects):
+        for ins in insects:
+            if ins.spooked:
+                continue
+            sx = int(ins.x - self.cam_x)
+            sy = int(ins.y - self.cam_y)
+            if sx < -30 or sx > SCREEN_W + 30 or sy < -30 or sy > SCREEN_H + 30:
+                continue
+            self._draw_insect(ins, sx, sy)
+
+    def _draw_insect(self, ins, sx, sy):
+        wt = ins.WING_TYPE
+        wf = abs(math.sin(ins._hover_phase)) * 3
+        if wt == "butterfly":
+            self._draw_insect_butterfly(ins, sx, sy, wf)
+        elif wt == "moth":
+            self._draw_insect_moth(ins, sx, sy, wf)
+        elif wt == "dragonfly":
+            self._draw_insect_dragonfly(ins, sx, sy, wf)
+        elif wt == "firefly":
+            self._draw_insect_firefly(ins, sx, sy)
+        elif wt == "beetle":
+            self._draw_insect_beetle(ins, sx, sy)
+        else:
+            self._draw_insect_generic(ins, sx, sy, wf)
+
+    def _draw_insect_butterfly(self, ins, sx, sy, wf):
+        W, H = ins.W, ins.H
+        wo = int(wf)
+        # Upper wings
+        pygame.draw.ellipse(self.screen, ins.WING_COLOR,
+                            (sx, sy - wo, W // 2, H))
+        pygame.draw.ellipse(self.screen, ins.WING_COLOR,
+                            (sx + W // 2, sy - wo, W // 2, H))
+        # Accent spots
+        pygame.draw.ellipse(self.screen, ins.ACCENT_COLOR,
+                            (sx + 2, sy - wo + 2, W // 2 - 3, H // 2))
+        pygame.draw.ellipse(self.screen, ins.ACCENT_COLOR,
+                            (sx + W // 2 + 1, sy - wo + 2, W // 2 - 3, H // 2))
+        # Body
+        pygame.draw.ellipse(self.screen, ins.BODY_COLOR,
+                            (sx + W // 2 - 1, sy, 3, H))
+
+    def _draw_insect_moth(self, ins, sx, sy, wf):
+        W, H = ins.W, ins.H
+        wo = int(wf)
+        # Broad flat wings
+        pygame.draw.ellipse(self.screen, ins.WING_COLOR,
+                            (sx, sy + 1 - wo, W, H - 2))
+        pygame.draw.ellipse(self.screen, ins.ACCENT_COLOR,
+                            (sx + 2, sy + 2 - wo, W - 4, H - 4))
+        # Body
+        pygame.draw.ellipse(self.screen, ins.BODY_COLOR,
+                            (sx + W // 2 - 1, sy, 3, H))
+
+    def _draw_insect_dragonfly(self, ins, sx, sy, wf):
+        W, H = ins.W, ins.H
+        wo = int(wf)
+        cx = sx + W // 2
+        # 4 narrow wings
+        pygame.draw.ellipse(self.screen, ins.WING_COLOR,
+                            (sx, sy - 1 - wo, W // 2, 3))
+        pygame.draw.ellipse(self.screen, ins.WING_COLOR,
+                            (cx, sy - 1 - wo, W // 2, 3))
+        pygame.draw.ellipse(self.screen, ins.WING_COLOR,
+                            (sx + 2, sy + 2 - wo, W // 2 - 2, 2))
+        pygame.draw.ellipse(self.screen, ins.WING_COLOR,
+                            (cx - 2, sy + 2 - wo, W // 2 - 2, 2))
+        # Elongated segmented body
+        pygame.draw.ellipse(self.screen, ins.BODY_COLOR, (sx + 1, sy + 1, W - 2, H - 2))
+        pygame.draw.ellipse(self.screen, ins.ACCENT_COLOR,
+                            (sx + 3, sy + 2, W - 6, H - 4))
+
+    def _draw_insect_firefly(self, ins, sx, sy):
+        W, H = ins.W, ins.H
+        # Small oval body
+        pygame.draw.ellipse(self.screen, ins.BODY_COLOR, (sx, sy + 1, W, H - 2))
+        pygame.draw.ellipse(self.screen, ins.WING_COLOR, (sx + 1, sy + 2, W - 2, H - 4))
+        # Glowing tail — pulse with hover_phase
+        glow_a = int(abs(math.sin(ins._hover_phase * 0.5)) * 200 + 55)
+        gc = (
+            min(255, ins.ACCENT_COLOR[0]),
+            min(255, ins.ACCENT_COLOR[1]),
+            min(255, ins.ACCENT_COLOR[2]),
+        )
+        tail_x = sx + W - 3
+        pygame.draw.circle(self.screen, gc, (tail_x, sy + H // 2), 2)
+
+    def _draw_insect_beetle(self, ins, sx, sy):
+        W, H = ins.W, ins.H
+        # Elytra (wing covers)
+        pygame.draw.ellipse(self.screen, ins.WING_COLOR, (sx, sy, W, H))
+        pygame.draw.ellipse(self.screen, ins.BODY_COLOR, (sx + 1, sy + 1, W - 2, H - 2))
+        # Central seam
+        pygame.draw.line(self.screen, ins.WING_COLOR,
+                         (sx + W // 2, sy + 1), (sx + W // 2, sy + H - 2))
+        # Head
+        pygame.draw.circle(self.screen, ins.ACCENT_COLOR,
+                           (sx + W // 6, sy + H // 2), H // 3)
+
+    def _draw_insect_generic(self, ins, sx, sy, wf):
+        W, H = ins.W, ins.H
+        wo = int(wf)
+        pygame.draw.ellipse(self.screen, ins.WING_COLOR,
+                            (sx, sy - wo, W, H + wo))
+        pygame.draw.ellipse(self.screen, ins.BODY_COLOR,
+                            (sx + W // 4, sy + 1, W // 2, H - 2))
+        pygame.draw.circle(self.screen, ins.ACCENT_COLOR,
+                           (sx + W // 2, sy), H // 3)

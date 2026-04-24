@@ -1678,6 +1678,326 @@ class Firecrest(Bird):
     ACCENT_COLOR     = (235, 130, 30)
 
 
+class RedCrownedCrane(Bird):
+    SPECIES          = "red_crowned_crane"
+    RARITY           = "rare"
+    BIOMES           = ["wetland", "steppe", "tundra"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (2, 4)
+    ALTITUDE_BLOCKS  = (2, 6)
+    SPEED            = 55.0
+    W, H             = 18, 24
+    BODY_COLOR       = (240, 238, 235)
+    WING_COLOR       = (22, 22, 28)      # black secondary wings
+    BEAK_COLOR       = (175, 168, 130)
+    HEAD_COLOR       = (200, 25, 25)     # vivid red crown cap
+    ACCENT_COLOR     = (240, 238, 235)
+
+
+class MandarinDuck(Bird):
+    SPECIES          = "mandarin_duck"
+    RARITY           = "uncommon"
+    BIOMES           = ["wetland", "swamp", "boreal"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (1, 3)
+    SPEED            = 50.0
+    W, H             = 14, 12
+    BODY_COLOR       = (210, 120, 40)    # copper-orange flanks
+    WING_COLOR       = (40, 115, 145)    # teal sail feathers
+    BEAK_COLOR       = (215, 90, 45)     # coral-red bill
+    HEAD_COLOR       = (40, 150, 120)    # iridescent green crown
+    ACCENT_COLOR     = (245, 242, 238)   # white cheek stripe
+
+
+class ChineseMonal(Bird):
+    SPECIES          = "chinese_monal"
+    RARITY           = "rare"
+    BIOMES           = ["alpine_mountain", "rocky_mountain"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (2, 6)
+    SPEED            = 55.0
+    W, H             = 20, 14
+    BODY_COLOR       = (30, 140, 110)    # iridescent blue-green
+    WING_COLOR       = (55, 35, 100)     # deep purple-black
+    BEAK_COLOR       = (185, 168, 125)
+    HEAD_COLOR       = (40, 160, 130)    # metallic turquoise
+    ACCENT_COLOR     = (210, 85, 40)     # copper tail
+
+
+class SilverPheasant(Bird):
+    SPECIES          = "silver_pheasant"
+    RARITY           = "uncommon"
+    BIOMES           = ["jungle", "redwood", "boreal"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (1, 5)
+    SPEED            = 55.0
+    W, H             = 20, 14
+    BODY_COLOR       = (238, 235, 232)   # silver-white
+    WING_COLOR       = (28, 26, 30)      # black
+    BEAK_COLOR       = (165, 152, 130)
+    HEAD_COLOR       = (30, 26, 30)      # glossy black head
+    ACCENT_COLOR     = (195, 45, 40)     # red facial wattle
+
+
+class CrestedIbis(Bird):
+    SPECIES          = "crested_ibis"
+    RARITY           = "rare"
+    BIOMES           = ["wetland", "steppe"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (2, 6)
+    SPEED            = 50.0
+    W, H             = 16, 18
+    BODY_COLOR       = (242, 228, 220)   # pale white with rosy flush
+    WING_COLOR       = (228, 195, 175)
+    BEAK_COLOR       = (38, 34, 30)      # dark downcurved bill
+    HEAD_COLOR       = (195, 45, 40)     # red facial skin
+    ACCENT_COLOR     = (230, 180, 170)   # rosy wing flush
+
+
+class ChinesePondHeron(Bird):
+    SPECIES          = "chinese_pond_heron"
+    RARITY           = "common"
+    BIOMES           = ["wetland", "swamp", "beach"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (1, 4)
+    SPEED            = 45.0
+    W, H             = 12, 16
+    BODY_COLOR       = (155, 120, 75)    # streaked brown mantle
+    WING_COLOR       = (235, 230, 222)   # white wings (fold contrast)
+    BEAK_COLOR       = (195, 175, 80)    # yellow bill
+    HEAD_COLOR       = (140, 108, 65)
+    ACCENT_COLOR     = (235, 230, 222)
+
+
+class FairyPitta(Bird):
+    SPECIES          = "fairy_pitta"
+    RARITY           = "rare"
+    BIOMES           = ["jungle", "tropical"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (1, 4)
+    SPEED            = 75.0
+    W, H             = 14, 12
+    BODY_COLOR       = (50, 170, 80)     # vivid green back
+    WING_COLOR       = (30, 100, 200)    # cobalt blue
+    BEAK_COLOR       = (35, 32, 28)
+    HEAD_COLOR       = (22, 22, 28)      # black crown
+    ACCENT_COLOR     = (220, 50, 50)     # scarlet belly
+
+
+class Hwamei(Bird):
+    SPECIES          = "hwamei"
+    RARITY           = "uncommon"
+    BIOMES           = ["temperate", "birch_forest", "boreal", "jungle"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (2, 6)
+    SPEED            = 70.0
+    W, H             = 14, 10
+    BODY_COLOR       = (155, 115, 72)    # warm brown
+    WING_COLOR       = (130, 95, 58)
+    BEAK_COLOR       = (195, 170, 70)    # yellowish bill
+    HEAD_COLOR       = (145, 108, 65)
+    ACCENT_COLOR     = (220, 195, 145)   # white eye-stripe / spectacles
+
+
+class BlackDrongo(Bird):
+    SPECIES          = "black_drongo"
+    RARITY           = "common"
+    BIOMES           = ["savanna", "tropical", "wetland", "temperate"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (3, 8)
+    SPEED            = 85.0
+    W, H             = 14, 10
+    BODY_COLOR       = (22, 22, 30)      # glossy black
+    WING_COLOR       = (18, 18, 26)
+    BEAK_COLOR       = (40, 38, 42)
+    HEAD_COLOR       = (22, 22, 30)
+    ACCENT_COLOR     = (40, 40, 60)      # blue-black iridescent sheen
+
+
+class RedBilledBlueMagpie(Bird):
+    SPECIES          = "red_billed_blue_magpie"
+    RARITY           = "uncommon"
+    BIOMES           = ["temperate", "jungle", "boreal"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (2, 4)
+    ALTITUDE_BLOCKS  = (3, 8)
+    SPEED            = 80.0
+    W, H             = 18, 14
+    BODY_COLOR       = (40, 120, 210)    # vivid azure blue
+    WING_COLOR       = (30, 95, 180)
+    BEAK_COLOR       = (215, 55, 35)     # bright red bill
+    HEAD_COLOR       = (22, 22, 28)      # black hood
+    ACCENT_COLOR     = (240, 238, 230)   # white nape / tail tip
+
+
+class AfricanFishEagle(Bird):
+    SPECIES          = "african_fish_eagle"
+    RARITY           = "rare"
+    BIOMES           = ["savanna", "wetland", "beach"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (6, 14)
+    SPEED            = 95.0
+    W, H             = 24, 14
+    BODY_COLOR       = (90, 55, 25)     # dark brown
+    WING_COLOR       = (75, 45, 20)
+    BEAK_COLOR       = (235, 195, 50)   # yellow
+    HEAD_COLOR       = (245, 245, 240)  # white
+    ACCENT_COLOR     = (195, 60, 30)    # chestnut breast
+
+
+class SecretaryBird(Bird):
+    SPECIES          = "secretary_bird"
+    RARITY           = "rare"
+    BIOMES           = ["savanna", "steppe", "arid_steppe"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (1, 4)
+    SPEED            = 50.0
+    W, H             = 16, 24
+    BODY_COLOR       = (165, 168, 175)  # grey
+    WING_COLOR       = (30, 28, 32)     # black
+    BEAK_COLOR       = (210, 180, 80)   # yellow-grey
+    HEAD_COLOR       = (165, 168, 175)
+    ACCENT_COLOR     = (220, 115, 40)   # orange facial skin
+
+
+class MartialEagle(Bird):
+    SPECIES          = "martial_eagle"
+    RARITY           = "rare"
+    BIOMES           = ["savanna", "arid_steppe", "canyon"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (7, 15)
+    SPEED            = 105.0
+    W, H             = 22, 14
+    BODY_COLOR       = (245, 242, 238)  # white spotted underside
+    WING_COLOR       = (60, 55, 48)     # dark brown
+    BEAK_COLOR       = (200, 185, 130)  # pale grey
+    HEAD_COLOR       = (65, 60, 52)     # dark brown head
+    ACCENT_COLOR     = (60, 55, 48)     # spots same shade as wings
+
+
+class MarabouStork(Bird):
+    SPECIES          = "marabou_stork"
+    RARITY           = "uncommon"
+    BIOMES           = ["savanna", "wetland", "swamp"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (2, 4)
+    ALTITUDE_BLOCKS  = (2, 7)
+    SPEED            = 55.0
+    W, H             = 18, 24
+    BODY_COLOR       = (242, 240, 238)  # white
+    WING_COLOR       = (48, 46, 52)     # dark grey-black
+    BEAK_COLOR       = (195, 182, 148)  # pale massive bill
+    HEAD_COLOR       = (195, 135, 105)  # bare pinkish skin
+    ACCENT_COLOR     = (210, 90, 75)    # throat pouch
+
+
+class SuperbStarling(Bird):
+    SPECIES          = "superb_starling"
+    RARITY           = "common"
+    BIOMES           = ["savanna"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (3, 7)
+    ALTITUDE_BLOCKS  = (2, 6)
+    SPEED            = 75.0
+    W, H             = 12, 9
+    BODY_COLOR       = (195, 118, 45)   # rufous-orange belly
+    WING_COLOR       = (28, 135, 90)    # iridescent green
+    BEAK_COLOR       = (35, 32, 28)
+    HEAD_COLOR       = (25, 80, 150)    # iridescent blue-green
+    ACCENT_COLOR     = (245, 240, 235)  # white breast band
+
+
+class CapeWeaver(Bird):
+    SPECIES          = "cape_weaver"
+    RARITY           = "common"
+    BIOMES           = ["savanna", "rolling_hills", "wetland"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (4, 8)
+    ALTITUDE_BLOCKS  = (2, 6)
+    SPEED            = 65.0
+    W, H             = 12, 9
+    BODY_COLOR       = (228, 192, 22)   # bright yellow
+    WING_COLOR       = (72, 95, 38)     # olive green
+    BEAK_COLOR       = (55, 48, 35)     # dark conical
+    HEAD_COLOR       = (215, 180, 18)   # golden yellow
+    ACCENT_COLOR     = (195, 48, 28)    # red eye ring
+
+
+class Hamerkop(Bird):
+    SPECIES          = "hamerkop"
+    RARITY           = "uncommon"
+    BIOMES           = ["wetland", "swamp", "savanna"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (1, 4)
+    SPEED            = 55.0
+    W, H             = 16, 14
+    BODY_COLOR       = (120, 88, 58)    # brown
+    WING_COLOR       = (105, 75, 48)    # darker brown
+    BEAK_COLOR       = (55, 48, 38)
+    HEAD_COLOR       = (115, 82, 52)    # brown
+    ACCENT_COLOR     = (148, 108, 70)   # lighter brown crest
+
+
+class AfricanGreyParrot(Bird):
+    SPECIES          = "african_grey_parrot"
+    RARITY           = "rare"
+    BIOMES           = ["jungle", "tropical"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (3, 8)
+    SPEED            = 75.0
+    W, H             = 16, 12
+    BODY_COLOR       = (148, 148, 155)  # grey
+    WING_COLOR       = (125, 125, 132)  # darker grey
+    BEAK_COLOR       = (38, 36, 38)     # black hooked
+    HEAD_COLOR       = (155, 155, 162)  # slightly lighter grey
+    ACCENT_COLOR     = (210, 38, 35)    # bright red tail
+
+
+class GroundHornbill(Bird):
+    SPECIES          = "ground_hornbill"
+    RARITY           = "rare"
+    BIOMES           = ["savanna"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (1, 4)
+    SPEED            = 50.0
+    W, H             = 24, 16
+    BODY_COLOR       = (25, 22, 28)     # black
+    WING_COLOR       = (240, 238, 235)  # white wing patches (in flight)
+    BEAK_COLOR       = (28, 25, 28)     # black massive casqued bill
+    HEAD_COLOR       = (200, 45, 40)    # red facial skin
+    ACCENT_COLOR     = (200, 45, 40)    # red throat wattle
+
+
+class AfricanPenguin(Bird):
+    SPECIES          = "african_penguin"
+    RARITY           = "uncommon"
+    BIOMES           = ["beach"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (2, 5)
+    ALTITUDE_BLOCKS  = (1, 3)
+    SPEED            = 55.0
+    W, H             = 12, 14
+    BODY_COLOR       = (245, 242, 238)  # white
+    WING_COLOR       = (28, 25, 32)     # black
+    BEAK_COLOR       = (38, 35, 30)
+    HEAD_COLOR       = (28, 25, 32)     # black
+    ACCENT_COLOR     = (218, 148, 132)  # pink cheek patches
+
+
 # ======================================================================
 # Registry
 # ======================================================================
@@ -1695,6 +2015,10 @@ ALL_SPECIES = [
     Wren, Nuthatch, Gannet, Frigatebird, NightHeron, Lapwing, Wheatear, Redstart,
     Warbler, LongTailedTit, Oystercatcher, Kite, Harrier, Snipe, Merlin, Goshawk,
     Shoebill, Booby, Tropicbird, Dunlin, Godwit, Oxpecker, Dipper, Skua, Firecrest,
+    RedCrownedCrane, MandarinDuck, ChineseMonal, SilverPheasant, CrestedIbis,
+    ChinesePondHeron, FairyPitta, Hwamei, BlackDrongo, RedBilledBlueMagpie,
+    AfricanFishEagle, SecretaryBird, MartialEagle, MarabouStork, SuperbStarling,
+    CapeWeaver, Hamerkop, AfricanGreyParrot, GroundHornbill, AfricanPenguin,
 ]
 
 SPECIES_BY_ID = {cls.SPECIES: cls for cls in ALL_SPECIES}

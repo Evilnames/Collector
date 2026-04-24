@@ -49,7 +49,7 @@ class Animal:
         self._kill_timer = 0.0
 
         # Breeding
-        self._breed_cooldown = random.uniform(60.0, 180.0)
+        self._breed_cooldown = random.uniform(300.0, 900.0)
 
         # Taming
         self.tamed = False
@@ -259,9 +259,9 @@ class Animal:
         offspring.parent_a_uid = self.uid
         offspring.parent_b_uid = other.uid
         offspring.tamed = self.tamed and other.tamed
-        offspring._breed_cooldown = 60.0 if offspring_mutation == "miniature" else 120.0
-        self._breed_cooldown = 120.0
-        other._breed_cooldown = 120.0
+        offspring._breed_cooldown = 300.0 if offspring_mutation == "miniature" else 600.0
+        self._breed_cooldown = 600.0
+        other._breed_cooldown = 600.0
         world.entities.append(offspring)
 
         # Remove the most distant un-tamed animal of this type so the

@@ -23,6 +23,7 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK,
                     COFFEE_CROP_YOUNG, ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK,
                     GRAPEVINE_CROP_YOUNG, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
+                    GRAIN_CROP_YOUNG, STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
                     FOSSIL_TABLE_BLOCK,
                     ARTISAN_BENCH_BLOCK,
                     POLISHED_GRANITE, POLISHED_MARBLE, SLATE_TILE,
@@ -38,7 +39,11 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     SILVER_PANEL, GOLD_LEAF_TRIM,
                     STAINED_GLASS_RED, STAINED_GLASS_BLUE, STAINED_GLASS_GREEN,
                     QUARTZ_PILLAR, ONYX_INLAY,
-                    COMPOST_BIN_BLOCK, WELL_BLOCK)
+                    COMPOST_BIN_BLOCK, WELL_BLOCK,
+                    INSECT_DISPLAY_CASE_BLOCK,
+                    STAIRS_RIGHT,
+                    GARDEN_BLOCK,
+                    STABLE_BLOCK, HORSE_TROUGH_BLOCK)
 
 ITEMS = {
     # --- Natural resources ---
@@ -131,7 +136,7 @@ ITEMS = {
     "bucket":        {"name": "Bucket",        "color": (160, 120, 60),  "place_block": None, "harvest_tool": True, "max_uses": 10},
     # --- Farming tools ---
     "hoe":             {"name": "Hoe",             "color": (180, 140,  70), "place_block": None,              "till_tool":      True, "max_uses": 80},
-    "watering_can":    {"name": "Watering Can",    "color": (130, 165, 200), "place_block": None,              "water_tool":     True, "max_uses": 8},
+    "watering_can":    {"name": "Watering Can",    "color": (130, 165, 200), "place_block": None,              "water_tool":     True},
     "compost":         {"name": "Compost",         "color": ( 88,  64,  30), "place_block": None,              "fertilize_tool": True, "fertility_gain": 3},
     "compost_bin_item":{"name": "Compost Bin",     "color": (110,  75,  45), "place_block": COMPOST_BIN_BLOCK},
     "well_item":       {"name": "Well",            "color": ( 80, 115, 145), "place_block": WELL_BLOCK},
@@ -307,6 +312,27 @@ ITEMS = {
     "fish_congee":         {"name": "Fish Congee",         "color": (225, 210, 170), "place_block": None, "edible": True, "hunger_restore": 55},
     "fish_noodle_soup":    {"name": "Fish Noodle Soup",    "color": (195, 165,  85), "place_block": None, "edible": True, "hunger_restore": 70},
     "grilled_fish":        {"name": "Grilled Fish",        "color": (175, 125,  65), "place_block": None, "edible": True, "hunger_restore": 50},
+    # --- Italian cuisine ---
+    "bruschetta":         {"name": "Bruschetta",         "color": (215,  90,  55), "place_block": None, "edible": True, "hunger_restore": 35},
+    "spaghetti_pomodoro": {"name": "Spaghetti Pomodoro", "color": (200,  65,  45), "place_block": None, "edible": True, "hunger_restore": 58},
+    "minestrone":         {"name": "Minestrone",         "color": (195, 100,  55), "place_block": None, "edible": True, "hunger_restore": 60},
+    "ossobuco":           {"name": "Ossobuco",           "color": (165, 115,  50), "place_block": None, "edible": True, "hunger_restore": 75},
+    "caponata":           {"name": "Caponata",           "color": (150,  60,  80), "place_block": None, "edible": True, "hunger_restore": 52},
+    "frittata":           {"name": "Frittata",           "color": (230, 200,  90), "place_block": None, "edible": True, "hunger_restore": 48},
+    "pasta_al_forno":     {"name": "Pasta al Forno",     "color": (210, 155,  65), "place_block": None, "edible": True, "hunger_restore": 65},
+    "pesto_gnocchi":      {"name": "Pesto Gnocchi",      "color": (130, 175,  80), "place_block": None, "edible": True, "hunger_restore": 58},
+    "ribollita":          {"name": "Ribollita",          "color": (185, 120,  55), "place_block": None, "edible": True, "hunger_restore": 62},
+    "saltimbocca":        {"name": "Saltimbocca",        "color": (210, 175, 110), "place_block": None, "edible": True, "hunger_restore": 65},
+    "puttanesca":         {"name": "Puttanesca",         "color": (195,  55,  40), "place_block": None, "edible": True, "hunger_restore": 62},
+    "cacio_e_pepe":       {"name": "Cacio e Pepe",       "color": (235, 225, 175), "place_block": None, "edible": True, "hunger_restore": 55},
+    "pasta_e_fagioli":    {"name": "Pasta e Fagioli",    "color": (185, 145,  80), "place_block": None, "edible": True, "hunger_restore": 58},
+    "cacciatore":         {"name": "Cacciatore",         "color": (190,  75,  45), "place_block": None, "edible": True, "hunger_restore": 68},
+    "zuppa_di_pesce":     {"name": "Zuppa di Pesce",     "color": (175,  85,  50), "place_block": None, "edible": True, "hunger_restore": 65},
+    "acquacotta":         {"name": "Acquacotta",         "color": (175, 160, 105), "place_block": None, "edible": True, "hunger_restore": 50},
+    "peperonata":         {"name": "Peperonata",         "color": (205,  70,  50), "place_block": None, "edible": True, "hunger_restore": 45},
+    "zucchini_fritters":  {"name": "Zucchini Fritters",  "color": (210, 190,  95), "place_block": None, "edible": True, "hunger_restore": 45},
+    "polenta":            {"name": "Polenta",            "color": (235, 210, 115), "place_block": None, "edible": True, "hunger_restore": 42},
+    "bistecca":           {"name": "Bistecca",           "color": (155,  60,  35), "place_block": None, "edible": True, "hunger_restore": 70},
     # --- Refinery outputs ---
     "rock_dust":      {"name": "Rock Dust",      "color": (180, 160, 140), "place_block": None},
     "polished_stone": {"name": "Polished Stone", "color": (200, 200, 215), "place_block": POLISHED_STONE_BLOCK},
@@ -327,6 +353,11 @@ ITEMS = {
     "chest_item":         {"name": "Chest",          "color": (160, 110, 55),  "place_block": CHEST_BLOCK},
     "bird_feeder":        {"name": "Bird Feeder",    "color": (160, 115,  65), "place_block": BIRD_FEEDER_BLOCK},
     "bird_bath":          {"name": "Bird Bath",      "color": (185, 180, 172), "place_block": BIRD_BATH_BLOCK},
+    # --- Insect collecting ---
+    "bug_net":             {"name": "Bug Net",            "color": (140, 200, 140), "place_block": None, "insect_tool": True},
+    "insect_display_case": {"name": "Insect Display Case","color": (180, 160, 120), "place_block": INSECT_DISPLAY_CASE_BLOCK},
+    "wood_stairs":         {"name": "Wood Stairs",        "color": (139, 100,  60), "place_block": STAIRS_RIGHT},
+    "garden_block":        {"name": "Garden Block",       "color": ( 80, 140,  60), "place_block": GARDEN_BLOCK},
     # --- Automations ---
     "coal_miner_item":    {"name": "Coal Miner",    "color": (110, 90,  70),  "place_block": None, "spawn_automation": "coal_miner"},
     "iron_miner_item":    {"name": "Iron Miner",    "color": (160, 170, 180), "place_block": None, "spawn_automation": "iron_miner"},
@@ -434,4 +465,38 @@ ITEMS = {
     "rose_wine_reserve":    {"name": "Rosé Wine (Reserve)",      "color": (250, 175, 185), "place_block": None, "edible": True, "hunger_restore": 12, "wine_buff": "charm",         "wine_buff_duration": 135.0},
     "sparkling_wine_reserve":{"name": "Sparkling Wine (Reserve)","color": (250, 245, 210), "place_block": None, "edible": True, "hunger_restore": 10, "wine_buff": "vivacity",      "wine_buff_duration":  90.0},
     "dessert_wine_reserve": {"name": "Dessert Wine (Reserve)",   "color": (195, 125,  50), "place_block": None, "edible": True, "hunger_restore": 18, "wine_buff": "contemplation", "wine_buff_duration": 225.0},
+    # --- Distillery supply chain ---
+    "grain_seed":           {"name": "Grain Seed",              "color": (180, 160,  70), "place_block": GRAIN_CROP_YOUNG},
+    "still_item":           {"name": "Copper Still",            "color": (175, 110,  50), "place_block": STILL_BLOCK},
+    "barrel_room_item":     {"name": "Barrel Room",             "color": (110,  70,  35), "place_block": BARREL_ROOM_BLOCK},
+    "bottling_item":        {"name": "Bottling Station",        "color": ( 90,  80,  70), "place_block": BOTTLING_BLOCK},
+    # Bottled spirits — young (base)
+    "whiskey":              {"name": "Whiskey",                 "color": (180, 120,  40), "place_block": None, "edible": True, "hunger_restore": 10, "spirit_buff": "grit",       "spirit_buff_duration": 120.0},
+    "bourbon":              {"name": "Bourbon",                 "color": (200, 100,  30), "place_block": None, "edible": True, "hunger_restore": 10, "spirit_buff": "warmth",     "spirit_buff_duration": 120.0},
+    "rum":                  {"name": "Rum",                     "color": (220, 160,  60), "place_block": None, "edible": True, "hunger_restore": 10, "spirit_buff": "sea_legs",   "spirit_buff_duration": 100.0},
+    "gin":                  {"name": "Gin",                     "color": (190, 225, 235), "place_block": None, "edible": True, "hunger_restore":  8, "spirit_buff": "clarity",    "spirit_buff_duration":  90.0},
+    "brandy":               {"name": "Brandy",                  "color": (185, 110,  50), "place_block": None, "edible": True, "hunger_restore": 12, "spirit_buff": "refinement", "spirit_buff_duration": 130.0},
+    "vodka":                {"name": "Vodka",                   "color": (230, 235, 240), "place_block": None, "edible": True, "hunger_restore":  8, "spirit_buff": "endurance",  "spirit_buff_duration": 150.0},
+    # Bottled spirits — aged tier
+    "whiskey_aged":         {"name": "Whiskey (Aged)",          "color": (195, 135,  50), "place_block": None, "edible": True, "hunger_restore": 13, "spirit_buff": "grit",       "spirit_buff_duration": 150.0},
+    "bourbon_aged":         {"name": "Bourbon (Aged)",          "color": (215, 115,  40), "place_block": None, "edible": True, "hunger_restore": 13, "spirit_buff": "warmth",     "spirit_buff_duration": 150.0},
+    "rum_aged":             {"name": "Rum (Aged)",              "color": (235, 175,  75), "place_block": None, "edible": True, "hunger_restore": 13, "spirit_buff": "sea_legs",   "spirit_buff_duration": 125.0},
+    "gin_aged":             {"name": "Gin (Aged)",              "color": (205, 235, 245), "place_block": None, "edible": True, "hunger_restore": 11, "spirit_buff": "clarity",    "spirit_buff_duration": 112.0},
+    "brandy_aged":          {"name": "Brandy (Aged)",           "color": (200, 125,  60), "place_block": None, "edible": True, "hunger_restore": 15, "spirit_buff": "refinement", "spirit_buff_duration": 162.0},
+    "vodka_aged":           {"name": "Vodka (Aged)",            "color": (240, 245, 250), "place_block": None, "edible": True, "hunger_restore": 11, "spirit_buff": "endurance",  "spirit_buff_duration": 188.0},
+    # Bottled spirits — reserve tier
+    "whiskey_reserve":      {"name": "Whiskey (Reserve)",       "color": (210, 150,  60), "place_block": None, "edible": True, "hunger_restore": 16, "spirit_buff": "grit",       "spirit_buff_duration": 180.0},
+    "bourbon_reserve":      {"name": "Bourbon (Reserve)",       "color": (230, 130,  50), "place_block": None, "edible": True, "hunger_restore": 16, "spirit_buff": "warmth",     "spirit_buff_duration": 180.0},
+    "rum_reserve":          {"name": "Rum (Reserve)",           "color": (245, 190,  90), "place_block": None, "edible": True, "hunger_restore": 16, "spirit_buff": "sea_legs",   "spirit_buff_duration": 150.0},
+    "gin_reserve":          {"name": "Gin (Reserve)",           "color": (220, 245, 255), "place_block": None, "edible": True, "hunger_restore": 14, "spirit_buff": "clarity",    "spirit_buff_duration": 135.0},
+    "brandy_reserve":       {"name": "Brandy (Reserve)",        "color": (215, 140,  70), "place_block": None, "edible": True, "hunger_restore": 19, "spirit_buff": "refinement", "spirit_buff_duration": 195.0},
+    "vodka_reserve":        {"name": "Vodka (Reserve)",         "color": (248, 250, 255), "place_block": None, "edible": True, "hunger_restore": 14, "spirit_buff": "endurance",  "spirit_buff_duration": 225.0},
+
+    # --- Horse items ---
+    "saddle":           {"name": "Saddle",       "color": (130,  80,  40), "place_block": None},
+    "horse_brush":      {"name": "Horse Brush",  "color": (200, 170, 110), "place_block": None},
+    "horseshoe":        {"name": "Horseshoe",    "color": (160, 155, 145), "place_block": None},
+    "sugar_lump":       {"name": "Sugar Lump",   "color": (245, 240, 225), "place_block": None, "edible": True, "hunger_restore": 2},
+    "stable_item":      {"name": "Stable",       "color": (120,  85,  45), "place_block": STABLE_BLOCK},
+    "horse_trough_item":{"name": "Horse Trough", "color": ( 60, 100, 130), "place_block": HORSE_TROUGH_BLOCK},
 }

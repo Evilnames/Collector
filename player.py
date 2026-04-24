@@ -28,8 +28,10 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P, WATERMELON_CROP_MATURE_P,
                     CORN_CROP_MATURE_P, RICE_CROP_MATURE_P,
                     OIL, BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK,
-                    COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, SKY_OPENING, STONE,
-                    TILLED_SOIL, SAND, COMPOST_BIN_BLOCK, WELL_BLOCK)
+                    COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE,
+                    SKY_OPENING, STONE, TILLED_SOIL, SAND, COMPOST_BIN_BLOCK, WELL_BLOCK,
+                    STAIRS_RIGHT, STAIRS_LEFT, STAIR_BLOCKS,
+                    GARDEN_BLOCK)
 import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
@@ -39,6 +41,7 @@ from gemstones import GemGenerator, Gemstone
 from fish import FishGenerator, Fish
 from coffee import CoffeeGenerator, CoffeeBean
 from wine import WineGenerator, Grape
+from spirits import SpiritGenerator, Spirit
 from constants import (
     BLOCK_SIZE, PLAYER_W, PLAYER_H,
     GRAVITY, JUMP_FORCE, MOVE_SPEED, MAX_FALL,
@@ -48,12 +51,13 @@ from constants import (
 
 # Blocks that cannot be placed in the background layer
 _BG_DISALLOWED = (
-    {WATER, LADDER, SAPLING, CHEST_BLOCK,
+    {WATER, LADDER, SAPLING, CHEST_BLOCK, GARDEN_BLOCK,
      WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
      BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK}
     | BUSH_BLOCKS
     | YOUNG_CROP_BLOCKS
     | EQUIPMENT_BLOCKS
+    | STAIR_BLOCKS
 )
 
 
@@ -111,6 +115,12 @@ class Player:
         self._wine_gen = WineGenerator(world.seed)
         # Active buffs from drinking wine (separate pool, stacks with coffee)
         self.wine_buffs = {}  # buff_name -> {"duration": float}
+        # Spirits collection
+        self.spirits = []
+        self.discovered_spirit_types = set()  # "biome_tier" strings e.g. "canyon_aged"
+        self._spirit_gen = SpiritGenerator(world.seed)
+        # Active buffs from drinking spirits (separate pool, stacks with coffee/wine)
+        self.spirit_buffs = {}  # buff_name -> {"duration": float}
         # Fishing mini-game state
         self.fishing_state = None     # None | "casting" | "biting" | "result"
         self._fishing_timer = 0.0
@@ -119,6 +129,12 @@ class Player:
         # Bird observations
         self.birds_observed = {}           # species_id -> {"count": int, "biome": str}
         self.discovered_bird_types = set()
+        # Insect observations
+        self.insects_observed = {}         # species_id -> {"count": int, "biome": str}
+        self.discovered_insect_types = set()
+        # Food codex
+        self.discovered_foods = set()      # output_id strings of crafted food items
+        self.foods_cooked = {}             # output_id -> count crafted
         self.pending_notifications = []   # (category, name_or_bid, rarity)
         self.known_recipes = set()
         self.known_crops   = set()   # young block IDs the player has harvested at least once
@@ -142,6 +158,7 @@ class Player:
         # Placement state
         self.place_target = None  # (bx, by) ghost shown by renderer
         self.bg_place_mode = False  # True when Shift held — places in background layer
+        self._shift_held = False    # True when Shift held — required to mine background layer
         # Farm sense: block under mouse (for crop readiness display)
         self.target_block = None
         # Construction equipment
@@ -156,6 +173,22 @@ class Player:
         self.bird_spook_reduction       = 0.0   # fraction of spook radius removed
         self.bird_feeder_bonus          = 1.0   # multiplier on feeder attraction chance
         self.avian_mastery              = False # enables larger flocks
+        self.insect_net_reduction       = 0.0   # fraction of insect spook radius removed
+        self.insect_pollination_mult    = 1.1   # crop growth multiplier when insects nearby
+        # Horsemanship research bonuses
+        self.horse_whisperer_bonus    = 0
+        self.horse_breeding_mastery   = False
+        self.horse_stamina_drain_mult = 1.0
+        self.horse_shoe_bonus         = 0.05
+        # Horse riding state
+        self.mounted_horse         = None   # Horse ref or None
+        self._sprint_cooldown      = 0.0    # exhaustion cooldown after stamina empty
+        self._pending_horse_break  = None   # Horse ref; set on right-click, read by main.py
+        # Horse codex tracking
+        self.horses_tamed           = 0
+        self.horses_bred            = 0
+        self.horse_records          = {"best_speed": 0.0, "best_stamina": 0.0}
+        self.discovered_coat_biomes = set()
 
     def apply_save(self, d):
         self.x, self.y = d["x"], d["y"]
@@ -178,8 +211,14 @@ class Player:
         self.discovered_coffee_origins = set(d.get("discovered_coffee_origins", []))
         self.wine_grapes = [Grape(**g) for g in d.get("wine_grapes", [])]
         self.discovered_wine_origins = set(d.get("discovered_wine_origins", []))
+        self.spirits = [Spirit(**s) for s in d.get("spirits", [])]
+        self.discovered_spirit_types = set(d.get("discovered_spirit_types", []))
         self.birds_observed = d.get("birds_observed", {})
         self.discovered_bird_types = set(d.get("discovered_bird_types", []))
+        self.insects_observed = d.get("insects_observed", {})
+        self.discovered_insect_types = set(d.get("discovered_insect_types", []))
+        self.discovered_foods = set(d.get("discovered_foods", []))
+        self.foods_cooked = d.get("foods_cooked", {})
         self.discovered_types = set(d["discovered_types"])
         self.discovered_flower_types = set(d["discovered_flower_types"])
         self.discovered_fossil_types = set(d.get("discovered_fossil_types", []))
@@ -189,6 +228,10 @@ class Player:
         self.discovered_mushroom_types = set(int(x) for x in d["discovered_mushroom_types"])
         self.spawn_x = d.get("spawn_x")
         self.spawn_y = d.get("spawn_y")
+        self.horses_tamed           = d.get("horses_tamed", 0)
+        self.horses_bred            = d.get("horses_bred", 0)
+        self.horse_records          = d.get("horse_records", {"best_speed": 0.0, "best_stamina": 0.0})
+        self.discovered_coat_biomes = set(d.get("discovered_coat_biomes", []))
 
     # ------------------------------------------------------------------
     # Input
@@ -196,6 +239,9 @@ class Player:
 
     def handle_input(self, keys, mouse_buttons, mouse_world_pos, dt):
         if self.mounted_machine is not None:
+            return
+        if self.mounted_horse is not None:
+            self._handle_horse_input(keys, dt)
             return
         self.vx = 0.0
         speed = MOVE_SPEED * (1.25 if "rush" in self.active_buffs else 1.0)
@@ -223,6 +269,8 @@ class Player:
 
         mining = False
         harvest_target = None
+        shift_held = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+        self._shift_held = shift_held
 
         # Keyboard mining: Z key digs in the direction you're facing.
         # Z + W = dig up, Z + S = dig down.
@@ -296,8 +344,7 @@ class Player:
 
         # Block placement: right-click = mouse target, Ctrl = block in facing direction
         # Hold Shift to place in background layer instead of foreground
-        bg_mode = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
-        self.bg_place_mode = bool(bg_mode)
+        self.bg_place_mode = bool(shift_held)
         placing = mouse_buttons[2] or keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]
         if placing:
             if keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]:
@@ -308,7 +355,7 @@ class Player:
                 else:
                     bx = int(self.x // BLOCK_SIZE) - 1
                 self.place_target = (bx, by)
-                self._try_place(bx, by, bg=bg_mode)
+                self._try_place(bx, by, bg=self.bg_place_mode)
             else:
                 # Right-click: place at cursor
                 mx, my = mouse_world_pos
@@ -317,17 +364,54 @@ class Player:
                 cx = (self.x + PLAYER_W / 2) / BLOCK_SIZE
                 cy = (self.y + PLAYER_H / 2) / BLOCK_SIZE
                 if ((bx - cx) ** 2 + (by - cy) ** 2) ** 0.5 <= MINE_REACH:
-                    # Feed animals before block placement
+                    # Feed animals (or mount horses) before block placement
                     feed_target = self._find_animal_at(mx, my)
                     if feed_target is not None and not getattr(feed_target, 'dead', False):
-                        feed_target.try_feed(self)
+                        from horses import Horse as _Horse
+                        held = self.hotbar[self.selected_slot]
+                        if isinstance(feed_target, _Horse) and feed_target.tamed and held == "saddle":
+                            if feed_target._broken:
+                                self.mounted_horse = feed_target
+                                feed_target.rider = self
+                            else:
+                                self._pending_horse_break = feed_target
+                        else:
+                            feed_target.try_feed(self)
                     else:
                         self.place_target = (bx, by)
-                        self._try_place(bx, by, bg=bg_mode)
+                        self._try_place(bx, by, bg=self.bg_place_mode)
                 else:
                     self.place_target = None
         else:
             self.place_target = None
+
+    def _handle_horse_input(self, keys, dt):
+        horse = self.mounted_horse
+        base_speed = MOVE_SPEED * (1.0 + horse.traits["speed_rating"])
+        if horse.traits.get("horseshoe_applied"):
+            base_speed *= 1.0 + getattr(self, "horse_shoe_bonus", 0.05)
+
+        # Spacebar sprint burst
+        if keys[pygame.K_SPACE] and horse.stamina > 0 and self._sprint_cooldown <= 0:
+            drain = 25.0 * getattr(self, "horse_stamina_drain_mult", 1.0) * dt
+            horse.stamina = max(0.0, horse.stamina - drain)
+            if horse.stamina == 0.0:
+                self._sprint_cooldown = 3.0
+            base_speed *= 1.5
+        else:
+            self._sprint_cooldown = max(0.0, self._sprint_cooldown - dt)
+
+        self.vx = 0.0
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            self.vx = -base_speed
+            self.facing = -1
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            self.vx = base_speed
+            self.facing = 1
+
+        if (keys[pygame.K_w] or keys[pygame.K_UP]) and self.on_ground:
+            self.vy = JUMP_FORCE * 0.9
+            self.on_ground = False
 
     def _find_animal_at(self, mx, my):
         for entity in getattr(self.world, 'entities', []):
@@ -364,6 +448,9 @@ class Player:
     def _mine_at(self, bx, by, dt):
         block_id = self.world.get_block(bx, by)
         if block_id == AIR:
+            if not self._shift_held:
+                self._reset_mine()
+                return
             bg_bid = self.world.get_bg_block(bx, by)
             if bg_bid == SKY_OPENING:
                 self._reset_mine()
@@ -456,6 +543,12 @@ class Player:
                 self.wine_grapes.append(grape)
                 self._add_item("grape_seed")
                 self.pending_notifications.append(("Wine", "Grape Cluster", None))
+            elif block_id == GRAIN_CROP_MATURE:
+                biodome = self.world.get_biodome(bx)
+                spirit = self._spirit_gen.generate(biodome)
+                self.spirits.append(spirit)
+                self._add_item("grain_seed")
+                self.pending_notifications.append(("Spirits", "Grain Harvest", None))
             elif block_id in CAVE_MUSHROOMS:
                 self.mushrooms_found[block_id] = self.mushrooms_found.get(block_id, 0) + 1
                 self.discovered_mushroom_types.add(block_id)
@@ -485,6 +578,10 @@ class Player:
                     for item_id, count in self.world.chest_data.pop((bx, by), {}).items():
                         if count > 0:
                             self._add_item(item_id, count)
+                if block_id == GARDEN_BLOCK:
+                    garden_flowers = self.world.garden_data.pop((bx, by), [])
+                    for wf in garden_flowers:
+                        self.wildflowers.append(wf)
                 if block_id == COMPOST_BIN_BLOCK:
                     bin_data = self.world.compost_bin_data.pop((bx, by), None)
                     if bin_data:
@@ -815,6 +912,8 @@ class Player:
         block_id = item_data.get("place_block")
         if block_id is None:
             return
+        if block_id in STAIR_BLOCKS:
+            block_id = STAIRS_RIGHT if self.facing == 1 else STAIRS_LEFT
         if self.inventory.get(item_id, 0) <= 0:
             return
         if bg:
@@ -845,19 +944,8 @@ class Player:
                     self.hotbar[i] = None
 
     def _use_watering_can(self, bx, by):
-        """Refill the can at a WATER block, or water a tilled tile / young crop on tilled soil.
-
-        Unlike ordinary tools the can isn't destroyed at 0 uses — it just goes empty
-        and must be refilled at a water source.
-        """
-        slot = self.selected_slot
-        capacity = ITEMS.get(self.hotbar[slot], {}).get("max_uses", _soil.WATERING_CAN_CAPACITY)
+        """Water a tilled tile or young crop on tilled soil. No durability or refill needed."""
         target = self.world.get_block(bx, by)
-        # Refill by clicking on water.
-        if target in (WATER, WELL_BLOCK):
-            self.hotbar_uses[slot] = capacity
-            return
-        # Spend water on tilled soil, or on tilled soil directly below a young crop.
         water_target = None
         if target == TILLED_SOIL:
             water_target = (bx, by)
@@ -865,13 +953,9 @@ class Player:
             water_target = (bx, by + 1)
         if water_target is None:
             return
-        current = self.hotbar_uses[slot] or 0
-        if current <= 0:
-            return
         wx, wy = water_target
         cur_m = self.world._soil_moisture.get((wx, wy), 0)
         self.world._soil_moisture[(wx, wy)] = min(_soil.MAX_MOISTURE, cur_m + _soil.WATERING_AMOUNT)
-        self.hotbar_uses[slot] = current - 1
 
     def _consume_tool_use(self):
         """Decrement uses for a consumable tool in the selected hotbar slot."""
@@ -1159,7 +1243,9 @@ class Player:
         self.x += dx
         if self._collides():
             if self._try_auto_open_door():
-                return  # door opened, movement proceeds
+                return
+            if self._try_stair_step(dx):
+                return
             self.x -= dx
             self.vx = 0.0
 
@@ -1191,6 +1277,22 @@ class Player:
                             break
                     opened = True
         return opened
+
+    def _try_stair_step(self, dx):
+        left  = int(self.x // BLOCK_SIZE)
+        right = int((self.x + PLAYER_W - 1) // BLOCK_SIZE)
+        top   = int(self.y // BLOCK_SIZE)
+        bot   = int((self.y + PLAYER_H - 1) // BLOCK_SIZE)
+        for bx in range(left, right + 1):
+            for by in range(top, bot + 1):
+                bid = self.world.get_block(bx, by)
+                if (bid == STAIRS_RIGHT and dx > 0) or (bid == STAIRS_LEFT and dx < 0):
+                    self.y -= BLOCK_SIZE
+                    if not self._collides():
+                        self.on_ground = False
+                        return True
+                    self.y += BLOCK_SIZE
+        return False
 
     def _move_y(self, dy):
         if dy == 0:
@@ -1288,6 +1390,18 @@ class Player:
                 if dx * self.facing < 0:
                     continue
                 if self.world.get_block(cx + dx, cy + dy) == CHEST_BLOCK:
+                    return (cx + dx, cy + dy)
+        return None
+
+    def get_nearby_garden(self):
+        """Return (bx, by) of a garden block within 2 blocks of the player, or None."""
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        for dy in range(-2, 3):
+            for dx in range(-2, 3):
+                if dx * self.facing < 0:
+                    continue
+                if self.world.get_block(cx + dx, cy + dy) == GARDEN_BLOCK:
                     return (cx + dx, cy + dy)
         return None
 

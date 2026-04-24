@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit(/.claude/skills/add-bird/**)",
+      "Edit(/.claude/skills/add-fish/**)",
+      "Edit(/.claude/skills/add-rock/**)",
+      "Edit(/.claude/skills/add-fossil/**)",
+      "Edit(/.claude/skills/add-coffee/**)",
+      "Edit(/.claude/skills/add-wine/**)",
+      "Edit(/.claude/skills/add-system/**)",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
+    ],
+    "additionalDirectories": [
+      "d:\\Dev\\CollectorBlocks\\.claude\\skills"
+    ]
+  }
+}
