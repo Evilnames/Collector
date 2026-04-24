@@ -13,6 +13,8 @@ from blocks import (
     RADISH_CROP_YOUNG, PEA_CROP_YOUNG, CELERY_CROP_YOUNG, BROCCOLI_CROP_YOUNG,
     CACTUS_YOUNG, DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG,
     COFFEE_CROP_YOUNG, GRAPEVINE_CROP_YOUNG,
+    STRAWBERRY_CROP_YOUNG_P, TOMATO_CROP_YOUNG_P, WATERMELON_CROP_YOUNG_P,
+    CORN_CROP_YOUNG_P, RICE_CROP_YOUNG_P,
 )
 
 # --- Tunable constants ------------------------------------------------------
@@ -107,6 +109,12 @@ CROP_PREFERENCES = {
     AGAVE_CROP_YOUNG:        {"moisture": _DRY,        "base_yield": 2, "fertility_drain": 1},
     COFFEE_CROP_YOUNG:       {"moisture": _MEDIUM_WET, "base_yield": 1, "fertility_drain": 3},
     GRAPEVINE_CROP_YOUNG:    {"moisture": _MEDIUM,     "base_yield": 1, "fertility_drain": 2},
+    # --- Premium variants: wider moisture band, +50% base yield, lower fertility drain ---
+    STRAWBERRY_CROP_YOUNG_P:  {"moisture": (1, 7), "base_yield": 3, "fertility_drain": 1},
+    TOMATO_CROP_YOUNG_P:      {"moisture": (2, 7), "base_yield": 3, "fertility_drain": 2},
+    WATERMELON_CROP_YOUNG_P:  {"moisture": (3, 8), "base_yield": 3, "fertility_drain": 2},
+    CORN_CROP_YOUNG_P:        {"moisture": (1, 6), "base_yield": 3, "fertility_drain": 2},
+    RICE_CROP_YOUNG_P:        {"moisture": (4, 8), "base_yield": 3, "fertility_drain": 1},
 }
 
 _DEFAULT_PREFS = {"moisture": _MEDIUM, "base_yield": 2, "fertility_drain": 2}

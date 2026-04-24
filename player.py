@@ -25,9 +25,11 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     ZUCCHINI_CROP_MATURE, SWEET_POTATO_CROP_MATURE, WATERMELON_CROP_MATURE,
                     RADISH_CROP_MATURE, PEA_CROP_MATURE, CELERY_CROP_MATURE, BROCCOLI_CROP_MATURE,
                     PERENNIAL_CROP_MATURE, MATURE_TO_YOUNG_CROP, CHEST_BLOCK,
+                    STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P, WATERMELON_CROP_MATURE_P,
+                    CORN_CROP_MATURE_P, RICE_CROP_MATURE_P,
                     OIL, BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK,
                     COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, SKY_OPENING, STONE,
-                    TILLED_SOIL, SAND, COMPOST_BIN_BLOCK)
+                    TILLED_SOIL, SAND, COMPOST_BIN_BLOCK, WELL_BLOCK)
 import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
@@ -119,6 +121,8 @@ class Player:
         self.discovered_bird_types = set()
         self.pending_notifications = []   # (category, name_or_bid, rarity)
         self.known_recipes = set()
+        self.known_crops   = set()   # young block IDs the player has harvested at least once
+        self.pending_harvest_floats = []  # (world_x, world_y, text, color) consumed by renderer
         # Water state
         self._drowning_timer = 0.0
         # Hunger
@@ -164,6 +168,7 @@ class Player:
         self.hotbar = d["hotbar"]
         self.hotbar_uses = d["hotbar_uses"]
         self.known_recipes = set(d["known_recipes"])
+        self.known_crops   = set(d.get("known_crops", []))
         self.rocks = [Rock(**r) for r in d["rocks"]]
         self.wildflowers = [Wildflower(**wf) for wf in d["wildflowers"]]
         self.fossils = [Fossil(**f) for f in d.get("fossils", [])]
@@ -470,6 +475,8 @@ class Player:
                         if self.harvest_bonus >= 1:
                             count += 1
                         self._add_item(drop, count)
+                        self.known_crops.add(young_bid)
+                        self._emit_harvest_float(bx, by, drop, count, avg_care)
                     else:
                         chance = block_data.get("drop_chance", 1.0)
                         if random.random() < chance:
@@ -571,6 +578,22 @@ class Player:
                 elif block_id == BROCCOLI_CROP_MATURE:
                     for _ in range(random.randint(1, 2)):
                         self._add_item("broccoli_seed")
+                # Premium mature crops: drop premium seeds
+                elif block_id == STRAWBERRY_CROP_MATURE_P:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("strawberry_seed_premium")
+                elif block_id == TOMATO_CROP_MATURE_P:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("tomato_seed_premium")
+                elif block_id == WATERMELON_CROP_MATURE_P:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("watermelon_seed_premium")
+                elif block_id == CORN_CROP_MATURE_P:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("corn_seed_premium")
+                elif block_id == RICE_CROP_MATURE_P:
+                    for _ in range(random.randint(1, 2)):
+                        self._add_item("rice_seed_premium")
                 # Bushes: small chance of food directly
                 elif block_id == STRAWBERRY_BUSH and random.random() < 0.25:
                     self._add_item("strawberry")
@@ -831,7 +854,7 @@ class Player:
         capacity = ITEMS.get(self.hotbar[slot], {}).get("max_uses", _soil.WATERING_CAN_CAPACITY)
         target = self.world.get_block(bx, by)
         # Refill by clicking on water.
-        if target == WATER:
+        if target in (WATER, WELL_BLOCK):
             self.hotbar_uses[slot] = capacity
             return
         # Spend water on tilled soil, or on tilled soil directly below a young crop.
@@ -884,6 +907,21 @@ class Player:
                     if max_uses is not None:
                         self.hotbar_uses[i] = max_uses
                     break
+
+    def _emit_harvest_float(self, bx, by, item_id, count, avg_care):
+        if avg_care >= 0.7:
+            label, color = "great care!", (100, 255, 120)
+        elif avg_care >= 0.5:
+            label, color = "good care",   (200, 255, 100)
+        elif avg_care >= 0.3:
+            label, color = "ok care",     (200, 200, 200)
+        else:
+            label, color = "neglected",   (220, 100, 100)
+        name = ITEMS.get(item_id, {}).get("name", item_id)
+        text = f"+{count} {name} ({label})"
+        wx = bx * BLOCK_SIZE + BLOCK_SIZE // 2
+        wy = by * BLOCK_SIZE
+        self.pending_harvest_floats.append((wx, wy, text, color))
 
     def collect_all_items(self):
         drops = {k: v for k, v in self.inventory.items() if v > 0}

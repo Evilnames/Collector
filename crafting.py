@@ -48,6 +48,15 @@ WOK_RECIPES = [
     {"name": "Zucchini Stir Fry","ingredients": {"zucchini": 2, "garlic": 1},                    "output_id": "zucchini_stir_fry","output_count": 1},
     {"name": "Celery Stir Fry",  "ingredients": {"celery": 2, "scallion": 1},                    "output_id": "celery_stir_fry",  "output_count": 1},
     {"name": "Broccoli Stir Fry","ingredients": {"broccoli": 2, "garlic": 1},                    "output_id": "broccoli_stir_fry","output_count": 1},
+    # --- Meat ---
+    {"name": "Beef & Broccoli",   "ingredients": {"cooked_beef": 1, "broccoli": 1, "garlic": 1},  "output_id": "beef_broccoli",      "output_count": 1},
+    {"name": "Chili Chicken",     "ingredients": {"cooked_chicken": 1, "chili": 1, "garlic": 1},  "output_id": "chili_chicken",      "output_count": 1},
+    {"name": "Ginger Beef",       "ingredients": {"cooked_beef": 1, "ginger": 1, "scallion": 1},  "output_id": "ginger_beef",        "output_count": 1},
+    {"name": "Sesame Chicken",    "ingredients": {"cooked_chicken": 1, "mushroom": 1, "scallion": 1}, "output_id": "sesame_chicken", "output_count": 1},
+    {"name": "Mutton Stir Fry",   "ingredients": {"cooked_mutton": 1, "pepper": 1, "onion": 1},   "output_id": "mutton_stir_fry",    "output_count": 1},
+    # --- Fish ---
+    {"name": "Sweet & Sour Fish", "ingredients": {"fish": 1, "tomato": 1, "pumpkin": 1},          "output_id": "sweet_sour_fish",    "output_count": 1},
+    {"name": "Fish & Tofu",       "ingredients": {"fish": 1, "tofu": 1, "scallion": 1},           "output_id": "fish_tofu",          "output_count": 1},
     # --- Desert wok ---
     {"name": "Desert Salad",     "ingredients": {"cactus_fruit": 1, "watermelon": 1, "chili": 1}, "output_id": "desert_salad",     "output_count": 1},
 ]
@@ -61,7 +70,9 @@ STEAMER_RECIPES = [
     {"name": "Lotus Rice",     "ingredients": {"rice": 2, "mushroom": 1},                        "output_id": "lotus_rice",     "output_count": 1},
     {"name": "Crystal Rolls",  "ingredients": {"wheat": 1, "bok_choy": 1, "scallion": 1},       "output_id": "crystal_rolls",  "output_count": 2},
     {"name": "Steamed Egg",    "ingredients": {"egg": 2, "milk": 1},                             "output_id": "steamed_egg",    "output_count": 1},
-    {"name": "Pumpkin Cake",   "ingredients": {"pumpkin": 1, "rice": 1},                         "output_id": "pumpkin_cake",   "output_count": 2},
+    {"name": "Pumpkin Cake",        "ingredients": {"pumpkin": 1, "rice": 1},                    "output_id": "pumpkin_cake",        "output_count": 2},
+    {"name": "Steamed Ginger Fish", "ingredients": {"fish": 1, "ginger": 1, "scallion": 1},      "output_id": "steamed_ginger_fish", "output_count": 1},
+    {"name": "Meat Bun",            "ingredients": {"cooked_mutton": 1, "wheat": 2},              "output_id": "meat_bun",            "output_count": 2},
 ]
 
 # ---------------------------------------------------------------------------
@@ -79,6 +90,10 @@ NOODLE_POT_RECIPES = [
     {"name": "Scallion Soup",     "ingredients": {"scallion": 2, "tofu": 1},                    "output_id": "scallion_soup",    "output_count": 1},
     {"name": "Leek & Potato Soup","ingredients": {"leek": 1, "potato": 2},                       "output_id": "leek_potato_soup", "output_count": 1},
     {"name": "Pea Soup",          "ingredients": {"pea": 2, "onion": 1},                         "output_id": "pea_soup",         "output_count": 1},
+    {"name": "Fish Congee",        "ingredients": {"fish": 1, "rice": 2},                        "output_id": "fish_congee",       "output_count": 1},
+    {"name": "Fish Noodle Soup",   "ingredients": {"fish": 1, "noodles": 1, "ginger": 1},       "output_id": "fish_noodle_soup",  "output_count": 1},
+    {"name": "Beef Noodle Soup",   "ingredients": {"cooked_beef": 1, "noodles": 1, "scallion": 1}, "output_id": "beef_noodle_soup",  "output_count": 1},
+    {"name": "Chicken Noodle Soup","ingredients": {"cooked_chicken": 1, "noodles": 1, "ginger": 1},"output_id": "chicken_noodle_soup","output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -105,6 +120,12 @@ BBQ_GRILL_RECIPES = [
     {"name": "Cooked Mutton",    "ingredients": {"raw_mutton": 1},                                "output_id": "cooked_mutton",     "output_count": 1},
     {"name": "Cooked Beef",      "ingredients": {"raw_beef": 1},                                  "output_id": "cooked_beef",       "output_count": 1},
     {"name": "Cooked Chicken",   "ingredients": {"raw_chicken": 1},                               "output_id": "cooked_chicken",    "output_count": 1},
+    # --- Meat ---
+    {"name": "Mutton Skewer",    "ingredients": {"raw_mutton": 1, "chili": 1, "scallion": 1},    "output_id": "mutton_skewer",     "output_count": 2},
+    {"name": "Herb Chicken",     "ingredients": {"raw_chicken": 1, "garlic": 1, "leek": 1},      "output_id": "herb_chicken",      "output_count": 1},
+    {"name": "BBQ Beef Ribs",    "ingredients": {"raw_beef": 1, "pepper": 1, "garlic": 1},       "output_id": "bbq_beef_ribs",     "output_count": 1},
+    # --- Fish ---
+    {"name": "Grilled Fish",     "ingredients": {"fish": 1, "chili": 1, "scallion": 1},          "output_id": "grilled_fish",      "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -127,6 +148,14 @@ CLAY_POT_RECIPES = [
     {"name": "Radish Kimchi",     "ingredients": {"radish": 2, "chili": 1, "garlic": 1},             "output_id": "radish_kimchi",    "output_count": 1},
     {"name": "Stuffed Zucchini",  "ingredients": {"zucchini": 2, "rice": 1},                         "output_id": "stuffed_zucchini", "output_count": 1},
     {"name": "Garden Soup",       "ingredients": {"broccoli": 1, "pea": 1, "celery": 1},             "output_id": "garden_soup",      "output_count": 1},
+    # --- Meat ---
+    {"name": "Beef Stew",           "ingredients": {"cooked_beef": 1, "potato": 1, "carrot": 1},  "output_id": "beef_stew",           "output_count": 1},
+    {"name": "Chicken Mushroom Pot","ingredients": {"cooked_chicken": 1, "mushroom": 1, "onion": 1},"output_id": "chicken_mushroom_pot","output_count": 1},
+    {"name": "Mutton Hotpot",       "ingredients": {"raw_mutton": 1, "chili": 1, "tomato": 1},    "output_id": "mutton_hotpot",       "output_count": 1},
+    {"name": "Braised Chicken",     "ingredients": {"raw_chicken": 1, "soy_sauce": 1, "ginger": 1},"output_id": "braised_chicken",    "output_count": 1},
+    # --- Fish ---
+    {"name": "Sichuan Boiled Fish", "ingredients": {"fish": 1, "chili": 2, "bok_choy": 1},        "output_id": "sichuan_boiled_fish", "output_count": 1},
+    {"name": "West Lake Fish",      "ingredients": {"fish": 1, "ginger": 1, "mushroom": 1},       "output_id": "west_lake_fish",      "output_count": 1},
     # --- Desert clay pot ---
     {"name": "Date Palm Broth",  "ingredients": {"date_palm_fruit": 2, "onion": 1},                "output_id": "date_palm_broth",  "output_count": 1},
 ]
@@ -329,6 +358,16 @@ RECIPES = [
             ["dirt_clump", "dirt_clump", "dirt_clump"],
         ],
         "output_id":    "compost_bin_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Well",
+        "pattern": [
+            ["stone_chip", None,         "stone_chip"],
+            ["stone_chip", "lumber",     "stone_chip"],
+            ["stone_chip", "stone_chip", "stone_chip"],
+        ],
+        "output_id":    "well_item",
         "output_count": 1,
     },
     # --- Refinery equipment ---
@@ -742,6 +781,57 @@ RECIPES = [
         "output_id":    "wine_cellar_item",
         "output_count": 1,
     },
+    # --- Premium seeds (selective_breeding research) ---
+    {
+        "name": "Premium Strawberry Seed",
+        "pattern": [
+            ["strawberry_seed", "strawberry_seed", None],
+            ["strawberry_seed", "iron_chunk",       None],
+            [None,              None,               None],
+        ],
+        "output_id":    "strawberry_seed_premium",
+        "output_count": 1,
+    },
+    {
+        "name": "Premium Tomato Seed",
+        "pattern": [
+            ["tomato_seed", "tomato_seed", None],
+            ["tomato_seed", "iron_chunk",  None],
+            [None,          None,          None],
+        ],
+        "output_id":    "tomato_seed_premium",
+        "output_count": 1,
+    },
+    {
+        "name": "Premium Watermelon Seed",
+        "pattern": [
+            ["watermelon_seed", "watermelon_seed", None],
+            ["watermelon_seed", "iron_chunk",       None],
+            [None,              None,               None],
+        ],
+        "output_id":    "watermelon_seed_premium",
+        "output_count": 1,
+    },
+    {
+        "name": "Premium Corn Seed",
+        "pattern": [
+            ["corn_seed", "corn_seed", None],
+            ["corn_seed", "iron_chunk", None],
+            [None,        None,         None],
+        ],
+        "output_id":    "corn_seed_premium",
+        "output_count": 1,
+    },
+    {
+        "name": "Premium Rice Seed",
+        "pattern": [
+            ["rice_seed", "rice_seed", None],
+            ["rice_seed", "iron_chunk", None],
+            [None,        None,         None],
+        ],
+        "output_id":    "rice_seed_premium",
+        "output_count": 1,
+    },
 ]
 
 
@@ -760,6 +850,11 @@ RESEARCH_LOCKED_RECIPES = {
     "wine_cellar_item":      "wine_basics",
     "bird_feeder":           "bird_watching",
     "bird_bath":             "bird_sanctuary",
+    "strawberry_seed_premium": "selective_breeding",
+    "tomato_seed_premium":     "selective_breeding",
+    "watermelon_seed_premium": "selective_breeding",
+    "corn_seed_premium":       "selective_breeding",
+    "rice_seed_premium":       "selective_breeding",
 }
 
 

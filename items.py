@@ -1,4 +1,6 @@
 from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
+                    STRAWBERRY_CROP_YOUNG_P, TOMATO_CROP_YOUNG_P, WATERMELON_CROP_YOUNG_P,
+                    CORN_CROP_YOUNG_P, RICE_CROP_YOUNG_P,
                     TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK,
                     KILN_BLOCK, RESONANCE_BLOCK, POLISHED_STONE_BLOCK,
                     LADDER, SAPLING,
@@ -36,7 +38,7 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     SILVER_PANEL, GOLD_LEAF_TRIM,
                     STAINED_GLASS_RED, STAINED_GLASS_BLUE, STAINED_GLASS_GREEN,
                     QUARTZ_PILLAR, ONYX_INLAY,
-                    COMPOST_BIN_BLOCK)
+                    COMPOST_BIN_BLOCK, WELL_BLOCK)
 
 ITEMS = {
     # --- Natural resources ---
@@ -132,6 +134,13 @@ ITEMS = {
     "watering_can":    {"name": "Watering Can",    "color": (130, 165, 200), "place_block": None,              "water_tool":     True, "max_uses": 8},
     "compost":         {"name": "Compost",         "color": ( 88,  64,  30), "place_block": None,              "fertilize_tool": True, "fertility_gain": 3},
     "compost_bin_item":{"name": "Compost Bin",     "color": (110,  75,  45), "place_block": COMPOST_BIN_BLOCK},
+    "well_item":       {"name": "Well",            "color": ( 80, 115, 145), "place_block": WELL_BLOCK},
+    # --- Premium seeds (selective_breeding research) ---
+    "strawberry_seed_premium": {"name": "Premium Strawberry Seed", "color": (255, 100, 140), "place_block": STRAWBERRY_CROP_YOUNG_P, "premium_seed": True},
+    "tomato_seed_premium":     {"name": "Premium Tomato Seed",     "color": (255, 100, 100), "place_block": TOMATO_CROP_YOUNG_P,     "premium_seed": True},
+    "watermelon_seed_premium": {"name": "Premium Watermelon Seed", "color": (100, 220, 120), "place_block": WATERMELON_CROP_YOUNG_P, "premium_seed": True},
+    "corn_seed_premium":       {"name": "Premium Corn Seed",       "color": (255, 240, 100), "place_block": CORN_CROP_YOUNG_P,       "premium_seed": True},
+    "rice_seed_premium":       {"name": "Premium Rice Seed",       "color": (200, 235, 180), "place_block": RICE_CROP_YOUNG_P,       "premium_seed": True},
     # --- Animal products ---
     "wool":           {"name": "Wool",           "color": (235, 235, 235), "place_block": None},
     "milk":           {"name": "Milk",           "color": (245, 245, 255), "place_block": None},
@@ -144,6 +153,22 @@ ITEMS = {
     "cooked_mutton":  {"name": "Cooked Mutton",  "color": (165,  80,  55), "place_block": None, "edible": True, "hunger_restore": 40},
     "cooked_beef":    {"name": "Cooked Beef",    "color": (145,  55,  35), "place_block": None, "edible": True, "hunger_restore": 40},
     "cooked_chicken": {"name": "Cooked Chicken", "color": (210, 170, 100), "place_block": None, "edible": True, "hunger_restore": 40},
+    # --- Meat dishes ---
+    "beef_broccoli":        {"name": "Beef & Broccoli",      "color": ( 55, 130,  55), "place_block": None, "edible": True, "hunger_restore": 65},
+    "chili_chicken":        {"name": "Chili Chicken",        "color": (215,  85,  45), "place_block": None, "edible": True, "hunger_restore": 62},
+    "ginger_beef":          {"name": "Ginger Beef",          "color": (155,  75,  45), "place_block": None, "edible": True, "hunger_restore": 65},
+    "sesame_chicken":       {"name": "Sesame Chicken",       "color": (225, 185,  90), "place_block": None, "edible": True, "hunger_restore": 60},
+    "mutton_stir_fry":      {"name": "Mutton Stir Fry",      "color": (175,  85,  55), "place_block": None, "edible": True, "hunger_restore": 62},
+    "mutton_skewer":        {"name": "Mutton Skewer",        "color": (145,  65,  35), "place_block": None, "edible": True, "hunger_restore": 55},
+    "herb_chicken":         {"name": "Herb Chicken",         "color": (195, 175,  90), "place_block": None, "edible": True, "hunger_restore": 52},
+    "bbq_beef_ribs":        {"name": "BBQ Beef Ribs",        "color": (125,  50,  30), "place_block": None, "edible": True, "hunger_restore": 60},
+    "beef_stew":            {"name": "Beef Stew",            "color": (145,  90,  50), "place_block": None, "edible": True, "hunger_restore": 78},
+    "chicken_mushroom_pot": {"name": "Chicken Mushroom Pot", "color": (165, 130,  80), "place_block": None, "edible": True, "hunger_restore": 72},
+    "mutton_hotpot":        {"name": "Mutton Hotpot",        "color": (185,  60,  45), "place_block": None, "edible": True, "hunger_restore": 70},
+    "braised_chicken":      {"name": "Braised Chicken",      "color": (165, 115,  55), "place_block": None, "edible": True, "hunger_restore": 68},
+    "beef_noodle_soup":     {"name": "Beef Noodle Soup",     "color": (185, 145,  75), "place_block": None, "edible": True, "hunger_restore": 75},
+    "chicken_noodle_soup":  {"name": "Chicken Noodle Soup",  "color": (205, 175, 100), "place_block": None, "edible": True, "hunger_restore": 72},
+    "meat_bun":             {"name": "Meat Bun",             "color": (235, 215, 190), "place_block": None, "edible": True, "hunger_restore": 60},
     "hunting_knife":  {"name": "Hunting Knife",  "color": (170, 165, 160), "place_block": None, "harvest_tool": True, "max_uses": 15},
     # --- Refinery equipment (craftable + placeable) ---
     "tumbler_item":    {"name": "Rock Tumbler",      "color": (160, 120, 80),  "place_block": TUMBLER_BLOCK},
@@ -258,6 +283,15 @@ ITEMS = {
     "moon_cake":     {"name": "Moon Cake",     "color": (210, 155,  60), "place_block": None, "edible": True, "hunger_restore": 78},
     "hot_sour_soup": {"name": "Hot & Sour Soup","color":(195,  80,  50), "place_block": None, "edible": True, "hunger_restore": 58},
     "sweet_rice_ball":{"name": "Sweet Rice Ball","color":(240, 220, 190),"place_block": None, "edible": True, "hunger_restore": 55},
+    # --- Chinese fish dishes ---
+    "steamed_ginger_fish": {"name": "Steamed Ginger Fish", "color": (220, 190, 130), "place_block": None, "edible": True, "hunger_restore": 65},
+    "sweet_sour_fish":     {"name": "Sweet & Sour Fish",   "color": (205,  75,  45), "place_block": None, "edible": True, "hunger_restore": 68},
+    "fish_tofu":           {"name": "Fish & Tofu",         "color": (210, 185, 125), "place_block": None, "edible": True, "hunger_restore": 65},
+    "sichuan_boiled_fish": {"name": "Sichuan Boiled Fish", "color": (190,  55,  35), "place_block": None, "edible": True, "hunger_restore": 72},
+    "west_lake_fish":      {"name": "West Lake Fish",      "color": (175, 150,  95), "place_block": None, "edible": True, "hunger_restore": 70},
+    "fish_congee":         {"name": "Fish Congee",         "color": (225, 210, 170), "place_block": None, "edible": True, "hunger_restore": 55},
+    "fish_noodle_soup":    {"name": "Fish Noodle Soup",    "color": (195, 165,  85), "place_block": None, "edible": True, "hunger_restore": 70},
+    "grilled_fish":        {"name": "Grilled Fish",        "color": (175, 125,  65), "place_block": None, "edible": True, "hunger_restore": 50},
     # --- Refinery outputs ---
     "rock_dust":      {"name": "Rock Dust",      "color": (180, 160, 140), "place_block": None},
     "polished_stone": {"name": "Polished Stone", "color": (200, 200, 215), "place_block": POLISHED_STONE_BLOCK},

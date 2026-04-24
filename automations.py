@@ -2,7 +2,8 @@ import random
 import pygame
 from blocks import (BLOCKS, AIR,
                     MATURE_CROP_BLOCKS, MATURE_TO_YOUNG_CROP, YOUNG_CROP_BLOCKS,
-                    GRASS, DIRT, OIL)
+                    GRASS, DIRT, OIL, TILLED_SOIL, WATER)
+import soil as _soil
 from constants import BLOCK_SIZE, WORLD_MAX_X, WORLD_H, MINE_REACH, PLAYER_W, PLAYER_H
 
 AUTOMATION_DEFS = {
@@ -78,6 +79,7 @@ FARM_BOT_DEFS = {
         "inv_limit":     100,
         "w": 28, "h": 28,
         "color":         (160, 180, 160),
+        "water_tank":    20,  # internal water reservoir capacity
     },
     "crystal_farm_bot": {
         "name":          "Crystal Farm Bot",
@@ -89,6 +91,8 @@ FARM_BOT_DEFS = {
         "inv_limit":     160,
         "w": 28, "h": 28,
         "color":         (100, 220, 200),
+        "water_tank":    30,   # larger water tank
+        "compost_tank":  10,   # compost items stored for auto-fertilizing
     },
 }
 
@@ -319,7 +323,8 @@ class Automation:
 
 
 class FarmBot:
-    def __init__(self, x, y, bot_type, fuel=0.0, seeds=None, stored=None, state="active"):
+    def __init__(self, x, y, bot_type, fuel=0.0, seeds=None, stored=None, state="active",
+                 water_reservoir=0.0, compost_slot=0):
         self.x = float(x)
         self.y = float(y)
         self.bot_type = bot_type
@@ -331,6 +336,8 @@ class FarmBot:
         self._halt_reason = ""
         self._scan_timer = 0.0
         self._mature_to_seed = None
+        self.water_reservoir = float(water_reservoir)
+        self.compost_slot    = int(compost_slot)
 
     @property
     def W(self):
@@ -396,16 +403,71 @@ class FarmBot:
         cx = int((self.x + self.W / 2) // BLOCK_SIZE)
         cy = int((self.y + self.H / 2) // BLOCK_SIZE)
         r = adef["scan_radius"]
+
+        # Tier 2+: auto-refill water reservoir from any adjacent WATER block
+        water_tank = adef.get("water_tank", 0)
+        if water_tank > 0 and self.water_reservoir < water_tank:
+            for dx, dy in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+                if world.get_block(cx + dx, cy + dy) == WATER:
+                    self.water_reservoir = float(water_tank)
+                    break
+
         mature_to_seed = self._get_mature_to_seed()
+        is_crystal = self.bot_type == "crystal_farm_bot"
+        compost_tank = adef.get("compost_tank", 0)
+
         for bx in range(cx - r, cx + r + 1):
             for by in range(cy - r, cy + r + 1):
                 if self.inv_count >= adef["inv_limit"]:
                     return
                 bid = world.get_block(bx, by)
+
                 if bid in MATURE_CROP_BLOCKS:
                     self._harvest(world, bx, by, bid, mature_to_seed)
-                elif bid == AIR and self.seeds and world.get_block(bx, by + 1) in (GRASS, DIRT):
+                    continue
+
+                below = world.get_block(bx, by + 1)
+
+                # Tier 3: till DIRT/GRASS in range before planting
+                if is_crystal and bid == AIR and below in (GRASS, DIRT):
+                    world.set_block(bx, by + 1, TILLED_SOIL)
+                    world._soil_moisture[(bx, by + 1)] = _soil.TILL_START_MOISTURE
+                    world._soil_fertility[(bx, by + 1)] = world.max_fertility
+                    below = TILLED_SOIL
+
+                # All tiers: plant only on tilled soil
+                if bid == AIR and self.seeds and below == TILLED_SOIL:
                     self._plant(world, bx, by)
+                    continue
+
+                # Tier 2+: water tilled soil tiles with low moisture
+                if water_tank > 0 and self.water_reservoir > 0:
+                    soil_pos = self._soil_pos(world, bx, by)
+                    if soil_pos is not None:
+                        moisture = world._soil_moisture.get(soil_pos, 0)
+                        if moisture < _soil.WATER_ADJACENT_FLOOR:
+                            world._soil_moisture[soil_pos] = min(
+                                _soil.MAX_MOISTURE, moisture + _soil.WATERING_AMOUNT)
+                            self.water_reservoir -= 1
+
+                # Tier 3: apply compost to low-fertility tilled soil
+                if is_crystal and compost_tank > 0 and self.compost_slot > 0:
+                    soil_pos = self._soil_pos(world, bx, by)
+                    if soil_pos is not None:
+                        fertility = world._soil_fertility.get(soil_pos, world.max_fertility)
+                        if fertility < world.max_fertility // 2:
+                            world._soil_fertility[soil_pos] = min(
+                                world.max_fertility, fertility + _soil.COMPOST_FERTILITY_GAIN)
+                            self.compost_slot -= 1
+
+    def _soil_pos(self, world, bx, by):
+        """Return the (bx, by) of the tilled soil beneath this block, or None."""
+        bid = world.get_block(bx, by)
+        if bid == TILLED_SOIL:
+            return (bx, by)
+        if bid in YOUNG_CROP_BLOCKS and world.get_block(bx, by + 1) == TILLED_SOIL:
+            return (bx, by + 1)
+        return None
 
     def _plant(self, world, bx, by):
         from items import ITEMS
@@ -427,7 +489,7 @@ class FarmBot:
             count = random.randint(1, 2)
             self.stored[seed_drop] = self.stored.get(seed_drop, 0) + count
         world.set_block(bx, by, AIR)
-        if world.get_block(bx, by + 1) not in (GRASS, DIRT):
+        if world.get_block(bx, by + 1) != TILLED_SOIL:
             return
         seed_id = mature_to_seed.get(block_id)
         # Prefer exact seed match, fall back to any available seed
@@ -438,6 +500,25 @@ class FarmBot:
                 del self.seeds[seed_id]
         elif self.seeds:
             self._plant(world, bx, by)
+
+    def deposit_compost(self, player, amount=None):
+        """Load compost items from player into the crystal farm bot compost slot."""
+        tank = self._def.get("compost_tank", 0)
+        if tank == 0:
+            return
+        have = player.inventory.get("compost", 0)
+        if have <= 0 or self.compost_slot >= tank:
+            return
+        space = tank - self.compost_slot
+        n = min(have, space)
+        if amount is not None:
+            n = min(n, amount)
+        if n <= 0:
+            return
+        self.compost_slot += n
+        player.inventory["compost"] = have - n
+        if player.inventory["compost"] <= 0:
+            del player.inventory["compost"]
 
     def deposit_fuel(self, player, amount=None):
         adef = self._def

@@ -398,6 +398,15 @@ class SaveManager:
             con.execute("ALTER TABLE player ADD COLUMN discovered_fossil_types TEXT DEFAULT '[]'")
         except Exception:
             pass
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN known_crops TEXT DEFAULT '[]'")
+        except Exception:
+            pass
+        for col in ("water_reservoir", "compost_slot"):
+            try:
+                con.execute(f"ALTER TABLE farm_bots ADD COLUMN {col} REAL DEFAULT 0")
+            except Exception:
+                pass
         for col in ("soil_moisture", "crop_progress", "crop_care_sum",
                     "soil_fertility", "compost_bin_data"):
             try:
@@ -616,8 +625,8 @@ class SaveManager:
                 selected_slot, inventory, hotbar, hotbar_uses, known_recipes,
                 discovered_types, discovered_flower_types,
                 discovered_mushroom_types, mushrooms_found,
-                spawn_x, spawn_y, discovered_fossil_types)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                spawn_x, spawn_y, discovered_fossil_types, known_crops)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 player.x, player.y, player.vx, player.vy, player.facing,
                 player.health, player.hunger, player.pick_power, player.money,
@@ -632,6 +641,7 @@ class SaveManager:
                 json.dumps(mushrooms),
                 player.spawn_x, player.spawn_y,
                 json.dumps(list(player.discovered_fossil_types)),
+                json.dumps(list(player.known_crops)),
             )
         )
 
@@ -799,9 +809,11 @@ class SaveManager:
         con.execute("DELETE FROM farm_bots")
         for fb in world.farm_bots:
             con.execute(
-                "INSERT INTO farm_bots (x, y, bot_type, fuel, seeds, stored, state) VALUES (?,?,?,?,?,?,?)",
+                "INSERT INTO farm_bots (x, y, bot_type, fuel, seeds, stored, state, "
+                "water_reservoir, compost_slot) VALUES (?,?,?,?,?,?,?,?,?)",
                 (fb.x, fb.y, fb.bot_type, fb.fuel,
-                 json.dumps(fb.seeds), json.dumps(fb.stored), fb._state)
+                 json.dumps(fb.seeds), json.dumps(fb.stored), fb._state,
+                 fb.water_reservoir, fb.compost_slot)
             )
 
     def _save_backhoes(self, con, world):
@@ -903,7 +915,7 @@ class SaveManager:
                    selected_slot, inventory, hotbar, hotbar_uses, known_recipes,
                    discovered_types, discovered_flower_types,
                    discovered_mushroom_types, mushrooms_found,
-                   spawn_x, spawn_y, discovered_fossil_types
+                   spawn_x, spawn_y, discovered_fossil_types, known_crops
             FROM player LIMIT 1
         """).fetchone()
 
@@ -911,7 +923,7 @@ class SaveManager:
          selected_slot, inventory, hotbar, hotbar_uses, known_recipes,
          discovered_types, discovered_flower_types,
          discovered_mushroom_types, mushrooms_found,
-         spawn_x, spawn_y, discovered_fossil_types) = row
+         spawn_x, spawn_y, discovered_fossil_types, known_crops) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -1097,6 +1109,7 @@ class SaveManager:
             }),
             "spawn_x": spawn_x,
             "spawn_y": spawn_y,
+            "known_crops": json.loads(known_crops or "[]"),
         }
 
     def _load_automations(self, con):
@@ -1124,16 +1137,19 @@ class SaveManager:
     def _load_farm_bots(self, con):
         try:
             rows = con.execute(
-                "SELECT x, y, bot_type, fuel, seeds, stored, state FROM farm_bots"
+                "SELECT x, y, bot_type, fuel, seeds, stored, state, "
+                "water_reservoir, compost_slot FROM farm_bots"
             ).fetchall()
         except Exception:
             return []
         result = []
-        for x, y, bot_type, fuel, seeds, stored, state in rows:
+        for x, y, bot_type, fuel, seeds, stored, state, water_res, compost in rows:
             result.append({
                 "x": x, "y": y, "bot_type": bot_type, "fuel": fuel,
                 "seeds": json.loads(seeds), "stored": json.loads(stored),
                 "state": state,
+                "water_reservoir": float(water_res or 0),
+                "compost_slot":    int(compost or 0),
             })
         return result
 

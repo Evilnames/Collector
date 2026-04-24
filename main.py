@@ -896,6 +896,9 @@ def main():
         if not _any_ui_open() and not ui.cheat_open:
             player.handle_input(keys, mouse_btns, mouse_world, dt)
         player.update(dt)
+        for wx, wy, text, color in player.pending_harvest_floats:
+            renderer.add_float_text(wx, wy, text, color)
+        player.pending_harvest_floats.clear()
         world.update_loaded_chunks(player.x)
         if player.dead:
             drops = player.collect_all_items()
@@ -963,6 +966,8 @@ def main():
         renderer.draw_place_indicator(player)
         renderer.draw_water_overlay(player)
         renderer.draw_rain(world)
+        renderer.tick_float_texts(dt)
+        renderer.draw_float_texts()
         renderer.draw_lighting(player, player.get_depth())
         ui.draw(player, research, dt)
         if ui._bird_obs_active:

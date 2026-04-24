@@ -248,6 +248,19 @@ ONYX_INLAY           = 267  # polished black accent stone
 TILLED_SOIL          = 268  # prepared farm soil; required under young crops
 COMPOST_BIN_BLOCK    = 269  # placed compost processing structure
 
+# --- Premium crop variants (Phase 3 — unlocked by selective_breeding research) ---
+STRAWBERRY_CROP_YOUNG_P   = 270  # premium strawberry; wider moisture tolerance
+STRAWBERRY_CROP_MATURE_P  = 271
+TOMATO_CROP_YOUNG_P       = 272
+TOMATO_CROP_MATURE_P      = 273
+WATERMELON_CROP_YOUNG_P   = 274
+WATERMELON_CROP_MATURE_P  = 275
+CORN_CROP_YOUNG_P         = 276
+CORN_CROP_MATURE_P        = 277
+RICE_CROP_YOUNG_P         = 278
+RICE_CROP_MATURE_P        = 279
+WELL_BLOCK                = 280  # placeable well; refills watering can
+
 HOUSE_WALL           = 108  # city house wall block
 HOUSE_ROOF           = 109  # city house roof block
 WILDFLOWER_PATCH     = 110  # surface collectable; interact → generates unique Wildflower object
@@ -351,7 +364,9 @@ YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG,
                      BEET_CROP_YOUNG, TURNIP_CROP_YOUNG, LEEK_CROP_YOUNG, ZUCCHINI_CROP_YOUNG, SWEET_POTATO_CROP_YOUNG,
                      WATERMELON_CROP_YOUNG, RADISH_CROP_YOUNG, PEA_CROP_YOUNG, CELERY_CROP_YOUNG, BROCCOLI_CROP_YOUNG,
                      CACTUS_YOUNG, DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG,
-                     COFFEE_CROP_YOUNG, GRAPEVINE_CROP_YOUNG}
+                     COFFEE_CROP_YOUNG, GRAPEVINE_CROP_YOUNG,
+                     STRAWBERRY_CROP_YOUNG_P, TOMATO_CROP_YOUNG_P, WATERMELON_CROP_YOUNG_P,
+                     CORN_CROP_YOUNG_P, RICE_CROP_YOUNG_P}
 MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATURE, TOMATO_CROP_MATURE, CORN_CROP_MATURE, PUMPKIN_CROP_MATURE, APPLE_CROP_MATURE,
                      RICE_CROP_MATURE, GINGER_CROP_MATURE, BOK_CHOY_CROP_MATURE, GARLIC_CROP_MATURE,
                      SCALLION_CROP_MATURE, CHILI_CROP_MATURE,
@@ -359,7 +374,9 @@ MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATU
                      BEET_CROP_MATURE, TURNIP_CROP_MATURE, LEEK_CROP_MATURE, ZUCCHINI_CROP_MATURE, SWEET_POTATO_CROP_MATURE,
                      WATERMELON_CROP_MATURE, RADISH_CROP_MATURE, PEA_CROP_MATURE, CELERY_CROP_MATURE, BROCCOLI_CROP_MATURE,
                      CACTUS_MATURE, DATE_PALM_CROP_MATURE, AGAVE_CROP_MATURE,
-                     COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE}
+                     COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE,
+                     STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P, WATERMELON_CROP_MATURE_P,
+                     CORN_CROP_MATURE_P, RICE_CROP_MATURE_P}
 CROP_BLOCKS       = YOUNG_CROP_BLOCKS | MATURE_CROP_BLOCKS
 
 # Perennial crops regrow after harvest (each harvest has ~33% chance to die)
@@ -367,6 +384,7 @@ PERENNIAL_CROP_MATURE = {
     STRAWBERRY_CROP_MATURE, APPLE_CROP_MATURE, TOMATO_CROP_MATURE,
     PEPPER_CROP_MATURE, CHILI_CROP_MATURE, EGGPLANT_CROP_MATURE,
     CACTUS_MATURE, COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE,
+    STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P,
 }
 
 # Reverse mapping: mature → young, used for perennial regrowth
@@ -404,6 +422,11 @@ MATURE_TO_YOUNG_CROP = {
     AGAVE_CROP_MATURE:        AGAVE_CROP_YOUNG,
     COFFEE_CROP_MATURE:       COFFEE_CROP_YOUNG,
     GRAPEVINE_CROP_MATURE:    GRAPEVINE_CROP_YOUNG,
+    STRAWBERRY_CROP_MATURE_P: STRAWBERRY_CROP_YOUNG_P,
+    TOMATO_CROP_MATURE_P:     TOMATO_CROP_YOUNG_P,
+    WATERMELON_CROP_MATURE_P: WATERMELON_CROP_YOUNG_P,
+    CORN_CROP_MATURE_P:       CORN_CROP_YOUNG_P,
+    RICE_CROP_MATURE_P:       RICE_CROP_YOUNG_P,
 }
 
 BLOCKS = {
@@ -691,4 +714,16 @@ BLOCKS = {
     ONYX_INLAY:             {"name": "Onyx Inlay",               "hardness": 2,   "color": ( 40,  35,  45), "drop": "onyx_inlay"},
     TILLED_SOIL:            {"name": "Tilled Soil",              "hardness": 1,   "color": (100,  66,  32), "drop": "dirt_clump"},
     COMPOST_BIN_BLOCK:      {"name": "Compost Bin",              "hardness": 1,   "color": (100,  70,  40), "drop": "compost_bin_item"},
+    WELL_BLOCK:             {"name": "Well",                     "hardness": 3,   "color": ( 80, 115, 145), "drop": "well_item"},
+    # --- Premium crop variants ---
+    STRAWBERRY_CROP_YOUNG_P:   {"name": "Premium Strawberry",        "hardness": 0.5, "color": (255, 100, 140), "drop": "strawberry_seed_premium", "drop_chance": 1.0},
+    STRAWBERRY_CROP_MATURE_P:  {"name": "Premium Strawberry (Ripe)", "hardness": 0.5, "color": (255, 100, 140), "drop": "strawberry",               "drop_chance": 1.0},
+    TOMATO_CROP_YOUNG_P:       {"name": "Premium Tomato",            "hardness": 0.5, "color": (255, 100, 100), "drop": "tomato_seed_premium",      "drop_chance": 1.0},
+    TOMATO_CROP_MATURE_P:      {"name": "Premium Tomato (Ripe)",     "hardness": 0.5, "color": (255, 100, 100), "drop": "tomato",                   "drop_chance": 1.0},
+    WATERMELON_CROP_YOUNG_P:   {"name": "Premium Watermelon",        "hardness": 0.5, "color": (100, 220, 120), "drop": "watermelon_seed_premium",  "drop_chance": 1.0},
+    WATERMELON_CROP_MATURE_P:  {"name": "Premium Watermelon (Ripe)", "hardness": 0.5, "color": (100, 220, 120), "drop": "watermelon",               "drop_chance": 1.0},
+    CORN_CROP_YOUNG_P:         {"name": "Premium Corn",              "hardness": 0.5, "color": (255, 240, 100), "drop": "corn_seed_premium",        "drop_chance": 1.0},
+    CORN_CROP_MATURE_P:        {"name": "Premium Corn (Ripe)",       "hardness": 0.5, "color": (255, 240, 100), "drop": "corn",                     "drop_chance": 1.0},
+    RICE_CROP_YOUNG_P:         {"name": "Premium Rice",              "hardness": 0.5, "color": (200, 235, 180), "drop": "rice_seed_premium",        "drop_chance": 1.0},
+    RICE_CROP_MATURE_P:        {"name": "Premium Rice (Ripe)",       "hardness": 0.5, "color": (200, 235, 180), "drop": "rice",                     "drop_chance": 1.0},
 }

@@ -238,6 +238,7 @@ class Renderer:
         self._minimap_timer = 0.0
         self.minimap_visible = False
         self._mm_ctable     = self._build_mm_color_table()
+        self._floating_texts = []  # list of {x, y, text, color, life, vy}
 
     def _build_bg_darken_surf(self):
         s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
@@ -2764,6 +2765,31 @@ class Renderer:
                     self._ghost_surf.fill((*color, 120))
                 self.screen.blit(self._ghost_surf, (sx, sy))
             pygame.draw.rect(self.screen, (255, 255, 255), (sx, sy, BLOCK_SIZE, BLOCK_SIZE), 2)
+
+    # ------------------------------------------------------------------
+    # Floating harvest text
+    # ------------------------------------------------------------------
+
+    def add_float_text(self, world_x, world_y, text, color):
+        self._floating_texts.append({
+            "x": float(world_x), "y": float(world_y),
+            "text": text, "color": color, "life": 2.0, "vy": -40.0,
+        })
+
+    def tick_float_texts(self, dt):
+        for ft in self._floating_texts:
+            ft["y"] += ft["vy"] * dt
+            ft["life"] -= dt
+        self._floating_texts = [ft for ft in self._floating_texts if ft["life"] > 0]
+
+    def draw_float_texts(self):
+        for ft in self._floating_texts:
+            sx = int(ft["x"] - self.cam_x)
+            sy = int(ft["y"] - self.cam_y)
+            alpha = min(255, int(255 * ft["life"]))
+            surf = self._npc_font.render(ft["text"], True, ft["color"])
+            surf.set_alpha(alpha)
+            self.screen.blit(surf, (sx - surf.get_width() // 2, sy))
 
     # ------------------------------------------------------------------
     # Farm sense: readiness indicator on targeted crop blocks

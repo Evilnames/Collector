@@ -350,7 +350,9 @@ class World:
         for fb_data in data.get("farm_bots", []):
             fb = FarmBot(fb_data["x"], fb_data["y"], fb_data["bot_type"],
                          fuel=fb_data["fuel"], seeds=fb_data["seeds"],
-                         stored=fb_data["stored"], state=fb_data["state"])
+                         stored=fb_data["stored"], state=fb_data["state"],
+                         water_reservoir=fb_data.get("water_reservoir", 0.0),
+                         compost_slot=fb_data.get("compost_slot", 0))
             self.farm_bots.append(fb)
         for bh_data in data.get("backhoes", []):
             self.backhoes.append(Backhoe.from_dict(bh_data))
@@ -485,12 +487,14 @@ class World:
             "temperate":      [STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, POTATO_BUSH,
                                BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, LEEK_BUSH, CORN_BUSH,
                                PUMPKIN_BUSH, GARLIC_BUSH, SCALLION_BUSH, APPLE_BUSH,
-                               RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, BROCCOLI_BUSH],
+                               RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, BROCCOLI_BUSH,
+                               GRAPEVINE_BUSH, GRAPEVINE_BUSH],
             "boreal":         [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
                                TURNIP_BUSH, CABBAGE_BUSH, LEEK_BUSH, APPLE_BUSH,
-                               RADISH_BUSH, PEA_BUSH, BROCCOLI_BUSH],
+                               RADISH_BUSH, PEA_BUSH, BROCCOLI_BUSH, GRAPEVINE_BUSH],
             "birch_forest":   [STRAWBERRY_BUSH, CARROT_BUSH, APPLE_BUSH, POTATO_BUSH,
-                               BEET_BUSH, PUMPKIN_BUSH, PEA_BUSH, BROCCOLI_BUSH],
+                               BEET_BUSH, PUMPKIN_BUSH, PEA_BUSH, BROCCOLI_BUSH,
+                               GRAPEVINE_BUSH],
             "jungle":         [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
                                PEPPER_BUSH, EGGPLANT_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH,
                                CHILI_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
@@ -513,11 +517,11 @@ class World:
             "rolling_hills":  [STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, CORN_BUSH,
                                POTATO_BUSH, APPLE_BUSH, PUMPKIN_BUSH, GARLIC_BUSH,
                                RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, CABBAGE_BUSH, ONION_BUSH,
-                               COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH],
+                               COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH],
             "steep_hills":    [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
-                               APPLE_BUSH, CABBAGE_BUSH, BROCCOLI_BUSH],
+                               APPLE_BUSH, CABBAGE_BUSH, BROCCOLI_BUSH, GRAPEVINE_BUSH],
             "steppe":         [WHEAT_BUSH, CORN_BUSH, RADISH_BUSH, ONION_BUSH,
-                               GARLIC_BUSH, TURNIP_BUSH],
+                               GARLIC_BUSH, TURNIP_BUSH, GRAPEVINE_BUSH],
             "arid_steppe":    [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, RADISH_BUSH,
                                SWEET_POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
             "tundra":         [BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, RADISH_BUSH, COFFEE_BUSH],
@@ -586,10 +590,10 @@ class World:
         _impassable = {BEDROCK, GATE_MID, GATE_DEEP, GATE_CORE}
         # Each zone has a probability of spawning one lake per chunk
         zones = [
-            (15,  38,  0.43,  4,  8, 2, 3),
-            (45,  98,  0.54,  7, 14, 3, 4),
-            (105, 158, 0.54, 10, 20, 3, 5),
-            (165, 190, 0.32, 12, 24, 4, 6),
+            (15,  38,  1.00,  4,  8, 2, 3),
+            (45,  98,  1.00,  7, 14, 3, 4),
+            (105, 158, 1.00, 10, 20, 3, 5),
+            (165, 190, 0.96, 12, 24, 4, 6),
         ]
         for depth_min, depth_max, prob, w_min, w_max, h_min, h_max in zones:
             if rng.random() > prob:
@@ -657,7 +661,7 @@ class World:
             return None
 
         rng = random.Random(self._zone_seed(self.seed, zone_idx, 7))
-        prob = 0.35 if can_river else 0.25
+        prob = 1.00 if can_river else 0.75
         if rng.random() > prob:
             self._surf_water_cache[zone_idx] = None
             return None

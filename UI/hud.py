@@ -3,6 +3,17 @@ from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, MAX_HEALTH
 from items import ITEMS
 from item_icons import render_item_icon
 
+_MOISTURE_LABELS = {
+    (0, 3): "dry / arid",
+    (1, 4): "lightly watered",
+    (2, 5): "moderate moisture",
+    (3, 6): "well watered",
+    (5, 8): "wet / flooded",
+}
+
+def _moisture_label(lo, hi):
+    return _MOISTURE_LABELS.get((lo, hi), "wide tolerance")
+
 
 class HUDMixin:
 
@@ -97,6 +108,22 @@ class HUDMixin:
                     name_txt = self.small.render(item["name"], True, (200, 200, 200))
                     nx = (SCREEN_W - name_txt.get_width()) // 2
                     self.screen.blit(name_txt, (nx, y - 18))
+                    # Crop tooltip: show moisture preference for seed items
+                    place_block = item.get("place_block")
+                    if place_block is not None:
+                        import soil as _soil
+                        prefs = _soil.CROP_PREFERENCES.get(place_block)
+                        if prefs is not None:
+                            m_lo, m_hi = prefs["moisture"]
+                            if place_block in player.known_crops:
+                                hint = f"Moisture: {m_lo}-{m_hi}  Drain: {prefs['fertility_drain']}/harvest"
+                            else:
+                                hint = f"Likes: {_moisture_label(m_lo, m_hi)}"
+                            is_premium = item.get("premium_seed", False)
+                            hint_col = (255, 220, 100) if is_premium else (140, 210, 170)
+                            hint_txt = self.small.render(hint, True, hint_col)
+                            hx = (SCREEN_W - hint_txt.get_width()) // 2
+                            self.screen.blit(hint_txt, (hx, y - 34))
 
     def _draw_bg_mode_indicator(self):
         slot_sz = 48
