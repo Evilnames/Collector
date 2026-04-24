@@ -144,6 +144,53 @@ FORGE_RECIPES = [
 ]
 
 # ---------------------------------------------------------------------------
+# Artisan Bench recipes — refine raw materials into decorative building blocks
+# ---------------------------------------------------------------------------
+
+ARTISAN_RECIPES = [
+    {"name": "Polished Granite", "ingredients": {"stone_chip": 2},                      "output_id": "polished_granite", "output_count": 2},
+    {"name": "Polished Marble",  "ingredients": {"stone_chip": 2, "gold_nugget": 1},    "output_id": "polished_marble",  "output_count": 2},
+    {"name": "Slate Tile",       "ingredients": {"stone_chip": 2, "coal": 1},           "output_id": "slate_tile",       "output_count": 2},
+    {"name": "Terracotta",       "ingredients": {"stone_chip": 1, "sand_grain": 2},     "output_id": "terracotta",       "output_count": 2},
+    {"name": "Mossy Brick",      "ingredients": {"stone_chip": 2, "dirt_clump": 1},     "output_id": "mossy_brick",      "output_count": 2},
+    {"name": "Cream Brick",      "ingredients": {"sand_grain": 3},                      "output_id": "cream_brick",      "output_count": 2},
+    {"name": "Charcoal Plank",   "ingredients": {"lumber": 1, "coal": 1},               "output_id": "charcoal_plank",   "output_count": 2},
+    {"name": "Walnut Plank",     "ingredients": {"lumber": 2, "coal": 1},               "output_id": "walnut_plank",     "output_count": 2},
+    {"name": "Oak Panel",        "ingredients": {"lumber": 2, "stone_chip": 1},         "output_id": "oak_panel",        "output_count": 2},
+    {"name": "Bamboo Panel",     "ingredients": {"lumber": 1, "sand_grain": 1},         "output_id": "bamboo_panel",     "output_count": 2},
+    {"name": "Obsidian Tile",    "ingredients": {"obsidian_slab": 1, "stone_chip": 2},   "output_id": "obsidian_tile",    "output_count": 2},
+    {"name": "Cobblestone",      "ingredients": {"stone_chip": 3},                       "output_id": "cobblestone",      "output_count": 3},
+    {"name": "Lapis Brick",      "ingredients": {"stone_chip": 2, "crystal_shard": 1},   "output_id": "lapis_brick",      "output_count": 2},
+    {"name": "Basalt Column",    "ingredients": {"stone_chip": 2, "coal": 2},            "output_id": "basalt_column",    "output_count": 2},
+    {"name": "Limestone",        "ingredients": {"stone_chip": 2, "sand_grain": 1},      "output_id": "limestone_block",  "output_count": 2},
+    {"name": "Copper Tile",      "ingredients": {"stone_chip": 1, "iron_chunk": 1},      "output_id": "copper_tile",      "output_count": 2},
+    {"name": "Teak Plank",       "ingredients": {"lumber": 2, "dirt_clump": 1},          "output_id": "teak_plank",       "output_count": 2},
+    {"name": "Driftwood Plank",  "ingredients": {"lumber": 1, "sand_grain": 2},          "output_id": "driftwood_plank",  "output_count": 2},
+    {"name": "Cedar Panel",      "ingredients": {"lumber": 2, "iron_chunk": 1},          "output_id": "cedar_panel",      "output_count": 2},
+    {"name": "Jade Panel",       "ingredients": {"stone_chip": 1, "crystal_shard": 1, "lumber": 1}, "output_id": "jade_panel", "output_count": 2},
+    {"name": "Rose Quartz",      "ingredients": {"stone_chip": 2, "ruby": 1},                       "output_id": "rose_quartz_block", "output_count": 2},
+    {"name": "Gilded Brick",     "ingredients": {"stone_chip": 1, "gold_nugget": 2},                "output_id": "gilded_brick",      "output_count": 2},
+    {"name": "Amethyst Block",   "ingredients": {"stone_chip": 1, "crystal_shard": 2},              "output_id": "amethyst_block",    "output_count": 2},
+    {"name": "Amber Tile",       "ingredients": {"sand_grain": 2, "gold_nugget": 1},                "output_id": "amber_tile",        "output_count": 2},
+    {"name": "Ivory Brick",      "ingredients": {"stone_chip": 1, "sand_grain": 1, "gold_nugget": 1}, "output_id": "ivory_brick",     "output_count": 2},
+    {"name": "Ebony Plank",      "ingredients": {"lumber": 2, "obsidian_slab": 1},                  "output_id": "ebony_plank",       "output_count": 2},
+    {"name": "Mahogany Plank",   "ingredients": {"lumber": 2, "ruby": 1},                           "output_id": "mahogany_plank",    "output_count": 2},
+    {"name": "Ash Plank",        "ingredients": {"lumber": 2, "sand_grain": 1},                     "output_id": "ash_plank",         "output_count": 2},
+    {"name": "Frosted Glass",    "ingredients": {"sand_grain": 2, "crystal_shard": 1},              "output_id": "frosted_glass",     "output_count": 2},
+    {"name": "Crimson Brick",    "ingredients": {"dirt_clump": 2, "ruby": 1},                       "output_id": "crimson_brick",     "output_count": 2},
+    {"name": "Terracotta Shingle",   "ingredients": {"stone_chip": 1, "dirt_clump": 2},              "output_id": "terracotta_shingle",  "output_count": 2},
+    {"name": "Thatch Roof",          "ingredients": {"lumber": 2, "wheat": 1},                       "output_id": "thatch_roof",         "output_count": 2},
+    {"name": "Verdigris Copper",     "ingredients": {"iron_chunk": 1, "crystal_shard": 1},           "output_id": "verdigris_copper",    "output_count": 2},
+    {"name": "Silver Panel",         "ingredients": {"iron_chunk": 2, "crystal_shard": 1},           "output_id": "silver_panel",        "output_count": 2},
+    {"name": "Gold Leaf Trim",       "ingredients": {"gold_nugget": 2, "lumber": 1},                 "output_id": "gold_leaf_trim",      "output_count": 2},
+    {"name": "Stained Glass (Red)",  "ingredients": {"sand_grain": 2, "ruby": 1},                    "output_id": "stained_glass_red",   "output_count": 2},
+    {"name": "Stained Glass (Blue)", "ingredients": {"sand_grain": 1, "crystal_shard": 2},           "output_id": "stained_glass_blue",  "output_count": 2},
+    {"name": "Stained Glass (Green)","ingredients": {"sand_grain": 2, "crystal_shard": 1, "dirt_clump": 1}, "output_id": "stained_glass_green", "output_count": 2},
+    {"name": "Quartz Pillar",        "ingredients": {"stone_chip": 3, "crystal_shard": 1},           "output_id": "quartz_pillar",       "output_count": 2},
+    {"name": "Onyx Inlay",           "ingredients": {"obsidian_slab": 1, "coal": 1},                 "output_id": "onyx_inlay",          "output_count": 2},
+]
+
+# ---------------------------------------------------------------------------
 # Shaped 3x3 grid recipes
 # ---------------------------------------------------------------------------
 
@@ -250,6 +297,38 @@ RECIPES = [
             [None,         None,         None        ],
         ],
         "output_id":    "bucket",
+        "output_count": 1,
+    },
+    # --- Farming tools ---
+    {
+        "name": "Hoe",
+        "pattern": [
+            ["stone_chip", "stone_chip", None],
+            [None,         "lumber",     None],
+            [None,         "lumber",     None],
+        ],
+        "output_id":    "hoe",
+        "output_count": 1,
+    },
+    {
+        "name": "Watering Can",
+        "pattern": [
+            ["iron_chunk", None,         "iron_chunk"],
+            ["iron_chunk", "iron_chunk", "iron_chunk"],
+            [None,         None,         None        ],
+        ],
+        "output_id":    "watering_can",
+        "output_count": 1,
+    },
+    # --- Farming structures ---
+    {
+        "name": "Compost Bin",
+        "pattern": [
+            ["lumber",     "lumber",     "lumber"],
+            ["lumber",     None,         "lumber"],
+            ["dirt_clump", "dirt_clump", "dirt_clump"],
+        ],
+        "output_id":    "compost_bin_item",
         "output_count": 1,
     },
     # --- Refinery equipment ---
@@ -622,17 +701,63 @@ RECIPES = [
         "output_id":    "fossil_table_item",
         "output_count": 1,
     },
+    {
+        "name": "Artisan Bench",
+        "pattern": [
+            ["stone_chip", "lumber",     "stone_chip"],
+            ["lumber",     "iron_chunk", "lumber"    ],
+            ["stone_chip", "stone_chip", "stone_chip"],
+        ],
+        "output_id":    "artisan_bench_item",
+        "output_count": 1,
+    },
+    # --- Wine equipment ---
+    {
+        "name": "Grape Press",
+        "pattern": [
+            ["lumber",     "lumber",     "lumber"    ],
+            ["stone_chip", "stone_chip", "stone_chip"],
+            ["stone_chip", "lumber",     "stone_chip"],
+        ],
+        "output_id":    "grape_press_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Fermentation Tank",
+        "pattern": [
+            ["iron_chunk", "lumber",     "iron_chunk"],
+            ["iron_chunk", None,         "iron_chunk"],
+            ["iron_chunk", "stone_chip", "iron_chunk"],
+        ],
+        "output_id":    "fermentation_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Wine Cellar",
+        "pattern": [
+            ["stone_chip", "lumber",     "stone_chip"],
+            ["stone_chip", "coal",       "stone_chip"],
+            ["stone_chip", "lumber",     "stone_chip"],
+        ],
+        "output_id":    "wine_cellar_item",
+        "output_count": 1,
+    },
 ]
 
 
 # Maps output_id -> research node_id required before that recipe is available.
 RESEARCH_LOCKED_RECIPES = {
+    # hoe and watering_can are freely craftable from the start — players need them immediately
+    "compost_bin_item":      "irrigation",
     "farm_bot_item":         "soil_prep",
     "iron_farm_bot_item":    "selective_breeding",
     "crystal_farm_bot_item": "agri_automation",
     "roaster_item":          "coffee_basics",
     "blend_station_item":    "blend_arts",
     "brew_station_item":     "brew_expertise",
+    "grape_press_item":      "wine_basics",
+    "fermentation_item":     "wine_basics",
+    "wine_cellar_item":      "wine_basics",
     "bird_feeder":           "bird_watching",
     "bird_bath":             "bird_sanctuary",
 }

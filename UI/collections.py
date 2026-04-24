@@ -17,6 +17,9 @@ from renderer import render_mushroom_preview
 from blocks import BLOCKS
 from coffee import (BIOME_DISPLAY_NAMES, ROAST_LEVEL_DESCS, ROAST_COLORS,
                     COFFEE_TYPE_ORDER)
+from wine import (WINE_STYLE_DESCS, WINE_STYLE_COLORS, WINE_TYPE_ORDER,
+                  WINE_STYLE_ORDER, VARIETY_DISPLAY_NAMES as WINE_VARIETY_NAMES,
+                  BIOME_DISPLAY_NAMES as WINE_BIOME_NAMES)
 from constants import SCREEN_W, SCREEN_H
 from ._data import (_MUSHROOM_ORDER, _MUSHROOM_BIOME, _MUSHROOM_DROP_COLOR,
                     _MUSHROOM_SHAPES, _MUSHROOM_NAMES, SPECIAL_DESCS, RARITY_LABEL)
@@ -46,8 +49,10 @@ class CollectionsMixin:
         n_fish_disc  = len(player.discovered_fish_species)
         n_fish_total = len(FISH_TYPE_ORDER)
         n_coffee_owned = len(player.coffee_beans)
+        n_wine_owned   = len(getattr(player, "wine_grapes", []))
         total_collected = (len(player.rocks) + len(player.wildflowers) +
-                           len(player.fossils) + len(player.gems) + n_mush_owned + n_coffee_owned)
+                           len(player.fossils) + len(player.gems) + n_mush_owned +
+                           n_coffee_owned + n_wine_owned)
 
         # ---- 3 main tabs ----
         self._tab_rects.clear()
@@ -76,8 +81,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -102,6 +107,7 @@ class CollectionsMixin:
                 ("gems",      f"GEMS ({len(player.gems)})"),
                 ("mushrooms", f"MUSHROOMS ({n_mush_owned})"),
                 ("coffee",    f"COFFEE ({n_coffee_owned})"),
+                ("wine",      f"WINE ({n_wine_owned})"),
             ]
             FILTER_THEME = {
                 "all":       ((55, 55, 75),  (130, 130, 180), (200, 200, 240)),
@@ -111,6 +117,7 @@ class CollectionsMixin:
                 "gems":      ((22, 48, 45),  (72,  195, 170), (145, 235, 215)),
                 "mushrooms": ((40, 36, 16),  (148, 132, 56),  (198, 182, 105)),
                 "coffee":    ((40, 25, 10),  (140,  90,  35), (210, 150,  70)),
+                "wine":      ((40, 15, 22),  (175,  85, 110), (235, 155, 175)),
             }
             fGAP = 6
             fW = min(148, (SCREEN_W - 20 - fGAP * (len(filter_defs) - 1)) // len(filter_defs))
@@ -142,6 +149,8 @@ class CollectionsMixin:
             n_bird_total = 85
             n_coffee_disc  = len(player.discovered_coffee_origins)
             n_coffee_total = len(COFFEE_TYPE_ORDER)
+            n_wine_disc    = len(getattr(player, "discovered_wine_origins", set()))
+            n_wine_total   = len(WINE_TYPE_ORDER)
             enc_defs = [
                 (0, f"ROCKS ({n_rock_disc}/{n_rock_total})"),
                 (1, f"FLOWERS ({n_fl_disc}/{n_fl_total})"),
@@ -151,6 +160,7 @@ class CollectionsMixin:
                 (5, f"BIRDS ({n_bird_disc}/{n_bird_total})"),
                 (6, f"FISH ({n_fish_disc}/{n_fish_total})"),
                 (7, f"COFFEE ({n_coffee_disc}/{n_coffee_total})"),
+                (8, f"WINE ({n_wine_disc}/{n_wine_total})"),
             ]
             ENC_THEME = [
                 ((42, 52, 70),  (95, 138, 198),  (175, 208, 248)),
@@ -161,6 +171,7 @@ class CollectionsMixin:
                 ((18, 40, 58),  (70, 150, 220),  (140, 210, 255)),
                 ((18, 32, 50),  (55, 110, 185),  (120, 185, 240)),
                 ((35, 22,  8),  (140,  90,  30), (210, 145,  60)),
+                ((40, 18, 28),  (175,  90, 115), (235, 160, 180)),
             ]
             eGAP = 6
             eW = min(190, (SCREEN_W - 20 - eGAP * (len(enc_defs) - 1)) // len(enc_defs))
@@ -198,6 +209,7 @@ class CollectionsMixin:
                 self._draw_bird_codex,
                 self._draw_fish_codex,
                 self._draw_coffee_codex,
+                self._draw_wine_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0)
@@ -233,6 +245,8 @@ class CollectionsMixin:
                          if player.mushrooms_found.get(bid, 0) > 0)
         if flt in ("all", "coffee"):
             items.extend(("coffee", i) for i in range(len(player.coffee_beans)))
+        if flt in ("all", "wine"):
+            items.extend(("wine", i) for i in range(len(getattr(player, "wine_grapes", []))))
 
         if not items:
             msg = self.font.render("Nothing collected yet!", True, (80, 80, 90))
@@ -353,7 +367,6 @@ class CollectionsMixin:
                 bg_col = (40, 25, 10) if selected else (25, 15, 5)
                 pygame.draw.rect(self.screen, bg_col, rect)
                 pygame.draw.rect(self.screen, roast_col, rect, 3 if selected else 2)
-                # Draw a simple coffee bean icon
                 img = pygame.Surface((58, 58), pygame.SRCALPHA)
                 img.fill((0, 0, 0, 0))
                 cx2, cy2 = 29, 29
@@ -365,6 +378,22 @@ class CollectionsMixin:
                 img.blit(sc_s, (cx2 - sc_s.get_width() // 2, 2))
                 label = BIOME_DISPLAY_NAMES.get(it.origin_biome, it.origin_biome)
                 label_col = (210, 150, 70)
+            elif cat == "wine":
+                it = getattr(player, "wine_grapes", [])[key]
+                style_col = WINE_STYLE_COLORS.get(it.style, (175, 90, 115))
+                bg_col = (35, 12, 20) if selected else (22, 8, 14)
+                pygame.draw.rect(self.screen, bg_col, rect)
+                pygame.draw.rect(self.screen, style_col, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                for gx3, gy3 in [(20, 10), (34, 10), (14, 22), (28, 22), (42, 22), (20, 34), (34, 34)]:
+                    pygame.draw.circle(img, style_col, (gx3, gy3), 7)
+                pygame.draw.line(img, (120, 160, 80), (29, 40), (29, 54), 2)
+                state_char = {"raw": "R", "crushed": "C", "fermented": "F", "aged": "A", "blended": "B"}.get(it.state, "?")
+                sc_s = self.small.render(state_char, True, (240, 200, 210))
+                img.blit(sc_s, (img.get_width() - sc_s.get_width() - 2, 2))
+                label = WINE_VARIETY_NAMES.get(it.variety, it.variety.replace("_", " "))
+                label_col = (230, 150, 170)
             else:  # mushroom
                 count = player.mushrooms_found.get(key, 0)
                 pygame.draw.rect(self.screen, (40, 36, 20) if selected else (25, 22, 12), rect)
@@ -602,6 +631,49 @@ class CollectionsMixin:
             stat_bar("Sweetness", bean.sweetness,  (220, 180, 60))
             stat_bar("Earthiness",bean.earthiness, (130, 100, 50))
             stat_bar("Brightness",bean.brightness, (230, 200, 80))
+        elif sel_cat == "wine":
+            grape = getattr(player, "wine_grapes", [])[sel_key]
+            style_col = WINE_STYLE_COLORS.get(grape.style, (175, 90, 115))
+            pygame.draw.rect(self.screen, (18, 8, 14), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, style_col, (dx, dy2, dw, dh), 2)
+            grape_surf = pygame.Surface((80, 80), pygame.SRCALPHA)
+            grape_surf.fill((0, 0, 0, 0))
+            for gx4, gy4 in [(26, 12), (46, 12), (16, 28), (36, 28), (56, 28), (26, 44), (46, 44)]:
+                pygame.draw.circle(grape_surf, style_col, (gx4, gy4), 10)
+            pygame.draw.line(grape_surf, (100, 150, 70), (40, 56), (40, 74), 3)
+            self.screen.blit(grape_surf, (dx + dw // 2 - 40, dy2 + 4))
+            variety_name = WINE_VARIETY_NAMES.get(grape.variety, grape.variety.replace("_", " ").title())
+            biome_name = WINE_BIOME_NAMES.get(grape.origin_biome, grape.origin_biome.replace("_", " ").title())
+            dlabel(f"{biome_name} {variety_name}", (235, 165, 185))
+            dlabel(f"State: {grape.state.title()}", style_col)
+            if grape.style:
+                dlabel(f"Style: {grape.style.title()}", style_col)
+            if grape.crush_style:
+                dlabel(f"Crush: {grape.crush_style.replace('_', ' ').title()}", (200, 160, 175))
+            if grape.yeast:
+                dlabel(f"Yeast: {grape.yeast.replace('_', ' ').title()}", (190, 155, 170))
+            if grape.vessel:
+                dlabel(f"Vessel: {grape.vessel.title()}", (185, 150, 165))
+            if grape.press_quality > 0:
+                stars = "★" * round(grape.press_quality * 5)
+                dlabel(f"Press Quality: {stars}", (215, 175, 190))
+            if grape.ferment_quality > 0:
+                stars = "★" * round(grape.ferment_quality * 5)
+                dlabel(f"Ferment Quality: {stars}", (215, 175, 190))
+            if grape.flavor_notes:
+                dlabel("Flavour Notes:", (195, 140, 155))
+                for note in grape.flavor_notes:
+                    dlabel(f"  • {note.title()}", (220, 170, 185))
+            iy[0] += 4
+            stat_bar("Sweetness", grape.sweetness,  (230, 175, 80))
+            stat_bar("Acidity",   grape.acidity,    (180, 220, 80))
+            stat_bar("Tannin",    grape.tannin,     (100,  60, 40))
+            stat_bar("Body",      grape.body,       (140,  60, 80))
+            stat_bar("Aromatics", grape.aromatics,  (200, 140, 220))
+            if grape.alcohol > 0:
+                stat_bar("Alcohol",   grape.alcohol,    (220, 100,  60))
+            if grape.complexity > 0:
+                stat_bar("Complexity",grape.complexity, (175, 130, 210))
         else:  # mushroom
             bid = sel_key
             pygame.draw.rect(self.screen, (16, 14, 8), (dx, dy2, dw, dh))
@@ -1846,6 +1918,96 @@ class CollectionsMixin:
                     dline(f"Flavour Notes:", (180, 140, 60))
                     for note in best.flavor_notes:
                         dline(f"  • {note.title()}", (210, 175, 100))
+
+    def _draw_wine_codex(self, player, gy0=58):
+        BIOMES = ["tropical", "jungle", "savanna", "wetland", "arid_steppe", "canyon", "beach",
+                  "tundra", "swamp", "alpine_mountain", "rocky_mountain", "rolling_hills"]
+        STYLES = WINE_STYLE_ORDER
+        COLS = len(STYLES)
+        CELL_W, CELL_H, GAP = 110, 54, 6
+        HDR_H = 22
+        gx0 = (SCREEN_W - (COLS * CELL_W + (COLS - 1) * GAP)) // 2
+
+        # Column header
+        hdr_y = gy0
+        for ci, style in enumerate(STYLES):
+            hx = gx0 + ci * (CELL_W + GAP)
+            col = WINE_STYLE_COLORS.get(style, (150, 80, 100))
+            lbl = self.small.render(style.upper(), True, col)
+            self.screen.blit(lbl, (hx + CELL_W // 2 - lbl.get_width() // 2, hdr_y + 4))
+
+        self._wine_codex_rects.clear()
+        cy = hdr_y + HDR_H - self._wine_codex_scroll
+        for biome in BIOMES:
+            bnm = WINE_BIOME_NAMES.get(biome, biome)
+            bl = self.font.render(bnm.upper(), True, (210, 160, 180))
+            self.screen.blit(bl, (10, cy + (CELL_H - bl.get_height()) // 2))
+            for ci, style in enumerate(STYLES):
+                hx = gx0 + ci * (CELL_W + GAP)
+                key = f"{biome}_{style}"
+                discovered = key in getattr(player, "discovered_wine_origins", set())
+                rect = pygame.Rect(hx, cy, CELL_W, CELL_H)
+                self._wine_codex_rects[key] = rect
+                col = WINE_STYLE_COLORS.get(style, (150, 80, 100))
+                selected = (self._wine_codex_selected == key)
+
+                if discovered:
+                    pygame.draw.rect(self.screen, (35, 18, 26), rect)
+                    pygame.draw.rect(self.screen, col, rect, 3 if selected else 1)
+                    best_q = max(
+                        (g.ferment_quality for g in player.wine_grapes
+                         if g.origin_biome == biome and g.style == style), default=0.0)
+                    stars = "★" * round(best_q * 5) if best_q > 0 else ""
+                    name_s = self.small.render(style.title(), True, col)
+                    self.screen.blit(name_s, (hx + 4, cy + 4))
+                    if stars:
+                        qs = self.small.render(stars, True, (220, 190, 60))
+                        self.screen.blit(qs, (hx + 4, cy + CELL_H - qs.get_height() - 4))
+                else:
+                    pygame.draw.rect(self.screen, (14, 8, 12), rect)
+                    pygame.draw.rect(self.screen, (45, 22, 32), rect, 1)
+                    lock = self.small.render("?", True, (60, 30, 40))
+                    self.screen.blit(lock, (hx + CELL_W // 2 - lock.get_width() // 2,
+                                            cy + CELL_H // 2 - lock.get_height() // 2))
+            cy += CELL_H + GAP
+
+        total_h = len(BIOMES) * (CELL_H + GAP) + HDR_H
+        visible_h = SCREEN_H - gy0 - 10
+        self._max_wine_codex_scroll = max(0, total_h - visible_h)
+
+        # Detail panel for selected discovered entry
+        if self._wine_codex_selected:
+            key = self._wine_codex_selected
+            if key in player.discovered_wine_origins:
+                biome, style = key.rsplit("_", 1)
+                matching = [g for g in player.wine_grapes
+                            if g.origin_biome == biome and g.style == style]
+                if matching:
+                    best = max(matching, key=lambda g: g.ferment_quality)
+                    dx2 = gx0 + COLS * (CELL_W + GAP) + 10
+                    dpw = SCREEN_W - dx2 - 8
+                    if dpw > 120:
+                        col = WINE_STYLE_COLORS.get(style, (150, 80, 100))
+                        pygame.draw.rect(self.screen, (20, 12, 18), (dx2, gy0, dpw, SCREEN_H - gy0 - 10))
+                        pygame.draw.rect(self.screen, col, (dx2, gy0, dpw, SCREEN_H - gy0 - 10), 2)
+                        iy2 = gy0 + 8
+
+                        def dline(txt, c=(220, 170, 180)):
+                            nonlocal iy2
+                            s = self.small.render(txt, True, c)
+                            self.screen.blit(s, (dx2 + 6, iy2))
+                            iy2 += 15
+
+                        dline(f"{WINE_BIOME_NAMES.get(biome, biome)} {WINE_VARIETY_NAMES.get(best.variety, best.variety)}", (230, 180, 200))
+                        dline(WINE_STYLE_DESCS.get(style, style), col)
+                        if best.vessel:
+                            dline(f"Aged: {best.vessel.title()}", (190, 150, 170))
+                        stars = "★" * round(best.ferment_quality * 5)
+                        dline(f"Best quality: {stars}", (220, 190, 60))
+                        dline(f"Alcohol: {best.alcohol:.0%}   Complexity: {best.complexity:.0%}", (190, 160, 170))
+                        dline("Flavour Notes:", (190, 150, 170))
+                        for note in best.flavor_notes:
+                            dline(f"  • {note.title()}", (220, 180, 190))
 
     def _draw_achievements(self):
         CARD_W, CARD_H = 360, 118

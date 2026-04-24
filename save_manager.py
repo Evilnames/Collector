@@ -22,7 +22,7 @@ class SaveManager:
                 self._create_tables(con)
                 for tbl in ("save_meta", "chunks", "bg_chunks", "world_meta", "player",
                             "rocks", "wildflowers", "fossils", "gems", "bird_observations",
-                            "fish", "coffee_beans",
+                            "fish", "coffee_beans", "wine_grapes",
                             "research", "automations",
                             "farm_bots", "backhoes", "entities", "dropped_items", "chests"):
                     # global_collection and achievements are intentionally preserved
@@ -60,6 +60,7 @@ class SaveManager:
             self._save_gems(con, player)
             self._save_fish(con, player)
             self._save_coffee_beans(con, player)
+            self._save_wine_grapes(con, player)
             self._save_bird_observations(con, player)
             self._save_research(con, research)
             self._save_automations(con, world)
@@ -78,7 +79,7 @@ class SaveManager:
             self._create_tables(con)
             self._maybe_migrate(con)
             seed = con.execute("SELECT seed FROM save_meta LIMIT 1").fetchone()[0]
-            water_level = self._load_world_meta(con)
+            world_meta  = self._load_world_meta(con)
             bird_obs    = self._load_bird_observations(con)
             player_data = self._load_player(con, bird_obs)
             automations = self._load_automations(con)
@@ -90,7 +91,12 @@ class SaveManager:
             chest_data = self._load_chests(con)
         return {
             "seed": seed,
-            "water_level": water_level,
+            "water_level":     world_meta["water_level"],
+            "soil_moisture":   world_meta["soil_moisture"],
+            "soil_fertility":  world_meta["soil_fertility"],
+            "crop_progress":   world_meta["crop_progress"],
+            "crop_care_sum":   world_meta["crop_care_sum"],
+            "compost_bin_data": world_meta["compost_bin_data"],
             "player": player_data,
             "automations": automations,
             "farm_bots": farm_bots,
@@ -247,7 +253,12 @@ class SaveManager:
             data    BLOB NOT NULL
         );
         CREATE TABLE IF NOT EXISTS world_meta (
-            water_level TEXT
+            water_level TEXT,
+            soil_moisture TEXT,
+            crop_progress TEXT,
+            crop_care_sum TEXT,
+            soil_fertility TEXT,
+            compost_bin_data TEXT
         );
         CREATE TABLE IF NOT EXISTS player (
             x REAL, y REAL, vx REAL, vy REAL, facing INTEGER,
@@ -345,6 +356,28 @@ class SaveManager:
             blend_components   TEXT,
             processing_method  TEXT DEFAULT ''
         );
+        CREATE TABLE IF NOT EXISTS wine_grapes (
+            uid                TEXT PRIMARY KEY,
+            origin_biome       TEXT,
+            variety            TEXT,
+            state              TEXT,
+            style              TEXT,
+            sweetness          REAL,
+            acidity            REAL,
+            tannin             REAL,
+            body               REAL,
+            aromatics          REAL,
+            alcohol            REAL,
+            complexity         REAL,
+            press_quality      REAL,
+            ferment_quality    REAL,
+            flavor_notes       TEXT,
+            seed               INTEGER,
+            blend_components   TEXT,
+            crush_style        TEXT DEFAULT '',
+            yeast              TEXT DEFAULT '',
+            vessel             TEXT DEFAULT ''
+        );
         CREATE TABLE IF NOT EXISTS global_collection (
             category TEXT NOT NULL,
             item_id  TEXT NOT NULL,
@@ -365,6 +398,12 @@ class SaveManager:
             con.execute("ALTER TABLE player ADD COLUMN discovered_fossil_types TEXT DEFAULT '[]'")
         except Exception:
             pass
+        for col in ("soil_moisture", "crop_progress", "crop_care_sum",
+                    "soil_fertility", "compost_bin_data"):
+            try:
+                con.execute(f"ALTER TABLE world_meta ADD COLUMN {col} TEXT")
+            except Exception:
+                pass
 
     # ------------------------------------------------------------------
     # Achievements (global, cross-save)
@@ -406,6 +445,11 @@ class SaveManager:
             con.execute(
                 "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
                 ("coffee", t),
+            )
+        for t in player.discovered_wine_origins:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("wine", t),
             )
 
     def _check_and_save_achievements(self, con):
@@ -548,10 +592,20 @@ class SaveManager:
         world._dirty_bg_chunks.clear()
 
     def _save_world_meta(self, con, world):
-        water = {f"{x},{y}": lvl for (x, y), lvl in world._water_level.items()}
+        water        = {f"{x},{y}": lvl    for (x, y), lvl   in world._water_level.items()}
+        moisture     = {f"{x},{y}": m      for (x, y), m     in world._soil_moisture.items()}
+        fertility    = {f"{x},{y}": f      for (x, y), f     in world._soil_fertility.items()}
+        progress     = {f"{x},{y}": p      for (x, y), p     in world._crop_progress.items()}
+        care_sum     = {f"{x},{y}": [s, c] for (x, y), (s, c) in world._crop_care_sum.items()}
+        compost_bins = {f"{x},{y}": d      for (x, y), d     in world.compost_bin_data.items()}
         con.execute("DELETE FROM world_meta")
-        con.execute("INSERT INTO world_meta (water_level) VALUES (?)",
-                    (json.dumps(water),))
+        con.execute(
+            "INSERT INTO world_meta "
+            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (json.dumps(water), json.dumps(moisture), json.dumps(progress),
+             json.dumps(care_sum), json.dumps(fertility), json.dumps(compost_bins)),
+        )
 
     def _save_player(self, con, player):
         con.execute("DELETE FROM player")
@@ -684,6 +738,23 @@ class SaveManager:
                 )
             )
 
+    def _save_wine_grapes(self, con, player):
+        con.execute("DELETE FROM wine_grapes")
+        for g in player.wine_grapes:
+            con.execute(
+                "INSERT OR REPLACE INTO wine_grapes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    g.uid, g.origin_biome, g.variety, g.state, g.style,
+                    g.sweetness, g.acidity, g.tannin, g.body, g.aromatics,
+                    g.alcohol, g.complexity, g.press_quality, g.ferment_quality,
+                    json.dumps(g.flavor_notes), g.seed,
+                    json.dumps(g.blend_components),
+                    getattr(g, "crush_style", ""),
+                    getattr(g, "yeast", ""),
+                    getattr(g, "vessel", ""),
+                )
+            )
+
     def _save_bird_observations(self, con, player):
         con.execute("DELETE FROM bird_observations")
         for species_id, data in player.birds_observed.items():
@@ -794,15 +865,37 @@ class SaveManager:
     # ------------------------------------------------------------------
 
     def _load_world_meta(self, con):
-        row = con.execute("SELECT water_level FROM world_meta LIMIT 1").fetchone()
-        if row is None or row[0] is None:
-            return {}
-        water_raw = json.loads(row[0])
-        water = {}
-        for key, lvl in water_raw.items():
-            xs, ys = key.split(",")
-            water[(int(xs), int(ys))] = lvl
-        return water
+        row = con.execute(
+            "SELECT water_level, soil_moisture, crop_progress, crop_care_sum, "
+            "soil_fertility, compost_bin_data "
+            "FROM world_meta LIMIT 1"
+        ).fetchone()
+        if row is None:
+            return {"water_level": {}, "soil_moisture": {}, "crop_progress": {},
+                    "crop_care_sum": {}, "soil_fertility": {}, "compost_bin_data": {}}
+
+        def _parse_coord_dict(raw, transform=lambda v: v):
+            if raw is None:
+                return {}
+            out = {}
+            for key, val in json.loads(raw).items():
+                xs, ys = key.split(",")
+                out[(int(xs), int(ys))] = transform(val)
+            return out
+
+        def _parse_bin_data(raw):
+            if raw is None:
+                return {}
+            return json.loads(raw)
+
+        return {
+            "water_level":     _parse_coord_dict(row[0]),
+            "soil_moisture":   _parse_coord_dict(row[1]),
+            "crop_progress":   _parse_coord_dict(row[2]),
+            "crop_care_sum":   _parse_coord_dict(row[3], lambda v: (float(v[0]), int(v[1]))),
+            "soil_fertility":  _parse_coord_dict(row[4]),
+            "compost_bin_data": _parse_bin_data(row[5]),
+        }
 
     def _load_player(self, con, bird_obs=None):
         row = con.execute("""
@@ -941,6 +1034,35 @@ class SaveManager:
                 "processing_method": c[14] or "",
             })
 
+        try:
+            wine_rows = con.execute("""
+                SELECT uid, origin_biome, variety, state, style,
+                       sweetness, acidity, tannin, body, aromatics,
+                       alcohol, complexity, press_quality, ferment_quality,
+                       flavor_notes, seed, blend_components,
+                       COALESCE(crush_style, ''),
+                       COALESCE(yeast, ''),
+                       COALESCE(vessel, '')
+                FROM wine_grapes
+            """).fetchall()
+        except Exception:
+            wine_rows = []
+        wine_data = []
+        for w in wine_rows:
+            wine_data.append({
+                "uid": w[0], "origin_biome": w[1], "variety": w[2], "state": w[3],
+                "style": w[4],
+                "sweetness": w[5], "acidity": w[6], "tannin": w[7], "body": w[8], "aromatics": w[9],
+                "alcohol": w[10], "complexity": w[11],
+                "press_quality": w[12], "ferment_quality": w[13],
+                "flavor_notes": json.loads(w[14]) if w[14] else [],
+                "seed": w[15],
+                "blend_components": json.loads(w[16]) if w[16] else [],
+                "crush_style": w[17] or "",
+                "yeast": w[18] or "",
+                "vessel": w[19] or "",
+            })
+
         return {
             "x": x, "y": y, "vx": vx, "vy": vy, "facing": facing,
             "health": health, "hunger": hunger, "pick_power": pick_power,
@@ -967,6 +1089,11 @@ class SaveManager:
             "discovered_coffee_origins": list({
                 f"{c['origin_biome']}_{c['roast_level']}"
                 for c in coffee_data if c["state"] != "raw"
+            }),
+            "wine_grapes": wine_data,
+            "discovered_wine_origins": list({
+                f"{w['origin_biome']}_{w['style']}"
+                for w in wine_data if w["state"] not in ("raw", "crushed") and w["style"]
             }),
             "spawn_x": spawn_x,
             "spawn_y": spawn_y,

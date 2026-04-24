@@ -8,6 +8,22 @@ from automations import AUTOMATION_ITEM
 from ._data import RARITY_LABEL, SPECIAL_DESCS
 
 
+def _wrap_text(text, font, max_w):
+    words = text.split()
+    lines, cur = [], ""
+    for word in words:
+        test = (cur + " " + word).strip()
+        if font.size(test)[0] <= max_w:
+            cur = test
+        else:
+            if cur:
+                lines.append(cur)
+            cur = word
+    if cur:
+        lines.append(cur)
+    return lines
+
+
 class PanelsMixin:
 
     def _draw_npc_panel(self, player):
@@ -324,11 +340,13 @@ class PanelsMixin:
         self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 26))
 
         n_cols = len(research.COLUMNS)
-        CARD_W, CARD_H = 210, 92
-        COL_GAP, ROW_GAP = 12, 7
+        CARD_W, CARD_H = 210, 118
+        COL_GAP, ROW_GAP = 12, 8
         total_w = n_cols * CARD_W + (n_cols - 1) * COL_GAP
         col_x = [(SCREEN_W - total_w) // 2 + c * (CARD_W + COL_GAP) for c in range(n_cols)]
         header_y = 46
+        TEXT_PAD = 6
+        TEXT_W = CARD_W - TEXT_PAD * 2
 
         for c, label in enumerate(research.COLUMNS):
             hdr = self.small.render(label, True, (190, 190, 190))
@@ -360,31 +378,55 @@ class PanelsMixin:
 
             pygame.draw.rect(self.screen, bg, rect)
             pygame.draw.rect(self.screen, border, rect, 2)
-            self.screen.blit(self.font.render(node.name, True, (255, 255, 220)), (x + 6, y + 5))
-            st_surf = self.small.render(status_txt, True, status_col)
-            self.screen.blit(st_surf, (x + CARD_W - st_surf.get_width() - 6, y + 8))
-            self.screen.blit(self.small.render(node.description, True, (150, 150, 150)), (x + 6, y + 27))
 
+            # Name row — clip so it doesn't reach the status badge
+            st_surf = self.small.render(status_txt, True, status_col)
+            st_x = x + CARD_W - st_surf.get_width() - TEXT_PAD
+            name_max_w = st_x - (x + TEXT_PAD) - 4
+            name_surf = self.font.render(node.name, True, (255, 255, 220))
+            if name_surf.get_width() > name_max_w:
+                name_surf = name_surf.subsurface((0, 0, name_max_w, name_surf.get_height()))
+            self.screen.blit(name_surf, (x + TEXT_PAD, y + 5))
+            self.screen.blit(st_surf, (st_x, y + 8))
+
+            # Description — wrapped to fit card width
+            desc_lines = _wrap_text(node.description, self.small, TEXT_W)
+            dy = y + 26
+            for line in desc_lines[:2]:
+                self.screen.blit(self.small.render(line, True, (150, 150, 150)), (x + TEXT_PAD, dy))
+                dy += 15
+
+            # Cost / prereq rows below description
+            cost_y = y + 60
             if not node.unlocked:
                 if not prereqs_ok:
                     blocked = [research.nodes[p].name for p in node.prerequisites
                                if not research.nodes[p].unlocked]
-                    req_surf = self.small.render("Requires: " + ", ".join(blocked[:2]),
-                                                 True, (160, 80, 80))
-                    self.screen.blit(req_surf, (x + 6, y + 50))
+                    req_lines = _wrap_text("Requires: " + ", ".join(blocked[:2]),
+                                           self.small, TEXT_W)
+                    for line in req_lines[:2]:
+                        self.screen.blit(self.small.render(line, True, (160, 80, 80)),
+                                         (x + TEXT_PAD, cost_y))
+                        cost_y += 15
                 else:
-                    cx2 = x + 6
+                    cx2 = x + TEXT_PAD
                     for item_id, needed in node.cost.items():
                         have = player.inventory.get(item_id, 0)
                         iname = ITEMS.get(item_id, {}).get("name", item_id)
                         col_c = (70, 200, 70) if have >= needed else (210, 80, 80)
                         cs = self.small.render(f"{iname}: {have}/{needed}", True, col_c)
-                        self.screen.blit(cs, (cx2, y + 50))
-                        cx2 += cs.get_width() + 10
+                        if cx2 + cs.get_width() > x + CARD_W - TEXT_PAD and cx2 > x + TEXT_PAD:
+                            cost_y += 15
+                            cx2 = x + TEXT_PAD
+                        self.screen.blit(cs, (cx2, cost_y))
+                        cx2 += cs.get_width() + 8
                     if node.money_cost > 0:
                         col_m = (70, 200, 70) if player.money >= node.money_cost else (210, 80, 80)
                         ms = self.small.render(f"Gold: {player.money}/{node.money_cost}", True, col_m)
-                        self.screen.blit(ms, (cx2, y + 50))
+                        if cx2 + ms.get_width() > x + CARD_W - TEXT_PAD and cx2 > x + TEXT_PAD:
+                            cost_y += 15
+                            cx2 = x + TEXT_PAD
+                        self.screen.blit(ms, (cx2, cost_y))
 
             if row > 0 and prereqs_ok and not node.unlocked:
                 mid_x = x + CARD_W // 2

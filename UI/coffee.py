@@ -97,7 +97,7 @@ class CoffeeMixin:
                     self._roast_event_flash = (txt, col, timer)
 
             # Draw temperature bar
-            BAR_X, BAR_Y, BAR_W, BAR_H = 80, 60, 30, SCREEN_H - 120
+            BAR_X, BAR_Y, BAR_W, BAR_H = 80, 60, 30, SCREEN_H - 180
             pygame.draw.rect(self.screen, (25, 15, 5), (BAR_X, BAR_Y, BAR_W, BAR_H))
             pygame.draw.rect(self.screen, (60, 40, 20), (BAR_X, BAR_Y, BAR_W, BAR_H), 2)
             # Zone bands
@@ -123,7 +123,7 @@ class CoffeeMixin:
                 pygame.draw.line(self.screen, (60, 40, 20), (BAR_X, yl), (BAR_X + BAR_W, yl), 1)
 
             # Time bar
-            TIME_X, TIME_Y = 130, SCREEN_H - 50
+            TIME_X, TIME_Y = 130, SCREEN_H - 110
             TIME_W = SCREEN_W - 260
             pygame.draw.rect(self.screen, (25, 15, 5), (TIME_X, TIME_Y, TIME_W, 18))
             pygame.draw.rect(self.screen, (60, 40, 20), (TIME_X, TIME_Y, TIME_W, 18), 2)
@@ -149,7 +149,7 @@ class CoffeeMixin:
             self.screen.blit(inst, (SCREEN_W // 2 - inst.get_width() // 2, TIME_Y - 36))
 
             # STOP button
-            stop_rect = pygame.Rect(SCREEN_W - 150, SCREEN_H - 50, 130, 32)
+            stop_rect = pygame.Rect(SCREEN_W - 150, SCREEN_H - 110, 130, 32)
             pygame.draw.rect(self.screen, (80, 35, 10), stop_rect)
             pygame.draw.rect(self.screen, (200, 100, 40), stop_rect, 2)
             stop_lbl = self.font.render("STOP", True, (240, 160, 60))
@@ -158,7 +158,7 @@ class CoffeeMixin:
             self._roast_stop_btn = stop_rect
 
             # HEAT button
-            heat_rect = pygame.Rect(SCREEN_W - 150, SCREEN_H - 90, 130, 32)
+            heat_rect = pygame.Rect(SCREEN_W - 150, SCREEN_H - 150, 130, 32)
             hcol = (120, 50, 15) if not self._roast_heat_held else (180, 80, 20)
             pygame.draw.rect(self.screen, hcol, heat_rect)
             pygame.draw.rect(self.screen, (220, 120, 50), heat_rect, 2)

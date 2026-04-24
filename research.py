@@ -40,7 +40,7 @@ def _noop(player, world):
 
 
 class ResearchTree:
-    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding"]
+    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking"]
 
     def __init__(self):
         self.nodes = {}    # id -> ResearchNode
@@ -52,19 +52,29 @@ class ResearchTree:
             if node_id in self.nodes:
                 self.nodes[node_id].unlocked = True
 
-    def apply_bonuses(self, player):
-        """Set all research-derived bonuses on player from current unlock state."""
+    def apply_bonuses(self, player, world=None):
+        """Set all research-derived bonuses on player (and world) from current unlock state."""
+        import soil as _soil
         def u(nid):
             n = self.nodes.get(nid)
             return n is not None and n.unlocked
 
-        player.crop_grow_bonus           = 0.12 if u("irrigation")        else 0.0
-        player.harvest_bonus             = 1    if u("composting")         else 0
-        player.roast_quality_bonus       = 0.15 if u("roast_mastery")      else 0.0
-        player.coffee_buff_duration_bonus = 0.5 if u("master_barista")     else 0.0
-        player.bird_spook_reduction      = 0.4  if u("bird_sanctuary")     else 0.0
-        player.bird_feeder_bonus         = 2.0  if u("bird_lure")          else 1.0
-        player.avian_mastery             = u("avian_mastery")
+        # Deprecated flat bonuses kept at 0 — soil math now drives farming output.
+        player.crop_grow_bonus            = 0.0
+        player.harvest_bonus              = 0
+        player.roast_quality_bonus        = 0.15 if u("roast_mastery")      else 0.0
+        player.coffee_buff_duration_bonus = 0.5  if u("master_barista")     else 0.0
+        player.bird_spook_reduction       = 0.4  if u("bird_sanctuary")     else 0.0
+        player.bird_feeder_bonus          = 2.0  if u("bird_lure")          else 1.0
+        player.avian_mastery              = u("avian_mastery")
+        if world is not None:
+            # irrigation: moisture decays half as fast
+            world.moisture_decay_chance = (
+                _soil.MOISTURE_DECAY_CHANCE / 2 if u("irrigation")
+                else _soil.MOISTURE_DECAY_CHANCE
+            )
+            # composting: raises the max fertility cap
+            world.max_fertility = 10 if u("composting") else _soil.MAX_FERTILITY
 
     def _add(self, node, col, row):
         self.nodes[node.id] = node
@@ -106,19 +116,19 @@ class ResearchTree:
         # --- Farming (column 2) ---
         self._add(ResearchNode(
             "soil_prep", "Soil Preparation",
-            "Basic farming — unlocks Farm Bot",
+            "Till dirt, water crops — unlocks Hoe, Watering Can, and Farm Bot",
             {"dirt_clump": 8, "wheat": 3}, [],
             _noop, money_cost=5), 2, 0)
 
         self._add(ResearchNode(
             "irrigation", "Irrigation",
-            "Water channels make crops mature 80% faster",
+            "Moisture decays half as fast — unlocks Compost Bin crafting",
             {"stone_chip": 5, "carrot": 3}, ["soil_prep"],
             _noop, money_cost=15), 2, 1)
 
         self._add(ResearchNode(
             "composting", "Composting",
-            "Rich soil yields +1 extra produce per harvest",
+            "Raises max soil fertility cap from 8 to 10",
             {"dirt_clump": 15, "carrot": 5}, ["irrigation"],
             _noop, money_cost=25), 2, 2)
 
@@ -138,31 +148,31 @@ class ResearchTree:
         self._add(ResearchNode(
             "coffee_basics", "Coffee Cultivation",
             "Learn to roast — unlocks Coffee Roaster",
-            {"coffee_seed": 5, "stone_chip": 3}, [],
+            {"stone_chip": 5, "dirt_clump": 5}, [],
             _noop, money_cost=10), 3, 0)
 
         self._add(ResearchNode(
             "roast_mastery", "Roast Mastery",
             "Technique improves roast quality by 15%",
-            {"coal": 3, "coffee_seed": 5}, ["coffee_basics"],
+            {"coal": 5, "stone_chip": 3}, ["coffee_basics"],
             _noop, money_cost=20), 3, 1)
 
         self._add(ResearchNode(
             "blend_arts", "Blending Arts",
             "Art of blending — unlocks Blend Station",
-            {"lumber": 5, "coffee_seed": 8}, ["roast_mastery"],
+            {"lumber": 8, "stone_chip": 5}, ["roast_mastery"],
             _noop, money_cost=35), 3, 2)
 
         self._add(ResearchNode(
             "brew_expertise", "Brewing Expertise",
             "Five brew methods — unlocks Brew Station",
-            {"iron_chunk": 3, "coffee_seed": 5}, ["blend_arts"],
+            {"iron_chunk": 5, "coal": 3}, ["blend_arts"],
             _noop, money_cost=50), 3, 3)
 
         self._add(ResearchNode(
             "master_barista", "Master Barista",
             "Coffee buffs last 50% longer",
-            {"gold_nugget": 1, "coffee_seed": 10}, ["brew_expertise"],
+            {"gold_nugget": 2, "iron_chunk": 3}, ["brew_expertise"],
             _noop, money_cost=80), 3, 4)
 
         # --- Birding (column 4) ---
@@ -195,6 +205,25 @@ class ResearchTree:
             "Larger flocks, more species in your world",
             {"gold_nugget": 1, "lumber": 10}, ["bird_lure"],
             _noop, money_cost=80), 4, 4)
+
+        # --- Winemaking (column 5) ---
+        self._add(ResearchNode(
+            "wine_basics", "Viticulture",
+            "Unlock Grape Press, Fermentation Tank, Wine Cellar",
+            {"lumber": 6, "stone_chip": 4}, [],
+            _noop, money_cost=15), 5, 0)
+
+        self._add(ResearchNode(
+            "fermentation_arts", "Fermentation Arts",
+            "Ferment quality bonus +15%",
+            {"iron_chunk": 4, "coal": 3}, ["wine_basics"],
+            _noop, money_cost=30), 5, 1)
+
+        self._add(ResearchNode(
+            "winemaking_mastery", "Winemaking Mastery",
+            "Wine buffs last 50% longer",
+            {"gold_nugget": 2, "iron_chunk": 3}, ["fermentation_arts"],
+            _noop, money_cost=60), 5, 2)
 
     def prereqs_met(self, node_id):
         return all(self.nodes[p].unlocked for p in self.nodes[node_id].prerequisites)

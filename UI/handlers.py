@@ -2,14 +2,17 @@ import pygame
 from items import ITEMS
 from item_icons import render_item_icon
 from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOODLE_POT_RECIPES,
-                      BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES,
+                      BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
 from rocks import get_refinery_equipment
 from gemstones import get_fault_points, apply_cracking_result, invalidate_gem_cache
 from blocks import (BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK,
                     CLAY_POT_BLOCK, GEM_CUTTER_BLOCK, DESERT_FORGE_BLOCK,
-                    ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK, FOSSIL_TABLE_BLOCK)
+                    ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK, FOSSIL_TABLE_BLOCK,
+                    ARTISAN_BENCH_BLOCK,
+                    GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
+                    COMPOST_BIN_BLOCK)
 from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE
 
 
@@ -115,12 +118,14 @@ class HandlersMixin:
                 self._bird_codex_scroll = 0
                 self._fish_codex_scroll = 0
                 self._coffee_codex_scroll = 0
+                self._wine_codex_scroll = 0
                 self._codex_selected_type = None
                 self._flower_codex_selected_type = None
                 self._mushroom_codex_selected_bid = None
                 self._fossil_codex_selected_type = None
                 self._gem_codex_selected_type = None
                 self._coffee_codex_selected = None
+                self._wine_codex_selected = None
                 return
 
         if self._collection_tab == 0:
@@ -150,12 +155,14 @@ class HandlersMixin:
                     self._bird_codex_scroll = 0
                     self._fish_codex_scroll = 0
                     self._coffee_codex_scroll = 0
+                    self._wine_codex_scroll = 0
                     self._codex_selected_type = None
                     self._flower_codex_selected_type = None
                     self._mushroom_codex_selected_bid = None
                     self._fossil_codex_selected_type = None
                     self._gem_codex_selected_type = None
                     self._coffee_codex_selected = None
+                    self._wine_codex_selected = None
                     return
             # Codex item clicks
             if self._encyclopedia_cat == 0:
@@ -187,6 +194,11 @@ class HandlersMixin:
                 for key, rect in self._coffee_codex_rects.items():
                     if rect.collidepoint(pos):
                         self._coffee_codex_selected = key if self._coffee_codex_selected != key else None
+                        return
+            elif self._encyclopedia_cat == 8:
+                for key, rect in self._wine_codex_rects.items():
+                    if rect.collidepoint(pos):
+                        self._wine_codex_selected = key if self._wine_codex_selected != key else None
                         return
             # cat 5 = bird codex (view only, no selection needed)
         # tab 2 (awards) has no click-to-select items
@@ -223,6 +235,8 @@ class HandlersMixin:
                     self._fish_codex_scroll = max(0, min(self._max_fish_codex_scroll, self._fish_codex_scroll - dy * 80))
                 elif self._encyclopedia_cat == 7:
                     self._coffee_codex_scroll = max(0, min(self._max_coffee_codex_scroll, self._coffee_codex_scroll - dy * 60))
+                elif self._encyclopedia_cat == 8:
+                    self._wine_codex_scroll = max(0, min(self._max_wine_codex_scroll, self._wine_codex_scroll - dy * 60))
             elif self._collection_tab == 2:
                 self._achievement_scroll = max(0, min(self._max_achievement_scroll, self._achievement_scroll - dy))
         elif self.breeding_open:
@@ -349,6 +363,15 @@ class HandlersMixin:
         if self.refinery_block_id == BREW_STATION_BLOCK:
             self._handle_brew_click(pos, player)
             return
+        if self.refinery_block_id == GRAPE_PRESS_BLOCK:
+            self._handle_grape_press_click(pos, player)
+            return
+        if self.refinery_block_id == FERMENTATION_BLOCK:
+            self._handle_fermenter_click(pos, player)
+            return
+        if self.refinery_block_id == WINE_CELLAR_BLOCK:
+            self._handle_wine_cellar_click(pos, player)
+            return
         if self.refinery_block_id == BAKERY_BLOCK:
             for i, rect in self._bakery_recipe_rects.items():
                 if rect.collidepoint(pos):
@@ -405,6 +428,17 @@ class HandlersMixin:
             if self._refine_btn and self._refine_btn.collidepoint(pos):
                 self._do_cook(player, FORGE_RECIPES, self._desert_forge_selected_recipe)
             return
+        if self.refinery_block_id == ARTISAN_BENCH_BLOCK:
+            for i, rect in self._artisan_recipe_rects.items():
+                if rect.collidepoint(pos):
+                    self._artisan_selected_recipe = i
+                    return
+            if self._refine_btn and self._refine_btn.collidepoint(pos):
+                self._do_cook(player, ARTISAN_RECIPES, self._artisan_selected_recipe)
+            return
+        if self.refinery_block_id == COMPOST_BIN_BLOCK:
+            self._handle_compost_bin_click(pos, player)
+            return
         for idx, rect in self._refine_rects.items():
             if rect.collidepoint(pos):
                 self._refinery_selected_idx = idx
@@ -459,3 +493,24 @@ class HandlersMixin:
             for item_id, count in outputs:
                 for _ in range(count):
                     player._add_item(item_id)
+
+    def _handle_compost_bin_click(self, pos, player):
+        import soil as _soil
+        bin_pos = self.active_compost_bin_pos
+        if bin_pos is None:
+            return
+        bin_data = player.world.compost_bin_data.setdefault(
+            bin_pos, {"input": {}, "progress": 0.0, "output": 0})
+
+        if self._compost_deposit_btn and self._compost_deposit_btn.collidepoint(pos):
+            sel = player.hotbar[player.selected_slot]
+            if sel and sel in _soil.ORGANIC_ITEM_IDS and player.inventory.get(sel, 0) > 0:
+                player.inventory[sel] -= 1
+                if player.inventory[sel] <= 0:
+                    del player.inventory[sel]
+                bin_data["input"][sel] = bin_data["input"].get(sel, 0) + 1
+
+        if self._compost_collect_btn and self._compost_collect_btn.collidepoint(pos):
+            if bin_data["output"] > 0:
+                player._add_item("compost", bin_data["output"])
+                bin_data["output"] = 0

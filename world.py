@@ -5,6 +5,46 @@ from math import cos, sin, pi
 from blocks import *  # noqa: F401,F403
 from constants import CHUNK_W, CHUNK_LOAD_RADIUS, WORLD_MAX_X, WORLD_H, SURFACE_Y, BLOCK_SIZE, PLAYER_W, PLAYER_H
 from biomes import BIOMES, BIOME_ORE_MULTIPLIERS, BIODOME_TYPES, BIODOME_TERRAIN_MODS
+import soil as _soil
+
+
+# Young → mature block mapping for crop maturation. Lifted out of the crop
+# update loop so it isn't rebuilt every tick.
+_CROP_MATURE_MAP = {
+    STRAWBERRY_CROP_YOUNG:   STRAWBERRY_CROP_MATURE,
+    WHEAT_CROP_YOUNG:        WHEAT_CROP_MATURE,
+    CARROT_CROP_YOUNG:       CARROT_CROP_MATURE,
+    TOMATO_CROP_YOUNG:       TOMATO_CROP_MATURE,
+    CORN_CROP_YOUNG:         CORN_CROP_MATURE,
+    PUMPKIN_CROP_YOUNG:      PUMPKIN_CROP_MATURE,
+    APPLE_CROP_YOUNG:        APPLE_CROP_MATURE,
+    RICE_CROP_YOUNG:         RICE_CROP_MATURE,
+    GINGER_CROP_YOUNG:       GINGER_CROP_MATURE,
+    BOK_CHOY_CROP_YOUNG:     BOK_CHOY_CROP_MATURE,
+    GARLIC_CROP_YOUNG:       GARLIC_CROP_MATURE,
+    SCALLION_CROP_YOUNG:     SCALLION_CROP_MATURE,
+    CHILI_CROP_YOUNG:        CHILI_CROP_MATURE,
+    PEPPER_CROP_YOUNG:       PEPPER_CROP_MATURE,
+    ONION_CROP_YOUNG:        ONION_CROP_MATURE,
+    POTATO_CROP_YOUNG:       POTATO_CROP_MATURE,
+    EGGPLANT_CROP_YOUNG:     EGGPLANT_CROP_MATURE,
+    CABBAGE_CROP_YOUNG:      CABBAGE_CROP_MATURE,
+    BEET_CROP_YOUNG:         BEET_CROP_MATURE,
+    TURNIP_CROP_YOUNG:       TURNIP_CROP_MATURE,
+    LEEK_CROP_YOUNG:         LEEK_CROP_MATURE,
+    ZUCCHINI_CROP_YOUNG:     ZUCCHINI_CROP_MATURE,
+    SWEET_POTATO_CROP_YOUNG: SWEET_POTATO_CROP_MATURE,
+    WATERMELON_CROP_YOUNG:   WATERMELON_CROP_MATURE,
+    RADISH_CROP_YOUNG:       RADISH_CROP_MATURE,
+    PEA_CROP_YOUNG:          PEA_CROP_MATURE,
+    CELERY_CROP_YOUNG:       CELERY_CROP_MATURE,
+    BROCCOLI_CROP_YOUNG:     BROCCOLI_CROP_MATURE,
+    CACTUS_YOUNG:            CACTUS_MATURE,
+    DATE_PALM_CROP_YOUNG:    DATE_PALM_CROP_MATURE,
+    AGAVE_CROP_YOUNG:        AGAVE_CROP_MATURE,
+    COFFEE_CROP_YOUNG:       COFFEE_CROP_MATURE,
+    GRAPEVINE_CROP_YOUNG:    GRAPEVINE_CROP_MATURE,
+}
 
 
 class World:
@@ -24,6 +64,22 @@ class World:
         self.dropped_items = []
         self.chest_data = {}     # (bx, by) -> {item_id: count}
         self._water_level = {}   # (x,y) -> int 1-8; 8 = world-gen source block
+        # Soil state (Phases 1-2): parallel dicts keyed by (x,y)
+        self._soil_moisture  = {}  # tilled tile -> int 0..MAX_MOISTURE
+        self._soil_fertility = {}  # tilled tile -> int 0..MAX_FERTILITY
+        self._crop_progress  = {}  # young crop tile -> int 0..GROWTH_PROGRESS_MAX
+        self._crop_care_sum  = {}  # young crop tile -> (sum, count) running mean of care
+        self._soil_fallow    = {}  # tilled-but-empty tile -> ticks without a crop
+        # Rain state (Phase 2)
+        self._rain_active   = False
+        self._rain_timer    = 0.0
+        self._rain_duration = 0.0
+        self._rain_gap      = 0.0  # set after soil_rng is initialized below
+        # Compost bins (Phase 2): (bx,by) -> {"input": {}, "progress": float, "output": int}
+        self.compost_bin_data = {}
+        # Research-derived world flags (set by research.apply_bonuses)
+        self.moisture_decay_chance = _soil.MOISTURE_DECAY_CHANCE
+        self.max_fertility         = _soil.MAX_FERTILITY
         self._lake_cells  = []
         # Pre-compute deterministic terrain noise once
         _rng = random.Random(self.seed)
@@ -54,6 +110,11 @@ class World:
         self._crop_interval = 20.0
         self._crop_rng      = random.Random(seed + 11111)
         self.pending_crops  = set()
+        # Soil moisture tick (independent of crop growth — faster so care feels responsive)
+        self._soil_timer    = 0.0
+        self._soil_interval = _soil.SOIL_TICK_SECS
+        self._soil_rng      = random.Random(seed + 22222)
+        self._rain_gap      = self._soil_rng.uniform(_soil.RAIN_MIN_GAP_SECS, _soil.RAIN_MAX_GAP_SECS)
         if not preloaded:
             from cities import generate_cities
             generate_cities(self, self.seed)
@@ -134,6 +195,31 @@ class World:
                 brng = random.Random(self._zone_seed(self.seed, z, 3))
                 nearest = brng.choice(BIODOME_TYPES)
         return nearest
+
+    def _biodome_owning_zone(self, x: int) -> int:
+        zone = x // 200
+        owner, best = zone, float('inf')
+        for z in (zone - 1, zone, zone + 1):
+            rng = random.Random(self._zone_seed(self.seed, z, 2))
+            cxz = z * 200 + rng.randint(-40, 40)
+            dist = abs(x - cxz)
+            if dist < best:
+                best = dist
+                owner = z
+        return owner
+
+    def biodome_tree_density(self, x: int) -> float:
+        """Per-biodome-instance spacing multiplier: <1 = dense forest, >1 = sparse."""
+        zone = self._biodome_owning_zone(x)
+        drng = random.Random(self._zone_seed(self.seed, zone, 11))
+        roll = drng.random()
+        if roll < 0.15:
+            return drng.uniform(0.35, 0.55)   # dense forest
+        if roll < 0.55:
+            return drng.uniform(0.75, 1.15)   # normal
+        if roll < 0.85:
+            return drng.uniform(1.4, 2.0)     # sparse
+        return drng.uniform(2.5, 3.5)         # very sparse
 
     def get_biome(self, bx: int) -> str:
         return self.biome_at(bx)
@@ -230,7 +316,16 @@ class World:
             self._dirty_chunks.add(cx)
 
     def _load_from(self, data, player_x: float = 0.0):
-        self._water_level = data.get("water_level", {})
+        self._water_level    = data.get("water_level", {})
+        self._soil_moisture  = data.get("soil_moisture", {})
+        self._soil_fertility = data.get("soil_fertility", {})
+        self._crop_progress  = data.get("crop_progress", {})
+        self._crop_care_sum  = data.get("crop_care_sum", {})
+        raw_bins = data.get("compost_bin_data", {})
+        self.compost_bin_data = {
+            tuple(int(v) for v in k.split(",")): bin_d
+            for k, bin_d in raw_bins.items()
+        }
         raw_chests = data.get("chest_data", {})
         self.chest_data = {
             tuple(int(v) for v in k.split(",")): inv
@@ -380,6 +475,9 @@ class World:
                 "swamp":           (3, 7),  "beach":          (9, 16),
                 "canyon":          (12, 22),
             }.get(biodome, (5, 10))
+            factor = self.biodome_tree_density(x)
+            lo = max(2, int(lo * factor))
+            hi = max(lo + 1, int(hi * factor))
             lx += tree_rng.randint(lo, hi)
 
         # Bushes — biome-appropriate plants on grass surfaces
@@ -395,37 +493,37 @@ class World:
                                BEET_BUSH, PUMPKIN_BUSH, PEA_BUSH, BROCCOLI_BUSH],
             "jungle":         [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
                                PEPPER_BUSH, EGGPLANT_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH,
-                               CHILI_BUSH, COFFEE_BUSH],
+                               CHILI_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
             "wetland":        [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, LEEK_BUSH,
                                CELERY_BUSH, SCALLION_BUSH, PUMPKIN_BUSH, TOMATO_BUSH,
-                               WATERMELON_BUSH, COFFEE_BUSH],
+                               WATERMELON_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
             "redwood":        [STRAWBERRY_BUSH, APPLE_BUSH, POTATO_BUSH, CARROT_BUSH,
                                BEET_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH],
             "tropical":       [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
                                CORN_BUSH, PEPPER_BUSH, CHILI_BUSH, EGGPLANT_BUSH,
                                WATERMELON_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH, ZUCCHINI_BUSH,
-                               COFFEE_BUSH, COFFEE_BUSH],
+                               COFFEE_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
             "savanna":        [CORN_BUSH, CHILI_BUSH, PEPPER_BUSH, EGGPLANT_BUSH,
                                SWEET_POTATO_BUSH, WATERMELON_BUSH, ONION_BUSH, PUMPKIN_BUSH,
-                               COFFEE_BUSH],
+                               COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
             "wasteland":      [BEET_BUSH, TURNIP_BUSH, RADISH_BUSH, ONION_BUSH],
             "fungal":         [],
-            "alpine_mountain":[BEET_BUSH, TURNIP_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH, POTATO_BUSH, COFFEE_BUSH],
-            "rocky_mountain": [BEET_BUSH, TURNIP_BUSH, POTATO_BUSH, CARROT_BUSH, COFFEE_BUSH],
+            "alpine_mountain":[BEET_BUSH, TURNIP_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH, POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
+            "rocky_mountain": [BEET_BUSH, TURNIP_BUSH, POTATO_BUSH, CARROT_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
             "rolling_hills":  [STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, CORN_BUSH,
                                POTATO_BUSH, APPLE_BUSH, PUMPKIN_BUSH, GARLIC_BUSH,
                                RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, CABBAGE_BUSH, ONION_BUSH,
-                               COFFEE_BUSH],
+                               COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH],
             "steep_hills":    [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
                                APPLE_BUSH, CABBAGE_BUSH, BROCCOLI_BUSH],
             "steppe":         [WHEAT_BUSH, CORN_BUSH, RADISH_BUSH, ONION_BUSH,
                                GARLIC_BUSH, TURNIP_BUSH],
             "arid_steppe":    [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, RADISH_BUSH,
-                               SWEET_POTATO_BUSH, COFFEE_BUSH],
+                               SWEET_POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH],
             "tundra":         [BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, RADISH_BUSH, COFFEE_BUSH],
             "swamp":          [RICE_BUSH, CELERY_BUSH, LEEK_BUSH, SCALLION_BUSH, COFFEE_BUSH],
             "beach":          [WATERMELON_BUSH, SWEET_POTATO_BUSH, CORN_BUSH, COFFEE_BUSH],
-            "canyon":         [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, TOMATO_BUSH, CORN_BUSH, COFFEE_BUSH],
+            "canyon":         [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, TOMATO_BUSH, CORN_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH],
         }
         bush_rng = random.Random(hash((self.seed, cx, 'bushes')) & 0x7FFFFFFF)
         lx = 5
@@ -1094,8 +1192,22 @@ class World:
             self.pending_saplings.discard((x, y))
         if block_id in YOUNG_CROP_BLOCKS:
             self.pending_crops.add((x, y))
+            if old_bid not in YOUNG_CROP_BLOCKS:
+                # Fresh planting (incl. perennial regrowth from MATURE): reset progress.
+                self._crop_progress[(x, y)] = 0
+                self._crop_care_sum[(x, y)] = (0.0, 0)
+                self._soil_fallow.pop((x, y), None)
         elif old_bid in YOUNG_CROP_BLOCKS:
             self.pending_crops.discard((x, y))
+            # Progress stops mattering the moment the young stage ends.
+            self._crop_progress.pop((x, y), None)
+            # Preserve care_sum through maturation so harvest can read it; drop it
+            # only when the crop is destroyed before maturing.
+            if block_id not in MATURE_CROP_BLOCKS:
+                self._crop_care_sum.pop((x, y), None)
+        if old_bid == TILLED_SOIL and block_id != TILLED_SOIL:
+            self._soil_moisture.pop((x, y), None)
+            self._soil_fallow.pop((x, y), None)
         if old_bid == WATER:
             self._water_level.pop((x, y), None)
         if block_id == AIR:
@@ -1126,7 +1238,8 @@ class World:
         return (bid != AIR and bid != LADDER
                 and bid != WATER and bid != OIL and bid != SAPLING
                 and bid not in BUSH_BLOCKS and bid not in CROP_BLOCKS
-                and bid not in OPEN_DOORS)
+                and bid not in OPEN_DOORS
+                and bid not in ALL_LOGS and bid not in ALL_LEAVES)
 
     def update_water(self, dt, player):
         self._water_timer += dt
@@ -1520,54 +1633,127 @@ class World:
             if y + 1 >= WORLD_H:
                 still_pending.add((x, y))
                 continue
-            below = self.get_block(x, y + 1)
-            if below not in (GRASS, DIRT, SAND):
+            # Crops require tilled soil underneath. Existing old-save crops on
+            # plain dirt/grass simply stall until the player re-tills.
+            if self.get_block(x, y + 1) != TILLED_SOIL:
                 still_pending.add((x, y))
                 continue
             if not self._has_sky_view(x, y):
                 still_pending.add((x, y))
                 continue
-            _player = getattr(self, '_player_ref', None)
-            _grow_chance = 0.15 + (getattr(_player, 'crop_grow_bonus', 0.0) if _player else 0.0)
-            if self._crop_rng.random() < _grow_chance:
-                _crop_mature_map = {
-                    STRAWBERRY_CROP_YOUNG: STRAWBERRY_CROP_MATURE,
-                    WHEAT_CROP_YOUNG:      WHEAT_CROP_MATURE,
-                    CARROT_CROP_YOUNG:     CARROT_CROP_MATURE,
-                    TOMATO_CROP_YOUNG:     TOMATO_CROP_MATURE,
-                    CORN_CROP_YOUNG:       CORN_CROP_MATURE,
-                    PUMPKIN_CROP_YOUNG:    PUMPKIN_CROP_MATURE,
-                    APPLE_CROP_YOUNG:      APPLE_CROP_MATURE,
-                    RICE_CROP_YOUNG:       RICE_CROP_MATURE,
-                    GINGER_CROP_YOUNG:     GINGER_CROP_MATURE,
-                    BOK_CHOY_CROP_YOUNG:   BOK_CHOY_CROP_MATURE,
-                    GARLIC_CROP_YOUNG:     GARLIC_CROP_MATURE,
-                    SCALLION_CROP_YOUNG:   SCALLION_CROP_MATURE,
-                    CHILI_CROP_YOUNG:      CHILI_CROP_MATURE,
-                    PEPPER_CROP_YOUNG:     PEPPER_CROP_MATURE,
-                    ONION_CROP_YOUNG:      ONION_CROP_MATURE,
-                    POTATO_CROP_YOUNG:     POTATO_CROP_MATURE,
-                    EGGPLANT_CROP_YOUNG:      EGGPLANT_CROP_MATURE,
-                    CABBAGE_CROP_YOUNG:       CABBAGE_CROP_MATURE,
-                    BEET_CROP_YOUNG:          BEET_CROP_MATURE,
-                    TURNIP_CROP_YOUNG:        TURNIP_CROP_MATURE,
-                    LEEK_CROP_YOUNG:          LEEK_CROP_MATURE,
-                    ZUCCHINI_CROP_YOUNG:      ZUCCHINI_CROP_MATURE,
-                    SWEET_POTATO_CROP_YOUNG:  SWEET_POTATO_CROP_MATURE,
-                    WATERMELON_CROP_YOUNG:    WATERMELON_CROP_MATURE,
-                    RADISH_CROP_YOUNG:        RADISH_CROP_MATURE,
-                    PEA_CROP_YOUNG:           PEA_CROP_MATURE,
-                    CELERY_CROP_YOUNG:        CELERY_CROP_MATURE,
-                    BROCCOLI_CROP_YOUNG:      BROCCOLI_CROP_MATURE,
-                    CACTUS_YOUNG:             CACTUS_MATURE,
-                    DATE_PALM_CROP_YOUNG:     DATE_PALM_CROP_MATURE,
-                    AGAVE_CROP_YOUNG:         AGAVE_CROP_MATURE,
-                    COFFEE_CROP_YOUNG:        COFFEE_CROP_MATURE,
-                }
-                self.set_block(x, y, _crop_mature_map[bid])
+            moisture  = self._soil_moisture.get((x, y + 1), 0)
+            fertility = self._soil_fertility.get((x, y + 1), self.max_fertility)
+            prefs     = _soil.get_prefs(bid)
+            delta     = _soil.growth_delta(prefs, moisture, fertility)
+            # Record care quality for yield scaling at harvest, even if delta is 0.
+            care = _soil.care_score(prefs, moisture, fertility)
+            csum, ccount = self._crop_care_sum.get((x, y), (0.0, 0))
+            self._crop_care_sum[(x, y)] = (csum + care, ccount + 1)
+            if delta <= 0:
+                still_pending.add((x, y))
+                continue
+            progress = self._crop_progress.get((x, y), 0) + delta
+            if progress >= _soil.GROWTH_PROGRESS_MAX:
+                # Drain fertility from soil on maturation
+                fert = self._soil_fertility.get((x, y + 1), self.max_fertility)
+                drain = prefs.get("fertility_drain", _soil.FERTILITY_DRAIN_PER_HARVEST)
+                self._soil_fertility[(x, y + 1)] = max(0, fert - drain)
+                self.set_block(x, y, _CROP_MATURE_MAP[bid])
             else:
+                self._crop_progress[(x, y)] = progress
                 still_pending.add((x, y))
         self.pending_crops = still_pending
+
+    def update_soil(self, dt):
+        """Per-tick moisture decay, water-adjacency top-up, rain events, and fallow cleanup."""
+        self._update_rain(dt)
+
+        self._soil_timer += dt
+        if self._soil_timer < self._soil_interval:
+            return
+        self._soil_timer -= self._soil_interval
+
+        if not self._soil_moisture:
+            return
+
+        # During rain: all sky-exposed tilled tiles fill to max moisture.
+        if self._rain_active:
+            for (x, y) in list(self._soil_moisture.keys()):
+                if self._has_sky_view(x, y):
+                    self._soil_moisture[(x, y)] = _soil.MAX_MOISTURE
+
+        # Snapshot keys so we can mutate safely inside the loop.
+        to_revert = []
+        for (x, y), moisture in list(self._soil_moisture.items()):
+            # Sanity: tile may have changed out from under us.
+            if self.get_block(x, y) != TILLED_SOIL:
+                to_revert.append((x, y))
+                continue
+            # Natural irrigation: adjacent water keeps soil at least modestly wet.
+            if self._adjacent_to_water(x, y):
+                if moisture < _soil.WATER_ADJACENT_FLOOR:
+                    moisture = _soil.WATER_ADJACENT_FLOOR
+            elif moisture > 0 and self._soil_rng.random() < self.moisture_decay_chance:
+                moisture -= 1
+            self._soil_moisture[(x, y)] = moisture
+            # Fallow tracking: tilled tile with no crop above → revert after a while.
+            above = self.get_block(x, y - 1) if y > 0 else AIR
+            if above in YOUNG_CROP_BLOCKS or above in MATURE_CROP_BLOCKS:
+                self._soil_fallow.pop((x, y), None)
+            else:
+                self._soil_fallow[(x, y)] = self._soil_fallow.get((x, y), 0) + 1
+                if self._soil_fallow[(x, y)] >= _soil.REVERT_AFTER_FALLOW_TICKS:
+                    to_revert.append((x, y))
+
+        for (x, y) in to_revert:
+            # Only flip tiles that are still tilled; leave the rest alone.
+            if self.get_block(x, y) == TILLED_SOIL:
+                self.set_block(x, y, DIRT)
+            else:
+                self._soil_moisture.pop((x, y), None)
+                self._soil_fallow.pop((x, y), None)
+
+    def _adjacent_to_water(self, x, y):
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            if self.get_block(x + dx, y + dy) == WATER:
+                return True
+        return False
+
+    def _update_rain(self, dt):
+        self._rain_timer += dt
+        if self._rain_active:
+            if self._rain_timer >= self._rain_duration:
+                self._rain_active = False
+                self._rain_timer  = 0.0
+                self._rain_gap    = self._soil_rng.uniform(
+                    _soil.RAIN_MIN_GAP_SECS, _soil.RAIN_MAX_GAP_SECS)
+        else:
+            if self._rain_timer >= self._rain_gap:
+                self._rain_active   = True
+                self._rain_timer    = 0.0
+                self._rain_duration = self._soil_rng.uniform(
+                    _soil.RAIN_DURATION_MIN_SECS, _soil.RAIN_DURATION_MAX_SECS)
+
+    def update_compost_bins(self, dt):
+        """Advance composting progress; produce compost items when threshold reached."""
+        import soil as _s
+        for bin_data in self.compost_bin_data.values():
+            total = sum(bin_data["input"].values())
+            if total < _s.COMPOST_INPUT_PER_OUTPUT:
+                continue
+            bin_data["progress"] += _s.COMPOST_PROGRESS_PER_SEC * dt
+            if bin_data["progress"] >= _s.COMPOST_OUTPUT_THRESHOLD:
+                bin_data["progress"] -= _s.COMPOST_OUTPUT_THRESHOLD
+                bin_data["output"] += 1
+                remaining = _s.COMPOST_INPUT_PER_OUTPUT
+                for item_id in list(bin_data["input"].keys()):
+                    take = min(remaining, bin_data["input"][item_id])
+                    bin_data["input"][item_id] -= take
+                    remaining -= take
+                    if bin_data["input"][item_id] <= 0:
+                        del bin_data["input"][item_id]
+                    if remaining <= 0:
+                        break
 
     def update_leaves(self, dt, player):
         self._leaves_timer += dt

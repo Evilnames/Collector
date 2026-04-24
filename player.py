@@ -26,7 +26,9 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     RADISH_CROP_MATURE, PEA_CROP_MATURE, CELERY_CROP_MATURE, BROCCOLI_CROP_MATURE,
                     PERENNIAL_CROP_MATURE, MATURE_TO_YOUNG_CROP, CHEST_BLOCK,
                     OIL, BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK,
-                    COFFEE_CROP_MATURE)
+                    COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, SKY_OPENING, STONE,
+                    TILLED_SOIL, SAND, COMPOST_BIN_BLOCK)
+import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
 from wildflowers import WildflowerGenerator, Wildflower
@@ -34,6 +36,7 @@ from fossils import FossilGenerator, Fossil
 from gemstones import GemGenerator, Gemstone
 from fish import FishGenerator, Fish
 from coffee import CoffeeGenerator, CoffeeBean
+from wine import WineGenerator, Grape
 from constants import (
     BLOCK_SIZE, PLAYER_W, PLAYER_H,
     GRAVITY, JUMP_FORCE, MOVE_SPEED, MAX_FALL,
@@ -100,6 +103,12 @@ class Player:
         self._coffee_gen = CoffeeGenerator(world.seed)
         # Active buffs from drinking coffee
         self.active_buffs = {}  # buff_name -> {"duration": float}
+        # Wine collection
+        self.wine_grapes = []
+        self.discovered_wine_origins = set()  # "biome_style" strings
+        self._wine_gen = WineGenerator(world.seed)
+        # Active buffs from drinking wine (separate pool, stacks with coffee)
+        self.wine_buffs = {}  # buff_name -> {"duration": float}
         # Fishing mini-game state
         self.fishing_state = None     # None | "casting" | "biting" | "result"
         self._fishing_timer = 0.0
@@ -162,6 +171,8 @@ class Player:
         self.fish_caught = [Fish(**f) for f in d.get("fish", [])]
         self.coffee_beans = [CoffeeBean(**cb) for cb in d.get("coffee_beans", [])]
         self.discovered_coffee_origins = set(d.get("discovered_coffee_origins", []))
+        self.wine_grapes = [Grape(**g) for g in d.get("wine_grapes", [])]
+        self.discovered_wine_origins = set(d.get("discovered_wine_origins", []))
         self.birds_observed = d.get("birds_observed", {})
         self.discovered_bird_types = set(d.get("discovered_bird_types", []))
         self.discovered_types = set(d["discovered_types"])
@@ -202,7 +213,7 @@ class Player:
                 self.vy = -3   # swim up
             self.vx *= 0.55    # water drag on horizontal movement
         elif (keys[pygame.K_w] or keys[pygame.K_UP] or keys[pygame.K_SPACE]) and self.on_ground:
-            self.vy = JUMP_FORCE
+            self.vy = JUMP_FORCE * (1.25 if "vivacity" in self.wine_buffs else 1.0)
             self.on_ground = False
 
         mining = False
@@ -349,8 +360,25 @@ class Player:
         block_id = self.world.get_block(bx, by)
         if block_id == AIR:
             bg_bid = self.world.get_bg_block(bx, by)
-            if bg_bid == AIR:
+            if bg_bid == SKY_OPENING:
                 self._reset_mine()
+                return
+            if bg_bid == AIR:
+                # Cave-wall backdrop: only drawn below procedural surface height.
+                # Mining it replaces the tile with a SKY_OPENING sentinel so the
+                # renderer shows sky — lets the player clear out mountains.
+                if by <= self.world.surface_height(bx):
+                    self._reset_mine()
+                    return
+                if self.mining_block != (bx, by):
+                    self.mining_block = (bx, by)
+                    self._mine_time = 0.0
+                    self._mine_total = max(0.05, BLOCKS[STONE]["hardness"] / self._mining_power_for(STONE))
+                self._mine_time += dt
+                self.mine_progress = min(1.0, self._mine_time / self._mine_total)
+                if self.mine_progress >= 1.0:
+                    self.world.set_bg_block(bx, by, SKY_OPENING)
+                    self._reset_mine()
                 return
             hardness = BLOCKS[bg_bid]["hardness"]
             if hardness == float('inf'):
@@ -417,6 +445,12 @@ class Player:
                 self.coffee_beans.append(bean)
                 self._add_item("coffee_seed")
                 self.pending_notifications.append(("Coffee", "Coffee Cherry", None))
+            elif block_id == GRAPEVINE_CROP_MATURE:
+                biodome = self.world.get_biodome(bx)
+                grape = self._wine_gen.generate(biodome)
+                self.wine_grapes.append(grape)
+                self._add_item("grape_seed")
+                self.pending_notifications.append(("Wine", "Grape Cluster", None))
             elif block_id in CAVE_MUSHROOMS:
                 self.mushrooms_found[block_id] = self.mushrooms_found.get(block_id, 0) + 1
                 self.discovered_mushroom_types.add(block_id)
@@ -425,15 +459,33 @@ class Player:
                 block_data = BLOCKS[block_id]
                 drop = block_data["drop"]
                 if drop:
-                    chance = block_data.get("drop_chance", 1.0)
-                    if random.random() < chance:
-                        self._add_item(drop)
-                    if self.harvest_bonus >= 1 and block_id in MATURE_CROP_BLOCKS:
-                        self._add_item(drop)
+                    if block_id in MATURE_CROP_BLOCKS:
+                        # Care-scaled yield: running-mean care across growth → multiplier.
+                        csum, ccount = self.world._crop_care_sum.pop((bx, by), (0.0, 0))
+                        avg_care = csum / ccount if ccount > 0 else 0.5
+                        young_bid  = MATURE_TO_YOUNG_CROP.get(block_id, block_id)
+                        prefs      = _soil.get_prefs(young_bid)
+                        base_yield = prefs.get("base_yield", 1)
+                        count      = max(1, int(round(base_yield * _soil.yield_multiplier(avg_care))))
+                        if self.harvest_bonus >= 1:
+                            count += 1
+                        self._add_item(drop, count)
+                    else:
+                        chance = block_data.get("drop_chance", 1.0)
+                        if random.random() < chance:
+                            self._add_item(drop)
                 if block_id == CHEST_BLOCK:
                     for item_id, count in self.world.chest_data.pop((bx, by), {}).items():
                         if count > 0:
                             self._add_item(item_id, count)
+                if block_id == COMPOST_BIN_BLOCK:
+                    bin_data = self.world.compost_bin_data.pop((bx, by), None)
+                    if bin_data:
+                        for item_id, count in bin_data["input"].items():
+                            if count > 0:
+                                self._add_item(item_id, count)
+                        if bin_data["output"] > 0:
+                            self._add_item("compost", bin_data["output"])
                 # Mature crops also drop seeds back
                 if block_id == STRAWBERRY_CROP_MATURE:
                     for _ in range(random.randint(1, 2)):
@@ -684,6 +736,44 @@ class Player:
                                 self.hotbar[i] = None
                                 break
                 return
+            # Hoe: till grass/dirt/sand into tilled soil.
+            if item_data.get("till_tool"):
+                target = self.world.get_block(bx, by)
+                if target in (GRASS, DIRT, SAND):
+                    # Don't till under a solid block — soil dries out & stays barren.
+                    if by > 0 and self.world.is_solid(bx, by - 1):
+                        return
+                    self.world.set_block(bx, by, TILLED_SOIL)
+                    self.world._soil_moisture[(bx, by)] = _soil.TILL_START_MOISTURE
+                    self._consume_tool_use()
+                return
+            # Watering can: refill from WATER; otherwise apply moisture to tilled soil / crop-on-tilled.
+            if item_data.get("water_tool"):
+                self._use_watering_can(bx, by)
+                return
+            # Compost: apply fertility to tilled soil or the tilled tile below a young crop.
+            if item_data.get("fertilize_tool"):
+                target = self.world.get_block(bx, by)
+                soil_pos = None
+                if target == TILLED_SOIL:
+                    soil_pos = (bx, by)
+                elif target in YOUNG_CROP_BLOCKS and self.world.get_block(bx, by + 1) == TILLED_SOIL:
+                    soil_pos = (bx, by + 1)
+                if soil_pos is None:
+                    return
+                fx, fy = soil_pos
+                gain    = item_data.get("fertility_gain", _soil.COMPOST_FERTILITY_GAIN)
+                cap     = self.world.max_fertility
+                cur     = self.world._soil_fertility.get((fx, fy), 0)
+                self.world._soil_fertility[(fx, fy)] = min(cap, cur + gain)
+                self.inventory[item_id] = self.inventory.get(item_id, 1) - 1
+                if self.inventory[item_id] <= 0:
+                    del self.inventory[item_id]
+                    for i in range(HOTBAR_SIZE):
+                        if self.hotbar[i] == item_id:
+                            self.hotbar[i] = None
+                            break
+                return
             # Backhoe placement
             if item_data.get("spawn_backhoe"):
                 if self.inventory.get(item_id, 0) <= 0:
@@ -707,15 +797,15 @@ class Player:
         if bg:
             if block_id in _BG_DISALLOWED:
                 return
-            if self.world.get_bg_block(bx, by) != AIR:
+            if self.world.get_bg_block(bx, by) not in (AIR, SKY_OPENING):
                 return
             self.world.set_bg_block(bx, by, block_id)
         else:
             if self.world.get_block(bx, by) != AIR:
                 return
-            # Seeds must be planted on grass or dirt
+            # Seeds must be planted on tilled soil (prep with a hoe first).
             if block_id in YOUNG_CROP_BLOCKS:
-                if self.world.get_block(bx, by + 1) not in (GRASS, DIRT):
+                if self.world.get_block(bx, by + 1) != TILLED_SOIL:
                     return
             # Don't place inside the player (passable blocks are exempt)
             passable = {LADDER, SAPLING} | BUSH_BLOCKS | YOUNG_CROP_BLOCKS
@@ -730,6 +820,35 @@ class Player:
             for i in range(HOTBAR_SIZE):
                 if self.hotbar[i] == item_id:
                     self.hotbar[i] = None
+
+    def _use_watering_can(self, bx, by):
+        """Refill the can at a WATER block, or water a tilled tile / young crop on tilled soil.
+
+        Unlike ordinary tools the can isn't destroyed at 0 uses — it just goes empty
+        and must be refilled at a water source.
+        """
+        slot = self.selected_slot
+        capacity = ITEMS.get(self.hotbar[slot], {}).get("max_uses", _soil.WATERING_CAN_CAPACITY)
+        target = self.world.get_block(bx, by)
+        # Refill by clicking on water.
+        if target == WATER:
+            self.hotbar_uses[slot] = capacity
+            return
+        # Spend water on tilled soil, or on tilled soil directly below a young crop.
+        water_target = None
+        if target == TILLED_SOIL:
+            water_target = (bx, by)
+        elif target in YOUNG_CROP_BLOCKS and self.world.get_block(bx, by + 1) == TILLED_SOIL:
+            water_target = (bx, by + 1)
+        if water_target is None:
+            return
+        current = self.hotbar_uses[slot] or 0
+        if current <= 0:
+            return
+        wx, wy = water_target
+        cur_m = self.world._soil_moisture.get((wx, wy), 0)
+        self.world._soil_moisture[(wx, wy)] = min(_soil.MAX_MOISTURE, cur_m + _soil.WATERING_AMOUNT)
+        self.hotbar_uses[slot] = current - 1
 
     def _consume_tool_use(self):
         """Decrement uses for a consumable tool in the selected hotbar slot."""
@@ -913,6 +1032,10 @@ class Player:
             duration = item_data.get("coffee_buff_duration", 60.0)
             duration *= 1.0 + self.coffee_buff_duration_bonus
             self.active_buffs[buff] = {"duration": duration}
+        if item_data.get("wine_buff"):
+            buff = item_data["wine_buff"]
+            duration = item_data.get("wine_buff_duration", 120.0)
+            self.wine_buffs[buff] = {"duration": duration}
         self.inventory[item_id] -= 1
         if self.inventory[item_id] <= 0:
             del self.inventory[item_id]
@@ -938,8 +1061,8 @@ class Player:
         prev_vy = self.vy
         landed = self._move_y(self.vy)
         if not self.god_mode:
-            # Fall damage only applies outside water
-            if landed and prev_vy > 10 and not in_water:
+            # Fall damage only applies outside water (wine "vivacity" negates it)
+            if landed and prev_vy > 10 and not in_water and "vivacity" not in self.wine_buffs:
                 dmg = int((prev_vy - 10) * 5)
                 self.health = max(0, self.health - dmg)
             # Drowning: after 5 s with head submerged, 5 HP/s damage
@@ -956,13 +1079,21 @@ class Player:
         # Hunger drain and starvation damage
         if self._eat_cooldown > 0:
             self._eat_cooldown -= dt
-        # Tick active coffee buffs
+        # Tick active coffee and wine buffs
         for buff in list(self.active_buffs):
             self.active_buffs[buff]["duration"] -= dt
             if self.active_buffs[buff]["duration"] <= 0:
                 del self.active_buffs[buff]
+        for buff in list(self.wine_buffs):
+            self.wine_buffs[buff]["duration"] -= dt
+            if self.wine_buffs[buff]["duration"] <= 0:
+                del self.wine_buffs[buff]
         if not self.god_mode:
-            drain_mult = 0.6 if "endurance" in self.active_buffs else 1.0
+            drain_mult = 1.0
+            if "endurance" in self.active_buffs:
+                drain_mult *= 0.6
+            if "serenity" in self.wine_buffs:
+                drain_mult *= 0.4
             self.hunger = max(0.0, self.hunger - self._hunger_drain_rate * drain_mult * dt)
             if self.hunger == 0.0:
                 self.health = max(0, self.health - 3 * dt)
@@ -1096,6 +1227,18 @@ class Player:
                 bid = self.world.get_block(cx + dx, cy + dy)
                 if bid in EQUIPMENT_BLOCKS:
                     return bid
+        return None
+
+    def get_nearby_equipment_pos(self, target_bid):
+        """Return (bx, by) of the nearest matching equipment block within 2 blocks, or None."""
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        for dy in range(-2, 3):
+            for dx in range(-2, 3):
+                if dx * self.facing < 0:
+                    continue
+                if self.world.get_block(cx + dx, cy + dy) == target_bid:
+                    return (cx + dx, cy + dy)
         return None
 
     def get_nearby_chest(self):

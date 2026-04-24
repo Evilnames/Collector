@@ -13,7 +13,7 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK
 
 SETTINGS_PATH = Path(__file__).parent / "settings.json"
 
@@ -156,9 +156,12 @@ def _show_settings_screen(screen, settings):
 
     def _make_rects(w, h):
         bx = w // 2 - btn_w // 2
+        gap = btn_h + 20
+        base = h // 2 - (gap * 2) // 2
         return (
-            pygame.Rect(bx, h // 2 - 50, btn_w, btn_h),
-            pygame.Rect(bx, h // 2 + 40, btn_w, btn_h),
+            pygame.Rect(bx, base,          btn_w, btn_h),
+            pygame.Rect(bx, base + gap,    btn_w, btn_h),
+            pygame.Rect(bx, base + gap * 2, btn_w, btn_h),
         )
 
     def draw_button(surf, rect, label, hovered, active=False):
@@ -174,11 +177,12 @@ def _show_settings_screen(screen, settings):
         surf.blit(lbl, lbl.get_rect(center=rect.center))
 
     W, H = screen.get_size()
-    rect_fs, rect_back = _make_rects(W, H)
+    rect_fs, rect_ores, rect_back = _make_rects(W, H)
 
     while True:
         mx, my = pygame.mouse.get_pos()
         hover_fs   = rect_fs.collidepoint(mx, my)
+        hover_ores = rect_ores.collidepoint(mx, my)
         hover_back = rect_back.collidepoint(mx, my)
 
         for event in pygame.event.get():
@@ -193,16 +197,20 @@ def _show_settings_screen(screen, settings):
                     _save_settings(settings)
                     screen = _apply_display_mode(settings)
                     W, H = screen.get_size()
-                    rect_fs, rect_back = _make_rects(W, H)
+                    rect_fs, rect_ores, rect_back = _make_rects(W, H)
+                if rect_ores.collidepoint(mx, my):
+                    settings["show_all_resources"] = not settings.get("show_all_resources", True)
+                    _save_settings(settings)
                 if rect_back.collidepoint(mx, my):
                     return screen, settings
 
         screen.fill(BLACK)
         title = font_title.render("Settings", True, WHITE)
         screen.blit(title, title.get_rect(center=(W // 2, H // 4)))
-        fs_on = settings.get("fullscreen", True)
-        draw_button(screen, rect_fs, "Fullscreen: ON" if fs_on else "Fullscreen: OFF",
-                    hover_fs, active=fs_on)
+        fs_on   = settings.get("fullscreen", True)
+        ores_on = settings.get("show_all_resources", True)
+        draw_button(screen, rect_fs,   "Fullscreen: ON"  if fs_on   else "Fullscreen: OFF",  hover_fs,   active=fs_on)
+        draw_button(screen, rect_ores, "Show Ores: ON"   if ores_on else "Show Ores: OFF",   hover_ores, active=ores_on)
         draw_button(screen, rect_back, "Back", hover_back)
         pygame.display.flip()
         clock.tick(60)
@@ -359,6 +367,7 @@ def main():
     t0 = _t("menu choice: " + choice, t0)
 
     renderer = Renderer(screen)
+    renderer.show_all_resources = settings.get("show_all_resources", True)
     t0 = _t("Renderer", t0)
 
     ui = UI(screen)
@@ -387,7 +396,7 @@ def main():
             return w, p, data["research"]
         world, player, research_data = _run_with_loading_screen(screen, "Loading", _do_load)
         research.apply_save(research_data)
-        research.apply_bonuses(player)
+        research.apply_bonuses(player, world)
         t0 = _t("research.apply_save", t0)
     else:
         seed = random.randint(0, 2**31 - 1)
@@ -533,6 +542,14 @@ def main():
                 # Roaster: ENTER to stop roasting
                 if ui.refinery_open and ui.refinery_block_id == ROASTER_BLOCK:
                     ui.handle_roaster_keydown(event.key, player)
+
+                # Grape Press: ENTER to finish pressing
+                if ui.refinery_open and ui.refinery_block_id == GRAPE_PRESS_BLOCK:
+                    ui.handle_press_keydown(event.key, player)
+
+                # Fermentation Tank: P punchdown, ENTER to finish
+                if ui.refinery_open and ui.refinery_block_id == FERMENTATION_BLOCK:
+                    ui.handle_fermenter_keydown(event.key, player)
 
                 if event.key == pygame.K_ESCAPE:
                     if player.fishing_state in ("casting", "biting"):
@@ -682,6 +699,10 @@ def main():
                                 ui.refinery_block_id = equip
                                 ui.research_open = ui.inventory_open = ui.crafting_open = False
                                 ui.equipment_crafting_open = ui.collection_open = False
+                                if equip == COMPOST_BIN_BLOCK:
+                                    ui.active_compost_bin_pos = player.get_nearby_equipment_pos(COMPOST_BIN_BLOCK)
+                                else:
+                                    ui.active_compost_bin_pos = None
                             else:
                                 ui.refinery_open = False
 
@@ -698,7 +719,7 @@ def main():
 
             if event.type == pygame.MOUSEWHEEL:
                 if not player.dead and not ui.cheat_open:
-                    if ui.inventory_open or ui.crafting_open or ui.collection_open or ui.refinery_open or ui.chest_open:
+                    if ui.inventory_open or ui.crafting_open or ui.collection_open or ui.refinery_open or ui.chest_open or ui.breeding_open:
                         ui.handle_scroll(event.y)
                     elif not _any_ui_open():
                         player.selected_slot = (player.selected_slot - event.y) % 8
@@ -795,6 +816,14 @@ def main():
                         if ui.refinery_block_id == ROASTER_BLOCK:
                             if hasattr(ui, '_roast_heat_btn') and ui._roast_heat_btn and ui._roast_heat_btn.collidepoint(event.pos):
                                 ui._roast_heat_held = True
+                        if ui.refinery_block_id == GRAPE_PRESS_BLOCK:
+                            if getattr(ui, '_press_btn', None) and ui._press_btn.collidepoint(event.pos):
+                                ui._press_held = True
+                        if ui.refinery_block_id == FERMENTATION_BLOCK:
+                            if getattr(ui, '_ferm_temp_btn', None) and ui._ferm_temp_btn.collidepoint(event.pos):
+                                ui._ferm_temp_held = True
+                            if getattr(ui, '_ferm_nut_btn', None) and ui._ferm_nut_btn.collidepoint(event.pos):
+                                ui._ferm_nut_held = True
                 elif ui.chest_open:
                     ui.handle_chest_click(event.pos, player, event.button)
                 else:
@@ -820,6 +849,12 @@ def main():
         # Roaster: poll SPACE for heat
         if ui.refinery_open and ui.refinery_block_id == ROASTER_BLOCK:
             ui.handle_roaster_keys(keys)
+        # Grape Press: poll SPACE for pressure
+        if ui.refinery_open and ui.refinery_block_id == GRAPE_PRESS_BLOCK:
+            ui.handle_press_keys(keys)
+        # Fermentation Tank: poll SPACE (temp) + N (nutrient)
+        if ui.refinery_open and ui.refinery_block_id == FERMENTATION_BLOCK:
+            ui.handle_fermenter_keys(keys)
 
         if ui.pause_open:
             renderer.draw_world(world, player)
@@ -907,6 +942,8 @@ def main():
             if player.mounted_machine is not bh:
                 bh.apply_gravity(world)
         world.update_water(dt, player)
+        world.update_soil(dt)
+        world.update_compost_bins(dt)
         world.update_saplings(dt)
         world.update_crops(dt)
         world.update_leaves(dt, player)
@@ -925,6 +962,7 @@ def main():
         renderer.draw_mining_indicator(player)
         renderer.draw_place_indicator(player)
         renderer.draw_water_overlay(player)
+        renderer.draw_rain(world)
         renderer.draw_lighting(player, player.get_depth())
         ui.draw(player, research, dt)
         if ui._bird_obs_active:

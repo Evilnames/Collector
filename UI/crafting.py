@@ -2,7 +2,7 @@ import pygame
 from items import ITEMS
 from item_icons import render_item_icon
 from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOODLE_POT_RECIPES,
-                      BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES,
+                      BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
 from rocks import get_refinery_equipment, RARITY_COLORS
@@ -371,14 +371,15 @@ class CraftingMixin:
         self._refine_btn = btn_rect
 
     def _draw_cooking_station(self, player, recipe_list, title_str, title_color,
-                               selected_idx, recipe_rects_dict, selected_attr, block_id=None):
+                               selected_idx, recipe_rects_dict, selected_attr, block_id=None,
+                               action_label="COOK"):
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 220))
         self.screen.blit(overlay, (0, 0))
 
         title = self.font.render(title_str, True, title_color)
         self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 6))
-        hint = self.small.render("ESC to close  |  Select a recipe and click COOK",
+        hint = self.small.render(f"ESC to close  |  Select a recipe and click {action_label}",
                                  True, (120, 120, 130))
         self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 26))
 
@@ -476,7 +477,7 @@ class CraftingMixin:
         btn_rect = pygame.Rect(DX, iy + 40, 120, 34)
         pygame.draw.rect(self.screen, btn_col, btn_rect)
         pygame.draw.rect(self.screen, title_color if can_cook else (60, 70, 60), btn_rect, 2)
-        btn_txt = self.font.render("COOK", True,
+        btn_txt = self.font.render(action_label, True,
                                    (200, 255, 180) if can_cook else (80, 100, 80))
         self.screen.blit(btn_txt, (btn_rect.centerx - btn_txt.get_width() // 2,
                                    btn_rect.centery - btn_txt.get_height() // 2))
@@ -486,7 +487,10 @@ class CraftingMixin:
         from blocks import (FOSSIL_TABLE_BLOCK, ROASTER_BLOCK, BLEND_STATION_BLOCK,
                             BREW_STATION_BLOCK, GEM_CUTTER_BLOCK, BAKERY_BLOCK,
                             WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK,
-                            BBQ_GRILL_BLOCK, CLAY_POT_BLOCK, DESERT_FORGE_BLOCK)
+                            BBQ_GRILL_BLOCK, CLAY_POT_BLOCK, DESERT_FORGE_BLOCK,
+                            ARTISAN_BENCH_BLOCK,
+                            GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
+                            COMPOST_BIN_BLOCK)
         if self.refinery_block_id == FOSSIL_TABLE_BLOCK:
             self._draw_fossil_table(player, dt)
             return
@@ -498,6 +502,15 @@ class CraftingMixin:
             return
         if self.refinery_block_id == BREW_STATION_BLOCK:
             self._draw_brew_station(player)
+            return
+        if self.refinery_block_id == GRAPE_PRESS_BLOCK:
+            self._draw_grape_press(player, dt)
+            return
+        if self.refinery_block_id == FERMENTATION_BLOCK:
+            self._draw_fermenter(player, dt)
+            return
+        if self.refinery_block_id == WINE_CELLAR_BLOCK:
+            self._draw_wine_cellar(player)
             return
         if self.refinery_block_id == GEM_CUTTER_BLOCK:
             self._draw_gem_cutter(player, dt)
@@ -540,6 +553,16 @@ class CraftingMixin:
                                        (175, 95, 40), self._desert_forge_selected_recipe,
                                        self._desert_forge_recipe_rects, "_desert_forge_selected_recipe",
                                        block_id=DESERT_FORGE_BLOCK)
+            return
+        if self.refinery_block_id == ARTISAN_BENCH_BLOCK:
+            self._draw_cooking_station(player, ARTISAN_RECIPES, "ARTISAN BENCH",
+                                       (210, 180, 130), self._artisan_selected_recipe,
+                                       self._artisan_recipe_rects, "_artisan_selected_recipe",
+                                       block_id=ARTISAN_BENCH_BLOCK,
+                                       action_label="CRAFT")
+            return
+        if self.refinery_block_id == COMPOST_BIN_BLOCK:
+            self._draw_compost_bin(player)
             return
         equip_data = get_refinery_equipment().get(self.refinery_block_id)
         if equip_data is None:
@@ -666,3 +689,95 @@ class CraftingMixin:
         rl = self.font.render("REFINE", True, btxt)
         self.screen.blit(rl, (bx2 + BW // 2 - rl.get_width() // 2,
                                by + BH // 2 - rl.get_height() // 2))
+
+    # ------------------------------------------------------------------
+    # Compost Bin panel
+    # ------------------------------------------------------------------
+
+    def _draw_compost_bin(self, player):
+        import soil as _soil
+        from item_icons import render_item_icon
+        from items import ITEMS as _ITEMS
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 210))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 480, 320
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (50, 36, 20), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (130, 90, 50), (px, py, PW, PH), 2)
+
+        title = self.font.render("COMPOST BIN", True, (200, 160, 80))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 8))
+
+        hint = self.small.render(
+            "Click an organic item in hotbar then [Deposit]  |  ESC to close",
+            True, (130, 110, 70))
+        self.screen.blit(hint, (px + PW // 2 - hint.get_width() // 2, py + 30))
+
+        bin_pos = self.active_compost_bin_pos
+        bin_data = (player.world.compost_bin_data.setdefault(
+            bin_pos, {"input": {}, "progress": 0.0, "output": 0})
+            if bin_pos else {"input": {}, "progress": 0.0, "output": 0})
+
+        # --- Input inventory ---
+        ix, iy = px + 16, py + 60
+        input_label = self.small.render("Input (organic items):", True, (180, 155, 110))
+        self.screen.blit(input_label, (ix, iy))
+        iy += 18
+        if bin_data["input"]:
+            for item_id, count in list(bin_data["input"].items()):
+                item_def = _ITEMS.get(item_id, {})
+                icon = render_item_icon(item_id, item_def.get("color", (180, 180, 180)), 24)
+                self.screen.blit(icon, (ix, iy))
+                lbl = self.small.render(f"{item_def.get('name', item_id)} x{count}", True, (200, 190, 160))
+                self.screen.blit(lbl, (ix + 28, iy + 4))
+                iy += 28
+        else:
+            empty = self.small.render("(empty)", True, (100, 90, 70))
+            self.screen.blit(empty, (ix, iy))
+            iy += 20
+
+        # --- Progress bar ---
+        bar_y = py + 185
+        progress = bin_data["progress"]
+        bar_w = PW - 32
+        filled = int(bar_w * progress / _soil.COMPOST_OUTPUT_THRESHOLD)
+        pygame.draw.rect(self.screen, (40, 28, 14), (px + 16, bar_y, bar_w, 16))
+        if filled > 0:
+            pygame.draw.rect(self.screen, (100, 160, 60), (px + 16, bar_y, filled, 16))
+        pygame.draw.rect(self.screen, (110, 85, 45), (px + 16, bar_y, bar_w, 16), 1)
+        prog_lbl = self.small.render(f"Composting: {int(progress)}/{int(_soil.COMPOST_OUTPUT_THRESHOLD)}", True, (180, 200, 140))
+        self.screen.blit(prog_lbl, (px + 16, bar_y - 18))
+
+        # --- Output ---
+        out_count = bin_data["output"]
+        out_lbl = self.font.render(f"Compost ready: {out_count}", True, (140, 200, 80) if out_count > 0 else (80, 80, 60))
+        self.screen.blit(out_lbl, (px + 16, bar_y + 24))
+
+        # --- Buttons ---
+        btn_y = py + PH - 48
+        deposit_enabled = False
+        sel = player.hotbar[player.selected_slot]
+        if sel and _ITEMS.get(sel, {}).get("fertilize_tool") is None:
+            if sel in _soil.ORGANIC_ITEM_IDS and player.inventory.get(sel, 0) > 0:
+                deposit_enabled = True
+
+        dep_col = (40, 90, 40) if deposit_enabled else (28, 28, 36)
+        dep_bdr = (80, 180, 80) if deposit_enabled else (55, 55, 68)
+        self._compost_deposit_btn = pygame.Rect(px + 16, btn_y, 140, 32)
+        pygame.draw.rect(self.screen, dep_col, self._compost_deposit_btn)
+        pygame.draw.rect(self.screen, dep_bdr, self._compost_deposit_btn, 2)
+        dep_txt = self.font.render("Deposit", True, (200, 240, 200) if deposit_enabled else (70, 70, 82))
+        self.screen.blit(dep_txt, (self._compost_deposit_btn.centerx - dep_txt.get_width() // 2,
+                                   self._compost_deposit_btn.centery - dep_txt.get_height() // 2))
+
+        col_col = (40, 90, 40) if out_count > 0 else (28, 28, 36)
+        col_bdr = (80, 180, 80) if out_count > 0 else (55, 55, 68)
+        self._compost_collect_btn = pygame.Rect(px + 168, btn_y, 140, 32)
+        pygame.draw.rect(self.screen, col_col, self._compost_collect_btn)
+        pygame.draw.rect(self.screen, col_bdr, self._compost_collect_btn, 2)
+        col_txt = self.font.render("Collect", True, (200, 240, 200) if out_count > 0 else (70, 70, 82))
+        self.screen.blit(col_txt, (self._compost_collect_btn.centerx - col_txt.get_width() // 2,
+                                   self._compost_collect_btn.centery - col_txt.get_height() // 2))

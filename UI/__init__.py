@@ -10,13 +10,14 @@ from .handlers import HandlersMixin
 from .panels import PanelsMixin
 from .crafting import CraftingMixin
 from .coffee import CoffeeMixin
+from .wine import WineMixin
 from .minigames import MinigamesMixin
 from .collections import CollectionsMixin
 
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
-    CraftingMixin, CoffeeMixin, MinigamesMixin, CollectionsMixin,
+    CraftingMixin, CoffeeMixin, WineMixin, MinigamesMixin, CollectionsMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -29,6 +30,9 @@ class UI(
         self.collection_open         = False   # G: rock collection
         self.refinery_open           = False   # E near equipment block
         self.refinery_block_id       = None
+        self.active_compost_bin_pos  = None   # (bx, by) when compost bin is open
+        self._compost_deposit_btn    = None
+        self._compost_collect_btn    = None
         self._selected_rock_idx      = None
         self._refinery_selected_idx  = None
         self._card_rects    = {}
@@ -118,6 +122,8 @@ class UI(
         self._clay_pot_recipe_rects      = {}
         self._desert_forge_selected_recipe = 0
         self._desert_forge_recipe_rects    = {}
+        self._artisan_selected_recipe      = 0
+        self._artisan_recipe_rects         = {}
         self._cook_station_scroll        = {}
         self._cook_station_max_scroll    = {}
         self.npc_open   = False
@@ -208,6 +214,84 @@ class UI(
         self._brew_grind_size    = "medium"
         self._brew_water_rects   = {}
         self._brew_grind_rects   = {}
+        # ----- Wine codex UI state -----
+        self._wine_codex_scroll      = 0
+        self._max_wine_codex_scroll  = 0
+        self._wine_codex_selected    = None   # "biome_style" or None
+        self._wine_codex_rects       = {}
+        # ----- Grape press mini-game state -----
+        self._press_phase            = "select_grape"  # select_grape | select_style | pressing | result
+        self._press_grape_idx        = None
+        self._press_time             = 0.0
+        self._press_total_time       = 30.0
+        self._press_pressure         = 0.0
+        self._press_held             = False
+        self._press_time_green       = 0.0
+        self._press_time_yellow      = 0.0
+        self._press_over_penalty     = 0
+        self._press_freerun_hit      = False
+        self._press_wine_hit         = False
+        self._press_event_flash      = None
+        self._press_select_rects     = {}
+        self._press_style_rects      = {}
+        self._press_stop_btn         = None
+        self._press_btn              = None
+        self._press_result_done_btn  = None
+        # ----- Fermentation mini-game state -----
+        self._ferm_phase             = "select_must"  # select_must | select_yeast | fermenting | result
+        self._ferm_must_idx          = None
+        self._ferm_total_time        = 60.0
+        self._ferm_time              = 0.0
+        self._ferm_temp              = 0.45
+        self._ferm_temp_vel          = 0.0
+        self._ferm_temp_held         = False
+        self._ferm_temp_band_time    = 0.0
+        self._ferm_nutrient          = 0.5
+        self._ferm_nut_held          = False
+        self._ferm_nutrient_band_time = 0.0
+        self._ferm_penalties         = 0
+        self._ferm_primary_hit       = False
+        self._ferm_malolactic_hit    = False
+        self._ferm_finish_hit        = False
+        self._ferm_event_flash       = None
+        self._ferm_punch_hits        = 0
+        self._ferm_punch_total       = 0
+        self._ferm_next_punch_time   = 8.0
+        self._ferm_punch_active_until = 0.0
+        self._ferm_select_rects      = {}
+        self._ferm_yeast_rects       = {}
+        self._ferm_stop_btn          = None
+        self._ferm_temp_btn          = None
+        self._ferm_nut_btn           = None
+        self._ferm_punch_btn         = None
+        self._ferm_result_done_btn   = None
+        # ----- Wine Cellar state (tabs: blend/age/bottle) -----
+        self._cellar_tab             = "blend"
+        self._cellar_tab_rects       = {}
+        # Blend wine
+        self._blend_wine_slots       = [None, None, None]
+        self._blend_wine_slot_rects  = []
+        self._blend_wine_list_rects  = {}
+        self._blend_wine_btn         = None
+        self._blend_wine_phase       = "select"
+        self._blend_wine_result      = None
+        self._blend_wine_done_btn    = None
+        # Age wine
+        self._age_wine_idx           = None
+        self._age_wine_list_rects    = {}
+        self._age_vessel             = "oak"
+        self._age_duration           = "medium"
+        self._age_vessel_rects       = {}
+        self._age_duration_rects     = {}
+        self._age_btn                = None
+        # Bottle wine
+        self._bottle_wine_idx        = None
+        self._bottle_wine_rects      = {}
+        self._bottle_method          = None
+        self._bottle_method_rects    = {}
+        self._bottle_temp            = "cellar"
+        self._bottle_temp_rects      = {}
+        self._bottle_btn             = None
         # Fossil prep table mini-game state
         self._fprep_phase      = "select"   # "select" | "prep" | "reveal"
         self._fprep_fossil     = None       # Fossil being prepared
@@ -312,6 +396,7 @@ class UI(
         if getattr(player, 'bg_place_mode', False):
             self._draw_bg_mode_indicator()
         self._draw_coffee_buffs(player)
+        self._draw_wine_buffs(player)
         self._drain_notifications(player)
         self._draw_toasts(dt)
         if self._drag_item_id is not None and self.inventory_open:

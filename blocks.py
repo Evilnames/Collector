@@ -186,6 +186,67 @@ BREW_STATION_BLOCK    = 216
 WOOD_FENCE_OPEN      = 217
 IRON_FENCE_OPEN      = 218
 FOSSIL_TABLE_BLOCK   = 219  # placed Fossil Prep Table equipment
+# --- Artisan Bench: refines raw materials into decorative building blocks ---
+ARTISAN_BENCH_BLOCK  = 220  # placed Artisan Bench equipment
+POLISHED_GRANITE     = 221  # decorative: cool pink-gray stone
+POLISHED_MARBLE      = 222  # decorative: clean off-white stone
+SLATE_TILE           = 223  # decorative: dark blue-gray tile
+TERRACOTTA_BLOCK     = 224  # decorative: warm orange-red clay
+MOSSY_BRICK          = 225  # decorative: green-tinted brick
+CREAM_BRICK          = 226  # decorative: warm cream sandstone brick
+CHARCOAL_PLANK       = 227  # decorative: near-black charred timber
+WALNUT_PLANK         = 228  # decorative: rich dark brown plank
+OAK_PANEL            = 229  # decorative: honey-light wood panel
+BAMBOO_PANEL         = 230  # decorative: pale green-yellow panel
+
+# --- Wine supply chain ---
+GRAPEVINE_BUSH        = 231   # surface bush; drops grape_seed
+GRAPEVINE_CROP_YOUNG  = 232
+GRAPEVINE_CROP_MATURE = 233   # special: mine → Grape object + grape_seed drop
+GRAPE_PRESS_BLOCK     = 234   # placed Grape Press (crush mini-game)
+FERMENTATION_BLOCK    = 235   # placed Fermentation Tank (multi-control mini-game)
+WINE_CELLAR_BLOCK     = 236   # placed Wine Cellar (blend/age/bottle)
+
+# --- Second wave of Artisan Bench decorative blocks ---
+OBSIDIAN_TILE        = 237  # deep black-purple volcanic tile
+COBBLESTONE          = 238  # rough rustic gray stone
+LAPIS_BRICK          = 239  # royal blue ornamental brick
+BASALT_COLUMN        = 240  # near-black columnar basalt
+LIMESTONE_BLOCK      = 241  # pale beige stone
+COPPER_TILE          = 242  # warm orange-metal accent tile
+TEAK_PLANK           = 243  # rich medium-brown plank
+DRIFTWOOD_PLANK      = 244  # weathered gray wood
+CEDAR_PANEL          = 245  # reddish-brown cedar panel
+JADE_PANEL           = 246  # luxurious green-stone panel
+
+# --- Third wave of Artisan Bench decorative blocks ---
+ROSE_QUARTZ_BLOCK    = 247  # soft rosy-pink ornamental stone
+GILDED_BRICK         = 248  # golden-accent decorative brick
+AMETHYST_BLOCK       = 249  # vibrant purple crystal block
+AMBER_TILE           = 250  # warm glowing amber tile
+IVORY_BRICK          = 251  # pure cream neutral brick
+EBONY_PLANK          = 252  # near-black polished wood
+MAHOGANY_PLANK       = 253  # rich red-brown luxury wood
+ASH_PLANK            = 254  # pale blonde sanded plank
+FROSTED_GLASS        = 255  # pale blue-white translucent
+CRIMSON_BRICK        = 256  # deep red ornate brick
+
+# --- Sentinels ---
+SKY_OPENING          = 257  # bg sentinel: tile mined clear of cave-wall backdrop (renders as sky)
+
+# --- Fourth wave of Artisan Bench decorative blocks ---
+TERRACOTTA_SHINGLE   = 258  # Mediterranean roof shingle
+THATCH_ROOF          = 259  # rustic straw roof
+VERDIGRIS_COPPER     = 260  # aged green copper patina
+SILVER_PANEL         = 261  # polished silvery metal
+GOLD_LEAF_TRIM       = 262  # gilded ornamental trim
+STAINED_GLASS_RED    = 263  # translucent crimson
+STAINED_GLASS_BLUE   = 264  # translucent azure
+STAINED_GLASS_GREEN  = 265  # translucent emerald
+QUARTZ_PILLAR        = 266  # white columnar stone
+ONYX_INLAY           = 267  # polished black accent stone
+TILLED_SOIL          = 268  # prepared farm soil; required under young crops
+COMPOST_BIN_BLOCK    = 269  # placed compost processing structure
 
 HOUSE_WALL           = 108  # city house wall block
 HOUSE_ROOF           = 109  # city house roof block
@@ -273,7 +334,8 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
                     DESERT_FORGE_BLOCK,
                     ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK,
-                    FOSSIL_TABLE_BLOCK}
+                    GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
+                    FOSSIL_TABLE_BLOCK, ARTISAN_BENCH_BLOCK, COMPOST_BIN_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT}
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
                      RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, GARLIC_BUSH, SCALLION_BUSH, CHILI_BUSH,
@@ -281,7 +343,7 @@ BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN
                      BEET_BUSH, TURNIP_BUSH, LEEK_BUSH, ZUCCHINI_BUSH, SWEET_POTATO_BUSH,
                      WATERMELON_BUSH, RADISH_BUSH, PEA_BUSH, CELERY_BUSH, BROCCOLI_BUSH,
                      DATE_PALM_BUSH, AGAVE_BUSH,
-                     COFFEE_BUSH}
+                     COFFEE_BUSH, GRAPEVINE_BUSH}
 YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG, TOMATO_CROP_YOUNG, CORN_CROP_YOUNG, PUMPKIN_CROP_YOUNG, APPLE_CROP_YOUNG,
                      RICE_CROP_YOUNG, GINGER_CROP_YOUNG, BOK_CHOY_CROP_YOUNG, GARLIC_CROP_YOUNG,
                      SCALLION_CROP_YOUNG, CHILI_CROP_YOUNG,
@@ -289,7 +351,7 @@ YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG,
                      BEET_CROP_YOUNG, TURNIP_CROP_YOUNG, LEEK_CROP_YOUNG, ZUCCHINI_CROP_YOUNG, SWEET_POTATO_CROP_YOUNG,
                      WATERMELON_CROP_YOUNG, RADISH_CROP_YOUNG, PEA_CROP_YOUNG, CELERY_CROP_YOUNG, BROCCOLI_CROP_YOUNG,
                      CACTUS_YOUNG, DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG,
-                     COFFEE_CROP_YOUNG}
+                     COFFEE_CROP_YOUNG, GRAPEVINE_CROP_YOUNG}
 MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATURE, TOMATO_CROP_MATURE, CORN_CROP_MATURE, PUMPKIN_CROP_MATURE, APPLE_CROP_MATURE,
                      RICE_CROP_MATURE, GINGER_CROP_MATURE, BOK_CHOY_CROP_MATURE, GARLIC_CROP_MATURE,
                      SCALLION_CROP_MATURE, CHILI_CROP_MATURE,
@@ -297,14 +359,14 @@ MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATU
                      BEET_CROP_MATURE, TURNIP_CROP_MATURE, LEEK_CROP_MATURE, ZUCCHINI_CROP_MATURE, SWEET_POTATO_CROP_MATURE,
                      WATERMELON_CROP_MATURE, RADISH_CROP_MATURE, PEA_CROP_MATURE, CELERY_CROP_MATURE, BROCCOLI_CROP_MATURE,
                      CACTUS_MATURE, DATE_PALM_CROP_MATURE, AGAVE_CROP_MATURE,
-                     COFFEE_CROP_MATURE}
+                     COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE}
 CROP_BLOCKS       = YOUNG_CROP_BLOCKS | MATURE_CROP_BLOCKS
 
 # Perennial crops regrow after harvest (each harvest has ~33% chance to die)
 PERENNIAL_CROP_MATURE = {
     STRAWBERRY_CROP_MATURE, APPLE_CROP_MATURE, TOMATO_CROP_MATURE,
     PEPPER_CROP_MATURE, CHILI_CROP_MATURE, EGGPLANT_CROP_MATURE,
-    CACTUS_MATURE, COFFEE_CROP_MATURE,
+    CACTUS_MATURE, COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE,
 }
 
 # Reverse mapping: mature → young, used for perennial regrowth
@@ -341,6 +403,7 @@ MATURE_TO_YOUNG_CROP = {
     DATE_PALM_CROP_MATURE:    DATE_PALM_CROP_YOUNG,
     AGAVE_CROP_MATURE:        AGAVE_CROP_YOUNG,
     COFFEE_CROP_MATURE:       COFFEE_CROP_YOUNG,
+    GRAPEVINE_CROP_MATURE:    GRAPEVINE_CROP_YOUNG,
 }
 
 BLOCKS = {
@@ -573,4 +636,59 @@ BLOCKS = {
     BLEND_STATION_BLOCK:    {"name": "Blend Station",            "hardness": 1.5, "color": (110,  75,  40), "drop": "blend_station_item"},
     BREW_STATION_BLOCK:     {"name": "Brew Station",             "hardness": 1.5, "color": ( 75,  60,  45), "drop": "brew_station_item"},
     FOSSIL_TABLE_BLOCK:     {"name": "Fossil Prep Table",        "hardness": 2,   "color": (110,  88,  62), "drop": "fossil_table_item"},
+    # --- Artisan Bench + decorative house blocks ---
+    ARTISAN_BENCH_BLOCK:    {"name": "Artisan Bench",            "hardness": 1.5, "color": (135, 100,  70), "drop": "artisan_bench_item"},
+    POLISHED_GRANITE:       {"name": "Polished Granite",         "hardness": 2,   "color": (130, 115, 120), "drop": "polished_granite"},
+    POLISHED_MARBLE:        {"name": "Polished Marble",          "hardness": 2,   "color": (235, 230, 225), "drop": "polished_marble"},
+    SLATE_TILE:             {"name": "Slate Tile",               "hardness": 2,   "color": ( 55,  65,  80), "drop": "slate_tile"},
+    TERRACOTTA_BLOCK:       {"name": "Terracotta",               "hardness": 2,   "color": (195, 105,  70), "drop": "terracotta"},
+    MOSSY_BRICK:            {"name": "Mossy Brick",              "hardness": 2,   "color": (115, 140,  90), "drop": "mossy_brick"},
+    CREAM_BRICK:            {"name": "Cream Brick",              "hardness": 2,   "color": (220, 200, 165), "drop": "cream_brick"},
+    CHARCOAL_PLANK:         {"name": "Charcoal Plank",           "hardness": 2,   "color": ( 55,  50,  55), "drop": "charcoal_plank"},
+    WALNUT_PLANK:           {"name": "Walnut Plank",             "hardness": 2,   "color": ( 90,  60,  40), "drop": "walnut_plank"},
+    OAK_PANEL:              {"name": "Oak Panel",                "hardness": 2,   "color": (180, 140,  90), "drop": "oak_panel"},
+    BAMBOO_PANEL:           {"name": "Bamboo Panel",             "hardness": 2,   "color": (210, 200, 130), "drop": "bamboo_panel"},
+    # --- Wine supply chain ---
+    GRAPEVINE_BUSH:         {"name": "Grapevine Bush",           "hardness": 0.5, "color": ( 80, 130,  60), "drop": "grape_seed", "drop_chance": 1.0},
+    GRAPEVINE_CROP_YOUNG:   {"name": "Grapevine",                "hardness": 0.5, "color": ( 95, 150,  70), "drop": "grape_seed", "drop_chance": 1.0},
+    GRAPEVINE_CROP_MATURE:  {"name": "Grapevine (Ripe)",         "hardness": 0.5, "color": (110,  40,  95), "drop": None},
+    GRAPE_PRESS_BLOCK:      {"name": "Grape Press",              "hardness": 1.5, "color": (150, 110,  80), "drop": "grape_press_item"},
+    FERMENTATION_BLOCK:     {"name": "Fermentation Tank",        "hardness": 1.5, "color": (115,  95,  80), "drop": "fermentation_item"},
+    WINE_CELLAR_BLOCK:      {"name": "Wine Cellar",              "hardness": 1.5, "color": ( 75,  45,  55), "drop": "wine_cellar_item"},
+    # --- Second wave of artisan decorative blocks ---
+    OBSIDIAN_TILE:          {"name": "Obsidian Tile",            "hardness": 2,   "color": ( 30,  25,  40), "drop": "obsidian_tile"},
+    COBBLESTONE:            {"name": "Cobblestone",              "hardness": 2,   "color": (100,  95,  90), "drop": "cobblestone"},
+    LAPIS_BRICK:            {"name": "Lapis Brick",              "hardness": 2,   "color": ( 55,  85, 165), "drop": "lapis_brick"},
+    BASALT_COLUMN:          {"name": "Basalt Column",            "hardness": 2,   "color": ( 60,  55,  65), "drop": "basalt_column"},
+    LIMESTONE_BLOCK:        {"name": "Limestone",                "hardness": 2,   "color": (225, 215, 195), "drop": "limestone_block"},
+    COPPER_TILE:            {"name": "Copper Tile",              "hardness": 2,   "color": (180, 110,  75), "drop": "copper_tile"},
+    TEAK_PLANK:             {"name": "Teak Plank",               "hardness": 2,   "color": (140,  95,  60), "drop": "teak_plank"},
+    DRIFTWOOD_PLANK:        {"name": "Driftwood Plank",          "hardness": 2,   "color": (165, 155, 145), "drop": "driftwood_plank"},
+    CEDAR_PANEL:            {"name": "Cedar Panel",              "hardness": 2,   "color": (160, 105,  75), "drop": "cedar_panel"},
+    JADE_PANEL:             {"name": "Jade Panel",               "hardness": 2,   "color": ( 95, 165, 125), "drop": "jade_panel"},
+    # --- Third wave of artisan decorative blocks ---
+    ROSE_QUARTZ_BLOCK:      {"name": "Rose Quartz",              "hardness": 2,   "color": (245, 175, 185), "drop": "rose_quartz_block"},
+    GILDED_BRICK:           {"name": "Gilded Brick",             "hardness": 2,   "color": (215, 170,  70), "drop": "gilded_brick"},
+    AMETHYST_BLOCK:         {"name": "Amethyst Block",           "hardness": 2,   "color": (155,  95, 200), "drop": "amethyst_block"},
+    AMBER_TILE:             {"name": "Amber Tile",               "hardness": 2,   "color": (215, 140,  50), "drop": "amber_tile"},
+    IVORY_BRICK:            {"name": "Ivory Brick",              "hardness": 2,   "color": (240, 230, 205), "drop": "ivory_brick"},
+    EBONY_PLANK:            {"name": "Ebony Plank",              "hardness": 2,   "color": ( 35,  25,  25), "drop": "ebony_plank"},
+    MAHOGANY_PLANK:         {"name": "Mahogany Plank",           "hardness": 2,   "color": (115,  50,  35), "drop": "mahogany_plank"},
+    ASH_PLANK:              {"name": "Ash Plank",                "hardness": 2,   "color": (200, 195, 175), "drop": "ash_plank"},
+    FROSTED_GLASS:          {"name": "Frosted Glass",            "hardness": 2,   "color": (210, 230, 240), "drop": "frosted_glass"},
+    CRIMSON_BRICK:          {"name": "Crimson Brick",            "hardness": 2,   "color": (160,  40,  50), "drop": "crimson_brick"},
+    SKY_OPENING:            {"name": "Sky",                      "hardness": 0,   "color": None,            "drop": None},
+    # --- Fourth wave of artisan decorative blocks ---
+    TERRACOTTA_SHINGLE:     {"name": "Terracotta Shingle",       "hardness": 2,   "color": (140,  60,  45), "drop": "terracotta_shingle"},
+    THATCH_ROOF:            {"name": "Thatch Roof",              "hardness": 1,   "color": (175, 140,  75), "drop": "thatch_roof"},
+    VERDIGRIS_COPPER:       {"name": "Verdigris Copper",         "hardness": 2,   "color": ( 90, 165, 140), "drop": "verdigris_copper"},
+    SILVER_PANEL:           {"name": "Silver Panel",             "hardness": 2,   "color": (190, 195, 205), "drop": "silver_panel"},
+    GOLD_LEAF_TRIM:         {"name": "Gold Leaf Trim",           "hardness": 2,   "color": (230, 200,  90), "drop": "gold_leaf_trim"},
+    STAINED_GLASS_RED:      {"name": "Stained Glass (Red)",      "hardness": 2,   "color": (180,  50,  55), "drop": "stained_glass_red"},
+    STAINED_GLASS_BLUE:     {"name": "Stained Glass (Blue)",     "hardness": 2,   "color": ( 60,  90, 180), "drop": "stained_glass_blue"},
+    STAINED_GLASS_GREEN:    {"name": "Stained Glass (Green)",    "hardness": 2,   "color": ( 60, 150,  95), "drop": "stained_glass_green"},
+    QUARTZ_PILLAR:          {"name": "Quartz Pillar",            "hardness": 2,   "color": (220, 220, 210), "drop": "quartz_pillar"},
+    ONYX_INLAY:             {"name": "Onyx Inlay",               "hardness": 2,   "color": ( 40,  35,  45), "drop": "onyx_inlay"},
+    TILLED_SOIL:            {"name": "Tilled Soil",              "hardness": 1,   "color": (100,  66,  32), "drop": "dirt_clump"},
+    COMPOST_BIN_BLOCK:      {"name": "Compost Bin",              "hardness": 1,   "color": (100,  70,  40), "drop": "compost_bin_item"},
 }
