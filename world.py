@@ -1519,7 +1519,8 @@ class World:
                 and bid not in OPEN_DOORS
                 and bid not in ALL_LOGS and bid not in ALL_LEAVES
                 and bid not in EQUIPMENT_BLOCKS
-                and bid != MINE_TRACK_BLOCK and bid != MINE_TRACK_STOP_BLOCK)
+                and bid != MINE_TRACK_BLOCK and bid != MINE_TRACK_STOP_BLOCK
+                and bid != ELEVATOR_CABLE_BLOCK)
 
     def update_time(self, dt):
         self.time_of_day = (self.time_of_day + dt) % CYCLE_DURATION

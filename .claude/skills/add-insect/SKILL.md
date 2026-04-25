@@ -63,6 +63,8 @@ Increment it to match the new species count.
 | `"beetle"` | Oval elytra with centre seam | Oval with dividing line, accent head |
 | `"other"` | Generic catch-all | Wing ellipse + body ellipse + accent dot |
 
+Draw logic for each wing type lives in [Render/insects.py](../../../Render/insects.py). If you need a new `WING_TYPE`, add a `_draw_insect_*` function there and a matching branch in `_draw_insect`.
+
 ### Biomes (from [biomes.py](../../../biomes.py))
 
 `temperate`, `boreal`, `birch_forest`, `jungle`, `wetland`, `redwood`, `tropical`, `savanna`, `wasteland`, `fungal`, `alpine_mountain`, `rocky_mountain`, `rolling_hills`, `steep_hills`, `steppe`, `arid_steppe`, `desert`, `tundra`, `swamp`, `beach`, `canyon`

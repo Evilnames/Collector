@@ -5,7 +5,7 @@ description: Step-by-step guide for adding a new bird species to CollectorBlocks
 
 # Add a New Bird
 
-Birds are class-based entities defined in [birds.py](../../../birds.py). Each species is a subclass of `Bird` with class-level attributes. **Every new bird also requires a draw method in [renderer.py](../../../renderer.py)** — without it the bird spawns invisibly.
+Birds are class-based entities defined in [birds.py](../../../birds.py). Each species is a subclass of `Bird` with class-level attributes. **Every new bird also requires a draw function in [Render/birds.py](../../../Render/birds.py)** — without it the bird spawns invisibly.
 
 ## Step 1 — Define the class
 
@@ -42,48 +42,48 @@ ALL_SPECIES = [
 
 `SPECIES_BY_ID` is auto-generated from `ALL_SPECIES` — no extra step needed.
 
-## Step 3 — Add a dispatch entry in renderer.py
+## Step 3 — Add a dispatch entry in Render/birds.py
 
-In `_draw_bird` inside [renderer.py](../../../renderer.py), add an `elif` branch after the last existing entry (search for the final `elif sp ==` line):
+In `_draw_bird` inside [Render/birds.py](../../../Render/birds.py), add an `elif` branch after the last existing entry (search for the final `elif sp ==` line):
 
 ```python
 elif sp == "golden_oriole":
-    self._draw_golden_oriole(bird, sx, sy, wing_flap, perching)
+    _draw_golden_oriole(screen, bird, sx, sy, wing_flap, perching)
 ```
 
-## Step 4 — Add the draw method in renderer.py
+## Step 4 — Add the draw function in Render/birds.py
 
-Add the `_draw_*` method just before the `# Insects` section comment. All draw methods receive `(self, bird, sx, sy, wf, perching)` where `wf` is the wing-flap offset (0 when perching).
+Add the `_draw_*` function at the bottom of [Render/birds.py](../../../Render/birds.py). All draw functions receive `(screen, bird, sx, sy, wf, perching)` where `wf` is the wing-flap offset (0 when perching).
 
 Use the bird's class-level color constants and `W`/`H` for all geometry. The standard structure is:
 
 ```python
-def _draw_golden_oriole(self, bird, sx, sy, wf, perching):
+def _draw_golden_oriole(screen, bird, sx, sy, wf, perching):
     W, H = bird.W, bird.H
     f = bird.facing           # 1 = right, -1 = left
 
     # Wings (drawn first so body overlaps them)
     if not perching:
-        pygame.draw.ellipse(self.screen, bird.WING_COLOR,
+        pygame.draw.ellipse(screen, bird.WING_COLOR,
                             (sx, sy + int(wf), W, H - 2))
     else:
-        pygame.draw.ellipse(self.screen, bird.WING_COLOR,
+        pygame.draw.ellipse(screen, bird.WING_COLOR,
                             (sx + 1, sy + 2, W - 2, H - 3))
 
     # Body
-    pygame.draw.ellipse(self.screen, bird.BODY_COLOR,
+    pygame.draw.ellipse(screen, bird.BODY_COLOR,
                         (sx + 2, sy + 3, W - 4, H - 4))
 
     # Head — offset to facing side
     hx = sx + W - 5 if f == 1 else sx + 1
-    pygame.draw.circle(self.screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 4)
+    pygame.draw.circle(screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 4)
 
     # Beak
     bx = hx + 5 if f == 1 else hx - 3
-    pygame.draw.rect(self.screen, bird.BEAK_COLOR, (bx, sy + 2, 3, 2))
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (bx, sy + 2, 3, 2))
 
     # Eye
-    pygame.draw.rect(self.screen, (20, 20, 20), (hx + (3 if f == 1 else 1), sy + 1, 2, 2))
+    pygame.draw.rect(screen, (20, 20, 20), (hx + (3 if f == 1 else 1), sy + 1, 2, 2))
 ```
 
 ### Draw method tips
@@ -111,6 +111,6 @@ def _draw_golden_oriole(self, bird, sx, sy, wf, perching):
 - [ ] `SPECIES` string is unique across all classes in `ALL_SPECIES`
 - [ ] `BIOMES` entries are valid keys (check [biomes.py](../../../biomes.py))
 - [ ] Class added to `ALL_SPECIES`
-- [ ] Dispatch `elif` added to `_draw_bird` in renderer.py
-- [ ] `_draw_*` method added to renderer.py
+- [ ] Dispatch `elif` added to `_draw_bird` in [Render/birds.py](../../../Render/birds.py)
+- [ ] `_draw_*` function added to [Render/birds.py](../../../Render/birds.py)
 - [ ] Run the game and visit the relevant biome — bird should spawn, be visible, and appear in the Codex
