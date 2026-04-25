@@ -370,28 +370,8 @@ class World:
             tuple(int(v) for v in k.split(",")): inv
             for k, inv in raw_chests.items()
         }
-        from wildflowers import Wildflower
-        def _wf_from_dict(d):
-            return Wildflower(
-                uid=d["uid"], flower_type=d["flower_type"], rarity=d["rarity"],
-                bloom_stage=d["bloom_stage"],
-                primary_color=tuple(d["primary_color"]),
-                secondary_color=tuple(d["secondary_color"]),
-                center_color=tuple(d["center_color"]),
-                petal_pattern=d["petal_pattern"], petal_count=d["petal_count"],
-                fragrance=d["fragrance"], vibrancy=d["vibrancy"],
-                specials=d["specials"], biodome_found=d["biodome_found"], seed=d["seed"],
-            )
-        raw_garden = data.get("garden_data", {})
-        self.garden_data = {
-            tuple(int(v) for v in k.split(",")): [_wf_from_dict(f) for f in flowers]
-            for k, flowers in raw_garden.items()
-        }
-        raw_displays = data.get("wildflower_display_data", {})
-        self.wildflower_display_data = {
-            tuple(int(v) for v in k.split(",")): _wf_from_dict(f)
-            for k, f in raw_displays.items()
-        }
+        self.garden_data = data.get("garden_data", {})
+        self.wildflower_display_data = data.get("wildflower_display_data", {})
         # sculpture_positions loaded here as uid strings; resolved in main.py
         # after player.apply_save (which loads the Sculpture objects)
         self._pending_sculpture_positions = data.get("sculpture_positions", {})

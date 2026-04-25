@@ -25,7 +25,7 @@ def _load_settings():
             return json.loads(SETTINGS_PATH.read_text())
     except Exception:
         pass
-    return {"fullscreen": True}
+    return {"fullscreen": True, "debug": False}
 
 
 def _save_settings(settings):
@@ -158,11 +158,12 @@ def _show_settings_screen(screen, settings):
     def _make_rects(w, h):
         bx = w // 2 - btn_w // 2
         gap = btn_h + 20
-        base = h // 2 - (gap * 2) // 2
+        base = h // 2 - (gap * 3) // 2
         return (
-            pygame.Rect(bx, base,          btn_w, btn_h),
-            pygame.Rect(bx, base + gap,    btn_w, btn_h),
+            pygame.Rect(bx, base,           btn_w, btn_h),
+            pygame.Rect(bx, base + gap,     btn_w, btn_h),
             pygame.Rect(bx, base + gap * 2, btn_w, btn_h),
+            pygame.Rect(bx, base + gap * 3, btn_w, btn_h),
         )
 
     def draw_button(surf, rect, label, hovered, active=False):
@@ -178,13 +179,14 @@ def _show_settings_screen(screen, settings):
         surf.blit(lbl, lbl.get_rect(center=rect.center))
 
     W, H = screen.get_size()
-    rect_fs, rect_ores, rect_back = _make_rects(W, H)
+    rect_fs, rect_ores, rect_debug, rect_back = _make_rects(W, H)
 
     while True:
         mx, my = pygame.mouse.get_pos()
-        hover_fs   = rect_fs.collidepoint(mx, my)
-        hover_ores = rect_ores.collidepoint(mx, my)
-        hover_back = rect_back.collidepoint(mx, my)
+        hover_fs    = rect_fs.collidepoint(mx, my)
+        hover_ores  = rect_ores.collidepoint(mx, my)
+        hover_debug = rect_debug.collidepoint(mx, my)
+        hover_back  = rect_back.collidepoint(mx, my)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -198,9 +200,12 @@ def _show_settings_screen(screen, settings):
                     _save_settings(settings)
                     screen = _apply_display_mode(settings)
                     W, H = screen.get_size()
-                    rect_fs, rect_ores, rect_back = _make_rects(W, H)
+                    rect_fs, rect_ores, rect_debug, rect_back = _make_rects(W, H)
                 if rect_ores.collidepoint(mx, my):
                     settings["show_all_resources"] = not settings.get("show_all_resources", True)
+                    _save_settings(settings)
+                if rect_debug.collidepoint(mx, my):
+                    settings["debug"] = not settings.get("debug", False)
                     _save_settings(settings)
                 if rect_back.collidepoint(mx, my):
                     return screen, settings
@@ -208,11 +213,13 @@ def _show_settings_screen(screen, settings):
         screen.fill(BLACK)
         title = font_title.render("Settings", True, WHITE)
         screen.blit(title, title.get_rect(center=(W // 2, H // 4)))
-        fs_on   = settings.get("fullscreen", True)
-        ores_on = settings.get("show_all_resources", True)
-        draw_button(screen, rect_fs,   "Fullscreen: ON"  if fs_on   else "Fullscreen: OFF",  hover_fs,   active=fs_on)
-        draw_button(screen, rect_ores, "Show Ores: ON"   if ores_on else "Show Ores: OFF",   hover_ores, active=ores_on)
-        draw_button(screen, rect_back, "Back", hover_back)
+        fs_on    = settings.get("fullscreen", True)
+        ores_on  = settings.get("show_all_resources", True)
+        debug_on = settings.get("debug", False)
+        draw_button(screen, rect_fs,    "Fullscreen: ON"   if fs_on    else "Fullscreen: OFF",   hover_fs,    active=fs_on)
+        draw_button(screen, rect_ores,  "Show Ores: ON"    if ores_on  else "Show Ores: OFF",    hover_ores,  active=ores_on)
+        draw_button(screen, rect_debug, "Debug Mode: ON"   if debug_on else "Debug Mode: OFF",   hover_debug, active=debug_on)
+        draw_button(screen, rect_back,  "Back", hover_back)
         pygame.display.flip()
         clock.tick(60)
 
@@ -421,6 +428,13 @@ def main():
             t0 = _t("  Player", t0)
             return w, p
         world, player = _run_with_loading_screen(screen, "Generating World", _do_gen)
+        if settings.get("debug", False):
+            for node in research.nodes.values():
+                node.apply(player, world)
+            research.apply_bonuses(player, world)
+
+    if settings.get("debug", False):
+        player.no_hunger = True
 
     t0 = _t("total after choice", t0)
 
@@ -528,6 +542,9 @@ def main():
     _fps_smooth = 60.0
     _fps_last = -1
     fps_surf = _fps_font.render("FPS: 60", True, (255, 255, 255))
+
+    autosave_timer = 0.0
+    AUTOSAVE_INTERVAL = 60.0
 
     running = True
     while running:
@@ -1286,6 +1303,12 @@ def main():
         world.update_crops(dt)
         world.update_leaves(dt, player)
         world.update_dropped_items(dt, player)
+
+        autosave_timer += dt
+        if autosave_timer >= AUTOSAVE_INTERVAL:
+            autosave_timer = 0.0
+            _save_and_notify(world, player, research)
+
         renderer.update_camera(player, world)
 
         renderer.draw_world(world, player)

@@ -218,6 +218,7 @@ class Player:
         self.spawn_y = None
         self.dead = False
         self.god_mode = False
+        self.no_hunger = False
         # Mining state
         self.mining_block = None  # (bx, by) or None
         self.mine_progress = 0.0
@@ -1644,7 +1645,7 @@ class Player:
                 del self.pottery_buffs[buff]
         if self._bow_cooldown > 0:
             self._bow_cooldown -= dt
-        if not self.god_mode:
+        if not self.god_mode and not self.no_hunger:
             drain_mult = 1.0
             if "endurance" in self.active_buffs:
                 drain_mult *= 0.6
@@ -1656,7 +1657,7 @@ class Player:
                 drain_mult *= 0.60
         if "vitality" in self.cheese_buffs and self.hunger > 20.0:
             self.health = min(MAX_HEALTH, self.health + 1.0 * dt)
-        if not self.god_mode:
+        if not self.god_mode and not self.no_hunger:
             self.hunger = max(0.0, self.hunger - self._hunger_drain_rate * drain_mult * dt)
             if self.hunger == 0.0:
                 self.health = max(0, self.health - 3 * dt)

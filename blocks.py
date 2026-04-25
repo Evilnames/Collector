@@ -318,8 +318,10 @@ OREGANO_CROP_MATURE     = 325
 DILL_BUSH               = 326
 DILL_CROP_YOUNG         = 327
 DILL_CROP_MATURE        = 328
-FENNEL_BUSH             = 329
-FENNEL_CROP_YOUNG       = 330
+FENNEL_BUSH             = 908
+
+FENNEL_CROP_YOUNG       = 909
+
 FENNEL_CROP_MATURE      = 331
 TARRAGON_BUSH           = 332
 TARRAGON_CROP_YOUNG     = 333
@@ -378,19 +380,43 @@ COMFREY_CROP_MATURE     = 385
 MUGWORT_BUSH            = 386
 MUGWORT_CROP_YOUNG      = 387
 MUGWORT_CROP_MATURE     = 388
-BAIT_STATION_BLOCK      = 314  # placed Bait Station; crafts fishing bait
-CHICKPEA_CROP_YOUNG     = 315
-CHICKPEA_CROP_MATURE    = 316
-LENTIL_CROP_YOUNG       = 317
-LENTIL_CROP_MATURE      = 318
-SESAME_CROP_YOUNG       = 319
-SESAME_CROP_MATURE      = 320
-POMEGRANATE_TREE_YOUNG  = 321
-POMEGRANATE_TREE_MATURE = 322
-OLIVE_TREE_YOUNG        = 323
-OLIVE_TREE_MATURE       = 324
-SAFFRON_CROP_YOUNG      = 325
-SAFFRON_CROP_MATURE     = 326
+BAIT_STATION_BLOCK      = 910  # placed Bait Station; crafts fishing bait
+CHICKPEA_CROP_YOUNG     = 911
+
+
+CHICKPEA_CROP_MATURE    = 912
+
+
+LENTIL_CROP_YOUNG       = 913
+
+
+LENTIL_CROP_MATURE      = 914
+
+
+SESAME_CROP_YOUNG       = 915
+
+
+SESAME_CROP_MATURE      = 916
+
+
+POMEGRANATE_TREE_YOUNG  = 917
+
+
+POMEGRANATE_TREE_MATURE = 918
+
+
+OLIVE_TREE_YOUNG        = 919
+
+
+OLIVE_TREE_MATURE       = 920
+
+
+SAFFRON_CROP_YOUNG      = 921
+
+
+SAFFRON_CROP_MATURE     = 922
+
+
 
 # --- Islamic architecture blocks (Artisan Bench) ---
 # --- Mineable natural deposits ---
@@ -398,76 +424,83 @@ CLAY_DEPOSIT      = 329  # natural clay bed; shallow sedimentary/temperate zones
 LIMESTONE_DEPOSIT = 330  # natural limestone layer; shallow-mid sedimentary zones
 
 # --- Islamic architecture blocks (Artisan Bench) ---
-WHITE_PLASTER_WALL = 323  # smooth white plaster wall
-CARVED_PLASTER     = 324  # white plaster with gold arabesque geometric inlay
-MUQARNAS_BLOCK     = 325  # stepped stalactite/honeycomb overhang element
-MASHRABIYA         = 326  # carved wooden diamond-lattice screen
-ZELLIGE_TILE       = 327  # colorful geometric mosaic tile (Moroccan style)
-ARABESQUE_PANEL    = 328  # sandstone panel with interlaced geometric carving
+WHITE_PLASTER_WALL = 923  # smooth white plaster wall
+CARVED_PLASTER     = 924  # white plaster with gold arabesque geometric inlay
+MUQARNAS_BLOCK     = 925  # stepped stalactite/honeycomb overhang element
+MASHRABIYA         = 926  # carved wooden diamond-lattice screen
+ZELLIGE_TILE       = 927  # colorful geometric mosaic tile (Moroccan style)
+ARABESQUE_PANEL    = 928  # sandstone panel with interlaced geometric carving
 
 # --- Spanish architecture blocks (Artisan Bench) ---
-ADOBE_BRICK        = 331  # sun-dried mud brick; warm tan with straw texture
-SPANISH_ROOF_TILE  = 332  # curved barrel roof tile in terracotta red
-WROUGHT_IRON_GRILLE= 333  # decorative forged-iron scrollwork panel
-TALAVERA_TILE      = 334  # blue-and-white hand-painted ceramic tile
-SALTILLO_TILE      = 335  # unglazed terracotta floor tile
+ADOBE_BRICK        = 929  # sun-dried mud brick; warm tan with straw texture
+SPANISH_ROOF_TILE  = 930  # curved barrel roof tile in terracotta red
+WROUGHT_IRON_GRILLE= 931  # decorative forged-iron scrollwork panel
+TALAVERA_TILE      = 932  # blue-and-white hand-painted ceramic tile
+SALTILLO_TILE      = 933  # unglazed terracotta floor tile
 
 # --- Middle Eastern decorative doors (Artisan Bench) ---
-COBALT_DOOR_CLOSED       = 336  # royal blue lacquered door with gold arabesque
-COBALT_DOOR_OPEN         = 337
-CRIMSON_CEDAR_DOOR_CLOSED= 338  # deep red cedar with carved diamond geometry
-CRIMSON_CEDAR_DOOR_OPEN  = 339
-TEAL_DOOR_CLOSED         = 340  # rich teal lacquered door with gold trim
-TEAL_DOOR_OPEN           = 341
-SAFFRON_DOOR_CLOSED      = 342  # warm golden-yellow with dark carved panels
-SAFFRON_DOOR_OPEN        = 343
+COBALT_DOOR_CLOSED       = 934  # royal blue lacquered door with gold arabesque
+COBALT_DOOR_OPEN         = 935
+
+
+CRIMSON_CEDAR_DOOR_CLOSED= 936  # deep red cedar with carved diamond geometry
+CRIMSON_CEDAR_DOOR_OPEN  = 937
+
+
+TEAL_DOOR_CLOSED         = 938  # rich teal lacquered door with gold trim
+TEAL_DOOR_OPEN           = 939
+
+
+SAFFRON_DOOR_CLOSED      = 860  # warm golden-yellow with dark carved panels
+SAFFRON_DOOR_OPEN        = 861
+
 
 # --- European architecture blocks (Artisan Bench) ---
-HALF_TIMBER_WALL  = 344  # Tudor black timber framing on white plaster
-ASHLAR_BLOCK      = 345  # precisely dressed stone with tight regular joints
-GOTHIC_TRACERY    = 346  # pointed lancet arch tracery panel
-FLUTED_COLUMN     = 347  # classical column shaft with vertical flute grooves
-CORNICE_BLOCK     = 348  # classical stepped projecting molding
-ROSE_WINDOW       = 349  # Gothic circular window tracery
-HERRINGBONE_BRICK = 350  # diagonal herringbone brick floor
-BAROQUE_TRIM      = 351  # elaborate carved stone scrollwork panel
-TUDOR_BEAM        = 352  # dark exposed structural timber
-VENETIAN_FLOOR    = 353  # pale stone with diamond inlay accents
-FLEMISH_BRICK     = 354  # two-tone Flemish bond brick
-PILASTER          = 355  # classical flat wall column with capital and base
-DENTIL_TRIM       = 356  # classical tooth-molding band
-WATTLE_DAUB       = 357  # medieval woven-straw plaster wall
-NORDIC_PLANK      = 358  # dark weathered Nordic timber
-MANSARD_SLATE     = 359  # French fish-scale roof slate
-ROMAN_MOSAIC      = 360  # small square tiles in warm geometric pattern
-SETT_STONE        = 361  # European granite street sett
-ROMANESQUE_ARCH   = 362  # warm sandstone rounded arch voussoir panel
-DARK_SLATE_ROOF   = 363  # overlapping dark grey-blue slate shingles
-KEYSTONE          = 364  # arch keystone wedge block
-PLINTH_BLOCK      = 365  # classical column base with recessed panel
-IRON_LANTERN      = 366  # Victorian iron lantern frame with warm glow
-SANDSTONE_ASHLAR  = 367  # warm sandstone with precise rectangular joints
-GARGOYLE_BLOCK    = 368  # Gothic grotesque carved stone panel
-OGEE_ARCH         = 369  # S-curved ogee arch with finial (Gothic/Venetian)
-RUSTICATED_STONE  = 370  # Renaissance rough-faced stone with deep V-joints
-CHEVRON_STONE     = 371  # Norman zigzag carved stone
-TRIGLYPH_PANEL    = 372  # Doric frieze with vertical channels and guttae
-MARBLE_INLAY      = 373  # Italian white marble with coloured geometric inlay
-BRICK_NOGGING     = 374  # brick infill between timber frame panels
-CRENELLATION      = 375  # castle battlement with merlons and crenels
-FAN_VAULT         = 376  # Gothic fan vaulting panel with radiating ribs
-ACANTHUS_PANEL    = 377  # Corinthian carved acanthus leaf panel
-PEBBLE_DASH       = 378  # rough exterior render with embedded pebbles
-ENCAUSTIC_TILE    = 379  # medieval inlaid terracotta floor tile
-CHEQUERBOARD_MARBLE = 380  # alternating black and white marble squares
-WROUGHT_IRON_BALUSTRADE = 381  # decorative iron balcony balustrade
-OPUS_INCERTUM     = 382  # Roman irregular polygon stone facing
-GROTESQUE_FRIEZE  = 383  # carved stone frieze with foliage and faces
-BARREL_VAULT      = 384  # Romanesque semicircular vault section
-POINTED_ARCH      = 385  # clean Gothic pointed arch
-ENGLISH_BOND      = 386  # alternating header/stretcher brick courses
-RELIEF_PANEL      = 387  # Classical carved stone relief
-DIAGONAL_TILE     = 388  # European diagonal square floor tile
+HALF_TIMBER_WALL  = 862  # Tudor black timber framing on white plaster
+ASHLAR_BLOCK      = 863  # precisely dressed stone with tight regular joints
+GOTHIC_TRACERY    = 864  # pointed lancet arch tracery panel
+FLUTED_COLUMN     = 865  # classical column shaft with vertical flute grooves
+CORNICE_BLOCK     = 866  # classical stepped projecting molding
+ROSE_WINDOW       = 867  # Gothic circular window tracery
+HERRINGBONE_BRICK = 868  # diagonal herringbone brick floor
+BAROQUE_TRIM      = 869  # elaborate carved stone scrollwork panel
+TUDOR_BEAM        = 870  # dark exposed structural timber
+VENETIAN_FLOOR    = 871  # pale stone with diamond inlay accents
+FLEMISH_BRICK     = 872  # two-tone Flemish bond brick
+PILASTER          = 873  # classical flat wall column with capital and base
+DENTIL_TRIM       = 874  # classical tooth-molding band
+WATTLE_DAUB       = 875  # medieval woven-straw plaster wall
+NORDIC_PLANK      = 876  # dark weathered Nordic timber
+MANSARD_SLATE     = 877  # French fish-scale roof slate
+ROMAN_MOSAIC      = 878  # small square tiles in warm geometric pattern
+SETT_STONE        = 879  # European granite street sett
+ROMANESQUE_ARCH   = 880  # warm sandstone rounded arch voussoir panel
+DARK_SLATE_ROOF   = 881  # overlapping dark grey-blue slate shingles
+KEYSTONE          = 882  # arch keystone wedge block
+PLINTH_BLOCK      = 883  # classical column base with recessed panel
+IRON_LANTERN      = 884  # Victorian iron lantern frame with warm glow
+SANDSTONE_ASHLAR  = 885  # warm sandstone with precise rectangular joints
+GARGOYLE_BLOCK    = 886  # Gothic grotesque carved stone panel
+OGEE_ARCH         = 887  # S-curved ogee arch with finial (Gothic/Venetian)
+RUSTICATED_STONE  = 888  # Renaissance rough-faced stone with deep V-joints
+CHEVRON_STONE     = 889  # Norman zigzag carved stone
+TRIGLYPH_PANEL    = 890  # Doric frieze with vertical channels and guttae
+MARBLE_INLAY      = 891  # Italian white marble with coloured geometric inlay
+BRICK_NOGGING     = 892  # brick infill between timber frame panels
+CRENELLATION      = 893  # castle battlement with merlons and crenels
+FAN_VAULT         = 894  # Gothic fan vaulting panel with radiating ribs
+ACANTHUS_PANEL    = 895  # Corinthian carved acanthus leaf panel
+PEBBLE_DASH       = 896  # rough exterior render with embedded pebbles
+ENCAUSTIC_TILE    = 897  # medieval inlaid terracotta floor tile
+CHEQUERBOARD_MARBLE = 898  # alternating black and white marble squares
+WROUGHT_IRON_BALUSTRADE = 899  # decorative iron balcony balustrade
+OPUS_INCERTUM     = 900  # Roman irregular polygon stone facing
+GROTESQUE_FRIEZE  = 901  # carved stone frieze with foliage and faces
+BARREL_VAULT      = 902  # Romanesque semicircular vault section
+POINTED_ARCH      = 903  # clean Gothic pointed arch
+ENGLISH_BOND      = 904  # alternating header/stretcher brick courses
+RELIEF_PANEL      = 905  # Classical carved stone relief
+DIAGONAL_TILE     = 906  # European diagonal square floor tile
 # --- Sonoran desert plants ---
 SAGUARO_YOUNG       = 389
 SAGUARO_MATURE      = 390
@@ -942,7 +975,7 @@ ESTREMOZ_MARBLE        = 793  # white Estremoz marble tile
 WILDFLOWER_DISPLAY_BLOCK = 794  # decorative vase; holds one wildflower from the player's collection
 
 # --- Córdoba / Umayyad Architecture ---
-MEZQUITA_ARCH          = 794  # alternating red & cream voussoir arch block
+MEZQUITA_ARCH          = 907  # alternating red & cream voussoir arch block
 MIHRAB_TILE            = 795  # golden tessera mosaic mihrab niche panel
 MEDINA_AZAHARA_STONE   = 796  # white marble carved acanthus relief (Medina Azahara)
 CORDOBA_COLUMN         = 797  # slender Umayyad marble column section
@@ -982,6 +1015,37 @@ MOAT_STONE             = 826  # damp algae-stained moat-face stone
 CHAPEL_STONE           = 827  # small castle chapel carved Gothic panel
 MURDER_HOLE            = 828  # dark passage ceiling with drop hole
 GARDEROBE_CHUTE        = 829  # projecting corbelled garderobe chute
+# --- Mid-Century Modern ---
+MCM_CONCRETE_PANEL     = 830  # smooth poured concrete wall panel
+MCM_BREEZE_BLOCK       = 831  # open-grid decorative concrete screen
+MCM_BOARD_BATTEN       = 832  # vertical cedar board-and-batten siding
+MCM_WALNUT_PANEL       = 833  # horizontal walnut wood wall paneling
+MCM_TEAK_PANEL         = 834  # warm teak horizontal plank wall
+MCM_ROMAN_BRICK        = 835  # thin Roman-course horizontal brick
+TERRAZZO_FLOOR_MCM     = 836  # speckled terrazzo floor tile
+TRAVERTINE_FLOOR_MCM   = 837  # cream travertine stone floor tile
+QUARRY_TILE            = 838  # unglazed terra-cotta quarry tile
+FLAGSTONE_PATIO        = 839  # irregular grey flagstone paving
+MCM_PARQUET            = 840  # herringbone parquet wood floor
+CORK_FLOOR_TILE        = 841  # natural cork floor tile
+AVOCADO_TILE           = 842  # avocado green glazed ceramic tile
+HARVEST_GOLD_TILE      = 843  # harvest gold glazed ceramic tile
+BURNT_ORANGE_TILE      = 844  # burnt orange glazed ceramic tile
+TURQUOISE_TILE         = 845  # turquoise glazed ceramic tile
+PLATE_GLASS_PANEL      = 846  # large clear plate-glass wall panel
+TINTED_GLASS_PANEL     = 847  # dark tinted glass panel
+RIBBED_GLASS_MCM       = 848  # frosted ribbed glass wall block
+BRASS_TRIM_PANEL       = 849  # warm brass decorative wall panel
+COPPER_SCREEN_MCM      = 850  # patinated copper screen panel
+ANODIZED_ALUMINUM      = 851  # silver anodized aluminum panel
+RATTAN_SCREEN_MCM      = 852  # woven rattan decorative screen
+SPLIT_BAMBOO_PANEL     = 853  # split bamboo wall panel
+LAVA_ROCK_WALL         = 854  # volcanic lava rock wall panel
+MCM_TONGUE_GROOVE      = 855  # tongue-and-groove pine ceiling panel
+BUTTERFLY_BEAM         = 856  # angled butterfly roof beam panel
+STARBURST_PANEL        = 857  # geometric starburst ornamental panel
+STACKED_STONE_VENEER   = 858  # thin stacked stone veneer panel
+FIBERGLASS_SHELL       = 859  # molded fiberglass decorative panel
 
 HOUSE_WALL           = 108  # city house wall block
 HOUSE_ROOF           = 109  # city house roof block
@@ -1084,7 +1148,8 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     ANAEROBIC_TANK_BLOCK,
                     GLASS_KILN_BLOCK,
                     JEWELRY_WORKBENCH_BLOCK,
-                    GARDEN_WORKSHOP_BLOCK}
+                    GARDEN_WORKSHOP_BLOCK,
+                    GARDEN_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT}
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
@@ -2220,4 +2285,35 @@ BLOCKS = {
     CHAPEL_STONE:       {"name": "Chapel Stone",        "hardness": 2, "color": (198, 192, 178), "drop": "chapel_stone"},
     MURDER_HOLE:        {"name": "Murder Hole",         "hardness": 3, "color": ( 55,  50,  45), "drop": "murder_hole"},
     GARDEROBE_CHUTE:    {"name": "Garderobe Chute",     "hardness": 2, "color": (148, 140, 125), "drop": "garderobe_chute"},
+    # --- Mid-Century Modern ---
+    MCM_CONCRETE_PANEL:   {"name": "Concrete Panel",      "hardness": 2, "color": (178, 174, 168), "drop": "mcm_concrete_panel"},
+    MCM_BREEZE_BLOCK:     {"name": "Breeze Block",        "hardness": 2, "color": (192, 188, 182), "drop": "mcm_breeze_block"},
+    MCM_BOARD_BATTEN:     {"name": "Board and Batten",    "hardness": 2, "color": (148, 108,  65), "drop": "mcm_board_batten"},
+    MCM_WALNUT_PANEL:     {"name": "Walnut Panel",        "hardness": 2, "color": ( 88,  55,  28), "drop": "mcm_walnut_panel"},
+    MCM_TEAK_PANEL:       {"name": "Teak Panel",          "hardness": 2, "color": (148,  95,  48), "drop": "mcm_teak_panel"},
+    MCM_ROMAN_BRICK:      {"name": "Roman Brick",         "hardness": 2, "color": (185, 105,  68), "drop": "mcm_roman_brick"},
+    TERRAZZO_FLOOR_MCM:   {"name": "Terrazzo Floor",      "hardness": 2, "color": (210, 208, 204), "drop": "terrazzo_floor_mcm"},
+    TRAVERTINE_FLOOR_MCM: {"name": "Travertine Floor",    "hardness": 2, "color": (222, 215, 192), "drop": "travertine_floor_mcm"},
+    QUARRY_TILE:          {"name": "Quarry Tile",         "hardness": 2, "color": (178,  82,  55), "drop": "quarry_tile"},
+    FLAGSTONE_PATIO:      {"name": "Flagstone Patio",     "hardness": 2, "color": (148, 144, 136), "drop": "flagstone_patio"},
+    MCM_PARQUET:          {"name": "Parquet Floor",       "hardness": 2, "color": (138,  90,  45), "drop": "mcm_parquet"},
+    CORK_FLOOR_TILE:      {"name": "Cork Floor Tile",     "hardness": 2, "color": (175, 138,  80), "drop": "cork_floor_tile"},
+    AVOCADO_TILE:         {"name": "Avocado Tile",        "hardness": 2, "color": (105, 128,  72), "drop": "avocado_tile"},
+    HARVEST_GOLD_TILE:    {"name": "Harvest Gold Tile",   "hardness": 2, "color": (215, 165,  42), "drop": "harvest_gold_tile"},
+    BURNT_ORANGE_TILE:    {"name": "Burnt Orange Tile",   "hardness": 2, "color": (195,  85,  35), "drop": "burnt_orange_tile"},
+    TURQUOISE_TILE:       {"name": "Turquoise Tile",      "hardness": 2, "color": ( 50, 160, 172), "drop": "turquoise_tile"},
+    PLATE_GLASS_PANEL:    {"name": "Plate Glass Panel",   "hardness": 1, "color": (185, 215, 228), "drop": "plate_glass_panel"},
+    TINTED_GLASS_PANEL:   {"name": "Tinted Glass Panel",  "hardness": 1, "color": ( 42,  50,  56), "drop": "tinted_glass_panel"},
+    RIBBED_GLASS_MCM:     {"name": "Ribbed Glass",        "hardness": 1, "color": (208, 218, 224), "drop": "ribbed_glass_mcm"},
+    BRASS_TRIM_PANEL:     {"name": "Brass Trim Panel",    "hardness": 2, "color": (188, 152,  65), "drop": "brass_trim_panel"},
+    COPPER_SCREEN_MCM:    {"name": "Copper Screen",       "hardness": 2, "color": ( 85, 148, 115), "drop": "copper_screen_mcm"},
+    ANODIZED_ALUMINUM:    {"name": "Anodized Aluminum",   "hardness": 2, "color": (178, 182, 190), "drop": "anodized_aluminum"},
+    RATTAN_SCREEN_MCM:    {"name": "Rattan Screen",       "hardness": 2, "color": (188, 152,  95), "drop": "rattan_screen_mcm"},
+    SPLIT_BAMBOO_PANEL:   {"name": "Split Bamboo Panel",  "hardness": 2, "color": (172, 182, 118), "drop": "split_bamboo_panel"},
+    LAVA_ROCK_WALL:       {"name": "Lava Rock Wall",      "hardness": 3, "color": ( 48,  42,  40), "drop": "lava_rock_wall"},
+    MCM_TONGUE_GROOVE:    {"name": "Tongue and Groove",   "hardness": 2, "color": (218, 185, 128), "drop": "mcm_tongue_groove"},
+    BUTTERFLY_BEAM:       {"name": "Butterfly Beam",      "hardness": 2, "color": (112,  72,  38), "drop": "butterfly_beam"},
+    STARBURST_PANEL:      {"name": "Starburst Panel",     "hardness": 2, "color": (225, 215, 182), "drop": "starburst_panel"},
+    STACKED_STONE_VENEER: {"name": "Stacked Stone Veneer","hardness": 2, "color": (155, 148, 136), "drop": "stacked_stone_veneer"},
+    FIBERGLASS_SHELL:     {"name": "Fiberglass Shell",    "hardness": 1, "color": (228, 218, 198), "drop": "fiberglass_shell"},
 }
