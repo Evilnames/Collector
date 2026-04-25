@@ -421,12 +421,8 @@ class Player:
             self.vx = speed
             self.facing = 1
 
-        overlapping_ladder = self._in_ladder()
         pressing_down = keys[pygame.K_s] or keys[pygame.K_DOWN]
-        if not overlapping_ladder:
-            self._on_ladder = False
-        elif pressing_down or self._on_ladder:
-            self._on_ladder = True
+        self._on_ladder = self._in_ladder()
         if self._on_ladder:
             if keys[pygame.K_w] or keys[pygame.K_UP] or keys[pygame.K_SPACE]:
                 self.vy = -4   # climb up

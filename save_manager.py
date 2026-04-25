@@ -37,6 +37,7 @@ class SaveManager:
                             "rocks", "wildflowers", "fossils", "gems", "bird_observations",
                             "insect_observations",
                             "fish", "coffee_beans", "wine_grapes", "spirits",
+                            "tea_leaves", "textiles", "cheese_wheels", "jewelry", "sculptures", "pottery_pieces",
                             "research", "automations",
                             "farm_bots", "backhoes", "elevator_cars", "entities", "dropped_items", "chests"):
                     # global_collection and achievements are intentionally preserved
