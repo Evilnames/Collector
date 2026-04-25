@@ -7237,12 +7237,12 @@ class Renderer:
                 dk = _darken(c, 20)
                 s.fill(c)
                 import random as _rnd
-                _rnd.seed(42)
+                _rng = _rnd.Random(42)
                 for _ in range(22):
-                    bx2 = _rnd.randint(0, BS - 6)
-                    by2 = _rnd.randint(0, BS - 3)
-                    blen = _rnd.randint(4, 8)
-                    col = lt if _rnd.random() > 0.5 else dk
+                    bx2 = _rng.randint(0, BS - 6)
+                    by2 = _rng.randint(0, BS - 3)
+                    blen = _rng.randint(4, 8)
+                    col = lt if _rng.random() > 0.5 else dk
                     pygame.draw.rect(s, col, (bx2, by2, blen, 2))
                 surfs[bid] = s
                 continue
