@@ -957,6 +957,16 @@ def main():
                             else:
                                 ui.refinery_open = False
 
+                if event.key == pygame.K_q and not _any_ui_open():
+                    # Deconstruct nearby idle elevator car
+                    nearby_car = next(
+                        (c for c in world.elevator_cars if c.in_range(player) and c.state == "idle" and c.rider is None),
+                        None,
+                    )
+                    if nearby_car is not None:
+                        world.elevator_cars.remove(nearby_car)
+                        player._add_item("elevator_car")
+
                 if event.key == pygame.K_m:
                     renderer.minimap_visible = not renderer.minimap_visible
 

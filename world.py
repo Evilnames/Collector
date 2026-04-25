@@ -1490,6 +1490,11 @@ class World:
                     nb = self._chunk_get(nx, ny)
                     if nb == WATER:
                         self._pending_water.add((nx, ny))
+        elif block_id != WATER:
+            for ddx, ddy in ((-1, 0), (1, 0), (0, 1)):
+                nx, ny = x + ddx, y + ddy
+                if self._chunk_get(nx, ny) == WATER:
+                    self._drain_unsustained_water(nx, ny)
 
     def get_bg_block(self, x, y):
         if y < 0 or y >= WORLD_H or abs(x) > WORLD_MAX_X:
@@ -1571,6 +1576,41 @@ class World:
                         spreads += 1
 
         self._pending_water.update(new_water)
+
+    def _drain_unsustained_water(self, start_x, start_y):
+        """Drain water tiles that can no longer be fed after a block was placed nearby."""
+        queue = [(start_x, start_y)]
+        seen = set()
+        while queue:
+            x, y = queue.pop()
+            if (x, y) in seen:
+                continue
+            seen.add((x, y))
+            if self._chunk_get(x, y) != WATER:
+                continue
+            level = self._water_level.get((x, y), 8)
+            if level == 8:
+                continue  # never drain world-gen source blocks
+            # Sustained if a horizontal neighbor can supply it (level >= this+1)
+            # or a water tile above can fall into it (level >= this).
+            sustained = False
+            for dx in (-1, 1):
+                if self._chunk_get(x + dx, y) == WATER:
+                    if self._water_level.get((x + dx, y), 8) >= level + 1:
+                        sustained = True
+                        break
+            if not sustained and y > 0 and self._chunk_get(x, y - 1) == WATER:
+                if self._water_level.get((x, y - 1), 8) >= level:
+                    sustained = True
+            if sustained:
+                continue
+            self._chunk_set(x, y, AIR)
+            self._water_level.pop((x, y), None)
+            for dx in (-1, 1):
+                if self._chunk_get(x + dx, y) == WATER:
+                    queue.append((x + dx, y))
+            if y + 1 < WORLD_H and self._chunk_get(x, y + 1) == WATER:
+                queue.append((x, y + 1))
 
     def _has_sky_view(self, x, y):
         _transparent = BUSH_BLOCKS | CROP_BLOCKS | {SAPLING}

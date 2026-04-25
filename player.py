@@ -1355,7 +1355,7 @@ class Player:
                 return
             self.world.set_bg_block(bx, by, block_id)
         else:
-            if self.world.get_block(bx, by) != AIR:
+            if self.world.get_block(bx, by) not in (AIR, WATER):
                 return
             # Seeds must be planted on tilled soil (prep with a hoe first).
             if block_id in YOUNG_CROP_BLOCKS:

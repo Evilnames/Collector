@@ -6,7 +6,7 @@ ELEVATOR_SPEED = 200  # pixels/second — much faster than walking (MOVE_SPEED *
 
 class ElevatorCar:
     W = BLOCK_SIZE
-    H = BLOCK_SIZE * 2
+    H = BLOCK_SIZE
 
     def __init__(self, shaft_x, stop_by):
         self.shaft_x = shaft_x      # block column of the cable/stop shaft
@@ -48,9 +48,6 @@ class ElevatorCar:
         return True
 
     def call(self, target_by, world):
-        car_by = int(round(self.car_y / BLOCK_SIZE))
-        if not self._path_clear(car_by, target_by, world):
-            return
         self.target_y = float(target_by * BLOCK_SIZE)
         self.state = "moving"
 
