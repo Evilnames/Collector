@@ -367,6 +367,31 @@ class HandlersMixin:
                 inv[item_id] = inv.get(item_id, 0) + deposit
                 return
 
+    def handle_wildflower_display_click(self, pos, player):
+        if self.active_display_pos is None:
+            return
+        bx, by = self.active_display_pos
+        stored = player.world.wildflower_display_data.get((bx, by))
+        # Click the display slot area to reclaim the flower
+        slot_from_left = (SCREEN_W - 820) // 2 + 10
+        half = (820 - 30) // 2
+        slot_rect_x = slot_from_left + half // 2 - 60
+        slot_rect_y = (SCREEN_H - 500) // 2 + 70
+        slot_rect = pygame.Rect(slot_rect_x, slot_rect_y, 120, 120)
+        if slot_rect.collidepoint(pos) and stored is not None:
+            player.wildflowers.append(stored)
+            player.world.wildflower_display_data.pop((bx, by), None)
+            return
+        # Click a flower in the player collection → place it (replaces any existing)
+        for uid, rect in self._display_player_rects.items():
+            if rect.collidepoint(pos):
+                for i, wf in enumerate(player.wildflowers):
+                    if wf.uid == uid:
+                        if stored is not None:
+                            player.wildflowers.append(stored)
+                        player.world.wildflower_display_data[(bx, by)] = player.wildflowers.pop(i)
+                        return
+
     def handle_garden_click(self, pos, player):
         flowers = self.active_garden_flowers
         garden_pos = self.active_garden_pos

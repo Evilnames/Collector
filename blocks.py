@@ -908,6 +908,81 @@ LAUREL_FRIEZE        = 761  # classical laurel-wreath border frieze
 POTTERY_WHEEL_BLOCK  = 762  # shaping station — interactive profile editor
 POTTERY_KILN_BLOCK   = 763  # firing station — temperature mini-game + glazing
 
+# --- Portuguese / Spanish Ceramic Tiles ---
+CALCADA_PORTUGUESA   = 764  # black & white wave-mosaic cobblestone pavement
+AZULEJO_GEOMETRIC    = 765  # bold repeating diamond/compass geometric azulejo
+PAINTED_TILE_BORDER  = 766  # blue & yellow decorative border/trim tile
+SPANISH_MAJOLICA     = 767  # colorful folk-art majolica tile (cream, green, ochre)
+AZULEJO_STAIR        = 768  # blue-painted azulejo stair-riser tile
+PORTUGUESE_PINK_MARBLE = 769  # Estremoz rose-pink marble floor tile
+SPANISH_HEX_TILE       = 770  # black & white hexagonal encaustic floor
+MUDEJAR_STAR_TILE      = 771  # 8-pointed star Mudéjar ceramic tile
+ALBARRADA_PANEL        = 772  # Portuguese vase-of-flowers azulejo panel
+SGRAFFITO_WALL         = 773  # two-tone scraped-plaster wall
+TRENCADIS_PANEL        = 774  # Gaudí broken-tile mosaic panel
+AZULEJO_NAVY           = 775  # deep navy plain azulejo (dado/wainscoting)
+AZULEJO_MANGANESE      = 776  # manganese-purple 17th-century azulejo
+PLATERESQUE_PANEL      = 777  # ornate Spanish Plateresque carved stone relief
+AZULEJO_CORNICE        = 778  # blue & white tile cornice frieze
+TALAVERA_FOUNTAIN      = 779  # Talavera-tiled fountain basin piece
+BARCELONA_TILE         = 780  # Catalan Modernista floor tile
+MOORISH_ARCHWAY_TILE   = 781  # Mudéjar horseshoe-arch tile
+PORTUGUESE_CHIMNEY     = 782  # ornamental Portuguese chimney pot
+BARCELOS_TILE          = 783  # Portuguese Barcelos rooster folk-art tile
+REJA_PANEL             = 784  # Spanish Rejas iron-grid window panel
+ORANGE_TREE_PLANTER    = 785  # majolica-painted ceramic orange-tree planter
+WAVE_COBBLE            = 786  # pale limestone wave-patterned pavement
+AZULEJO_FACADE_PANEL   = 787  # large-format blue/white azulejo facade panel
+MUDEJAR_BRICK          = 788  # ornamental Mudéjar geometric brickwork
+PORTUGUESE_BENCH       = 789  # stone bench with azulejo-tiled seat
+SPANISH_PATIO_FLOOR    = 790  # octagonal patio tile with dark corner inserts
+ARABIC_ROOF_TILE       = 791  # half-round Arabic barrel roof tile
+MOORISH_COLUMN_TILE    = 792  # zellige-clad decorative column section
+ESTREMOZ_MARBLE        = 793  # white Estremoz marble tile
+WILDFLOWER_DISPLAY_BLOCK = 794  # decorative vase; holds one wildflower from the player's collection
+
+# --- Córdoba / Umayyad Architecture ---
+MEZQUITA_ARCH          = 794  # alternating red & cream voussoir arch block
+MIHRAB_TILE            = 795  # golden tessera mosaic mihrab niche panel
+MEDINA_AZAHARA_STONE   = 796  # white marble carved acanthus relief (Medina Azahara)
+CORDOBA_COLUMN         = 797  # slender Umayyad marble column section
+ORANGE_COURT_FLOOR     = 798  # Court of Oranges geometric stone paving
+CORDOBAN_LEATHER       = 799  # embossed guadamecil gold-on-leather wall panel
+UMAYYAD_MULTILOBED     = 800  # multi-lobed polyfoil Umayyad arch tile
+GOLD_TESSERA_PANEL     = 801  # Byzantine/Umayyad gold tessera mosaic panel
+UMAYYAD_DOME_RIB       = 802  # rib section of a Umayyad stone vault
+KUFIC_PANEL            = 803  # carved Kufic calligraphy stone panel
+PATIO_FLOWER_WALL      = 804  # whitewashed wall with hanging ceramic geranium pots
+CORDOBAN_PATIO_TILE    = 805  # small geometric Cordoban patio floor tile
+STAR_VAULT_PANEL       = 806  # 8-pointed star Umayyad ceiling vault tile
+ANDALUSIAN_FOUNTAIN    = 807  # small Cordoban courtyard basin fountain
+NASRID_HONEYCOMB       = 808  # honeycomb muqarnas ceiling panel
+
+# --- Pottery display ---
+POTTERY_DISPLAY_BLOCK  = 809  # placeable pedestal; stores and displays a fired PotteryPiece vase
+
+# --- Medieval Castle ---
+PORTCULLIS_BLOCK       = 810  # iron drop-gate with vertical bars and pointed bases
+ARROW_LOOP             = 811  # narrow cruciform arrow-slit in thick stone wall
+MACHICOLATION          = 812  # projecting corbelled parapet with drop holes
+DRAWBRIDGE_PLANK       = 813  # heavy oak drawbridge plank with iron strap bands
+ROUND_TOWER_WALL       = 814  # curved ashlar tower wall section
+CURTAIN_WALL           = 815  # thick castle curtain wall stone block
+CORBEL_COURSE          = 816  # projecting stone corbel bracket course
+TOWER_CAP              = 817  # conical slate tower roof cap
+GREAT_HALL_FLOOR       = 818  # large stone-flagged great hall floor
+DUNGEON_WALL           = 819  # rough-hewn stone with iron ring staple
+CASTLE_FIREPLACE       = 820  # grand castle fireplace surround with hood
+HERALDIC_PANEL         = 821  # carved stone heraldic escutcheon shield panel
+WALL_WALK_FLOOR        = 822  # allure / chemin de ronde walkway paving
+CASTLE_GATE_ARCH       = 823  # grand gatehouse stone arch with iron studs
+DRAWBRIDGE_CHAIN       = 824  # heavy iron chain link decorative panel
+DUNGEON_GRATE          = 825  # iron-barred dungeon floor grate
+MOAT_STONE             = 826  # damp algae-stained moat-face stone
+CHAPEL_STONE           = 827  # small castle chapel carved Gothic panel
+MURDER_HOLE            = 828  # dark passage ceiling with drop hole
+GARDEROBE_CHUTE        = 829  # projecting corbelled garderobe chute
+
 HOUSE_WALL           = 108  # city house wall block
 HOUSE_ROOF           = 109  # city house roof block
 WILDFLOWER_PATCH     = 110  # surface collectable; interact → generates unique Wildflower object
@@ -1488,6 +1563,7 @@ BLOCKS = {
     STAIRS_RIGHT:              {"name": "Stairs (Right)",            "hardness": 1.5, "color": (139, 100,  60), "drop": "wood_stairs"},
     STAIRS_LEFT:               {"name": "Stairs (Left)",             "hardness": 1.5, "color": (139, 100,  60), "drop": "wood_stairs"},
     GARDEN_BLOCK:              {"name": "Garden Block",              "hardness": 1.0, "color": ( 80, 140,  60), "drop": "garden_block"},
+    WILDFLOWER_DISPLAY_BLOCK:  {"name": "Wildflower Display",        "hardness": 1.0, "color": (200, 230, 200), "drop": "wildflower_display"},
     STABLE_BLOCK:              {"name": "Stable",                   "hardness": 2.0, "color": (120,  85,  45), "drop": "stable_item"},
     HORSE_TROUGH_BLOCK:        {"name": "Horse Trough",             "hardness": 1.5, "color": ( 60, 100, 130), "drop": "horse_trough_item"},
     # --- Herbalism supply chain ---
@@ -2075,4 +2151,73 @@ BLOCKS = {
     # --- Pottery & Ceramics ---
     POTTERY_WHEEL_BLOCK:  {"name": "Pottery Wheel",        "hardness": 3,   "color": (130,  95, 65),  "drop": "pottery_wheel_item"},
     POTTERY_KILN_BLOCK:   {"name": "Pottery Kiln",         "hardness": 3,   "color": ( 80,  60, 50),  "drop": "pottery_kiln_item"},
+    # --- Portuguese / Spanish Ceramic Tiles ---
+    CALCADA_PORTUGUESA:   {"name": "Calçada Portuguesa",   "hardness": 2,   "color": ( 30,  28,  26), "drop": "calcada_portuguesa"},
+    AZULEJO_GEOMETRIC:    {"name": "Azulejo Geometric",    "hardness": 2,   "color": (245, 242, 235), "drop": "azulejo_geometric"},
+    PAINTED_TILE_BORDER:  {"name": "Painted Tile Border",  "hardness": 2,   "color": (245, 240, 225), "drop": "painted_tile_border"},
+    SPANISH_MAJOLICA:     {"name": "Spanish Majolica",     "hardness": 2,   "color": (242, 238, 218), "drop": "spanish_majolica"},
+    AZULEJO_STAIR:        {"name": "Azulejo Stair",        "hardness": 2,   "color": (245, 242, 235), "drop": "azulejo_stair"},
+    PORTUGUESE_PINK_MARBLE: {"name": "Portuguese Pink Marble", "hardness": 2, "color": (220, 175, 175), "drop": "portuguese_pink_marble"},
+    SPANISH_HEX_TILE:       {"name": "Spanish Hex Tile",       "hardness": 2, "color": ( 22,  20,  18), "drop": "spanish_hex_tile"},
+    MUDEJAR_STAR_TILE:      {"name": "Mudéjar Star Tile",      "hardness": 2, "color": (245, 238, 215), "drop": "mudejar_star_tile"},
+    ALBARRADA_PANEL:        {"name": "Albarrada Panel",        "hardness": 2, "color": (245, 242, 238), "drop": "albarrada_panel"},
+    SGRAFFITO_WALL:         {"name": "Sgraffito Wall",         "hardness": 2, "color": (225, 218, 200), "drop": "sgraffito_wall"},
+    TRENCADIS_PANEL:        {"name": "Trencadís Panel",        "hardness": 2, "color": (185, 183, 178), "drop": "trencadis_panel"},
+    AZULEJO_NAVY:           {"name": "Azulejo Navy",           "hardness": 2, "color": ( 28,  52, 120), "drop": "azulejo_navy"},
+    AZULEJO_MANGANESE:      {"name": "Azulejo Manganese",      "hardness": 2, "color": (238, 235, 228), "drop": "azulejo_manganese"},
+    PLATERESQUE_PANEL:      {"name": "Plateresque Panel",      "hardness": 2, "color": (205, 195, 175), "drop": "plateresque_panel"},
+    AZULEJO_CORNICE:        {"name": "Azulejo Cornice",        "hardness": 2, "color": (245, 242, 235), "drop": "azulejo_cornice"},
+    TALAVERA_FOUNTAIN:      {"name": "Talavera Fountain",      "hardness": 2, "color": (235, 240, 248), "drop": "talavera_fountain"},
+    BARCELONA_TILE:         {"name": "Barcelona Tile",         "hardness": 2, "color": (195, 185, 120), "drop": "barcelona_tile"},
+    MOORISH_ARCHWAY_TILE:   {"name": "Moorish Archway Tile",   "hardness": 2, "color": (205, 195, 175), "drop": "moorish_archway_tile"},
+    PORTUGUESE_CHIMNEY:     {"name": "Portuguese Chimney",     "hardness": 2, "color": (190, 105,  65), "drop": "portuguese_chimney"},
+    BARCELOS_TILE:          {"name": "Barcelos Tile",          "hardness": 2, "color": (242, 238, 222), "drop": "barcelos_tile"},
+    REJA_PANEL:             {"name": "Reja Panel",             "hardness": 2, "color": (225, 218, 205), "drop": "reja_panel"},
+    ORANGE_TREE_PLANTER:    {"name": "Orange Tree Planter",    "hardness": 1, "color": (242, 235, 218), "drop": "orange_tree_planter"},
+    WAVE_COBBLE:            {"name": "Wave Cobble",            "hardness": 2, "color": (195, 192, 182), "drop": "wave_cobble"},
+    AZULEJO_FACADE_PANEL:   {"name": "Azulejo Facade Panel",   "hardness": 2, "color": (243, 241, 238), "drop": "azulejo_facade_panel"},
+    MUDEJAR_BRICK:          {"name": "Mudéjar Brick",          "hardness": 2, "color": (185, 105,  60), "drop": "mudejar_brick"},
+    PORTUGUESE_BENCH:       {"name": "Portuguese Bench",       "hardness": 2, "color": (180, 172, 158), "drop": "portuguese_bench"},
+    SPANISH_PATIO_FLOOR:    {"name": "Spanish Patio Floor",    "hardness": 2, "color": (215, 205, 185), "drop": "spanish_patio_floor"},
+    ARABIC_ROOF_TILE:       {"name": "Arabic Roof Tile",       "hardness": 2, "color": (190, 105,  65), "drop": "arabic_roof_tile"},
+    MOORISH_COLUMN_TILE:    {"name": "Moorish Column Tile",    "hardness": 2, "color": ( 35,  32,  30), "drop": "moorish_column_tile"},
+    ESTREMOZ_MARBLE:        {"name": "Estremoz Marble",        "hardness": 2, "color": (240, 235, 230), "drop": "estremoz_marble"},
+    # --- Córdoba / Umayyad Architecture ---
+    MEZQUITA_ARCH:          {"name": "Mezquita Arch",          "hardness": 2, "color": (195,  65,  45), "drop": "mezquita_arch"},
+    MIHRAB_TILE:            {"name": "Mihrab Tile",            "hardness": 2, "color": (200, 162,  50), "drop": "mihrab_tile"},
+    MEDINA_AZAHARA_STONE:   {"name": "Medina Azahara Stone",   "hardness": 2, "color": (235, 230, 218), "drop": "medina_azahara_stone"},
+    CORDOBA_COLUMN:         {"name": "Córdoba Column",         "hardness": 2, "color": (230, 225, 215), "drop": "cordoba_column"},
+    ORANGE_COURT_FLOOR:     {"name": "Orange Court Floor",     "hardness": 2, "color": (210, 200, 178), "drop": "orange_court_floor"},
+    CORDOBAN_LEATHER:       {"name": "Cordoban Leather",       "hardness": 1, "color": (135,  72,  30), "drop": "cordoban_leather"},
+    UMAYYAD_MULTILOBED:     {"name": "Umayyad Multilobed Arch","hardness": 2, "color": (215, 208, 192), "drop": "umayyad_multilobed"},
+    GOLD_TESSERA_PANEL:     {"name": "Gold Tessera Panel",     "hardness": 2, "color": (205, 165,  45), "drop": "gold_tessera_panel"},
+    UMAYYAD_DOME_RIB:       {"name": "Umayyad Dome Rib",       "hardness": 2, "color": (215, 210, 198), "drop": "umayyad_dome_rib"},
+    KUFIC_PANEL:            {"name": "Kufic Panel",            "hardness": 2, "color": (210, 202, 185), "drop": "kufic_panel"},
+    PATIO_FLOWER_WALL:      {"name": "Patio Flower Wall",      "hardness": 2, "color": (245, 243, 238), "drop": "patio_flower_wall"},
+    CORDOBAN_PATIO_TILE:    {"name": "Cordoban Patio Tile",    "hardness": 2, "color": (225, 218, 198), "drop": "cordoban_patio_tile"},
+    STAR_VAULT_PANEL:       {"name": "Star Vault Panel",       "hardness": 2, "color": (195, 188, 172), "drop": "star_vault_panel"},
+    ANDALUSIAN_FOUNTAIN:    {"name": "Andalusian Fountain",    "hardness": 2, "color": ( 65, 140, 190), "drop": "andalusian_fountain"},
+    NASRID_HONEYCOMB:       {"name": "Nasrid Honeycomb",       "hardness": 2, "color": (215, 205, 182), "drop": "nasrid_honeycomb"},
+    POTTERY_DISPLAY_BLOCK:  {"name": "Pottery Display",        "hardness": 1, "color": None,           "drop": "pottery_display"},
+    # --- Medieval Castle ---
+    PORTCULLIS_BLOCK:   {"name": "Portcullis",          "hardness": 3, "color": ( 48,  44,  40), "drop": "portcullis_block"},
+    ARROW_LOOP:         {"name": "Arrow Loop",          "hardness": 3, "color": (155, 148, 136), "drop": "arrow_loop"},
+    MACHICOLATION:      {"name": "Machicolation",       "hardness": 3, "color": (162, 155, 142), "drop": "machicolation"},
+    DRAWBRIDGE_PLANK:   {"name": "Drawbridge Plank",    "hardness": 2, "color": ( 80,  55,  30), "drop": "drawbridge_plank"},
+    ROUND_TOWER_WALL:   {"name": "Round Tower Wall",    "hardness": 3, "color": (158, 150, 138), "drop": "round_tower_wall"},
+    CURTAIN_WALL:       {"name": "Curtain Wall",        "hardness": 3, "color": (148, 140, 128), "drop": "curtain_wall"},
+    CORBEL_COURSE:      {"name": "Corbel Course",       "hardness": 3, "color": (165, 158, 145), "drop": "corbel_course"},
+    TOWER_CAP:          {"name": "Tower Cap",           "hardness": 2, "color": ( 72,  80,  88), "drop": "tower_cap"},
+    GREAT_HALL_FLOOR:   {"name": "Great Hall Floor",    "hardness": 2, "color": (185, 178, 162), "drop": "great_hall_floor"},
+    DUNGEON_WALL:       {"name": "Dungeon Wall",        "hardness": 3, "color": ( 88,  82,  72), "drop": "dungeon_wall"},
+    CASTLE_FIREPLACE:   {"name": "Castle Fireplace",    "hardness": 2, "color": (145, 136, 122), "drop": "castle_fireplace"},
+    HERALDIC_PANEL:     {"name": "Heraldic Panel",      "hardness": 2, "color": (175, 168, 152), "drop": "heraldic_panel"},
+    WALL_WALK_FLOOR:    {"name": "Wall-Walk Floor",     "hardness": 2, "color": (172, 165, 150), "drop": "wall_walk_floor"},
+    CASTLE_GATE_ARCH:   {"name": "Castle Gate Arch",    "hardness": 3, "color": (152, 145, 132), "drop": "castle_gate_arch"},
+    DRAWBRIDGE_CHAIN:   {"name": "Drawbridge Chain",    "hardness": 2, "color": ( 52,  48,  44), "drop": "drawbridge_chain"},
+    DUNGEON_GRATE:      {"name": "Dungeon Grate",       "hardness": 2, "color": ( 45,  42,  38), "drop": "dungeon_grate"},
+    MOAT_STONE:         {"name": "Moat Stone",          "hardness": 2, "color": ( 78,  92,  72), "drop": "moat_stone"},
+    CHAPEL_STONE:       {"name": "Chapel Stone",        "hardness": 2, "color": (198, 192, 178), "drop": "chapel_stone"},
+    MURDER_HOLE:        {"name": "Murder Hole",         "hardness": 3, "color": ( 55,  50,  45), "drop": "murder_hole"},
+    GARDEROBE_CHUTE:    {"name": "Garderobe Chute",     "hardness": 2, "color": (148, 140, 125), "drop": "garderobe_chute"},
 }

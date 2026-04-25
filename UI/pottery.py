@@ -598,7 +598,11 @@ class PotteryMixin:
 
         # Map biodome to clay biome profile key
         clay_biome_map = {"wetland": "wetland", "river": "river", "swamp": "wetland",
-                          "tropical": "tropical", "jungle": "tropical"}
+                          "tropical": "tropical", "jungle": "tropical",
+                          "steppe": "mediterranean", "arid_steppe": "mediterranean", "savanna": "mediterranean",
+                          "birch_forest": "celadon", "boreal": "celadon",
+                          "rolling_hills": "blue_white",
+                          "rocky_mountain": "jun", "canyon": "jun"}
         clay_biome = clay_biome_map.get(biodome, "temperate")
 
         piece = player._pottery_gen.generate(clay_biome, profile, thick, even)
@@ -670,6 +674,10 @@ class PotteryMixin:
 
         output_id = get_output_item(piece)
         player._add_item(output_id)
+
+        # Track as displayable if it's a vase and not cracked
+        if piece.shape == "vase" and piece.firing_level != "cracked":
+            player.unplaced_vases.append(piece)
 
         # Track discovery
         if piece.firing_level != "cracked":

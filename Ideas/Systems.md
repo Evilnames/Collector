@@ -22,28 +22,9 @@ Files: bees.py, UI/bees.py, extend blocks.py, items.py, farming integration
 
 
 
-6. Pottery & Ceramics
-Why it fits: Adds a crafting branch with both functional and decorative outputs. Clay is a natural underground resource. Functional items (pots that boost food effects) create reasons to invest.
-
-Clay: Mine clay deposits in wetland/river biomes (new block type)
-Pottery Wheel block: Shape clay → raw forms (bowls, vases, jugs, pots)
-Kiln firing mini-game: Temperature control (similar to roasting) → determines final quality (cracked / intact / fine)
-Glazing: Apply crushed gemstone dust for colored glazes → decorative rarity
-Functional outputs:
-Clay cooking pot → boosts food crafting yield (+1 serving)
-Wine amphora → already referenced! (new vessel option with higher complexity gain)
-Herb storage jar → extends dried ingredient shelf life
-Water jug → portable water source for farming
-Decorative: Vases, urns, display pieces for player base
-Research: Clay Working → Kiln Mastery → Glaze Arts (3 nodes)
 
 Tier 3 — Flavor & World-Building
 
-
-
-
-Jewelry
-Gemstones + metals → rings, brooches, pendants. Each piece has passive stat effects. Adds a functional reason to collect and cut gems — right now gems feel decorative.
 
 
 

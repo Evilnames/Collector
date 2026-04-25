@@ -9,7 +9,8 @@
       "Edit(/.claude/skills/add-wine/**)",
       "Edit(/.claude/skills/add-system/**)",
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Edit(/.claude/skills/add-pottery/**)"
     ],
     "additionalDirectories": [
       "d:\\Dev\\CollectorBlocks\\.claude\\skills"

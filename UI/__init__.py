@@ -200,6 +200,10 @@ class UI(
         self._max_garden_scroll    = 0
         self._player_garden_scroll = 0
         self._max_player_garden_scroll = 0
+        # Wildflower display UI
+        self.wildflower_display_open = False
+        self.active_display_pos      = None  # (bx, by)
+        self._display_player_rects   = {}    # uid -> Rect
         # Cheat console
         self.cheat_open    = False
         self.cheat_text    = ""
@@ -727,6 +731,8 @@ class UI(
             self._draw_chest(player)
         if self.garden_open and self.active_garden_flowers is not None:
             self._draw_garden(player)
+        if self.wildflower_display_open and self.active_display_pos is not None:
+            self._draw_wildflower_display(player)
         if self.cheat_open:
             self._draw_cheat_console()
         if self.pause_open:

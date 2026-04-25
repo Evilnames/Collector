@@ -66,7 +66,7 @@ class SaveManager:
             self._create_tables(con)
             self._save_meta(con, world.seed)
             self._save_dirty_chunks(con, world)
-            self._save_world_meta(con, world)
+            self._save_world_meta(con, world, player)
             self._save_player(con, player)
             self._save_rocks(con, player)
             self._save_wildflowers(con, player)
@@ -122,8 +122,11 @@ class SaveManager:
             "crop_progress":   world_meta["crop_progress"],
             "crop_care_sum":   world_meta["crop_care_sum"],
             "compost_bin_data":    world_meta["compost_bin_data"],
-            "garden_data":         world_meta["garden_data"],
-            "sculpture_positions": world_meta.get("sculpture_positions", {}),
+            "garden_data":             world_meta["garden_data"],
+            "sculpture_positions":     world_meta.get("sculpture_positions", {}),
+            "wildflower_display_data": world_meta.get("wildflower_display_data", {}),
+            "pottery_display_data":    world_meta.get("pottery_display_data", {}),
+            "unplaced_vase_uids":      world_meta.get("unplaced_vase_uids", []),
             "player": player_data,
             "automations": automations,
             "farm_bots": farm_bots,
@@ -288,7 +291,10 @@ class SaveManager:
             soil_fertility TEXT,
             compost_bin_data TEXT,
             garden_data TEXT,
-            sculpture_positions TEXT
+            sculpture_positions TEXT,
+            wildflower_display_data TEXT,
+            pottery_display_data TEXT,
+            unplaced_vase_uids TEXT
         );
         CREATE TABLE IF NOT EXISTS player (
             x REAL, y REAL, vx REAL, vy REAL, facing INTEGER,
@@ -565,7 +571,8 @@ class SaveManager:
                 pass
         for col in ("soil_moisture", "crop_progress", "crop_care_sum",
                     "soil_fertility", "compost_bin_data", "garden_data",
-                    "sculpture_positions"):
+                    "sculpture_positions", "wildflower_display_data",
+                    "pottery_display_data", "unplaced_vase_uids"):
             try:
                 con.execute(f"ALTER TABLE world_meta ADD COLUMN {col} TEXT")
             except Exception:
@@ -581,6 +588,26 @@ class SaveManager:
         ]:
             try:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT {default}")
+            except Exception:
+                pass
+        for col in ("crush_style", "yeast", "vessel"):
+            try:
+                con.execute(f"ALTER TABLE wine_grapes ADD COLUMN {col} TEXT DEFAULT ''")
+            except Exception:
+                pass
+        for col in ("barrel_type", "age_duration"):
+            try:
+                con.execute(f"ALTER TABLE spirits ADD COLUMN {col} TEXT DEFAULT ''")
+            except Exception:
+                pass
+        for col, default in [("wither_method", "''"), ("herbal_additions", "'[]'"), ("age_duration", "''")]:
+            try:
+                con.execute(f"ALTER TABLE tea_leaves ADD COLUMN {col} TEXT DEFAULT {default}")
+            except Exception:
+                pass
+        for col, default in [("cheese_type", "''"), ("press_quality", "0.0")]:
+            try:
+                con.execute(f"ALTER TABLE cheese_wheels ADD COLUMN {col} DEFAULT {default}")
             except Exception:
                 pass
 
@@ -775,7 +802,7 @@ class SaveManager:
             con.execute("INSERT OR REPLACE INTO bg_chunks VALUES (?,?)", (cx, data))
         world._dirty_bg_chunks.clear()
 
-    def _save_world_meta(self, con, world):
+    def _save_world_meta(self, con, world, player=None):
         water        = {f"{x},{y}": lvl    for (x, y), lvl   in world._water_level.items()}
         moisture     = {f"{x},{y}": m      for (x, y), m     in world._soil_moisture.items()}
         fertility    = {f"{x},{y}": f      for (x, y), f     in world._soil_fertility.items()}
@@ -795,14 +822,26 @@ class SaveManager:
                 sculpture_pos[f"{x},{y}"] = {"root": f"{rbx},{rby}"}
             else:
                 sculpture_pos[f"{x},{y}"] = data.uid
+        wf_displays = {
+            f"{x},{y}": _wf_to_dict(wf)
+            for (x, y), wf in world.wildflower_display_data.items()
+            if wf is not None
+        }
+        import dataclasses
+        pottery_displays = {
+            f"{x},{y}": dataclasses.asdict(piece)
+            for (x, y), piece in world.pottery_display_data.items()
+        }
+        unplaced_uids = [p.uid for p in (player.unplaced_vases if player else [])]
         con.execute("DELETE FROM world_meta")
         con.execute(
             "INSERT INTO world_meta "
-            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (json.dumps(water), json.dumps(moisture), json.dumps(progress),
              json.dumps(care_sum), json.dumps(fertility), json.dumps(compost_bins),
-             json.dumps(garden_flowers), json.dumps(sculpture_pos)),
+             json.dumps(garden_flowers), json.dumps(sculpture_pos), json.dumps(wf_displays),
+             json.dumps(pottery_displays), json.dumps(unplaced_uids)),
         )
 
     def _save_player(self, con, player):
@@ -1264,13 +1303,16 @@ class SaveManager:
             pass
         row = con.execute(
             "SELECT water_level, soil_moisture, crop_progress, crop_care_sum, "
-            "soil_fertility, compost_bin_data, garden_data, sculpture_positions "
+            "soil_fertility, compost_bin_data, garden_data, sculpture_positions, "
+            "wildflower_display_data, "
+            "COALESCE(pottery_display_data, '{}'), COALESCE(unplaced_vase_uids, '[]') "
             "FROM world_meta LIMIT 1"
         ).fetchone()
         if row is None:
             return {"water_level": {}, "soil_moisture": {}, "crop_progress": {},
                     "crop_care_sum": {}, "soil_fertility": {}, "compost_bin_data": {},
-                    "garden_data": {}, "sculpture_positions": {}}
+                    "garden_data": {}, "sculpture_positions": {}, "wildflower_display_data": {},
+                    "pottery_display_data": {}, "unplaced_vase_uids": []}
 
         def _parse_coord_dict(raw, transform=lambda v: v):
             if raw is None:
@@ -1320,15 +1362,50 @@ class SaveManager:
                 else:
                     sculpture_positions[pos] = val   # uid string
 
+        def _parse_display_data(raw):
+            if not raw:
+                return {}
+            from wildflowers import Wildflower
+            result = {}
+            for key, f in json.loads(raw).items():
+                xs, ys = key.split(",")
+                result[(int(xs), int(ys))] = Wildflower(
+                    uid=f["uid"], flower_type=f["flower_type"], rarity=f["rarity"],
+                    bloom_stage=f["bloom_stage"],
+                    primary_color=tuple(f["primary_color"]),
+                    secondary_color=tuple(f["secondary_color"]),
+                    center_color=tuple(f["center_color"]),
+                    petal_pattern=f["petal_pattern"], petal_count=f["petal_count"],
+                    fragrance=f["fragrance"], vibrancy=f["vibrancy"],
+                    specials=f["specials"], biodome_found=f["biodome_found"], seed=f["seed"],
+                )
+            return result
+
+        def _parse_pottery_displays(raw):
+            if not raw:
+                return {}
+            from pottery import PotteryPiece
+            result = {}
+            for key, p in json.loads(raw).items():
+                xs, ys = key.split(",")
+                p["texture_notes"] = p.get("texture_notes") or []
+                p["profile"]       = p.get("profile") or []
+                p["blend_components"] = p.get("blend_components") or []
+                result[(int(xs), int(ys))] = PotteryPiece(**p)
+            return result
+
         return {
-            "water_level":        _parse_coord_dict(row[0]),
-            "soil_moisture":      _parse_coord_dict(row[1]),
-            "crop_progress":      _parse_coord_dict(row[2]),
-            "crop_care_sum":      _parse_coord_dict(row[3], lambda v: (float(v[0]), int(v[1]))),
-            "soil_fertility":     _parse_coord_dict(row[4]),
-            "compost_bin_data":   _parse_bin_data(row[5]),
-            "garden_data":        _parse_garden_data(row[6] if len(row) > 6 else None),
-            "sculpture_positions": sculpture_positions,
+            "water_level":            _parse_coord_dict(row[0]),
+            "soil_moisture":          _parse_coord_dict(row[1]),
+            "crop_progress":          _parse_coord_dict(row[2]),
+            "crop_care_sum":          _parse_coord_dict(row[3], lambda v: (float(v[0]), int(v[1]))),
+            "soil_fertility":         _parse_coord_dict(row[4]),
+            "compost_bin_data":       _parse_bin_data(row[5]),
+            "garden_data":            _parse_garden_data(row[6] if len(row) > 6 else None),
+            "sculpture_positions":    sculpture_positions,
+            "wildflower_display_data": _parse_display_data(row[8] if len(row) > 8 else None),
+            "pottery_display_data":   _parse_pottery_displays(row[9] if len(row) > 9 else None),
+            "unplaced_vase_uids":     json.loads(row[10]) if len(row) > 10 and row[10] else [],
         }
 
     def _load_player(self, con, bird_obs=None, insect_obs=None):

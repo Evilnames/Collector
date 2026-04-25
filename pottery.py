@@ -11,7 +11,7 @@ WHEEL_MIN_RAD = 1    # minimum half-width per row
 @dataclass
 class PotteryPiece:
     uid: str
-    clay_biome: str       # "wetland" | "tropical" | "temperate" | "river"
+    clay_biome: str       # "wetland"|"tropical"|"temperate"|"river"|"mediterranean"|"celadon"|"blue_white"|"jun"
     shape: str            # auto-detected: "pot" | "amphora" | "jar" | "jug" | "vase"
     state: str            # "formed" | "fired" | "glazed"
     firing_level: str     # "cracked" | "intact" | "fine" | "masterwork"
@@ -30,14 +30,22 @@ CLAY_BIOME_PROFILES = {
     "wetland":   {"thickness": 0.80, "evenness": 0.55, "variety": "earthenware",  "glaze_affinity": 0.40},
     "tropical":  {"thickness": 0.50, "evenness": 0.85, "variety": "porcelain",    "glaze_affinity": 0.90},
     "temperate": {"thickness": 0.90, "evenness": 0.65, "variety": "stoneware",    "glaze_affinity": 0.55},
-    "river":     {"thickness": 0.65, "evenness": 0.75, "variety": "slipware",     "glaze_affinity": 0.80},
+    "river":         {"thickness": 0.65, "evenness": 0.75, "variety": "slipware",     "glaze_affinity": 0.80},
+    "mediterranean": {"thickness": 0.35, "evenness": 0.90, "variety": "terracotta",        "glaze_affinity": 0.75},
+    "celadon":       {"thickness": 0.55, "evenness": 0.85, "variety": "celadon",            "glaze_affinity": 0.85},
+    "blue_white":    {"thickness": 0.40, "evenness": 0.92, "variety": "blue-white porcelain","glaze_affinity": 0.95},
+    "jun":           {"thickness": 0.75, "evenness": 0.60, "variety": "jun ware",            "glaze_affinity": 0.38},
 }
 
 _TEXTURE_NOTE_POOLS = {
     "wetland":   ["iron-rich veins", "red ochre swirls", "earthy pitting", "warm terracotta", "mineral deposits"],
     "tropical":  ["translucent walls", "smooth porcelain finish", "fine grain", "white clay body", "delicate rim"],
     "temperate": ["grey stoneware body", "dense walls", "frost inclusions", "matte surface", "salt deposits"],
-    "river":     ["blue-grey slip", "smooth burnish", "watermark lines", "silty finish", "ripple texture"],
+    "river":         ["blue-grey slip", "smooth burnish", "watermark lines", "silty finish", "ripple texture"],
+    "mediterranean": ["iron-rich red clay body", "black gloss slip", "burnished ochre surface", "charcoal figure bands", "kiln-fired terracotta"],
+    "celadon":       ["jade-green crackle glaze", "translucent celadon body", "smooth grey stoneware", "fine ash glaze", "glassy celadon finish"],
+    "blue_white":    ["cobalt blue brushwork", "pure white ground", "crisp blue linework", "translucent glaze layer", "vivid cobalt wash"],
+    "jun":           ["opalescent blue glaze", "copper-red splashes", "glaze pooling at foot", "milky glaze haze", "kiln-transformed copper bloom"],
 }
 
 GLAZE_TYPES = {
@@ -73,7 +81,11 @@ BIOME_DISPLAY_NAMES = {
     "wetland":   "Wetland",
     "tropical":  "Tropical",
     "temperate": "Temperate",
-    "river":     "River",
+    "river":         "River",
+    "mediterranean": "Mediterranean",
+    "celadon":       "Celadon",
+    "blue_white":    "Blue & White",
+    "jun":           "Jun Ware",
 }
 
 

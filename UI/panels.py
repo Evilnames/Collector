@@ -789,6 +789,100 @@ class PanelsMixin:
             empty_s = self.small.render("No wildflowers in collection", True, (50, 90, 50))
             self.screen.blit(empty_s, (rx + half // 2 - empty_s.get_width() // 2, py + 280))
 
+    def _draw_wildflower_display(self, player):
+        world = player.world
+        bx, by = self.active_display_pos
+        stored = world.wildflower_display_data.get((bx, by))
+
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 200))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 820, 500
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (10, 24, 18), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (80, 160, 100), (px, py, PW, PH), 2)
+
+        hint = self.small.render("Left-click flower to display it  |  Left-click display to reclaim  |  E or ESC: close",
+                                 True, (80, 150, 90))
+        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, py + 8))
+
+        # Left panel: current display slot
+        lw = (PW - 30) // 2
+        lx = px + 10
+        title_s = self.font.render("DISPLAYED", True, (160, 230, 130))
+        self.screen.blit(title_s, (lx + lw // 2 - title_s.get_width() // 2, py + 30))
+        slot_rect = pygame.Rect(lx + lw // 2 - 60, py + 70, 120, 120)
+        pygame.draw.rect(self.screen, (20, 40, 28), slot_rect)
+        pygame.draw.rect(self.screen, (60, 120, 80), slot_rect, 2)
+        if stored is not None:
+            self._draw_wf_preview(stored, slot_rect)
+            name_s = self.font.render(stored.flower_type.replace("_", " ").title(), True, (220, 255, 200))
+            self.screen.blit(name_s, (lx + lw // 2 - name_s.get_width() // 2, py + 200))
+            rar_col = self._RARITY_COLOR.get(stored.rarity, (160, 160, 160))
+            rar_s = self.small.render(stored.rarity.capitalize(), True, rar_col)
+            self.screen.blit(rar_s, (lx + lw // 2 - rar_s.get_width() // 2, py + 224))
+            bio_s = self.small.render(stored.biodome_found, True, (100, 160, 110))
+            self.screen.blit(bio_s, (lx + lw // 2 - bio_s.get_width() // 2, py + 244))
+        else:
+            empty_s = self.small.render("Empty", True, (60, 100, 70))
+            self.screen.blit(empty_s, (slot_rect.centerx - empty_s.get_width() // 2,
+                                       slot_rect.centery - empty_s.get_height() // 2))
+
+        # Divider
+        div_x = px + lw + 20
+        pygame.draw.line(self.screen, (40, 90, 50), (div_x, py + 30), (div_x, py + PH - 20), 1)
+
+        # Right panel: player's wildflower collection
+        rx = div_x + 10
+        title2_s = self.font.render("YOUR WILDFLOWERS", True, (160, 230, 130))
+        self.screen.blit(title2_s, (rx + lw // 2 - title2_s.get_width() // 2, py + 30))
+
+        CW, CH, GAP = lw - 20, 50, 5
+        VISIBLE = 6
+        AREA_H = VISIBLE * (CH + GAP)
+        clip = pygame.Rect(rx, py + 55, lw, AREA_H + 5)
+        self.screen.set_clip(clip)
+        self._display_player_rects.clear()
+        for idx, wf in enumerate(player.wildflowers):
+            row = idx - getattr(self, '_display_scroll', 0)
+            if row < 0 or row >= VISIBLE:
+                continue
+            y = py + 58 + row * (CH + GAP)
+            rect = pygame.Rect(rx + 10, y, CW, CH)
+            self._display_player_rects[wf.uid] = rect
+            bg = (30, 50, 35) if stored and stored.uid == wf.uid else (20, 38, 26)
+            pygame.draw.rect(self.screen, bg, rect)
+            pygame.draw.rect(self.screen, (50, 110, 65), rect, 1)
+            swatch = pygame.Rect(rx + 16, y + 7, 36, 36)
+            pygame.draw.rect(self.screen, wf.primary_color, swatch)
+            pygame.draw.rect(self.screen, wf.secondary_color, swatch, 3)
+            name_s = self.small.render(wf.flower_type.replace("_", " ").title(), True, (210, 245, 195))
+            self.screen.blit(name_s, (rx + 60, y + 7))
+            rar_col = self._RARITY_COLOR.get(wf.rarity, (160, 160, 160))
+            self.screen.blit(self.small.render(wf.rarity.capitalize(), True, rar_col), (rx + 60, y + 27))
+        self.screen.set_clip(None)
+
+        max_scroll = max(0, len(player.wildflowers) - VISIBLE)
+        self._display_scroll = min(getattr(self, '_display_scroll', 0), max_scroll)
+        if not player.wildflowers:
+            empty_s = self.small.render("No wildflowers in collection", True, (50, 90, 60))
+            self.screen.blit(empty_s, (rx + lw // 2 - empty_s.get_width() // 2, py + 240))
+
+    def _draw_wf_preview(self, wf, slot_rect):
+        import math as _math
+        cx = slot_rect.centerx
+        cy = slot_rect.centery
+        pygame.draw.line(self.screen, (50, 140, 40), (cx, cy + 20), (cx, cy - 20), 2)
+        for i in range(wf.petal_count):
+            ang = i * 2 * _math.pi / wf.petal_count - _math.pi / 2
+            px = int(cx + 22 * _math.cos(ang))
+            py = int(cy - 12 + 22 * _math.sin(ang))
+            col = wf.primary_color if i % 2 == 0 else wf.secondary_color
+            pygame.draw.circle(self.screen, col, (px, py), 10)
+        pygame.draw.circle(self.screen, wf.center_color, (cx, cy - 12), 8)
+
     _STATUS_COLOR = {
         "active":         (80, 220, 80),
         "halted_fuel":    (220, 140, 40),

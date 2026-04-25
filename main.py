@@ -13,7 +13,7 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK
 from elevators import ElevatorCar
 
 SETTINGS_PATH = Path(__file__).parent / "settings.json"
@@ -452,6 +452,8 @@ def main():
         ui.garden_open = False
         ui.active_garden_flowers = None
         ui.active_garden_pos = None
+        ui.wildflower_display_open = False
+        ui.active_display_pos = None
         ui.wardrobe_open = False
         ui._jw_phase = "idle"
         ui._jw_drag_uid = None
@@ -461,7 +463,7 @@ def main():
         return any([ui.pause_open, ui.help_open, ui.research_open, ui.inventory_open, ui.crafting_open,
                     ui.collection_open, ui.refinery_open, ui.npc_open,
                     ui.automation_open, ui.farm_bot_open, ui.chest_open,
-                    ui.backhoe_open, ui.breeding_open, ui.garden_open,
+                    ui.backhoe_open, ui.breeding_open, ui.garden_open, ui.wildflower_display_open,
                     ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open])
 
     def _find_nearby_npc(world, player):
@@ -805,6 +807,8 @@ def main():
                         ui.active_npc = None
                         nearby_chest = player.get_nearby_chest()
                         nearby_garden = player.get_nearby_garden()
+                        nearby_wf_display = player.get_nearby_wildflower_display()
+                        nearby_pottery_display = player.get_nearby_pottery_display()
                         if nearby_chest is not None:
                             if ui.chest_open and ui.active_chest_pos == nearby_chest:
                                 ui.chest_open = False
@@ -827,6 +831,29 @@ def main():
                                 ui.active_garden_flowers = world.garden_data.setdefault((bx, by), [])
                                 ui.active_garden_pos = nearby_garden
                                 ui.garden_open = True
+                        elif nearby_wf_display is not None:
+                            if ui.wildflower_display_open and ui.active_display_pos == nearby_wf_display:
+                                ui.wildflower_display_open = False
+                                ui.active_display_pos = None
+                            else:
+                                _close_all_ui()
+                                ui.active_display_pos = nearby_wf_display
+                                ui.wildflower_display_open = True
+                        elif nearby_pottery_display is not None:
+                            bx, by = nearby_pottery_display
+                            existing = world.pottery_display_data.get((bx, by))
+                            if existing is not None:
+                                # Remove piece from pedestal, return vase item
+                                from pottery import get_output_item
+                                world.pottery_display_data.pop((bx, by))
+                                player._add_item(get_output_item(existing))
+                                player.pending_notifications.append(("Pottery", f"{existing.shape.title()} removed from display", None))
+                            elif player.unplaced_vases:
+                                piece = player.unplaced_vases.pop()
+                                world.pottery_display_data[(bx, by)] = piece
+                                player.pending_notifications.append(("Pottery", f"{piece.firing_level.title()} {piece.clay_biome.title()} vase displayed", None))
+                            else:
+                                player.pending_notifications.append(("Pottery", "No vases available to display", None))
                         else:
                             equip = player.get_nearby_equipment()
                             if equip is not None:
@@ -868,6 +895,9 @@ def main():
                 if not player.dead and not ui.cheat_open:
                     if ui.help_open:
                         ui._help_scroll = max(0, min(ui._help_max_scroll, ui._help_scroll - event.y * 20))
+                    elif ui.wildflower_display_open:
+                        max_s = max(0, len(player.wildflowers) - 6)
+                        ui._display_scroll = max(0, min(max_s, getattr(ui, '_display_scroll', 0) - event.y))
                     elif ui.research_open or ui.inventory_open or ui.crafting_open or ui.collection_open or ui.refinery_open or ui.chest_open or ui.breeding_open or ui.garden_open or ui.horse_breeding_open:
                         ui.handle_scroll(event.y)
                     elif not _any_ui_open():
@@ -993,6 +1023,8 @@ def main():
                     ui.handle_chest_click(event.pos, player, event.button)
                 elif ui.garden_open:
                     ui.handle_garden_click(event.pos, player)
+                elif ui.wildflower_display_open:
+                    ui.handle_wildflower_display_click(event.pos, player)
                 else:
                     # Check for bird clicks before falling through to hotbar/world
                     if event.button == 1 and not ui._bird_obs_active:

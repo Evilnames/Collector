@@ -647,6 +647,27 @@ ARTISAN_RECIPES = [
     {"name": "Chimney Breast",      "ingredients": {"limestone_block": 2, "stone_chip": 2},       "output_id": "chimney_breast_ren",   "output_count": 1},
     {"name": "Pedimented Niche",    "ingredients": {"limestone_block": 2, "stone_chip": 1},       "output_id": "pedimented_niche",     "output_count": 1},
     {"name": "Shell Niche",         "ingredients": {"limestone_block": 1, "stone_chip": 2},       "output_id": "shell_niche_ren",      "output_count": 1},
+    # Medieval Castle
+    {"name": "Portcullis",          "ingredients": {"iron_chunk": 3, "lumber": 1},                "output_id": "portcullis_block",    "output_count": 1},
+    {"name": "Arrow Loop",          "ingredients": {"stone_chip": 2, "limestone_block": 1},        "output_id": "arrow_loop",          "output_count": 2},
+    {"name": "Machicolation",       "ingredients": {"stone_chip": 3, "limestone_chip": 1},         "output_id": "machicolation",       "output_count": 2},
+    {"name": "Drawbridge Plank",    "ingredients": {"lumber": 3, "iron_chunk": 1},                 "output_id": "drawbridge_plank",    "output_count": 3},
+    {"name": "Round Tower Wall",    "ingredients": {"stone_chip": 2, "limestone_block": 1},        "output_id": "round_tower_wall",    "output_count": 3},
+    {"name": "Curtain Wall",        "ingredients": {"limestone_block": 2, "stone_chip": 1},        "output_id": "curtain_wall",        "output_count": 3},
+    {"name": "Corbel Course",       "ingredients": {"stone_chip": 3},                              "output_id": "corbel_course",       "output_count": 3},
+    {"name": "Tower Cap",           "ingredients": {"stone_chip": 2, "lumber": 1},                 "output_id": "tower_cap",           "output_count": 2},
+    {"name": "Great Hall Floor",    "ingredients": {"limestone_block": 1, "stone_chip": 1},        "output_id": "great_hall_floor",    "output_count": 4},
+    {"name": "Dungeon Wall",        "ingredients": {"stone_chip": 2, "iron_chunk": 1},             "output_id": "dungeon_wall",        "output_count": 3},
+    {"name": "Castle Fireplace",    "ingredients": {"stone_chip": 3, "limestone_block": 1},        "output_id": "castle_fireplace",    "output_count": 1},
+    {"name": "Heraldic Panel",      "ingredients": {"limestone_block": 1, "stone_chip": 2},        "output_id": "heraldic_panel",      "output_count": 2},
+    {"name": "Wall-Walk Floor",     "ingredients": {"stone_chip": 2, "limestone_chip": 1},         "output_id": "wall_walk_floor",     "output_count": 4},
+    {"name": "Castle Gate Arch",    "ingredients": {"stone_chip": 3, "iron_chunk": 1},             "output_id": "castle_gate_arch",    "output_count": 1},
+    {"name": "Drawbridge Chain",    "ingredients": {"iron_chunk": 3},                              "output_id": "drawbridge_chain",    "output_count": 3},
+    {"name": "Dungeon Grate",       "ingredients": {"iron_chunk": 2, "stone_chip": 1},             "output_id": "dungeon_grate",       "output_count": 2},
+    {"name": "Moat Stone",          "ingredients": {"stone_chip": 2, "sand_grain": 1},             "output_id": "moat_stone",          "output_count": 4},
+    {"name": "Chapel Stone",        "ingredients": {"limestone_block": 1, "crystal_shard": 1},     "output_id": "chapel_stone",        "output_count": 2},
+    {"name": "Murder Hole",         "ingredients": {"stone_chip": 3},                              "output_id": "murder_hole",         "output_count": 2},
+    {"name": "Garderobe Chute",     "ingredients": {"stone_chip": 2, "limestone_chip": 1},         "output_id": "garderobe_chute",     "output_count": 2},
 ]
 
 # ---------------------------------------------------------------------------
@@ -1180,6 +1201,16 @@ RECIPES = [
         "output_id":    "garden_block",
         "output_count": 1,
     },
+    {
+        "name": "Wildflower Display",
+        "pattern": [
+            [None,          "glass_pane",  None        ],
+            [None,          "glass_pane",  None        ],
+            ["lumber",      "lumber",      "lumber"    ],
+        ],
+        "output_id":    "wildflower_display",
+        "output_count": 1,
+    },
     # --- Horse items ---
     {
         "name": "Saddle",
@@ -1627,6 +1658,14 @@ RECIPES = [
         "output_id":    "pottery_kiln_item",
         "output_count": 1,
     },
+    {
+        "name":    "Pottery Display",
+        "pattern": [[None,         "stone_chip", None],
+                    ["stone_chip", "clay",       "stone_chip"],
+                    ["stone_chip", "stone_chip", "stone_chip"]],
+        "output_id":    "pottery_display",
+        "output_count": 1,
+    },
 ]
 
 # ---------------------------------------------------------------------------
@@ -1676,6 +1715,54 @@ FLETCHING_RECIPES = [
 # ---------------------------------------------------------------------------
 
 GARDEN_WORKSHOP_RECIPES = [
+    # Zellige tiles
+    # Portuguese / Spanish ceramic tiles
+    {"name": "Calçada Portuguesa",   "ingredients": {"stone_chip": 2, "coal": 1},                                        "output_id": "calcada_portuguesa",  "output_count": 4},
+    {"name": "Azulejo Geometric",    "ingredients": {"clay": 2, "dye_extract_cobalt": 1},                                "output_id": "azulejo_geometric",   "output_count": 4},
+    {"name": "Painted Tile Border",  "ingredients": {"clay": 1, "dye_extract_cobalt": 1, "dye_extract_golden": 1},       "output_id": "painted_tile_border", "output_count": 6},
+    {"name": "Spanish Majolica",     "ingredients": {"clay": 2, "dye_extract_verdant": 1, "dye_extract_amber": 1},       "output_id": "spanish_majolica",    "output_count": 3},
+    {"name": "Azulejo Stair",        "ingredients": {"clay": 2, "dye_extract_cobalt": 1, "dye_extract_ivory": 1},        "output_id": "azulejo_stair",       "output_count": 4},
+    {"name": "Portuguese Pink Marble", "ingredients": {"limestone_block": 1, "dye_extract_rose": 1},                    "output_id": "portuguese_pink_marble", "output_count": 4},
+    {"name": "Spanish Hex Tile",     "ingredients": {"clay": 2, "coal": 1},                                             "output_id": "spanish_hex_tile",    "output_count": 4},
+    {"name": "Mudéjar Star Tile",    "ingredients": {"clay": 2, "dye_extract_cobalt": 1, "dye_extract_amber": 1},       "output_id": "mudejar_star_tile",   "output_count": 3},
+    {"name": "Albarrada Panel",      "ingredients": {"clay": 2, "dye_extract_cobalt": 1},                               "output_id": "albarrada_panel",     "output_count": 2},
+    {"name": "Sgraffito Wall",       "ingredients": {"clay": 2, "limestone_chip": 1},                                   "output_id": "sgraffito_wall",      "output_count": 4},
+    {"name": "Trencadís Panel",      "ingredients": {"clay": 1, "dye_extract_cobalt": 1, "dye_extract_crimson": 1},     "output_id": "trencadis_panel",     "output_count": 2},
+    {"name": "Azulejo Navy",         "ingredients": {"clay": 2, "dye_extract_cobalt": 2},                               "output_id": "azulejo_navy",        "output_count": 4},
+    {"name": "Azulejo Manganese",    "ingredients": {"clay": 2, "dye_extract_violet": 1},                               "output_id": "azulejo_manganese",   "output_count": 4},
+    {"name": "Plateresque Panel",    "ingredients": {"stone_chip": 3},                                                  "output_id": "plateresque_panel",   "output_count": 2},
+    {"name": "Azulejo Cornice",      "ingredients": {"clay": 1, "dye_extract_cobalt": 1},                               "output_id": "azulejo_cornice",     "output_count": 6},
+    {"name": "Talavera Fountain",    "ingredients": {"clay": 3, "dye_extract_cobalt": 1},                               "output_id": "talavera_fountain",   "output_count": 1},
+    {"name": "Barcelona Tile",       "ingredients": {"clay": 2, "dye_extract_rose": 1},                                 "output_id": "barcelona_tile",      "output_count": 4},
+    {"name": "Moorish Archway Tile", "ingredients": {"stone_chip": 2, "clay": 1},                                       "output_id": "moorish_archway_tile","output_count": 2},
+    {"name": "Portuguese Chimney",   "ingredients": {"clay": 3, "dye_extract_cobalt": 1},                               "output_id": "portuguese_chimney",  "output_count": 1},
+    {"name": "Barcelos Tile",        "ingredients": {"clay": 2, "dye_extract_cobalt": 1},                               "output_id": "barcelos_tile",       "output_count": 3},
+    {"name": "Reja Panel",           "ingredients": {"iron_chunk": 2, "clay": 1},                                       "output_id": "reja_panel",          "output_count": 2},
+    {"name": "Orange Tree Planter",  "ingredients": {"clay": 3, "dye_extract_amber": 1},                                "output_id": "orange_tree_planter", "output_count": 1},
+    {"name": "Wave Cobble",          "ingredients": {"stone_chip": 2},                                                  "output_id": "wave_cobble",         "output_count": 4},
+    {"name": "Azulejo Facade Panel", "ingredients": {"clay": 3, "dye_extract_cobalt": 2},                               "output_id": "azulejo_facade_panel","output_count": 2},
+    {"name": "Mudéjar Brick",        "ingredients": {"clay": 2, "stone_chip": 1},                                       "output_id": "mudejar_brick",       "output_count": 4},
+    {"name": "Portuguese Bench",     "ingredients": {"stone_chip": 3, "dye_extract_cobalt": 1},                         "output_id": "portuguese_bench",    "output_count": 1},
+    {"name": "Spanish Patio Floor",  "ingredients": {"clay": 2, "coal": 1},                                             "output_id": "spanish_patio_floor", "output_count": 4},
+    {"name": "Arabic Roof Tile",     "ingredients": {"clay": 2},                                                        "output_id": "arabic_roof_tile",    "output_count": 4},
+    {"name": "Moorish Column Tile",  "ingredients": {"clay": 2, "dye_extract_cobalt": 1, "dye_extract_verdant": 1},     "output_id": "moorish_column_tile", "output_count": 3},
+    {"name": "Estremoz Marble",      "ingredients": {"limestone_block": 2},                                             "output_id": "estremoz_marble",     "output_count": 4},
+    # Córdoba / Umayyad Architecture
+    {"name": "Mezquita Arch",        "ingredients": {"clay": 2, "dye_extract_crimson": 1},                               "output_id": "mezquita_arch",       "output_count": 2},
+    {"name": "Mihrab Tile",          "ingredients": {"clay": 2, "dye_extract_golden": 2},                                "output_id": "mihrab_tile",         "output_count": 1},
+    {"name": "Medina Azahara Stone", "ingredients": {"limestone_block": 1, "stone_chip": 1},                             "output_id": "medina_azahara_stone","output_count": 3},
+    {"name": "Córdoba Column",       "ingredients": {"limestone_block": 2},                                              "output_id": "cordoba_column",      "output_count": 2},
+    {"name": "Orange Court Floor",   "ingredients": {"stone_chip": 2, "clay": 1},                                        "output_id": "orange_court_floor",  "output_count": 4},
+    {"name": "Cordoban Leather",     "ingredients": {"clay": 1, "dye_extract_amber": 1, "dye_extract_golden": 1},        "output_id": "cordoban_leather",    "output_count": 2},
+    {"name": "Umayyad Multilobed",   "ingredients": {"stone_chip": 3},                                                   "output_id": "umayyad_multilobed",  "output_count": 2},
+    {"name": "Gold Tessera Panel",   "ingredients": {"clay": 1, "dye_extract_golden": 2},                                "output_id": "gold_tessera_panel",  "output_count": 2},
+    {"name": "Umayyad Dome Rib",     "ingredients": {"stone_chip": 2, "limestone_chip": 1},                              "output_id": "umayyad_dome_rib",    "output_count": 3},
+    {"name": "Kufic Panel",          "ingredients": {"stone_chip": 3},                                                   "output_id": "kufic_panel",         "output_count": 2},
+    {"name": "Patio Flower Wall",    "ingredients": {"clay": 2, "dye_extract_crimson": 1},                               "output_id": "patio_flower_wall",   "output_count": 3},
+    {"name": "Cordoban Patio Tile",  "ingredients": {"clay": 2, "stone_chip": 1},                                        "output_id": "cordoban_patio_tile", "output_count": 4},
+    {"name": "Star Vault Panel",     "ingredients": {"stone_chip": 2, "clay": 1},                                        "output_id": "star_vault_panel",    "output_count": 3},
+    {"name": "Andalusian Fountain",  "ingredients": {"clay": 3, "stone_chip": 2},                                        "output_id": "andalusian_fountain", "output_count": 1},
+    {"name": "Nasrid Honeycomb",     "ingredients": {"stone_chip": 3, "dye_extract_amber": 1},                           "output_id": "nasrid_honeycomb",    "output_count": 2},
     # Zellige tiles
     {"name": "Zellige Blue",         "ingredients": {"clay": 2, "dye_extract_cobalt": 1},   "output_id": "zellige_blue",       "output_count": 4},
     {"name": "Zellige Terracotta",   "ingredients": {"clay": 3},                             "output_id": "zellige_terracotta", "output_count": 4},
@@ -1921,6 +2008,7 @@ RECIPE_GROUPS = {
     ],
     "Wildlife": [
         "bird_feeder", "bird_bath", "bug_net", "insect_display_case",
+        "wildflower_display",
     ],
     "Horses": [
         "saddle", "horse_brush", "horseshoe", "sugar_lump",
@@ -1972,6 +2060,7 @@ RESEARCH_LOCKED_RECIPES = {
     "bird_bath":             "bird_sanctuary",
     "bug_net":               "entomology_basics",
     "insect_display_case":   "entomology_basics",
+    "wildflower_display":    "garden_workshop",
     "saddle":                "saddle_craft",
     "stable_item":           "saddle_craft",
     "drying_rack_item":      "herbalism_basics",

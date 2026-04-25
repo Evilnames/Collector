@@ -44,10 +44,11 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     CHAMOMILE_CROP_MATURE, LAVENDER_CROP_MATURE, MINT_CROP_MATURE, ROSEMARY_CROP_MATURE,
                     SKY_OPENING, STONE, TILLED_SOIL, SAND, COMPOST_BIN_BLOCK, WELL_BLOCK,
                     STAIRS_RIGHT, STAIRS_LEFT, STAIR_BLOCKS,
-                    GARDEN_BLOCK,
+                    GARDEN_BLOCK, WILDFLOWER_DISPLAY_BLOCK,
                     COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE,
                     ELEVATOR_STOP_BLOCK,
-                    SCULPTURE_BLOCK_ROOT, SCULPTURE_BLOCK_BODY)
+                    SCULPTURE_BLOCK_ROOT, SCULPTURE_BLOCK_BODY,
+                    POTTERY_DISPLAY_BLOCK)
 import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
@@ -73,7 +74,7 @@ from constants import (
 
 # Blocks that cannot be placed in the background layer
 _BG_DISALLOWED = (
-    {WATER, LADDER, SAPLING, CHEST_BLOCK, GARDEN_BLOCK,
+    {WATER, LADDER, SAPLING, CHEST_BLOCK, GARDEN_BLOCK, WILDFLOWER_DISPLAY_BLOCK,
      WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
      COBALT_DOOR_CLOSED, COBALT_DOOR_OPEN,
      CRIMSON_CEDAR_DOOR_CLOSED, CRIMSON_CEDAR_DOOR_OPEN,
@@ -182,6 +183,7 @@ class Player:
         self.pottery_pieces       = []   # PotteryPiece objects
         self.discovered_pottery   = set()  # "biome_firinglevel" strings
         self._pottery_gen         = PotteryGenerator(world.seed)
+        self.unplaced_vases       = []   # PotteryPiece vases available to mount on a display pedestal
         self.pottery_buffs        = {}   # buff_name -> {"duration": float}
         # Hunting
         self.animals_hunted  = {}   # animal_id -> count killed
@@ -322,6 +324,12 @@ class Player:
         self.pottery_pieces     = [PotteryPiece(**x) for x in d.get("pottery_pieces", [])]
         self.discovered_pottery = set(d.get("discovered_pottery", []))
         self.pottery_buffs      = d.get("pottery_buffs", {})
+        # Reconstruct unplaced_vases from saved UIDs
+        _piece_by_uid = {p.uid: p for p in self.pottery_pieces}
+        _pending_uids = getattr(self.world, "_pending_unplaced_vase_uids", [])
+        self.unplaced_vases = [_piece_by_uid[uid] for uid in _pending_uids if uid in _piece_by_uid]
+        if hasattr(self.world, "_pending_unplaced_vase_uids"):
+            del self.world._pending_unplaced_vase_uids
 
     # ------------------------------------------------------------------
     # Sculpture helpers
@@ -791,6 +799,10 @@ class Player:
                     garden_flowers = self.world.garden_data.pop((bx, by), [])
                     for wf in garden_flowers:
                         self.wildflowers.append(wf)
+                if block_id == WILDFLOWER_DISPLAY_BLOCK:
+                    stored = self.world.wildflower_display_data.pop((bx, by), None)
+                    if stored is not None:
+                        self.wildflowers.append(stored)
                 if block_id == COMPOST_BIN_BLOCK:
                     bin_data = self.world.compost_bin_data.pop((bx, by), None)
                     if bin_data:
@@ -799,6 +811,11 @@ class Player:
                                 self._add_item(item_id, count)
                         if bin_data["output"] > 0:
                             self._add_item("compost", bin_data["output"])
+                if block_id == POTTERY_DISPLAY_BLOCK:
+                    piece = self.world.pottery_display_data.pop((bx, by), None)
+                    if piece is not None:
+                        from pottery import get_output_item
+                        self._add_item(get_output_item(piece))
                 # Mature crops also drop seeds back
                 if block_id == STRAWBERRY_CROP_MATURE:
                     for _ in range(random.randint(1, 2)):
@@ -1830,6 +1847,31 @@ class Player:
                 if dx * self.facing < 0:
                     continue
                 if self.world.get_block(cx + dx, cy + dy) == GARDEN_BLOCK:
+                    return (cx + dx, cy + dy)
+        return None
+
+    def get_nearby_wildflower_display(self):
+        """Return (bx, by) of a wildflower display block within 2 blocks of the player, or None."""
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        for dy in range(-2, 3):
+            for dx in range(-2, 3):
+                if dx * self.facing < 0:
+                    continue
+                if self.world.get_block(cx + dx, cy + dy) == WILDFLOWER_DISPLAY_BLOCK:
+                    return (cx + dx, cy + dy)
+        return None
+
+    def get_nearby_pottery_display(self):
+        """Return (bx, by) of a pottery display pedestal within 2 blocks of the player, or None."""
+        from blocks import POTTERY_DISPLAY_BLOCK
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        for dy in range(-2, 3):
+            for dx in range(-2, 3):
+                if dx * self.facing < 0:
+                    continue
+                if self.world.get_block(cx + dx, cy + dy) == POTTERY_DISPLAY_BLOCK:
                     return (cx + dx, cy + dy)
         return None
 

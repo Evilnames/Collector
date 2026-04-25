@@ -74,6 +74,7 @@ class World:
         self.dropped_items = []
         self.chest_data = {}     # (bx, by) -> {item_id: count}
         self.garden_data = {}    # (bx, by) -> [Wildflower, ...]
+        self.wildflower_display_data = {}  # (bx, by) -> Wildflower | None
         self._surface_height_cache = {}
         self._water_level   = {}   # (x,y) -> int 1-8; 8 = world-gen source block
         self._ore_richness  = {}   # (bx,by) -> int 1-3; richer veins drop more ore
@@ -92,6 +93,8 @@ class World:
         self.compost_bin_data = {}
         # Sculpture data: root pos -> Sculpture obj; body pos -> {"root": (bx, root_y)}
         self.sculpture_data = {}
+        # Pottery display pedestals: (bx, by) -> PotteryPiece
+        self.pottery_display_data = {}
         # Research-derived world flags (set by research.apply_bonuses)
         self.moisture_decay_chance = _soil.MOISTURE_DECAY_CHANCE
         self.max_fertility         = _soil.MAX_FERTILITY
@@ -384,9 +387,16 @@ class World:
             tuple(int(v) for v in k.split(",")): [_wf_from_dict(f) for f in flowers]
             for k, flowers in raw_garden.items()
         }
+        raw_displays = data.get("wildflower_display_data", {})
+        self.wildflower_display_data = {
+            tuple(int(v) for v in k.split(",")): _wf_from_dict(f)
+            for k, f in raw_displays.items()
+        }
         # sculpture_positions loaded here as uid strings; resolved in main.py
         # after player.apply_save (which loads the Sculpture objects)
         self._pending_sculpture_positions = data.get("sculpture_positions", {})
+        self.pottery_display_data = data.get("pottery_display_data", {})
+        self._pending_unplaced_vase_uids  = data.get("unplaced_vase_uids", [])
         # Load chunks around the player's saved position
         player_cx = int(player_x // BLOCK_SIZE) // CHUNK_W
         for cx in range(player_cx - CHUNK_LOAD_RADIUS, player_cx + CHUNK_LOAD_RADIUS + 1):
@@ -1258,7 +1268,9 @@ class World:
     def _pick_block(self, depth, rng, biome="igneous", bx=0, by=0):
         r = rng.random()
         # Clay deposits — shallow pockets in sedimentary/temperate/wetland/river zones
-        if depth < 35 and biome in ("sedimentary", "temperate", "wetland", "river", "swamp"):
+        if depth < 35 and biome in ("sedimentary", "temperate", "wetland", "river", "swamp",
+                                    "steppe", "arid_steppe", "savanna",
+                                    "birch_forest", "boreal", "rolling_hills", "rocky_mountain", "canyon"):
             clay_n = self._vein_noise(bx, by, 0x3C1A2, scale=5)
             if clay_n >= 0.60 and r < 0.07:
                 return CLAY_DEPOSIT
