@@ -833,9 +833,12 @@ class CoffeeMixin:
                 item_data = ITEMS.get(output_id, {})
                 player._add_item(output_id)
                 if item_data.get("coffee_buff"):
-                    player.active_buffs[item_data["coffee_buff"]] = {
+                    buff_name = item_data["coffee_buff"]
+                    player.active_buffs[buff_name] = {
                         "duration": final_dur, "intensity": 1.0
                     }
+                    from crossover import apply_pairing_to_buff
+                    apply_pairing_to_buff(player, "coffee", buff_name)
 
     # ------------------------------------------------------------------
     # Anaerobic Tank UI

@@ -2595,6 +2595,27 @@ BAIT_AFFINITIES = {
         "channel_catfish", "blue_catfish", "electric_eel",
         "alligator_gar", "gar", "snakehead",
     },
+    # Cross-system baits — biased toward rare/legendary ornamental species.
+    "floral_bait": {
+        "golden_koi", "koi", "mirror_carp", "discus", "arowana",
+        "silver_arowana", "peacock_bass", "ayu", "tanago", "medaka",
+        "biwamasu", "japanese_eel",
+    },
+    "spiced_bait": {
+        "arapaima", "tigerfish", "african_tigerfish", "snakehead",
+        "wels_catfish", "muskie", "amago", "yamame", "iwana", "itou",
+        "sakura_masu",
+    },
+    "aromatic_bait": {
+        "trout", "rainbow_trout", "brown_trout", "brook_trout",
+        "lake_trout", "grayling", "arctic_grayling", "yamame", "amago",
+        "iwana", "ayu", "biwamasu",
+    },
+    "honeyed_bait": {
+        "golden_koi", "koi", "mirror_carp", "leather_carp",
+        "crucian_carp", "tench", "rudd", "ide",
+        "ayu", "oikawa", "ugui", "gibuna",
+    },
 }
 
 # Pre-computed set for O(1) lookup — fish in this set require specific bait

@@ -176,9 +176,10 @@ class CollectionsMixin:
                 ((45, 20, 35),  (190, 100, 155), (250, 170, 220)),   # Jewelry
                 ((40, 25, 10),  (160, 110,  80), (210, 160, 110)),   # Pottery
                 ((32, 30, 28),  (190, 185, 165), (235, 232, 215)),   # Salt
+                ((30, 18, 38),  (165, 110, 215), (225, 180, 255)),   # Pairings
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
-                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT"]
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
             for cat_i, cat_label in enumerate(enc_labels):
@@ -221,6 +222,7 @@ class CollectionsMixin:
                 self._draw_jewelry_codex,
                 self._draw_pottery_codex,
                 self._draw_salt_codex,
+                self._draw_pairings_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)
@@ -3126,3 +3128,51 @@ class CollectionsMixin:
             dline(grade_.replace("_", " ").title(), col2)
             dline(SALT_BIOME_NAMES.get(biome_, biome_.replace("_", " ").title()), _TITLE)
             dline("Discovered!", (120, 220, 140))
+
+    def _draw_pairings_codex(self, player, gy0=58, gx_off=130):
+        from crossover import PAIRING_TABLE
+        disc = getattr(player, "discovered_pairings", set())
+
+        _BG       = (24, 18, 32)
+        _TITLE    = (235, 220, 250)
+        _LABEL    = (190, 175, 215)
+        _DIM      = ( 95,  85, 110)
+        _DISC_BRD = (185, 130, 230)
+        _MULT     = (245, 200, 120)
+
+        total = len(PAIRING_TABLE)
+        sub = self.small.render(
+            f"Discovered: {len(disc)} / {total}     Combine buffs from two systems for bonus duration.",
+            True, _LABEL)
+        self.screen.blit(sub, (gx_off + 8, gy0))
+
+        row_y = gy0 + 26
+        cell_w, cell_h, gap = 360, 46, 6
+
+        for key, info in PAIRING_TABLE.items():
+            discovered = info["name"] in disc
+            rect = pygame.Rect(gx_off + 8, row_y, cell_w, cell_h)
+            pygame.draw.rect(self.screen, _BG, rect)
+            pygame.draw.rect(self.screen, _DISC_BRD if discovered else _DIM, rect, 2)
+            if discovered:
+                name_s = self.small.render(info["name"], True, _TITLE)
+                self.screen.blit(name_s, (rect.x + 8, rect.y + 4))
+                # Two systems → buff combo line
+                parts = sorted(key, key=lambda t: t[0])
+                combo = "  +  ".join(
+                    f"{sys.title()}: {buff.replace('_', ' ').title()}"
+                    for sys, buff in parts
+                )
+                combo_s = self.small.render(combo, True, _LABEL)
+                self.screen.blit(combo_s, (rect.x + 8, rect.y + 22))
+                mult_s = self.small.render(
+                    f"x{info['duration_mult']:.2f}", True, _MULT)
+                self.screen.blit(mult_s,
+                    (rect.right - mult_s.get_width() - 8,
+                     rect.y + cell_h // 2 - mult_s.get_height() // 2))
+            else:
+                q_s = self.small.render("???  +  ???", True, _DIM)
+                self.screen.blit(q_s, (rect.x + 8, rect.y + cell_h // 2 - q_s.get_height() // 2))
+            row_y += cell_h + gap
+            if row_y > gy0 + 600:
+                break  # avoid overflow on small screens

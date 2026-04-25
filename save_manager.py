@@ -624,6 +624,8 @@ class SaveManager:
             ("discovered_recipes", "'[]'"),
             ("animals_hunted", "'{}'"),
             ("roast_profiles", "'[]'"),
+            ("discovered_pairings", "'[]'"),
+            ("aging_vessels", "'[]'"),
         ]:
             try:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT {default}")
@@ -906,8 +908,9 @@ class SaveManager:
                 spawn_x, spawn_y, discovered_fossil_types, known_crops,
                 discovered_foods, foods_cooked,
                 horses_tamed, horses_bred, horse_records, discovered_coat_biomes,
-                discovered_recipes, animals_hunted, roast_profiles)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                discovered_recipes, animals_hunted, roast_profiles,
+                discovered_pairings, aging_vessels)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 player.x, player.y, player.vx, player.vy, player.facing,
                 player.health, player.hunger, player.pick_power, player.money,
@@ -932,6 +935,8 @@ class SaveManager:
                 json.dumps(list(getattr(player, "discovered_recipes", set()))),
                 json.dumps(getattr(player, "animals_hunted", {})),
                 json.dumps(getattr(player, "roast_profiles", [])),
+                json.dumps(list(getattr(player, "discovered_pairings", set()))),
+                json.dumps(getattr(player, "aging_vessels", [])),
             )
         )
 
@@ -1527,7 +1532,9 @@ class SaveManager:
                    COALESCE(discovered_recipes, '[]'),
                    COALESCE(worn, '{}'),
                    COALESCE(animals_hunted, '{}'),
-                   COALESCE(roast_profiles, '[]')
+                   COALESCE(roast_profiles, '[]'),
+                   COALESCE(discovered_pairings, '[]'),
+                   COALESCE(aging_vessels, '[]')
             FROM player LIMIT 1
         """).fetchone()
 
@@ -1538,7 +1545,8 @@ class SaveManager:
          spawn_x, spawn_y, discovered_fossil_types, known_crops,
          discovered_foods, foods_cooked,
          horses_tamed, horses_bred, horse_records_raw, discovered_coat_biomes_raw,
-         discovered_recipes_raw, worn_raw, animals_hunted_raw, roast_profiles_raw) = row
+         discovered_recipes_raw, worn_raw, animals_hunted_raw, roast_profiles_raw,
+         discovered_pairings_raw, aging_vessels_raw) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -1957,6 +1965,8 @@ class SaveManager:
             "discovered_recipes": json.loads(discovered_recipes_raw or "[]"),
             "animals_hunted":     json.loads(animals_hunted_raw or "{}"),
             "roast_profiles":     json.loads(roast_profiles_raw or "[]"),
+            "discovered_pairings": json.loads(discovered_pairings_raw or "[]"),
+            "aging_vessels": json.loads(aging_vessels_raw or "[]"),
             "sculptures_created": _sculpture_created,
             "pending_sculptures": _sculpture_pending,
             "tapestries_created": _tapestry_created,

@@ -796,6 +796,10 @@ ITEMS = {
     "grain_bait":  {"name": "Grain Bait",  "color": (210, 180, 90), "place_block": None, "bait": True},
     "berry_bait":  {"name": "Berry Bait",  "color": (180,  60,120), "place_block": None, "bait": True},
     "meat_bait":   {"name": "Meat Bait",   "color": (160,  80, 60), "place_block": None, "bait": True},
+    "floral_bait":   {"name": "Floral Bait",   "color": (220, 170, 220), "place_block": None, "bait": True},
+    "spiced_bait":   {"name": "Spiced Bait",   "color": (200, 130,  60), "place_block": None, "bait": True},
+    "aromatic_bait": {"name": "Aromatic Bait", "color": (155, 130, 195), "place_block": None, "bait": True},
+    "honeyed_bait":  {"name": "Honeyed Bait",  "color": (235, 195,  90), "place_block": None, "bait": True},
     # --- Coffee supply chain ---
     "coffee_seed":          {"name": "Coffee Seed",       "color": ( 80, 105,  55), "place_block": COFFEE_CROP_YOUNG},
     "coffee_cherry":        {"name": "Coffee Cherry",     "color": (170,  40,  30), "place_block": None, "edible": True, "hunger_restore": 4},

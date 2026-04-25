@@ -686,6 +686,8 @@ class SpiritsMixin:
         duration = item.get("spirit_buff_duration", 120.0)
         if hasattr(player, "spirit_buffs"):
             player.spirit_buffs[buff_key] = {"duration": duration}
+            from crossover import apply_pairing_to_buff
+            apply_pairing_to_buff(player, "spirit", buff_key)
 
     # ------------------------------------------------------------------ #
     #  Spirits codex  (drawn by collections.py, but helper lives here)    #

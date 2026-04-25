@@ -1894,11 +1894,16 @@ POTTERY_KILN_RECIPES = [
 # ---------------------------------------------------------------------------
 
 BAIT_STATION_RECIPES = [
-    {"name": "Worm Bait",   "ingredients": {"wheat": 2},                          "output_id": "worm_bait",   "output_count": 4},
-    {"name": "Insect Bait", "ingredients": {"mint": 1, "rosemary": 1},            "output_id": "insect_bait", "output_count": 4},
-    {"name": "Grain Bait",  "ingredients": {"corn": 2, "wheat": 1},               "output_id": "grain_bait",  "output_count": 4},
-    {"name": "Berry Bait",  "ingredients": {"strawberry": 3},                     "output_id": "berry_bait",  "output_count": 4},
-    {"name": "Meat Bait",   "ingredients": {"fish": 2},                           "output_id": "meat_bait",   "output_count": 4},
+    {"name": "Worm Bait",     "ingredients": {"wheat": 2},                                         "output_id": "worm_bait",     "output_count": 4},
+    {"name": "Insect Bait",   "ingredients": {"mint": 1, "rosemary": 1},                           "output_id": "insect_bait",   "output_count": 4},
+    {"name": "Grain Bait",    "ingredients": {"corn": 2, "wheat": 1},                              "output_id": "grain_bait",    "output_count": 4},
+    {"name": "Berry Bait",    "ingredients": {"strawberry": 3},                                    "output_id": "berry_bait",    "output_count": 4},
+    {"name": "Meat Bait",     "ingredients": {"fish": 2},                                          "output_id": "meat_bait",     "output_count": 4},
+    # Cross-system baits — draw from wildflower / herbalism / cooking outputs
+    {"name": "Floral Bait",   "ingredients": {"pressed_flower": 2, "dried_chamomile": 1},          "output_id": "floral_bait",   "output_count": 3},
+    {"name": "Spiced Bait",   "ingredients": {"dried_ginger": 1, "olive_oil": 1, "wheat": 1},      "output_id": "spiced_bait",   "output_count": 3},
+    {"name": "Aromatic Bait", "ingredients": {"dried_lavender": 1, "dried_mint": 1},               "output_id": "aromatic_bait", "output_count": 3},
+    {"name": "Honeyed Bait",  "ingredients": {"pressed_flower": 1, "dried_rosemary": 1, "corn": 2},"output_id": "honeyed_bait",  "output_count": 3},
 ]
 
 # ---------------------------------------------------------------------------

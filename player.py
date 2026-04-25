@@ -70,6 +70,7 @@ from textiles import TextileGenerator, Textile
 from cheese import CheeseGenerator, Cheese
 from jewelry import Jewelry
 from salt import SaltGenerator, SaltCrystal
+from crossover import apply_pairing_to_buff, get_pollination_bonus, apply_aging_modifier
 from constants import (
     BLOCK_SIZE, PLAYER_W, PLAYER_H,
     GRAVITY, JUMP_FORCE, MOVE_SPEED, MAX_FALL,
@@ -199,6 +200,13 @@ class Player:
         self._pottery_gen         = PotteryGenerator(world.seed)
         self.unplaced_vases       = []   # PotteryPiece vases available to mount on a display pedestal
         self.pottery_buffs        = {}   # buff_name -> {"duration": float}
+        # Cross-system pairings discovered (see crossover.PAIRING_TABLE)
+        self.discovered_pairings  = set()
+        # Pottery aging vessels: list of dicts:
+        #   {"vessel_uid", "vessel_clay_biome", "vessel_shape",
+        #    "kind": "wine"|"spirit"|"tea",
+        #    "beverage_uid", "elapsed_seconds": float}
+        self.aging_vessels        = []
         # Hunting
         self.animals_hunted  = {}   # animal_id -> count killed
         self._bow_cooldown   = 0.0
@@ -346,6 +354,8 @@ class Player:
         self.salt_crystals          = [SaltCrystal(**x) for x in d.get("salt_crystals", [])]
         self.discovered_salt_origins= set(d.get("discovered_salt_origins", []))
         self.salt_buffs             = d.get("salt_buffs", {})
+        self.discovered_pairings    = set(d.get("discovered_pairings", []))
+        self.aging_vessels          = d.get("aging_vessels", [])
         # Reconstruct unplaced_vases from saved UIDs
         _piece_by_uid = {p.uid: p for p in self.pottery_pieces}
         _pending_uids = getattr(self.world, "_pending_unplaced_vase_uids", [])
@@ -769,11 +779,17 @@ class Player:
                 self.pending_notifications.append(
                     ("Rock", rock.base_type.replace("_", " ").title(), rock.rarity))
             elif block_id == WILDFLOWER_PATCH:
-                flower = self._flower_gen.generate(bx, by, self.world.get_biodome(bx))
+                biodome = self.world.get_biodome(bx)
+                flower = self._flower_gen.generate(bx, by, biodome)
                 self.wildflowers.append(flower)
                 self.discovered_flower_types.add(flower.flower_type)
                 self.pending_notifications.append(
                     ("Wildflower", flower.flower_type.replace("_", " ").title(), flower.rarity))
+                bonus = get_pollination_bonus(self, biodome, WILDFLOWER_PATCH)
+                if random.random() < bonus["yield"]:
+                    extra = self._flower_gen.generate(bx, by + 1, biodome)
+                    self.wildflowers.append(extra)
+                    self.discovered_flower_types.add(extra.flower_type)
             elif block_id == FOSSIL_DEPOSIT:
                 fossil = self._fossil_gen.generate(bx, by, self.get_depth(), self.world.get_biome(bx))
                 self.fossils.append(fossil)
@@ -800,16 +816,24 @@ class Player:
                     terroir = (moisture / MAX_MOISTURE * 0.5 + fertility / MAX_FERTILITY * 0.5)
                 else:
                     terroir = 0.0  # wild bush — no terroir bonus
+                bonus = get_pollination_bonus(self, biodome, COFFEE_CROP_MATURE)
+                terroir = min(1.0, terroir + bonus["quality"])
                 bean = self._coffee_gen.generate(biodome, terroir=terroir)
                 self.coffee_beans.append(bean)
                 self._add_item("coffee_seed")
                 self.pending_notifications.append(("Coffee", "Coffee Cherry", None))
+                if random.random() < bonus["yield"]:
+                    extra_bean = self._coffee_gen.generate(biodome, terroir=terroir)
+                    self.coffee_beans.append(extra_bean)
             elif block_id == GRAPEVINE_CROP_MATURE:
                 biodome = self.world.get_biodome(bx)
                 grape = self._wine_gen.generate(biodome)
                 self.wine_grapes.append(grape)
                 self._add_item("grape_seed")
                 self.pending_notifications.append(("Wine", "Grape Cluster", None))
+                bonus = get_pollination_bonus(self, biodome, GRAPEVINE_CROP_MATURE)
+                if random.random() < bonus["yield"]:
+                    self.wine_grapes.append(self._wine_gen.generate(biodome))
             elif block_id == GRAIN_CROP_MATURE:
                 biodome = self.world.get_biodome(bx)
                 spirit = self._spirit_gen.generate(biodome)
@@ -822,6 +846,9 @@ class Player:
                 self.tea_leaves.append(leaf)
                 self._add_item("tea_seed")
                 self.pending_notifications.append(("Tea", "Tea Leaf", None))
+                bonus = get_pollination_bonus(self, biodome, TEA_CROP_MATURE)
+                if random.random() < bonus["yield"]:
+                    self.tea_leaves.append(self._tea_gen.generate(biodome))
             elif block_id == FLAX_CROP_MATURE:
                 self._add_item("flax_fiber")
                 self._add_item("flax_seed")
@@ -1459,6 +1486,73 @@ class Player:
         self.hotbar_uses = [None] * HOTBAR_SIZE
         return drops
 
+    # ------------------------------------------------------------------
+    # Pottery aging vessels (cross-system: pottery × wine / spirits / tea)
+    # ------------------------------------------------------------------
+    _AGING_KIND_LIST = {"wine": "wine_grapes", "spirit": "spirits", "tea": "tea_leaves"}
+    _AGING_KIND_CLASS = {"wine": Grape, "spirit": Spirit, "tea": TeaLeaf}
+
+    def _vessel_shape_supports_aging(self, shape):
+        return shape in ("amphora", "vase", "jug")
+
+    def start_aging_in_vessel(self, vessel_piece, kind, beverage_uid):
+        """
+        Move a beverage out of its collection list into the vessel. Returns
+        True on success. Vessel must be fired/glazed and shape must be vessel-
+        capable. The beverage is stored as a serialized snapshot in the aging
+        entry so save/load is trivial.
+        """
+        from dataclasses import asdict
+        if vessel_piece.state == "formed":
+            return False
+        if not self._vessel_shape_supports_aging(vessel_piece.shape):
+            return False
+        if any(av["vessel_uid"] == vessel_piece.uid for av in self.aging_vessels):
+            return False
+        list_attr = self._AGING_KIND_LIST.get(kind)
+        if list_attr is None:
+            return False
+        bevs = getattr(self, list_attr)
+        idx = next((i for i, b in enumerate(bevs) if b.uid == beverage_uid), -1)
+        if idx < 0:
+            return False
+        bev = bevs.pop(idx)
+        self.aging_vessels.append({
+            "vessel_uid":        vessel_piece.uid,
+            "vessel_clay_biome": vessel_piece.clay_biome,
+            "vessel_shape":      vessel_piece.shape,
+            "kind":              kind,
+            "beverage_snapshot": asdict(bev),
+            "elapsed_seconds":   0.0,
+        })
+        return True
+
+    def tick_aging_vessels(self, dt):
+        for av in self.aging_vessels:
+            av["elapsed_seconds"] += dt
+
+    def retrieve_from_aging_vessel(self, idx):
+        """
+        Apply aging modifier and reattach the beverage to its collection list.
+        Returns the matured beverage, or None if idx is invalid.
+        """
+        from world import DAY_DURATION, NIGHT_DURATION
+        if not (0 <= idx < len(self.aging_vessels)):
+            return None
+        av = self.aging_vessels.pop(idx)
+        list_attr = self._AGING_KIND_LIST.get(av["kind"])
+        cls = self._AGING_KIND_CLASS.get(av["kind"])
+        if list_attr is None or cls is None:
+            return None
+        bev = cls(**av["beverage_snapshot"])
+        cycle = DAY_DURATION + NIGHT_DURATION
+        days_aged = av["elapsed_seconds"] / cycle if cycle > 0 else 0.0
+        apply_aging_modifier(bev, av["vessel_clay_biome"], days_aged)
+        getattr(self, list_attr).append(bev)
+        self.pending_notifications.append(
+            ("Aged", av["kind"].title(), "rare"))
+        return bev
+
     def respawn(self):
         if self.spawn_x is not None and self.spawn_y is not None:
             self.x = float(self.spawn_x)
@@ -1636,20 +1730,24 @@ class Player:
             duration = item_data.get("coffee_buff_duration", 60.0)
             duration *= 1.0 + self.coffee_buff_duration_bonus
             self.active_buffs[buff] = {"duration": duration}
+            apply_pairing_to_buff(self, "coffee", buff)
         if item_data.get("wine_buff"):
             buff = item_data["wine_buff"]
             duration = item_data.get("wine_buff_duration", 120.0)
             self.wine_buffs[buff] = {"duration": duration}
+            apply_pairing_to_buff(self, "wine", buff)
         if item_data.get("tea_buff"):
             buff = item_data["tea_buff"]
             duration = item_data.get("tea_buff_duration", 90.0)
             self.tea_buffs[buff] = {"duration": duration}
+            apply_pairing_to_buff(self, "tea", buff)
         if item_data.get("herb_heal"):
             self.health = min(MAX_HEALTH, self.health + item_data["herb_heal"])
         if item_data.get("herb_buff"):
             buff = item_data["herb_buff"]
             duration = item_data.get("herb_buff_duration", 90.0)
             self.herb_buffs[buff] = {"duration": duration}
+            apply_pairing_to_buff(self, "herb", buff)
         if item_data.get("cheese_buff"):
             buff = item_data["cheese_buff"]
             duration = item_data.get("cheese_buff_duration", 90.0)
@@ -1658,6 +1756,7 @@ class Player:
                 self.health = min(MAX_HEALTH, self.health + heal)
             else:
                 self.cheese_buffs[buff] = {"duration": duration}
+                apply_pairing_to_buff(self, "cheese", buff)
         if item_data.get("cheese_buff_2"):
             buff2 = item_data["cheese_buff_2"]
             dur2  = item_data.get("cheese_buff_2_duration", 60.0)
@@ -1666,15 +1765,18 @@ class Player:
                 self.health = min(MAX_HEALTH, self.health + heal)
             else:
                 self.cheese_buffs[buff2] = {"duration": dur2}
+                apply_pairing_to_buff(self, "cheese", buff2)
         if item_data.get("pottery_buff"):
             buff = item_data["pottery_buff"]
             duration = item_data.get("pottery_buff_duration", 120.0)
             duration *= 1.0 + self.pottery_buff_duration_bonus
             self.pottery_buffs[buff] = {"duration": duration}
+            apply_pairing_to_buff(self, "pottery", buff)
         if item_data.get("salt_buff"):
             buff = item_data["salt_buff"]
             duration = item_data.get("salt_buff_duration", 90.0)
             self.salt_buffs[buff] = {"duration": duration}
+            apply_pairing_to_buff(self, "salt", buff)
         self.inventory[item_id] -= 1
         if self.inventory[item_id] <= 0:
             del self.inventory[item_id]
@@ -1769,6 +1871,7 @@ class Player:
             self.salt_buffs[buff]["duration"] -= dt
             if self.salt_buffs[buff]["duration"] <= 0:
                 del self.salt_buffs[buff]
+        self.tick_aging_vessels(dt)
         if self._bow_cooldown > 0:
             self._bow_cooldown -= dt
         if not self.god_mode and not self.no_hunger:
