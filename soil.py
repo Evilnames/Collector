@@ -12,6 +12,8 @@ from blocks import (
     ZUCCHINI_CROP_YOUNG, SWEET_POTATO_CROP_YOUNG, WATERMELON_CROP_YOUNG,
     RADISH_CROP_YOUNG, PEA_CROP_YOUNG, CELERY_CROP_YOUNG, BROCCOLI_CROP_YOUNG,
     CACTUS_YOUNG, DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG,
+    SAGUARO_YOUNG, BARREL_CACTUS_YOUNG, OCOTILLO_YOUNG,
+    PRICKLY_PEAR_YOUNG, CHOLLA_YOUNG, PALO_VERDE_YOUNG,
     COFFEE_CROP_YOUNG, GRAPEVINE_CROP_YOUNG,
     STRAWBERRY_CROP_YOUNG_P, TOMATO_CROP_YOUNG_P, WATERMELON_CROP_YOUNG_P,
     CORN_CROP_YOUNG_P, RICE_CROP_YOUNG_P,
@@ -30,9 +32,10 @@ WATERING_CAN_CAPACITY     = 8      # uses per full watering can
 REVERT_AFTER_FALLOW_TICKS = 24     # empty tilled soil → DIRT after this many soil ticks
 
 # Growth progress (0..GROWTH_PROGRESS_MAX)
-GROWTH_PROGRESS_MAX = 100
-GROWTH_DELTA_MAX    = 22           # perfect care → ~5 ticks to mature
-GROWTH_DELTA_MIN    = 5            # minimum positive delta inside the tolerance band
+GROWTH_PROGRESS_MAX  = 100
+GROWTH_DELTA_MAX     = 22          # perfect care → ~5 ticks to mature
+GROWTH_DELTA_MIN     = 5           # minimum positive delta inside the tolerance band
+DESERT_GROWTH_SPEED  = 0.2         # desert plants grow ~5x slower than normal crops
 
 # Yield scaling
 YIELD_MIN_MULT = 0.5
@@ -104,9 +107,15 @@ CROP_PREFERENCES = {
     PEA_CROP_YOUNG:          {"moisture": _MEDIUM,     "base_yield": 2, "fertility_drain": 1},
     CELERY_CROP_YOUNG:       {"moisture": _MEDIUM_WET, "base_yield": 2, "fertility_drain": 2},
     BROCCOLI_CROP_YOUNG:     {"moisture": _MEDIUM,     "base_yield": 2, "fertility_drain": 2},
-    CACTUS_YOUNG:            {"moisture": _DRY,        "base_yield": 2, "fertility_drain": 1},
-    DATE_PALM_CROP_YOUNG:    {"moisture": _MEDIUM_DRY, "base_yield": 2, "fertility_drain": 1},
-    AGAVE_CROP_YOUNG:        {"moisture": _DRY,        "base_yield": 2, "fertility_drain": 1},
+    CACTUS_YOUNG:            {"moisture": _DRY, "base_yield": 2, "fertility_drain": 1, "growth_speed": DESERT_GROWTH_SPEED},
+    DATE_PALM_CROP_YOUNG:    {"moisture": _DRY, "base_yield": 2, "fertility_drain": 1, "growth_speed": DESERT_GROWTH_SPEED},
+    AGAVE_CROP_YOUNG:        {"moisture": _DRY, "base_yield": 2, "fertility_drain": 1, "growth_speed": DESERT_GROWTH_SPEED},
+    SAGUARO_YOUNG:           {"moisture": _DRY, "base_yield": 2, "fertility_drain": 1, "growth_speed": DESERT_GROWTH_SPEED},
+    BARREL_CACTUS_YOUNG:     {"moisture": _DRY, "base_yield": 2, "fertility_drain": 1, "growth_speed": DESERT_GROWTH_SPEED},
+    OCOTILLO_YOUNG:          {"moisture": _DRY, "base_yield": 2, "fertility_drain": 1, "growth_speed": DESERT_GROWTH_SPEED},
+    PRICKLY_PEAR_YOUNG:      {"moisture": _DRY, "base_yield": 2, "fertility_drain": 1, "growth_speed": DESERT_GROWTH_SPEED},
+    CHOLLA_YOUNG:            {"moisture": _DRY, "base_yield": 2, "fertility_drain": 1, "growth_speed": DESERT_GROWTH_SPEED},
+    PALO_VERDE_YOUNG:        {"moisture": _DRY, "base_yield": 2, "fertility_drain": 1, "growth_speed": DESERT_GROWTH_SPEED},
     COFFEE_CROP_YOUNG:       {"moisture": _MEDIUM_WET, "base_yield": 1, "fertility_drain": 3},
     GRAPEVINE_CROP_YOUNG:    {"moisture": _MEDIUM,     "base_yield": 1, "fertility_drain": 2},
     # --- Premium variants: wider moisture band, +50% base yield, lower fertility drain ---
@@ -156,7 +165,9 @@ def growth_delta(prefs, moisture, fertility=None):
     if moisture < m_lo:
         return 0
     delta = int(round(care_score(prefs, moisture, fertility) * GROWTH_DELTA_MAX))
-    return max(GROWTH_DELTA_MIN, delta)
+    delta = max(GROWTH_DELTA_MIN, delta)
+    speed = prefs.get("growth_speed", 1.0)
+    return max(1, int(round(delta * speed)))
 
 
 def yield_multiplier(avg_care):

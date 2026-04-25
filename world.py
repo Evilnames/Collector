@@ -64,16 +64,19 @@ class World:
         self._bg_chunks = {}        # background layer: chunk_x -> [[block_id]*CHUNK_W]*WORLD_H
         self._dirty_bg_chunks = set()
         self.entities = []
+        self.arrows   = []
         self.automations = []
         self.farm_bots = []
         self.backhoes = []
+        self.elevator_cars = []
         self.birds = []
         self.insects = []
         self.dropped_items = []
         self.chest_data = {}     # (bx, by) -> {item_id: count}
         self.garden_data = {}    # (bx, by) -> [Wildflower, ...]
         self._surface_height_cache = {}
-        self._water_level = {}   # (x,y) -> int 1-8; 8 = world-gen source block
+        self._water_level   = {}   # (x,y) -> int 1-8; 8 = world-gen source block
+        self._ore_richness  = {}   # (bx,by) -> int 1-3; richer veins drop more ore
         # Soil state (Phases 1-2): parallel dicts keyed by (x,y)
         self._soil_moisture  = {}  # tilled tile -> int 0..MAX_MOISTURE
         self._soil_fertility = {}  # tilled tile -> int 0..MAX_FERTILITY
@@ -87,6 +90,8 @@ class World:
         self._rain_gap      = 0.0  # set after soil_rng is initialized below
         # Compost bins (Phase 2): (bx,by) -> {"input": {}, "progress": float, "output": int}
         self.compost_bin_data = {}
+        # Sculpture data: root pos -> Sculpture obj; body pos -> {"root": (bx, root_y)}
+        self.sculpture_data = {}
         # Research-derived world flags (set by research.apply_bonuses)
         self.moisture_decay_chance = _soil.MOISTURE_DECAY_CHANCE
         self.max_fertility         = _soil.MAX_FERTILITY
@@ -102,6 +107,7 @@ class World:
             for cx in range(-CHUNK_LOAD_RADIUS, CHUNK_LOAD_RADIUS + 1):
                 self.load_chunk(cx)
             self._spawn_animals()
+            self._spawn_huntable_animals()
         # Water simulation
         self._water_timer = 0.0
         self._water_interval = 0.12
@@ -378,6 +384,9 @@ class World:
             tuple(int(v) for v in k.split(",")): [_wf_from_dict(f) for f in flowers]
             for k, flowers in raw_garden.items()
         }
+        # sculpture_positions loaded here as uid strings; resolved in main.py
+        # after player.apply_save (which loads the Sculpture objects)
+        self._pending_sculpture_positions = data.get("sculpture_positions", {})
         # Load chunks around the player's saved position
         player_cx = int(player_x // BLOCK_SIZE) // CHUNK_W
         for cx in range(player_cx - CHUNK_LOAD_RADIUS, player_cx + CHUNK_LOAD_RADIUS + 1):
@@ -403,10 +412,13 @@ class World:
             self.farm_bots.append(fb)
         for bh_data in data.get("backhoes", []):
             self.backhoes.append(Backhoe.from_dict(bh_data))
+        from elevators import ElevatorCar
+        for car_data in data.get("elevator_cars", []):
+            self.elevator_cars.append(ElevatorCar.from_dict(car_data))
 
-        from animals import Sheep, Cow, Chicken, SnowLeopard, MountainLion
+        from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion
         from horses import Horse
-        _CLASS_MAP = {"Sheep": Sheep, "Cow": Cow, "Chicken": Chicken,
+        _CLASS_MAP = {"Sheep": Sheep, "Cow": Cow, "Chicken": Chicken, "Goat": Goat,
                       "SnowLeopard": SnowLeopard, "MountainLion": MountainLion,
                       "Horse": Horse}
         for e_data in data["entities"]:
@@ -416,9 +428,14 @@ class World:
             entity = cls(e_data["x"], e_data["y"], self)
             entity.facing = e_data["facing"]
             extra = e_data.get("extra", {})
-            if isinstance(entity, Sheep) and "has_wool" in extra:
-                entity.has_wool = extra["has_wool"]
+            if isinstance(entity, Sheep):
+                if "has_wool" in extra:
+                    entity.has_wool = extra["has_wool"]
+                if "has_milk" in extra:
+                    entity.has_milk = extra["has_milk"]
             elif isinstance(entity, Cow) and "has_milk" in extra:
+                entity.has_milk = extra["has_milk"]
+            elif isinstance(entity, Goat) and "has_milk" in extra:
                 entity.has_milk = extra["has_milk"]
             elif isinstance(entity, Chicken) and "has_egg" in extra:
                 entity.has_egg = extra["has_egg"]
@@ -444,11 +461,38 @@ class World:
                     entity.traits["temperament"]        = raw.get("temperament", "spirited")
                     entity.traits["coat_color"]         = tuple(raw.get("coat_color", [160, 115, 65]))
                     entity.traits["horseshoe_applied"]  = raw.get("horseshoe_applied", False)
+                    entity.traits["endurance"]          = raw.get("endurance", 1.0)
+                    entity.traits["gait"]               = raw.get("gait", 1.0)
+                    entity.traits["coat_pattern"]  = raw.get("coat_pattern", "solid")
+                    entity.traits["leg_marking"]   = raw.get("leg_marking", "none")
+                    entity.traits["mane_color"]    = raw.get("mane_color", "match")
+                    entity.traits["face_marking"]  = raw.get("face_marking", "none")
+                elif isinstance(entity, Sheep):
+                    entity.traits["wool_color"] = raw.get("wool_color", "white")
+                    entity.traits["fleece"]     = raw.get("fleece", raw.get("productivity", 1.0))
+                    entity.traits["birth"]      = raw.get("birth", "single")
+                elif isinstance(entity, Cow):
+                    entity.traits["milk_richness"] = raw.get("milk_richness", raw.get("productivity", 1.0))
+                    entity.traits["hide"]          = raw.get("hide", "solid")
+                elif isinstance(entity, Goat):
+                    entity.traits["milk_richness"] = raw.get("milk_richness", raw.get("productivity", 1.0))
+                    entity.traits["coat_color"]    = raw.get("coat_color", "tan")
+                elif isinstance(entity, Chicken):
+                    entity.traits["lay_rate"] = raw.get("lay_rate", raw.get("productivity", 1.0))
+                    entity.traits["plumage"]  = raw.get("plumage", "white")
+            entity.no_breed        = extra.get("no_breed", False)
             entity.health          = extra.get("health", 3)
             entity.dead            = extra.get("dead", False)
             entity._breed_cooldown = extra.get("_breed_cooldown", 60.0)
             entity.tamed           = extra.get("tamed", False)
             entity.tame_progress   = extra.get("tame_progress", 0)
+            # Restore genotype; synthesize from traits for pre-genetics saves
+            raw_geno = extra.get("genotype")
+            if raw_geno:
+                entity.genotype = {k: list(v) for k, v in raw_geno.items()}
+                entity._apply_genotype_to_traits()
+            else:
+                entity._synthesize_genotype_from_traits()
             self.entities.append(entity)
 
         from cities import generate_cities
@@ -547,56 +591,72 @@ class World:
                                PUMPKIN_BUSH, GARLIC_BUSH, SCALLION_BUSH, APPLE_BUSH,
                                RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, BROCCOLI_BUSH,
                                GRAPEVINE_BUSH, GRAPEVINE_BUSH,
-                               CHAMOMILE_BUSH, LAVENDER_BUSH, MINT_BUSH, FLAX_BUSH, FLAX_BUSH],
+                               CHAMOMILE_BUSH, LAVENDER_BUSH, MINT_BUSH, FLAX_BUSH, FLAX_BUSH,
+                               DILL_BUSH, TARRAGON_BUSH, LEMON_BALM_BUSH, CATNIP_BUSH,
+                               ST_JOHNS_WORT_BUSH, YARROW_BUSH, BERGAMOT_BUSH, WOOD_SORREL_BUSH,
+                               COMFREY_BUSH],
             "boreal":         [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
                                TURNIP_BUSH, CABBAGE_BUSH, LEEK_BUSH, APPLE_BUSH,
                                RADISH_BUSH, PEA_BUSH, BROCCOLI_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
-                               CHAMOMILE_BUSH, LAVENDER_BUSH],
+                               CHAMOMILE_BUSH, LAVENDER_BUSH, YARROW_BUSH, VALERIAN_BUSH],
             "birch_forest":   [STRAWBERRY_BUSH, CARROT_BUSH, APPLE_BUSH, POTATO_BUSH,
                                BEET_BUSH, PUMPKIN_BUSH, PEA_BUSH, BROCCOLI_BUSH,
                                COFFEE_BUSH, GRAPEVINE_BUSH,
-                               CHAMOMILE_BUSH, LAVENDER_BUSH],
+                               CHAMOMILE_BUSH, LAVENDER_BUSH, LEMON_BALM_BUSH, BERGAMOT_BUSH,
+                               WOOD_SORREL_BUSH],
             "jungle":         [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
                                PEPPER_BUSH, EGGPLANT_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH,
                                CHILI_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
-                               TEA_BUSH, TEA_BUSH, MINT_BUSH],
+                               TEA_BUSH, TEA_BUSH, MINT_BUSH, BASIL_BUSH, BASIL_BUSH],
             "wetland":        [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, LEEK_BUSH,
                                CELERY_BUSH, SCALLION_BUSH, PUMPKIN_BUSH, TOMATO_BUSH,
                                WATERMELON_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
-                               MINT_BUSH, MINT_BUSH],
+                               MINT_BUSH, MINT_BUSH, ANGELICA_BUSH, COMFREY_BUSH, WOOD_SORREL_BUSH],
             "redwood":        [STRAWBERRY_BUSH, APPLE_BUSH, POTATO_BUSH, CARROT_BUSH,
-                               BEET_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH],
+                               BEET_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH, WOOD_SORREL_BUSH],
             "tropical":       [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
                                CORN_BUSH, PEPPER_BUSH, CHILI_BUSH, EGGPLANT_BUSH,
                                WATERMELON_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH, ZUCCHINI_BUSH,
                                COFFEE_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
-                               TEA_BUSH, TEA_BUSH, TEA_BUSH, MINT_BUSH],
+                               TEA_BUSH, TEA_BUSH, TEA_BUSH, MINT_BUSH,
+                               BASIL_BUSH, BASIL_BUSH, LEMON_VERBENA_BUSH],
             "savanna":        [CORN_BUSH, CHILI_BUSH, PEPPER_BUSH, EGGPLANT_BUSH,
                                SWEET_POTATO_BUSH, WATERMELON_BUSH, ONION_BUSH, PUMPKIN_BUSH,
-                               COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH],
-            "wasteland":      [BEET_BUSH, TURNIP_BUSH, RADISH_BUSH, ONION_BUSH, ROSEMARY_BUSH],
+                               COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
+                               MARJORAM_BUSH, LEMON_VERBENA_BUSH],
+            "wasteland":      [BEET_BUSH, TURNIP_BUSH, RADISH_BUSH, ONION_BUSH, ROSEMARY_BUSH,
+                               WORMWOOD_BUSH, WORMWOOD_BUSH, MUGWORT_BUSH],
             "fungal":         [],
             "alpine_mountain":[BEET_BUSH, TURNIP_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH, POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
-                               TEA_BUSH, TEA_BUSH, CHAMOMILE_BUSH, LAVENDER_BUSH],
-            "rocky_mountain": [BEET_BUSH, TURNIP_BUSH, POTATO_BUSH, CARROT_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH],
+                               TEA_BUSH, TEA_BUSH, CHAMOMILE_BUSH, LAVENDER_BUSH, YARROW_BUSH, VALERIAN_BUSH],
+            "rocky_mountain": [BEET_BUSH, TURNIP_BUSH, POTATO_BUSH, CARROT_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
+                               SAVORY_BUSH, RUE_BUSH, HYSSOP_BUSH],
             "rolling_hills":  [STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, CORN_BUSH,
                                POTATO_BUSH, APPLE_BUSH, PUMPKIN_BUSH, GARLIC_BUSH,
                                RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, CABBAGE_BUSH, ONION_BUSH,
                                COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH,
                                TEA_BUSH, CHAMOMILE_BUSH, LAVENDER_BUSH, ROSEMARY_BUSH,
-                               FLAX_BUSH, FLAX_BUSH],
+                               FLAX_BUSH, FLAX_BUSH,
+                               THYME_BUSH, THYME_BUSH, OREGANO_BUSH, SAGE_BUSH, MARJORAM_BUSH,
+                               YARROW_BUSH, ECHINACEA_BUSH, HYSSOP_BUSH, MUGWORT_BUSH],
             "steep_hills":    [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
                                APPLE_BUSH, CABBAGE_BUSH, BROCCOLI_BUSH, GRAPEVINE_BUSH,
-                               LAVENDER_BUSH, ROSEMARY_BUSH],
+                               LAVENDER_BUSH, ROSEMARY_BUSH, THYME_BUSH, SAVORY_BUSH, RUE_BUSH],
             "steppe":         [WHEAT_BUSH, CORN_BUSH, RADISH_BUSH, ONION_BUSH,
                                GARLIC_BUSH, TURNIP_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
-                               FLAX_BUSH],
+                               FLAX_BUSH,
+                               THYME_BUSH, SAGE_BUSH, OREGANO_BUSH, WORMWOOD_BUSH,
+                               YARROW_BUSH, MUGWORT_BUSH],
             "arid_steppe":    [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, RADISH_BUSH,
-                               SWEET_POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH],
-            "tundra":         [BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, RADISH_BUSH, COFFEE_BUSH, TEA_BUSH, CHAMOMILE_BUSH],
-            "swamp":          [RICE_BUSH, CELERY_BUSH, LEEK_BUSH, SCALLION_BUSH, COFFEE_BUSH, MINT_BUSH, MINT_BUSH],
+                               SWEET_POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
+                               THYME_BUSH, SAGE_BUSH, WORMWOOD_BUSH, RUE_BUSH],
+            "tundra":         [BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, RADISH_BUSH, COFFEE_BUSH, TEA_BUSH, CHAMOMILE_BUSH,
+                               YARROW_BUSH, ANGELICA_BUSH],
+            "swamp":          [RICE_BUSH, CELERY_BUSH, LEEK_BUSH, SCALLION_BUSH, COFFEE_BUSH, MINT_BUSH, MINT_BUSH,
+                               VALERIAN_BUSH, ANGELICA_BUSH, COMFREY_BUSH, CATNIP_BUSH],
             "beach":          [WATERMELON_BUSH, SWEET_POTATO_BUSH, CORN_BUSH, COFFEE_BUSH],
-            "canyon":         [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, TOMATO_BUSH, CORN_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH],
+            "canyon":         [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, TOMATO_BUSH, CORN_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
+                               OREGANO_BUSH, FENNEL_BUSH, LEMON_VERBENA_BUSH, WORMWOOD_BUSH],
         }
         bush_rng = random.Random(hash((self.seed, cx, 'bushes')) & 0x7FFFFFFF)
         lx = 5
@@ -629,7 +689,7 @@ class World:
                     CHOLLA_YOUNG,
                     PALO_VERDE_YOUNG,
                 ])
-            lx += desert_rng.randint(9, 20)
+            lx += desert_rng.randint(5, 11)
 
         # Wildflowers
         flower_rng = random.Random(hash((self.seed, cx, 'flowers')) & 0x7FFFFFFF)
@@ -1022,9 +1082,10 @@ class World:
         while floor_y < self.height - 1 and self.grid[floor_y][bx] == AIR:
             floor_y += 1
         if floor_y - ceiling_y > 4:
+            sy = self.surface_y_at(bx)
             for fy in range(ceiling_y + 1, floor_y):
                 if self.grid[fy][bx] == AIR:
-                    self.grid[fy][bx] = STONE
+                    self.grid[fy][bx] = self._stone_for_depth(fy - sy)
 
     def _place_speleothems(self, cave_cells, rng):
         for cx, cy in cave_cells:
@@ -1163,6 +1224,14 @@ class World:
 
     # ---------------------------------------------------------------- /caves --
 
+    def _stone_for_depth(self, depth):
+        """Return the geological stone block appropriate for this depth."""
+        if depth < 15:  return STONE
+        if depth < 60:  return LIMESTONE_STONE
+        if depth < 120: return GRANITE_STONE
+        if depth < 180: return BASALT_STONE
+        return MAGMATIC_STONE
+
     def _vein_noise(self, bx, by, seed_offset, scale=5):
         """Smooth value noise [0,1] for vein/cluster placement — nearby blocks return similar values."""
         fx = bx / scale
@@ -1188,11 +1257,31 @@ class World:
 
     def _pick_block(self, depth, rng, biome="igneous", bx=0, by=0):
         r = rng.random()
-        # Clay deposits — shallow pockets in sedimentary/temperate zones
-        if depth < 30 and biome in ("sedimentary", "temperate"):
+        # Clay deposits — shallow pockets in sedimentary/temperate/wetland/river zones
+        if depth < 35 and biome in ("sedimentary", "temperate", "wetland", "river", "swamp"):
             clay_n = self._vein_noise(bx, by, 0x3C1A2, scale=5)
             if clay_n >= 0.60 and r < 0.07:
                 return CLAY_DEPOSIT
+        # Marble veins — medium-depth sedimentary pockets; rarer than limestone
+        if 25 <= depth < 80 and biome in ("sedimentary", "temperate"):
+            marb_n = self._vein_noise(bx, by, 0xD4A1F2, scale=6)
+            if marb_n >= 0.63 and r < 0.018:
+                return MARBLE_VEIN
+        # Alabaster veins — shallow to mid, warm sedimentary
+        if 15 <= depth < 55 and biome in ("sedimentary", "temperate"):
+            alab_n = self._vein_noise(bx, by, 0xE2B8C4, scale=6)
+            if alab_n >= 0.64 and r < 0.013:
+                return ALABASTER_VEIN
+        # Verdite veins — mid to deep igneous zones; striking green
+        if 60 <= depth < 140 and biome in ("igneous", "volcanic"):
+            verd_n = self._vein_noise(bx, by, 0x3B8F5A, scale=5)
+            if verd_n >= 0.65 and r < 0.010:
+                return VERDITE_VEIN
+        # Onyx veins — very deep igneous/volcanic; very rare
+        if 130 <= depth and biome in ("igneous", "volcanic"):
+            onyx_n = self._vein_noise(bx, by, 0x1F1A2E, scale=5)
+            if onyx_n >= 0.67 and r < 0.007:
+                return ONYX_VEIN
         # Limestone layers — shallow to mid depth in sedimentary zones
         if 4 <= depth < 55 and biome in ("sedimentary", "temperate", "igneous"):
             lime_n = self._vein_noise(bx, by, 0xA7E23, scale=7)
@@ -1233,30 +1322,50 @@ class World:
         if depth < 40:
             coal_n = self._vein_noise(bx, by, 0x1C0A1, scale=6)
             iron_n = self._vein_noise(bx, by, 0x17EA4, scale=6)
-            if coal_n >= 0.55 and r < 0.040 * cm * 2.2: return COAL_ORE
-            if iron_n >= 0.55 and r < 0.060 * im * 2.2: return IRON_ORE
+            if coal_n >= 0.55 and r < 0.040 * cm * 2.2:
+                self._ore_richness[(bx, by)] = 3 if coal_n >= 0.68 else 2 if coal_n >= 0.63 else 1
+                return COAL_ORE
+            if iron_n >= 0.55 and r < 0.060 * im * 2.2:
+                self._ore_richness[(bx, by)] = 3 if iron_n >= 0.68 else 2 if iron_n >= 0.63 else 1
+                return IRON_ORE
         elif depth < 100:
             iron_n = self._vein_noise(bx, by, 0x17EA4, scale=6)
             gold_n = self._vein_noise(bx, by, 0xC01D1, scale=6)
             coal_n = self._vein_noise(bx, by, 0x1C0A1, scale=6)
-            if iron_n >= 0.55 and r < 0.030 * im * 2.2: return IRON_ORE
-            if gold_n >= 0.55 and r < 0.055 * gm * 2.2: return GOLD_ORE
-            if coal_n >= 0.55 and r < 0.065 * cm * 2.2: return COAL_ORE
+            if iron_n >= 0.55 and r < 0.030 * im * 2.2:
+                self._ore_richness[(bx, by)] = 3 if iron_n >= 0.68 else 2 if iron_n >= 0.63 else 1
+                return IRON_ORE
+            if gold_n >= 0.55 and r < 0.055 * gm * 2.2:
+                self._ore_richness[(bx, by)] = 3 if gold_n >= 0.68 else 2 if gold_n >= 0.63 else 1
+                return GOLD_ORE
+            if coal_n >= 0.55 and r < 0.065 * cm * 2.2:
+                self._ore_richness[(bx, by)] = 3 if coal_n >= 0.68 else 2 if coal_n >= 0.63 else 1
+                return COAL_ORE
         elif depth < 160:
             gold_n = self._vein_noise(bx, by, 0xC01D1, scale=6)
             crys_n = self._vein_noise(bx, by, 0xCE750, scale=6)
             ruby_n = self._vein_noise(bx, by, 0xB4E1D, scale=6)
-            if gold_n >= 0.55 and r < 0.025 * gm * 2.2: return GOLD_ORE
-            if crys_n >= 0.55 and r < 0.045 * xm * 2.2: return CRYSTAL_ORE
-            if ruby_n >= 0.55 and r < 0.055 * rm * 2.2: return RUBY_ORE
+            if gold_n >= 0.55 and r < 0.025 * gm * 2.2:
+                self._ore_richness[(bx, by)] = 3 if gold_n >= 0.68 else 2 if gold_n >= 0.63 else 1
+                return GOLD_ORE
+            if crys_n >= 0.55 and r < 0.045 * xm * 2.2:
+                self._ore_richness[(bx, by)] = 3 if crys_n >= 0.68 else 2 if crys_n >= 0.63 else 1
+                return CRYSTAL_ORE
+            if ruby_n >= 0.55 and r < 0.055 * rm * 2.2:
+                self._ore_richness[(bx, by)] = 3 if ruby_n >= 0.68 else 2 if ruby_n >= 0.63 else 1
+                return RUBY_ORE
         else:
             obsi_n = self._vein_noise(bx, by, 0x0B51D, scale=5)
             crys_n = self._vein_noise(bx, by, 0xCE750, scale=5)
             ruby_n = self._vein_noise(bx, by, 0xB4E1D, scale=5)
             if obsi_n >= 0.55 and r < 0.150 * om * 2.2: return OBSIDIAN
-            if crys_n >= 0.55 and r < 0.180 * xm * 2.2: return CRYSTAL_ORE
-            if ruby_n >= 0.55 and r < 0.195 * rm * 2.2: return RUBY_ORE
-        return STONE
+            if crys_n >= 0.55 and r < 0.180 * xm * 2.2:
+                self._ore_richness[(bx, by)] = 3 if crys_n >= 0.68 else 2 if crys_n >= 0.63 else 1
+                return CRYSTAL_ORE
+            if ruby_n >= 0.55 and r < 0.195 * rm * 2.2:
+                self._ore_richness[(bx, by)] = 3 if ruby_n >= 0.68 else 2 if ruby_n >= 0.63 else 1
+                return RUBY_ORE
+        return self._stone_for_depth(depth)
 
     def get_block(self, x, y):
         if y < 0 or y >= WORLD_H or abs(x) > WORLD_MAX_X:
@@ -1328,7 +1437,8 @@ class World:
                 and bid != WATER and bid != OIL and bid != SAPLING
                 and bid not in BUSH_BLOCKS and bid not in CROP_BLOCKS
                 and bid not in OPEN_DOORS
-                and bid not in ALL_LOGS and bid not in ALL_LEAVES)
+                and bid not in ALL_LOGS and bid not in ALL_LEAVES
+                and bid not in EQUIPMENT_BLOCKS)
 
     def update_water(self, dt, player):
         self._water_timer += dt
@@ -1955,6 +2065,53 @@ class World:
                     continue
                 x += horse_rng.randint(8, 16)
 
+    def _spawn_huntable_animals(self):
+        from animals import (Deer, Boar, Rabbit, Turkey, Wolf, Bear, Duck, Elk, Bison, Fox,
+                             DEER_BIOMES, BOAR_BIOMES, RABBIT_BIOMES, TURKEY_BIOMES,
+                             WOLF_BIOMES, BEAR_BIOMES, DUCK_BIOMES, ELK_BIOMES, BISON_BIOMES, FOX_BIOMES,
+                             Moose, Bighorn, Pheasant, Warthog, MuskOx, Crocodile, Goose, Hare,
+                             MOOSE_BIOMES, BIGHORN_BIOMES, PHEASANT_BIOMES, WARTHOG_BIOMES,
+                             MUSK_OX_BIOMES, CROC_BIOMES, GOOSE_BIOMES, HARE_BIOMES)
+        _HUNTABLE_MAP = [
+            (Deer,      DEER_BIOMES,     0.06),
+            (Boar,      BOAR_BIOMES,     0.05),
+            (Rabbit,    RABBIT_BIOMES,   0.08),
+            (Turkey,    TURKEY_BIOMES,   0.05),
+            (Wolf,      WOLF_BIOMES,     0.04),
+            (Bear,      BEAR_BIOMES,     0.03),
+            (Duck,      DUCK_BIOMES,     0.07),
+            (Elk,       ELK_BIOMES,      0.04),
+            (Bison,     BISON_BIOMES,    0.05),
+            (Fox,       FOX_BIOMES,      0.05),
+            (Moose,     MOOSE_BIOMES,    0.04),
+            (Bighorn,   BIGHORN_BIOMES,  0.05),
+            (Pheasant,  PHEASANT_BIOMES, 0.06),
+            (Warthog,   WARTHOG_BIOMES,  0.05),
+            (MuskOx,    MUSK_OX_BIOMES,  0.05),
+            (Crocodile, CROC_BIOMES,     0.04),
+            (Goose,     GOOSE_BIOMES,    0.06),
+            (Hare,      HARE_BIOMES,     0.07),
+        ]
+        rng = random.Random(self.seed + 74193)
+        for cx in sorted(self._chunks.keys()):
+            chunk  = self._chunks[cx]
+            base_x = cx * CHUNK_W
+            x      = base_x + 3
+            x_end  = base_x + CHUNK_W - 3
+            while x < x_end:
+                lx      = x - base_x
+                sy      = self.surface_height(x)
+                biodome = self.biodome_at(x)
+                surf = chunk[sy][lx] if 0 < sy < WORLD_H else AIR
+                if 0 < sy < WORLD_H and surf in (GRASS, SNOW) and chunk[sy - 1][lx] == AIR:
+                    for cls, biomes, rate in _HUNTABLE_MAP:
+                        if biodome in biomes and rng.random() < rate:
+                            ax = x * BLOCK_SIZE + (BLOCK_SIZE - cls.ANIMAL_W) // 2
+                            ay = sy * BLOCK_SIZE - cls.ANIMAL_H
+                            self.entities.append(cls(ax, ay, self))
+                            break
+                x += rng.randint(12, 28)
+
     def _spawn_birds(self):
         from birds import ALL_SPECIES, COMMON_SPECIES
         self.birds.clear()
@@ -2009,11 +2166,13 @@ class World:
                 x += rng.randint(spacing, spacing * 2)
 
     def _spawn_animals_for_chunk(self, cx: int):
-        from animals import Sheep, Cow, Chicken, SnowLeopard, MountainLion
+        from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion
         chunk = self._chunks.get(cx)
         if chunk is None:
             return
         base_x = cx * CHUNK_W
+
+        _GOAT_BIOMES = {"rocky_mountain", "alpine_mountain", "canyon", "arid_steppe", "boreal"}
 
         rng = random.Random(self.seed + 12345 + cx * 6271)
         x = base_x + 5
@@ -2021,7 +2180,11 @@ class World:
             lx = x - base_x
             sy = self.surface_height(x)
             if 0 < sy < WORLD_H and chunk[sy][lx] == GRASS and chunk[sy - 1][lx] == AIR:
-                animal_cls = rng.choice([Sheep, Sheep, Cow, Chicken])
+                biodome = self.biodome_at(x)
+                if biodome in _GOAT_BIOMES:
+                    animal_cls = rng.choice([Goat, Goat, Sheep, Cow])
+                else:
+                    animal_cls = rng.choice([Sheep, Sheep, Cow, Chicken])
                 ax = x * BLOCK_SIZE + (BLOCK_SIZE - animal_cls.ANIMAL_W) // 2
                 ay = sy * BLOCK_SIZE - animal_cls.ANIMAL_H
                 self.entities.append(animal_cls(ax, ay, self))
@@ -2068,6 +2231,48 @@ class World:
                 x += 55
                 continue
             x += horse_rng.randint(8, 16)
+
+        from animals import (Deer, Boar, Rabbit, Turkey, Wolf, Bear, Duck, Elk, Bison, Fox,
+                             DEER_BIOMES, BOAR_BIOMES, RABBIT_BIOMES, TURKEY_BIOMES,
+                             WOLF_BIOMES, BEAR_BIOMES, DUCK_BIOMES, ELK_BIOMES, BISON_BIOMES, FOX_BIOMES,
+                             Moose, Bighorn, Pheasant, Warthog, MuskOx, Crocodile, Goose, Hare,
+                             MOOSE_BIOMES, BIGHORN_BIOMES, PHEASANT_BIOMES, WARTHOG_BIOMES,
+                             MUSK_OX_BIOMES, CROC_BIOMES, GOOSE_BIOMES, HARE_BIOMES)
+        _HUNTABLE_MAP = [
+            (Deer,      DEER_BIOMES,     0.06),
+            (Boar,      BOAR_BIOMES,     0.05),
+            (Rabbit,    RABBIT_BIOMES,   0.08),
+            (Turkey,    TURKEY_BIOMES,   0.05),
+            (Wolf,      WOLF_BIOMES,     0.04),
+            (Bear,      BEAR_BIOMES,     0.03),
+            (Duck,      DUCK_BIOMES,     0.07),
+            (Elk,       ELK_BIOMES,      0.04),
+            (Bison,     BISON_BIOMES,    0.05),
+            (Fox,       FOX_BIOMES,      0.05),
+            (Moose,     MOOSE_BIOMES,    0.04),
+            (Bighorn,   BIGHORN_BIOMES,  0.05),
+            (Pheasant,  PHEASANT_BIOMES, 0.06),
+            (Warthog,   WARTHOG_BIOMES,  0.05),
+            (MuskOx,    MUSK_OX_BIOMES,  0.05),
+            (Crocodile, CROC_BIOMES,     0.04),
+            (Goose,     GOOSE_BIOMES,    0.06),
+            (Hare,      HARE_BIOMES,     0.07),
+        ]
+        hunt_rng = random.Random(self.seed + 74193 + cx * 8317)
+        x = base_x + 3
+        while x < base_x + CHUNK_W - 3:
+            lx = x - base_x
+            sy = self.surface_height(x)
+            biodome = self.biodome_at(x)
+            surf = chunk[sy][lx] if 0 < sy < WORLD_H else AIR
+            if 0 < sy < WORLD_H and surf in (GRASS, SNOW) and chunk[sy - 1][lx] == AIR:
+                for cls, biomes, rate in _HUNTABLE_MAP:
+                    if biodome in biomes and hunt_rng.random() < rate:
+                        ax = x * BLOCK_SIZE + (BLOCK_SIZE - cls.ANIMAL_W) // 2
+                        ay = sy * BLOCK_SIZE - cls.ANIMAL_H
+                        self.entities.append(cls(ax, ay, self))
+                        break
+            x += hunt_rng.randint(12, 28)
 
     def _spawn_birds_for_chunk(self, cx: int):
         from birds import ALL_SPECIES, COMMON_SPECIES

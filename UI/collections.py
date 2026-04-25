@@ -56,10 +56,15 @@ class CollectionsMixin:
         from herbalism import ALL_POTION_IDS
         n_potions_owned = sum(player.inventory.get(k, 0) for k in ALL_POTION_IDS)
         n_textiles_owned = len(getattr(player, "textiles", []))
+        n_cheese_owned   = len([c for c in getattr(player, "cheese_wheels", []) if c.state == "aged"])
+        n_jewelry_owned    = len(getattr(player, "jewelry", []))
+        n_sculptures_owned = len(getattr(player, "sculptures_created", []))
+        n_pottery_owned    = len(getattr(player, "pottery_pieces", []))
         total_collected = (len(player.rocks) + len(player.wildflowers) +
                            len(player.fossils) + len(player.gems) + n_mush_owned +
                            n_coffee_owned + n_wine_owned + n_spirits_owned + n_tea_owned +
-                           n_potions_owned + n_textiles_owned)
+                           n_potions_owned + n_textiles_owned + n_cheese_owned + n_jewelry_owned +
+                           n_sculptures_owned + n_pottery_owned)
 
         # ---- 3 main tabs ----
         self._tab_rects.clear()
@@ -88,8 +93,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -118,6 +123,10 @@ class CollectionsMixin:
                 ("tea",       f"TEA ({n_tea_owned})",              (25, 45, 20),  ( 65, 160,  75), (130, 215, 140)),
                 ("herbs",     f"POTIONS ({n_potions_owned})",      (10, 28, 24),  ( 70, 175, 140), (140, 235, 200)),
                 ("textiles",  f"TEXTILES ({n_textiles_owned})",    (25, 12, 32),  (160,  90, 190), (220, 160, 250)),
+                ("cheese",    f"CHEESE ({n_cheese_owned})",         (38, 30, 10),  (185, 155,  65), (245, 230, 160)),
+                ("jewelry",    f"JEWELRY ({n_jewelry_owned})",        (28, 22,  8),  (180, 150,  60), (240, 205, 100)),
+                ("sculptures", f"SCULPTURES ({n_sculptures_owned})", (35, 30, 22),  (190, 180, 155), (240, 230, 200)),
+                ("pottery",    f"POTTERY ({n_pottery_owned})",       (40, 25, 10),  (160, 110,  80), (210, 160, 110)),
             ]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._collection_filter_rects.clear()
@@ -158,9 +167,11 @@ class CollectionsMixin:
                 ((25, 45, 20),  ( 65, 160,  75), (130, 215, 140)),
                 ((10, 28, 24),  ( 70, 175, 140), (140, 235, 200)),
                 ((25, 12, 32),  (160,  90, 190), (220, 160, 250)),
+                ((38, 30, 10),  (185, 155,  65), (245, 230, 160)),
+                ((40, 25, 10),  (160, 110,  80), (210, 160, 110)),   # Pottery
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
-                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES"]
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
             for cat_i, cat_label in enumerate(enc_labels):
@@ -199,6 +210,9 @@ class CollectionsMixin:
                 self._draw_tea_codex,
                 self._draw_herb_codex,
                 self._draw_textile_codex,
+                self._draw_cheese_codex,
+                self._draw_jewelry_codex,
+                self._draw_pottery_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)
@@ -247,6 +261,12 @@ class CollectionsMixin:
                     items.append(("herb", pkey))
         if flt in ("all", "textiles"):
             items.extend(("textile", i) for i in range(len(getattr(player, "textiles", []))))
+        if flt in ("all", "jewelry"):
+            items.extend(("jewelry", i) for i in range(len(getattr(player, "jewelry", []))))
+        if flt in ("all", "sculptures"):
+            items.extend(("sculpture", i) for i in range(len(getattr(player, "sculptures_created", []))))
+        if flt in ("all", "pottery"):
+            items.extend(("pottery", i) for i in range(len(getattr(player, "pottery_pieces", []))))
 
         if not items:
             msg = self.font.render("Nothing collected yet!", True, (80, 80, 90))
@@ -460,6 +480,84 @@ class CollectionsMixin:
                 img.blit(sc_s, (img.get_width() - sc_s.get_width() - 2, 2))
                 label = _TBDN.get(it.origin_biome, it.origin_biome)
                 label_col = (130, 215, 140)
+            elif cat == "jewelry":
+                from jewelry import JEWELRY_TYPES as _JT, calculate_value
+                piece = getattr(player, "jewelry", [])[key]
+                jcol = (180, 150, 60)
+                pygame.draw.rect(self.screen, (30, 24, 8) if selected else (20, 16, 6), rect)
+                pygame.draw.rect(self.screen, jcol, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                # Draw a tiny jewelry silhouette in the icon
+                jtype = piece.jewelry_type
+                cx_i, cy_i = 29, 29
+                if jtype == "ring":
+                    pygame.draw.circle(img, jcol, (cx_i, cy_i), 18, 3)
+                elif jtype == "crown":
+                    pts = [(cx_i-18,cy_i+4),(cx_i-9,cy_i-10),(cx_i,cy_i-4),(cx_i+9,cy_i-10),(cx_i+18,cy_i+4)]
+                    pygame.draw.lines(img, jcol, False, pts, 3)
+                elif jtype == "pendant":
+                    pygame.draw.polygon(img, jcol, [(cx_i,cy_i-14),(cx_i+12,cy_i),(cx_i,cy_i+14),(cx_i-12,cy_i)])
+                elif jtype == "necklace":
+                    import math
+                    pygame.draw.arc(img, jcol, (cx_i-16,cy_i-16,32,32), 0, math.pi, 3)
+                else:  # bracelet
+                    pygame.draw.circle(img, jcol, (cx_i, cy_i), 16, 4)
+                # Slot dots
+                for si in range(min(piece.slot_count, 5)):
+                    dot_x = 6 + si * 10
+                    dot_col = (220, 190, 80) if (si < len(piece.slots) and piece.slots[si] is not None) else (70, 60, 28)
+                    pygame.draw.circle(img, dot_col, (dot_x, 52), 4)
+                label = piece.custom_name
+                label_col = jcol
+                if selected:
+                    self._jw_detail_jewelry = piece
+            elif cat == "sculpture":
+                from sculpture import SCULPTABLE_MINERALS, MINERAL_COLORS
+                sc = getattr(player, "sculptures_created", [])[key]
+                sc_col = tuple(sc.color) if sc.color else (190, 180, 155)
+                pygame.draw.rect(self.screen, (35, 30, 20) if selected else (22, 18, 12), rect)
+                pygame.draw.rect(self.screen, sc_col, rect, 3 if selected else 2)
+                # Tiny grid preview
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                rows = len(sc.grid)
+                cw = max(1, 58 // 8)
+                ch = max(1, 58 // rows)
+                hi = tuple(min(255, c + 20) for c in sc_col)
+                lo = tuple(max(0,   c - 25) for c in sc_col)
+                for ri, row in enumerate(sc.grid):
+                    for ci, filled in enumerate(row):
+                        px2 = ci * cw
+                        py2 = ri * ch
+                        col2 = (hi if ci % 2 == 0 else lo) if filled else (18, 14, 10)
+                        pygame.draw.rect(img, col2, (px2, py2, cw, ch))
+                mineral_name = SCULPTABLE_MINERALS.get(sc.mineral, "Stone")
+                label = f"{mineral_name} {sc.height}H"
+                label_col = sc_col
+            elif cat == "pottery":
+                from pottery import CLAY_BIOME_PROFILES, GLAZE_TYPES
+                piece = getattr(player, "pottery_pieces", [])[key]
+                clay_col = (155, 105, 75)
+                if piece.glaze_type and piece.glaze_type in GLAZE_TYPES:
+                    gdata = GLAZE_TYPES[piece.glaze_type]
+                    border_col = gdata["color"]
+                else:
+                    border_col = (160, 110, 80)
+                pygame.draw.rect(self.screen, (40, 25, 10) if selected else (25, 15, 6), rect)
+                pygame.draw.rect(self.screen, border_col, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                # Silhouette from profile
+                if piece.profile:
+                    prof = piece.profile
+                    row_h = max(1, 50 // len(prof))
+                    cx_i, ty = 29, 4
+                    for ri, rad in enumerate(prof):
+                        w = max(2, int(rad * 3.5))
+                        pygame.draw.rect(img, clay_col, (cx_i - w, ty + ri * row_h, w * 2, row_h - 1))
+                label = f"{piece.shape.title()} ({piece.firing_level[:3]})"
+                label_col = (210, 160, 110)
             else:  # mushroom
                 count = player.mushrooms_found.get(key, 0)
                 pygame.draw.rect(self.screen, (40, 36, 20) if selected else (25, 22, 12), rect)
@@ -2692,3 +2790,181 @@ class CollectionsMixin:
                 dline(OUTPUT_DISPLAY.get(otype, otype), dye_col)
                 dline(f"{ftype.title()} · {DYE_FAMILY_DISPLAY.get(dye,'Natural')}", (200, 175, 220))
                 dline("Discovered!", (120, 220, 140))
+
+    def _draw_cheese_codex(self, player, gy0=58, gx_off=130):
+        from cheese import _CODEX_BIOMES, BIOME_DISPLAY_NAMES, CHEESE_TYPE_DESCS, CHEESE_TYPE_COLORS
+        disc = getattr(player, "discovered_cheese", set())
+
+        _BG    = ( 38,  30,  10)
+        _CELL  = ( 52,  42,  18)
+        _TITLE = (245, 230, 160)
+        _LABEL = (195, 170, 110)
+        _DIM   = ( 90,  72,  40)
+
+        gw = SCREEN_W - gx_off - 4
+        cell_w, cell_h, gap = 120, 52, 6
+        cols = max(1, gw // (cell_w + gap))
+
+        cheese_types = list(CHEESE_TYPE_DESCS.keys())
+        total = len(_CODEX_BIOMES) * len(cheese_types)
+        disc_count = len(disc)
+
+        # Header
+        hl = self.small.render(f"Discovered: {disc_count} / {total}", True, _LABEL)
+        self.screen.blit(hl, (gx_off + 8, gy0))
+
+        # Grid: rows = biomes, cols = cheese types
+        col_header_y = gy0 + 22
+        for ci, ct in enumerate(cheese_types):
+            hx = gx_off + 8 + ci * (cell_w + gap)
+            col = CHEESE_TYPE_COLORS.get(ct, _CELL)
+            hl2 = self.small.render(ct.replace("_", " ").title(), True, col)
+            self.screen.blit(hl2, (hx, col_header_y))
+
+        grid_y0 = col_header_y + 18
+        self._cheese_codex_rects.clear()
+        for ri, biome in enumerate(_CODEX_BIOMES):
+            row_y = grid_y0 + ri * (cell_h + gap)
+            # Row biome label
+            bnm = BIOME_DISPLAY_NAMES.get(biome, biome)
+            bl = self.small.render(bnm, True, _LABEL)
+            self.screen.blit(bl, (gx_off, row_y + cell_h // 2 - bl.get_height() // 2))
+            for ci, ct in enumerate(cheese_types):
+                key = f"{biome}_{ct}"
+                discovered = key in disc
+                cx_ = gx_off + 8 + ci * (cell_w + gap)
+                crect = pygame.Rect(cx_, row_y, cell_w, cell_h)
+                self._cheese_codex_rects[key] = crect
+                bg = _CELL if discovered else ( 28,  22,  10)
+                pygame.draw.rect(self.screen, bg, crect)
+                col = CHEESE_TYPE_COLORS.get(ct, _CELL)
+                brd = col if discovered else _DIM
+                pygame.draw.rect(self.screen, brd, crect, 2)
+                if discovered:
+                    ct_s = self.small.render(ct.replace("_", " ").title(), True, col)
+                    self.screen.blit(ct_s, (cx_ + 4, row_y + 6))
+                    b_s = self.small.render(bnm, True, _LABEL)
+                    self.screen.blit(b_s, (cx_ + 4, row_y + 24))
+                else:
+                    unk = self.small.render("?", True, _DIM)
+                    self.screen.blit(unk, (cx_ + cell_w // 2 - unk.get_width() // 2,
+                                           row_y + cell_h // 2 - unk.get_height() // 2))
+
+        # Detail panel for selected entry
+        sel = self._cheese_codex_selected
+        if sel and sel in disc:
+            biome_, ct_ = sel.rsplit("_", 1)
+            dpx = gx_off + cols * (cell_w + gap) + 12
+            dpy = gy0 + 40
+            dw, dh = 200, 120
+            pygame.draw.rect(self.screen, _CELL, (dpx, dpy, dw, dh))
+            col = CHEESE_TYPE_COLORS.get(ct_, _LABEL)
+            pygame.draw.rect(self.screen, col, (dpx, dpy, dw, dh), 2)
+            iy = dpy + 8
+
+            def dline(txt, c=_LABEL):
+                nonlocal iy
+                s = self.small.render(txt, True, c)
+                self.screen.blit(s, (dpx + 6, iy))
+                iy += 16
+
+            dline(ct_.replace("_", " ").title(), col)
+            dline(BIOME_DISPLAY_NAMES.get(biome_, biome_), _TITLE)
+            dline("Discovered!", (120, 220, 140))
+
+    def _draw_jewelry_codex(self, player, gy0=58, gx_off=130):
+        from jewelry import JEWELRY_TYPES, JEWELRY_TYPE_ORDER
+        disc = getattr(player, "discovered_jewelry", set())
+        n_disc = len(disc)
+
+        _GOLD  = (220, 180, 60)
+        _BG    = (22, 18, 8)
+        _CELL  = (35, 28, 10)
+        _LABEL = (195, 165, 80)
+
+        sub = self.small.render(f"{n_disc} / {len(JEWELRY_TYPE_ORDER)} jewelry types crafted", True, _LABEL)
+        self.screen.blit(sub, (gx_off + 8, gy0))
+
+        CELL_W, CELL_H, GAP = 160, 110, 12
+        gx0 = gx_off + 8
+        gy  = gy0 + 22
+
+        self._jewelry_codex_rects.clear()
+        for ji, jkey in enumerate(JEWELRY_TYPE_ORDER):
+            jdata = JEWELRY_TYPES[jkey]
+            discovered = jkey in disc
+            rx = gx0 + ji * (CELL_W + GAP)
+            rect = pygame.Rect(rx, gy, CELL_W, CELL_H)
+            self._jewelry_codex_rects[jkey] = rect
+            selected = (self._jewelry_codex_selected == jkey)
+            bg  = (50, 40, 14) if selected else _CELL
+            bdr = _GOLD if selected else ((140, 115, 45) if discovered else (55, 45, 18))
+            pygame.draw.rect(self.screen, bg, rect, border_radius=6)
+            pygame.draw.rect(self.screen, bdr, rect, 2, border_radius=6)
+
+            if discovered:
+                nm = self.font.render(jdata["label"], True, _GOLD)
+                self.screen.blit(nm, (rx + CELL_W // 2 - nm.get_width() // 2, gy + 10))
+                self._draw_jw_icon(jkey, rx + CELL_W // 2, gy + 60, 22)
+                slots_lbl = self.small.render(f"Up to {jdata['max_slots']} slots", True, _LABEL)
+                self.screen.blit(slots_lbl, (rx + CELL_W // 2 - slots_lbl.get_width() // 2, gy + CELL_H - 20))
+            else:
+                unk = self.font.render("?", True, (70, 58, 25))
+                self.screen.blit(unk, (rx + CELL_W // 2 - unk.get_width() // 2, gy + CELL_H // 2 - unk.get_height() // 2))
+
+    def _draw_pottery_codex(self, player, gy0=58, gx_off=130):
+        from pottery import CLAY_BIOME_PROFILES, BIOME_DISPLAY_NAMES, FIRING_LEVELS, GLAZE_TYPES
+        _BG   = (30, 18, 8)
+        _BDR  = (160, 110, 80)
+        _CELL = (40, 25, 10)
+        _TXT  = (210, 160, 110)
+        _DIM  = (120, 85, 50)
+
+        disc        = getattr(player, "discovered_pottery", set())
+        all_biomes  = list(CLAY_BIOME_PROFILES.keys())
+        fire_levels = FIRING_LEVELS[1:]  # skip "cracked"
+        total       = len(all_biomes) * len(fire_levels)
+        n_disc      = len(disc)
+
+        sub = self.small.render(f"{n_disc} / {total} pottery types fired", True, _TXT)
+        self.screen.blit(sub, (gx_off + 8, gy0))
+
+        CELL_W, CELL_H, GAP = 120, 80, 10
+        gx0 = gx_off + 8
+
+        if not hasattr(self, '_pottery_codex_rects'):
+            self._pottery_codex_rects = {}
+        self._pottery_codex_rects.clear()
+
+        for bi, biome in enumerate(all_biomes):
+            # Column header
+            bname = BIOME_DISPLAY_NAMES.get(biome, biome.title())
+            bh = self.small.render(bname, True, _TXT)
+            self.screen.blit(bh, (gx0 + bi * (CELL_W + GAP) + CELL_W // 2 - bh.get_width() // 2, gy0 + 18))
+            for fi, level in enumerate(fire_levels):
+                key = f"{biome}_{level}"
+                rx  = gx0 + bi * (CELL_W + GAP)
+                ry  = gy0 + 36 + fi * (CELL_H + GAP)
+                rect = pygame.Rect(rx, ry, CELL_W, CELL_H)
+                self._pottery_codex_rects[key] = rect
+                found = key in disc
+
+                bg  = (55, 35, 14) if found else _CELL
+                bdr = _BDR if found else (70, 48, 28)
+                pygame.draw.rect(self.screen, bg, rect, border_radius=4)
+                pygame.draw.rect(self.screen, bdr, rect, 2, border_radius=4)
+
+                if found:
+                    lvl_lbl = self.small.render(level.title(), True, _TXT)
+                    self.screen.blit(lvl_lbl, (rx + CELL_W // 2 - lvl_lbl.get_width() // 2, ry + 6))
+                    # Mini vase silhouette
+                    cx_c = rx + CELL_W // 2
+                    profile = [3, 3, 5, 6, 6, 5, 4, 4, 5, 5, 4, 3]
+                    row_h = 4
+                    ty = ry + 24
+                    for ri, rad in enumerate(profile):
+                        w = rad * 3
+                        pygame.draw.rect(self.screen, (160, 110, 80), (cx_c - w, ty + ri * row_h, w * 2, row_h - 1))
+                else:
+                    unk = self.font.render("?", True, (70, 48, 25))
+                    self.screen.blit(unk, (rx + CELL_W // 2 - unk.get_width() // 2, ry + CELL_H // 2 - unk.get_height() // 2))

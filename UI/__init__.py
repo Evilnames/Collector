@@ -19,21 +19,29 @@ from .horses_ui import HorseMixin
 from .tea import TeaMixin
 from .herbalism import HerbalismMixin
 from .textiles import TextileMixin
+from .cheese import CheeseMixin
+from .jewelry import JewelryMixin
+from .sculpture import SculptureMixin
+from .pottery import PotteryMixin
 
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
     CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, MinigamesMixin, CollectionsMixin,
-    HelpMixin, HorseMixin, TextileMixin,
+    HelpMixin, HorseMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, PotteryMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
         pygame.font.init()
         self.font  = pygame.font.SysFont("consolas", 18)
         self.small = pygame.font.SysFont("consolas", 13)
-        self.research_open           = False
-        self._research_selected_col  = 0
-        self._research_cat_rects     = {}
+        self.research_open               = False
+        self._research_selected_col      = 0
+        self._research_cat_rects         = {}
+        self._research_cat_scroll        = 0
+        self._max_research_cat_scroll    = 0
+        self._research_right_scroll      = 0
+        self._max_research_right_scroll  = 0
         self.inventory_open          = False
         self.crafting_open           = False   # C: crafting panel
         self.collection_open         = False   # G: rock collection
@@ -133,8 +141,16 @@ class UI(
         self._desert_forge_recipe_rects    = {}
         self._artisan_selected_recipe      = 0
         self._artisan_recipe_rects         = {}
-        self._bait_station_selected_recipe = 0
-        self._bait_station_recipe_rects    = {}
+        self._bait_station_selected_recipe  = 0
+        self._bait_station_recipe_rects     = {}
+        self._fletching_selected_recipe     = 0
+        self._fletching_recipe_rects        = {}
+        self._smelter_selected_recipe       = 0
+        self._smelter_recipe_rects          = {}
+        self._glass_kiln_selected_recipe    = 0
+        self._glass_kiln_recipe_rects       = {}
+        self._garden_workshop_selected_recipe = 0
+        self._garden_workshop_recipe_rects    = {}
         self._cook_station_scroll        = {}
         self._cook_station_max_scroll    = {}
         self.npc_open   = False
@@ -231,6 +247,19 @@ class UI(
         self._roast_select_rects     = {}
         self._roast_result_done_btn  = None
         self._roast_proc_rects       = {}   # processing phase button rects
+        self._roast_recording        = []   # [(time, temp), ...] curve recorded during roast
+        self._roast_active_profile   = None # profile dict currently being followed
+        self._roast_profile_match_time = 0.0
+        self._roast_profile_rects    = {}
+        self._roast_save_profile_btn = None
+        self._roast_profile_name_entry = None  # None or str while typing name
+        self._roast_profile_confirm_btn = None
+        self._anaerobic_bean_idx     = None
+        self._anaerobic_start_time   = None
+        self._anaerobic_select_rects = {}
+        self._anaerobic_action_btn   = None
+        self._brew_herb_key          = None
+        self._brew_herb_rects        = {}
         # Blend station state
         self._blend_slots        = [None, None, None]  # bean indices or None
         self._blend_slot_rects   = []
@@ -418,6 +447,7 @@ class UI(
         self._breed_tab           = 0          # 0=all 1=sheep 2=cow 3=chicken
         self._breed_tab_rects     = {}
         self._breed_list_rects    = {}         # uid -> Rect
+        self._breed_nb_rects      = {}         # uid -> no_breed toggle Rect
         self._breed_selected_uid  = None
         self._breed_scroll        = 0
         self._max_breed_scroll    = 0
@@ -550,6 +580,113 @@ class UI(
         self._textile_codex_scroll   = 0
         self._textile_codex_selected = None
         self._textile_codex_rects    = {}
+        # ----- Cheese UI state -----
+        self._vat_phase          = "select_milk"
+        self._vat_select_rects   = {}
+        self._vat_current_cheese = None
+        self._vat_result_cheese  = None
+        self._vat_temp           = 0.0
+        self._vat_temp_score     = 0.0
+        self._vat_culture_added  = False
+        self._vat_culture_score  = 0.0
+        self._vat_culture_pulse  = 0.0
+        self._vat_penalties      = 0.0
+        self._vat_finish_timer   = 3.0
+        self._vat_game_done      = False
+        self._cp_phase          = "select_curd"
+        self._cp_select_rects   = {}
+        self._cp_type_rects     = {}
+        self._cp_current_curd   = None
+        self._cp_type           = "pressed"
+        self._cp_pressure       = 0.0
+        self._cp_score          = 0.0
+        self._cp_timer          = 8.0
+        self._cp_game_done      = False
+        self._cp_result_cheese  = None
+        self._cave_phase           = "select_wheel"
+        self._cave_select_rects    = {}
+        self._cave_duration_rects  = {}
+        self._cave_current_wheel   = None
+        self._cave_cycles          = 3
+        self._cave_age_progress    = 0.0
+        self._cave_care_bonus      = 0.0
+        self._cave_care_prompt_timer = 5.0
+        self._cave_care_active     = False
+        self._cave_care_window     = 0.0
+        self._cave_game_done       = False
+        self._cave_result_item     = None
+        self._cave_result_wheel    = None
+        self._cheese_codex_scroll   = 0
+        self._cheese_codex_selected = None
+        self._cheese_codex_rects    = {}
+        # ----- Jewelry UI state -----
+        self._jw_phase            = "idle"
+        self._jw_type             = None
+        self._jw_slot_count       = 1
+        self._jw_slots            = []
+        self._jw_custom_name      = ""
+        self._jw_gem_scroll       = 0
+        self._jw_gem_rects        = {}
+        self._jw_type_rects       = {}
+        self._jw_slot_count_rects = {}
+        self._jw_slot_rects       = []
+        self._jw_drag_uid         = None
+        self._jw_drag_kind        = None
+        self._jw_drag_pos         = (0, 0)
+        self._jw_detail_jewelry   = None
+        self._jw_sell_rects       = {}
+        self._jw_confirm_rect     = None
+        self._jw_finish_rect      = None
+        self._jw_craft_rect       = None
+        self._jw_detail_close_rect= None
+        self._jewelry_codex_scroll   = 0
+        self._jewelry_codex_selected = None
+        self._jewelry_codex_rects    = {}
+
+        # Sculpture mini-game
+        self._sculpt_phase          = "idle"
+        self._sculpt_mineral        = None
+        self._sculpt_count          = 0
+        self._sculpt_grid           = []
+        self._sculpt_undo_stack     = []
+        self._sculpt_template       = None
+        self._sculpt_cell_rects     = {}
+        self._sculpt_template_rects = {}
+        self._sculpt_mineral_rects  = {}
+        self._sculpt_symmetry       = False   # mirror left↔right while carving
+        self._sculpt_drag_mode      = None    # "carve" | "restore" | None
+        self._sculpt_hover_cell     = None    # (ri, ci) | None
+
+        # Pottery Wheel
+        self._wheel_phase        = "select_clay"
+        self._wheel_profile      = [3] * 12
+        self._wheel_clay_budget  = 0
+        self._wheel_clay_loaded  = 0
+        self._wheel_spin_angle   = 0.0
+        self._wheel_undo_stack   = []
+        self._wheel_drag_row     = None
+        self._wheel_row_rects    = {}
+        self._wheel_clay_btn_rects = {}
+        # Pottery Kiln
+        self._kiln_tab           = "fire"
+        self._kiln_phase         = "select_piece"
+        self._kiln_firing_piece  = None
+        self._kiln_firing_result_piece = None
+        self._kiln_temp          = 0.0
+        self._kiln_temp_vel      = 0.0
+        self._kiln_time          = 0.0
+        self._kiln_total_time    = 35.0
+        self._kiln_heat_held     = False
+        self._kiln_shock_penalties = 0.0
+        self._kiln_time_in_green = 0.0
+        self._kiln_event_flash   = None
+        self._kiln_select_rects  = {}
+        self._kiln_tab_rects     = {}
+        # Glazing
+        self._glaze_piece_idx    = None
+        self._glaze_dust_key     = None
+        self._glaze_piece_rects  = {}
+        self._glaze_dust_rects   = {}
 
 
     def draw(self, player, research=None, dt=0.0):
@@ -614,4 +751,6 @@ class UI(
         self._draw_horse_stamina_hud(player)
         if self.wardrobe_open:
             self._draw_wardrobe(player)
+        if self._jw_detail_jewelry is not None:
+            self._draw_jewelry_detail(player)
 

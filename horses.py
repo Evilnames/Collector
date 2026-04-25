@@ -2,7 +2,10 @@ import random
 import uuid
 import pygame
 from constants import BLOCK_SIZE, GRAVITY, MAX_FALL, PLAYER_W, PLAYER_H, MINE_REACH, HOTBAR_SIZE
-from animals import Animal, MUTATION_TYPES, MUTATION_CHANCE, MUTATION_INHERIT_ONE, MUTATION_INHERIT_BOTH
+from animals import (Animal, MUTATION_TYPES,
+                     COAT_PATTERN_ORDER, LEG_MARKING_ORDER,
+                     MANE_COLOR_ORDER, FACE_MARKING_ORDER,
+                     _expressed_categorical)
 
 HORSE_MOVE_SPEED  = 1.4   # wander speed (px/frame)
 HORSE_FLEE_SPEED  = 3.2   # flee speed when attacked
@@ -79,18 +82,98 @@ class Horse(Animal):
         biodome = world.biodome_at(bx) if world is not None else "temperate"
         coat_options = BIOME_COAT_COLORS.get(biodome, _FALLBACK_COAT)
 
-        self.traits["speed_rating"]  = round(random.uniform(0.7, 1.3), 3)
-        self.traits["stamina_max"]   = round(random.uniform(0.8, 1.2), 3)
-        self.traits["temperament"]   = random.choices(
+        self.traits["speed_rating"]      = round(random.uniform(0.7, 1.3), 3)
+        self.traits["stamina_max"]       = round(random.uniform(0.8, 1.2), 3)
+        self.traits["temperament"]       = random.choices(
             ["calm", "spirited", "wild"], weights=[3, 4, 3]
         )[0]
-        self.traits["coat_color"]    = random.choice(coat_options)
+        self.traits["coat_color"]        = random.choice(coat_options)
         self.traits["horseshoe_applied"] = False
 
         self.stamina    = 100.0
         self.rider      = None       # Player ref when mounted
         self._broken    = False      # True once horse-breaking minigame passed
         self._flee_timer = 0.0       # flee after being attacked
+
+        self._init_horse_genotype()
+
+    def _init_horse_genotype(self):
+        sr = self.traits["speed_rating"]
+        sm = self.traits["stamina_max"]
+        self.genotype["speed_gene"]    = [sr, round(random.uniform(0.7, 1.3), 3)]
+        self.genotype["stamina_gene"]  = [sm, round(random.uniform(0.8, 1.2), 3)]
+        self.genotype["endurance_gene"]= [round(random.uniform(0.8, 1.2), 3),
+                                          round(random.uniform(0.8, 1.2), 3)]
+        self.genotype["gait_gene"]     = [round(random.uniform(0.8, 1.2), 3),
+                                          round(random.uniform(0.8, 1.2), 3)]
+        self.genotype["coat_pattern_gene"] = [
+            random.choices(COAT_PATTERN_ORDER, weights=[55, 25, 15, 5])[0],
+            random.choices(COAT_PATTERN_ORDER, weights=[55, 25, 15, 5])[0],
+        ]
+        self.genotype["leg_marking_gene"] = [
+            "none",
+            random.choices(LEG_MARKING_ORDER, weights=[60, 25, 15])[0],
+        ]
+        self.genotype["mane_color_gene"] = [
+            "match",
+            random.choices(MANE_COLOR_ORDER, weights=[55, 25, 12, 8])[0],
+        ]
+        self.genotype["face_marking_gene"] = [
+            "none",
+            random.choices(FACE_MARKING_ORDER, weights=[50, 25, 15, 10])[0],
+        ]
+        self._apply_genotype_to_traits()
+
+    def _apply_genotype_to_traits(self):
+        super()._apply_genotype_to_traits()
+        if "speed_gene" in self.genotype:
+            avg = (self.genotype["speed_gene"][0] + self.genotype["speed_gene"][1]) / 2
+            self.traits["speed_rating"] = round(max(0.6, min(1.4, avg)), 3)
+        if "stamina_gene" in self.genotype:
+            avg = (self.genotype["stamina_gene"][0] + self.genotype["stamina_gene"][1]) / 2
+            self.traits["stamina_max"] = round(max(0.7, min(1.3, avg)), 3)
+        if "endurance_gene" in self.genotype:
+            avg = (self.genotype["endurance_gene"][0] + self.genotype["endurance_gene"][1]) / 2
+            self.traits["endurance"] = round(max(0.7, min(1.3, avg)), 3)
+        if "gait_gene" in self.genotype:
+            avg = (self.genotype["gait_gene"][0] + self.genotype["gait_gene"][1]) / 2
+            self.traits["gait"] = round(max(0.7, min(1.3, avg)), 3)
+        if "coat_pattern_gene" in self.genotype:
+            self.traits["coat_pattern"] = _expressed_categorical(
+                self.genotype["coat_pattern_gene"], COAT_PATTERN_ORDER
+            )
+        if "leg_marking_gene" in self.genotype:
+            self.traits["leg_marking"] = _expressed_categorical(
+                self.genotype["leg_marking_gene"], LEG_MARKING_ORDER
+            )
+        if "mane_color_gene" in self.genotype:
+            self.traits["mane_color"] = _expressed_categorical(
+                self.genotype["mane_color_gene"], MANE_COLOR_ORDER
+            )
+        if "face_marking_gene" in self.genotype:
+            self.traits["face_marking"] = _expressed_categorical(
+                self.genotype["face_marking_gene"], FACE_MARKING_ORDER
+            )
+
+    def _synthesize_genotype_from_traits(self):
+        super()._synthesize_genotype_from_traits()
+        for gene_key, trait_key, lo, hi in [
+            ("speed_gene",    "speed_rating", 0.7, 1.3),
+            ("stamina_gene",  "stamina_max",  0.8, 1.2),
+            ("endurance_gene","endurance",    0.8, 1.2),
+            ("gait_gene",     "gait",         0.8, 1.2),
+        ]:
+            v = self.traits.get(trait_key, 1.0)
+            noise = random.uniform(-0.04, 0.04)
+            self.genotype[gene_key] = [round(max(lo, v + noise), 3), round(max(lo, v - noise), 3)]
+        cp = self.traits.get("coat_pattern", "solid")
+        self.genotype["coat_pattern_gene"] = [cp, cp]
+        lm = self.traits.get("leg_marking", "none")
+        self.genotype["leg_marking_gene"] = ["none", lm]
+        mc = self.traits.get("mane_color", "match")
+        self.genotype["mane_color_gene"] = ["match", mc]
+        fm = self.traits.get("face_marking", "none")
+        self.genotype["face_marking_gene"] = ["none", fm]
 
     # ------------------------------------------------------------------
     # Non-killable — flee instead
@@ -176,6 +259,8 @@ class Horse(Animal):
 
     def breed_with(self, other, world, player):
         """Player-triggered breeding at a stable. Returns offspring or None."""
+        if self.no_breed or other.no_breed:
+            return None
         if not (self.tamed and other.tamed):
             return None
         if not (self._stable_nearby(world) or other._stable_nearby(world)):
@@ -183,39 +268,24 @@ class Horse(Animal):
 
         offspring = Horse((self.x + other.x) / 2, (self.y + other.y) / 2, world)
 
-        # Base genetics crossover (mirrors Animal._breed)
+        # Mendelian allele inheritance
+        offspring._inherit_genotype(self, other)
+
+        # color_shift blended (not allele-based)
         cs_a = self.traits["color_shift"]
         cs_b = other.traits["color_shift"]
         offspring.traits["color_shift"] = tuple(
             max(-0.25, min(0.25, (cs_a[i] + cs_b[i]) / 2 + random.uniform(-0.03, 0.03)))
             for i in range(3)
         )
-        sz = (self.traits["size"] + other.traits["size"]) / 2 + random.uniform(-0.02, 0.02)
-        offspring.traits["size"] = max(0.85, min(1.15, sz))
+        if offspring.traits.get("mutation") == "albino":
+            offspring.traits["color_shift"] = (
+                random.uniform(0.20, 0.25),
+                random.uniform(0.20, 0.25),
+                random.uniform(0.20, 0.25),
+            )
 
-        mut_a = self.traits.get("mutation")
-        mut_b = other.traits.get("mutation")
-        offspring_mutation = None
-        if mut_a is not None and mut_a == mut_b:
-            if random.random() < MUTATION_INHERIT_BOTH:
-                offspring_mutation = mut_a
-        elif mut_a is not None or mut_b is not None:
-            source = mut_a if mut_a is not None else mut_b
-            if random.random() < MUTATION_INHERIT_ONE:
-                offspring_mutation = source
-        if offspring_mutation is None and random.random() < MUTATION_CHANCE:
-            offspring_mutation = random.choice(MUTATION_TYPES)
-        offspring.traits["mutation"] = offspring_mutation
-
-        # Horse-specific trait crossover
-        sr = (self.traits["speed_rating"] + other.traits["speed_rating"]) / 2
-        sr += random.uniform(-0.04, 0.04)
-        offspring.traits["speed_rating"] = round(max(0.6, min(1.4, sr)), 3)
-
-        sm = (self.traits["stamina_max"] + other.traits["stamina_max"]) / 2
-        sm += random.uniform(-0.03, 0.03)
-        offspring.traits["stamina_max"] = round(max(0.7, min(1.3, sm)), 3)
-
+        # Temperament: still index-blended since it has 3 discrete states
         order = ["calm", "spirited", "wild"]
         avg_idx = (order.index(self.traits["temperament"]) +
                    order.index(other.traits["temperament"])) / 2
@@ -224,11 +294,12 @@ class Horse(Animal):
         avg_idx += random.uniform(-0.5, 0.5)
         offspring.traits["temperament"] = order[max(0, min(2, round(avg_idx)))]
 
-        # Coat blend with small noise
+        # Coat color blended (RGB, not allele-based)
         ca, cb = self.traits["coat_color"], other.traits["coat_color"]
-        blended = tuple(max(0, min(255, int((ca[i] + cb[i]) / 2) + random.randint(-8, 8)))
-                        for i in range(3))
-        offspring.traits["coat_color"] = blended
+        offspring.traits["coat_color"] = tuple(
+            max(0, min(255, int((ca[i] + cb[i]) / 2) + random.randint(-8, 8)))
+            for i in range(3)
+        )
 
         offspring.traits["horseshoe_applied"] = False
         offspring.parent_a_uid = self.uid
@@ -237,10 +308,8 @@ class Horse(Animal):
         offspring._broken = True
         offspring._breed_cooldown = 9999.0
 
-        cooldown = 900.0
-        self._breed_cooldown  = cooldown
-        other._breed_cooldown = cooldown
-
+        self._breed_cooldown  = 900.0
+        other._breed_cooldown = 900.0
         world.entities.append(offspring)
 
         if player:
@@ -278,6 +347,7 @@ class Horse(Animal):
         if self.rider is None:
             regen = 8.0 * self.traits.get("stamina_max", 1.0) * dt
             self.stamina = min(100.0, self.stamina + regen)
+        # Endurance slows drain when sprinting (accessed in player.py via trait key)
 
         # Keep breed cooldown high to prevent auto-breed
         if self._breed_cooldown < 9999.0:

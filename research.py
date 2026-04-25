@@ -40,7 +40,7 @@ def _noop(player, world):
 
 
 class ResearchTree:
-    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship", "Tea Cultivation", "Herbalism", "Textile Arts"]
+    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship", "Tea Cultivation", "Herbalism", "Textile Arts", "Dairy Arts", "Hunting", "Jewelry Arts", "Garden Arts", "Masonry Arts", "Ceramics"]
 
     def __init__(self):
         self.nodes = {}    # id -> ResearchNode
@@ -67,8 +67,18 @@ class ResearchTree:
         player.bird_spook_reduction       = 0.4  if u("bird_sanctuary")     else 0.0
         player.bird_feeder_bonus          = 2.0  if u("bird_lure")          else 1.0
         player.avian_mastery              = u("avian_mastery")
+        player.master_hunter              = u("master_hunter")
         player.insect_net_reduction       = 0.4  if u("net_mastery")        else 0.0
         player.insect_pollination_mult    = 1.35 if u("advanced_entomology") else 1.1
+
+        # Dairy Arts bonuses
+        player.curd_quality_bonus       = 0.15 if u("curd_mastery")      else 0.0
+        player.cheese_buff_duration_bonus = 0.5 if u("affineurs_touch")  else 0.0
+        player.blue_cheese_unlocked     = u("affineurs_touch")
+
+        # Ceramics bonuses
+        player.kiln_quality_bonus           = 0.15 if u("kiln_mastery")       else 0.0
+        player.pottery_buff_duration_bonus  = 0.5  if u("glaze_arts")         else 0.0
 
         # Horsemanship bonuses
         player.horse_whisperer_bonus    = 2    if u("horse_whisperer")   else 0
@@ -182,6 +192,12 @@ class ResearchTree:
             "Coffee buffs last 50% longer",
             {"gold_nugget": 2, "iron_chunk": 3}, ["brew_expertise"],
             _noop, money_cost=80), 3, 4)
+
+        self._add(ResearchNode(
+            "anaerobic_processing", "Anaerobic Fermentation",
+            "Seal beans in oxygen-deprived tanks for intense, volatile flavours — unlocks Anaerobic Tank",
+            {"gold_nugget": 2, "crystal_shard": 2}, ["master_barista"],
+            _noop, money_cost=100), 3, 5)
 
         # --- Birding (column 4) ---
         self._add(ResearchNode(
@@ -388,6 +404,120 @@ class ResearchTree:
             "Advanced weaving patterns — unlocks diamond texture and tapestry output",
             {"gold_nugget": 2, "ruby": 1}, ["loom_mastery"],
             _noop, money_cost=70), 11, 3)
+
+        self._add(ResearchNode(
+            "glassblowing", "Glassblowing",
+            "Smelt sand into glass — unlocks Glass Kiln crafting",
+            {"sand_grain": 6, "coal": 3}, ["natural_dyes"],
+            _noop, money_cost=45), 11, 4)
+
+        # --- Dairy Arts (column 12) ---
+        self._add(ResearchNode(
+            "dairy_basics", "Dairy Basics",
+            "Learn cheesemaking — unlocks Dairy Vat crafting; goats and sheep become milkable",
+            {"milk": 5, "stone_chip": 4}, [],
+            _noop, money_cost=20), 12, 0)
+
+        self._add(ResearchNode(
+            "curd_mastery", "Curd Mastery",
+            "Curdling technique improves culture quality by 15%",
+            {"milk": 8, "coal": 3}, ["dairy_basics"],
+            _noop, money_cost=35), 12, 1)
+
+        self._add(ResearchNode(
+            "aging_arts", "Aging Arts",
+            "Learn to age and press — unlocks Cheese Press and Aging Cave crafting",
+            {"lumber": 6, "iron_chunk": 3}, ["curd_mastery"],
+            _noop, money_cost=50), 12, 2)
+
+        self._add(ResearchNode(
+            "affineurs_touch", "Affineur's Touch",
+            "Unlock blue cheese aging; cheese buffs last 50% longer",
+            {"gold_nugget": 2, "iron_chunk": 3}, ["aging_arts"],
+            _noop, money_cost=80), 12, 3)
+
+        # --- Hunting (column 13) ---
+        self._add(ResearchNode(
+            "basic_archery", "Basic Archery",
+            "Learn to craft bows and arrows — unlocks Fletching Table",
+            {"lumber": 4, "stone_chip": 3}, [],
+            _noop, money_cost=12), 13, 0)
+
+        self._add(ResearchNode(
+            "iron_arrows", "Iron Arrows",
+            "Heavier arrowheads — craft iron arrows that deal double damage",
+            {"iron_chunk": 3, "lumber": 2}, ["basic_archery"],
+            _noop, money_cost=28), 13, 1)
+
+        self._add(ResearchNode(
+            "master_hunter", "Master Hunter",
+            "Each successful hunt yields one extra drop",
+            {"gold_nugget": 1, "iron_chunk": 3}, ["iron_arrows"],
+            _noop, money_cost=55), 13, 2)
+
+        # --- Jewelry Arts (column 14) ---
+        self._add(ResearchNode(
+            "goldsmithing", "Goldsmithing",
+            "Unlock the Jewelry Workbench — craft custom rings, necklaces, pendants and more",
+            {"iron_chunk": 8, "crystal_shard": 4}, [],
+            _noop, money_cost=30), 14, 0)
+
+        self._add(ResearchNode(
+            "master_jeweler", "Master Jeweler",
+            "Jewelry merchants pay 25% more for your pieces",
+            {"gold_nugget": 3, "ruby": 1}, ["goldsmithing"],
+            lambda p, w: setattr(p, "master_jeweler", True), money_cost=70), 14, 1)
+
+        # --- Garden Arts (column 15) ---
+        self._add(ResearchNode(
+            "garden_workshop", "Garden Workshop",
+            "Unlock the Garden Workshop — craft Moorish zellige tiles, Italian topiaries, fountains, and more",
+            {"stone_chip": 10, "iron_chunk": 3}, [],
+            _noop, money_cost=25), 15, 0)
+
+        self._add(ResearchNode(
+            "master_gardener", "Master Gardener",
+            "Your garden blocks look 20% more impressive (sell bonus for adjacent structures)",
+            {"limestone_block": 3, "sapling": 4}, ["garden_workshop"],
+            _noop, money_cost=50), 15, 1)
+
+        # --- Masonry Arts (column 16) ---
+        self._add(ResearchNode(
+            "stone_carving", "Stone Carving",
+            "Unlock the Sculptor's Bench — chisel minerals into custom decorative sculptures",
+            {"stone_chip": 8, "iron_chunk": 2}, [],
+            _noop, money_cost=20), 16, 0)
+
+        self._add(ResearchNode(
+            "fine_chiseling", "Fine Chiseling",
+            "Increase carving grid resolution: use 6 rows per mineral piece instead of 4",
+            {"limestone_chip": 4, "iron_ingot": 1}, ["stone_carving"],
+            _noop, money_cost=35), 16, 1)
+
+        self._add(ResearchNode(
+            "master_sculptor", "Master Sculptor",
+            "Unlock the Effigy template and allow mixing mineral colors in a single sculpture",
+            {"polished_marble": 3, "chisel": 1}, ["fine_chiseling"],
+            _noop, money_cost=60), 16, 2)
+
+        # --- Ceramics (column 17) ---
+        self._add(ResearchNode(
+            "clay_working", "Clay Working",
+            "Unlock the Pottery Wheel — shape clay into bowls, pots, jugs, and vases",
+            {"clay": 8, "stone_chip": 4}, [],
+            _noop, money_cost=15), 17, 0)
+
+        self._add(ResearchNode(
+            "kiln_mastery", "Kiln Mastery",
+            "Unlock the Pottery Kiln and gain +15% firing quality bonus",
+            {"clay": 12, "coal": 5}, ["clay_working"],
+            _noop, money_cost=30), 17, 1)
+
+        self._add(ResearchNode(
+            "glaze_arts", "Glaze Arts",
+            "Unlock gem dust glazing at the kiln — glazed pieces gain a quality tier and extend buff durations by 50%",
+            {"clay": 8, "ruby": 1}, ["kiln_mastery"],
+            _noop, money_cost=50), 17, 2)
 
     def prereqs_met(self, node_id):
         return all(self.nodes[p].unlocked for p in self.nodes[node_id].prerequisites)

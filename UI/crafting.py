@@ -3,7 +3,9 @@ from items import ITEMS
 from item_icons import render_item_icon
 from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOODLE_POT_RECIPES,
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
-                      BAIT_STATION_RECIPES, RECIPE_GROUPS, RECIPE_GROUPS_ORDER,
+                      BAIT_STATION_RECIPES, FLETCHING_RECIPES, SMELTER_RECIPES, GLASS_KILN_RECIPES,
+                      GARDEN_WORKSHOP_RECIPES,
+                      RECIPE_GROUPS, RECIPE_GROUPS_ORDER,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
 from rocks import get_refinery_equipment, RARITY_COLORS
@@ -559,7 +561,14 @@ class CraftingMixin:
                             WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK,
                             DRYING_RACK_BLOCK, KILN_BLOCK, RESONANCE_BLOCK,
                             BAIT_STATION_BLOCK,
-                            SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK)
+                            SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK,
+                            DAIRY_VAT_BLOCK, CHEESE_PRESS_BLOCK, AGING_CAVE_BLOCK,
+                            FLETCHING_TABLE_BLOCK, SMELTER_BLOCK, ANAEROBIC_TANK_BLOCK,
+                            GLASS_KILN_BLOCK, GARDEN_WORKSHOP_BLOCK,
+                            JEWELRY_WORKBENCH_BLOCK)
+        if self.refinery_block_id == JEWELRY_WORKBENCH_BLOCK:
+            self._draw_jewelry_workbench(player, dt)
+            return
         if self.refinery_block_id == FOSSIL_TABLE_BLOCK:
             self._draw_fossil_table(player, dt)
             return
@@ -617,6 +626,15 @@ class CraftingMixin:
         if self.refinery_block_id == LOOM_BLOCK:
             self._draw_loom(player, dt)
             return
+        if self.refinery_block_id == DAIRY_VAT_BLOCK:
+            self._draw_dairy_vat(player, dt)
+            return
+        if self.refinery_block_id == CHEESE_PRESS_BLOCK:
+            self._draw_cheese_press(player, dt)
+            return
+        if self.refinery_block_id == AGING_CAVE_BLOCK:
+            self._draw_aging_cave(player, dt)
+            return
         if self.refinery_block_id == GEM_CUTTER_BLOCK:
             self._draw_gem_cutter(player, dt)
             return
@@ -673,8 +691,50 @@ class CraftingMixin:
                                        block_id=BAIT_STATION_BLOCK,
                                        action_label="CRAFT")
             return
+        if self.refinery_block_id == FLETCHING_TABLE_BLOCK:
+            self._draw_cooking_station(player, FLETCHING_RECIPES, "FLETCHING TABLE",
+                                       (139, 110, 75), self._fletching_selected_recipe,
+                                       self._fletching_recipe_rects, "_fletching_selected_recipe",
+                                       block_id=FLETCHING_TABLE_BLOCK,
+                                       action_label="CRAFT")
+            return
+        if self.refinery_block_id == SMELTER_BLOCK:
+            self._draw_cooking_station(player, SMELTER_RECIPES, "SMELTER",
+                                       (160, 80, 50), self._smelter_selected_recipe,
+                                       self._smelter_recipe_rects, "_smelter_selected_recipe",
+                                       block_id=SMELTER_BLOCK,
+                                       action_label="SMELT")
+            return
+        if self.refinery_block_id == ANAEROBIC_TANK_BLOCK:
+            self._draw_anaerobic_tank(player, dt)
+            return
+        if self.refinery_block_id == GLASS_KILN_BLOCK:
+            self._draw_cooking_station(player, GLASS_KILN_RECIPES, "GLASS KILN",
+                                       (180, 220, 240), self._glass_kiln_selected_recipe,
+                                       self._glass_kiln_recipe_rects, "_glass_kiln_selected_recipe",
+                                       block_id=GLASS_KILN_BLOCK,
+                                       action_label="SMELT")
+            return
+        if self.refinery_block_id == GARDEN_WORKSHOP_BLOCK:
+            self._draw_cooking_station(player, GARDEN_WORKSHOP_RECIPES, "GARDEN WORKSHOP",
+                                       (100, 155, 80), self._garden_workshop_selected_recipe,
+                                       self._garden_workshop_recipe_rects, "_garden_workshop_selected_recipe",
+                                       block_id=GARDEN_WORKSHOP_BLOCK,
+                                       action_label="CRAFT")
+            return
         if self.refinery_block_id == COMPOST_BIN_BLOCK:
             self._draw_compost_bin(player)
+            return
+        from blocks import SCULPTORS_BENCH
+        if self.refinery_block_id == SCULPTORS_BENCH:
+            self._draw_sculptor_bench(player, dt)
+            return
+        from blocks import POTTERY_WHEEL_BLOCK, POTTERY_KILN_BLOCK
+        if self.refinery_block_id == POTTERY_WHEEL_BLOCK:
+            self._draw_pottery_wheel(player, dt)
+            return
+        if self.refinery_block_id == POTTERY_KILN_BLOCK:
+            self._draw_pottery_kiln(player, dt)
             return
         equip_data = get_refinery_equipment().get(self.refinery_block_id)
         if equip_data is None:

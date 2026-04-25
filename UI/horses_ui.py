@@ -229,9 +229,9 @@ class HorseMixin:
         self._draw_horse_stat_card(horse_a, left_x, card_y, card_w, 200, player)
         self._draw_horse_stat_card(horse_b, right_x, card_y, card_w, 200, player)
 
-        # Predicted offspring stats (midpoint of parents)
+        # Predicted offspring stats (allele averages)
         off_sr = (horse_a.traits["speed_rating"] + horse_b.traits["speed_rating"]) / 2
-        off_sm = (horse_a.traits["stamina_max"] + horse_b.traits["stamina_max"]) / 2
+        off_sm = (horse_a.traits["stamina_max"]  + horse_b.traits["stamina_max"])  / 2
         pred_y = card_y + 210
         pred_lbl = self.small.render(
             f"Offspring: SPD ~{off_sr:.2f}  STA ~{off_sm:.2f}  (±noise)",
@@ -239,24 +239,56 @@ class HorseMixin:
         )
         self.screen.blit(pred_lbl, (SCREEN_W // 2 - pred_lbl.get_width() // 2, pred_y))
 
+        # Coat pattern allele odds
+        geno_a = getattr(horse_a, 'genotype', {})
+        geno_b = getattr(horse_b, 'genotype', {})
+        pa_pair = geno_a.get("coat_pattern_gene", ["solid", "solid"])
+        pb_pair = geno_b.get("coat_pattern_gene", ["solid", "solid"])
+        all_combos = [a + "/" + b for a in pa_pair for b in pb_pair]
+        from animals import COAT_PATTERN_ORDER, _expressed_categorical
+        pattern_counts = {}
+        for combo in all_combos:
+            expressed = _expressed_categorical(combo.split("/"), COAT_PATTERN_ORDER)
+            pattern_counts[expressed] = pattern_counts.get(expressed, 0) + 1
+        pattern_parts = [f"{p}: {c * 25}%" for p, c in sorted(pattern_counts.items())]
+        pat_lbl = self.small.render("Pattern odds: " + "  ".join(pattern_parts), True, (160, 140, 100))
+        self.screen.blit(pat_lbl, (SCREEN_W // 2 - pat_lbl.get_width() // 2, pred_y + 16))
+
+        # Mutation carrier check
+        mut_a = geno_a.get("mutation", [None, None])
+        mut_b = geno_b.get("mutation", [None, None])
+        carrier_types = {a for a in mut_a + mut_b if a is not None}
+        if carrier_types:
+            for ct in carrier_types:
+                combos_ct = [a == ct and b == ct for a in mut_a for b in mut_b]
+                expr_pct = sum(combos_ct) * 25
+                car_s = self.small.render(f"★ {ct} mutation: {expr_pct}% express, carriers possible",
+                                           True, (220, 190, 70))
+                pred_y += 16
+                self.screen.blit(car_s, (SCREEN_W // 2 - car_s.get_width() // 2, pred_y + 16))
+
         if getattr(player, "horse_breeding_mastery", False):
             calm_lbl = self.small.render("Breeding Mastery: offspring temperament skews calmer",
                                           True, (100, 200, 100))
-            self.screen.blit(calm_lbl, (SCREEN_W // 2 - calm_lbl.get_width() // 2, pred_y + 16))
+            self.screen.blit(calm_lbl, (SCREEN_W // 2 - calm_lbl.get_width() // 2, pred_y + 32))
 
-        # Breed button
+        # Breed button — blocked if either horse has no_breed set
         cooldown_a = horse_a._breed_cooldown
         cooldown_b = horse_b._breed_cooldown
+        no_breed_blocked = getattr(horse_a, 'no_breed', False) or getattr(horse_b, 'no_breed', False)
         on_cooldown = (cooldown_a < 9999 and cooldown_a > 0) or (cooldown_b < 9999 and cooldown_b > 0)
+        blocked = on_cooldown or no_breed_blocked
 
-        btn_w, btn_h = 120, 30
+        btn_w, btn_h = 160, 30
         btn_x = SCREEN_W // 2 - btn_w // 2
         btn_y = py + ph - 44
         btn_r = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
-        btn_color = (80, 55, 25) if on_cooldown else (130, 90, 35)
+        btn_color = (80, 55, 25) if blocked else (130, 90, 35)
         pygame.draw.rect(self.screen, btn_color, btn_r, border_radius=6)
         pygame.draw.rect(self.screen, (180, 140, 70), btn_r, 2, border_radius=6)
-        if on_cooldown:
+        if no_breed_blocked:
+            btn_txt = self.small.render("BREEDING DISABLED", True, (200, 80, 80))
+        elif on_cooldown:
             cd = max(cooldown_a if cooldown_a < 9999 else 0,
                      cooldown_b if cooldown_b < 9999 else 0)
             btn_txt = self.small.render(f"COOLDOWN {int(cd)}s", True, (130, 105, 60))
@@ -264,7 +296,7 @@ class HorseMixin:
             btn_txt = self.font.render("BREED", True, (240, 210, 130))
         self.screen.blit(btn_txt, (btn_r.centerx - btn_txt.get_width() // 2,
                                     btn_r.centery - btn_txt.get_height() // 2))
-        self._hbr_breed_btn = None if on_cooldown else btn_r
+        self._hbr_breed_btn = None if blocked else btn_r
 
     def _draw_horse_stat_card(self, horse, cx, cy, cw, ch, player):
         traits = horse.traits

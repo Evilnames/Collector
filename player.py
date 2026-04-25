@@ -35,10 +35,19 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE,
                     FLAX_CROP_MATURE,
                     CHAMOMILE_BUSH, LAVENDER_BUSH, MINT_BUSH, ROSEMARY_BUSH,
+                    THYME_BUSH, SAGE_BUSH, BASIL_BUSH, OREGANO_BUSH,
+                    DILL_BUSH, FENNEL_BUSH, TARRAGON_BUSH, LEMON_BALM_BUSH,
+                    ECHINACEA_BUSH, VALERIAN_BUSH, ST_JOHNS_WORT_BUSH, YARROW_BUSH,
+                    BERGAMOT_BUSH, WORMWOOD_BUSH, RUE_BUSH, LEMON_VERBENA_BUSH,
+                    HYSSOP_BUSH, CATNIP_BUSH, WOOD_SORREL_BUSH, MARJORAM_BUSH,
+                    SAVORY_BUSH, ANGELICA_BUSH, BORAGE_BUSH, COMFREY_BUSH, MUGWORT_BUSH,
                     CHAMOMILE_CROP_MATURE, LAVENDER_CROP_MATURE, MINT_CROP_MATURE, ROSEMARY_CROP_MATURE,
                     SKY_OPENING, STONE, TILLED_SOIL, SAND, COMPOST_BIN_BLOCK, WELL_BLOCK,
                     STAIRS_RIGHT, STAIRS_LEFT, STAIR_BLOCKS,
-                    GARDEN_BLOCK)
+                    GARDEN_BLOCK,
+                    COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE,
+                    ELEVATOR_STOP_BLOCK,
+                    SCULPTURE_BLOCK_ROOT, SCULPTURE_BLOCK_BODY)
 import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
@@ -48,9 +57,13 @@ from gemstones import GemGenerator, Gemstone
 from fish import FishGenerator, Fish
 from coffee import CoffeeGenerator, CoffeeBean
 from wine import WineGenerator, Grape
+from sculpture import SculptureGenerator, Sculpture
+from pottery import PotteryPiece, PotteryGenerator
 from spirits import SpiritGenerator, Spirit
 from tea import TeaGenerator, TeaLeaf
 from textiles import TextileGenerator, Textile
+from cheese import CheeseGenerator, Cheese
+from jewelry import Jewelry
 from constants import (
     BLOCK_SIZE, PLAYER_W, PLAYER_H,
     GRAVITY, JUMP_FORCE, MOVE_SPEED, MAX_FALL,
@@ -84,6 +97,7 @@ class Player:
         self.vx = 0.0
         self.vy = 0.0
         self.on_ground = False
+        self._on_ladder = False
         self.facing = 1          # 1 = right, -1 = left
         self.health = MAX_HEALTH
         self.pick_power = 1
@@ -122,6 +136,7 @@ class Player:
         self.coffee_beans = []
         self.discovered_coffee_origins = set()  # "biome_roastlevel" strings
         self._coffee_gen = CoffeeGenerator(world.seed)
+        self.roast_profiles = []  # [{name, biome, roast_level, curve: [(t, temp), ...]}]
         # Active buffs from drinking coffee
         self.active_buffs = {}  # buff_name -> {"duration": float}
         # Wine collection
@@ -150,6 +165,28 @@ class Player:
         self.discovered_textiles = set()         # "fiber_dye_output" strings
         self.worn = {"head": None, "chest": None, "feet": None}  # Textile UIDs
         self._textile_gen = TextileGenerator(world.seed)
+        # Cheese collection
+        self.cheese_wheels = []
+        self.discovered_cheese = set()           # "biome_cheesetype" strings
+        self._cheese_gen = CheeseGenerator(world.seed)
+        self.cheese_buffs = {}                   # buff_name -> {"duration": float}
+        # Jewelry collection
+        self.jewelry = []
+        self.discovered_jewelry = set()          # jewelry_type strings
+        self.master_jeweler = False              # set True by research bonus
+        # Sculpture system
+        self.pending_sculptures = []   # Sculpture objects ready to place
+        self.sculptures_created = []   # permanent log of all completed sculptures
+        self._sculpture_gen     = SculptureGenerator(world.seed)
+        # Pottery & Ceramics
+        self.pottery_pieces       = []   # PotteryPiece objects
+        self.discovered_pottery   = set()  # "biome_firinglevel" strings
+        self._pottery_gen         = PotteryGenerator(world.seed)
+        self.pottery_buffs        = {}   # buff_name -> {"duration": float}
+        # Hunting
+        self.animals_hunted  = {}   # animal_id -> count killed
+        self._bow_cooldown   = 0.0
+        self.master_hunter   = False  # set True by research bonus
         # Fishing mini-game state
         self.fishing_state = None     # None | "casting" | "biting" | "result"
         self._fishing_timer = 0.0
@@ -192,14 +229,21 @@ class Player:
         self.target_block = None
         # Construction equipment
         self.mounted_machine = None
+        # Elevator
+        self.riding_elevator = None
         # Doors the player auto-opened by walking into them
         self._auto_opened_doors = set()  # set of (bx, by)
         # Research-derived bonuses (computed by ResearchTree.apply_bonuses)
         self.crop_grow_bonus            = 0.0   # added to 0.15 crop-mature chance
         self.harvest_bonus              = 0     # extra drops per crop harvest
-        self.roast_quality_bonus        = 0.0   # multiplied onto roast quality result
-        self.coffee_buff_duration_bonus = 0.0   # fraction added to buff duration
-        self.bird_spook_reduction       = 0.0   # fraction of spook radius removed
+        self.roast_quality_bonus        = 0.0
+        self.coffee_buff_duration_bonus = 0.0
+        self.curd_quality_bonus         = 0.0
+        self.cheese_buff_duration_bonus = 0.0
+        self.blue_cheese_unlocked       = False
+        self.kiln_quality_bonus          = 0.0   # added to firing quality score
+        self.pottery_buff_duration_bonus = 0.0   # multiplier on pottery buff durations
+        self.bird_spook_reduction        = 0.0   # fraction of spook radius removed
         self.bird_feeder_bonus          = 1.0   # multiplier on feeder attraction chance
         self.avian_mastery              = False # enables larger flocks
         self.insect_net_reduction       = 0.0   # fraction of insect spook radius removed
@@ -238,6 +282,7 @@ class Player:
         self.fish_caught = [Fish(**f) for f in d.get("fish", [])]
         self.coffee_beans = [CoffeeBean(**cb) for cb in d.get("coffee_beans", [])]
         self.discovered_coffee_origins = set(d.get("discovered_coffee_origins", []))
+        self.roast_profiles = d.get("roast_profiles", [])
         self.wine_grapes = [Grape(**g) for g in d.get("wine_grapes", [])]
         self.discovered_wine_origins = set(d.get("discovered_wine_origins", []))
         self.tea_leaves = [TeaLeaf(**x) for x in d.get("tea_leaves", [])]
@@ -248,11 +293,15 @@ class Player:
         self.textiles = [Textile(**x) for x in d.get("textiles", [])]
         self.discovered_textiles = set(d.get("discovered_textiles", []))
         self.worn = d.get("worn", {"head": None, "chest": None, "feet": None})
+        self.cheese_wheels = [Cheese(**x) for x in d.get("cheese_wheels", [])]
+        self.discovered_cheese = set(d.get("discovered_cheese", []))
         self.birds_observed = d.get("birds_observed", {})
         self.discovered_bird_types = set(d.get("discovered_bird_types", []))
         self.insects_observed = d.get("insects_observed", {})
         self.discovered_insect_types = set(d.get("discovered_insect_types", []))
         self.discovered_foods = set(d.get("discovered_foods", []))
+        self.jewelry = [Jewelry(**j) for j in d.get("jewelry", [])]
+        self.discovered_jewelry = set(d.get("discovered_jewelry", []))
         self.foods_cooked = d.get("foods_cooked", {})
         self.discovered_types = set(d["discovered_types"])
         self.discovered_flower_types = set(d["discovered_flower_types"])
@@ -267,6 +316,72 @@ class Player:
         self.horses_bred            = d.get("horses_bred", 0)
         self.horse_records          = d.get("horse_records", {"best_speed": 0.0, "best_stamina": 0.0})
         self.discovered_coat_biomes = set(d.get("discovered_coat_biomes", []))
+        self.animals_hunted = d.get("animals_hunted", {})
+        self.pending_sculptures = [Sculpture.from_dict(x) for x in d.get("pending_sculptures", [])]
+        self.sculptures_created = [Sculpture.from_dict(x) for x in d.get("sculptures_created", [])]
+        self.pottery_pieces     = [PotteryPiece(**x) for x in d.get("pottery_pieces", [])]
+        self.discovered_pottery = set(d.get("discovered_pottery", []))
+        self.pottery_buffs      = d.get("pottery_buffs", {})
+
+    # ------------------------------------------------------------------
+    # Sculpture helpers
+    # ------------------------------------------------------------------
+
+    def _demolish_sculpture(self, root_bx, root_by):
+        sc = self.world.sculpture_data.pop((root_bx, root_by), None)
+        height = sc.height if sc else 1
+        self.world.set_bg_block(root_bx, root_by, AIR)
+        for k in range(1, height):
+            self.world.sculpture_data.pop((root_bx, root_by - k), None)
+            self.world.set_bg_block(root_bx, root_by - k, AIR)
+
+    def _place_sculpture(self, bx, by):
+        if not self.pending_sculptures:
+            return False
+        sc = self.pending_sculptures[0]
+        for k in range(sc.height):
+            if self.world.get_bg_block(bx, by - k) != AIR:
+                return False
+        self.pending_sculptures.pop(0)
+        self.world.set_bg_block(bx, by, SCULPTURE_BLOCK_ROOT)
+        self.world.sculpture_data[(bx, by)] = sc
+        for k in range(1, sc.height):
+            self.world.set_bg_block(bx, by - k, SCULPTURE_BLOCK_BODY)
+            self.world.sculpture_data[(bx, by - k)] = {"root": (bx, by)}
+        self._consume_item("sculpture", 1)
+        return True
+
+    # ------------------------------------------------------------------
+    # Bow / Arrow firing
+    # ------------------------------------------------------------------
+
+    def fire_arrow(self):
+        """Fire an arrow in player.facing direction. Returns True on success."""
+        tool = self.hotbar[self.selected_slot]
+        if not tool or not ITEMS.get(tool, {}).get("bow"):
+            return False
+        if self._bow_cooldown > 0:
+            return False
+        arrow_id = None
+        for aid in ("iron_arrow", "wood_arrow"):
+            if self.inventory.get(aid, 0) > 0:
+                arrow_id = aid
+                break
+        if not arrow_id:
+            return False
+        self.inventory[arrow_id] -= 1
+        if self.inventory[arrow_id] <= 0:
+            del self.inventory[arrow_id]
+            for i in range(HOTBAR_SIZE):
+                if self.hotbar[i] == arrow_id and self.inventory.get(arrow_id, 0) == 0:
+                    pass  # keep bow in slot; arrows are separate inventory items
+        from hunting import Arrow
+        cx = self.x + PLAYER_W / 2
+        cy = self.y + PLAYER_H / 2 - 4
+        damage = ITEMS.get(arrow_id, {}).get("arrow_damage", 1)
+        self.world.arrows.append(Arrow(cx, cy, self.facing, self.world, damage))
+        self._bow_cooldown = 0.45
+        return True
 
     # ------------------------------------------------------------------
     # Input
@@ -274,6 +389,8 @@ class Player:
 
     def handle_input(self, keys, mouse_buttons, mouse_world_pos, dt):
         if self.mounted_machine is not None:
+            return
+        if self.riding_elevator is not None:
             return
         if self.mounted_horse is not None:
             self._handle_horse_input(keys, dt)
@@ -284,6 +401,8 @@ class Player:
             speed *= 1.50
         elif "haste" in self.herb_buffs:
             speed *= 1.35
+        if "nimbleness" in self.cheese_buffs:
+            speed *= 1.20
         textile_swift = self.get_textile_bonus("swiftness")
         if textile_swift > 0:
             speed *= (1.0 + textile_swift)
@@ -294,10 +413,16 @@ class Player:
             self.vx = speed
             self.facing = 1
 
-        if self._in_ladder():
+        overlapping_ladder = self._in_ladder()
+        pressing_down = keys[pygame.K_s] or keys[pygame.K_DOWN]
+        if not overlapping_ladder:
+            self._on_ladder = False
+        elif pressing_down or self._on_ladder:
+            self._on_ladder = True
+        if self._on_ladder:
             if keys[pygame.K_w] or keys[pygame.K_UP] or keys[pygame.K_SPACE]:
                 self.vy = -4   # climb up
-            elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            elif pressing_down:
                 self.vy = 2    # climb down
             else:
                 self.vy = 0    # hold position
@@ -347,6 +472,7 @@ class Player:
                         for _ in range(count):
                             self._add_item(item_id)
                     self._consume_tool_use()
+                    self._on_milk_harvested(harvest_target, result)
                 if getattr(harvest_target, 'dead', False):
                     if harvest_target in self.world.entities:
                         self.world.entities.remove(harvest_target)
@@ -429,13 +555,15 @@ class Player:
 
     def _handle_horse_input(self, keys, dt):
         horse = self.mounted_horse
-        base_speed = MOVE_SPEED * (1.0 + horse.traits["speed_rating"])
+        gait = horse.traits.get("gait", 1.0)
+        base_speed = MOVE_SPEED * (1.0 + horse.traits["speed_rating"]) * (0.9 + gait * 0.1)
         if horse.traits.get("horseshoe_applied"):
             base_speed *= 1.0 + getattr(self, "horse_shoe_bonus", 0.05)
 
-        # Spacebar sprint burst
+        # Spacebar sprint burst — endurance gene slows drain (higher = slower)
         if keys[pygame.K_SPACE] and horse.stamina > 0 and self._sprint_cooldown <= 0:
-            drain = 25.0 * getattr(self, "horse_stamina_drain_mult", 1.0) * dt
+            endurance = horse.traits.get("endurance", 1.0)
+            drain = 25.0 * getattr(self, "horse_stamina_drain_mult", 1.0) / endurance * dt
             horse.stamina = max(0.0, horse.stamina - drain)
             if horse.stamina == 0.0:
                 self._sprint_cooldown = 3.0
@@ -524,6 +652,17 @@ class Player:
             self._mine_time += dt
             self.mine_progress = min(1.0, self._mine_time / self._mine_total)
             if self.mine_progress >= 1.0:
+                if bg_bid == SCULPTURE_BLOCK_BODY:
+                    ptr = self.world.sculpture_data.get((bx, by))
+                    if ptr and "root" in ptr:
+                        rbx, rby = ptr["root"]
+                        self._demolish_sculpture(rbx, rby)
+                    self._reset_mine()
+                    return
+                if bg_bid == SCULPTURE_BLOCK_ROOT:
+                    self._demolish_sculpture(bx, by)
+                    self._reset_mine()
+                    return
                 block_data = BLOCKS[bg_bid]
                 drop = block_data["drop"]
                 if drop:
@@ -575,7 +714,15 @@ class Player:
                     ("Gem", gem.gem_type.replace("_", " ").title(), gem.rarity))
             elif block_id == COFFEE_CROP_MATURE:
                 biodome = self.world.get_biodome(bx)
-                bean = self._coffee_gen.generate(biodome)
+                # Farmed crops: compute terroir from soil below the crop tile.
+                moisture  = self.world._soil_moisture.get((bx, by + 1), 0)
+                fertility = self.world._soil_fertility.get((bx, by + 1), 0)
+                if moisture > 0 or fertility > 0:
+                    from soil import MAX_MOISTURE, MAX_FERTILITY
+                    terroir = (moisture / MAX_MOISTURE * 0.5 + fertility / MAX_FERTILITY * 0.5)
+                else:
+                    terroir = 0.0  # wild bush — no terroir bonus
+                bean = self._coffee_gen.generate(biodome, terroir=terroir)
                 self.coffee_beans.append(bean)
                 self._add_item("coffee_seed")
                 self.pending_notifications.append(("Coffee", "Coffee Cherry", None))
@@ -622,13 +769,20 @@ class Player:
                         count      = max(1, int(round(base_yield * _soil.yield_multiplier(avg_care))))
                         if self.harvest_bonus >= 1:
                             count += 1
+                        if "abundance" in self.cheese_buffs and count >= 1:
+                            import random as _r
+                            if _r.random() < 0.20:
+                                count += 1
                         self._add_item(drop, count)
                         self.known_crops.add(young_bid)
                         self._emit_harvest_float(bx, by, drop, count, avg_care)
                     else:
                         chance = block_data.get("drop_chance", 1.0)
                         if random.random() < chance:
-                            self._add_item(drop)
+                            count = 1
+                            if block_id in (COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE):
+                                count = self.world._ore_richness.get((bx, by), 1)
+                            self._add_item(drop, count)
                 if block_id == CHEST_BLOCK:
                     for item_id, count in self.world.chest_data.pop((bx, by), {}).items():
                         if count > 0:
@@ -811,6 +965,56 @@ class Player:
                     self._add_item("mint")
                 elif block_id == ROSEMARY_BUSH and random.random() < 0.20:
                     self._add_item("rosemary")
+                elif block_id == THYME_BUSH and random.random() < 0.25:
+                    self._add_item("thyme")
+                elif block_id == SAGE_BUSH and random.random() < 0.20:
+                    self._add_item("sage")
+                elif block_id == BASIL_BUSH and random.random() < 0.30:
+                    self._add_item("basil")
+                elif block_id == OREGANO_BUSH and random.random() < 0.25:
+                    self._add_item("oregano")
+                elif block_id == DILL_BUSH and random.random() < 0.25:
+                    self._add_item("dill")
+                elif block_id == FENNEL_BUSH and random.random() < 0.20:
+                    self._add_item("fennel")
+                elif block_id == TARRAGON_BUSH and random.random() < 0.20:
+                    self._add_item("tarragon")
+                elif block_id == LEMON_BALM_BUSH and random.random() < 0.30:
+                    self._add_item("lemon_balm")
+                elif block_id == ECHINACEA_BUSH and random.random() < 0.15:
+                    self._add_item("echinacea")
+                elif block_id == VALERIAN_BUSH and random.random() < 0.15:
+                    self._add_item("valerian")
+                elif block_id == ST_JOHNS_WORT_BUSH and random.random() < 0.20:
+                    self._add_item("st_johns_wort")
+                elif block_id == YARROW_BUSH and random.random() < 0.20:
+                    self._add_item("yarrow")
+                elif block_id == BERGAMOT_BUSH and random.random() < 0.20:
+                    self._add_item("bergamot")
+                elif block_id == WORMWOOD_BUSH and random.random() < 0.15:
+                    self._add_item("wormwood")
+                elif block_id == RUE_BUSH and random.random() < 0.15:
+                    self._add_item("rue")
+                elif block_id == LEMON_VERBENA_BUSH and random.random() < 0.25:
+                    self._add_item("lemon_verbena")
+                elif block_id == HYSSOP_BUSH and random.random() < 0.20:
+                    self._add_item("hyssop")
+                elif block_id == CATNIP_BUSH and random.random() < 0.25:
+                    self._add_item("catnip")
+                elif block_id == WOOD_SORREL_BUSH and random.random() < 0.30:
+                    self._add_item("wood_sorrel")
+                elif block_id == MARJORAM_BUSH and random.random() < 0.25:
+                    self._add_item("marjoram")
+                elif block_id == SAVORY_BUSH and random.random() < 0.20:
+                    self._add_item("savory")
+                elif block_id == ANGELICA_BUSH and random.random() < 0.15:
+                    self._add_item("angelica")
+                elif block_id == BORAGE_BUSH and random.random() < 0.25:
+                    self._add_item("borage")
+                elif block_id == COMFREY_BUSH and random.random() < 0.20:
+                    self._add_item("comfrey")
+                elif block_id == MUGWORT_BUSH and random.random() < 0.25:
+                    self._add_item("mugwort")
             if block_id in PERENNIAL_CROP_MATURE and random.random() > 0.33:
                 self.world.set_block(bx, by, MATURE_TO_YOUNG_CROP[block_id])
             else:
@@ -975,6 +1179,24 @@ class Player:
                             self.hotbar[i] = None
                             break
                 return
+            # Elevator car placement — place on or adjacent to an elevator stop
+            if item_data.get("spawn_elevator_car"):
+                if self.inventory.get(item_id, 0) <= 0:
+                    return
+                nearby = self.get_nearby_elevator_stop()
+                if nearby is None:
+                    return
+                from elevators import ElevatorCar
+                nbx, nby = nearby
+                self.world.elevator_cars.append(ElevatorCar(nbx, nby))
+                self.inventory[item_id] -= 1
+                if self.inventory[item_id] <= 0:
+                    del self.inventory[item_id]
+                    for i in range(HOTBAR_SIZE):
+                        if self.hotbar[i] == item_id:
+                            self.hotbar[i] = None
+                            break
+                return
             # Backhoe placement
             if item_data.get("spawn_backhoe"):
                 if self.inventory.get(item_id, 0) <= 0:
@@ -990,6 +1212,10 @@ class Player:
                             self.hotbar[i] = None
                             break
                 return
+        if item_id == "sculpture":
+            if bg:
+                self._place_sculpture(bx, by)
+            return
         block_id = item_data.get("place_block")
         if block_id is None:
             return
@@ -1011,7 +1237,7 @@ class Player:
                 if self.world.get_block(bx, by + 1) != TILLED_SOIL:
                     return
             # Don't place inside the player (passable blocks are exempt)
-            passable = {LADDER, SAPLING} | BUSH_BLOCKS | YOUNG_CROP_BLOCKS
+            passable = {LADDER, SAPLING} | BUSH_BLOCKS | YOUNG_CROP_BLOCKS | EQUIPMENT_BLOCKS
             if block_id not in passable:
                 block_px = pygame.Rect(bx * BLOCK_SIZE, by * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
                 if block_px.colliderect(self.rect):
@@ -1072,6 +1298,19 @@ class Player:
                     if max_uses is not None:
                         self.hotbar_uses[i] = max_uses
                     break
+
+    def _on_milk_harvested(self, animal, result):
+        """Generate a Cheese milk object whenever an animal yields milk."""
+        milk_to_animal = {"milk": "cow", "goat_milk": "goat", "sheep_milk": "sheep"}
+        for item_id, count in result:
+            animal_type = milk_to_animal.get(item_id)
+            if animal_type is None:
+                continue
+            bx = int(animal.x // BLOCK_SIZE)
+            biodome = self.world.get_biodome(bx)
+            for _ in range(count):
+                wheel = self._cheese_gen.generate(biodome, animal_type)
+                self.cheese_wheels.append(wheel)
 
     def _emit_harvest_float(self, bx, by, item_id, count, avg_care):
         if avg_care >= 0.7:
@@ -1284,6 +1523,27 @@ class Player:
             buff = item_data["herb_buff"]
             duration = item_data.get("herb_buff_duration", 90.0)
             self.herb_buffs[buff] = {"duration": duration}
+        if item_data.get("cheese_buff"):
+            buff = item_data["cheese_buff"]
+            duration = item_data.get("cheese_buff_duration", 90.0)
+            if buff == "resilience":
+                heal = item_data.get("cheese_heal_amount", 5)
+                self.health = min(MAX_HEALTH, self.health + heal)
+            else:
+                self.cheese_buffs[buff] = {"duration": duration}
+        if item_data.get("cheese_buff_2"):
+            buff2 = item_data["cheese_buff_2"]
+            dur2  = item_data.get("cheese_buff_2_duration", 60.0)
+            if buff2 == "resilience":
+                heal = item_data.get("cheese_heal_amount", 5)
+                self.health = min(MAX_HEALTH, self.health + heal)
+            else:
+                self.cheese_buffs[buff2] = {"duration": dur2}
+        if item_data.get("pottery_buff"):
+            buff = item_data["pottery_buff"]
+            duration = item_data.get("pottery_buff_duration", 120.0)
+            duration *= 1.0 + self.pottery_buff_duration_bonus
+            self.pottery_buffs[buff] = {"duration": duration}
         self.inventory[item_id] -= 1
         if self.inventory[item_id] <= 0:
             del self.inventory[item_id]
@@ -1297,13 +1557,18 @@ class Player:
     # ------------------------------------------------------------------
 
     def update(self, dt):
+        if self.riding_elevator is not None:
+            self.vy = 0.0
+            self.vx = 0.0
+            self.on_ground = True
+            return  # car.update() sets player x/y each frame
         if self.blessing_timer > 0:
             self.blessing_timer -= dt
             if self.blessing_timer <= 0:
                 self.blessing_timer = 0.0
                 self.blessing_mult  = 1.0
         in_water = self._in_water()
-        if self._in_ladder():
+        if self._on_ladder:
             self.vy = min(self.vy, 2)  # suppress gravity; allow slow drift but not free-fall
         elif in_water:
             # Buoyancy: reduced gravity and terminal velocity while submerged
@@ -1356,6 +1621,16 @@ class Player:
             self.herb_buffs[buff]["duration"] -= dt
             if self.herb_buffs[buff]["duration"] <= 0:
                 del self.herb_buffs[buff]
+        for buff in list(self.cheese_buffs):
+            self.cheese_buffs[buff]["duration"] -= dt
+            if self.cheese_buffs[buff]["duration"] <= 0:
+                del self.cheese_buffs[buff]
+        for buff in list(self.pottery_buffs):
+            self.pottery_buffs[buff]["duration"] -= dt
+            if self.pottery_buffs[buff]["duration"] <= 0:
+                del self.pottery_buffs[buff]
+        if self._bow_cooldown > 0:
+            self._bow_cooldown -= dt
         if not self.god_mode:
             drain_mult = 1.0
             if "endurance" in self.active_buffs:
@@ -1364,6 +1639,11 @@ class Player:
                 drain_mult *= 0.4
             if "longevity" in self.tea_buffs:
                 drain_mult *= 0.45
+            if "satiation" in self.cheese_buffs:
+                drain_mult *= 0.60
+        if "vitality" in self.cheese_buffs and self.hunger > 20.0:
+            self.health = min(MAX_HEALTH, self.health + 1.0 * dt)
+        if not self.god_mode:
             self.hunger = max(0.0, self.hunger - self._hunger_drain_rate * drain_mult * dt)
             if self.hunger == 0.0:
                 self.health = max(0, self.health - 3 * dt)
@@ -1553,6 +1833,16 @@ class Player:
                     return (cx + dx, cy + dy)
         return None
 
+    def get_nearby_elevator_stop(self):
+        """Return (bx, by) of an elevator stop within 2 blocks of the player, or None."""
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        for dy in range(-2, 3):
+            for dx in range(-2, 3):
+                if self.world.get_block(cx + dx, cy + dy) == ELEVATOR_STOP_BLOCK:
+                    return (cx + dx, cy + dy)
+        return None
+
     def get_depth(self):
         block_y = int(self.y // BLOCK_SIZE)
         surface_y = self.world.surface_y_at(int(self.x // BLOCK_SIZE))
@@ -1572,8 +1862,11 @@ class Player:
             mult *= 1.20
         if "mastery" in self.herb_buffs:
             mult *= 1.40
+        if "keenness" in self.cheese_buffs:
+            mult *= 1.15
         mult += self.get_textile_bonus("focus")
-        return base * mult
+        vigor_bonus = 1 if "vigor" in self.cheese_buffs else 0
+        return base * mult + vigor_bonus
 
     @property
     def effective_axe_power(self):

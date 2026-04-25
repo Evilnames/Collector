@@ -57,6 +57,19 @@ BAKERY_RECIPES = [
     {"name": "Churros",     "ingredients": {"wheat": 2, "egg": 1},                              "output_id": "churros",      "output_count": 3},
     {"name": "Torrija",     "ingredients": {"wheat": 1, "milk": 1, "egg": 1},                   "output_id": "torrija",      "output_count": 2},
     {"name": "Polvoron",    "ingredients": {"wheat": 1, "milk": 1, "agave": 1},                 "output_id": "polvoron",     "output_count": 3},
+    # --- Wild game pies & pasties ---
+    {"name": "Game Pasty",    "ingredients": {"cooked_venison": 1, "wheat": 2, "onion": 1},        "output_id": "game_pasty",    "output_count": 2},
+    {"name": "Rabbit Pie",    "ingredients": {"raw_rabbit": 1, "wheat": 2, "potato": 1},           "output_id": "rabbit_pie",    "output_count": 1},
+    {"name": "Venison Pasty", "ingredients": {"raw_venison": 1, "wheat": 2, "mushroom": 1},        "output_id": "venison_pasty", "output_count": 2},
+    {"name": "Pheasant Pie",  "ingredients": {"raw_pheasant": 1, "wheat": 2, "onion": 1},          "output_id": "pheasant_pie",  "output_count": 1},
+    # --- Typed cheese dishes ---
+    {"name": "Fondue",            "ingredients": {"cheese_alpine": 1, "milk": 1, "wheat": 1},      "output_id": "fondue",            "output_count": 1},
+    {"name": "Cheesecake",        "ingredients": {"cheese_double_cream": 1, "egg": 1, "wheat": 1}, "output_id": "cheesecake",        "output_count": 1},
+    {"name": "Cheese Tart",       "ingredients": {"cheese_fresh": 1, "wheat": 1, "egg": 1},        "output_id": "cheese_tart",       "output_count": 2},
+    {"name": "Gratin",            "ingredients": {"cheese_pressed": 1, "potato": 2},               "output_id": "gratin",            "output_count": 1},
+    {"name": "Blue Cheese Toast", "ingredients": {"cheese_blue": 1, "bread": 1},                   "output_id": "blue_cheese_toast", "output_count": 1},
+    {"name": "Herb Cheese Bread", "ingredients": {"cheese_herb_crusted": 1, "bread": 1},           "output_id": "herb_cheese_bread", "output_count": 1},
+    {"name": "Ash Flatbread",     "ingredients": {"cheese_ash_coated": 1, "wheat": 2},             "output_id": "ash_flatbread",     "output_count": 2},
 ]
 
 # ---------------------------------------------------------------------------
@@ -113,6 +126,9 @@ WOK_RECIPES = [
     {"name": "Pimientos Padrón","ingredients": {"pepper": 3, "olive_oil": 1},                      "output_id": "pimientos_padron", "output_count": 1},
     {"name": "Croquetas",       "ingredients": {"potato": 1, "wheat": 1, "cheese": 1},              "output_id": "croquetas",        "output_count": 2},
     {"name": "Gambas al Ajillo","ingredients": {"fish": 1, "garlic": 3, "olive_oil": 1},            "output_id": "gambas_al_ajillo", "output_count": 1},
+    # --- Wild game ---
+    {"name": "Wild Game Stir Fry","ingredients": {"cooked_venison": 1, "bok_choy": 1, "garlic": 1},"output_id": "wild_game_stir_fry","output_count": 1},
+    {"name": "Duck Fried Rice",  "ingredients": {"cooked_duck": 1, "rice": 1, "scallion": 1},       "output_id": "duck_fried_rice",   "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -174,6 +190,8 @@ NOODLE_POT_RECIPES = [
     {"name": "Chorba Frik",      "ingredients": {"bulgur": 1, "cooked_mutton": 1, "tomato": 1},    "output_id": "chorba_frik",       "output_count": 1},
     # --- Spanish ---
     {"name": "Fideos",           "ingredients": {"noodles": 1, "fish": 1, "tomato": 1},            "output_id": "fideos",            "output_count": 1},
+    # --- Wild game ---
+    {"name": "Venison Noodle Soup","ingredients": {"cooked_venison": 1, "noodles": 1, "scallion": 1},"output_id": "venison_noodle_soup","output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -223,6 +241,32 @@ BBQ_GRILL_RECIPES = [
     {"name": "Cordero Asado",    "ingredients": {"raw_mutton": 1, "garlic": 1, "rosemary": 1},         "output_id": "cordero_asado",    "output_count": 1},
     {"name": "Espetos",          "ingredients": {"fish": 2, "olive_oil": 1},                           "output_id": "espetos",          "output_count": 1},
     {"name": "Berenjena Rellena","ingredients": {"eggplant": 2, "rice": 1, "tomato": 1},               "output_id": "berenjena_rellena","output_count": 1},
+    # --- Wild game ---
+    {"name": "Cooked Venison",    "ingredients": {"raw_venison": 1},                                       "output_id": "cooked_venison",    "output_count": 1},
+    {"name": "Cooked Boar",       "ingredients": {"raw_boar_meat": 1},                                     "output_id": "cooked_boar",       "output_count": 1},
+    {"name": "Cooked Rabbit",     "ingredients": {"raw_rabbit": 1},                                        "output_id": "cooked_rabbit",     "output_count": 1},
+    {"name": "Cooked Turkey",     "ingredients": {"raw_turkey": 1},                                        "output_id": "cooked_turkey",     "output_count": 1},
+    {"name": "Cooked Bear",       "ingredients": {"raw_bear_meat": 1},                                     "output_id": "cooked_bear",       "output_count": 1},
+    {"name": "Cooked Duck",       "ingredients": {"raw_duck": 1},                                          "output_id": "cooked_duck",       "output_count": 1},
+    {"name": "Cooked Bison",      "ingredients": {"raw_bison_meat": 1},                                    "output_id": "cooked_bison",      "output_count": 1},
+    {"name": "Venison Steak",     "ingredients": {"raw_venison": 1, "garlic": 1, "rosemary": 1},           "output_id": "venison_steak",     "output_count": 1},
+    {"name": "Wild Boar Chop",    "ingredients": {"raw_boar_meat": 1, "chili": 1, "pepper": 1},            "output_id": "wild_boar_chop",    "output_count": 1},
+    {"name": "Duck Roast",        "ingredients": {"raw_duck": 1, "garlic": 1, "onion": 1},                 "output_id": "duck_roast",        "output_count": 1},
+    {"name": "Bison Steak",       "ingredients": {"raw_bison_meat": 1, "garlic": 1, "pepper": 1},          "output_id": "bison_steak",       "output_count": 1},
+    {"name": "Bear Roast",        "ingredients": {"raw_bear_meat": 1, "garlic": 1, "mushroom": 1},         "output_id": "bear_roast",        "output_count": 1},
+    {"name": "Game Skewers",      "ingredients": {"raw_venison": 1, "raw_rabbit": 1, "chili": 1},          "output_id": "game_skewers",      "output_count": 2},
+    {"name": "Elk Medallion",     "ingredients": {"raw_venison": 1, "mushroom": 1, "garlic": 1},           "output_id": "elk_medallion",     "output_count": 1},
+    {"name": "Cooked Pheasant",   "ingredients": {"raw_pheasant": 1},                                       "output_id": "cooked_pheasant",   "output_count": 1},
+    {"name": "Cooked Goose",      "ingredients": {"raw_goose": 1},                                          "output_id": "cooked_goose",      "output_count": 1},
+    {"name": "Cooked Crocodile",  "ingredients": {"raw_crocodile": 1},                                      "output_id": "cooked_crocodile",  "output_count": 1},
+    {"name": "Roast Pheasant",    "ingredients": {"raw_pheasant": 1, "garlic": 1, "mushroom": 1},           "output_id": "roast_pheasant",    "output_count": 1},
+    {"name": "Goose Confit",      "ingredients": {"raw_goose": 1, "garlic": 2, "onion": 1},                 "output_id": "goose_confit",      "output_count": 1},
+    {"name": "Bighorn Roast",     "ingredients": {"raw_mutton": 1, "rosemary": 1, "garlic": 1},             "output_id": "bighorn_roast",     "output_count": 1},
+    {"name": "Warthog Skewer",    "ingredients": {"raw_boar_meat": 1, "chili": 1, "scallion": 1},           "output_id": "warthog_skewer",    "output_count": 2},
+    # --- Typed cheese dishes ---
+    {"name": "Smoked Cheese Melt","ingredients": {"cheese_smoked": 1, "bread": 1, "tomato": 1},            "output_id": "smoked_cheese_melt","output_count": 1},
+    {"name": "Grilled Cured",     "ingredients": {"cheese_cured": 1, "pepper": 1},                         "output_id": "grilled_cured_cheese","output_count": 1},
+    {"name": "Stretched Caprese", "ingredients": {"cheese_stretched": 1, "tomato": 1},                      "output_id": "stretched_caprese", "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -280,6 +324,18 @@ CLAY_POT_RECIPES = [
     {"name": "Tepsi",            "ingredients": {"eggplant": 2, "tomato": 2, "onion": 1},                     "output_id": "tepsi",            "output_count": 1},
     {"name": "Djej bil Lemon",   "ingredients": {"cooked_chicken": 1, "garlic": 2, "onion": 1},               "output_id": "djej_bil_lemon",   "output_count": 1},
     {"name": "Freekeh Soup",     "ingredients": {"bulgur": 1, "cooked_chicken": 1, "onion": 1},               "output_id": "freekeh_soup",     "output_count": 1},
+    # --- Wild game ---
+    {"name": "Venison Stew",       "ingredients": {"cooked_venison": 1, "potato": 1, "carrot": 1},          "output_id": "venison_stew",       "output_count": 1},
+    {"name": "Wild Boar Casserole","ingredients": {"raw_boar_meat": 1, "onion": 1, "mushroom": 1},          "output_id": "wild_boar_casserole","output_count": 1},
+    {"name": "Hunter's Pot",       "ingredients": {"cooked_venison": 1, "carrot": 1, "onion": 1},           "output_id": "hunters_pot",        "output_count": 1},
+    {"name": "Duck Confit",        "ingredients": {"raw_duck": 1, "onion": 1, "garlic": 1},                 "output_id": "duck_confit",        "output_count": 1},
+    {"name": "Bison Chili",        "ingredients": {"raw_bison_meat": 1, "chili": 1, "tomato": 1},           "output_id": "bison_chili",        "output_count": 1},
+    {"name": "Bear Broth",         "ingredients": {"raw_bear_meat": 1, "onion": 1, "ginger": 1},            "output_id": "bear_broth",         "output_count": 1},
+    {"name": "Rabbit Fricassee",   "ingredients": {"raw_rabbit": 1, "mushroom": 1, "garlic": 1},            "output_id": "rabbit_fricassee",   "output_count": 1},
+    {"name": "Wild Turkey Soup",   "ingredients": {"raw_turkey": 1, "celery": 1, "onion": 1},               "output_id": "wild_turkey_soup",   "output_count": 1},
+    {"name": "Moose Stew",         "ingredients": {"raw_venison": 2, "potato": 1, "carrot": 1},             "output_id": "moose_stew",         "output_count": 1},
+    {"name": "Crocodile Stew",     "ingredients": {"raw_crocodile": 1, "tomato": 1, "onion": 1},            "output_id": "croc_stew",          "output_count": 1},
+    {"name": "Goose Soup",         "ingredients": {"raw_goose": 1, "onion": 1, "carrot": 1},                "output_id": "goose_soup",         "output_count": 1},
     {"name": "Keshkek",          "ingredients": {"cooked_mutton": 1, "bulgur": 2},                            "output_id": "keshkek",          "output_count": 1},
     {"name": "Thareed",          "ingredients": {"cooked_mutton": 1, "flatbread": 1, "tomato": 1},            "output_id": "thareed",          "output_count": 1},
     {"name": "Kofta bil Tahini", "ingredients": {"kofte": 1, "tahini": 1},                                    "output_id": "kofta_bil_tahini", "output_count": 1},
@@ -290,12 +346,49 @@ CLAY_POT_RECIPES = [
     {"name": "Potaje",           "ingredients": {"chickpea": 2, "cabbage": 1, "onion": 1},                   "output_id": "potaje",           "output_count": 1},
     {"name": "Rabo de Toro",     "ingredients": {"cooked_beef": 1, "onion": 1, "tomato": 1},                 "output_id": "rabo_de_toro",     "output_count": 1},
     {"name": "Fabada",           "ingredients": {"chickpea": 2, "chorizo": 1, "onion": 1},                   "output_id": "fabada",           "output_count": 1},
+    # --- Typed cheese dishes ---
+    {"name": "Cheese Soup",      "ingredients": {"cheese_washed_rind": 1, "onion": 2, "carrot": 1},         "output_id": "cheese_soup",      "output_count": 1},
+    {"name": "Monastic Stew",    "ingredients": {"cheese_monastery": 1, "potato": 2, "onion": 1},           "output_id": "monastic_stew",    "output_count": 1},
+    {"name": "Truffle Bisque",   "ingredients": {"cheese_truffled": 1, "potato": 1, "onion": 1},            "output_id": "truffle_bisque",   "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
 # Desert Forge recipes (ingredient dict → output, same pattern as cooking stations)
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Glass Kiln recipes (sand + dye extracts → glass blocks)
+# ---------------------------------------------------------------------------
+
+GLASS_KILN_RECIPES = [
+    {"name": "Clear Glass",             "ingredients": {"sand_grain": 3},                                         "output_id": "clear_glass",           "output_count": 2},
+    {"name": "Stained Glass (Golden)",  "ingredients": {"sand_grain": 2, "dye_extract_golden": 1},               "output_id": "stained_glass_golden",  "output_count": 2},
+    {"name": "Stained Glass (Crimson)", "ingredients": {"sand_grain": 2, "dye_extract_crimson": 1},              "output_id": "stained_glass_crimson", "output_count": 2},
+    {"name": "Stained Glass (Rose)",    "ingredients": {"sand_grain": 2, "dye_extract_rose": 1},                 "output_id": "stained_glass_rose",    "output_count": 2},
+    {"name": "Stained Glass (Cobalt)",  "ingredients": {"sand_grain": 2, "dye_extract_cobalt": 1},               "output_id": "stained_glass_cobalt",  "output_count": 2},
+    {"name": "Stained Glass (Violet)",  "ingredients": {"sand_grain": 2, "dye_extract_violet": 1},               "output_id": "stained_glass_violet",  "output_count": 2},
+    {"name": "Stained Glass (Verdant)", "ingredients": {"sand_grain": 2, "dye_extract_verdant": 1},              "output_id": "stained_glass_verdant", "output_count": 2},
+    {"name": "Stained Glass (Amber)",   "ingredients": {"sand_grain": 2, "dye_extract_amber": 1},                "output_id": "stained_glass_amber",   "output_count": 2},
+    {"name": "Stained Glass (Ivory)",   "ingredients": {"sand_grain": 2, "dye_extract_ivory": 1},                "output_id": "stained_glass_ivory",   "output_count": 2},
+    {"name": "Cathedral Window",        "ingredients": {"sand_grain": 2, "crystal_shard": 1, "dye_extract_cobalt": 1}, "output_id": "cathedral_window", "output_count": 1},
+    {"name": "Mosaic Glass",            "ingredients": {"sand_grain": 1, "dye_extract_golden": 1, "dye_extract_cobalt": 1}, "output_id": "mosaic_glass", "output_count": 2},
+    {"name": "Smoked Glass",            "ingredients": {"sand_grain": 2, "coal": 2},                              "output_id": "smoked_glass",          "output_count": 2},
+    # --- Additional glass varieties ---
+    {"name": "Ribbed Glass",            "ingredients": {"sand_grain": 3, "iron_chunk": 1},                         "output_id": "ribbed_glass",          "output_count": 2},
+    {"name": "Hammered Glass",          "ingredients": {"sand_grain": 3, "stone_chip": 1},                        "output_id": "hammered_glass",        "output_count": 2},
+    {"name": "Crackled Glass",          "ingredients": {"sand_grain": 2, "crystal_shard": 1, "coal": 1},          "output_id": "crackled_glass",        "output_count": 2},
+    {"name": "Oculus Window",           "ingredients": {"sand_grain": 2, "crystal_shard": 2},                     "output_id": "oculus_window",         "output_count": 1},
+    {"name": "Lancet Window",           "ingredients": {"sand_grain": 2, "dye_extract_cobalt": 1, "iron_chunk": 1}, "output_id": "lancet_window",       "output_count": 1},
+    {"name": "Diamond Pane",            "ingredients": {"sand_grain": 3, "iron_chunk": 1, "coal": 1},             "output_id": "diamond_pane",          "output_count": 2},
+    {"name": "Sea Glass",               "ingredients": {"sand_grain": 2, "dye_extract_verdant": 1, "crystal_shard": 1}, "output_id": "sea_glass",       "output_count": 2},
+    {"name": "Mirror Glass",            "ingredients": {"sand_grain": 2, "iron_chunk": 2, "gold_nugget": 1},      "output_id": "mirror_glass",          "output_count": 1},
+    {"name": "Iridescent Glass",        "ingredients": {"sand_grain": 1, "dye_extract_violet": 1, "dye_extract_amber": 1, "crystal_shard": 1}, "output_id": "iridescent_glass", "output_count": 2},
+    {"name": "Sunset Glass",            "ingredients": {"sand_grain": 2, "dye_extract_amber": 1, "dye_extract_crimson": 1}, "output_id": "sunset_glass", "output_count": 2},
+    {"name": "Obsidian Glass",          "ingredients": {"sand_grain": 1, "obsidian_slab": 2},                     "output_id": "obsidian_glass",        "output_count": 2},
+    {"name": "Crystal Glass",           "ingredients": {"sand_grain": 1, "crystal_shard": 3},                     "output_id": "crystal_glass",         "output_count": 2},
+]
+
+# ---------------------------------------------------------------------------
 FORGE_RECIPES = [
     {"name": "Desert Glass",  "ingredients": {"sand_grain": 3},                              "output_id": "desert_glass",  "output_count": 1},
     {"name": "Sandstone",     "ingredients": {"sand_grain": 4, "stone_chip": 1},             "output_id": "sandstone",     "output_count": 2},
@@ -328,14 +421,14 @@ ARTISAN_RECIPES = [
     {"name": "Art Nouveau Panel",    "ingredients": {"limestone_block": 1, "crystal_shard": 1},           "output_id": "art_nouveau_panel",       "output_count": 2},
     {"name": "Ash Plank",            "ingredients": {"lumber": 2, "sand_grain": 1},                       "output_id": "ash_plank",               "output_count": 2},
     {"name": "Ashlar Block",         "ingredients": {"stone_chip": 2, "limestone_block": 1},              "output_id": "ashlar_block",            "output_count": 2},
-    {"name": "Aztec Sunstone",       "ingredients": {"stone_chip": 2, "obsidian_slab": 1},                "output_id": "aztec_sunstone",          "output_count": 2},
+    {"name": "Aztec Sunstone",       "ingredients": {"basalt_shard": 1, "stone_chip": 1, "obsidian_slab": 1}, "output_id": "aztec_sunstone",       "output_count": 2},
     {"name": "Azulejo Tile",         "ingredients": {"clay": 1, "crystal_shard": 1},                      "output_id": "azulejo_tile",            "output_count": 2},
     {"name": "Bamboo Panel",         "ingredients": {"lumber": 1, "sand_grain": 1},                       "output_id": "bamboo_panel",            "output_count": 2},
     {"name": "Bamboo Screen",        "ingredients": {"lumber": 2, "sand_grain": 1},                       "output_id": "bamboo_screen",           "output_count": 2},
     {"name": "Baroque Ornament",     "ingredients": {"limestone_block": 1, "gold_nugget": 2},             "output_id": "baroque_ornament",        "output_count": 2},
     {"name": "Baroque Trim",         "ingredients": {"limestone_block": 1, "gold_nugget": 1},             "output_id": "baroque_trim",            "output_count": 2},
-    {"name": "Barrel Vault",         "ingredients": {"limestone_block": 2, "stone_chip": 1},              "output_id": "barrel_vault",            "output_count": 2},
-    {"name": "Basalt Column",        "ingredients": {"stone_chip": 2, "coal": 2},                         "output_id": "basalt_column",           "output_count": 2},
+    {"name": "Barrel Vault",         "ingredients": {"limestone_block": 2, "limestone_chip": 1},          "output_id": "barrel_vault",            "output_count": 2},
+    {"name": "Basalt Column",        "ingredients": {"basalt_shard": 2, "coal": 1},                       "output_id": "basalt_column",           "output_count": 2},
     {"name": "Benin Relief",         "ingredients": {"stone_chip": 1, "gold_nugget": 2},                  "output_id": "benin_relief",            "output_count": 2},
     {"name": "Blue & White Tile",    "ingredients": {"clay": 1, "crystal_shard": 1, "sand_grain": 1},     "output_id": "blue_white_tile",         "output_count": 2},
     {"name": "Brick Nogging",        "ingredients": {"lumber": 1, "dirt_clump": 2},                       "output_id": "brick_nogging",           "output_count": 2},
@@ -343,7 +436,7 @@ ARTISAN_RECIPES = [
     {"name": "Byzantine Mosaic",     "ingredients": {"sand_grain": 1, "gold_nugget": 2},                  "output_id": "byzantine_mosaic",        "output_count": 2},
     {"name": "Carved Plaster",       "ingredients": {"limestone_block": 1, "gold_nugget": 1},             "output_id": "carved_plaster",          "output_count": 2},
     {"name": "Cedar Panel",          "ingredients": {"lumber": 2, "iron_chunk": 1},                       "output_id": "cedar_panel",             "output_count": 2},
-    {"name": "Celtic Knotwork",      "ingredients": {"stone_chip": 2, "obsidian_slab": 1},                "output_id": "celtic_knotwork",         "output_count": 2},
+    {"name": "Celtic Knotwork",      "ingredients": {"basalt_shard": 1, "stone_chip": 1, "obsidian_slab": 1}, "output_id": "celtic_knotwork",      "output_count": 2},
     {"name": "Ceramic Planter",      "ingredients": {"clay": 2, "crystal_shard": 1},                      "output_id": "ceramic_planter",         "output_count": 2},
     {"name": "Charcoal Plank",       "ingredients": {"lumber": 1, "coal": 1},                             "output_id": "charcoal_plank",          "output_count": 2},
     {"name": "Chequerboard Marble",  "ingredients": {"stone_chip": 1, "crystal_shard": 1},                "output_id": "chequerboard_marble",     "output_count": 2},
@@ -355,18 +448,18 @@ ARTISAN_RECIPES = [
     {"name": "Coffered Ceiling",     "ingredients": {"limestone_block": 3},                               "output_id": "coffered_ceiling",        "output_count": 2},
     {"name": "Coin Tile",            "ingredients": {"stone_chip": 1, "sand_grain": 1},                   "output_id": "coin_tile",               "output_count": 2},
     {"name": "Copper Tile",          "ingredients": {"stone_chip": 1, "iron_chunk": 1},                   "output_id": "copper_tile",             "output_count": 2},
-    {"name": "Cornice",              "ingredients": {"limestone_block": 2, "stone_chip": 1},              "output_id": "cornice_block",           "output_count": 2},
+    {"name": "Cornice",              "ingredients": {"limestone_block": 2, "limestone_chip": 1},          "output_id": "cornice_block",           "output_count": 2},
     {"name": "Craftsman Panel",      "ingredients": {"lumber": 2, "gold_nugget": 1},                      "output_id": "craftsman_panel",         "output_count": 2},
     {"name": "Cream Brick",          "ingredients": {"sand_grain": 3},                                    "output_id": "cream_brick",             "output_count": 2},
     {"name": "Crenellation",         "ingredients": {"stone_chip": 2, "limestone_block": 1},              "output_id": "crenellation",            "output_count": 2},
     {"name": "Crimson Brick",        "ingredients": {"dirt_clump": 2, "ruby": 1},                         "output_id": "crimson_brick",           "output_count": 2},
     {"name": "Crimson Cedar Door",   "ingredients": {"lumber": 2, "ruby": 1},                             "output_id": "crimson_cedar_door",      "output_count": 1},
     {"name": "Dancheong",            "ingredients": {"lumber": 1, "ruby": 1, "crystal_shard": 1},         "output_id": "dancheong",               "output_count": 2},
-    {"name": "Dark Slate Roof",      "ingredients": {"stone_chip": 2, "coal": 1},                         "output_id": "dark_slate_roof",         "output_count": 2},
+    {"name": "Dark Slate Roof",      "ingredients": {"magmatic_shard": 1, "coal": 1},                     "output_id": "dark_slate_roof",         "output_count": 2},
     {"name": "Dentil Trim",          "ingredients": {"limestone_block": 2},                               "output_id": "dentil_trim",             "output_count": 2},
     {"name": "Diagonal Tile",        "ingredients": {"clay": 1, "sand_grain": 2},                         "output_id": "diagonal_tile",           "output_count": 2},
     {"name": "Dougong",              "ingredients": {"lumber": 2, "gold_nugget": 1},                      "output_id": "dougong",                 "output_count": 2},
-    {"name": "Dragon Tile",          "ingredients": {"stone_chip": 2, "crystal_shard": 1},                "output_id": "dragon_tile",             "output_count": 2},
+    {"name": "Dragon Tile",          "ingredients": {"magmatic_shard": 1, "stone_chip": 1, "crystal_shard": 1}, "output_id": "dragon_tile",         "output_count": 2},
     {"name": "Driftwood Plank",      "ingredients": {"lumber": 1, "sand_grain": 2},                       "output_id": "driftwood_plank",         "output_count": 2},
     {"name": "Dutch Gable",          "ingredients": {"stone_chip": 1, "dirt_clump": 2},                   "output_id": "dutch_gable",             "output_count": 2},
     {"name": "Ebony Plank",          "ingredients": {"lumber": 2, "obsidian_slab": 1},                    "output_id": "ebony_plank",             "output_count": 2},
@@ -377,8 +470,8 @@ ARTISAN_RECIPES = [
     {"name": "Flemish Brick",        "ingredients": {"stone_chip": 2, "ruby": 1},                         "output_id": "flemish_brick",           "output_count": 2},
     {"name": "Fluted Column",        "ingredients": {"stone_chip": 2, "sand_grain": 1},                   "output_id": "fluted_column",           "output_count": 2},
     {"name": "Frosted Glass",        "ingredients": {"sand_grain": 2, "crystal_shard": 1},                "output_id": "frosted_glass",           "output_count": 2},
-    {"name": "Garden Rock",          "ingredients": {"stone_chip": 2, "obsidian_slab": 1},                "output_id": "garden_rock_block",       "output_count": 2},
-    {"name": "Gargoyle Block",       "ingredients": {"stone_chip": 2, "obsidian_slab": 1},                "output_id": "gargoyle_block",          "output_count": 2},
+    {"name": "Garden Rock",          "ingredients": {"basalt_shard": 1, "stone_chip": 1, "obsidian_slab": 1}, "output_id": "garden_rock_block",    "output_count": 2},
+    {"name": "Gargoyle Block",       "ingredients": {"basalt_shard": 1, "stone_chip": 1, "obsidian_slab": 1}, "output_id": "gargoyle_block",       "output_count": 2},
     {"name": "Georgian Fanlight",    "ingredients": {"sand_grain": 2, "iron_chunk": 1},                   "output_id": "georgian_fanlight",       "output_count": 2},
     {"name": "Gilded Brick",         "ingredients": {"stone_chip": 1, "gold_nugget": 2},                  "output_id": "gilded_brick",            "output_count": 2},
     {"name": "Glazed Roof Tile",     "ingredients": {"clay": 1, "crystal_shard": 1},                      "output_id": "glazed_roof_tile",        "output_count": 2},
@@ -391,7 +484,7 @@ ARTISAN_RECIPES = [
     {"name": "Hanji Screen",         "ingredients": {"lumber": 2, "crystal_shard": 1},                    "output_id": "hanji_screen",            "output_count": 2},
     {"name": "Hearth Stone",         "ingredients": {"stone_chip": 2, "coal": 1},                         "output_id": "hearth_stone",            "output_count": 2},
     {"name": "Herringbone Brick",    "ingredients": {"stone_chip": 1, "dirt_clump": 2},                   "output_id": "herringbone_brick",       "output_count": 2},
-    {"name": "Inca Ashlar",          "ingredients": {"stone_chip": 3},                                    "output_id": "inca_ashlar",             "output_count": 2},
+    {"name": "Inca Ashlar",          "ingredients": {"granite_slab": 2, "stone_chip": 1},                 "output_id": "inca_ashlar",             "output_count": 2},
     {"name": "Ionic Capital",        "ingredients": {"stone_chip": 2, "limestone_block": 1},              "output_id": "ionic_capital",           "output_count": 2},
     {"name": "Iron Balustrade",      "ingredients": {"iron_chunk": 2, "coal": 1},                         "output_id": "wrought_iron_balustrade", "output_count": 2},
     {"name": "Iron Lantern",         "ingredients": {"iron_chunk": 2, "gold_nugget": 1},                  "output_id": "iron_lantern",            "output_count": 2},
@@ -406,24 +499,24 @@ ARTISAN_RECIPES = [
     {"name": "Lapis Brick",          "ingredients": {"stone_chip": 2, "crystal_shard": 1},                "output_id": "lapis_brick",             "output_count": 2},
     {"name": "Lattice Screen",       "ingredients": {"lumber": 2, "stone_chip": 1},                       "output_id": "lattice_screen",          "output_count": 2},
     {"name": "Leadlight Window",     "ingredients": {"sand_grain": 2, "iron_chunk": 1},                   "output_id": "leadlight_window",        "output_count": 2},
-    {"name": "Limestone",            "ingredients": {"stone_chip": 2, "sand_grain": 1},                   "output_id": "limestone_block",         "output_count": 2},
+    {"name": "Limestone",            "ingredients": {"limestone_chip": 3},                               "output_id": "limestone_block",         "output_count": 2},
     {"name": "Linen Fold",           "ingredients": {"lumber": 2, "gold_nugget": 1},                      "output_id": "linen_fold",              "output_count": 2},
     {"name": "Lotus Capital",        "ingredients": {"limestone_block": 1, "stone_chip": 2},              "output_id": "lotus_capital",           "output_count": 2},
     {"name": "Mahogany Plank",       "ingredients": {"lumber": 2, "ruby": 1},                             "output_id": "mahogany_plank",          "output_count": 2},
-    {"name": "Mansard Slate",        "ingredients": {"stone_chip": 2, "coal": 2},                         "output_id": "mansard_slate",           "output_count": 2},
+    {"name": "Mansard Slate",        "ingredients": {"magmatic_shard": 1, "stone_chip": 1, "coal": 1},    "output_id": "mansard_slate",           "output_count": 2},
     {"name": "Manueline Panel",      "ingredients": {"limestone_block": 2, "iron_chunk": 1},              "output_id": "manueline_panel",         "output_count": 2},
     {"name": "Marble Inlay",         "ingredients": {"sand_grain": 1, "gold_nugget": 1, "crystal_shard": 1}, "output_id": "marble_inlay",         "output_count": 2},
     {"name": "Mashrabiya",           "ingredients": {"lumber": 2, "iron_chunk": 1},                       "output_id": "mashrabiya",              "output_count": 2},
     {"name": "Maya Relief",          "ingredients": {"stone_chip": 3},                                    "output_id": "maya_relief",             "output_count": 2},
     {"name": "Māori Carving",        "ingredients": {"lumber": 2, "obsidian_slab": 1},                    "output_id": "maori_carving",           "output_count": 2},
     {"name": "Metope",               "ingredients": {"limestone_block": 1, "stone_chip": 1},              "output_id": "metope",                  "output_count": 2},
-    {"name": "Moon Gate",            "ingredients": {"limestone_block": 2, "stone_chip": 1},              "output_id": "moon_gate",               "output_count": 2},
+    {"name": "Moon Gate",            "ingredients": {"limestone_block": 2, "limestone_chip": 1},          "output_id": "moon_gate",               "output_count": 2},
     {"name": "Moorish Column",       "ingredients": {"stone_chip": 2, "gold_nugget": 1},                  "output_id": "moorish_column",          "output_count": 2},
     {"name": "Moorish Star Tile",    "ingredients": {"stone_chip": 1, "crystal_shard": 1},                "output_id": "moorish_star_tile",       "output_count": 2},
     {"name": "Mossy Brick",          "ingredients": {"stone_chip": 2, "dirt_clump": 1},                   "output_id": "mossy_brick",             "output_count": 2},
     {"name": "Mughal Arch",          "ingredients": {"limestone_block": 2, "crystal_shard": 1},           "output_id": "mughal_arch",             "output_count": 2},
     {"name": "Mughal Jali",          "ingredients": {"limestone_block": 2, "sand_grain": 1},              "output_id": "mughal_jali",             "output_count": 2},
-    {"name": "Muqarnas",             "ingredients": {"limestone_block": 2, "stone_chip": 1},              "output_id": "muqarnas_block",          "output_count": 2},
+    {"name": "Muqarnas",             "ingredients": {"limestone_block": 2, "limestone_chip": 1},          "output_id": "muqarnas_block",          "output_count": 2},
     {"name": "Nordic Plank",         "ingredients": {"lumber": 2, "coal": 2},                             "output_id": "nordic_plank",            "output_count": 2},
     {"name": "Oak Panel",            "ingredients": {"lumber": 2, "stone_chip": 1},                       "output_id": "oak_panel",               "output_count": 2},
     {"name": "Obsidian Cut",         "ingredients": {"obsidian_slab": 2, "stone_chip": 1},                "output_id": "obsidian_cut",            "output_count": 2},
@@ -433,14 +526,14 @@ ARTISAN_RECIPES = [
     {"name": "Onyx Inlay",           "ingredients": {"obsidian_slab": 1, "coal": 1},                      "output_id": "onyx_inlay",              "output_count": 2},
     {"name": "Opus Incertum",        "ingredients": {"stone_chip": 2, "dirt_clump": 1},                   "output_id": "opus_incertum",           "output_count": 2},
     {"name": "Opus Signinum",        "ingredients": {"stone_chip": 1, "sand_grain": 1, "ruby": 1},        "output_id": "opus_signinum",           "output_count": 2},
-    {"name": "Ottoman Arch",         "ingredients": {"limestone_block": 2, "stone_chip": 1},              "output_id": "ottoman_arch",            "output_count": 2},
+    {"name": "Ottoman Arch",         "ingredients": {"limestone_block": 2, "limestone_chip": 1},          "output_id": "ottoman_arch",            "output_count": 2},
     {"name": "Ottoman Tile",         "ingredients": {"sand_grain": 2, "crystal_shard": 1},                "output_id": "ottoman_tile",            "output_count": 2},
     {"name": "Pagoda Eave",          "ingredients": {"lumber": 1, "ruby": 1, "crystal_shard": 1},         "output_id": "pagoda_eave",             "output_count": 2},
     {"name": "Painted Beam",         "ingredients": {"lumber": 2, "ruby": 1},                             "output_id": "painted_beam",            "output_count": 2},
     {"name": "Palladian Window",     "ingredients": {"limestone_block": 2, "crystal_shard": 1},           "output_id": "palladian_window",        "output_count": 2},
     {"name": "Paper Lantern",        "ingredients": {"lumber": 1, "crystal_shard": 1},                    "output_id": "paper_lantern",           "output_count": 2},
     {"name": "Parquet Floor",        "ingredients": {"lumber": 2, "sand_grain": 1},                       "output_id": "parquet_floor",           "output_count": 2},
-    {"name": "Pavilion Floor",       "ingredients": {"limestone_block": 2, "stone_chip": 1},              "output_id": "pavilion_floor",          "output_count": 2},
+    {"name": "Pavilion Floor",       "ingredients": {"limestone_block": 2, "limestone_chip": 1},          "output_id": "pavilion_floor",          "output_count": 2},
     {"name": "Pebble Dash",          "ingredients": {"stone_chip": 1, "sand_grain": 2},                   "output_id": "pebble_dash",             "output_count": 2},
     {"name": "Persian Iwan",         "ingredients": {"limestone_block": 2, "gold_nugget": 1},             "output_id": "persian_iwan",            "output_count": 2},
     {"name": "Persian Tile",         "ingredients": {"clay": 1, "crystal_shard": 2},                      "output_id": "persian_tile",            "output_count": 2},
@@ -448,7 +541,7 @@ ARTISAN_RECIPES = [
     {"name": "Pilaster",             "ingredients": {"stone_chip": 2, "limestone_block": 1},              "output_id": "pilaster",                "output_count": 2},
     {"name": "Plinth Block",         "ingredients": {"stone_chip": 2, "sand_grain": 1},                   "output_id": "plinth_block",            "output_count": 2},
     {"name": "Pointed Arch",         "ingredients": {"stone_chip": 2, "limestone_block": 1},              "output_id": "pointed_arch",            "output_count": 2},
-    {"name": "Polished Granite",     "ingredients": {"stone_chip": 2},                                    "output_id": "polished_granite",        "output_count": 2},
+    {"name": "Polished Granite",     "ingredients": {"granite_slab": 2},                                 "output_id": "polished_granite",        "output_count": 2},
     {"name": "Polished Marble",      "ingredients": {"stone_chip": 2, "gold_nugget": 1},                  "output_id": "polished_marble",         "output_count": 2},
     {"name": "Polynesian Carved",    "ingredients": {"lumber": 2, "dirt_clump": 1},                       "output_id": "polynesian_carved",       "output_count": 2},
     {"name": "Portuguese Cork",      "ingredients": {"lumber": 1, "dirt_clump": 2},                       "output_id": "portuguese_cork",         "output_count": 2},
@@ -458,15 +551,15 @@ ARTISAN_RECIPES = [
     {"name": "Romanesque Arch",      "ingredients": {"stone_chip": 1, "sand_grain": 2},                   "output_id": "romanesque_arch",         "output_count": 2},
     {"name": "Rose Quartz",          "ingredients": {"stone_chip": 2, "ruby": 1},                         "output_id": "rose_quartz_block",       "output_count": 2},
     {"name": "Rose Window",          "ingredients": {"stone_chip": 1, "crystal_shard": 2},                "output_id": "rose_window",             "output_count": 2},
-    {"name": "Rune Stone",           "ingredients": {"stone_chip": 2, "coal": 1},                         "output_id": "rune_stone",              "output_count": 2},
-    {"name": "Rusticated Stone",     "ingredients": {"stone_chip": 3},                                    "output_id": "rusticated_stone",        "output_count": 2},
+    {"name": "Rune Stone",           "ingredients": {"magmatic_shard": 1, "coal": 1},                     "output_id": "rune_stone",              "output_count": 2},
+    {"name": "Rusticated Stone",     "ingredients": {"granite_slab": 2, "stone_chip": 1},                 "output_id": "rusticated_stone",        "output_count": 2},
     {"name": "Russian Kokoshnik",    "ingredients": {"limestone_block": 1, "gold_nugget": 1},             "output_id": "russian_kokoshnik",       "output_count": 2},
     {"name": "Saffron Door",         "ingredients": {"lumber": 2, "gold_nugget": 2},                      "output_id": "saffron_door",            "output_count": 1},
     {"name": "Saltillo Tile",        "ingredients": {"clay": 1, "sand_grain": 1},                         "output_id": "saltillo_tile",           "output_count": 2},
     {"name": "Sandstone Ashlar",     "ingredients": {"sand_grain": 2, "stone_chip": 1},                   "output_id": "sandstone_ashlar",        "output_count": 2},
     {"name": "Sandstone Column",     "ingredients": {"sand_grain": 2, "limestone_block": 1},              "output_id": "sandstone_column",        "output_count": 2},
-    {"name": "Scottish Rubble",      "ingredients": {"stone_chip": 3},                                    "output_id": "scottish_rubble",         "output_count": 2},
-    {"name": "Sett Stone",           "ingredients": {"stone_chip": 3},                                    "output_id": "sett_stone",              "output_count": 3},
+    {"name": "Scottish Rubble",      "ingredients": {"granite_slab": 2, "stone_chip": 1},                 "output_id": "scottish_rubble",         "output_count": 2},
+    {"name": "Sett Stone",           "ingredients": {"granite_slab": 2, "stone_chip": 1},                 "output_id": "sett_stone",              "output_count": 3},
     {"name": "Silver Panel",         "ingredients": {"iron_chunk": 2, "crystal_shard": 1},                "output_id": "silver_panel",            "output_count": 2},
     {"name": "Slate Tile",           "ingredients": {"stone_chip": 2, "coal": 1},                         "output_id": "slate_tile",              "output_count": 2},
     {"name": "Spanish Roof Tile",    "ingredients": {"clay": 1, "dirt_clump": 1},                         "output_id": "spanish_roof_tile",       "output_count": 2},
@@ -487,7 +580,7 @@ ARTISAN_RECIPES = [
     {"name": "Thatch Roof",          "ingredients": {"lumber": 2, "wheat": 1},                            "output_id": "thatch_roof",             "output_count": 2},
     {"name": "Timber Truss",         "ingredients": {"lumber": 3},                                        "output_id": "timber_truss",            "output_count": 2},
     {"name": "Torii Panel",          "ingredients": {"lumber": 2, "ruby": 1},                             "output_id": "torii_panel",             "output_count": 2},
-    {"name": "Triglyph Panel",       "ingredients": {"limestone_block": 2, "stone_chip": 1},              "output_id": "triglyph_panel",          "output_count": 2},
+    {"name": "Triglyph Panel",       "ingredients": {"limestone_block": 2, "limestone_chip": 1},          "output_id": "triglyph_panel",          "output_count": 2},
     {"name": "Tudor Beam",           "ingredients": {"lumber": 2, "dirt_clump": 1},                       "output_id": "tudor_beam",              "output_count": 2},
     {"name": "Tudor Rose",           "ingredients": {"limestone_block": 1, "ruby": 1},                    "output_id": "tudor_rose",              "output_count": 2},
     {"name": "Venetian Floor",       "ingredients": {"sand_grain": 1, "gold_nugget": 1},                  "output_id": "venetian_floor",          "output_count": 2},
@@ -501,6 +594,59 @@ ARTISAN_RECIPES = [
     {"name": "Woven Rug",            "ingredients": {"lumber": 1, "dirt_clump": 1, "ruby": 1},            "output_id": "woven_rug",               "output_count": 1},
     {"name": "Wrought Iron Grille",  "ingredients": {"iron_chunk": 2, "coal": 1},                         "output_id": "wrought_iron_grille",     "output_count": 2},
     {"name": "Zellige Tile",         "ingredients": {"sand_grain": 2, "crystal_shard": 1},                "output_id": "zellige_tile",            "output_count": 2},
+    # --- Renaissance palace blocks ---
+    # Facade stonework
+    {"name": "Pietra Serena",       "ingredients": {"limestone_block": 2, "coal": 1},             "output_id": "pietra_serena",        "output_count": 2},
+    {"name": "Travertine Wall",     "ingredients": {"limestone_block": 2, "stone_chip": 1},       "output_id": "travertine_wall",      "output_count": 2},
+    {"name": "Marble Facade",       "ingredients": {"polished_marble": 2, "stone_chip": 1},       "output_id": "marble_facade",        "output_count": 2},
+    {"name": "Rusticated Quoin",    "ingredients": {"stone_chip": 3, "limestone_block": 1},       "output_id": "rusticated_quoin",     "output_count": 2},
+    {"name": "Bicolor Marble",      "ingredients": {"polished_marble": 1, "verdite_slab": 1},     "output_id": "bicolor_marble",       "output_count": 2},
+    {"name": "Pink Granite Base",   "ingredients": {"granite_slab": 3},                           "output_id": "pink_granite_base",    "output_count": 2},
+    {"name": "Blind Arch",          "ingredients": {"limestone_block": 2, "stone_chip": 2},       "output_id": "blind_arch",           "output_count": 1},
+    {"name": "Console Cornice",     "ingredients": {"limestone_block": 2, "stone_chip": 1},       "output_id": "console_cornice",      "output_count": 2},
+    # Columns and pilasters
+    {"name": "Corinthian Capital",  "ingredients": {"polished_marble": 2, "gold_nugget": 1},      "output_id": "corinthian_capital",   "output_count": 1},
+    {"name": "Giant Pilaster",      "ingredients": {"limestone_block": 2, "stone_chip": 2},       "output_id": "giant_pilaster",       "output_count": 2},
+    {"name": "Engaged Column",      "ingredients": {"polished_marble": 2, "limestone_chip": 1},   "output_id": "engaged_column",       "output_count": 1},
+    {"name": "Atlas Figure",        "ingredients": {"polished_marble": 3, "iron_chunk": 1},       "output_id": "atlas_figure",         "output_count": 1},
+    {"name": "Caryatid Column",     "ingredients": {"polished_marble": 3, "iron_chunk": 1},       "output_id": "caryatid_column",      "output_count": 1},
+    {"name": "Composite Capital",   "ingredients": {"polished_marble": 2, "gold_nugget": 1},      "output_id": "composite_capital",    "output_count": 1},
+    # Interior walls
+    {"name": "Intarsia Panel",      "ingredients": {"lumber": 2, "gold_nugget": 1, "coal": 1},    "output_id": "intarsia_panel",       "output_count": 2},
+    {"name": "Studiolo Wall",       "ingredients": {"lumber": 3, "iron_chunk": 1},                "output_id": "studiolo_wall",        "output_count": 2},
+    {"name": "Gilt Leather Wall",   "ingredients": {"lumber": 1, "gold_nugget": 2},               "output_id": "gilt_leather",         "output_count": 2},
+    {"name": "Fresco Lunette",      "ingredients": {"limestone_block": 1, "crystal_shard": 1},    "output_id": "fresco_lunette",       "output_count": 2},
+    {"name": "Marble Wainscoting",  "ingredients": {"polished_marble": 2, "limestone_chip": 1},   "output_id": "wainscot_marble",      "output_count": 2},
+    {"name": "Tapestry Frame",      "ingredients": {"lumber": 1, "gold_nugget": 2},               "output_id": "tapestry_frame",       "output_count": 1},
+    # Ceilings
+    {"name": "Lacunar Ceiling",     "ingredients": {"limestone_block": 3, "gold_nugget": 1},      "output_id": "lacunar_ceiling",      "output_count": 2},
+    {"name": "Barrel Vault Fresco", "ingredients": {"limestone_block": 2, "crystal_shard": 2},    "output_id": "barrel_fresco",        "output_count": 2},
+    {"name": "Golden Ceiling",      "ingredients": {"lumber": 1, "gold_nugget": 3},               "output_id": "golden_ceiling",       "output_count": 2},
+    {"name": "Grotesque Vault",     "ingredients": {"limestone_block": 2, "stone_chip": 2},       "output_id": "grotesque_vault",      "output_count": 2},
+    {"name": "Cupola Oculus",       "ingredients": {"polished_marble": 1, "crystal_shard": 2},    "output_id": "cupola_oculus",        "output_count": 1},
+    # Floors
+    {"name": "Cosmatesque Floor",   "ingredients": {"polished_marble": 1, "ruby": 1, "stone_chip": 1}, "output_id": "cosmatesque_floor", "output_count": 2},
+    {"name": "Terrazzo Floor",      "ingredients": {"limestone_block": 1, "stone_chip": 2},       "output_id": "terrazzo_floor_ren",   "output_count": 2},
+    {"name": "Opus Alexandrinum",   "ingredients": {"polished_marble": 1, "onyx_slab": 1, "ruby": 1}, "output_id": "opus_alexandrinum",  "output_count": 2},
+    {"name": "Marble Medallion",    "ingredients": {"polished_marble": 3, "gold_nugget": 1},      "output_id": "marble_medallion_ren", "output_count": 1},
+    {"name": "Palace Floor Tile",   "ingredients": {"polished_marble": 2, "limestone_chip": 1},   "output_id": "palace_floor_tile",    "output_count": 2},
+    # Doorways and windows
+    {"name": "Palace Portal",       "ingredients": {"limestone_block": 3, "stone_chip": 3},       "output_id": "palace_portal",        "output_count": 1},
+    {"name": "Aedicule Frame",      "ingredients": {"limestone_block": 2, "gold_nugget": 1},      "output_id": "aedicule_frame",       "output_count": 1},
+    {"name": "Thermal Window",      "ingredients": {"stone_chip": 2, "iron_chunk": 1},             "output_id": "thermal_window",       "output_count": 1},
+    {"name": "Bifora Window",       "ingredients": {"limestone_block": 1, "iron_chunk": 1},        "output_id": "bifora_window",        "output_count": 1},
+    {"name": "Serliana Window",     "ingredients": {"limestone_block": 2, "iron_chunk": 1},        "output_id": "serliana_window",      "output_count": 1},
+    {"name": "Palazzo Balcony",     "ingredients": {"limestone_block": 2, "iron_chunk": 2},        "output_id": "palazzo_balcony",      "output_count": 1},
+    # Arches and vaulting
+    {"name": "Roman Arch",          "ingredients": {"limestone_block": 3, "stone_chip": 2},       "output_id": "roman_arch_ren",       "output_count": 1},
+    {"name": "Coffered Barrel Vault","ingredients": {"limestone_block": 3, "gold_nugget": 1},      "output_id": "barrel_vault_coffer",  "output_count": 2},
+    {"name": "Pendentive",          "ingredients": {"polished_marble": 2, "limestone_chip": 1},   "output_id": "pendentive_block",     "output_count": 2},
+    {"name": "Groin Vault",         "ingredients": {"limestone_block": 3, "stone_chip": 1},       "output_id": "groin_vault",          "output_count": 2},
+    # Fireplaces and niches
+    {"name": "Renaissance Mantel",  "ingredients": {"polished_marble": 3, "iron_chunk": 1},       "output_id": "renaissance_mantel",   "output_count": 1},
+    {"name": "Chimney Breast",      "ingredients": {"limestone_block": 2, "stone_chip": 2},       "output_id": "chimney_breast_ren",   "output_count": 1},
+    {"name": "Pedimented Niche",    "ingredients": {"limestone_block": 2, "stone_chip": 1},       "output_id": "pedimented_niche",     "output_count": 1},
+    {"name": "Shell Niche",         "ingredients": {"limestone_block": 1, "stone_chip": 2},       "output_id": "shell_niche_ren",      "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -706,6 +852,16 @@ RECIPES = [
         "output_count": 1,
     },
     {
+        "name": "Smelter",
+        "pattern": [
+            ["stone_chip",  "iron_chunk", "stone_chip"],
+            ["iron_chunk",  "coal",       "iron_chunk"],
+            ["stone_chip",  "coal",       "stone_chip"],
+        ],
+        "output_id":    "smelter_item",
+        "output_count": 1,
+    },
+    {
         "name": "Resonance Chamber",
         "pattern": [
             ["obsidian_slab", "ruby",          "obsidian_slab"],
@@ -820,9 +976,9 @@ RECIPES = [
     {
         "name": "Iron Fence",
         "pattern": [
-            ["iron_chunk", "iron_chunk", None],
-            ["iron_chunk", "iron_chunk", None],
-            [None,         None,         None],
+            ["iron_bar", "iron_bar", None],
+            ["iron_bar", "iron_bar", None],
+            [None,       None,       None],
         ],
         "output_id":    "iron_fence",
         "output_count": 4,
@@ -840,9 +996,9 @@ RECIPES = [
     {
         "name": "Iron Door",
         "pattern": [
-            ["iron_chunk", "iron_chunk", None],
-            ["iron_chunk", "iron_chunk", None],
-            ["iron_chunk", "iron_chunk", None],
+            ["iron_bar", "iron_bar", None],
+            ["iron_bar", "iron_bar", None],
+            ["iron_bar", "iron_bar", None],
         ],
         "output_id":    "iron_door",
         "output_count": 1,
@@ -872,9 +1028,9 @@ RECIPES = [
     {
         "name": "Iron Miner",
         "pattern": [
-            ["iron_chunk", "gold_nugget", "iron_chunk"],
-            ["iron_chunk", "coal",        "iron_chunk"],
-            ["iron_chunk", "gold_nugget", "iron_chunk"],
+            ["steel_bar", "gold_nugget", "steel_bar"],
+            ["steel_bar", "coal",        "steel_bar"],
+            ["steel_bar", "gold_nugget", "steel_bar"],
         ],
         "output_id":    "iron_miner_item",
         "output_count": 1,
@@ -913,9 +1069,9 @@ RECIPES = [
     {
         "name": "Iron Farm Bot",
         "pattern": [
-            ["iron_chunk", "gold_nugget", "iron_chunk"],
-            ["gold_nugget", "iron_chunk", "gold_nugget"],
-            ["iron_chunk", "gold_nugget", "iron_chunk"],
+            ["steel_bar",   "gold_nugget", "steel_bar"  ],
+            ["gold_nugget", "steel_bar",   "gold_nugget"],
+            ["steel_bar",   "gold_nugget", "steel_bar"  ],
         ],
         "output_id":    "iron_farm_bot_item",
         "output_count": 1,
@@ -1117,6 +1273,26 @@ RECIPES = [
         "output_count": 1,
     },
     {
+        "name": "Anaerobic Tank",
+        "pattern": [
+            ["iron_chunk", "iron_chunk", "iron_chunk"],
+            ["iron_chunk", None,         "iron_chunk"],
+            ["stone_chip", "stone_chip", "stone_chip"],
+        ],
+        "output_id":    "anaerobic_tank_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Glass Kiln",
+        "pattern": [
+            ["stone_chip", "iron_chunk",  "stone_chip"],
+            ["sand_grain", None,          "sand_grain"],
+            ["coal",       "coal",        "coal"      ],
+        ],
+        "output_id":    "glass_kiln_item",
+        "output_count": 1,
+    },
+    {
         "name": "Fossil Prep Table",
         "pattern": [
             ["stone_chip", "stone_chip", "stone_chip"],
@@ -1271,6 +1447,37 @@ RECIPES = [
         "output_id":    "loom_item",
         "output_count": 1,
     },
+    # --- Cheese supply chain ---
+    {
+        "name": "Dairy Vat",
+        "pattern": [
+            ["iron_chunk", "stone_chip", "iron_chunk"],
+            ["lumber",     None,         "lumber"    ],
+            ["stone_chip", "stone_chip", "stone_chip"],
+        ],
+        "output_id":    "dairy_vat_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Cheese Press",
+        "pattern": [
+            ["lumber",     "iron_chunk", "lumber"    ],
+            ["lumber",     None,         "lumber"    ],
+            ["stone_chip", "lumber",     "stone_chip"],
+        ],
+        "output_id":    "cheese_press_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Aging Cave",
+        "pattern": [
+            ["stone_chip", "stone_chip", "stone_chip"],
+            ["stone_chip", None,         "stone_chip"],
+            ["stone_chip", "iron_chunk", "stone_chip"],
+        ],
+        "output_id":    "aging_cave_item",
+        "output_count": 1,
+    },
     # --- Premium seeds (selective_breeding research) ---
     {
         "name": "Premium Strawberry Seed",
@@ -1333,6 +1540,105 @@ RECIPES = [
         "output_id":    "bait_station_item",
         "output_count": 1,
     },
+    # --- Elevator system ---
+    {
+        "name": "Elevator Stop",
+        "pattern": [
+            ["iron_chunk", "stone_chip", "iron_chunk"],
+            ["iron_chunk", None,         "iron_chunk"],
+            ["stone_chip", "stone_chip", "stone_chip"],
+        ],
+        "output_id":    "elevator_stop",
+        "output_count": 1,
+    },
+    {
+        "name": "Elevator Cable (x4)",
+        "pattern": [
+            [None,         "iron_chunk", None],
+            [None,         "iron_chunk", None],
+            [None,         "iron_chunk", None],
+        ],
+        "output_id":    "elevator_cable",
+        "output_count": 4,
+    },
+    {
+        "name": "Elevator Car",
+        "pattern": [
+            ["iron_chunk", "lumber",     "iron_chunk"],
+            ["iron_chunk", "iron_chunk", "iron_chunk"],
+            ["iron_chunk", "iron_chunk", "iron_chunk"],
+        ],
+        "output_id":    "elevator_car",
+        "output_count": 1,
+    },
+    # --- Jewelry ---
+    {
+        "name": "Jewelry Workbench",
+        "pattern": [
+            ["iron_chunk",    "crystal_shard", "iron_chunk"   ],
+            ["crystal_shard", "gold_nugget",   "crystal_shard"],
+            ["iron_chunk",    "iron_chunk",    "iron_chunk"   ],
+        ],
+        "output_id":    "jewelry_workbench_item",
+        "output_count": 1,
+    },
+    # --- Garden Workshop ---
+    {
+        "name": "Garden Workshop",
+        "pattern": [
+            ["stone_chip", "stone_chip", "stone_chip"],
+            ["iron_chunk", "lumber",     "iron_chunk"],
+            ["stone_chip", "stone_chip", "stone_chip"],
+        ],
+        "output_id":    "garden_workshop_item",
+        "output_count": 1,
+    },
+    # --- Sculpture system ---
+    {
+        "name":    "Stone Chisel",
+        "pattern": [[None,          "stone_chip", None],
+                    [None,          "stone_chip", None],
+                    [None,          "lumber",     None]],
+        "output_id":    "chisel",
+        "output_count": 1,
+    },
+    {
+        "name":    "Sculptor's Bench",
+        "pattern": [["stone_chip",  "chisel",     "stone_chip"],
+                    ["lumber",      "iron_ingot",  "lumber"],
+                    ["lumber",      None,           "lumber"]],
+        "output_id":    "sculptors_bench_item",
+        "output_count": 1,
+    },
+    # --- Pottery & Ceramics ---
+    {
+        "name":    "Pottery Wheel",
+        "pattern": [["lumber",     "clay",    "lumber"],
+                    ["stone_chip", "clay",    "stone_chip"],
+                    ["lumber",     "clay",    "lumber"]],
+        "output_id":    "pottery_wheel_item",
+        "output_count": 1,
+    },
+    {
+        "name":    "Pottery Kiln",
+        "pattern": [["stone_chip", "coal",    "stone_chip"],
+                    ["clay",       None,       "clay"],
+                    ["stone_chip", "clay",    "stone_chip"]],
+        "output_id":    "pottery_kiln_item",
+        "output_count": 1,
+    },
+]
+
+# ---------------------------------------------------------------------------
+# Pottery Kiln recipes (gem dust, unlocked by glaze_arts research)
+# ---------------------------------------------------------------------------
+
+POTTERY_KILN_RECIPES = [
+    {"name": "Ruby Dust",     "ingredients": {"ruby": 1},         "output_id": "ruby_dust",     "output_count": 3, "research_required": "glaze_arts"},
+    {"name": "Amethyst Dust", "ingredients": {"amethyst_gem": 1}, "output_id": "amethyst_dust", "output_count": 3, "research_required": "glaze_arts"},
+    {"name": "Emerald Dust",  "ingredients": {"quartz_gem": 1},   "output_id": "emerald_dust",  "output_count": 3, "research_required": "glaze_arts"},
+    {"name": "Sapphire Dust", "ingredients": {"crystal_shard": 2},"output_id": "sapphire_dust", "output_count": 3, "research_required": "glaze_arts"},
+    {"name": "Topaz Dust",    "ingredients": {"citrine_gem": 1},  "output_id": "topaz_dust",    "output_count": 3, "research_required": "glaze_arts"},
 ]
 
 # ---------------------------------------------------------------------------
@@ -1345,6 +1651,208 @@ BAIT_STATION_RECIPES = [
     {"name": "Grain Bait",  "ingredients": {"corn": 2, "wheat": 1},               "output_id": "grain_bait",  "output_count": 4},
     {"name": "Berry Bait",  "ingredients": {"strawberry": 3},                     "output_id": "berry_bait",  "output_count": 4},
     {"name": "Meat Bait",   "ingredients": {"fish": 2},                           "output_id": "meat_bait",   "output_count": 4},
+]
+
+# ---------------------------------------------------------------------------
+# Fletching Table recipes
+# ---------------------------------------------------------------------------
+
+SMELTER_RECIPES = [
+    {"name": "Iron Bar",    "ingredients": {"iron_chunk": 1, "coal": 1}, "output_id": "iron_bar",    "output_count": 1},
+    {"name": "Gold Ingot",  "ingredients": {"gold_nugget": 1, "coal": 1},"output_id": "gold_ingot",  "output_count": 1},
+    {"name": "Steel Bar",   "ingredients": {"iron_bar": 1, "coal": 2},   "output_id": "steel_bar",   "output_count": 1},
+    {"name": "Cut Crystal", "ingredients": {"crystal_shard": 1, "coal": 1},"output_id": "cut_crystal","output_count": 1},
+]
+
+FLETCHING_RECIPES = [
+    {"name": "Fletching Table", "ingredients": {"lumber": 4, "stone_chip": 2},                         "output_id": "fletching_table_item", "output_count": 1},
+    {"name": "Wood Bow",        "ingredients": {"lumber": 3, "wool": 2},                                "output_id": "wood_bow",    "output_count": 1},
+    {"name": "Wood Arrows",     "ingredients": {"lumber": 2, "feather": 1, "stone_chip": 1},            "output_id": "wood_arrow",  "output_count": 8},
+    {"name": "Iron Arrows",     "ingredients": {"iron_chunk": 1, "feather": 1, "lumber": 1},            "output_id": "iron_arrow",  "output_count": 6},
+]
+
+# ---------------------------------------------------------------------------
+# Garden Workshop recipes — Alhambra / Italian garden blocks
+# ---------------------------------------------------------------------------
+
+GARDEN_WORKSHOP_RECIPES = [
+    # Zellige tiles
+    {"name": "Zellige Blue",         "ingredients": {"clay": 2, "dye_extract_cobalt": 1},   "output_id": "zellige_blue",       "output_count": 4},
+    {"name": "Zellige Terracotta",   "ingredients": {"clay": 3},                             "output_id": "zellige_terracotta", "output_count": 4},
+    {"name": "Zellige Emerald",      "ingredients": {"clay": 2, "dye_extract_verdant": 1},  "output_id": "zellige_emerald",    "output_count": 4},
+    {"name": "Zellige Ivory",        "ingredients": {"clay": 2, "dye_extract_ivory": 1},    "output_id": "zellige_white",      "output_count": 4},
+    # Geometric stone
+    {"name": "Star Tile",            "ingredients": {"stone_chip": 3, "coal": 1},           "output_id": "garden_star_tile",   "output_count": 2},
+    {"name": "Geometric Mosaic",     "ingredients": {"stone_chip": 2, "clay": 2},           "output_id": "geometric_mosaic",   "output_count": 2},
+    # Water features
+    {"name": "Water Channel",        "ingredients": {"stone_chip": 2},                      "output_id": "water_channel",      "output_count": 2},
+    {"name": "Ornamental Pool",      "ingredients": {"stone_chip": 4},                      "output_id": "ornamental_pool",    "output_count": 1},
+    {"name": "Fountain Basin",       "ingredients": {"stone_chip": 3, "iron_chunk": 1},     "output_id": "fountain_basin",     "output_count": 1},
+    {"name": "Tiered Fountain",      "ingredients": {"stone_chip": 5, "iron_chunk": 2},     "output_id": "tiered_fountain",    "output_count": 1},
+    # Architectural elements
+    {"name": "Horseshoe Arch",       "ingredients": {"stone_chip": 4},                      "output_id": "horseshoe_arch",     "output_count": 1},
+    {"name": "Muqarnas Panel",       "ingredients": {"stone_chip": 2, "clay": 2},           "output_id": "muqarnas_panel",     "output_count": 2},
+    {"name": "Arabesque Screen",     "ingredients": {"stone_chip": 2, "iron_chunk": 1},     "output_id": "arabesque_screen",   "output_count": 2},
+    {"name": "Garden Column",        "ingredients": {"stone_chip": 4},                      "output_id": "garden_column",      "output_count": 1},
+    {"name": "Marble Plinth",        "ingredients": {"limestone_block": 1, "stone_chip": 2},"output_id": "marble_plinth",      "output_count": 1},
+    {"name": "Garden Obelisk",       "ingredients": {"stone_chip": 5},                      "output_id": "garden_obelisk",     "output_count": 1},
+    # Living elements
+    {"name": "Topiary Cone",         "ingredients": {"lumber": 1, "sapling": 2},            "output_id": "topiary_cone",       "output_count": 1},
+    {"name": "Topiary Sphere",       "ingredients": {"lumber": 1, "sapling": 2},            "output_id": "topiary_sphere",     "output_count": 1},
+    {"name": "Box Hedge",            "ingredients": {"lumber": 1, "sapling": 1},            "output_id": "box_hedge",          "output_count": 2},
+    {"name": "Climbing Rose",        "ingredients": {"lumber": 1, "lavender": 1},           "output_id": "climbing_rose",      "output_count": 1},
+    # Furnishings
+    {"name": "Stone Bench",          "ingredients": {"stone_chip": 3, "lumber": 1},         "output_id": "stone_bench",        "output_count": 1},
+    {"name": "Stone Urn",            "ingredients": {"stone_chip": 3},                      "output_id": "stone_urn",          "output_count": 1},
+    {"name": "Terracotta Planter",   "ingredients": {"clay": 3},                            "output_id": "terracotta_planter", "output_count": 1},
+    {"name": "Sundial",              "ingredients": {"stone_chip": 2, "iron_chunk": 1},     "output_id": "sundial",            "output_count": 1},
+    {"name": "Garden Lantern",       "ingredients": {"iron_chunk": 2},                      "output_id": "garden_lantern",     "output_count": 1},
+    # Paths and ground
+    {"name": "Gravel Path",          "ingredients": {"stone_chip": 1},                      "output_id": "gravel_path",        "output_count": 4},
+    {"name": "Mosaic Path",          "ingredients": {"stone_chip": 2, "clay": 1},           "output_id": "mosaic_path",        "output_count": 2},
+    {"name": "Terracotta Path",      "ingredients": {"clay": 2},                            "output_id": "terracotta_path",    "output_count": 4},
+    {"name": "Cobble Circle",        "ingredients": {"stone_chip": 3},                      "output_id": "cobble_circle",      "output_count": 1},
+    # --- Garden Workshop extension ---
+    # Structural / architectural
+    {"name": "Pergola Post",         "ingredients": {"lumber": 3, "sapling": 1},            "output_id": "pergola_post",        "output_count": 2},
+    {"name": "Wisteria Arch",        "ingredients": {"stone_chip": 3, "lavender": 2},       "output_id": "wisteria_arch",       "output_count": 1},
+    {"name": "Garden Gate",          "ingredients": {"iron_chunk": 3},                       "output_id": "garden_gate",         "output_count": 1},
+    {"name": "Low Garden Wall",      "ingredients": {"stone_chip": 3, "limestone_chip": 1}, "output_id": "low_garden_wall",     "output_count": 2},
+    {"name": "Pool Coping",          "ingredients": {"limestone_block": 1, "stone_chip": 1},"output_id": "pool_coping",         "output_count": 4},
+    # Paths and flooring
+    {"name": "Stepping Stone",       "ingredients": {"stone_chip": 2},                      "output_id": "stepping_stone",      "output_count": 3},
+    {"name": "Opus Vermiculatum",    "ingredients": {"stone_chip": 2, "clay": 1},           "output_id": "opus_vermiculatum",   "output_count": 2},
+    {"name": "Porphyry Tile",        "ingredients": {"stone_chip": 2, "ruby": 1},           "output_id": "porphyry_tile",       "output_count": 4},
+    {"name": "Brick Edging",         "ingredients": {"clay": 1},                            "output_id": "brick_edging",        "output_count": 6},
+    # Living elements
+    {"name": "Spiral Topiary",       "ingredients": {"lumber": 1, "sapling": 3},            "output_id": "spiral_topiary",      "output_count": 1},
+    {"name": "Maze Hedge",           "ingredients": {"lumber": 2, "sapling": 2},            "output_id": "maze_hedge",          "output_count": 1},
+    {"name": "Wisteria Wall",        "ingredients": {"lumber": 1, "lavender": 3},           "output_id": "wisteria_wall",       "output_count": 2},
+    {"name": "Potted Citrus",        "ingredients": {"clay": 2, "sapling": 1},              "output_id": "potted_citrus",       "output_count": 1},
+    # Furnishings
+    {"name": "Marble Statue",        "ingredients": {"limestone_block": 2, "stone_chip": 3},"output_id": "marble_statue",       "output_count": 1},
+    {"name": "Marble Birdbath",      "ingredients": {"limestone_block": 1, "stone_chip": 2},"output_id": "marble_birdbath",     "output_count": 1},
+    {"name": "Garden Table",         "ingredients": {"stone_chip": 4},                      "output_id": "garden_table",        "output_count": 1},
+    {"name": "Iron Trellis",         "ingredients": {"iron_chunk": 2, "lumber": 1},         "output_id": "iron_trellis",        "output_count": 2},
+    # Moorish / Mediterranean
+    {"name": "Nasrid Panel",         "ingredients": {"stone_chip": 2, "clay": 3},           "output_id": "nasrid_panel",        "output_count": 2},
+    {"name": "Scallop Niche",        "ingredients": {"stone_chip": 3},                      "output_id": "scallop_niche",       "output_count": 1},
+    {"name": "Terrace Balustrade",   "ingredients": {"limestone_block": 1, "iron_chunk": 1},"output_id": "terrace_balustrade",  "output_count": 2},
+    # Japanese garden blocks
+    {"name": "Zen Gravel",          "ingredients": {"sand_grain": 2},                       "output_id": "zen_gravel",          "output_count": 4},
+    {"name": "Karesansui Rock",     "ingredients": {"stone_chip": 3},                       "output_id": "karesansui_rock",     "output_count": 1},
+    {"name": "Moss Carpet",         "ingredients": {"sapling": 1},                          "output_id": "moss_carpet",         "output_count": 4},
+    {"name": "Tsukubai",            "ingredients": {"stone_chip": 3, "iron_chunk": 1},      "output_id": "tsukubai",            "output_count": 1},
+    {"name": "Toro Lantern",        "ingredients": {"stone_chip": 4},                       "output_id": "toro_lantern",        "output_count": 1},
+    {"name": "Yukimi Lantern",      "ingredients": {"stone_chip": 3},                       "output_id": "yukimi_lantern",      "output_count": 1},
+    {"name": "Bamboo Fence",        "ingredients": {"lumber": 2},                           "output_id": "bamboo_fence_jp",     "output_count": 4},
+    {"name": "Roji Stone",          "ingredients": {"stone_chip": 1},                       "output_id": "roji_stone",          "output_count": 3},
+    {"name": "Cloud-Pruned Pine",   "ingredients": {"lumber": 1, "sapling": 3},             "output_id": "pine_topiary_jp",     "output_count": 1},
+    {"name": "Japanese Maple",      "ingredients": {"sapling": 2, "dye_extract_crimson": 1},"output_id": "japanese_maple",      "output_count": 1},
+    {"name": "Shishi-odoshi",       "ingredients": {"lumber": 2, "iron_chunk": 1},          "output_id": "shishi_odoshi",       "output_count": 1},
+    {"name": "Arched Bridge",       "ingredients": {"lumber": 3, "iron_chunk": 1},          "output_id": "red_arch_bridge",     "output_count": 1},
+    {"name": "Wave Ceramic",        "ingredients": {"clay": 2, "dye_extract_cobalt": 1},    "output_id": "wave_ceramic",        "output_count": 2},
+    {"name": "Zen Sand Ring",       "ingredients": {"sand_grain": 3},                       "output_id": "zen_sand_ring",       "output_count": 2},
+    {"name": "Bamboo Gate",         "ingredients": {"lumber": 3},                           "output_id": "bamboo_gate_jp",      "output_count": 1},
+    {"name": "Wabi Stone",          "ingredients": {"stone_chip": 2},                       "output_id": "wabi_stone",          "output_count": 1},
+    {"name": "Cherry Blossom Arch", "ingredients": {"lumber": 2, "lavender": 2},            "output_id": "cherry_arch",         "output_count": 1},
+    {"name": "Tatami Paving",       "ingredients": {"lumber": 1, "clay": 1},                "output_id": "tatami_paving",       "output_count": 2},
+    {"name": "Ikebana Stone",       "ingredients": {"stone_chip": 2},                       "output_id": "ikebana_stone",       "output_count": 1},
+    {"name": "Kanji Stone",         "ingredients": {"stone_chip": 2, "coal": 1},            "output_id": "kanji_stone",         "output_count": 1},
+    {"name": "Maple Leaf Tile",     "ingredients": {"clay": 2, "dye_extract_crimson": 1},   "output_id": "maple_leaf_tile",     "output_count": 4},
+    {"name": "Noren Panel",         "ingredients": {"lumber": 1, "dye_extract_cobalt": 1},  "output_id": "noren_panel",         "output_count": 2},
+    {"name": "Tsuru Tile",          "ingredients": {"clay": 2},                             "output_id": "tsuru_tile",          "output_count": 4},
+    {"name": "Pine Screen",         "ingredients": {"lumber": 2},                           "output_id": "pine_screen_jp",      "output_count": 2},
+    {"name": "Kare Bridge",         "ingredients": {"stone_chip": 3, "lumber": 1},          "output_id": "kare_bridge",         "output_count": 1},
+    # Chinese garden blocks
+    {"name": "Pebble Mosaic",       "ingredients": {"stone_chip": 2, "clay": 1},            "output_id": "pebble_mosaic_cn",    "output_count": 2},
+    {"name": "Zigzag Bridge",       "ingredients": {"stone_chip": 4},                       "output_id": "zigzag_bridge",       "output_count": 2},
+    {"name": "Cloud Wall",          "ingredients": {"clay": 3, "limestone_chip": 1},        "output_id": "cloud_wall",          "output_count": 2},
+    {"name": "Dragon Wall",         "ingredients": {"clay": 3, "dye_extract_crimson": 1},   "output_id": "dragon_wall_cn",      "output_count": 1},
+    {"name": "Lotus Pond",          "ingredients": {"stone_chip": 2, "sapling": 1},         "output_id": "lotus_pond",          "output_count": 1},
+    {"name": "Hexagonal Pavilion",  "ingredients": {"stone_chip": 3},                       "output_id": "hex_pavilion_tile",   "output_count": 2},
+    {"name": "Compass Paving",      "ingredients": {"stone_chip": 4},                       "output_id": "compass_paving",      "output_count": 1},
+    {"name": "Wave Balustrade",     "ingredients": {"stone_chip": 3},                       "output_id": "wave_balustrade_cn",  "output_count": 2},
+    {"name": "Ceramic Garden Seat", "ingredients": {"clay": 3, "dye_extract_cobalt": 1},    "output_id": "ceramic_seat",        "output_count": 1},
+    {"name": "Bonsai Tray",         "ingredients": {"stone_chip": 2, "sapling": 1},         "output_id": "bonsai_tray",         "output_count": 1},
+    {"name": "Scholar Screen",      "ingredients": {"lumber": 2, "stone_chip": 1},          "output_id": "scholar_screen",      "output_count": 2},
+    {"name": "Chrysanthemum Tile",  "ingredients": {"clay": 2, "dye_extract_golden": 1},    "output_id": "chrysanthemum_tile",  "output_count": 4},
+    {"name": "Plum Blossom Tile",   "ingredients": {"clay": 2, "dye_extract_rose": 1},      "output_id": "plum_blossom_tile",   "output_count": 4},
+    {"name": "Moon Pavement",       "ingredients": {"stone_chip": 3},                       "output_id": "moon_pavement",       "output_count": 1},
+    {"name": "Bamboo Grove",        "ingredients": {"lumber": 3, "sapling": 1},             "output_id": "bamboo_grove",        "output_count": 1},
+    {"name": "Osmanthus Bush",      "ingredients": {"sapling": 2, "dye_extract_golden": 1}, "output_id": "osmanthus_bush",      "output_count": 1},
+    {"name": "Water Lily",          "ingredients": {"stone_chip": 2, "sapling": 1},         "output_id": "water_lily_tile",     "output_count": 2},
+    {"name": "Koi Pond",            "ingredients": {"stone_chip": 4, "iron_chunk": 1},      "output_id": "koi_pond",            "output_count": 1},
+    {"name": "Lakeside Rock",       "ingredients": {"stone_chip": 2},                       "output_id": "lakeside_rock",       "output_count": 1},
+    {"name": "Cloud Collar Tile",   "ingredients": {"clay": 2},                             "output_id": "cloud_collar_tile",   "output_count": 4},
+    {"name": "Imperial Paving",     "ingredients": {"stone_chip": 5},                       "output_id": "imperial_paving",     "output_count": 1},
+    {"name": "Pavilion Column",     "ingredients": {"lumber": 2, "dye_extract_crimson": 1}, "output_id": "pavilion_column_cn",  "output_count": 1},
+    {"name": "Eight Diagram",       "ingredients": {"stone_chip": 3, "coal": 1},            "output_id": "eight_diagram",       "output_count": 1},
+    {"name": "Teahouse Step",       "ingredients": {"limestone_block": 1, "stone_chip": 1}, "output_id": "tea_house_step",      "output_count": 2},
+    {"name": "Lantern Festival",    "ingredients": {"lumber": 1, "dye_extract_crimson": 1}, "output_id": "lantern_festival",    "output_count": 3},
+    # Renaissance garden blocks — Classical architecture
+    {"name": "Ionic Column",        "ingredients": {"limestone_block": 2, "stone_chip": 2},  "output_id": "ionic_column_base",   "output_count": 1},
+    {"name": "Doric Entablature",   "ingredients": {"limestone_block": 1, "stone_chip": 3},  "output_id": "doric_entablature",   "output_count": 2},
+    {"name": "Rusticated Base",     "ingredients": {"stone_chip": 4},                         "output_id": "rusticated_base",     "output_count": 1},
+    {"name": "Garden Loggia",       "ingredients": {"limestone_block": 2, "iron_chunk": 1},   "output_id": "garden_loggia",       "output_count": 1},
+    {"name": "Triumphal Arch",      "ingredients": {"limestone_block": 3, "stone_chip": 2},   "output_id": "triumphal_arch_r",    "output_count": 1},
+    {"name": "Exedra Seat",         "ingredients": {"limestone_block": 2},                    "output_id": "exedra_seat",         "output_count": 1},
+    {"name": "Herm Pillar",         "ingredients": {"stone_chip": 3, "coal": 1},              "output_id": "herm_pillar",         "output_count": 1},
+    {"name": "Nymphaeum Panel",     "ingredients": {"stone_chip": 2, "clay": 2},              "output_id": "nymphaeum_panel",     "output_count": 2},
+    {"name": "Grotto Stone",        "ingredients": {"stone_chip": 2},                         "output_id": "grotto_stone",        "output_count": 4},
+    {"name": "Amphitheater Tier",   "ingredients": {"stone_chip": 2, "sapling": 1},           "output_id": "amphitheater_tier",   "output_count": 2},
+    # Water features
+    {"name": "Giochi d'Acqua",      "ingredients": {"stone_chip": 2, "iron_chunk": 2},        "output_id": "giochi_acqua",        "output_count": 1},
+    {"name": "Garden Rill",         "ingredients": {"stone_chip": 2},                         "output_id": "rill_block",          "output_count": 4},
+    {"name": "Water Cascade",       "ingredients": {"stone_chip": 3, "iron_chunk": 1},        "output_id": "cascade_block",       "output_count": 1},
+    {"name": "Grotto Pool",         "ingredients": {"stone_chip": 3},                         "output_id": "grotto_pool",         "output_count": 1},
+    {"name": "Wall Fountain",       "ingredients": {"stone_chip": 3, "iron_chunk": 1},        "output_id": "wall_fountain",       "output_count": 1},
+    {"name": "Basin Surround",      "ingredients": {"limestone_block": 1, "stone_chip": 2},   "output_id": "basin_surround",      "output_count": 2},
+    {"name": "Formal Canal",        "ingredients": {"stone_chip": 3},                         "output_id": "canal_block",         "output_count": 2},
+    {"name": "Terme Pool",          "ingredients": {"stone_chip": 4, "iron_chunk": 1},        "output_id": "terme_pool",          "output_count": 1},
+    # Parterre and planting
+    {"name": "Broderie Parterre",   "ingredients": {"sapling": 2},                            "output_id": "parterre_broderie",   "output_count": 2},
+    {"name": "Parterre Bed",        "ingredients": {"sapling": 1, "clay": 1},                 "output_id": "parterre_compartment","output_count": 2},
+    {"name": "Allée Tree",          "ingredients": {"lumber": 1, "sapling": 2},               "output_id": "allee_tree",          "output_count": 2},
+    {"name": "Pleached Hedge",      "ingredients": {"lumber": 2, "sapling": 2},               "output_id": "pleached_hedge",      "output_count": 2},
+    {"name": "Espalier Wall",       "ingredients": {"lumber": 2, "sapling": 1},               "output_id": "espalier_wall",       "output_count": 2},
+    {"name": "Knot Garden",         "ingredients": {"sapling": 3},                            "output_id": "knot_garden",         "output_count": 1},
+    {"name": "Turf Theater",        "ingredients": {"sapling": 1, "stone_chip": 1},           "output_id": "turf_theater",        "output_count": 2},
+    {"name": "Carpet Bedding",      "ingredients": {"sapling": 2, "dye_extract_crimson": 1},  "output_id": "carpet_bed",          "output_count": 2},
+    # Paths and flooring
+    {"name": "Opus Sectile",        "ingredients": {"limestone_block": 1, "clay": 2},         "output_id": "opus_sectile",        "output_count": 2},
+    {"name": "Travertine Floor",    "ingredients": {"limestone_chip": 3},                      "output_id": "travertine_floor",    "output_count": 4},
+    {"name": "Herringbone Path",    "ingredients": {"clay": 2},                                "output_id": "herringbone_garden",  "output_count": 4},
+    {"name": "Stone Ramp",          "ingredients": {"stone_chip": 3},                         "output_id": "ramp_stone",          "output_count": 2},
+    {"name": "Garden Steps",        "ingredients": {"limestone_block": 1, "stone_chip": 2},   "output_id": "garden_steps",        "output_count": 2},
+    {"name": "Sand Allée",          "ingredients": {"sand_grain": 2},                         "output_id": "sand_allee",          "output_count": 4},
+    {"name": "Patterned Pavement",  "ingredients": {"stone_chip": 2, "limestone_chip": 2},    "output_id": "patterned_pavement",  "output_count": 2},
+    {"name": "Inlaid Marble",       "ingredients": {"limestone_block": 1, "dye_extract_cobalt": 1}, "output_id": "inlaid_marble", "output_count": 2},
+    # Furnishings and decorative
+    {"name": "Tall Sundial",        "ingredients": {"stone_chip": 3, "iron_chunk": 1},        "output_id": "tall_sundial",        "output_count": 1},
+    {"name": "Stone Vase",          "ingredients": {"limestone_block": 1, "stone_chip": 2},   "output_id": "stone_vase",          "output_count": 1},
+    {"name": "Stone Sphere",        "ingredients": {"stone_chip": 2},                         "output_id": "stone_sphere",        "output_count": 1},
+    {"name": "Curved Bench",        "ingredients": {"limestone_block": 1, "stone_chip": 2},   "output_id": "curved_bench",        "output_count": 1},
+    {"name": "Ornate Gate",         "ingredients": {"iron_chunk": 4},                         "output_id": "ornate_gate",         "output_count": 1},
+    {"name": "Lead Planter",        "ingredients": {"iron_chunk": 2, "stone_chip": 1},        "output_id": "lead_planter",        "output_count": 1},
+    {"name": "Terrace Urn",         "ingredients": {"limestone_block": 1, "stone_chip": 3},   "output_id": "terrace_urn",         "output_count": 1},
+    {"name": "Stone Pineapple",     "ingredients": {"stone_chip": 3},                         "output_id": "stone_pineapple",     "output_count": 1},
+    # Structural elements
+    {"name": "Grotto Arch",         "ingredients": {"stone_chip": 3, "coal": 1},              "output_id": "grotto_arch",         "output_count": 1},
+    {"name": "Pergola Beam",        "ingredients": {"lumber": 3},                             "output_id": "pergola_beam",        "output_count": 2},
+    {"name": "Loggia Arch",         "ingredients": {"limestone_block": 2, "stone_chip": 2},   "output_id": "loggia_arch",         "output_count": 1},
+    {"name": "Wall Niche",          "ingredients": {"stone_chip": 3},                         "output_id": "garden_wall_niche",   "output_count": 1},
+    {"name": "Orangery Window",     "ingredients": {"stone_chip": 2, "iron_chunk": 1},        "output_id": "orangery_window",     "output_count": 2},
+    {"name": "Belvedere Panel",     "ingredients": {"limestone_block": 1, "stone_chip": 2},   "output_id": "belvedere_panel",     "output_count": 2},
+    {"name": "Bosco Tree",          "ingredients": {"lumber": 2, "sapling": 2},               "output_id": "bosco_tree",          "output_count": 1},
+    {"name": "Secret Garden Wall",  "ingredients": {"stone_chip": 3, "sapling": 1},           "output_id": "giardino_segreto",    "output_count": 2},
+    # Renaissance palace decorative ornament
+    {"name": "Cartouche",           "ingredients": {"limestone_block": 1, "stone_chip": 2},       "output_id": "cartouche_ren",        "output_count": 2},
+    {"name": "Putti Frieze",        "ingredients": {"polished_marble": 2, "stone_chip": 1},       "output_id": "putti_frieze",         "output_count": 2},
+    {"name": "Festoon Panel",       "ingredients": {"limestone_block": 1, "stone_chip": 1},       "output_id": "festoon_panel",        "output_count": 2},
+    {"name": "Trophy Panel",        "ingredients": {"iron_chunk": 2, "stone_chip": 2},             "output_id": "trophy_panel_ren",     "output_count": 2},
+    {"name": "Portrait Medallion",  "ingredients": {"polished_marble": 2, "gold_nugget": 1},      "output_id": "medallion_portrait",   "output_count": 2},
+    {"name": "Laurel Frieze",       "ingredients": {"limestone_block": 1, "stone_chip": 2},       "output_id": "laurel_frieze",        "output_count": 2},
 ]
 
 # ---------------------------------------------------------------------------
@@ -1367,6 +1875,7 @@ RECIPE_GROUPS = {
     "Building": [
         "wood_stairs", "ladder", "wood_fence", "iron_fence",
         "wood_door", "iron_door", "bed", "chest_item", "empty_barrel", "backhoe_item",
+        "elevator_stop", "elevator_cable", "elevator_car",
     ],
     "Automation": [
         "coal_miner_item", "iron_miner_item", "crystal_miner_item",
@@ -1375,13 +1884,16 @@ RECIPE_GROUPS = {
         "diamond", "tumbler_item", "crusher_item", "gem_cutter_item",
         "kiln_item", "resonance_item",
     ],
+    "Smelting": [
+        "smelter_item",
+    ],
     "Cooking Stations": [
         "bakery_item", "wok_item", "steamer_item", "noodle_pot_item",
         "bbq_grill_item", "clay_pot_item", "desert_forge_item",
         "artisan_bench_item", "fossil_table_item",
     ],
     "Coffee": [
-        "roaster_item", "blend_station_item", "brew_station_item",
+        "roaster_item", "blend_station_item", "brew_station_item", "anaerobic_tank_item",
     ],
     "Wine": [
         "grape_press_item", "fermentation_item", "wine_cellar_item",
@@ -1398,6 +1910,12 @@ RECIPE_GROUPS = {
     "Textiles": [
         "spinning_wheel_item", "dye_vat_item", "loom_item",
     ],
+    "Glassblowing": [
+        "glass_kiln_item",
+    ],
+    "Cheese": [
+        "dairy_vat_item", "cheese_press_item", "aging_cave_item",
+    ],
     "Fishing": [
         "fishing_pole", "bait_station_item",
     ],
@@ -1408,12 +1926,28 @@ RECIPE_GROUPS = {
         "saddle", "horse_brush", "horseshoe", "sugar_lump",
         "stable_item", "horse_trough_item",
     ],
+    "Hunting": [
+        "fletching_table_item", "wood_bow", "wood_arrow", "iron_arrow",
+    ],
+    "Jewelry": [
+        "jewelry_workbench_item",
+    ],
+    "Garden": [
+        "garden_workshop_item",
+    ],
+    "Sculpture": [
+        "chisel", "sculptors_bench_item",
+    ],
+    "Pottery": [
+        "pottery_wheel_item", "pottery_kiln_item",
+    ],
 }
 
 RECIPE_GROUPS_ORDER = [
-    "Tools", "Farming", "Building", "Automation", "Rock & Gems",
+    "Tools", "Farming", "Building", "Automation", "Rock & Gems", "Smelting",
     "Cooking Stations", "Coffee", "Wine", "Spirits", "Tea",
-    "Herbalism", "Textiles", "Fishing", "Wildlife", "Horses",
+    "Herbalism", "Textiles", "Glassblowing", "Fishing", "Wildlife", "Horses", "Hunting", "Jewelry",
+    "Garden", "Sculpture", "Pottery",
 ]
 
 
@@ -1427,6 +1961,7 @@ RESEARCH_LOCKED_RECIPES = {
     "roaster_item":          "coffee_basics",
     "blend_station_item":    "blend_arts",
     "brew_station_item":     "brew_expertise",
+    "anaerobic_tank_item":   "anaerobic_processing",
     "grape_press_item":      "wine_basics",
     "fermentation_item":     "wine_basics",
     "wine_cellar_item":      "wine_basics",
@@ -1451,6 +1986,19 @@ RESEARCH_LOCKED_RECIPES = {
     "spinning_wheel_item":     "fiber_arts",
     "dye_vat_item":            "natural_dyes",
     "loom_item":               "loom_mastery",
+    "glass_kiln_item":         "glassblowing",
+    "dairy_vat_item":          "dairy_basics",
+    "cheese_press_item":       "aging_arts",
+    "aging_cave_item":         "aging_arts",
+    "fletching_table_item":    "basic_archery",
+    "wood_bow":                "basic_archery",
+    "wood_arrow":              "basic_archery",
+    "iron_arrow":              "iron_arrows",
+    "jewelry_workbench_item":  "goldsmithing",
+    "garden_workshop_item":    "garden_workshop",
+    "sculptors_bench_item":    "stone_carving",
+    "pottery_wheel_item":      "clay_working",
+    "pottery_kiln_item":       "kiln_mastery",
 }
 
 

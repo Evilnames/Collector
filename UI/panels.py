@@ -28,7 +28,7 @@ class PanelsMixin:
 
     def _draw_npc_panel(self, player):
         from cities import (RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC,
-                            MerchantNPC, RestaurantNPC, ShrineKeeperNPC)
+                            MerchantNPC, RestaurantNPC, ShrineKeeperNPC, JewelryMerchantNPC)
         npc = self.active_npc
 
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
@@ -52,6 +52,8 @@ class PanelsMixin:
             border_col = (200, 90, 30)
         elif isinstance(npc, ShrineKeeperNPC):
             border_col = (160, 130, 60)
+        elif isinstance(npc, JewelryMerchantNPC):
+            border_col = (200, 165, 55)
         else:
             border_col = (120, 100, 60)
 
@@ -75,6 +77,8 @@ class PanelsMixin:
             self._draw_restaurant_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, ShrineKeeperNPC):
             self._draw_shrine_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, JewelryMerchantNPC):
+            self._draw_jewelry_merchant_content(player, npc, px, py, PW, PH)
 
     def _draw_quest_content(self, player, npc, px, py, PW, PH):
         from cities import quest_display, quest_hint, RARITY_ORDER
@@ -357,6 +361,14 @@ class PanelsMixin:
         SIDEBAR_Y = 52
         CAT_W, CAT_H, CAT_GAP = 175, 52, 6
 
+        SIDEBAR_AREA_H = SCREEN_H - SIDEBAR_Y
+        total_cat_h = len(research.COLUMNS) * (CAT_H + CAT_GAP) - CAT_GAP
+        self._max_research_cat_scroll = max(0, total_cat_h - SIDEBAR_AREA_H)
+        self._research_cat_scroll = max(0, min(self._max_research_cat_scroll, self._research_cat_scroll))
+
+        old_clip = self.screen.get_clip()
+        self.screen.set_clip(pygame.Rect(SIDEBAR_X, SIDEBAR_Y, CAT_W + 20, SIDEBAR_AREA_H))
+
         self._research_cat_rects = {}
         for ci, col_name in enumerate(research.COLUMNS):
             col_nodes = [nid for (c, _r, nid) in research.layout if c == ci]
@@ -367,7 +379,10 @@ class PanelsMixin:
             has_available = available_count > 0
             is_selected   = (self._research_selected_col == ci)
 
-            cat_rect = pygame.Rect(SIDEBAR_X, SIDEBAR_Y + ci * (CAT_H + CAT_GAP), CAT_W, CAT_H)
+            cat_y = SIDEBAR_Y + ci * (CAT_H + CAT_GAP) - self._research_cat_scroll
+            if cat_y + CAT_H < SIDEBAR_Y or cat_y > SCREEN_H:
+                continue
+            cat_rect = pygame.Rect(SIDEBAR_X, cat_y, CAT_W, CAT_H)
             self._research_cat_rects[ci] = cat_rect
 
             if has_available:
@@ -408,6 +423,8 @@ class PanelsMixin:
                 pygame.draw.rect(self.screen, (220, 178, 28), (bx, by, bw, bh), border_radius=4)
                 self.screen.blit(badge, (bx + 4, by + 2))
 
+        self.screen.set_clip(old_clip)
+
         # --- Right panel: nodes for selected column ---
         RIGHT_X  = SIDEBAR_X + CAT_W + 28
         RIGHT_W  = SCREEN_W - RIGHT_X - 20
@@ -421,10 +438,23 @@ class PanelsMixin:
         sel_col       = self._research_selected_col
         col_node_rows = sorted((r, nid) for (c, r, nid) in research.layout if c == sel_col)
 
+        RIGHT_AREA_H = SCREEN_H - NODE_Y
+        if col_node_rows:
+            max_row = col_node_rows[-1][0]
+            total_right_h = (max_row + 1) * (CARD_H + ROW_GAP) - ROW_GAP
+        else:
+            total_right_h = 0
+        self._max_research_right_scroll = max(0, total_right_h - RIGHT_AREA_H)
+        self._research_right_scroll = max(0, min(self._max_research_right_scroll, self._research_right_scroll))
+
+        self.screen.set_clip(pygame.Rect(RIGHT_X, NODE_Y, RIGHT_W, RIGHT_AREA_H))
+
         self._card_rects.clear()
         for row, node_id in col_node_rows:
             node = research.nodes[node_id]
-            y    = NODE_Y + row * (CARD_H + ROW_GAP)
+            y    = NODE_Y + row * (CARD_H + ROW_GAP) - self._research_right_scroll
+            if y + CARD_H < NODE_Y or y > SCREEN_H:
+                continue
             rect = pygame.Rect(RIGHT_X, y, CARD_W, CARD_H)
             self._card_rects[node_id] = rect
 
@@ -495,6 +525,8 @@ class PanelsMixin:
             if row > 0 and prereqs_ok and not node.unlocked:
                 mid_x = rect.x + CARD_W // 2
                 pygame.draw.line(self.screen, border, (mid_x, y - ROW_GAP), (mid_x, y), 1)
+
+        self.screen.set_clip(old_clip)
 
     def _draw_inventory(self, player):
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
@@ -1155,6 +1187,30 @@ class PanelsMixin:
                              (hx + hw - int(4 * s), hy + int(6 * s), int(4 * s), int(4 * s)))
             pygame.draw.rect(self.screen, (20, 10, 5),
                              (hx + hw - int(4 * s), hy + int(2 * s), max(1, int(2 * s)), max(1, int(2 * s))))
+        elif aid == "goat":
+            BW, BH = int(22 * s), int(18 * s)
+            sx, sy = cx - BW // 2, cy - BH // 2
+            bh = BH - int(8 * s)
+            for lo in (2, 6, 13, 17):
+                pygame.draw.rect(self.screen, _t((90, 70, 50), sh),
+                                 (sx + int(lo * s), sy + bh, max(1, int(3 * s)), int(8 * s)))
+            bclr = _t((195, 180, 155), sh)
+            pygame.draw.rect(self.screen, bclr, (sx, sy, BW, bh))
+            hw, hh = int(9 * s), int(9 * s)
+            hclr = _t((185, 170, 145), sh)
+            hx = sx + BW - int(2 * s)
+            hy = sy - int(2 * s)
+            pygame.draw.rect(self.screen, hclr, (hx, hy, hw, hh))
+            # horns
+            horn_c = _t((80, 65, 45), sh)
+            pygame.draw.rect(self.screen, horn_c, (hx + int(1 * s), hy - int(4 * s), max(1, int(2 * s)), int(4 * s)))
+            pygame.draw.rect(self.screen, horn_c, (hx + int(5 * s), hy - int(5 * s), max(1, int(2 * s)), int(5 * s)))
+            # beard
+            pygame.draw.rect(self.screen, _t((155, 140, 115), sh),
+                             (hx + int(1 * s), hy + hh, max(1, int(2 * s)), max(1, int(4 * s))))
+            # eye
+            pygame.draw.rect(self.screen, (20, 12, 5),
+                             (hx + hw - int(3 * s), hy + int(3 * s), max(1, int(2 * s)), max(1, int(2 * s))))
         elif aid == "chicken":
             BW, BH = int(18 * s), int(16 * s)
             sx, sy = cx - BW // 2, cy - BH // 2
@@ -1217,6 +1273,16 @@ class PanelsMixin:
                     self._breed_scroll = 0
                     self._breed_selected_uid = None
                 return
+        # No-breed toggle button
+        nb_rects = getattr(self, '_breed_nb_rects', {})
+        for uid, rect in nb_rects.items():
+            if rect.collidepoint(pos):
+                world = self.world_ref
+                if world:
+                    entity = next((e for e in world.entities if getattr(e, 'uid', None) == uid), None)
+                    if entity:
+                        entity.no_breed = not entity.no_breed
+                return
         for uid, rect in self._breed_list_rects.items():
             if rect.collidepoint(pos):
                 self._breed_selected_uid = uid if uid != self._breed_selected_uid else None
@@ -1251,7 +1317,7 @@ class PanelsMixin:
             type_ctr[aid] = type_ctr.get(aid, 0) + 1
             animal_numbers[e.uid] = type_ctr[aid]
 
-        TYPE_LABELS = {"sheep": "Sheep", "cow": "Cow", "chicken": "Chicken", "horse": "Horse"}
+        TYPE_LABELS = {"sheep": "Sheep", "cow": "Cow", "chicken": "Chicken", "horse": "Horse", "goat": "Goat"}
 
         # ── LEFT LIST COLUMN ──────────────────────────────────────────
         LW = 295
@@ -1262,7 +1328,7 @@ class PanelsMixin:
         self.screen.blit(title_s, (lx0 + LW // 2 - title_s.get_width() // 2, py + 10))
 
         # Species filter tabs
-        tab_defs = [(0, "All"), (1, "Sheep"), (2, "Cow"), (3, "Chicken"), (4, "Horse")]
+        tab_defs = [(0, "All"), (1, "Sheep"), (2, "Cow"), (3, "Chicken"), (4, "Horse"), (5, "Goat")]
         tw = (LW - 6) // len(tab_defs)
         self._breed_tab_rects.clear()
         for ti, (tidx, label) in enumerate(tab_defs):
@@ -1280,7 +1346,7 @@ class PanelsMixin:
         pygame.draw.line(self.screen, (38, 75, 52), (lx1, py), (lx1, py + PH))
 
         # Build filtered list
-        tab_filter = {1: "sheep", 2: "cow", 3: "chicken", 4: "horse"}.get(self._breed_tab)
+        tab_filter = {1: "sheep", 2: "cow", 3: "chicken", 4: "horse", 5: "goat"}.get(self._breed_tab)
         filtered = [e for e in all_tamed
                     if tab_filter is None or e.animal_id == tab_filter]
 
@@ -1324,8 +1390,12 @@ class PanelsMixin:
                 self.screen.blit(tag_s, (lx0 + LW - 30 - tag_s.get_width(), ry + 23))
 
             breed_ready = animal._breed_cooldown <= 0
-            dot_col = (75, 215, 100) if breed_ready else (175, 75, 75)
+            no_breed = getattr(animal, 'no_breed', False)
+            dot_col = (175, 75, 75) if no_breed else ((75, 215, 100) if breed_ready else (175, 75, 75))
             pygame.draw.circle(self.screen, dot_col, (lx0 + LW - 15, ry + ROW_H // 2), 5)
+            if no_breed:
+                nb_tag = self.small.render("✗", True, (210, 80, 80))
+                self.screen.blit(nb_tag, (lx0 + LW - 10 - nb_tag.get_width(), ry + 8))
 
             self._breed_list_rects[animal.uid] = row
 
@@ -1394,6 +1464,8 @@ class PanelsMixin:
             res_parts = [("Milk", getattr(animal, 'has_milk', False))]
         elif animal.animal_id == "chicken":
             res_parts = [("Egg", getattr(animal, 'has_egg', False))]
+        elif animal.animal_id == "goat":
+            res_parts = [("Milk", getattr(animal, 'has_milk', False))]
         elif animal.animal_id == "horse":
             broken = getattr(animal, '_broken', False)
             res_parts = [("Broken", broken)]
@@ -1416,68 +1488,85 @@ class PanelsMixin:
                          (stats_x, sy + 16), (rx0 + rw - 8, sy + 16))
         sy += 24
 
-        traits = animal.traits
-        BAR_W, BAR_H = 180, 10
+        traits  = animal.traits
+        geno    = getattr(animal, 'genotype', {})
+        BAR_W   = 80
+        BAR_H   = 8
+        COL_W   = 130  # width for one allele column
+
+        def _draw_allele_quant(label, gene_key, lo, hi, bar_col, label_w=60):
+            nonlocal sy
+            pair = geno.get(gene_key)
+            expressed = traits.get(gene_key.replace("_gene", ""), (lo + hi) / 2)
+            lbl_s = self.small.render(label, True, (150, 195, 165))
+            self.screen.blit(lbl_s, (stats_x, sy))
+            for ai, av in enumerate(pair if pair else [expressed, expressed]):
+                ax = stats_x + label_w + ai * (BAR_W + 14)
+                fill = max(0, min(BAR_W, int(BAR_W * (av - lo) / (hi - lo))))
+                pygame.draw.rect(self.screen, (22, 40, 30), (ax, sy + 1, BAR_W, BAR_H))
+                pygame.draw.rect(self.screen, bar_col, (ax, sy + 1, fill, BAR_H))
+                vl = self.small.render(f"{av:.2f}", True, (160, 205, 175))
+                self.screen.blit(vl, (ax + BAR_W + 3, sy))
+            exp_s = self.small.render(f"→{expressed:.2f}", True, (220, 240, 225))
+            self.screen.blit(exp_s, (stats_x + label_w + 2 * (BAR_W + 14) + 4, sy))
+            sy += 18
+
+        def _draw_allele_cat(label, gene_key, label_w=60):
+            nonlocal sy
+            pair = geno.get(gene_key)
+            expressed = traits.get(gene_key.replace("_gene", ""), "?")
+            lbl_s = self.small.render(label, True, (150, 195, 165))
+            self.screen.blit(lbl_s, (stats_x, sy))
+            if pair:
+                a_s = self.small.render(str(pair[0]), True, (180, 220, 195))
+                b_s = self.small.render(str(pair[1]), True, (180, 220, 195))
+                slash = self.small.render(" / ", True, (60, 90, 70))
+                self.screen.blit(a_s,   (stats_x + label_w, sy))
+                self.screen.blit(slash, (stats_x + label_w + a_s.get_width(), sy))
+                self.screen.blit(b_s,   (stats_x + label_w + a_s.get_width() + slash.get_width(), sy))
+                arr = self.small.render(f"→ {expressed}", True, (220, 240, 225))
+                self.screen.blit(arr, (stats_x + label_w + 2 * COL_W // 3 + 20, sy))
+            sy += 16
 
         if animal.animal_id == "horse":
-            spd_v = traits.get("speed_rating", 1.0)
-            spd_label = self.small.render("Speed", True, (150, 195, 165))
-            self.screen.blit(spd_label, (stats_x, sy))
-            spd_fill = max(0, min(BAR_W, int(BAR_W * (spd_v - 0.7) / 0.60)))
-            pygame.draw.rect(self.screen, (28, 48, 36), (stats_x + 60, sy + 1, BAR_W, BAR_H))
-            pygame.draw.rect(self.screen, (65, 155, 235), (stats_x + 60, sy + 1, spd_fill, BAR_H))
-            sv = self.small.render(f"{spd_v:.3f}", True, (175, 215, 185))
-            self.screen.blit(sv, (stats_x + 60 + BAR_W + 6, sy))
-            sy += 22
-
-            sta_v = traits.get("stamina_max", 1.0)
-            sta_label = self.small.render("Stamina", True, (150, 195, 165))
-            self.screen.blit(sta_label, (stats_x, sy))
-            sta_fill = max(0, min(BAR_W, int(BAR_W * (sta_v - 0.8) / 0.40)))
-            pygame.draw.rect(self.screen, (28, 48, 36), (stats_x + 60, sy + 1, BAR_W, BAR_H))
-            pygame.draw.rect(self.screen, (80, 210, 120), (stats_x + 60, sy + 1, sta_fill, BAR_H))
-            stav = self.small.render(f"{sta_v:.3f}", True, (175, 215, 185))
-            self.screen.blit(stav, (stats_x + 60 + BAR_W + 6, sy))
-            sy += 22
-
+            _draw_allele_quant("Speed",     "speed_gene",    0.7, 1.4, (65, 155, 235))
+            _draw_allele_quant("Stamina",   "stamina_gene",  0.8, 1.2, (80, 210, 120))
+            _draw_allele_quant("Endurance", "endurance_gene",0.7, 1.3, (100, 185, 240))
+            _draw_allele_quant("Gait",      "gait_gene",     0.7, 1.3, (160, 120, 230))
             temp = traits.get("temperament", "spirited")
-            temp_label = self.small.render("Temper", True, (150, 195, 165))
-            self.screen.blit(temp_label, (stats_x, sy))
+            temp_lbl = self.small.render("Temper", True, (150, 195, 165))
+            self.screen.blit(temp_lbl, (stats_x, sy))
             temp_cols = {"calm": (80, 200, 80), "spirited": (220, 180, 40), "wild": (220, 60, 60)}
             temp_s = self.small.render(temp.capitalize(), True, temp_cols.get(temp, (180, 180, 180)))
             self.screen.blit(temp_s, (stats_x + 60, sy))
-            sy += 22
-
+            sy += 16
             coat = traits.get("coat_color", (160, 115, 65))
-            coat_label = self.small.render("Coat", True, (150, 195, 165))
-            self.screen.blit(coat_label, (stats_x, sy))
+            coat_lbl = self.small.render("Coat", True, (150, 195, 165))
+            self.screen.blit(coat_lbl, (stats_x, sy))
             pygame.draw.rect(self.screen, coat, (stats_x + 60, sy, 24, 14))
             pygame.draw.rect(self.screen, (75, 108, 88), (stats_x + 60, sy, 24, 14), 1)
-            sy += 22
+            sy += 16
+            _draw_allele_cat("Pattern", "coat_pattern_gene")
+            _draw_allele_cat("Legs",    "leg_marking_gene")
+            _draw_allele_cat("Mane",    "mane_color_gene")
+            _draw_allele_cat("Marking", "face_marking_gene")
         else:
-            size_v = traits.get("size", 1.0)
-            siz_label = self.small.render("Size", True, (150, 195, 165))
-            self.screen.blit(siz_label, (stats_x, sy))
-            fill = int(BAR_W * (size_v - 0.85) / 0.30)
-            pygame.draw.rect(self.screen, (28, 48, 36), (stats_x + 50, sy + 1, BAR_W, BAR_H))
-            pygame.draw.rect(self.screen, (65, 185, 95), (stats_x + 50, sy + 1, fill, BAR_H))
-            sv = self.small.render(f"{size_v:.2f}x", True, (175, 215, 185))
-            self.screen.blit(sv, (stats_x + 50 + BAR_W + 6, sy))
-            sy += 22
+            _draw_allele_quant("Size",  "size_gene",        0.85, 1.15, (65, 185, 95), label_w=50)
+            _draw_allele_quant("Yield", "productivity_gene",0.7,  1.3,  (200, 160, 40), label_w=50)
+            if animal.animal_id == "sheep":
+                _draw_allele_quant("Fleece",  "fleece_gene", 0.7, 1.3, (200, 200, 255), label_w=50)
+                _draw_allele_cat("Wool",  "wool_color_gene", label_w=50)
+                _draw_allele_cat("Birth", "birth_gene",      label_w=50)
+            elif animal.animal_id == "cow":
+                _draw_allele_quant("Richness", "milk_richness_gene", 0.7, 1.3, (220, 200, 80), label_w=65)
+                _draw_allele_cat("Hide", "hide_gene", label_w=65)
+            elif animal.animal_id == "goat":
+                _draw_allele_quant("Richness", "milk_richness_gene", 0.7, 1.3, (220, 200, 80), label_w=65)
+                _draw_allele_cat("Coat", "coat_color_gene", label_w=65)
+            elif animal.animal_id == "chicken":
+                _draw_allele_quant("Lay Rate", "lay_rate_gene",  0.7, 1.3, (240, 200, 80), label_w=65)
+                _draw_allele_cat("Plumage",  "plumage_gene", label_w=65)
 
-            prod_v = traits.get("productivity", 1.0)
-            prod_label = self.small.render("Yield", True, (150, 195, 165))
-            self.screen.blit(prod_label, (stats_x, sy))
-            prod_fill = max(0, min(BAR_W, int(BAR_W * (prod_v - 0.7) / 0.60)))
-            pygame.draw.rect(self.screen, (28, 48, 36), (stats_x + 50, sy + 1, BAR_W, BAR_H))
-            prod_r = max(60, int(200 - (prod_v - 0.7) / 0.60 * 140))
-            prod_g = int(130 + (prod_v - 0.7) / 0.60 * 85)
-            pygame.draw.rect(self.screen, (prod_r, prod_g, 30), (stats_x + 50, sy + 1, prod_fill, BAR_H))
-            pv = self.small.render(f"{prod_v:.2f}x", True, (175, 215, 185))
-            self.screen.blit(pv, (stats_x + 50 + BAR_W + 6, sy))
-            sy += 22
-
-        if animal.animal_id != "horse":
             cs = traits.get("color_shift", (0, 0, 0))
             CB_W = 52
             cs_label = self.small.render("Color", True, (150, 195, 165))
@@ -1496,17 +1585,9 @@ class PanelsMixin:
                     pygame.draw.rect(self.screen, ch_col, (mid - fp, sy + 1, fp, BAR_H))
                 cl = self.small.render(ch_name, True, ch_col)
                 self.screen.blit(cl, (mid - cl.get_width() // 2, sy + BAR_H + 3))
+            sy += 22
 
-            def _tc(base, sh):
-                return tuple(max(0, min(255, int(base[i] + sh[i] * 255))) for i in range(3))
-            base_colors = {"sheep": (220, 220, 220), "cow": (140, 85, 45), "chicken": (235, 235, 210)}
-            swatch_col = _tc(base_colors.get(animal.animal_id, (200, 200, 200)), cs)
-            sw_x = stats_x + 50 + 3 * (CB_W + 4) + 10
-            pygame.draw.rect(self.screen, swatch_col, (sw_x, sy, 20, 20))
-            pygame.draw.rect(self.screen, (75, 108, 88), (sw_x, sy, 20, 20), 1)
-            sy += 36
-
-        mut = traits.get("mutation")
+        # Mutation gene — show carrier status
         _MUT_BADGE = {
             "albino":    ((240, 240, 255), (120, 120, 200)),
             "giant":     ((80,  140,  60), (210, 255, 185)),
@@ -1519,10 +1600,11 @@ class PanelsMixin:
             "miniature": "Tiny body  breed cooldown 60s",
             "golden":    "Drops a golden bonus resource",
         }
+        mut_pair = geno.get("mutation", [None, None])
+        mut      = traits.get("mutation")
         if mut is not None:
             bg_col, tx_col = _MUT_BADGE.get(mut, ((100, 100, 100), (220, 220, 220)))
-            badge_txt = f"★ {mut.upper()} MUTATION"
-            badge_s = self.small.render(badge_txt, True, tx_col)
+            badge_s = self.small.render(f"★ {mut.upper()} MUTATION", True, tx_col)
             badge_rect = pygame.Rect(stats_x, sy, badge_s.get_width() + 16, 20)
             pygame.draw.rect(self.screen, bg_col, badge_rect, border_radius=4)
             self.screen.blit(badge_s, (stats_x + 8, sy + 3))
@@ -1531,11 +1613,38 @@ class PanelsMixin:
             if hint:
                 hint_s = self.small.render(hint, True, (130, 175, 145))
                 self.screen.blit(hint_s, (stats_x, sy))
-                sy += 18
+                sy += 16
         else:
-            no_mut = self.small.render("No mutation", True, (55, 80, 65))
-            self.screen.blit(no_mut, (stats_x, sy))
-            sy += 18
+            # Check if carrier (one non-None allele)
+            carrier_type = next((a for a in mut_pair if a is not None), None)
+            if carrier_type is not None:
+                car_s = self.small.render(f"◈ CARRIER: {carrier_type}", True, (220, 175, 60))
+                self.screen.blit(car_s, (stats_x, sy))
+                sy += 16
+                hint_s = self.small.render("Hidden gene — breed two carriers for 25% expression", True, (120, 145, 110))
+                self.screen.blit(hint_s, (stats_x, sy))
+                sy += 16
+            else:
+                no_mut = self.small.render("No mutation gene", True, (55, 80, 65))
+                self.screen.blit(no_mut, (stats_x, sy))
+                sy += 16
+
+        # ── NO BREED TOGGLE ───────────────────────────────────────────
+        sy += 4
+        nb = getattr(animal, 'no_breed', False)
+        nb_col   = (110, 30, 30) if nb else (28, 52, 36)
+        nb_bdr   = (200, 60, 60) if nb else (60, 140, 80)
+        nb_txt   = "BREEDING: OFF" if nb else "BREEDING: ON"
+        nb_tc    = (240, 100, 100) if nb else (90, 200, 115)
+        nb_r = pygame.Rect(stats_x, sy, 130, 22)
+        pygame.draw.rect(self.screen, nb_col, nb_r, border_radius=4)
+        pygame.draw.rect(self.screen, nb_bdr, nb_r, 1, border_radius=4)
+        nb_s = self.small.render(nb_txt, True, nb_tc)
+        self.screen.blit(nb_s, (nb_r.centerx - nb_s.get_width() // 2, nb_r.centery - nb_s.get_height() // 2))
+        if not hasattr(self, '_breed_nb_rects'):
+            self._breed_nb_rects = {}
+        self._breed_nb_rects[animal.uid] = nb_r
+        sy += 26
 
         # ── LINEAGE ───────────────────────────────────────────────────
         lin_lbl = self.small.render("LINEAGE", True, (85, 155, 105))

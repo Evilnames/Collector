@@ -13,7 +13,8 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK
+from elevators import ElevatorCar
 
 SETTINGS_PATH = Path(__file__).parent / "settings.json"
 
@@ -394,6 +395,15 @@ def main():
             t0 = _t("  Player", t0)
             p.apply_save(data["player"])
             t0 = _t("  player.apply_save", t0)
+            # Resolve sculpture uid pointers now that Sculpture objects are loaded
+            if hasattr(w, "_pending_sculpture_positions"):
+                uid_map = {sc.uid: sc for sc in p.sculptures_created}
+                for pos, val in w._pending_sculpture_positions.items():
+                    if isinstance(val, dict) and "root" in val:
+                        w.sculpture_data[pos] = {"root": val["root"]}
+                    elif val in uid_map:
+                        w.sculpture_data[pos] = uid_map[val]
+                del w._pending_sculpture_positions
             return w, p, data["research"]
         world, player, research_data = _run_with_loading_screen(screen, "Loading", _do_load)
         research.apply_save(research_data)
@@ -443,6 +453,9 @@ def main():
         ui.active_garden_flowers = None
         ui.active_garden_pos = None
         ui.wardrobe_open = False
+        ui._jw_phase = "idle"
+        ui._jw_drag_uid = None
+        ui._sculpt_phase = "idle"
 
     def _any_ui_open():
         return any([ui.pause_open, ui.help_open, ui.research_open, ui.inventory_open, ui.crafting_open,
@@ -548,6 +561,26 @@ def main():
                         _close_all_ui()
                     continue
 
+                # Elevator floor navigation while riding
+                if player.riding_elevator is not None and not _any_ui_open():
+                    car = player.riding_elevator
+                    if event.key in (pygame.K_w, pygame.K_UP):
+                        stops = car.get_stops(world)
+                        if stops:
+                            car_by = int(round(car.car_y / BLOCK_SIZE))
+                            idx = min(range(len(stops)), key=lambda i: abs(stops[i] - car_by))
+                            if idx > 0:
+                                car.call(stops[idx - 1], world)
+                        continue
+                    elif event.key in (pygame.K_s, pygame.K_DOWN):
+                        stops = car.get_stops(world)
+                        if stops:
+                            car_by = int(round(car.car_y / BLOCK_SIZE))
+                            idx = min(range(len(stops)), key=lambda i: abs(stops[i] - car_by))
+                            if idx < len(stops) - 1:
+                                car.call(stops[idx + 1], world)
+                        continue
+
                 # Roaster: ENTER to stop roasting
                 if ui.refinery_open and ui.refinery_block_id == ROASTER_BLOCK:
                     ui.handle_roaster_keydown(event.key, player)
@@ -575,6 +608,28 @@ def main():
                 # Loom: ESC to close
                 if ui.refinery_open and ui.refinery_block_id == LOOM_BLOCK:
                     ui.handle_loom_keydown(event.key, player)
+
+                # Dairy Vat: SPACE to add culture
+                if ui.refinery_open and ui.refinery_block_id == DAIRY_VAT_BLOCK:
+                    ui.handle_dairy_vat_keydown(event.key, player)
+
+                # Aging Cave: C to care for wheel
+                if ui.refinery_open and ui.refinery_block_id == AGING_CAVE_BLOCK:
+                    ui.handle_aging_cave_keydown(event.key, player)
+
+                # Jewelry Workbench: text input for name phase
+                if ui.refinery_open and ui._jw_phase == "name_confirm":
+                    ui.handle_jewelry_keydown(event.key, getattr(event, "unicode", ""), player)
+
+                # Sculptor's Bench: Z=undo, ENTER=confirm, ESC=back
+                from blocks import SCULPTORS_BENCH as _SCULPTORS_BENCH
+                if ui.refinery_open and ui.refinery_block_id == _SCULPTORS_BENCH:
+                    ui.handle_sculptor_keydown(event.key, player)
+
+                # Pottery Wheel / Kiln: Z=undo, ENTER=confirm, SPACE=heat, ESC=back
+                from blocks import POTTERY_WHEEL_BLOCK as _PWB, POTTERY_KILN_BLOCK as _PKB
+                if ui.refinery_open and ui.refinery_block_id in (_PWB, _PKB):
+                    ui.handle_pottery_keydown(event.key, player)
 
                 # Wardrobe toggle (T = Textiles/Tailoring)
                 if event.key == pygame.K_t:
@@ -661,6 +716,14 @@ def main():
                         ui.collection_open = ui.refinery_open = ui.breeding_open = False
 
                 if event.key == pygame.K_e:
+                    # Dismount elevator if currently riding
+                    if player.riding_elevator is not None:
+                        car = player.riding_elevator
+                        car.rider = None
+                        player.x = car.shaft_x * BLOCK_SIZE + ElevatorCar.W + 4
+                        player.riding_elevator = None
+                        continue
+
                     # Dismount horse if currently riding
                     if player.mounted_horse is not None:
                         horse = player.mounted_horse
@@ -693,6 +756,7 @@ def main():
                     )
                     nearby_npc = _find_nearby_npc(world, player)
                     nearby_bed = player.get_nearby_bed()
+                    nearby_elev_stop = player.get_nearby_elevator_stop()
                     if nearby_auto is not None:
                         if ui.automation_open and ui.active_automation is nearby_auto:
                             ui.automation_open = False
@@ -726,6 +790,16 @@ def main():
                     elif nearby_bed is not None:
                         player.set_spawn(*nearby_bed)
                         print("Spawn point set to bed.")
+                    elif nearby_elev_stop is not None:
+                        bx, by = nearby_elev_stop
+                        car = next((c for c in world.elevator_cars if c.shaft_x == bx), None)
+                        if car is not None:
+                            car_by = int(round(car.car_y / BLOCK_SIZE))
+                            if car.state == "idle" and car_by == by and car.rider is None:
+                                car.rider = player
+                                player.riding_elevator = car
+                            elif car.state != "moving" or car_by != by:
+                                car.call(by, world)
                     else:
                         ui.npc_open = False
                         ui.active_npc = None
@@ -794,7 +868,7 @@ def main():
                 if not player.dead and not ui.cheat_open:
                     if ui.help_open:
                         ui._help_scroll = max(0, min(ui._help_max_scroll, ui._help_scroll - event.y * 20))
-                    elif ui.inventory_open or ui.crafting_open or ui.collection_open or ui.refinery_open or ui.chest_open or ui.breeding_open or ui.garden_open or ui.horse_breeding_open:
+                    elif ui.research_open or ui.inventory_open or ui.crafting_open or ui.collection_open or ui.refinery_open or ui.chest_open or ui.breeding_open or ui.garden_open or ui.horse_breeding_open:
                         ui.handle_scroll(event.y)
                     elif not _any_ui_open():
                         player.selected_slot = (player.selected_slot - event.y) % 8
@@ -802,10 +876,20 @@ def main():
             if event.type == pygame.MOUSEMOTION:
                 if ui.inventory_open:
                     ui.handle_inventory_drag(event.pos)
+                if ui._jw_drag_uid is not None:
+                    ui._jw_drag_pos = event.pos
 
             if event.type == pygame.MOUSEBUTTONUP:
                 if ui.inventory_open:
                     ui.handle_inventory_release(event.pos, player)
+                if ui._jw_drag_uid is not None:
+                    ui._handle_jewelry_drop(event.pos, player)
+                # End sculpt drag on any mouse release
+                if getattr(ui, '_sculpt_drag_mode', None) is not None:
+                    ui._sculpt_drag_mode = None
+                # End pottery wheel drag
+                if getattr(ui, '_wheel_drag_row', None) is not None:
+                    ui._wheel_drag_row = None
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if player.dead or ui.cheat_open:
@@ -932,6 +1016,14 @@ def main():
                             if pygame.Rect(isx - 4, isy - 4, ins.W + 8, ins.H + 8).collidepoint(mx, my):
                                 ui.open_insect_observation(ins)
                                 break
+                    # Bow firing — left-click with bow equipped fires an arrow
+                    if event.button == 1 and not player.dead:
+                        player.fire_arrow()
+                    # Sculptor right-click: restore stone in carve phase
+                    if event.button == 3 and ui.refinery_open:
+                        from blocks import SCULPTORS_BENCH as _SCULPTORS_BENCH_R
+                        if ui.refinery_block_id == _SCULPTORS_BENCH_R and ui._sculpt_phase == "carve":
+                            ui._handle_sculptor_bench_click(event.pos, player, right=True)
                     ui.handle_hotbar_click(event.pos, player)
 
         keys = pygame.key.get_pressed()
@@ -961,16 +1053,31 @@ def main():
         if ui.refinery_open and ui.refinery_block_id == SPINNING_WHEEL_BLOCK:
             ui.handle_spinning_wheel_keys(keys, dt, player)
 
+        # Sculptor's Bench: per-frame drag painting + hover tracking
+        if ui.refinery_open and getattr(ui, '_sculpt_phase', 'idle') == 'carve':
+            from blocks import SCULPTORS_BENCH as _SCULPTORS_BENCH_PF
+            if ui.refinery_block_id == _SCULPTORS_BENCH_PF:
+                ui._sculpt_update_drag(mouse_scr_pos, mouse_btns)
+
+        # Pottery: per-frame held key (SPACE for kiln heat) + wheel drag
+        from blocks import POTTERY_WHEEL_BLOCK as _PWB_PF, POTTERY_KILN_BLOCK as _PKB_PF
+        if ui.refinery_open and ui.refinery_block_id in (_PWB_PF, _PKB_PF):
+            ui.handle_pottery_keys(keys, dt, player)
+        if ui.refinery_open and ui.refinery_block_id == _PWB_PF and ui._wheel_phase == "shaping":
+            ui._handle_pottery_wheel_drag(mouse_scr_pos, mouse_btns)
+
         if ui.pause_open:
             renderer.draw_world(world, player)
             renderer.draw_player(player)
             renderer.draw_dropped_items(world.dropped_items)
             renderer.draw_entities(world.entities)
+            renderer.draw_arrows(world.arrows)
             renderer.draw_birds(world.birds)
             renderer.draw_insects(world.insects)
             renderer.draw_automations(world.automations)
             renderer.draw_farm_bots(world.farm_bots)
             renderer.draw_backhoes(world.backhoes, player)
+            renderer.draw_elevator_cars(world.elevator_cars)
             ui.draw(player, research, dt)
             pygame.display.flip()
             continue
@@ -1041,6 +1148,33 @@ def main():
         for entity in world.entities:
             entity.update(dt)
         world._player_ref = player
+
+        # Arrow projectile update + collision
+        if world.arrows:
+            from animals import HuntableAnimal
+            import pygame as _pg
+            for arrow in world.arrows:
+                if arrow.dead:
+                    continue
+                arrow.update()
+                arrow_rect = _pg.Rect(int(arrow.x), int(arrow.y), arrow.W, arrow.H)
+                for entity in world.entities:
+                    if isinstance(entity, HuntableAnimal) and not entity.dead:
+                        if arrow_rect.colliderect(entity.rect):
+                            drops = entity.on_arrow_hit(arrow.damage)
+                            arrow.dead = True
+                            if drops:
+                                if getattr(player, "master_hunter", False):
+                                    drops[0] = (drops[0][0], drops[0][1] + 1)
+                                for item_id, count in drops:
+                                    player._add_item(item_id, count)
+                                animal_id = entity.animal_id
+                                player.animals_hunted[animal_id] = player.animals_hunted.get(animal_id, 0) + 1
+                                player.pending_notifications.append(
+                                    ("Hunting", f"{animal_id.title()} hunted", None))
+                            break
+            world.arrows = [a for a in world.arrows if not a.dead]
+
         for bird in world.birds:
             bird.update(dt)
         for ins in world.insects:
@@ -1104,6 +1238,8 @@ def main():
                 ui._insect_obs_active = False
                 ui._insect_obs_failed = False
                 ui._insect_obs_insect = None
+        for car in world.elevator_cars:
+            car.update(dt, world, player)
         for automation in world.automations:
             automation.update(dt, world)
         for farm_bot in world.farm_bots:
@@ -1123,11 +1259,13 @@ def main():
         renderer.draw_world(world, player)
         renderer.draw_player(player)
         renderer.draw_entities(world.entities)
+        renderer.draw_arrows(world.arrows)
         renderer.draw_birds(world.birds)
         renderer.draw_insects(world.insects)
         renderer.draw_automations(world.automations)
         renderer.draw_farm_bots(world.farm_bots)
         renderer.draw_backhoes(world.backhoes, player)
+        renderer.draw_elevator_cars(world.elevator_cars, player)
         renderer.draw_dropped_items(world.dropped_items)
         renderer.draw_farm_sense(player, world)
         renderer.draw_mining_indicator(player)

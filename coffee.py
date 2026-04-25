@@ -20,6 +20,7 @@ class CoffeeBean:
     seed: int
     blend_components: list = field(default_factory=list)  # uids of source beans
     processing_method: str = ""  # "washed" | "natural" | "honey" | ""
+    terroir_quality: float = 0.0  # 0.0 = wild/unknown; >0 = farmed with soil care
 
 
 # Base flavor profiles per biodome
@@ -51,9 +52,10 @@ _FLAVOR_POOLS = {
 
 # Exclusive notes unlocked by processing method
 _PROCESSING_NOTES = {
-    "washed":  ["clean finish", "crisp acidity", "tea-like clarity"],
-    "natural": ["fermented", "peach", "wine", "blueberry", "tropical funk"],
-    "honey":   ["honey", "apricot", "nectarine", "white grape"],
+    "washed":    ["clean finish", "crisp acidity", "tea-like clarity"],
+    "natural":   ["fermented", "peach", "wine", "blueberry", "tropical funk"],
+    "honey":     ["honey", "apricot", "nectarine", "white grape"],
+    "anaerobic": ["lactic funk", "tropical fruit", "wine-like", "effervescent", "wild yeast"],
 }
 
 ROAST_LEVEL_DESCS = {
@@ -62,6 +64,7 @@ ROAST_LEVEL_DESCS = {
     "medium":  "Medium Roast — balanced, caramel, full flavour",
     "dark":    "Dark Roast — bold, smoky, low acidity",
     "charred": "Charred — burnt, bitter, ashy",
+    "ruined":  "Ruined — fermentation gone wrong",
 }
 
 ROAST_COLORS = {
@@ -70,6 +73,7 @@ ROAST_COLORS = {
     "medium":  (130,  80,  35),
     "dark":    ( 60,  35,  15),
     "charred": ( 25,  15,   8),
+    "ruined":  ( 80, 100,  40),
 }
 
 PROCESSING_METHODS = {
@@ -87,6 +91,13 @@ PROCESSING_METHODS = {
         "label": "Honey",
         "desc":  "Pulped but dried with mucilage intact. Sweet and complex.",
         "acidity": +0.05, "body": +0.05, "sweetness": +0.15, "earthiness": -0.05, "brightness": +0.05,
+    },
+    "anaerobic": {
+        "label": "Anaerobic",
+        "desc":  "Sealed oxygen-deprived fermentation. Intense, volatile. 20% failure chance.",
+        "acidity": -0.05, "body": +0.15, "sweetness": +0.30, "earthiness": +0.05, "brightness": +0.05,
+        "variance_mult": 2.5,   # re-jitters all attributes after base modifier
+        "failure_chance": 0.20, # chance the batch is ruined → vinegar_brew item
     },
 }
 
@@ -116,17 +127,31 @@ def _clamp(v, lo=0.0, hi=1.0):
     return max(lo, min(hi, v))
 
 
-def apply_processing(bean: "CoffeeBean", method: str):
-    """Mutates bean attributes based on processing method; called before roasting."""
+def apply_processing(bean: "CoffeeBean", method: str) -> bool:
+    """Mutates bean attributes based on processing method; called before roasting.
+    Returns False if the batch was ruined (anaerobic failure); caller should handle."""
     mods = PROCESSING_METHODS.get(method)
     if not mods:
-        return
+        return True
     bean.processing_method = method
     bean.acidity    = _clamp(bean.acidity    + mods["acidity"])
     bean.body       = _clamp(bean.body       + mods["body"])
     bean.sweetness  = _clamp(bean.sweetness  + mods["sweetness"])
     bean.earthiness = _clamp(bean.earthiness + mods["earthiness"])
     bean.brightness = _clamp(bean.brightness + mods["brightness"])
+
+    # Anaerobic: secondary jitter pass and possible failure
+    if method == "anaerobic":
+        rng = random.Random(bean.seed ^ 0xA3B7)
+        if rng.random() < mods["failure_chance"]:
+            bean.roast_level = "ruined"
+            bean.flavor_notes = ["acetic acid", "over-fermented"]
+            return False  # ruined batch
+        sigma = 0.08 * mods["variance_mult"]
+        for attr in ("acidity", "body", "sweetness", "earthiness", "brightness"):
+            setattr(bean, attr, _clamp(getattr(bean, attr) + rng.gauss(0, sigma)))
+
+    return True
 
 
 def generate_flavor_notes(bean: "CoffeeBean") -> list:
@@ -164,7 +189,8 @@ class CoffeeGenerator:
         self._world_seed = world_seed
         self._counter = 0
 
-    def generate(self, biodome: str) -> "CoffeeBean":
+    def generate(self, biodome: str, terroir: float = 0.0) -> "CoffeeBean":
+        """Generate a raw coffee bean. terroir=0 for wild harvest; 0–1 for farmed soil care."""
         self._counter += 1
         seed = (self._world_seed * 31 + self._counter * 7919) & 0xFFFFFFFF
         uid = hashlib.md5(f"coffee_{seed}_{self._counter}".encode()).hexdigest()[:12]
@@ -172,8 +198,11 @@ class CoffeeGenerator:
         profile = BIOME_FLAVOR_PROFILES.get(biodome, BIOME_FLAVOR_PROFILES["tropical"])
         rng = random.Random(seed)
 
+        # Well-tended soil narrows jitter (more predictable); 0.08 → 0.03 at max terroir.
+        jitter_sigma = 0.08 - terroir * 0.05
+
         def jitter(base):
-            return _clamp(base + rng.gauss(0, 0.08))
+            return _clamp(base + rng.gauss(0, jitter_sigma))
 
         bean = CoffeeBean(
             uid=uid,
@@ -189,13 +218,27 @@ class CoffeeGenerator:
             brightness=jitter(profile["brightness"]),
             flavor_notes=[],
             seed=seed,
+            terroir_quality=terroir,
         )
+
+        # Apply terroir bonuses: fertility → body+sweetness; moisture → acidity+brightness
+        if terroir > 0.0:
+            # Split terroir into fertility-half and moisture-half for distinct effects
+            t = terroir
+            bean.body       = _clamp(bean.body       + t * 0.12)
+            bean.sweetness  = _clamp(bean.sweetness  + t * 0.10)
+            bean.acidity    = _clamp(bean.acidity    + t * 0.08)
+            bean.brightness = _clamp(bean.brightness + t * 0.08)
+            bean.earthiness = _clamp(bean.earthiness - t * 0.06)  # well-tended = less earthy
+
         return bean
 
 
 def apply_roast_result(bean: "CoffeeBean", temp_at_stop: float,
                        timing_score: float, temp_control_score: float,
                        penalties: int):
+    if bean.roast_level == "ruined":
+        return  # anaerobic failure — already finalized in apply_processing
     if temp_at_stop < 0.25:
         bean.roast_level = "green"
     elif temp_at_stop < 0.45:
@@ -252,13 +295,15 @@ def make_blend(components: list) -> "CoffeeBean":
     return bean
 
 
-def get_brew_output_id(method: str, roast_quality: float) -> str:
+def get_brew_output_id(method: str, roast_quality: float, herb: str = "") -> str:
     if roast_quality >= 0.7:
         tier = "_superior"
     elif roast_quality >= 0.4:
         tier = "_fine"
     else:
         tier = ""
+    if herb and herb in HERB_PAIRINGS:
+        return f"{method}{tier}_{herb}"
     return f"{method}{tier}"
 
 
@@ -287,6 +332,17 @@ BUFF_DESCS = {
     "clarity":   "Collect radius +50%",
     "endurance": "Hunger drain -40%",
     "strength":  "Pick power +1",
+}
+
+# Dried herbs that can be added to brews; each gives a secondary herb_buff
+# at 40% of the standard potion duration.
+HERB_PAIRINGS = {
+    "dried_ginger":    {"name": "Ginger",    "herb_buff": "haste",      "herb_buff_duration": 24.0, "note": "warming spice"},
+    "dried_mint":      {"name": "Mint",      "herb_buff": "keen_eye",   "herb_buff_duration": 36.0, "note": "cool clarity"},
+    "dried_rosemary":  {"name": "Rosemary",  "herb_buff": "focus",      "herb_buff_duration": 36.0, "note": "woodsy lift"},
+    "dried_lavender":  {"name": "Lavender",  "herb_buff": "soothing",   "herb_buff_duration": 36.0, "note": "floral calm"},
+    "dried_chamomile": {"name": "Chamomile", "herb_buff": "resilience", "herb_buff_duration": 36.0, "note": "gentle body"},
+    "dried_garlic":    {"name": "Garlic",    "herb_buff": "fortune",    "herb_buff_duration": 48.0, "note": "pungent earth"},
 }
 
 BIOME_DISPLAY_NAMES = {

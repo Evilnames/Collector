@@ -303,6 +303,81 @@ MINT_CROP_MATURE        = 310  # harvest → mint + seed; perennial
 ROSEMARY_BUSH           = 311  # surface bush; drops rosemary_seed
 ROSEMARY_CROP_YOUNG     = 312
 ROSEMARY_CROP_MATURE    = 313  # harvest → rosemary + seed; perennial
+THYME_BUSH              = 314
+THYME_CROP_YOUNG        = 315
+THYME_CROP_MATURE       = 316
+SAGE_BUSH               = 317
+SAGE_CROP_YOUNG         = 318
+SAGE_CROP_MATURE        = 319
+BASIL_BUSH              = 320
+BASIL_CROP_YOUNG        = 321
+BASIL_CROP_MATURE       = 322
+OREGANO_BUSH            = 323
+OREGANO_CROP_YOUNG      = 324
+OREGANO_CROP_MATURE     = 325
+DILL_BUSH               = 326
+DILL_CROP_YOUNG         = 327
+DILL_CROP_MATURE        = 328
+FENNEL_BUSH             = 329
+FENNEL_CROP_YOUNG       = 330
+FENNEL_CROP_MATURE      = 331
+TARRAGON_BUSH           = 332
+TARRAGON_CROP_YOUNG     = 333
+TARRAGON_CROP_MATURE    = 334
+LEMON_BALM_BUSH         = 335
+LEMON_BALM_CROP_YOUNG   = 336
+LEMON_BALM_CROP_MATURE  = 337
+ECHINACEA_BUSH          = 338
+ECHINACEA_CROP_YOUNG    = 339
+ECHINACEA_CROP_MATURE   = 340
+VALERIAN_BUSH           = 341
+VALERIAN_CROP_YOUNG     = 342
+VALERIAN_CROP_MATURE    = 343
+ST_JOHNS_WORT_BUSH      = 344
+ST_JOHNS_WORT_CROP_YOUNG= 345
+ST_JOHNS_WORT_CROP_MATURE=346
+YARROW_BUSH             = 347
+YARROW_CROP_YOUNG       = 348
+YARROW_CROP_MATURE      = 349
+BERGAMOT_BUSH           = 350
+BERGAMOT_CROP_YOUNG     = 351
+BERGAMOT_CROP_MATURE    = 352
+WORMWOOD_BUSH           = 353
+WORMWOOD_CROP_YOUNG     = 354
+WORMWOOD_CROP_MATURE    = 355
+RUE_BUSH                = 356
+RUE_CROP_YOUNG          = 357
+RUE_CROP_MATURE         = 358
+LEMON_VERBENA_BUSH      = 359
+LEMON_VERBENA_CROP_YOUNG= 360
+LEMON_VERBENA_CROP_MATURE=361
+HYSSOP_BUSH             = 362
+HYSSOP_CROP_YOUNG       = 363
+HYSSOP_CROP_MATURE      = 364
+CATNIP_BUSH             = 365
+CATNIP_CROP_YOUNG       = 366
+CATNIP_CROP_MATURE      = 367
+WOOD_SORREL_BUSH        = 368
+WOOD_SORREL_CROP_YOUNG  = 369
+WOOD_SORREL_CROP_MATURE = 370
+MARJORAM_BUSH           = 371
+MARJORAM_CROP_YOUNG     = 372
+MARJORAM_CROP_MATURE    = 373
+SAVORY_BUSH             = 374
+SAVORY_CROP_YOUNG       = 375
+SAVORY_CROP_MATURE      = 376
+ANGELICA_BUSH           = 377
+ANGELICA_CROP_YOUNG     = 378
+ANGELICA_CROP_MATURE    = 379
+BORAGE_BUSH             = 380
+BORAGE_CROP_YOUNG       = 381
+BORAGE_CROP_MATURE      = 382
+COMFREY_BUSH            = 383
+COMFREY_CROP_YOUNG      = 384
+COMFREY_CROP_MATURE     = 385
+MUGWORT_BUSH            = 386
+MUGWORT_CROP_YOUNG      = 387
+MUGWORT_CROP_MATURE     = 388
 BAIT_STATION_BLOCK      = 314  # placed Bait Station; crafts fishing bait
 CHICKPEA_CROP_YOUNG     = 315
 CHICKPEA_CROP_MATURE    = 316
@@ -534,6 +609,305 @@ POLYNESIAN_CARVED  = 511  # Polynesian tapa/carved tiki pattern
 MOORISH_COLUMN     = 512  # Slender Moorish column with muqarnas capital
 PORTUGUESE_CORK    = 513  # Portuguese cork-board wall panel
 
+# --- Cheese supply chain ---
+DAIRY_VAT_BLOCK    = 514  # placed Dairy Vat (curdling mini-game)
+CHEESE_PRESS_BLOCK = 515  # placed Cheese Press (pressing + type selection)
+AGING_CAVE_BLOCK   = 516  # placed Aging Cave (duration + care aging)
+
+# --- Hunting supply chain ---
+FLETCHING_TABLE_BLOCK = 517  # placed Fletching Table; crafts bows and arrows
+
+# --- Geological strata (replace generic STONE at increasing depths) ---
+LIMESTONE_STONE = 518   # depth 15–60
+GRANITE_STONE   = 519   # depth 60–120
+BASALT_STONE    = 520   # depth 120–180
+MAGMATIC_STONE  = 521   # depth 180+
+
+# --- Ore processing ---
+SMELTER_BLOCK        = 522   # placed Smelter; converts raw ore → refined metal
+ANAEROBIC_TANK_BLOCK = 523   # placed Anaerobic Tank; advanced coffee processing
+
+# --- Glass Kiln station + glass blocks ---
+GLASS_KILN_BLOCK        = 524  # placed Glass Kiln; smelts sand + dye extracts into glass
+CLEAR_GLASS             = 525  # plain clear glass pane
+STAINED_GLASS_GOLDEN    = 526  # golden dye stained glass
+STAINED_GLASS_CRIMSON   = 527  # crimson dye stained glass
+STAINED_GLASS_ROSE      = 528  # rose dye stained glass
+STAINED_GLASS_COBALT    = 529  # cobalt dye stained glass
+STAINED_GLASS_VIOLET    = 530  # violet dye stained glass
+STAINED_GLASS_VERDANT   = 531  # verdant dye stained glass
+STAINED_GLASS_AMBER     = 532  # amber dye stained glass
+STAINED_GLASS_IVORY     = 533  # ivory dye stained glass
+CATHEDRAL_WINDOW        = 534  # ornate Gothic arch window
+MOSAIC_GLASS            = 535  # multi-color mosaic tile glass
+SMOKED_GLASS            = 536  # dark tinted smoked glass
+
+# --- Elevator system ---
+ELEVATOR_STOP_BLOCK  = 537  # call station placed at each floor
+ELEVATOR_CABLE_BLOCK = 538  # vertical shaft connecting stops (same x-column)
+
+# --- Additional glass varieties ---
+RIBBED_GLASS            = 539  # vertical ribbed texture
+HAMMERED_GLASS          = 540  # irregular hammered surface
+CRACKLED_GLASS          = 541  # ice-crackle pattern
+OCULUS_WINDOW           = 542  # circular porthole with spokes
+LANCET_WINDOW           = 543  # tall narrow Gothic lancet
+DIAMOND_PANE            = 544  # classic diamond-grid leaded panes
+SEA_GLASS               = 545  # frosted seafoam beach glass
+MIRROR_GLASS            = 546  # polished silver-mirror surface
+IRIDESCENT_GLASS        = 547  # rainbow oil-slick shimmer
+SUNSET_GLASS            = 548  # warm amber-to-rose gradient panes
+OBSIDIAN_GLASS          = 549  # volcanic black glass from obsidian
+CRYSTAL_GLASS           = 550  # pure crystal with sparkle facets
+JEWELRY_WORKBENCH_BLOCK = 551  # placed Jewelry Workbench (custom jewelry mini-game)
+
+# --- Garden Workshop system ---
+GARDEN_WORKSHOP_BLOCK = 552  # placed Garden Workshop (Alhambra / Italian garden crafting)
+ZELLIGE_BLUE          = 553  # Moorish glazed geometric tile — cobalt blue
+ZELLIGE_TERRACOTTA    = 554  # Moorish glazed geometric tile — warm terracotta
+ZELLIGE_EMERALD       = 555  # Moorish glazed geometric tile — deep emerald
+ZELLIGE_WHITE         = 556  # Moorish glazed geometric tile — ivory white
+GARDEN_STAR_TILE      = 557  # dark stone with 8-pointed star inlay
+GEOMETRIC_MOSAIC      = 558  # multi-colour diamond/triangle mosaic paving
+WATER_CHANNEL         = 559  # narrow acequia rill; still water strip
+ORNAMENTAL_POOL       = 560  # shallow reflecting pool surface
+FOUNTAIN_BASIN        = 561  # carved stone fountain basin with jet
+TIERED_FOUNTAIN       = 562  # two-tier stone fountain
+HORSESHOE_ARCH        = 563  # classic Moorish pointed horseshoe arch
+MUQARNAS_PANEL        = 564  # honeycomb stalactite plaster corbel
+ARABESQUE_SCREEN      = 565  # pierced geometric stone screen
+GARDEN_COLUMN         = 566  # fluted stone column shaft
+MARBLE_PLINTH         = 567  # pedestal / column base with molding
+GARDEN_OBELISK        = 568  # tall tapered stone obelisk
+TOPIARY_CONE          = 569  # clipped evergreen cone topiary
+TOPIARY_SPHERE        = 570  # clipped evergreen sphere topiary
+BOX_HEDGE             = 571  # formal low clipped box hedge
+CLIMBING_ROSE         = 572  # roses climbing a timber trellis
+STONE_BENCH           = 573  # stone garden bench
+STONE_URN             = 574  # large decorative stone urn / vase
+TERRACOTTA_PLANTER    = 575  # large terracotta garden pot
+SUNDIAL               = 576  # garden sundial on stone pedestal
+GARDEN_LANTERN        = 577  # Moorish-style iron lantern
+GRAVEL_PATH           = 578  # fine crushed-stone garden path
+MOSAIC_PATH           = 579  # ornamental coloured-stone mosaic path
+TERRACOTTA_PATH       = 580  # warm terracotta floor tile path
+COBBLE_CIRCLE         = 581  # circular cobblestone centrepiece
+
+# --- Sculpture system ---
+SCULPTURE_BLOCK_ROOT  = 582  # bottom block of a player-carved sculpture
+SCULPTURE_BLOCK_BODY  = 583  # upper continuation blocks of a tall sculpture
+SCULPTORS_BENCH       = 584  # crafting station for the sculpture mini-game
+
+# --- Garden Workshop extension blocks ---
+PERGOLA_POST          = 585  # timber pergola upright with climbing vine
+WISTERIA_ARCH         = 586  # stone arch draped in purple wisteria
+GARDEN_GATE           = 587  # ornamental wrought-iron gate panel
+LOW_GARDEN_WALL       = 588  # coped stone garden boundary wall
+POOL_COPING           = 589  # flat stone edge for pools and channels
+STEPPING_STONE        = 590  # large flat irregular stepping stone in grass
+OPUS_VERMICULATUM     = 591  # fine Roman worm-path mosaic floor
+PORPHYRY_TILE         = 592  # deep purple-red igneous stone floor tile
+BRICK_EDGING          = 593  # soldier-course brick border strip
+SPIRAL_TOPIARY        = 594  # spiraling clipped column topiary
+MAZE_HEDGE            = 595  # tall dense hedge for formal garden mazes
+WISTERIA_WALL         = 596  # wall surface cascading in purple wisteria
+POTTED_CITRUS         = 597  # orange/lemon tree in terracotta pot
+MARBLE_STATUE         = 598  # classical draped marble figure on base
+MARBLE_BIRDBATH       = 599  # ornate stone birdbath on pedestal
+GARDEN_TABLE          = 600  # low stone garden table
+IRON_TRELLIS          = 601  # decorative wrought-iron trellis panel
+NASRID_PANEL          = 602  # elaborate Alhambra hall carved plaster
+SCALLOP_NICHE         = 603  # shell-shaped Moorish wall niche
+TERRACE_BALUSTRADE    = 604  # Italian terrace balustraded railing section
+
+# --- Japanese garden blocks ---
+ZEN_GRAVEL          = 605  # raked dry-garden gravel with rake-line texture
+KARESANSUI_ROCK     = 606  # standalone dry-landscape garden rock
+MOSS_CARPET         = 607  # soft dense green moss ground cover
+TSUKUBAI            = 608  # low stone water basin with bamboo ladle
+TORO_LANTERN        = 609  # tall stone tōrō garden lantern on pedestal
+YUKIMI_LANTERN      = 610  # wide-capped snow-viewing yukimi-dōrō lantern
+BAMBOO_FENCE_JP     = 611  # woven bamboo fence panel
+ROJI_STONE          = 612  # irregular flat roji path stone in moss
+PINE_TOPIARY_JP     = 613  # cloud-pruned niwaki pine
+JAPANESE_MAPLE      = 614  # Japanese maple with red-orange autumn leaves
+SHISHI_ODOSHI       = 615  # bamboo shishi-odoshi deer-scarer
+RED_ARCH_BRIDGE     = 616  # red lacquer taiko arched garden bridge
+WAVE_CERAMIC        = 617  # blue-white nami wave pattern ceramic floor
+ZEN_SAND_RING       = 618  # flat sand with concentric raked circles
+BAMBOO_GATE_JP      = 619  # rustic bamboo kakehi garden gate
+WABI_STONE          = 620  # weathered moss-covered tachi-ishi standing stone
+CHERRY_ARCH         = 621  # arch draped in pink sakura cherry blossom
+TATAMI_PAVING       = 622  # flat square stone with subtle tatami grid
+IKEBANA_STONE       = 623  # flat presentation stone for flower arrangement
+KANJI_STONE         = 624  # carved stone with calligraphic brushstroke
+MAPLE_LEAF_TILE     = 625  # stone tile with autumn maple-leaf inlay
+NOREN_PANEL         = 626  # split indigo fabric noren entrance curtain
+TSURU_TILE          = 627  # crane motif auspicious ceramic floor tile
+PINE_SCREEN_JP      = 628  # pine-and-moon painted shōji-style screen
+KARE_BRIDGE         = 629  # flat stone bridge crossing dry gravel stream
+
+# --- Chinese garden blocks ---
+PEBBLE_MOSAIC_CN    = 630  # traditional luanshi cobblestone pebble mosaic
+ZIGZAG_BRIDGE       = 631  # segment of the classic jiuqu nine-turn bridge
+CLOUD_WALL          = 632  # white-plastered wall with cloud-shaped leaking window
+DRAGON_WALL_CN      = 633  # wall crest carved with sinuous dragon
+LOTUS_POND          = 634  # water surface with floating lotus flowers
+HEX_PAVILION_TILE   = 635  # hexagonal six-sided pavilion floor tile
+COMPASS_PAVING      = 636  # large stone compass-rose medallion
+WAVE_BALUSTRADE_CN  = 637  # cloud-and-wave carved stone balustrade
+CERAMIC_SEAT        = 638  # blue-and-white porcelain barrel garden seat
+BONSAI_TRAY         = 639  # flat stone tray with miniature potted bonsai
+SCHOLAR_SCREEN      = 640  # lattice screen framing a scholar's rock viewing window
+CHRYSANTHEMUM_TILE  = 641  # ceramic tile with chrysanthemum roundel
+PLUM_BLOSSOM_TILE   = 642  # ceramic tile with plum-blossom meihua pattern
+MOON_PAVEMENT       = 643  # circular moon-gate shaped stone paving inset
+BAMBOO_GROVE        = 644  # dense cluster of green bamboo stalks
+OSMANTHUS_BUSH      = 645  # sweet osmanthus guihua flowering shrub
+WATER_LILY_TILE     = 646  # water tile with floating lily pads
+KOI_POND            = 647  # ornamental koi pond with colourful fish visible
+LAKESIDE_ROCK       = 648  # low flat rock at a water garden's edge
+CLOUD_COLLAR_TILE   = 649  # ruyi cloud-collar shaped decorative floor tile
+IMPERIAL_PAVING     = 650  # large-format imperial huabiao courtyard stone
+PAVILION_COLUMN_CN  = 651  # red lacquered dougong pavilion column
+EIGHT_DIAGRAM       = 652  # bagua eight-trigram carved stone tile
+TEA_HOUSE_STEP      = 653  # worn stone step leading to a teahouse entrance
+LANTERN_FESTIVAL    = 654  # red paper lanterns strung on a cord
+
+# --- Renaissance garden blocks ---
+# Classical architecture
+IONIC_COLUMN_BASE   = 655  # Ionic column with volute capital and fluted shaft
+DORIC_ENTABLATURE   = 656  # Doric frieze band with triglyphs and metopes
+RUSTICATED_BASE     = 657  # heavy V-jointed rusticated stone plinth
+GARDEN_LOGGIA       = 658  # open colonnaded loggia arch bay
+TRIUMPHAL_ARCH_R    = 659  # classical Roman-style triumphal arch
+EXEDRA_SEAT         = 660  # curved semicircular stone exedra bench
+HERM_PILLAR         = 661  # classical herm/term boundary marker pillar
+NYMPHAEUM_PANEL     = 662  # grotto niche with shell and cascade decoration
+GROTTO_STONE        = 663  # rough tufa/rustic grotto stalactite stonework
+AMPHITHEATER_TIER   = 664  # curved green theater seating tier
+# Water features
+GIOCHI_ACQUA        = 665  # surprise water jet hidden in paving (giochi d'acqua)
+RILL_BLOCK          = 666  # long straight formal water rill channel
+CASCADE_BLOCK       = 667  # stepped water cascade element
+GROTTO_POOL         = 668  # dark mossy grotto pool surface
+WALL_FOUNTAIN       = 669  # wall-mounted grotesque mask fountain
+BASIN_SURROUND      = 670  # ornate carved stone basin rim
+CANAL_BLOCK         = 671  # formal straight garden canal
+TERME_POOL          = 672  # heated bathing/terme pool section
+# Parterre and planting
+PARTERRE_BRODERIE   = 673  # low clipped box embroidery parterre bed
+PARTERRE_COMPARTMENT= 674  # geometric parterre garden compartment
+ALLEE_TREE          = 675  # clipped allée tree for formal avenue
+PLEACHED_HEDGE      = 676  # trained pleached lime/hornbeam screen
+ESPALIER_WALL       = 677  # fruit tree trained flat against a wall
+KNOT_GARDEN         = 678  # interlaced Renaissance knot garden bed
+TURF_THEATER        = 679  # grassy amphitheater-style turf step
+CARPET_BED          = 680  # colorful Victorian-style carpet bedding
+# Paths and flooring
+OPUS_SECTILE        = 681  # marble cut-shape geometric opus sectile floor
+TRAVERTINE_FLOOR    = 682  # warm Roman travertine stone floor tile
+HERRINGBONE_GARDEN  = 683  # outdoor herringbone brick garden path
+RAMP_STONE          = 684  # gentle stone ramp / slope block
+GARDEN_STEPS        = 685  # classical stone garden steps
+SAND_ALLEE          = 686  # compacted sand formal allée path
+PATTERNED_PAVEMENT  = 687  # complex two-tone geometric pavement
+INLAID_MARBLE       = 688  # colored marble geometric inlay floor
+# Furnishings and decorative
+TALL_SUNDIAL        = 689  # tall sundial on ornate carved pedestal
+STONE_VASE          = 690  # large classical stone amphora/vase
+STONE_SPHERE        = 691  # decorative stone ball finial on plinth
+CURVED_BENCH        = 692  # curved stone garden exedra bench section
+ORNATE_GATE         = 693  # ornate wrought-iron scrollwork garden gate
+LEAD_PLANTER        = 694  # lead-lined classical garden planter
+TERRACE_URN         = 695  # large terrace urn on tall pedestal
+STONE_PINEAPPLE     = 696  # stone pineapple finial (symbol of hospitality)
+# Structural elements
+GROTTO_ARCH         = 697  # rustic grotto arch with tufa/stalactite trim
+PERGOLA_BEAM        = 698  # horizontal pergola beam/rafter with vine
+LOGGIA_ARCH         = 699  # open loggia arch with paired columns
+GARDEN_WALL_NICHE   = 700  # alcoved garden wall niche for a statue
+ORANGERY_WINDOW     = 701  # tall orangery/greenhouse arched window
+BELVEDERE_PANEL     = 702  # belvedere garden tower wall section
+BOSCO_TREE          = 703  # wild bosco/wilderness garden tree
+GIARDINO_SEGRETO    = 704  # secret garden high enclosed wall panel
+
+# --- Rare sculptable stone veins (natural underground deposits) ---
+MARBLE_VEIN         = 705  # white/gray veined marble; depth 25-80, sedimentary
+ALABASTER_VEIN      = 706  # warm ivory alabaster; depth 15-55, sedimentary/temperate
+VERDITE_VEIN        = 707  # deep forest-green verdite; depth 60-140, igneous
+ONYX_VEIN           = 708  # near-black with white banding; depth 130-240, igneous
+
+# --- Placed blocks for the rare stones ---
+ALABASTER_BLOCK     = 709  # smooth ivory alabaster building block
+VERDITE_BLOCK       = 710  # polished deep-green verdite tile
+ONYX_BLOCK          = 711  # polished black onyx with faint banding
+
+# --- Renaissance palace blocks (Artisan Bench / Garden Workshop) ---
+# Facade stonework
+PIETRA_SERENA        = 712  # blue-grey Florentine sandstone (Brunelleschi)
+TRAVERTINE_WALL      = 713  # cut Roman travertine ashlar block with pitting
+MARBLE_FACADE        = 714  # white Carrara marble smooth wall panel
+RUSTICATED_QUOIN     = 715  # bossage rusticated corner quoin
+BICOLOR_MARBLE       = 716  # two-tone white/green Florentine marble inlay
+PINK_GRANITE_BASE    = 717  # polished pink granite socle / plinth
+BLIND_ARCH           = 718  # decorative blind arch recess in ashlar wall
+CONSOLE_CORNICE      = 719  # projecting modillion/console bracket cornice
+# Columns and pilasters
+CORINTHIAN_CAPITAL   = 720  # acanthus-leaf Corinthian column capital
+GIANT_PILASTER       = 721  # colossal-order flat fluted pilaster strip
+ENGAGED_COLUMN       = 722  # half-round fluted column engaged in wall
+ATLAS_FIGURE         = 723  # male atlante/telamon figure support column
+CARYATID_COLUMN      = 724  # female caryatid draped figure column
+COMPOSITE_CAPITAL    = 725  # Ionic volutes + Corinthian acanthus composite capital
+# Interior walls
+INTARSIA_PANEL       = 726  # inlaid wood geometric intarsia wall panel
+STUDIOLO_WALL        = 727  # trompe-l'oeil studiolo open-cabinet panel
+GILT_LEATHER         = 728  # embossed gilded leather wall covering
+FRESCO_LUNETTE       = 729  # arched fresco-painted lunette panel
+WAINSCOT_MARBLE      = 730  # lower marble wall wainscoting strip
+TAPESTRY_FRAME       = 731  # gilded carved frame for hanging tapestry
+# Ceilings
+LACUNAR_CEILING      = 732  # deep coffered lacunar ceiling with rosettes
+BARREL_FRESCO        = 733  # barrel vault with painted fresco interior
+GOLDEN_CEILING       = 734  # gilded flat palatial coffered ceiling
+GROTESQUE_VAULT      = 735  # Renaissance grotesque painted vault panel
+CUPOLA_OCULUS        = 736  # painted dome with central light oculus
+# Floors
+COSMATESQUE_FLOOR    = 737  # coloured Cosmatesque marble geometric floor
+TERRAZZO_FLOOR_REN   = 738  # Venetian terrazzo aggregate chip floor
+OPUS_ALEXANDRINUM    = 739  # porphyry and granite concentric medallion floor
+MARBLE_MEDALLION_REN = 740  # large circular marble floor inlay medallion
+PALACE_FLOOR_TILE    = 741  # large polished stone palace floor tile
+# Doorways and windows
+PALACE_PORTAL        = 742  # grand classical palace entrance portal arch
+AEDICULE_FRAME       = 743  # tabernacle / aedicule pedimented door frame
+THERMAL_WINDOW       = 744  # semicircular Diocletian thermal window
+BIFORA_WINDOW        = 745  # divided twin-arch window with central column
+SERLIANA_WINDOW      = 746  # Serliana triple-arch Venetian window
+PALAZZO_BALCONY      = 747  # projecting balustraded palazzo balcony
+# Arches and vaulting
+ROMAN_ARCH_REN       = 748  # plain semicircular classical Roman arch
+BARREL_VAULT_COFFER  = 749  # coffered barrel vault ceiling piece
+PENDENTIVE_BLOCK     = 750  # triangular dome pendentive transition
+GROIN_VAULT          = 751  # groin cross-vault ceiling with diagonal ribs
+# Fireplaces and niches
+RENAISSANCE_MANTEL   = 752  # carved marble fireplace mantelpiece
+CHIMNEY_BREAST_REN   = 753  # projecting stone chimney breast
+PEDIMENTED_NICHE     = 754  # triangular-pedimented wall niche for statuary
+SHELL_NICHE_REN      = 755  # shell-hooded decorative wall niche
+# Decorative ornament
+CARTOUCHE_REN        = 756  # carved stone cartouche / shield surround
+PUTTI_FRIEZE         = 757  # cherub putti relief frieze band
+FESTOON_PANEL        = 758  # fruit and flower festoon garland panel
+TROPHY_PANEL_REN     = 759  # armour and weapons trophy carved relief
+MEDALLION_PORTRAIT   = 760  # round portrait bust medallion in carved frame
+LAUREL_FRIEZE        = 761  # classical laurel-wreath border frieze
+
+# --- Pottery & Ceramics ---
+POTTERY_WHEEL_BLOCK  = 762  # shaping station — interactive profile editor
+POTTERY_KILN_BLOCK   = 763  # firing station — temperature mini-game + glazing
+
 HOUSE_WALL           = 108  # city house wall block
 HOUSE_ROOF           = 109  # city house roof block
 WILDFLOWER_PATCH     = 110  # surface collectable; interact → generates unique Wildflower object
@@ -628,7 +1002,14 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     STABLE_BLOCK, HORSE_TROUGH_BLOCK,
                     WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK,
                     DRYING_RACK_BLOCK, BAIT_STATION_BLOCK,
-                    SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK}
+                    SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK,
+                    DAIRY_VAT_BLOCK, CHEESE_PRESS_BLOCK, AGING_CAVE_BLOCK,
+                    FLETCHING_TABLE_BLOCK,
+                    SMELTER_BLOCK,
+                    ANAEROBIC_TANK_BLOCK,
+                    GLASS_KILN_BLOCK,
+                    JEWELRY_WORKBENCH_BLOCK,
+                    GARDEN_WORKSHOP_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT}
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
@@ -640,6 +1021,12 @@ BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN
                      COFFEE_BUSH, GRAPEVINE_BUSH, GRAIN_CROP_BUSH,
                      TEA_BUSH,
                      CHAMOMILE_BUSH, LAVENDER_BUSH, MINT_BUSH, ROSEMARY_BUSH,
+                     THYME_BUSH, SAGE_BUSH, BASIL_BUSH, OREGANO_BUSH,
+                     DILL_BUSH, FENNEL_BUSH, TARRAGON_BUSH, LEMON_BALM_BUSH,
+                     ECHINACEA_BUSH, VALERIAN_BUSH, ST_JOHNS_WORT_BUSH, YARROW_BUSH,
+                     BERGAMOT_BUSH, WORMWOOD_BUSH, RUE_BUSH, LEMON_VERBENA_BUSH,
+                     HYSSOP_BUSH, CATNIP_BUSH, WOOD_SORREL_BUSH, MARJORAM_BUSH,
+                     SAVORY_BUSH, ANGELICA_BUSH, BORAGE_BUSH, COMFREY_BUSH, MUGWORT_BUSH,
                      FLAX_BUSH}
 YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG, TOMATO_CROP_YOUNG, CORN_CROP_YOUNG, PUMPKIN_CROP_YOUNG, APPLE_CROP_YOUNG,
                      RICE_CROP_YOUNG, GINGER_CROP_YOUNG, BOK_CHOY_CROP_YOUNG, GARLIC_CROP_YOUNG,
@@ -650,6 +1037,12 @@ YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG,
                      CACTUS_YOUNG, DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG,
                      COFFEE_CROP_YOUNG, GRAPEVINE_CROP_YOUNG, GRAIN_CROP_YOUNG, TEA_CROP_YOUNG,
                      CHAMOMILE_CROP_YOUNG, LAVENDER_CROP_YOUNG, MINT_CROP_YOUNG, ROSEMARY_CROP_YOUNG,
+                     THYME_CROP_YOUNG, SAGE_CROP_YOUNG, BASIL_CROP_YOUNG, OREGANO_CROP_YOUNG,
+                     DILL_CROP_YOUNG, FENNEL_CROP_YOUNG, TARRAGON_CROP_YOUNG, LEMON_BALM_CROP_YOUNG,
+                     ECHINACEA_CROP_YOUNG, VALERIAN_CROP_YOUNG, ST_JOHNS_WORT_CROP_YOUNG, YARROW_CROP_YOUNG,
+                     BERGAMOT_CROP_YOUNG, WORMWOOD_CROP_YOUNG, RUE_CROP_YOUNG, LEMON_VERBENA_CROP_YOUNG,
+                     HYSSOP_CROP_YOUNG, CATNIP_CROP_YOUNG, WOOD_SORREL_CROP_YOUNG, MARJORAM_CROP_YOUNG,
+                     SAVORY_CROP_YOUNG, ANGELICA_CROP_YOUNG, BORAGE_CROP_YOUNG, COMFREY_CROP_YOUNG, MUGWORT_CROP_YOUNG,
                      CHICKPEA_CROP_YOUNG, LENTIL_CROP_YOUNG, SESAME_CROP_YOUNG, POMEGRANATE_TREE_YOUNG,
                      OLIVE_TREE_YOUNG, SAFFRON_CROP_YOUNG,
                      SAGUARO_YOUNG, BARREL_CACTUS_YOUNG, OCOTILLO_YOUNG,
@@ -666,6 +1059,12 @@ MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATU
                      CACTUS_MATURE, DATE_PALM_CROP_MATURE, AGAVE_CROP_MATURE,
                      COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE,
                      CHAMOMILE_CROP_MATURE, LAVENDER_CROP_MATURE, MINT_CROP_MATURE, ROSEMARY_CROP_MATURE,
+                     THYME_CROP_MATURE, SAGE_CROP_MATURE, BASIL_CROP_MATURE, OREGANO_CROP_MATURE,
+                     DILL_CROP_MATURE, FENNEL_CROP_MATURE, TARRAGON_CROP_MATURE, LEMON_BALM_CROP_MATURE,
+                     ECHINACEA_CROP_MATURE, VALERIAN_CROP_MATURE, ST_JOHNS_WORT_CROP_MATURE, YARROW_CROP_MATURE,
+                     BERGAMOT_CROP_MATURE, WORMWOOD_CROP_MATURE, RUE_CROP_MATURE, LEMON_VERBENA_CROP_MATURE,
+                     HYSSOP_CROP_MATURE, CATNIP_CROP_MATURE, WOOD_SORREL_CROP_MATURE, MARJORAM_CROP_MATURE,
+                     SAVORY_CROP_MATURE, ANGELICA_CROP_MATURE, BORAGE_CROP_MATURE, COMFREY_CROP_MATURE, MUGWORT_CROP_MATURE,
                      CHICKPEA_CROP_MATURE, LENTIL_CROP_MATURE, SESAME_CROP_MATURE, POMEGRANATE_TREE_MATURE,
                      OLIVE_TREE_MATURE, SAFFRON_CROP_MATURE,
                      SAGUARO_MATURE, BARREL_CACTUS_MATURE, OCOTILLO_MATURE,
@@ -681,6 +1080,12 @@ PERENNIAL_CROP_MATURE = {
     PEPPER_CROP_MATURE, CHILI_CROP_MATURE, EGGPLANT_CROP_MATURE,
     CACTUS_MATURE, COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE,
     CHAMOMILE_CROP_MATURE, LAVENDER_CROP_MATURE, MINT_CROP_MATURE, ROSEMARY_CROP_MATURE,
+    THYME_CROP_MATURE, SAGE_CROP_MATURE, BASIL_CROP_MATURE, OREGANO_CROP_MATURE,
+    DILL_CROP_MATURE, FENNEL_CROP_MATURE, TARRAGON_CROP_MATURE, LEMON_BALM_CROP_MATURE,
+    ECHINACEA_CROP_MATURE, VALERIAN_CROP_MATURE, ST_JOHNS_WORT_CROP_MATURE, YARROW_CROP_MATURE,
+    BERGAMOT_CROP_MATURE, WORMWOOD_CROP_MATURE, RUE_CROP_MATURE, LEMON_VERBENA_CROP_MATURE,
+    HYSSOP_CROP_MATURE, CATNIP_CROP_MATURE, WOOD_SORREL_CROP_MATURE, MARJORAM_CROP_MATURE,
+    SAVORY_CROP_MATURE, ANGELICA_CROP_MATURE, BORAGE_CROP_MATURE, COMFREY_CROP_MATURE, MUGWORT_CROP_MATURE,
     SAGUARO_MATURE, BARREL_CACTUS_MATURE, OCOTILLO_MATURE,
     PRICKLY_PEAR_MATURE, CHOLLA_MATURE, PALO_VERDE_MATURE,
     STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P,
@@ -727,7 +1132,32 @@ MATURE_TO_YOUNG_CROP = {
     CHAMOMILE_CROP_MATURE:    CHAMOMILE_CROP_YOUNG,
     LAVENDER_CROP_MATURE:     LAVENDER_CROP_YOUNG,
     MINT_CROP_MATURE:         MINT_CROP_YOUNG,
-    ROSEMARY_CROP_MATURE:     ROSEMARY_CROP_YOUNG,
+    ROSEMARY_CROP_MATURE:           ROSEMARY_CROP_YOUNG,
+    THYME_CROP_MATURE:              THYME_CROP_YOUNG,
+    SAGE_CROP_MATURE:               SAGE_CROP_YOUNG,
+    BASIL_CROP_MATURE:              BASIL_CROP_YOUNG,
+    OREGANO_CROP_MATURE:            OREGANO_CROP_YOUNG,
+    DILL_CROP_MATURE:               DILL_CROP_YOUNG,
+    FENNEL_CROP_MATURE:             FENNEL_CROP_YOUNG,
+    TARRAGON_CROP_MATURE:           TARRAGON_CROP_YOUNG,
+    LEMON_BALM_CROP_MATURE:         LEMON_BALM_CROP_YOUNG,
+    ECHINACEA_CROP_MATURE:          ECHINACEA_CROP_YOUNG,
+    VALERIAN_CROP_MATURE:           VALERIAN_CROP_YOUNG,
+    ST_JOHNS_WORT_CROP_MATURE:      ST_JOHNS_WORT_CROP_YOUNG,
+    YARROW_CROP_MATURE:             YARROW_CROP_YOUNG,
+    BERGAMOT_CROP_MATURE:           BERGAMOT_CROP_YOUNG,
+    WORMWOOD_CROP_MATURE:           WORMWOOD_CROP_YOUNG,
+    RUE_CROP_MATURE:                RUE_CROP_YOUNG,
+    LEMON_VERBENA_CROP_MATURE:      LEMON_VERBENA_CROP_YOUNG,
+    HYSSOP_CROP_MATURE:             HYSSOP_CROP_YOUNG,
+    CATNIP_CROP_MATURE:             CATNIP_CROP_YOUNG,
+    WOOD_SORREL_CROP_MATURE:        WOOD_SORREL_CROP_YOUNG,
+    MARJORAM_CROP_MATURE:           MARJORAM_CROP_YOUNG,
+    SAVORY_CROP_MATURE:             SAVORY_CROP_YOUNG,
+    ANGELICA_CROP_MATURE:           ANGELICA_CROP_YOUNG,
+    BORAGE_CROP_MATURE:             BORAGE_CROP_YOUNG,
+    COMFREY_CROP_MATURE:            COMFREY_CROP_YOUNG,
+    MUGWORT_CROP_MATURE:            MUGWORT_CROP_YOUNG,
     CHICKPEA_CROP_MATURE:     CHICKPEA_CROP_YOUNG,
     LENTIL_CROP_MATURE:       LENTIL_CROP_YOUNG,
     SESAME_CROP_MATURE:       SESAME_CROP_YOUNG,
@@ -1083,7 +1513,82 @@ BLOCKS = {
     MINT_CROP_MATURE:          {"name": "Mint (Ripe)",              "hardness": 0.5, "color": ( 60, 210, 150), "drop": "mint",            "drop_chance": 1.0},
     ROSEMARY_BUSH:             {"name": "Rosemary Bush",            "hardness": 0.5, "color": (145, 165, 105), "drop": "rosemary_seed",   "drop_chance": 1.0},
     ROSEMARY_CROP_YOUNG:       {"name": "Rosemary Plant",           "hardness": 0.5, "color": (120, 155,  90), "drop": "rosemary_seed",   "drop_chance": 1.0},
-    ROSEMARY_CROP_MATURE:      {"name": "Rosemary (Ripe)",          "hardness": 0.5, "color": (155, 175, 115), "drop": "rosemary",        "drop_chance": 1.0},
+    ROSEMARY_CROP_MATURE:      {"name": "Rosemary (Ripe)",          "hardness": 0.5, "color": (155, 175, 115), "drop": "rosemary",            "drop_chance": 1.0},
+    THYME_BUSH:                {"name": "Thyme Bush",               "hardness": 0.5, "color": (110, 160,  80), "drop": "thyme_seed",           "drop_chance": 1.0},
+    THYME_CROP_YOUNG:          {"name": "Thyme Plant",              "hardness": 0.5, "color": ( 95, 148,  68), "drop": "thyme_seed",           "drop_chance": 1.0},
+    THYME_CROP_MATURE:         {"name": "Thyme (Ripe)",             "hardness": 0.5, "color": (125, 175,  95), "drop": "thyme",                "drop_chance": 1.0},
+    SAGE_BUSH:                 {"name": "Sage Bush",                "hardness": 0.5, "color": (140, 158, 128), "drop": "sage_seed",            "drop_chance": 1.0},
+    SAGE_CROP_YOUNG:           {"name": "Sage Plant",               "hardness": 0.5, "color": (120, 140, 108), "drop": "sage_seed",            "drop_chance": 1.0},
+    SAGE_CROP_MATURE:          {"name": "Sage (Ripe)",              "hardness": 0.5, "color": (155, 172, 142), "drop": "sage",                 "drop_chance": 1.0},
+    BASIL_BUSH:                {"name": "Basil Bush",               "hardness": 0.5, "color": ( 45, 162,  60), "drop": "basil_seed",           "drop_chance": 1.0},
+    BASIL_CROP_YOUNG:          {"name": "Basil Plant",              "hardness": 0.5, "color": ( 38, 145,  52), "drop": "basil_seed",           "drop_chance": 1.0},
+    BASIL_CROP_MATURE:         {"name": "Basil (Ripe)",             "hardness": 0.5, "color": ( 55, 180,  70), "drop": "basil",                "drop_chance": 1.0},
+    OREGANO_BUSH:              {"name": "Oregano Bush",             "hardness": 0.5, "color": (100, 155,  75), "drop": "oregano_seed",         "drop_chance": 1.0},
+    OREGANO_CROP_YOUNG:        {"name": "Oregano Plant",            "hardness": 0.5, "color": ( 85, 140,  65), "drop": "oregano_seed",         "drop_chance": 1.0},
+    OREGANO_CROP_MATURE:       {"name": "Oregano (Ripe)",           "hardness": 0.5, "color": (115, 170,  85), "drop": "oregano",              "drop_chance": 1.0},
+    DILL_BUSH:                 {"name": "Dill Bush",                "hardness": 0.5, "color": (130, 188,  72), "drop": "dill_seed",            "drop_chance": 1.0},
+    DILL_CROP_YOUNG:           {"name": "Dill Plant",               "hardness": 0.5, "color": (115, 172,  62), "drop": "dill_seed",            "drop_chance": 1.0},
+    DILL_CROP_MATURE:          {"name": "Dill (Ripe)",              "hardness": 0.5, "color": (148, 202,  85), "drop": "dill",                 "drop_chance": 1.0},
+    FENNEL_BUSH:               {"name": "Fennel Bush",              "hardness": 0.5, "color": (122, 178,  68), "drop": "fennel_seed",          "drop_chance": 1.0},
+    FENNEL_CROP_YOUNG:         {"name": "Fennel Plant",             "hardness": 0.5, "color": (108, 162,  58), "drop": "fennel_seed",          "drop_chance": 1.0},
+    FENNEL_CROP_MATURE:        {"name": "Fennel (Ripe)",            "hardness": 0.5, "color": (138, 192,  80), "drop": "fennel",               "drop_chance": 1.0},
+    TARRAGON_BUSH:             {"name": "Tarragon Bush",            "hardness": 0.5, "color": ( 90, 158,  80), "drop": "tarragon_seed",        "drop_chance": 1.0},
+    TARRAGON_CROP_YOUNG:       {"name": "Tarragon Plant",           "hardness": 0.5, "color": ( 78, 142,  70), "drop": "tarragon_seed",        "drop_chance": 1.0},
+    TARRAGON_CROP_MATURE:      {"name": "Tarragon (Ripe)",          "hardness": 0.5, "color": (102, 172,  90), "drop": "tarragon",             "drop_chance": 1.0},
+    LEMON_BALM_BUSH:           {"name": "Lemon Balm Bush",          "hardness": 0.5, "color": ( 95, 192,  85), "drop": "lemon_balm_seed",      "drop_chance": 1.0},
+    LEMON_BALM_CROP_YOUNG:     {"name": "Lemon Balm Plant",         "hardness": 0.5, "color": ( 82, 175,  74), "drop": "lemon_balm_seed",      "drop_chance": 1.0},
+    LEMON_BALM_CROP_MATURE:    {"name": "Lemon Balm (Ripe)",        "hardness": 0.5, "color": (110, 208,  96), "drop": "lemon_balm",           "drop_chance": 1.0},
+    ECHINACEA_BUSH:            {"name": "Echinacea Bush",           "hardness": 0.5, "color": (175, 100, 180), "drop": "echinacea_seed",       "drop_chance": 1.0},
+    ECHINACEA_CROP_YOUNG:      {"name": "Echinacea Plant",          "hardness": 0.5, "color": (115, 155,  90), "drop": "echinacea_seed",       "drop_chance": 1.0},
+    ECHINACEA_CROP_MATURE:     {"name": "Echinacea (Ripe)",         "hardness": 0.5, "color": (192, 115, 198), "drop": "echinacea",            "drop_chance": 1.0},
+    VALERIAN_BUSH:             {"name": "Valerian Bush",            "hardness": 0.5, "color": (210, 212, 175), "drop": "valerian_seed",        "drop_chance": 1.0},
+    VALERIAN_CROP_YOUNG:       {"name": "Valerian Plant",           "hardness": 0.5, "color": (128, 165, 100), "drop": "valerian_seed",        "drop_chance": 1.0},
+    VALERIAN_CROP_MATURE:      {"name": "Valerian (Ripe)",          "hardness": 0.5, "color": (225, 225, 188), "drop": "valerian",             "drop_chance": 1.0},
+    ST_JOHNS_WORT_BUSH:        {"name": "St. John's Wort Bush",     "hardness": 0.5, "color": (215, 198,  58), "drop": "st_johns_wort_seed",   "drop_chance": 1.0},
+    ST_JOHNS_WORT_CROP_YOUNG:  {"name": "St. John's Wort Plant",    "hardness": 0.5, "color": (138, 168,  78), "drop": "st_johns_wort_seed",   "drop_chance": 1.0},
+    ST_JOHNS_WORT_CROP_MATURE: {"name": "St. John's Wort (Ripe)",   "hardness": 0.5, "color": (232, 215,  70), "drop": "st_johns_wort",        "drop_chance": 1.0},
+    YARROW_BUSH:               {"name": "Yarrow Bush",              "hardness": 0.5, "color": (235, 238, 230), "drop": "yarrow_seed",          "drop_chance": 1.0},
+    YARROW_CROP_YOUNG:         {"name": "Yarrow Plant",             "hardness": 0.5, "color": (128, 165,  98), "drop": "yarrow_seed",          "drop_chance": 1.0},
+    YARROW_CROP_MATURE:        {"name": "Yarrow (Ripe)",            "hardness": 0.5, "color": (248, 248, 242), "drop": "yarrow",               "drop_chance": 1.0},
+    BERGAMOT_BUSH:             {"name": "Bergamot Bush",            "hardness": 0.5, "color": (200, 108, 188), "drop": "bergamot_seed",        "drop_chance": 1.0},
+    BERGAMOT_CROP_YOUNG:       {"name": "Bergamot Plant",           "hardness": 0.5, "color": (112, 155,  90), "drop": "bergamot_seed",        "drop_chance": 1.0},
+    BERGAMOT_CROP_MATURE:      {"name": "Bergamot (Ripe)",          "hardness": 0.5, "color": (215, 122, 202), "drop": "bergamot",             "drop_chance": 1.0},
+    WORMWOOD_BUSH:             {"name": "Wormwood Bush",            "hardness": 0.5, "color": (165, 175, 145), "drop": "wormwood_seed",        "drop_chance": 1.0},
+    WORMWOOD_CROP_YOUNG:       {"name": "Wormwood Plant",           "hardness": 0.5, "color": (145, 158, 128), "drop": "wormwood_seed",        "drop_chance": 1.0},
+    WORMWOOD_CROP_MATURE:      {"name": "Wormwood (Ripe)",          "hardness": 0.5, "color": (180, 192, 158), "drop": "wormwood",             "drop_chance": 1.0},
+    RUE_BUSH:                  {"name": "Rue Bush",                 "hardness": 0.5, "color": (128, 155, 162), "drop": "rue_seed",             "drop_chance": 1.0},
+    RUE_CROP_YOUNG:            {"name": "Rue Plant",                "hardness": 0.5, "color": (112, 138, 145), "drop": "rue_seed",             "drop_chance": 1.0},
+    RUE_CROP_MATURE:           {"name": "Rue (Ripe)",               "hardness": 0.5, "color": (142, 170, 178), "drop": "rue",                  "drop_chance": 1.0},
+    LEMON_VERBENA_BUSH:        {"name": "Lemon Verbena Bush",       "hardness": 0.5, "color": (195, 215,  88), "drop": "lemon_verbena_seed",   "drop_chance": 1.0},
+    LEMON_VERBENA_CROP_YOUNG:  {"name": "Lemon Verbena Plant",      "hardness": 0.5, "color": (175, 196,  78), "drop": "lemon_verbena_seed",   "drop_chance": 1.0},
+    LEMON_VERBENA_CROP_MATURE: {"name": "Lemon Verbena (Ripe)",     "hardness": 0.5, "color": (212, 232,  98), "drop": "lemon_verbena",        "drop_chance": 1.0},
+    HYSSOP_BUSH:               {"name": "Hyssop Bush",              "hardness": 0.5, "color": (128, 152, 212), "drop": "hyssop_seed",          "drop_chance": 1.0},
+    HYSSOP_CROP_YOUNG:         {"name": "Hyssop Plant",             "hardness": 0.5, "color": (105, 145, 100), "drop": "hyssop_seed",          "drop_chance": 1.0},
+    HYSSOP_CROP_MATURE:        {"name": "Hyssop (Ripe)",            "hardness": 0.5, "color": (142, 168, 228), "drop": "hyssop",               "drop_chance": 1.0},
+    CATNIP_BUSH:               {"name": "Catnip Bush",              "hardness": 0.5, "color": (155, 175, 145), "drop": "catnip_seed",          "drop_chance": 1.0},
+    CATNIP_CROP_YOUNG:         {"name": "Catnip Plant",             "hardness": 0.5, "color": (138, 158, 130), "drop": "catnip_seed",          "drop_chance": 1.0},
+    CATNIP_CROP_MATURE:        {"name": "Catnip (Ripe)",            "hardness": 0.5, "color": (170, 192, 158), "drop": "catnip",               "drop_chance": 1.0},
+    WOOD_SORREL_BUSH:          {"name": "Wood Sorrel Bush",         "hardness": 0.5, "color": ( 80, 178,  80), "drop": "wood_sorrel_seed",     "drop_chance": 1.0},
+    WOOD_SORREL_CROP_YOUNG:    {"name": "Wood Sorrel Plant",        "hardness": 0.5, "color": ( 68, 160,  68), "drop": "wood_sorrel_seed",     "drop_chance": 1.0},
+    WOOD_SORREL_CROP_MATURE:   {"name": "Wood Sorrel (Ripe)",       "hardness": 0.5, "color": ( 92, 195,  92), "drop": "wood_sorrel",          "drop_chance": 1.0},
+    MARJORAM_BUSH:             {"name": "Marjoram Bush",            "hardness": 0.5, "color": (105, 162,  80), "drop": "marjoram_seed",        "drop_chance": 1.0},
+    MARJORAM_CROP_YOUNG:       {"name": "Marjoram Plant",           "hardness": 0.5, "color": ( 90, 145,  70), "drop": "marjoram_seed",        "drop_chance": 1.0},
+    MARJORAM_CROP_MATURE:      {"name": "Marjoram (Ripe)",          "hardness": 0.5, "color": (120, 178,  90), "drop": "marjoram",             "drop_chance": 1.0},
+    SAVORY_BUSH:               {"name": "Savory Bush",              "hardness": 0.5, "color": (115, 152,  85), "drop": "savory_seed",          "drop_chance": 1.0},
+    SAVORY_CROP_YOUNG:         {"name": "Savory Plant",             "hardness": 0.5, "color": (100, 135,  75), "drop": "savory_seed",          "drop_chance": 1.0},
+    SAVORY_CROP_MATURE:        {"name": "Savory (Ripe)",            "hardness": 0.5, "color": (130, 168,  96), "drop": "savory",               "drop_chance": 1.0},
+    ANGELICA_BUSH:             {"name": "Angelica Bush",            "hardness": 0.5, "color": ( 88, 172, 110), "drop": "angelica_seed",        "drop_chance": 1.0},
+    ANGELICA_CROP_YOUNG:       {"name": "Angelica Plant",           "hardness": 0.5, "color": ( 75, 155,  98), "drop": "angelica_seed",        "drop_chance": 1.0},
+    ANGELICA_CROP_MATURE:      {"name": "Angelica (Ripe)",          "hardness": 0.5, "color": (100, 188, 122), "drop": "angelica",             "drop_chance": 1.0},
+    BORAGE_BUSH:               {"name": "Borage Bush",              "hardness": 0.5, "color": (118, 158, 218), "drop": "borage_seed",          "drop_chance": 1.0},
+    BORAGE_CROP_YOUNG:         {"name": "Borage Plant",             "hardness": 0.5, "color": (105, 148, 100), "drop": "borage_seed",          "drop_chance": 1.0},
+    BORAGE_CROP_MATURE:        {"name": "Borage (Ripe)",            "hardness": 0.5, "color": (132, 172, 235), "drop": "borage",               "drop_chance": 1.0},
+    COMFREY_BUSH:              {"name": "Comfrey Bush",             "hardness": 0.5, "color": (158, 130, 202), "drop": "comfrey_seed",         "drop_chance": 1.0},
+    COMFREY_CROP_YOUNG:        {"name": "Comfrey Plant",            "hardness": 0.5, "color": ( 98, 155,  90), "drop": "comfrey_seed",         "drop_chance": 1.0},
+    COMFREY_CROP_MATURE:       {"name": "Comfrey (Ripe)",           "hardness": 0.5, "color": (172, 145, 218), "drop": "comfrey",              "drop_chance": 1.0},
+    MUGWORT_BUSH:              {"name": "Mugwort Bush",             "hardness": 0.5, "color": (150, 165, 125), "drop": "mugwort_seed",         "drop_chance": 1.0},
+    MUGWORT_CROP_YOUNG:        {"name": "Mugwort Plant",            "hardness": 0.5, "color": (130, 148, 110), "drop": "mugwort_seed",         "drop_chance": 1.0},
+    MUGWORT_CROP_MATURE:       {"name": "Mugwort (Ripe)",           "hardness": 0.5, "color": (165, 182, 138), "drop": "mugwort",              "drop_chance": 1.0},
     # --- Middle Eastern crops ---
     CHICKPEA_CROP_YOUNG:       {"name": "Chickpea Crop",            "hardness": 0.5, "color": ( 90, 165,  80), "drop": "chickpea_seed",   "drop_chance": 1.0},
     CHICKPEA_CROP_MATURE:      {"name": "Chickpea Crop (Ripe)",     "hardness": 0.5, "color": (215, 195, 145), "drop": "chickpea",        "drop_chance": 1.0},
@@ -1301,4 +1806,273 @@ BLOCKS = {
     MONASTERY_ROOF:   {"name": "Monastery Roof",      "hardness": 2, "color": ( 88,  22,  18), "drop": "lumber"},
     MANI_STONE:       {"name": "Mani Stone",           "hardness": 3, "color": (152, 144, 135), "drop": "stone_chip"},
     PRAYER_FLAG_BLOCK:{"name": "Prayer Flags",         "hardness": 1, "color": ( 60, 100, 175), "drop": None},
+    # --- Cheese supply chain ---
+    DAIRY_VAT_BLOCK:   {"name": "Dairy Vat",    "hardness": 1.5, "color": (220, 215, 200), "drop": "dairy_vat_item"},
+    CHEESE_PRESS_BLOCK:{"name": "Cheese Press", "hardness": 1.5, "color": (175, 145, 100), "drop": "cheese_press_item"},
+    AGING_CAVE_BLOCK:  {"name": "Aging Cave",   "hardness": 2.0, "color": (100,  88,  75), "drop": "aging_cave_item"},
+    FLETCHING_TABLE_BLOCK: {"name": "Fletching Table", "hardness": 2, "color": (139, 110, 75), "drop": "fletching_table_item"},
+    # Geological strata — depth-banded stone types
+    LIMESTONE_STONE: {"name": "Limestone",     "hardness": 2,   "color": (200, 195, 170), "drop": "limestone_chip"},
+    GRANITE_STONE:   {"name": "Granite",        "hardness": 2.5, "color": (165, 140, 130), "drop": "granite_slab"},
+    BASALT_STONE:    {"name": "Basalt",         "hardness": 3,   "color": (80,  80,  90),  "drop": "basalt_shard"},
+    MAGMATIC_STONE:  {"name": "Magmatic Stone", "hardness": 3.5, "color": (60,  40,  35),  "drop": "magmatic_shard"},
+    SMELTER_BLOCK:        {"name": "Smelter",         "hardness": 2,   "color": (160, 80,  50),  "drop": "smelter_item"},
+    ANAEROBIC_TANK_BLOCK: {"name": "Anaerobic Tank",  "hardness": 1.5, "color": ( 70, 90,  55),  "drop": "anaerobic_tank_item"},
+    # --- Glass Kiln station ---
+    GLASS_KILN_BLOCK:     {"name": "Glass Kiln",              "hardness": 1.5, "color": (145,  80,  50), "drop": "glass_kiln_item"},
+    # --- Glass Kiln products ---
+    CLEAR_GLASS:          {"name": "Clear Glass",             "hardness": 2,   "color": (230, 240, 250), "drop": "clear_glass"},
+    STAINED_GLASS_GOLDEN: {"name": "Stained Glass (Golden)",  "hardness": 2,   "color": (215, 175,  40), "drop": "stained_glass_golden"},
+    STAINED_GLASS_CRIMSON:{"name": "Stained Glass (Crimson)", "hardness": 2,   "color": (185,  35,  45), "drop": "stained_glass_crimson"},
+    STAINED_GLASS_ROSE:   {"name": "Stained Glass (Rose)",    "hardness": 2,   "color": (220, 110, 155), "drop": "stained_glass_rose"},
+    STAINED_GLASS_COBALT: {"name": "Stained Glass (Cobalt)",  "hardness": 2,   "color": ( 55,  90, 185), "drop": "stained_glass_cobalt"},
+    STAINED_GLASS_VIOLET: {"name": "Stained Glass (Violet)",  "hardness": 2,   "color": (130,  65, 195), "drop": "stained_glass_violet"},
+    STAINED_GLASS_VERDANT:{"name": "Stained Glass (Verdant)", "hardness": 2,   "color": ( 60, 148,  75), "drop": "stained_glass_verdant"},
+    STAINED_GLASS_AMBER:  {"name": "Stained Glass (Amber)",   "hardness": 2,   "color": (200, 115,  35), "drop": "stained_glass_amber"},
+    STAINED_GLASS_IVORY:  {"name": "Stained Glass (Ivory)",   "hardness": 2,   "color": (245, 240, 220), "drop": "stained_glass_ivory"},
+    CATHEDRAL_WINDOW:     {"name": "Cathedral Window",         "hardness": 2,   "color": ( 80, 130, 200), "drop": "cathedral_window"},
+    MOSAIC_GLASS:         {"name": "Mosaic Glass",             "hardness": 2,   "color": (160, 100, 190), "drop": "mosaic_glass"},
+    SMOKED_GLASS:         {"name": "Smoked Glass",             "hardness": 2,   "color": ( 45,  55,  65), "drop": "smoked_glass"},
+    # --- Elevator system ---
+    ELEVATOR_STOP_BLOCK:  {"name": "Elevator Stop",  "hardness": 3,   "color": ( 90,  90, 110), "drop": "elevator_stop"},
+    ELEVATOR_CABLE_BLOCK: {"name": "Elevator Cable", "hardness": 1,   "color": None,            "drop": "elevator_cable"},
+    # --- Additional glass varieties ---
+    RIBBED_GLASS:         {"name": "Ribbed Glass",             "hardness": 2,   "color": (210, 230, 248), "drop": "ribbed_glass"},
+    HAMMERED_GLASS:       {"name": "Hammered Glass",           "hardness": 2,   "color": (195, 220, 235), "drop": "hammered_glass"},
+    CRACKLED_GLASS:       {"name": "Crackled Glass",           "hardness": 2,   "color": (200, 235, 250), "drop": "crackled_glass"},
+    OCULUS_WINDOW:        {"name": "Oculus Window",            "hardness": 2,   "color": ( 90, 150, 210), "drop": "oculus_window"},
+    LANCET_WINDOW:        {"name": "Lancet Window",            "hardness": 2,   "color": ( 70, 120, 190), "drop": "lancet_window"},
+    DIAMOND_PANE:         {"name": "Diamond Pane",             "hardness": 2,   "color": (220, 235, 245), "drop": "diamond_pane"},
+    SEA_GLASS:            {"name": "Sea Glass",                "hardness": 2,   "color": (120, 195, 175), "drop": "sea_glass"},
+    MIRROR_GLASS:         {"name": "Mirror Glass",             "hardness": 2,   "color": (210, 215, 225), "drop": "mirror_glass"},
+    IRIDESCENT_GLASS:     {"name": "Iridescent Glass",         "hardness": 2,   "color": (175, 140, 210), "drop": "iridescent_glass"},
+    SUNSET_GLASS:         {"name": "Sunset Glass",             "hardness": 2,   "color": (230, 120,  70), "drop": "sunset_glass"},
+    OBSIDIAN_GLASS:       {"name": "Obsidian Glass",           "hardness": 2,   "color": ( 28,  18,  42), "drop": "obsidian_glass"},
+    CRYSTAL_GLASS:        {"name": "Crystal Glass",            "hardness": 2,   "color": (215, 245, 255), "drop": "crystal_glass"},
+    JEWELRY_WORKBENCH_BLOCK: {"name": "Jewelry Workbench",     "hardness": 3,   "color": (180, 150,  80), "drop": "jewelry_workbench_item", "drop_chance": 1.0},
+    # --- Garden Workshop blocks ---
+    GARDEN_WORKSHOP_BLOCK: {"name": "Garden Workshop",      "hardness": 2.0, "color": (160, 140, 110), "drop": "garden_workshop_item"},
+    ZELLIGE_BLUE:          {"name": "Zellige Blue",         "hardness": 1.5, "color": ( 45, 100, 175), "drop": "zellige_blue"},
+    ZELLIGE_TERRACOTTA:    {"name": "Zellige Terracotta",   "hardness": 1.5, "color": (195,  95,  55), "drop": "zellige_terracotta"},
+    ZELLIGE_EMERALD:       {"name": "Zellige Emerald",      "hardness": 1.5, "color": ( 40, 130,  80), "drop": "zellige_emerald"},
+    ZELLIGE_WHITE:         {"name": "Zellige Ivory",        "hardness": 1.5, "color": (230, 225, 210), "drop": "zellige_white"},
+    GARDEN_STAR_TILE:      {"name": "Star Tile",            "hardness": 1.5, "color": ( 80,  70,  65), "drop": "garden_star_tile"},
+    GEOMETRIC_MOSAIC:      {"name": "Geometric Mosaic",     "hardness": 1.5, "color": (160, 140, 100), "drop": "geometric_mosaic"},
+    WATER_CHANNEL:         {"name": "Water Channel",        "hardness": 0.5, "color": ( 80, 155, 200), "drop": None},
+    ORNAMENTAL_POOL:       {"name": "Ornamental Pool",      "hardness": 0.5, "color": ( 55, 130, 185), "drop": None},
+    FOUNTAIN_BASIN:        {"name": "Fountain Basin",       "hardness": 2.0, "color": (150, 140, 130), "drop": "fountain_basin"},
+    TIERED_FOUNTAIN:       {"name": "Tiered Fountain",      "hardness": 2.0, "color": (150, 140, 130), "drop": "tiered_fountain"},
+    HORSESHOE_ARCH:        {"name": "Horseshoe Arch",       "hardness": 2.0, "color": (185, 175, 155), "drop": "horseshoe_arch"},
+    MUQARNAS_PANEL:        {"name": "Muqarnas Panel",       "hardness": 1.5, "color": (220, 210, 195), "drop": "muqarnas_panel"},
+    ARABESQUE_SCREEN:      {"name": "Arabesque Screen",     "hardness": 1.5, "color": (190, 180, 165), "drop": "arabesque_screen"},
+    GARDEN_COLUMN:         {"name": "Garden Column",        "hardness": 2.5, "color": (200, 195, 185), "drop": "garden_column"},
+    MARBLE_PLINTH:         {"name": "Marble Plinth",        "hardness": 2.5, "color": (215, 210, 205), "drop": "marble_plinth"},
+    GARDEN_OBELISK:        {"name": "Garden Obelisk",       "hardness": 2.5, "color": (170, 165, 155), "drop": "garden_obelisk"},
+    TOPIARY_CONE:          {"name": "Topiary Cone",         "hardness": 1.0, "color": ( 40, 105,  50), "drop": "topiary_cone"},
+    TOPIARY_SPHERE:        {"name": "Topiary Sphere",       "hardness": 1.0, "color": ( 45, 115,  55), "drop": "topiary_sphere"},
+    BOX_HEDGE:             {"name": "Box Hedge",            "hardness": 1.0, "color": ( 55, 100,  45), "drop": "box_hedge"},
+    CLIMBING_ROSE:         {"name": "Climbing Rose",        "hardness": 0.5, "color": ( 60,  90,  50), "drop": "climbing_rose"},
+    STONE_BENCH:           {"name": "Stone Bench",          "hardness": 1.5, "color": (175, 168, 158), "drop": "stone_bench"},
+    STONE_URN:             {"name": "Stone Urn",            "hardness": 1.5, "color": (180, 172, 162), "drop": "stone_urn"},
+    TERRACOTTA_PLANTER:    {"name": "Terracotta Planter",   "hardness": 1.0, "color": (185, 100,  65), "drop": "terracotta_planter"},
+    SUNDIAL:               {"name": "Sundial",              "hardness": 1.5, "color": (170, 165, 150), "drop": "sundial"},
+    GARDEN_LANTERN:        {"name": "Garden Lantern",       "hardness": 1.0, "color": ( 80,  75,  70), "drop": "garden_lantern"},
+    GRAVEL_PATH:           {"name": "Gravel Path",          "hardness": 0.5, "color": (195, 188, 175), "drop": "gravel_path"},
+    MOSAIC_PATH:           {"name": "Mosaic Path",          "hardness": 1.5, "color": (175, 155, 120), "drop": "mosaic_path"},
+    TERRACOTTA_PATH:       {"name": "Terracotta Path",      "hardness": 1.0, "color": (190, 110,  75), "drop": "terracotta_path"},
+    COBBLE_CIRCLE:         {"name": "Cobble Circle",        "hardness": 1.5, "color": (120, 115, 108), "drop": "cobble_circle"},
+
+    # Sculpture system
+    SCULPTURE_BLOCK_ROOT:  {"name": "Sculpture",            "hardness": 2.0, "color": (180, 175, 165), "drop": None},
+    SCULPTURE_BLOCK_BODY:  {"name": "Sculpture (Body)",     "hardness": 2.0, "color": (180, 175, 165), "drop": None},
+    SCULPTORS_BENCH:       {"name": "Sculptor's Bench",     "hardness": 1.0, "color": (160, 130,  90), "drop": "sculptors_bench_item"},
+    # --- Garden Workshop extension ---
+    PERGOLA_POST:          {"name": "Pergola Post",         "hardness": 1.0, "color": (140, 100,  55), "drop": "pergola_post"},
+    WISTERIA_ARCH:         {"name": "Wisteria Arch",        "hardness": 1.5, "color": (185, 175, 160), "drop": "wisteria_arch"},
+    GARDEN_GATE:           {"name": "Garden Gate",          "hardness": 1.5, "color": ( 55,  60,  65), "drop": "garden_gate"},
+    LOW_GARDEN_WALL:       {"name": "Low Garden Wall",      "hardness": 2.0, "color": (175, 168, 155), "drop": "low_garden_wall"},
+    POOL_COPING:           {"name": "Pool Coping",          "hardness": 1.5, "color": (205, 200, 190), "drop": "pool_coping"},
+    STEPPING_STONE:        {"name": "Stepping Stone",       "hardness": 1.0, "color": (155, 150, 140), "drop": "stepping_stone"},
+    OPUS_VERMICULATUM:     {"name": "Opus Vermiculatum",    "hardness": 1.5, "color": (170, 155, 125), "drop": "opus_vermiculatum"},
+    PORPHYRY_TILE:         {"name": "Porphyry Tile",        "hardness": 2.0, "color": ( 90,  55,  80), "drop": "porphyry_tile"},
+    BRICK_EDGING:          {"name": "Brick Edging",         "hardness": 0.5, "color": (170,  80,  50), "drop": "brick_edging"},
+    SPIRAL_TOPIARY:        {"name": "Spiral Topiary",       "hardness": 1.0, "color": ( 38, 100,  48), "drop": "spiral_topiary"},
+    MAZE_HEDGE:            {"name": "Maze Hedge",           "hardness": 1.5, "color": ( 30,  80,  38), "drop": "maze_hedge"},
+    WISTERIA_WALL:         {"name": "Wisteria Wall",        "hardness": 0.5, "color": (140, 100, 170), "drop": "wisteria_wall"},
+    POTTED_CITRUS:         {"name": "Potted Citrus",        "hardness": 0.5, "color": (185, 100,  60), "drop": "potted_citrus"},
+    MARBLE_STATUE:         {"name": "Marble Statue",        "hardness": 2.5, "color": (220, 215, 208), "drop": "marble_statue"},
+    MARBLE_BIRDBATH:       {"name": "Marble Birdbath",      "hardness": 2.0, "color": (215, 210, 202), "drop": "marble_birdbath"},
+    GARDEN_TABLE:          {"name": "Garden Table",         "hardness": 1.5, "color": (185, 178, 165), "drop": "garden_table"},
+    IRON_TRELLIS:          {"name": "Iron Trellis",         "hardness": 1.5, "color": ( 50,  55,  58), "drop": "iron_trellis"},
+    NASRID_PANEL:          {"name": "Nasrid Panel",         "hardness": 1.5, "color": (228, 218, 195), "drop": "nasrid_panel"},
+    SCALLOP_NICHE:         {"name": "Scallop Niche",        "hardness": 1.5, "color": (200, 190, 172), "drop": "scallop_niche"},
+    TERRACE_BALUSTRADE:    {"name": "Terrace Balustrade",   "hardness": 2.0, "color": (210, 205, 195), "drop": "terrace_balustrade"},
+    # Japanese garden blocks
+    ZEN_GRAVEL:         {"name": "Zen Gravel",          "hardness": 0.5, "color": (200, 195, 182), "drop": "zen_gravel"},
+    KARESANSUI_ROCK:    {"name": "Karesansui Rock",     "hardness": 2.5, "color": (130, 125, 118), "drop": "karesansui_rock"},
+    MOSS_CARPET:        {"name": "Moss Carpet",         "hardness": 0.5, "color": ( 52,  95,  42), "drop": "moss_carpet"},
+    TSUKUBAI:           {"name": "Tsukubai",            "hardness": 2.0, "color": (140, 135, 125), "drop": "tsukubai"},
+    TORO_LANTERN:       {"name": "Toro Lantern",        "hardness": 2.0, "color": (155, 150, 140), "drop": "toro_lantern"},
+    YUKIMI_LANTERN:     {"name": "Yukimi Lantern",      "hardness": 2.0, "color": (165, 160, 150), "drop": "yukimi_lantern"},
+    BAMBOO_FENCE_JP:    {"name": "Bamboo Fence",        "hardness": 0.5, "color": (140, 160,  60), "drop": "bamboo_fence_jp"},
+    ROJI_STONE:         {"name": "Roji Stone",          "hardness": 1.0, "color": (100,  95,  88), "drop": "roji_stone"},
+    PINE_TOPIARY_JP:    {"name": "Cloud-Pruned Pine",   "hardness": 1.0, "color": ( 35,  85,  40), "drop": "pine_topiary_jp"},
+    JAPANESE_MAPLE:     {"name": "Japanese Maple",      "hardness": 0.5, "color": (185,  60,  35), "drop": "japanese_maple"},
+    SHISHI_ODOSHI:      {"name": "Shishi-odoshi",       "hardness": 0.5, "color": (140, 160,  60), "drop": "shishi_odoshi"},
+    RED_ARCH_BRIDGE:    {"name": "Arched Bridge",       "hardness": 1.5, "color": (175,  35,  30), "drop": "red_arch_bridge"},
+    WAVE_CERAMIC:       {"name": "Wave Ceramic",        "hardness": 1.5, "color": ( 45,  90, 165), "drop": "wave_ceramic"},
+    ZEN_SAND_RING:      {"name": "Zen Sand Ring",       "hardness": 0.5, "color": (210, 205, 190), "drop": "zen_sand_ring"},
+    BAMBOO_GATE_JP:     {"name": "Bamboo Gate",         "hardness": 0.5, "color": (130, 150,  55), "drop": "bamboo_gate_jp"},
+    WABI_STONE:         {"name": "Wabi Stone",          "hardness": 2.5, "color": ( 85,  82,  75), "drop": "wabi_stone"},
+    CHERRY_ARCH:        {"name": "Cherry Blossom Arch", "hardness": 1.0, "color": (195, 155, 175), "drop": "cherry_arch"},
+    TATAMI_PAVING:      {"name": "Tatami Paving",       "hardness": 1.0, "color": (185, 172, 130), "drop": "tatami_paving"},
+    IKEBANA_STONE:      {"name": "Ikebana Stone",       "hardness": 1.5, "color": (125, 120, 112), "drop": "ikebana_stone"},
+    KANJI_STONE:        {"name": "Kanji Stone",         "hardness": 2.0, "color": (110, 108, 100), "drop": "kanji_stone"},
+    MAPLE_LEAF_TILE:    {"name": "Maple Leaf Tile",     "hardness": 1.5, "color": (170,  55,  30), "drop": "maple_leaf_tile"},
+    NOREN_PANEL:        {"name": "Noren Panel",         "hardness": 0.5, "color": ( 40,  55, 115), "drop": "noren_panel"},
+    TSURU_TILE:         {"name": "Tsuru Tile",          "hardness": 1.5, "color": (215, 215, 215), "drop": "tsuru_tile"},
+    PINE_SCREEN_JP:     {"name": "Pine Screen",         "hardness": 1.0, "color": (195, 185, 160), "drop": "pine_screen_jp"},
+    KARE_BRIDGE:        {"name": "Kare Bridge",         "hardness": 1.5, "color": (150, 145, 135), "drop": "kare_bridge"},
+    # Chinese garden blocks
+    PEBBLE_MOSAIC_CN:   {"name": "Pebble Mosaic",       "hardness": 1.5, "color": (145, 138, 125), "drop": "pebble_mosaic_cn"},
+    ZIGZAG_BRIDGE:      {"name": "Zigzag Bridge",       "hardness": 2.0, "color": (160, 155, 145), "drop": "zigzag_bridge"},
+    CLOUD_WALL:         {"name": "Cloud Wall",          "hardness": 1.5, "color": (240, 238, 230), "drop": "cloud_wall"},
+    DRAGON_WALL_CN:     {"name": "Dragon Wall",         "hardness": 2.0, "color": (180,  55,  45), "drop": "dragon_wall_cn"},
+    LOTUS_POND:         {"name": "Lotus Pond",          "hardness": 0.5, "color": ( 60, 140, 170), "drop": None},
+    HEX_PAVILION_TILE:  {"name": "Hexagonal Pavilion",  "hardness": 1.5, "color": (195, 185, 165), "drop": "hex_pavilion_tile"},
+    COMPASS_PAVING:     {"name": "Compass Paving",      "hardness": 2.0, "color": (160, 152, 138), "drop": "compass_paving"},
+    WAVE_BALUSTRADE_CN: {"name": "Wave Balustrade",     "hardness": 1.5, "color": (195, 190, 180), "drop": "wave_balustrade_cn"},
+    CERAMIC_SEAT:       {"name": "Ceramic Garden Seat", "hardness": 1.5, "color": ( 45,  90, 165), "drop": "ceramic_seat"},
+    BONSAI_TRAY:        {"name": "Bonsai Tray",         "hardness": 1.0, "color": (125, 118, 105), "drop": "bonsai_tray"},
+    SCHOLAR_SCREEN:     {"name": "Scholar Screen",      "hardness": 1.0, "color": (155, 148, 135), "drop": "scholar_screen"},
+    CHRYSANTHEMUM_TILE: {"name": "Chrysanthemum Tile",  "hardness": 1.5, "color": (210, 185,  55), "drop": "chrysanthemum_tile"},
+    PLUM_BLOSSOM_TILE:  {"name": "Plum Blossom Tile",   "hardness": 1.5, "color": (210, 155, 175), "drop": "plum_blossom_tile"},
+    MOON_PAVEMENT:      {"name": "Moon Pavement",       "hardness": 1.5, "color": (175, 168, 155), "drop": "moon_pavement"},
+    BAMBOO_GROVE:       {"name": "Bamboo Grove",        "hardness": 0.5, "color": ( 90, 145,  55), "drop": "bamboo_grove"},
+    OSMANTHUS_BUSH:     {"name": "Osmanthus Bush",      "hardness": 0.5, "color": ( 50, 110,  45), "drop": "osmanthus_bush"},
+    WATER_LILY_TILE:    {"name": "Water Lily",          "hardness": 0.5, "color": ( 50, 125, 155), "drop": None},
+    KOI_POND:           {"name": "Koi Pond",            "hardness": 0.5, "color": ( 55, 130, 170), "drop": None},
+    LAKESIDE_ROCK:      {"name": "Lakeside Rock",       "hardness": 2.0, "color": (100,  96,  88), "drop": "lakeside_rock"},
+    CLOUD_COLLAR_TILE:  {"name": "Cloud Collar Tile",   "hardness": 1.5, "color": (180, 172, 158), "drop": "cloud_collar_tile"},
+    IMPERIAL_PAVING:    {"name": "Imperial Paving",     "hardness": 2.5, "color": (165, 158, 145), "drop": "imperial_paving"},
+    PAVILION_COLUMN_CN: {"name": "Pavilion Column",     "hardness": 1.5, "color": (175,  45,  40), "drop": "pavilion_column_cn"},
+    EIGHT_DIAGRAM:      {"name": "Eight Diagram",       "hardness": 2.0, "color": (105,  98,  88), "drop": "eight_diagram"},
+    TEA_HOUSE_STEP:     {"name": "Teahouse Step",       "hardness": 1.5, "color": (140, 135, 125), "drop": "tea_house_step"},
+    LANTERN_FESTIVAL:   {"name": "Lantern Festival",    "hardness": 0.5, "color": (195,  40,  40), "drop": "lantern_festival"},
+    # Renaissance garden blocks
+    IONIC_COLUMN_BASE:   {"name": "Ionic Column",        "hardness": 2.5, "color": (210, 205, 195), "drop": "ionic_column_base"},
+    DORIC_ENTABLATURE:   {"name": "Doric Entablature",   "hardness": 2.0, "color": (200, 195, 182), "drop": "doric_entablature"},
+    RUSTICATED_BASE:     {"name": "Rusticated Base",     "hardness": 2.5, "color": (170, 163, 150), "drop": "rusticated_base"},
+    GARDEN_LOGGIA:       {"name": "Garden Loggia",       "hardness": 2.0, "color": (195, 188, 175), "drop": "garden_loggia"},
+    TRIUMPHAL_ARCH_R:    {"name": "Triumphal Arch",      "hardness": 2.5, "color": (185, 178, 163), "drop": "triumphal_arch_r"},
+    EXEDRA_SEAT:         {"name": "Exedra Seat",         "hardness": 2.0, "color": (190, 183, 170), "drop": "exedra_seat"},
+    HERM_PILLAR:         {"name": "Herm Pillar",         "hardness": 2.0, "color": (180, 173, 160), "drop": "herm_pillar"},
+    NYMPHAEUM_PANEL:     {"name": "Nymphaeum Panel",     "hardness": 1.5, "color": (160, 168, 148), "drop": "nymphaeum_panel"},
+    GROTTO_STONE:        {"name": "Grotto Stone",        "hardness": 1.5, "color": ( 98,  96,  88), "drop": "grotto_stone"},
+    AMPHITHEATER_TIER:   {"name": "Amphitheater Tier",   "hardness": 1.5, "color": ( 55, 100,  48), "drop": "amphitheater_tier"},
+    GIOCHI_ACQUA:        {"name": "Giochi d'Acqua",      "hardness": 1.0, "color": ( 80, 160, 210), "drop": "giochi_acqua"},
+    RILL_BLOCK:          {"name": "Garden Rill",         "hardness": 1.0, "color": ( 90, 165, 215), "drop": "rill_block"},
+    CASCADE_BLOCK:       {"name": "Water Cascade",       "hardness": 1.5, "color": (150, 165, 175), "drop": "cascade_block"},
+    GROTTO_POOL:         {"name": "Grotto Pool",         "hardness": 0.5, "color": ( 50, 100, 110), "drop": None},
+    WALL_FOUNTAIN:       {"name": "Wall Fountain",       "hardness": 2.0, "color": (175, 168, 155), "drop": "wall_fountain"},
+    BASIN_SURROUND:      {"name": "Basin Surround",      "hardness": 2.0, "color": (190, 183, 170), "drop": "basin_surround"},
+    CANAL_BLOCK:         {"name": "Formal Canal",        "hardness": 0.5, "color": ( 60, 130, 180), "drop": None},
+    TERME_POOL:          {"name": "Terme Pool",          "hardness": 0.5, "color": ( 70, 145, 175), "drop": None},
+    PARTERRE_BRODERIE:   {"name": "Broderie Parterre",   "hardness": 0.5, "color": ( 48,  95,  42), "drop": "parterre_broderie"},
+    PARTERRE_COMPARTMENT:{"name": "Parterre Bed",        "hardness": 0.5, "color": ( 55, 105,  48), "drop": "parterre_compartment"},
+    ALLEE_TREE:          {"name": "Allée Tree",          "hardness": 1.0, "color": ( 40,  90,  40), "drop": "allee_tree"},
+    PLEACHED_HEDGE:      {"name": "Pleached Hedge",      "hardness": 1.0, "color": ( 45,  95,  42), "drop": "pleached_hedge"},
+    ESPALIER_WALL:       {"name": "Espalier Wall",       "hardness": 1.0, "color": ( 90, 120,  60), "drop": "espalier_wall"},
+    KNOT_GARDEN:         {"name": "Knot Garden",         "hardness": 0.5, "color": ( 50, 100,  45), "drop": "knot_garden"},
+    TURF_THEATER:        {"name": "Turf Theater",        "hardness": 0.5, "color": ( 60, 115,  50), "drop": "turf_theater"},
+    CARPET_BED:          {"name": "Carpet Bedding",      "hardness": 0.5, "color": (185,  75,  55), "drop": "carpet_bed"},
+    OPUS_SECTILE:        {"name": "Opus Sectile",        "hardness": 2.0, "color": (195, 175, 140), "drop": "opus_sectile"},
+    TRAVERTINE_FLOOR:    {"name": "Travertine Floor",    "hardness": 1.5, "color": (210, 200, 182), "drop": "travertine_floor"},
+    HERRINGBONE_GARDEN:  {"name": "Herringbone Path",    "hardness": 1.0, "color": (175,  88,  55), "drop": "herringbone_garden"},
+    RAMP_STONE:          {"name": "Stone Ramp",          "hardness": 1.5, "color": (175, 168, 155), "drop": "ramp_stone"},
+    GARDEN_STEPS:        {"name": "Garden Steps",        "hardness": 2.0, "color": (185, 178, 165), "drop": "garden_steps"},
+    SAND_ALLEE:          {"name": "Sand Allée",          "hardness": 0.5, "color": (215, 205, 185), "drop": "sand_allee"},
+    PATTERNED_PAVEMENT:  {"name": "Patterned Pavement",  "hardness": 2.0, "color": (160, 145, 120), "drop": "patterned_pavement"},
+    INLAID_MARBLE:       {"name": "Inlaid Marble",       "hardness": 2.0, "color": (215, 205, 190), "drop": "inlaid_marble"},
+    TALL_SUNDIAL:        {"name": "Tall Sundial",        "hardness": 1.5, "color": (165, 158, 145), "drop": "tall_sundial"},
+    STONE_VASE:          {"name": "Stone Vase",          "hardness": 1.5, "color": (185, 178, 165), "drop": "stone_vase"},
+    STONE_SPHERE:        {"name": "Stone Sphere",        "hardness": 1.5, "color": (180, 173, 162), "drop": "stone_sphere"},
+    CURVED_BENCH:        {"name": "Curved Bench",        "hardness": 2.0, "color": (175, 168, 155), "drop": "curved_bench"},
+    ORNATE_GATE:         {"name": "Ornate Gate",         "hardness": 1.5, "color": ( 48,  52,  56), "drop": "ornate_gate"},
+    LEAD_PLANTER:        {"name": "Lead Planter",        "hardness": 1.5, "color": (100, 105, 108), "drop": "lead_planter"},
+    TERRACE_URN:         {"name": "Terrace Urn",         "hardness": 1.5, "color": (185, 178, 165), "drop": "terrace_urn"},
+    STONE_PINEAPPLE:     {"name": "Stone Pineapple",     "hardness": 1.5, "color": (175, 170, 155), "drop": "stone_pineapple"},
+    GROTTO_ARCH:         {"name": "Grotto Arch",         "hardness": 2.0, "color": ( 95,  92,  84), "drop": "grotto_arch"},
+    PERGOLA_BEAM:        {"name": "Pergola Beam",        "hardness": 1.0, "color": (135,  95,  50), "drop": "pergola_beam"},
+    LOGGIA_ARCH:         {"name": "Loggia Arch",         "hardness": 2.0, "color": (195, 188, 175), "drop": "loggia_arch"},
+    GARDEN_WALL_NICHE:   {"name": "Wall Niche",          "hardness": 2.0, "color": (180, 173, 160), "drop": "garden_wall_niche"},
+    ORANGERY_WINDOW:     {"name": "Orangery Window",     "hardness": 1.5, "color": (180, 175, 165), "drop": "orangery_window"},
+    BELVEDERE_PANEL:     {"name": "Belvedere Panel",     "hardness": 2.0, "color": (190, 183, 170), "drop": "belvedere_panel"},
+    BOSCO_TREE:          {"name": "Bosco Tree",          "hardness": 1.0, "color": ( 42,  80,  38), "drop": "bosco_tree"},
+    GIARDINO_SEGRETO:    {"name": "Secret Garden Wall",  "hardness": 2.0, "color": ( 88, 108,  68), "drop": "giardino_segreto"},
+
+    # Rare sculptable stone veins
+    MARBLE_VEIN:    {"name": "Marble Vein",    "hardness": 2.5, "color": (235, 232, 222), "drop": "marble_chunk",    "drop_chance": 1.0},
+    ALABASTER_VEIN: {"name": "Alabaster Vein", "hardness": 2.0, "color": (232, 218, 198), "drop": "alabaster_chunk", "drop_chance": 1.0},
+    VERDITE_VEIN:   {"name": "Verdite Vein",   "hardness": 2.5, "color": ( 38, 105,  58), "drop": "verdite_slab",    "drop_chance": 1.0},
+    ONYX_VEIN:      {"name": "Onyx Vein",      "hardness": 3.0, "color": ( 28,  22,  38), "drop": "onyx_slab",       "drop_chance": 1.0},
+
+    # Placed forms of the rare stones
+    ALABASTER_BLOCK: {"name": "Alabaster",  "hardness": 2.0, "color": (235, 222, 204), "drop": "alabaster_chunk"},
+    VERDITE_BLOCK:   {"name": "Verdite",    "hardness": 2.5, "color": ( 42, 108,  62), "drop": "verdite_slab"},
+    ONYX_BLOCK:      {"name": "Onyx",       "hardness": 3.0, "color": ( 30,  24,  40), "drop": "onyx_slab"},
+    # Renaissance palace blocks
+    PIETRA_SERENA:        {"name": "Pietra Serena",        "hardness": 2.5, "color": (155, 160, 172), "drop": "pietra_serena"},
+    TRAVERTINE_WALL:      {"name": "Travertine Wall",      "hardness": 2.0, "color": (215, 205, 185), "drop": "travertine_wall"},
+    MARBLE_FACADE:        {"name": "Marble Facade",        "hardness": 2.5, "color": (242, 240, 236), "drop": "marble_facade"},
+    RUSTICATED_QUOIN:     {"name": "Rusticated Quoin",     "hardness": 2.5, "color": (178, 172, 158), "drop": "rusticated_quoin"},
+    BICOLOR_MARBLE:       {"name": "Bicolor Marble",       "hardness": 2.5, "color": (228, 225, 218), "drop": "bicolor_marble"},
+    PINK_GRANITE_BASE:    {"name": "Pink Granite Base",    "hardness": 3.0, "color": (190, 168, 162), "drop": "pink_granite_base"},
+    BLIND_ARCH:           {"name": "Blind Arch",           "hardness": 2.0, "color": (205, 200, 188), "drop": "blind_arch"},
+    CONSOLE_CORNICE:      {"name": "Console Cornice",      "hardness": 2.0, "color": (215, 208, 195), "drop": "console_cornice"},
+    CORINTHIAN_CAPITAL:   {"name": "Corinthian Capital",   "hardness": 2.5, "color": (218, 212, 198), "drop": "corinthian_capital"},
+    GIANT_PILASTER:       {"name": "Giant Pilaster",       "hardness": 2.0, "color": (210, 205, 195), "drop": "giant_pilaster"},
+    ENGAGED_COLUMN:       {"name": "Engaged Column",       "hardness": 2.5, "color": (222, 218, 208), "drop": "engaged_column"},
+    ATLAS_FIGURE:         {"name": "Atlas Figure",         "hardness": 3.0, "color": (195, 185, 170), "drop": "atlas_figure"},
+    CARYATID_COLUMN:      {"name": "Caryatid Column",      "hardness": 3.0, "color": (215, 208, 195), "drop": "caryatid_column"},
+    COMPOSITE_CAPITAL:    {"name": "Composite Capital",    "hardness": 2.5, "color": (218, 212, 198), "drop": "composite_capital"},
+    INTARSIA_PANEL:       {"name": "Intarsia Panel",       "hardness": 1.5, "color": (155, 112,  65), "drop": "intarsia_panel"},
+    STUDIOLO_WALL:        {"name": "Studiolo Wall",        "hardness": 1.5, "color": (142, 105,  58), "drop": "studiolo_wall"},
+    GILT_LEATHER:         {"name": "Gilt Leather Wall",    "hardness": 1.0, "color": (148, 105,  40), "drop": "gilt_leather"},
+    FRESCO_LUNETTE:       {"name": "Fresco Lunette",       "hardness": 1.5, "color": (175, 165, 145), "drop": "fresco_lunette"},
+    WAINSCOT_MARBLE:      {"name": "Marble Wainscoting",   "hardness": 2.0, "color": (218, 195, 185), "drop": "wainscot_marble"},
+    TAPESTRY_FRAME:       {"name": "Tapestry Frame",       "hardness": 1.5, "color": (175, 145,  65), "drop": "tapestry_frame"},
+    LACUNAR_CEILING:      {"name": "Lacunar Ceiling",      "hardness": 2.0, "color": (195, 188, 172), "drop": "lacunar_ceiling"},
+    BARREL_FRESCO:        {"name": "Barrel Vault Fresco",  "hardness": 1.5, "color": (175, 178, 195), "drop": "barrel_fresco"},
+    GOLDEN_CEILING:       {"name": "Golden Ceiling",       "hardness": 1.5, "color": (215, 188,  95), "drop": "golden_ceiling"},
+    GROTESQUE_VAULT:      {"name": "Grotesque Vault",      "hardness": 1.5, "color": (185, 182, 175), "drop": "grotesque_vault"},
+    CUPOLA_OCULUS:        {"name": "Cupola Oculus",        "hardness": 1.5, "color": (148, 168, 200), "drop": "cupola_oculus"},
+    COSMATESQUE_FLOOR:    {"name": "Cosmatesque Floor",    "hardness": 2.5, "color": (188, 168, 142), "drop": "cosmatesque_floor"},
+    TERRAZZO_FLOOR_REN:   {"name": "Terrazzo Floor",       "hardness": 2.0, "color": (198, 188, 178), "drop": "terrazzo_floor_ren"},
+    OPUS_ALEXANDRINUM:    {"name": "Opus Alexandrinum",    "hardness": 3.0, "color": (145, 105, 110), "drop": "opus_alexandrinum"},
+    MARBLE_MEDALLION_REN: {"name": "Marble Medallion",     "hardness": 2.5, "color": (215, 208, 200), "drop": "marble_medallion_ren"},
+    PALACE_FLOOR_TILE:    {"name": "Palace Floor Tile",    "hardness": 2.0, "color": (200, 192, 180), "drop": "palace_floor_tile"},
+    PALACE_PORTAL:        {"name": "Palace Portal",        "hardness": 2.5, "color": (185, 178, 162), "drop": "palace_portal"},
+    AEDICULE_FRAME:       {"name": "Aedicule Frame",       "hardness": 2.5, "color": (195, 188, 175), "drop": "aedicule_frame"},
+    THERMAL_WINDOW:       {"name": "Thermal Window",       "hardness": 1.5, "color": (195, 205, 215), "drop": "thermal_window"},
+    BIFORA_WINDOW:        {"name": "Bifora Window",        "hardness": 1.5, "color": (198, 195, 185), "drop": "bifora_window"},
+    SERLIANA_WINDOW:      {"name": "Serliana Window",      "hardness": 1.5, "color": (198, 192, 180), "drop": "serliana_window"},
+    PALAZZO_BALCONY:      {"name": "Palazzo Balcony",      "hardness": 2.0, "color": (185, 178, 165), "drop": "palazzo_balcony"},
+    ROMAN_ARCH_REN:       {"name": "Roman Arch",           "hardness": 2.5, "color": (195, 188, 175), "drop": "roman_arch_ren"},
+    BARREL_VAULT_COFFER:  {"name": "Barrel Vault Coffer",  "hardness": 2.0, "color": (188, 182, 168), "drop": "barrel_vault_coffer"},
+    PENDENTIVE_BLOCK:     {"name": "Pendentive",           "hardness": 2.0, "color": (205, 198, 185), "drop": "pendentive_block"},
+    GROIN_VAULT:          {"name": "Groin Vault",          "hardness": 2.0, "color": (192, 188, 178), "drop": "groin_vault"},
+    RENAISSANCE_MANTEL:   {"name": "Renaissance Mantel",   "hardness": 2.5, "color": (225, 220, 215), "drop": "renaissance_mantel"},
+    CHIMNEY_BREAST_REN:   {"name": "Chimney Breast",       "hardness": 2.0, "color": (190, 185, 175), "drop": "chimney_breast_ren"},
+    PEDIMENTED_NICHE:     {"name": "Pedimented Niche",     "hardness": 2.0, "color": (198, 192, 180), "drop": "pedimented_niche"},
+    SHELL_NICHE_REN:      {"name": "Shell Niche",          "hardness": 2.0, "color": (200, 195, 185), "drop": "shell_niche_ren"},
+    CARTOUCHE_REN:        {"name": "Cartouche",            "hardness": 2.0, "color": (215, 208, 195), "drop": "cartouche_ren"},
+    PUTTI_FRIEZE:         {"name": "Putti Frieze",         "hardness": 2.0, "color": (210, 205, 195), "drop": "putti_frieze"},
+    FESTOON_PANEL:        {"name": "Festoon Panel",        "hardness": 1.5, "color": (195, 188, 172), "drop": "festoon_panel"},
+    TROPHY_PANEL_REN:     {"name": "Trophy Panel",         "hardness": 2.0, "color": (185, 178, 165), "drop": "trophy_panel_ren"},
+    MEDALLION_PORTRAIT:   {"name": "Portrait Medallion",   "hardness": 2.0, "color": (205, 200, 188), "drop": "medallion_portrait"},
+    LAUREL_FRIEZE:        {"name": "Laurel Frieze",        "hardness": 2.0, "color": (175, 188, 162), "drop": "laurel_frieze"},
+    # --- Pottery & Ceramics ---
+    POTTERY_WHEEL_BLOCK:  {"name": "Pottery Wheel",        "hardness": 3,   "color": (130,  95, 65),  "drop": "pottery_wheel_item"},
+    POTTERY_KILN_BLOCK:   {"name": "Pottery Kiln",         "hardness": 3,   "color": ( 80,  60, 50),  "drop": "pottery_kiln_item"},
 }

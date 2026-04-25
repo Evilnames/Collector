@@ -38,7 +38,7 @@ class SaveManager:
                             "insect_observations",
                             "fish", "coffee_beans", "wine_grapes", "spirits",
                             "research", "automations",
-                            "farm_bots", "backhoes", "entities", "dropped_items", "chests"):
+                            "farm_bots", "backhoes", "elevator_cars", "entities", "dropped_items", "chests"):
                     # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
                 con.commit()
@@ -78,12 +78,17 @@ class SaveManager:
             self._save_spirits(con, player)
             self._save_tea_leaves(con, player)
             self._save_textiles(con, player)
+            self._save_cheese_wheels(con, player)
+            self._save_jewelry(con, player)
+            self._save_sculptures(con, player)
+            self._save_pottery_pieces(con, player)
             self._save_bird_observations(con, player)
             self._save_insect_observations(con, player)
             self._save_research(con, research)
             self._save_automations(con, world)
             self._save_farm_bots(con, world)
             self._save_backhoes(con, world)
+            self._save_elevator_cars(con, world)
             self._save_entities(con, world)
             self._save_dropped_items(con, world)
             self._save_chests(con, world)
@@ -104,6 +109,7 @@ class SaveManager:
             automations = self._load_automations(con)
             farm_bots = self._load_farm_bots(con)
             backhoes = self._load_backhoes(con)
+            elevator_cars = self._load_elevator_cars(con)
             entities = self._load_entities(con)
             research = self._load_research(con)
             dropped_items = self._load_dropped_items(con)
@@ -115,12 +121,14 @@ class SaveManager:
             "soil_fertility":  world_meta["soil_fertility"],
             "crop_progress":   world_meta["crop_progress"],
             "crop_care_sum":   world_meta["crop_care_sum"],
-            "compost_bin_data": world_meta["compost_bin_data"],
-            "garden_data":      world_meta["garden_data"],
+            "compost_bin_data":    world_meta["compost_bin_data"],
+            "garden_data":         world_meta["garden_data"],
+            "sculpture_positions": world_meta.get("sculpture_positions", {}),
             "player": player_data,
             "automations": automations,
             "farm_bots": farm_bots,
             "backhoes": backhoes,
+            "elevator_cars": elevator_cars,
             "entities": entities,
             "research": research,
             "dropped_items": dropped_items,
@@ -279,7 +287,8 @@ class SaveManager:
             crop_care_sum TEXT,
             soil_fertility TEXT,
             compost_bin_data TEXT,
-            garden_data TEXT
+            garden_data TEXT,
+            sculpture_positions TEXT
         );
         CREATE TABLE IF NOT EXISTS player (
             x REAL, y REAL, vx REAL, vy REAL, facing INTEGER,
@@ -350,6 +359,10 @@ class SaveManager:
             x REAL, y REAL,
             fuel REAL, stored TEXT,
             arm_dx INTEGER, arm_dy INTEGER
+        );
+        CREATE TABLE IF NOT EXISTS elevator_cars (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            shaft_x INTEGER, stop_by INTEGER, car_by INTEGER
         );
         CREATE TABLE IF NOT EXISTS entities (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -457,6 +470,33 @@ class SaveManager:
             pattern_quality REAL,
             seed           INTEGER
         );
+        CREATE TABLE IF NOT EXISTS cheese_wheels (
+            uid             TEXT PRIMARY KEY,
+            origin_biome    TEXT,
+            animal_type     TEXT,
+            variety         TEXT,
+            state           TEXT,
+            richness        REAL,
+            sharpness       REAL,
+            nuttiness       REAL,
+            saltiness       REAL,
+            moisture        REAL,
+            culture_quality REAL,
+            age_quality     REAL,
+            flavor_notes    TEXT,
+            seed            INTEGER,
+            blend_components TEXT,
+            cheese_type     TEXT DEFAULT '',
+            press_quality   REAL DEFAULT 0.0
+        );
+        CREATE TABLE IF NOT EXISTS jewelry (
+            uid          TEXT PRIMARY KEY,
+            jewelry_type TEXT,
+            slot_count   INTEGER,
+            slots        TEXT,
+            custom_name  TEXT,
+            seed         INTEGER
+        );
         CREATE TABLE IF NOT EXISTS global_collection (
             category TEXT NOT NULL,
             item_id  TEXT NOT NULL,
@@ -466,6 +506,31 @@ class SaveManager:
             id           TEXT PRIMARY KEY,
             unlocked     INTEGER DEFAULT 0,
             unlocked_date TEXT
+        );
+        CREATE TABLE IF NOT EXISTS sculptures (
+            uid      TEXT PRIMARY KEY,
+            mineral  TEXT,
+            height   INTEGER,
+            grid     TEXT,
+            color    TEXT,
+            template TEXT,
+            seed     INTEGER,
+            pending  INTEGER DEFAULT 0
+        );
+        CREATE TABLE IF NOT EXISTS pottery_pieces (
+            uid            TEXT PRIMARY KEY,
+            clay_biome     TEXT,
+            shape          TEXT,
+            state          TEXT,
+            firing_level   TEXT,
+            firing_quality REAL,
+            thickness      REAL,
+            evenness       REAL,
+            glaze_type     TEXT DEFAULT '',
+            texture_notes  TEXT,
+            seed           INTEGER,
+            profile        TEXT,
+            blend_components TEXT DEFAULT '[]'
         );
         """)
         for col, default in [("spawn_x", "NULL"), ("spawn_y", "NULL")]:
@@ -499,7 +564,8 @@ class SaveManager:
             except Exception:
                 pass
         for col in ("soil_moisture", "crop_progress", "crop_care_sum",
-                    "soil_fertility", "compost_bin_data", "garden_data"):
+                    "soil_fertility", "compost_bin_data", "garden_data",
+                    "sculpture_positions"):
             try:
                 con.execute(f"ALTER TABLE world_meta ADD COLUMN {col} TEXT")
             except Exception:
@@ -510,6 +576,8 @@ class SaveManager:
             ("horse_records", "'{}'"),
             ("discovered_coat_biomes", "'[]'"),
             ("discovered_recipes", "'[]'"),
+            ("animals_hunted", "'{}'"),
+            ("roast_profiles", "'[]'"),
         ]:
             try:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT {default}")
@@ -719,14 +787,22 @@ class SaveManager:
             for (x, y), flowers in world.garden_data.items()
             if flowers
         }
+        # sculpture_positions: "bx,by" -> uid (root) or {"root": "rbx,rby"} (body)
+        sculpture_pos = {}
+        for (x, y), data in world.sculpture_data.items():
+            if isinstance(data, dict) and "root" in data:
+                rbx, rby = data["root"]
+                sculpture_pos[f"{x},{y}"] = {"root": f"{rbx},{rby}"}
+            else:
+                sculpture_pos[f"{x},{y}"] = data.uid
         con.execute("DELETE FROM world_meta")
         con.execute(
             "INSERT INTO world_meta "
-            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (json.dumps(water), json.dumps(moisture), json.dumps(progress),
              json.dumps(care_sum), json.dumps(fertility), json.dumps(compost_bins),
-             json.dumps(garden_flowers)),
+             json.dumps(garden_flowers), json.dumps(sculpture_pos)),
         )
 
     def _save_player(self, con, player):
@@ -741,8 +817,8 @@ class SaveManager:
                 spawn_x, spawn_y, discovered_fossil_types, known_crops,
                 discovered_foods, foods_cooked,
                 horses_tamed, horses_bred, horse_records, discovered_coat_biomes,
-                discovered_recipes)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                discovered_recipes, animals_hunted, roast_profiles)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 player.x, player.y, player.vx, player.vy, player.facing,
                 player.health, player.hunger, player.pick_power, player.money,
@@ -765,6 +841,8 @@ class SaveManager:
                 json.dumps(getattr(player, "horse_records", {})),
                 json.dumps(list(getattr(player, "discovered_coat_biomes", set()))),
                 json.dumps(list(getattr(player, "discovered_recipes", set()))),
+                json.dumps(getattr(player, "animals_hunted", {})),
+                json.dumps(getattr(player, "roast_profiles", [])),
             )
         )
 
@@ -858,16 +936,21 @@ class SaveManager:
             con.execute("ALTER TABLE coffee_beans ADD COLUMN processing_method TEXT DEFAULT ''")
         except Exception:
             pass
+        try:
+            con.execute("ALTER TABLE coffee_beans ADD COLUMN terroir_quality REAL DEFAULT 0.0")
+        except Exception:
+            pass
         con.execute("DELETE FROM coffee_beans")
         for b in player.coffee_beans:
             con.execute(
-                "INSERT OR REPLACE INTO coffee_beans VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT OR REPLACE INTO coffee_beans VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     b.uid, b.origin_biome, b.variety, b.state, b.roast_level,
                     b.roast_quality, b.acidity, b.body, b.sweetness, b.earthiness, b.brightness,
                     json.dumps(b.flavor_notes), b.seed,
                     json.dumps(b.blend_components),
                     getattr(b, "processing_method", ""),
+                    getattr(b, "terroir_quality", 0.0),
                 )
             )
 
@@ -938,6 +1021,58 @@ class SaveManager:
             "UPDATE player SET worn = ?",
             (json.dumps(player.worn),)
         )
+
+    def _save_cheese_wheels(self, con, player):
+        con.execute("DELETE FROM cheese_wheels")
+        for c in player.cheese_wheels:
+            con.execute(
+                "INSERT OR REPLACE INTO cheese_wheels VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    c.uid, c.origin_biome, c.animal_type, c.variety, c.state,
+                    c.richness, c.sharpness, c.nuttiness, c.saltiness, c.moisture,
+                    c.culture_quality, c.age_quality,
+                    json.dumps(c.flavor_notes), c.seed,
+                    json.dumps(c.blend_components),
+                    getattr(c, "cheese_type", ""),
+                    getattr(c, "press_quality", 0.0),
+                )
+            )
+
+    def _save_jewelry(self, con, player):
+        con.execute("DELETE FROM jewelry")
+        for j in player.jewelry:
+            con.execute(
+                "INSERT OR REPLACE INTO jewelry VALUES (?,?,?,?,?,?)",
+                (j.uid, j.jewelry_type, j.slot_count, json.dumps(j.slots), j.custom_name, j.seed),
+            )
+
+    def _save_sculptures(self, con, player):
+        con.execute("DELETE FROM sculptures")
+        all_sc = player.sculptures_created[:]
+        pending_uids = {sc.uid for sc in player.pending_sculptures}
+        for sc in all_sc:
+            con.execute(
+                "INSERT OR REPLACE INTO sculptures VALUES (?,?,?,?,?,?,?,?)",
+                (sc.uid, sc.mineral, sc.height,
+                 json.dumps(sc.grid), json.dumps(list(sc.color)),
+                 sc.template, sc.seed,
+                 1 if sc.uid in pending_uids else 0),
+            )
+
+    def _save_pottery_pieces(self, con, player):
+        con.execute("DELETE FROM pottery_pieces")
+        for p in player.pottery_pieces:
+            con.execute(
+                "INSERT OR REPLACE INTO pottery_pieces VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    p.uid, p.clay_biome, p.shape, p.state, p.firing_level,
+                    p.firing_quality, p.thickness, p.evenness,
+                    getattr(p, "glaze_type", ""),
+                    json.dumps(p.texture_notes), p.seed,
+                    json.dumps(p.profile),
+                    json.dumps(getattr(p, "blend_components", [])),
+                )
+            )
 
     def _save_bird_observations(self, con, player):
         con.execute("DELETE FROM bird_observations")
@@ -1015,8 +1150,24 @@ class SaveManager:
                 (bh.x, bh.y, bh.fuel, json.dumps(bh.stored), bh.arm_dx, bh.arm_dy)
             )
 
+    def _save_elevator_cars(self, con, world):
+        con.execute("DELETE FROM elevator_cars")
+        for car in world.elevator_cars:
+            car_by = int(car.car_y // 32)  # BLOCK_SIZE = 32
+            con.execute(
+                "INSERT INTO elevator_cars (shaft_x, stop_by, car_by) VALUES (?,?,?)",
+                (car.shaft_x, int(car.car_y // 32), car_by)
+            )
+
+    def _load_elevator_cars(self, con):
+        try:
+            rows = con.execute("SELECT shaft_x, stop_by, car_by FROM elevator_cars").fetchall()
+        except Exception:
+            return []
+        return [{"shaft_x": r[0], "stop_by": r[1], "car_by": r[2]} for r in rows]
+
     def _save_entities(self, con, world):
-        from animals import Sheep, Cow, Chicken, SnowLeopard, MountainLion
+        from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion
         from horses import Horse
         from cities import NPC
         con.execute("DELETE FROM entities")
@@ -1037,11 +1188,32 @@ class SaveManager:
                     traits_dict["temperament"]       = e.traits["temperament"]
                     traits_dict["coat_color"]        = list(e.traits["coat_color"])
                     traits_dict["horseshoe_applied"] = e.traits.get("horseshoe_applied", False)
+                    traits_dict["endurance"]         = e.traits.get("endurance", 1.0)
+                    traits_dict["gait"]              = e.traits.get("gait", 1.0)
+                    traits_dict["coat_pattern"]  = e.traits.get("coat_pattern", "solid")
+                    traits_dict["leg_marking"]   = e.traits.get("leg_marking", "none")
+                    traits_dict["mane_color"]    = e.traits.get("mane_color", "match")
+                    traits_dict["face_marking"]  = e.traits.get("face_marking", "none")
+                elif isinstance(e, Sheep):
+                    traits_dict["wool_color"] = e.traits.get("wool_color", "white")
+                    traits_dict["fleece"]     = e.traits.get("fleece", 1.0)
+                    traits_dict["birth"]      = e.traits.get("birth", "single")
+                elif isinstance(e, Cow):
+                    traits_dict["milk_richness"] = e.traits.get("milk_richness", 1.0)
+                    traits_dict["hide"]          = e.traits.get("hide", "solid")
+                elif isinstance(e, Goat):
+                    traits_dict["milk_richness"] = e.traits.get("milk_richness", 1.0)
+                    traits_dict["coat_color"]    = e.traits.get("coat_color", "tan")
+                elif isinstance(e, Chicken):
+                    traits_dict["lay_rate"] = e.traits.get("lay_rate", 1.0)
+                    traits_dict["plumage"]  = e.traits.get("plumage", "white")
             extra = {
                 "uid":           getattr(e, 'uid', None),
                 "parent_a_uid":  getattr(e, 'parent_a_uid', None),
                 "parent_b_uid":  getattr(e, 'parent_b_uid', None),
                 "traits":        traits_dict,
+                "genotype":      getattr(e, 'genotype', {}),
+                "no_breed":      getattr(e, 'no_breed', False),
                 "health":          getattr(e, 'health', 3),
                 "dead":            getattr(e, 'dead', False),
                 "_breed_cooldown": getattr(e, '_breed_cooldown', 60.0),
@@ -1050,7 +1222,10 @@ class SaveManager:
             }
             if isinstance(e, Sheep):
                 extra["has_wool"] = e.has_wool
+                extra["has_milk"] = e.has_milk
             elif isinstance(e, Cow):
+                extra["has_milk"] = e.has_milk
+            elif isinstance(e, Goat):
                 extra["has_milk"] = e.has_milk
             elif isinstance(e, Chicken):
                 extra["has_egg"] = e.has_egg
@@ -1089,13 +1264,13 @@ class SaveManager:
             pass
         row = con.execute(
             "SELECT water_level, soil_moisture, crop_progress, crop_care_sum, "
-            "soil_fertility, compost_bin_data, garden_data "
+            "soil_fertility, compost_bin_data, garden_data, sculpture_positions "
             "FROM world_meta LIMIT 1"
         ).fetchone()
         if row is None:
             return {"water_level": {}, "soil_moisture": {}, "crop_progress": {},
                     "crop_care_sum": {}, "soil_fertility": {}, "compost_bin_data": {},
-                    "garden_data": {}}
+                    "garden_data": {}, "sculpture_positions": {}}
 
         def _parse_coord_dict(raw, transform=lambda v: v):
             if raw is None:
@@ -1133,14 +1308,27 @@ class SaveManager:
                 ]
             return result
 
+        raw_sculpt = row[7] if len(row) > 7 else None
+        sculpture_positions = {}
+        if raw_sculpt:
+            for key, val in json.loads(raw_sculpt).items():
+                xs, ys = key.split(",")
+                pos = (int(xs), int(ys))
+                if isinstance(val, dict) and "root" in val:
+                    rbx, rby = val["root"].split(",")
+                    sculpture_positions[pos] = {"root": (int(rbx), int(rby))}
+                else:
+                    sculpture_positions[pos] = val   # uid string
+
         return {
-            "water_level":     _parse_coord_dict(row[0]),
-            "soil_moisture":   _parse_coord_dict(row[1]),
-            "crop_progress":   _parse_coord_dict(row[2]),
-            "crop_care_sum":   _parse_coord_dict(row[3], lambda v: (float(v[0]), int(v[1]))),
-            "soil_fertility":  _parse_coord_dict(row[4]),
-            "compost_bin_data": _parse_bin_data(row[5]),
-            "garden_data":     _parse_garden_data(row[6] if len(row) > 6 else None),
+            "water_level":        _parse_coord_dict(row[0]),
+            "soil_moisture":      _parse_coord_dict(row[1]),
+            "crop_progress":      _parse_coord_dict(row[2]),
+            "crop_care_sum":      _parse_coord_dict(row[3], lambda v: (float(v[0]), int(v[1]))),
+            "soil_fertility":     _parse_coord_dict(row[4]),
+            "compost_bin_data":   _parse_bin_data(row[5]),
+            "garden_data":        _parse_garden_data(row[6] if len(row) > 6 else None),
+            "sculpture_positions": sculpture_positions,
         }
 
     def _load_player(self, con, bird_obs=None, insect_obs=None):
@@ -1153,7 +1341,9 @@ class SaveManager:
                    discovered_foods, foods_cooked,
                    horses_tamed, horses_bred, horse_records, discovered_coat_biomes,
                    COALESCE(discovered_recipes, '[]'),
-                   COALESCE(worn, '{}')
+                   COALESCE(worn, '{}'),
+                   COALESCE(animals_hunted, '{}'),
+                   COALESCE(roast_profiles, '[]')
             FROM player LIMIT 1
         """).fetchone()
 
@@ -1164,7 +1354,7 @@ class SaveManager:
          spawn_x, spawn_y, discovered_fossil_types, known_crops,
          discovered_foods, foods_cooked,
          horses_tamed, horses_bred, horse_records_raw, discovered_coat_biomes_raw,
-         discovered_recipes_raw, worn_raw) = row
+         discovered_recipes_raw, worn_raw, animals_hunted_raw, roast_profiles_raw) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -1267,11 +1457,16 @@ class SaveManager:
                 "habitat": f[8], "biome_found": f[9] or "", "seed": f[10],
             })
 
+        try:
+            con.execute("ALTER TABLE coffee_beans ADD COLUMN terroir_quality REAL DEFAULT 0.0")
+        except Exception:
+            pass
         coffee_rows = con.execute("""
             SELECT uid, origin_biome, variety, state, roast_level, roast_quality,
                    acidity, body, sweetness, earthiness, brightness,
                    flavor_notes, seed, blend_components,
-                   COALESCE(processing_method, '')
+                   COALESCE(processing_method, ''),
+                   COALESCE(terroir_quality, 0.0)
             FROM coffee_beans
         """).fetchall()
         coffee_data = []
@@ -1285,6 +1480,7 @@ class SaveManager:
                 "seed": c[12],
                 "blend_components": json.loads(c[13]) if c[13] else [],
                 "processing_method": c[14] or "",
+                "terroir_quality": c[15] or 0.0,
             })
 
         try:
@@ -1388,6 +1584,85 @@ class SaveManager:
             for r in textile_rows
         ]
 
+        try:
+            cheese_rows = con.execute(
+                "SELECT uid, origin_biome, animal_type, variety, state, "
+                "richness, sharpness, nuttiness, saltiness, moisture, "
+                "culture_quality, age_quality, flavor_notes, seed, blend_components, "
+                "COALESCE(cheese_type, ''), COALESCE(press_quality, 0.0) "
+                "FROM cheese_wheels"
+            ).fetchall()
+        except Exception:
+            cheese_rows = []
+        cheese_data = [
+            {
+                "uid": r[0], "origin_biome": r[1], "animal_type": r[2],
+                "variety": r[3], "state": r[4],
+                "richness": r[5], "sharpness": r[6], "nuttiness": r[7],
+                "saltiness": r[8], "moisture": r[9],
+                "culture_quality": r[10], "age_quality": r[11],
+                "flavor_notes": json.loads(r[12]) if r[12] else [],
+                "seed": r[13],
+                "blend_components": json.loads(r[14]) if r[14] else [],
+                "cheese_type": r[15] or "",
+                "press_quality": r[16] or 0.0,
+            }
+            for r in cheese_rows
+        ]
+
+        try:
+            jewelry_rows = con.execute("SELECT uid, jewelry_type, slot_count, slots, custom_name, seed FROM jewelry").fetchall()
+        except Exception:
+            jewelry_rows = []
+        _jewelry_data = [
+            {
+                "uid": r[0], "jewelry_type": r[1], "slot_count": r[2],
+                "slots": json.loads(r[3]) if r[3] else [],
+                "custom_name": r[4] or "", "seed": r[5],
+            }
+            for r in jewelry_rows
+        ]
+
+        try:
+            sc_rows = con.execute(
+                "SELECT uid, mineral, height, grid, color, template, seed, pending FROM sculptures"
+            ).fetchall()
+        except Exception:
+            sc_rows = []
+        _sculpture_created = []
+        _sculpture_pending = []
+        for r in sc_rows:
+            sc_dict = {
+                "uid": r[0], "mineral": r[1], "height": r[2],
+                "grid": json.loads(r[3]),
+                "color": tuple(json.loads(r[4])),
+                "template": r[5], "seed": r[6],
+            }
+            _sculpture_created.append(sc_dict)
+            if r[7]:
+                _sculpture_pending.append(sc_dict)
+
+        try:
+            pottery_rows = con.execute(
+                "SELECT uid, clay_biome, shape, state, firing_level, firing_quality, "
+                "thickness, evenness, glaze_type, texture_notes, seed, profile, blend_components "
+                "FROM pottery_pieces"
+            ).fetchall()
+        except Exception:
+            pottery_rows = []
+        pottery_data = []
+        for r in pottery_rows:
+            pottery_data.append({
+                "uid": r[0], "clay_biome": r[1], "shape": r[2], "state": r[3],
+                "firing_level": r[4], "firing_quality": r[5],
+                "thickness": r[6], "evenness": r[7],
+                "glaze_type": r[8] or "",
+                "texture_notes": json.loads(r[9] or "[]"),
+                "seed": r[10],
+                "profile": json.loads(r[11] or "[]"),
+                "blend_components": json.loads(r[12] or "[]"),
+            })
+
         return {
             "x": x, "y": y, "vx": vx, "vy": vy, "facing": facing,
             "health": health, "hunger": hunger, "pick_power": pick_power,
@@ -1437,6 +1712,13 @@ class SaveManager:
                 f"{t['fiber_type']}_{t['dye_family']}_{t['output_type']}"
                 for t in textile_data if t["state"] == "woven"
             }),
+            "cheese_wheels": cheese_data,
+            "discovered_cheese": list({
+                f"{c['origin_biome']}_{c['cheese_type']}"
+                for c in cheese_data if c["state"] == "aged" and c["cheese_type"]
+            }),
+            "jewelry": _jewelry_data,
+            "discovered_jewelry": list({j["jewelry_type"] for j in _jewelry_data}),
             "worn": json.loads(worn_raw or "{}") or {"head": None, "chest": None, "feet": None},
             "spawn_x": spawn_x,
             "spawn_y": spawn_y,
@@ -1448,6 +1730,15 @@ class SaveManager:
             "horse_records": json.loads(horse_records_raw or "{}"),
             "discovered_coat_biomes": json.loads(discovered_coat_biomes_raw or "[]"),
             "discovered_recipes": json.loads(discovered_recipes_raw or "[]"),
+            "animals_hunted":     json.loads(animals_hunted_raw or "{}"),
+            "roast_profiles":     json.loads(roast_profiles_raw or "[]"),
+            "sculptures_created": _sculpture_created,
+            "pending_sculptures": _sculpture_pending,
+            "pottery_pieces": pottery_data,
+            "discovered_pottery": list({
+                f"{p['clay_biome']}_{p['firing_level']}"
+                for p in pottery_data if p["state"] == "fired" and p["firing_level"] != "cracked"
+            }),
         }
 
     def _load_automations(self, con):

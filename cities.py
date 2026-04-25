@@ -636,6 +636,26 @@ class ShrineKeeperNPC(NPC):
         return True
 
 
+class JewelryMerchantNPC(NPC):
+    """Buys custom jewelry pieces from the player."""
+    def __init__(self, x, y, world, rng):
+        super().__init__(x, y, world, "npc_merchant")
+        self.display_name = "Jewelry Merchant"
+
+    def appraise(self, jewelry, player):
+        from jewelry import calculate_value
+        return calculate_value(jewelry, player, master_jeweler=getattr(player, "master_jeweler", False))
+
+    def sell_piece(self, jewelry_uid, player):
+        piece = next((j for j in player.jewelry if j.uid == jewelry_uid), None)
+        if piece is None:
+            return 0
+        value = self.appraise(piece, player)
+        player.jewelry.remove(piece)
+        player.money += value
+        return value
+
+
 # ---------------------------------------------------------------------------
 # City generation
 # ---------------------------------------------------------------------------
@@ -699,7 +719,7 @@ CITY_CONFIGS = {
         ],
         "npc_types": ["quest_rock", "quest_wildflower", "trade", "merchant",
                       "quest_gem", "restaurant_npc", "quest_wildflower", "trade",
-                      "shrine_npc"],
+                      "shrine_npc", "jewelry_merchant"],
     },
 }
 
@@ -1209,6 +1229,8 @@ def _build_single_city(world, rng, city_bx, difficulty):
             world.entities.append(RestaurantNPC(npc_px, npc_py, world, rng))
         elif npc_type == "shrine_npc":
             world.entities.append(ShrineKeeperNPC(npc_px, npc_py, world, rng, difficulty, biodome))
+        elif npc_type == "jewelry_merchant":
+            world.entities.append(JewelryMerchantNPC(npc_px, npc_py, world, rng))
 
 
 def generate_cities(world, seed):

@@ -1,5 +1,5 @@
 import pygame
-from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER,
+from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER, GRASS, DIRT, SAND, SNOW,
                     YOUNG_CROP_BLOCKS, MATURE_CROP_BLOCKS,
                     RESOURCE_BLOCKS, ALL_LOGS, ALL_LEAVES,
                     STRAWBERRY_BUSH, WHEAT_BUSH,
@@ -56,6 +56,31 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER,
                     LAVENDER_BUSH, LAVENDER_CROP_YOUNG, LAVENDER_CROP_MATURE,
                     MINT_BUSH, MINT_CROP_YOUNG, MINT_CROP_MATURE,
                     ROSEMARY_BUSH, ROSEMARY_CROP_YOUNG, ROSEMARY_CROP_MATURE,
+                    THYME_BUSH, THYME_CROP_YOUNG, THYME_CROP_MATURE,
+                    SAGE_BUSH, SAGE_CROP_YOUNG, SAGE_CROP_MATURE,
+                    BASIL_BUSH, BASIL_CROP_YOUNG, BASIL_CROP_MATURE,
+                    OREGANO_BUSH, OREGANO_CROP_YOUNG, OREGANO_CROP_MATURE,
+                    DILL_BUSH, DILL_CROP_YOUNG, DILL_CROP_MATURE,
+                    FENNEL_BUSH, FENNEL_CROP_YOUNG, FENNEL_CROP_MATURE,
+                    TARRAGON_BUSH, TARRAGON_CROP_YOUNG, TARRAGON_CROP_MATURE,
+                    LEMON_BALM_BUSH, LEMON_BALM_CROP_YOUNG, LEMON_BALM_CROP_MATURE,
+                    ECHINACEA_BUSH, ECHINACEA_CROP_YOUNG, ECHINACEA_CROP_MATURE,
+                    VALERIAN_BUSH, VALERIAN_CROP_YOUNG, VALERIAN_CROP_MATURE,
+                    ST_JOHNS_WORT_BUSH, ST_JOHNS_WORT_CROP_YOUNG, ST_JOHNS_WORT_CROP_MATURE,
+                    YARROW_BUSH, YARROW_CROP_YOUNG, YARROW_CROP_MATURE,
+                    BERGAMOT_BUSH, BERGAMOT_CROP_YOUNG, BERGAMOT_CROP_MATURE,
+                    WORMWOOD_BUSH, WORMWOOD_CROP_YOUNG, WORMWOOD_CROP_MATURE,
+                    RUE_BUSH, RUE_CROP_YOUNG, RUE_CROP_MATURE,
+                    LEMON_VERBENA_BUSH, LEMON_VERBENA_CROP_YOUNG, LEMON_VERBENA_CROP_MATURE,
+                    HYSSOP_BUSH, HYSSOP_CROP_YOUNG, HYSSOP_CROP_MATURE,
+                    CATNIP_BUSH, CATNIP_CROP_YOUNG, CATNIP_CROP_MATURE,
+                    WOOD_SORREL_BUSH, WOOD_SORREL_CROP_YOUNG, WOOD_SORREL_CROP_MATURE,
+                    MARJORAM_BUSH, MARJORAM_CROP_YOUNG, MARJORAM_CROP_MATURE,
+                    SAVORY_BUSH, SAVORY_CROP_YOUNG, SAVORY_CROP_MATURE,
+                    ANGELICA_BUSH, ANGELICA_CROP_YOUNG, ANGELICA_CROP_MATURE,
+                    BORAGE_BUSH, BORAGE_CROP_YOUNG, BORAGE_CROP_MATURE,
+                    COMFREY_BUSH, COMFREY_CROP_YOUNG, COMFREY_CROP_MATURE,
+                    MUGWORT_BUSH, MUGWORT_CROP_YOUNG, MUGWORT_CROP_MATURE,
                     CACTUS_YOUNG, CACTUS_MATURE,
                     DATE_PALM_BUSH, DATE_PALM_CROP_YOUNG, DATE_PALM_CROP_MATURE,
                     AGAVE_BUSH, AGAVE_CROP_YOUNG, AGAVE_CROP_MATURE,
@@ -134,7 +159,77 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER,
                     TEXTILE_RUG_VERDANT, TEXTILE_RUG_AMBER, TEXTILE_RUG_IVORY,
                     TEXTILE_TAPESTRY_NATURAL, TEXTILE_TAPESTRY_GOLDEN, TEXTILE_TAPESTRY_CRIMSON,
                     TEXTILE_TAPESTRY_ROSE, TEXTILE_TAPESTRY_COBALT, TEXTILE_TAPESTRY_VIOLET,
-                    TEXTILE_TAPESTRY_VERDANT, TEXTILE_TAPESTRY_AMBER, TEXTILE_TAPESTRY_IVORY)
+                    TEXTILE_TAPESTRY_VERDANT, TEXTILE_TAPESTRY_AMBER, TEXTILE_TAPESTRY_IVORY,
+                    LIMESTONE_STONE, GRANITE_STONE, BASALT_STONE, MAGMATIC_STONE, SMELTER_BLOCK,
+                    GLASS_KILN_BLOCK,
+                    CLEAR_GLASS, STAINED_GLASS_GOLDEN, STAINED_GLASS_CRIMSON,
+                    STAINED_GLASS_ROSE, STAINED_GLASS_COBALT, STAINED_GLASS_VIOLET,
+                    STAINED_GLASS_VERDANT, STAINED_GLASS_AMBER, STAINED_GLASS_IVORY,
+                    CATHEDRAL_WINDOW, MOSAIC_GLASS, SMOKED_GLASS,
+                    RIBBED_GLASS, HAMMERED_GLASS, CRACKLED_GLASS,
+                    OCULUS_WINDOW, LANCET_WINDOW, DIAMOND_PANE,
+                    SEA_GLASS, MIRROR_GLASS, IRIDESCENT_GLASS,
+                    SUNSET_GLASS, OBSIDIAN_GLASS, CRYSTAL_GLASS,
+                    ELEVATOR_CABLE_BLOCK, ELEVATOR_STOP_BLOCK,
+                    GARDEN_WORKSHOP_BLOCK,
+                    ZELLIGE_BLUE, ZELLIGE_TERRACOTTA, ZELLIGE_EMERALD, ZELLIGE_WHITE,
+                    GARDEN_STAR_TILE, GEOMETRIC_MOSAIC,
+                    WATER_CHANNEL, ORNAMENTAL_POOL, FOUNTAIN_BASIN, TIERED_FOUNTAIN,
+                    HORSESHOE_ARCH, MUQARNAS_PANEL, ARABESQUE_SCREEN,
+                    GARDEN_COLUMN, MARBLE_PLINTH, GARDEN_OBELISK,
+                    TOPIARY_CONE, TOPIARY_SPHERE, BOX_HEDGE, CLIMBING_ROSE,
+                    STONE_BENCH, STONE_URN, TERRACOTTA_PLANTER, SUNDIAL, GARDEN_LANTERN,
+                    GRAVEL_PATH, MOSAIC_PATH, TERRACOTTA_PATH, COBBLE_CIRCLE,
+                    SCULPTURE_BLOCK_ROOT, SCULPTURE_BLOCK_BODY,
+                    PERGOLA_POST, WISTERIA_ARCH, GARDEN_GATE, LOW_GARDEN_WALL, POOL_COPING,
+                    STEPPING_STONE, OPUS_VERMICULATUM, PORPHYRY_TILE, BRICK_EDGING,
+                    SPIRAL_TOPIARY, MAZE_HEDGE, WISTERIA_WALL, POTTED_CITRUS,
+                    MARBLE_STATUE, MARBLE_BIRDBATH, GARDEN_TABLE, IRON_TRELLIS,
+                    NASRID_PANEL, SCALLOP_NICHE, TERRACE_BALUSTRADE,
+                    ZEN_GRAVEL, KARESANSUI_ROCK, MOSS_CARPET, TSUKUBAI,
+                    TORO_LANTERN, YUKIMI_LANTERN, BAMBOO_FENCE_JP, ROJI_STONE,
+                    PINE_TOPIARY_JP, JAPANESE_MAPLE, SHISHI_ODOSHI, RED_ARCH_BRIDGE,
+                    WAVE_CERAMIC, ZEN_SAND_RING, BAMBOO_GATE_JP, WABI_STONE,
+                    CHERRY_ARCH, TATAMI_PAVING, IKEBANA_STONE, KANJI_STONE,
+                    MAPLE_LEAF_TILE, NOREN_PANEL, TSURU_TILE, PINE_SCREEN_JP, KARE_BRIDGE,
+                    PEBBLE_MOSAIC_CN, ZIGZAG_BRIDGE, CLOUD_WALL, DRAGON_WALL_CN,
+                    LOTUS_POND, HEX_PAVILION_TILE, COMPASS_PAVING, WAVE_BALUSTRADE_CN,
+                    CERAMIC_SEAT, BONSAI_TRAY, SCHOLAR_SCREEN,
+                    CHRYSANTHEMUM_TILE, PLUM_BLOSSOM_TILE, MOON_PAVEMENT,
+                    BAMBOO_GROVE, OSMANTHUS_BUSH, WATER_LILY_TILE, KOI_POND,
+                    LAKESIDE_ROCK, CLOUD_COLLAR_TILE, IMPERIAL_PAVING,
+                    PAVILION_COLUMN_CN, EIGHT_DIAGRAM, TEA_HOUSE_STEP, LANTERN_FESTIVAL,
+                    IONIC_COLUMN_BASE, DORIC_ENTABLATURE, RUSTICATED_BASE, GARDEN_LOGGIA,
+                    TRIUMPHAL_ARCH_R, EXEDRA_SEAT, HERM_PILLAR, NYMPHAEUM_PANEL,
+                    GROTTO_STONE, AMPHITHEATER_TIER,
+                    GIOCHI_ACQUA, RILL_BLOCK, CASCADE_BLOCK, GROTTO_POOL, WALL_FOUNTAIN,
+                    BASIN_SURROUND, CANAL_BLOCK, TERME_POOL,
+                    PARTERRE_BRODERIE, PARTERRE_COMPARTMENT, ALLEE_TREE, PLEACHED_HEDGE,
+                    ESPALIER_WALL, KNOT_GARDEN, TURF_THEATER, CARPET_BED,
+                    OPUS_SECTILE, TRAVERTINE_FLOOR, HERRINGBONE_GARDEN, RAMP_STONE,
+                    GARDEN_STEPS, SAND_ALLEE, PATTERNED_PAVEMENT, INLAID_MARBLE,
+                    TALL_SUNDIAL, STONE_VASE, STONE_SPHERE, CURVED_BENCH, ORNATE_GATE,
+                    LEAD_PLANTER, TERRACE_URN, STONE_PINEAPPLE,
+                    GROTTO_ARCH, PERGOLA_BEAM, LOGGIA_ARCH, GARDEN_WALL_NICHE,
+                    ORANGERY_WINDOW, BELVEDERE_PANEL, BOSCO_TREE, GIARDINO_SEGRETO,
+                    MARBLE_VEIN, ALABASTER_VEIN, VERDITE_VEIN, ONYX_VEIN,
+                    ALABASTER_BLOCK, VERDITE_BLOCK, ONYX_BLOCK,
+                    PIETRA_SERENA, TRAVERTINE_WALL, MARBLE_FACADE, RUSTICATED_QUOIN,
+                    BICOLOR_MARBLE, PINK_GRANITE_BASE, BLIND_ARCH, CONSOLE_CORNICE,
+                    CORINTHIAN_CAPITAL, GIANT_PILASTER, ENGAGED_COLUMN, ATLAS_FIGURE,
+                    CARYATID_COLUMN, COMPOSITE_CAPITAL,
+                    INTARSIA_PANEL, STUDIOLO_WALL, GILT_LEATHER, FRESCO_LUNETTE,
+                    WAINSCOT_MARBLE, TAPESTRY_FRAME,
+                    LACUNAR_CEILING, BARREL_FRESCO, GOLDEN_CEILING, GROTESQUE_VAULT, CUPOLA_OCULUS,
+                    COSMATESQUE_FLOOR, TERRAZZO_FLOOR_REN, OPUS_ALEXANDRINUM,
+                    MARBLE_MEDALLION_REN, PALACE_FLOOR_TILE,
+                    PALACE_PORTAL, AEDICULE_FRAME, THERMAL_WINDOW, BIFORA_WINDOW,
+                    SERLIANA_WINDOW, PALAZZO_BALCONY,
+                    ROMAN_ARCH_REN, BARREL_VAULT_COFFER, PENDENTIVE_BLOCK, GROIN_VAULT,
+                    RENAISSANCE_MANTEL, CHIMNEY_BREAST_REN, PEDIMENTED_NICHE, SHELL_NICHE_REN,
+                    CARTOUCHE_REN, PUTTI_FRIEZE, FESTOON_PANEL, TROPHY_PANEL_REN,
+                    MEDALLION_PORTRAIT, LAUREL_FRIEZE,
+                    POTTERY_WHEEL_BLOCK, POTTERY_KILN_BLOCK)
 import math
 import soil as _soil
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE
@@ -284,8 +379,12 @@ class Renderer:
         self._resource_hint_surfs = self._build_resource_hint_surfs()
         self._biome_stone_surfs = self._build_biome_stone_surfs()
         self._biome_resource_hint_surfs = self._build_biome_resource_hint_surfs()
-        self._log_variants  = self._build_log_variants()
-        self._leaf_variants = self._build_leaf_variants()
+        self._log_variants   = self._build_log_variants()
+        self._leaf_variants  = self._build_leaf_variants()
+        self._grass_variants = self._build_grass_variants()
+        self._dirt_variants  = self._build_dirt_variants()
+        self._sand_variants  = self._build_sand_variants()
+        self._snow_variants  = self._build_snow_variants()
         self._bg_darken_surf = self._build_bg_darken_surf()
         self._bg_block_surfs = self._build_bg_block_surfs()
         self._cave_wall_surf = self._build_cave_wall_surf()
@@ -1321,6 +1420,84 @@ class Renderer:
                 pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
                 surfs[bid] = s
                 continue
+            if bid == MARBLE_VEIN:
+                c = (235, 232, 222)
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+                vein = _darken(c, 35)
+                lt   = _lighter(c, 12)
+                # Irregular diagonal veins
+                for pts in [[(0,4),(8,2),(16,6),(24,3),(32,5)],
+                             [(0,14),(6,12),(14,16),(22,13),(32,17)],
+                             [(0,24),(10,22),(18,26),(32,23)]]:
+                    pygame.draw.lines(s, vein, False, pts, 1)
+                    pygame.draw.lines(s, lt,   False, [(x, y+1) for x, y in pts], 1)
+                pygame.draw.rect(s, _darken(c, 22), s.get_rect(), 1)
+                surfs[bid] = s; continue
+            if bid == ALABASTER_VEIN:
+                c = (232, 218, 198)
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+                dk = _darken(c, 14); lt = _lighter(c, 16)
+                # Subtle horizontal banding (sedimentary feel)
+                for ly in [7, 15, 22]:
+                    pygame.draw.line(s, dk, (0, ly),   (BLOCK_SIZE, ly),   2)
+                    pygame.draw.line(s, lt, (0, ly-1), (BLOCK_SIZE, ly-1), 1)
+                # Soft highlight in top-left
+                pygame.draw.rect(s, lt, (2, 2, 14, 14))
+                pygame.draw.rect(s, _darken(c, 18), s.get_rect(), 1)
+                surfs[bid] = s; continue
+            if bid == VERDITE_VEIN:
+                c = (38, 105, 58)
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+                dk = _darken(c, 30); lt = _lighter(c, 25)
+                # Mottled crystalline texture
+                for fx, fy, fw, fh in [(3,3,6,5),(14,2,5,6),(22,5,7,4),
+                                        (5,14,8,5),(18,12,6,7),(28,16,4,4),
+                                        (8,22,7,6),(20,24,6,5)]:
+                    pygame.draw.rect(s, dk, (fx, fy, fw, fh))
+                for fx, fy in [(5,5),(16,4),(24,7),(7,16),(20,14),(10,24),(22,26)]:
+                    pygame.draw.rect(s, lt, (fx, fy, 2, 2))
+                pygame.draw.rect(s, _darken(c, 28), s.get_rect(), 1)
+                surfs[bid] = s; continue
+            if bid == ONYX_VEIN:
+                c = (28, 22, 38)
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+                band = _lighter(c, 20)
+                lt   = _lighter(c, 38)
+                # White/gray banding characteristic of onyx
+                for ly, thick in [(5,2),(12,1),(18,2),(26,1)]:
+                    pygame.draw.line(s, band, (0, ly), (BLOCK_SIZE, ly), thick)
+                # Faint sheen spots
+                for fx, fy in [(4,8),(20,6),(12,19),(27,22),(8,27)]:
+                    pygame.draw.rect(s, lt, (fx, fy, 3, 1))
+                pygame.draw.rect(s, _darken(c, 10), s.get_rect(), 1)
+                surfs[bid] = s; continue
+            # Placed rare stone blocks — clean polished versions
+            if bid == ALABASTER_BLOCK:
+                c = (235, 222, 204)
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+                lt = _lighter(c, 20); dk = _darken(c, 18)
+                pygame.draw.rect(s, lt, (2, 2, BLOCK_SIZE-4, BLOCK_SIZE//2-2))
+                pygame.draw.line(s, dk, (0, BLOCK_SIZE//2), (BLOCK_SIZE, BLOCK_SIZE//2), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 2)
+                surfs[bid] = s; continue
+            if bid == VERDITE_BLOCK:
+                c = (42, 108, 62)
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+                lt = _lighter(c, 22); dk = _darken(c, 28)
+                for fx, fy in [(2,2),(18,2),(2,18),(18,18)]:
+                    pygame.draw.rect(s, lt, (fx, fy, 6, 6))
+                pygame.draw.rect(s, dk, s.get_rect(), 2)
+                surfs[bid] = s; continue
+            if bid == ONYX_BLOCK:
+                c = (30, 24, 40)
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+                lt = _lighter(c, 35)
+                # Thin white banding + reflective highlight diagonal
+                pygame.draw.line(s, lt, (0, 10), (BLOCK_SIZE, 10), 1)
+                pygame.draw.line(s, lt, (0, 22), (BLOCK_SIZE, 22), 1)
+                pygame.draw.line(s, _lighter(c, 50), (2, 2), (12, 2), 1)
+                pygame.draw.rect(s, _lighter(c, 20), s.get_rect(), 2)
+                surfs[bid] = s; continue
             if bid == SAPLING:
                 s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
                 s.fill((0, 0, 0, 0))
@@ -1741,6 +1918,723 @@ class Renderer:
                     for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 3):
                         pygame.draw.rect(s, (130, 158, 98), (stx - 4, ny, 5, 1))
                         pygame.draw.rect(s, (130, 158, 98), (stx + 2, ny + 1, 5, 1))
+                surfs[bid] = s
+                continue
+            # --- Thyme (needle herb) ---
+            if bid == THYME_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(5, 20), (13, 24), (21, 18)]:
+                    pygame.draw.rect(s, ( 90, 148,  68), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 3):
+                        pygame.draw.rect(s, (120, 172,  90), (stx - 3, ny, 4, 1))
+                        pygame.draw.rect(s, (120, 172,  90), (stx + 2, ny + 1, 4, 1))
+                surfs[bid] = s
+                continue
+            if bid == THYME_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(7, 14), (15, 18), (23, 12)]:
+                    pygame.draw.rect(s, ( 95, 152,  72), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 4):
+                        pygame.draw.rect(s, (118, 168,  88), (stx - 2, ny, 3, 1))
+                surfs[bid] = s
+                continue
+            if bid == THYME_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 24), (12, 28), (20, 22)]:
+                    pygame.draw.rect(s, ( 90, 148,  68), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 3):
+                        pygame.draw.rect(s, (125, 178,  95), (stx - 4, ny, 5, 1))
+                        pygame.draw.rect(s, (125, 178,  95), (stx + 2, ny + 1, 5, 1))
+                surfs[bid] = s
+                continue
+            # --- Sage (broad rounded silver-green leaves) ---
+            if bid == SAGE_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(3,16,10,5),(12,12,11,6),(20,18,9,5),(6,22,8,4)]:
+                    pygame.draw.ellipse(s, (138, 155, 125), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, (158, 175, 142), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            if bid == SAGE_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(5,20,8,4),(14,17,9,5),(20,22,7,4)]:
+                    pygame.draw.ellipse(s, (118, 138, 108), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, (138, 158, 128), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            if bid == SAGE_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(2,13,12,6),(11,10,12,7),(20,15,10,6),(5,20,9,5)]:
+                    pygame.draw.ellipse(s, (142, 158, 128), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, (162, 178, 148), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            # --- Basil (large vivid green leaves) ---
+            if bid == BASIL_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(2,14,12,8),(13,10,12,9),(19,17,10,7),(5,21,9,6)]:
+                    pygame.draw.ellipse(s, ( 42, 155,  58), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, ( 58, 178,  72), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            if bid == BASIL_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(5,18,10,7),(14,15,10,8),(20,21,8,6)]:
+                    pygame.draw.ellipse(s, ( 36, 138,  50), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, ( 50, 158,  65), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            if bid == BASIL_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(1,11,13,9),(12,8,13,10),(20,14,11,8),(4,19,10,7)]:
+                    pygame.draw.ellipse(s, ( 45, 162,  60), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, ( 62, 185,  78), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            # --- Oregano (small rounded leaves on stems) ---
+            if bid == OREGANO_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(6, 18), (14, 22), (22, 16)]:
+                    pygame.draw.rect(s, ( 82, 138,  65), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 4):
+                        pygame.draw.ellipse(s, (102, 158,  78), (stx - 3, ny, 5, 3))
+                        pygame.draw.ellipse(s, (102, 158,  78), (stx + 2, ny + 2, 5, 3))
+                surfs[bid] = s
+                continue
+            if bid == OREGANO_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(8, 12), (16, 16), (23, 10)]:
+                    pygame.draw.rect(s, ( 82, 138,  65), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 5):
+                        pygame.draw.ellipse(s, (100, 155,  75), (stx - 2, ny, 4, 3))
+                surfs[bid] = s
+                continue
+            if bid == OREGANO_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 22), (12, 26), (21, 20)]:
+                    pygame.draw.rect(s, ( 82, 138,  65), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 3):
+                        pygame.draw.ellipse(s, (112, 168,  85), (stx - 4, ny, 6, 3))
+                        pygame.draw.ellipse(s, (112, 168,  85), (stx + 2, ny + 2, 6, 3))
+                surfs[bid] = s
+                continue
+            # --- Dill (feathery yellow-green wisps) ---
+            if bid == DILL_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(6, 22), (13, 26), (21, 20)]:
+                    pygame.draw.rect(s, (108, 168,  65), (stx, BLOCK_SIZE - sth, 1, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 4, 3):
+                        pygame.draw.rect(s, (128, 188,  75), (stx - 4, ny, 4, 1))
+                        pygame.draw.rect(s, (128, 188,  75), (stx + 1, ny + 1, 4, 1))
+                surfs[bid] = s
+                continue
+            if bid == DILL_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(8, 14), (15, 18), (22, 12)]:
+                    pygame.draw.rect(s, (108, 168,  65), (stx, BLOCK_SIZE - sth, 1, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 4, 4):
+                        pygame.draw.rect(s, (125, 182,  70), (stx - 3, ny, 3, 1))
+                surfs[bid] = s
+                continue
+            if bid == DILL_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 26), (12, 30), (21, 24)]:
+                    pygame.draw.rect(s, (108, 168,  65), (stx, BLOCK_SIZE - sth, 1, sth))
+                    for ny in range(BLOCK_SIZE - sth + 4, BLOCK_SIZE - 4, 3):
+                        pygame.draw.rect(s, (138, 195,  82), (stx - 5, ny, 5, 1))
+                        pygame.draw.rect(s, (138, 195,  82), (stx + 1, ny + 1, 5, 1))
+                    pygame.draw.circle(s, (215, 198,  55), (stx + 1, BLOCK_SIZE - sth + 2), 3)
+                surfs[bid] = s
+                continue
+            # --- Fennel (feathery, golden flower head) ---
+            if bid == FENNEL_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(5, 22), (13, 26), (21, 20)]:
+                    pygame.draw.rect(s, (100, 160,  60), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 4, 4):
+                        pygame.draw.rect(s, (120, 180,  72), (stx - 4, ny, 4, 1))
+                        pygame.draw.rect(s, (120, 180,  72), (stx + 2, ny + 2, 4, 1))
+                surfs[bid] = s
+                continue
+            if bid == FENNEL_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(7, 14), (15, 18), (22, 12)]:
+                    pygame.draw.rect(s, (100, 160,  60), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 4, 5):
+                        pygame.draw.rect(s, (115, 172,  68), (stx - 3, ny, 3, 1))
+                surfs[bid] = s
+                continue
+            if bid == FENNEL_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 26), (12, 30), (20, 24)]:
+                    pygame.draw.rect(s, (100, 160,  60), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 4, BLOCK_SIZE - 4, 3):
+                        pygame.draw.rect(s, (130, 188,  78), (stx - 4, ny, 5, 1))
+                        pygame.draw.rect(s, (130, 188,  78), (stx + 2, ny + 2, 5, 1))
+                    pygame.draw.circle(s, (210, 190,  50), (stx + 1, BLOCK_SIZE - sth + 2), 3)
+                surfs[bid] = s
+                continue
+            # --- Tarragon (narrow upright leaves) ---
+            if bid == TARRAGON_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(6, 20), (13, 24), (21, 18)]:
+                    pygame.draw.rect(s, ( 75, 142,  72), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 4):
+                        pygame.draw.rect(s, ( 95, 162,  85), (stx - 3, ny, 3, 2))
+                        pygame.draw.rect(s, ( 95, 162,  85), (stx + 2, ny + 2, 3, 2))
+                surfs[bid] = s
+                continue
+            if bid == TARRAGON_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(8, 14), (16, 17), (23, 12)]:
+                    pygame.draw.rect(s, ( 75, 142,  72), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 5):
+                        pygame.draw.rect(s, ( 92, 158,  82), (stx - 2, ny, 3, 2))
+                surfs[bid] = s
+                continue
+            if bid == TARRAGON_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 24), (12, 28), (21, 22)]:
+                    pygame.draw.rect(s, ( 75, 142,  72), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 3):
+                        pygame.draw.rect(s, (102, 172,  90), (stx - 4, ny, 4, 2))
+                        pygame.draw.rect(s, (102, 172,  90), (stx + 2, ny + 2, 4, 2))
+                surfs[bid] = s
+                continue
+            # --- Lemon Balm (bright green rounded leaves) ---
+            if bid == LEMON_BALM_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(2,15,11,7),(12,11,11,8),(20,17,9,6),(5,21,8,5)]:
+                    pygame.draw.ellipse(s, ( 82, 175,  75), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, (100, 198,  90), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            if bid == LEMON_BALM_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(5,19,9,6),(14,16,9,7),(20,22,8,5)]:
+                    pygame.draw.ellipse(s, ( 78, 162,  70), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, ( 95, 182,  85), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            if bid == LEMON_BALM_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(1,12,12,8),(12,9,12,9),(20,14,10,7),(4,19,9,6)]:
+                    pygame.draw.ellipse(s, ( 88, 182,  80), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, (108, 205,  95), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            # --- Echinacea (purple coneflower) ---
+            if bid == ECHINACEA_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(6, 22), (14, 26), (22, 20)]:
+                    pygame.draw.rect(s, ( 95, 138,  78), (stx, BLOCK_SIZE - sth, 2, sth))
+                surfs[bid] = s
+                continue
+            if bid == ECHINACEA_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(8, 14), (16, 18), (23, 12)]:
+                    pygame.draw.rect(s, ( 95, 138,  78), (stx, BLOCK_SIZE - sth, 2, sth))
+                    pygame.draw.ellipse(s, (105, 148,  88), (stx - 2, BLOCK_SIZE - sth, 6, 4))
+                surfs[bid] = s
+                continue
+            if bid == ECHINACEA_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 24), (13, 28), (22, 22)]:
+                    pygame.draw.rect(s, ( 95, 138,  78), (stx, BLOCK_SIZE - sth, 2, sth))
+                    pygame.draw.circle(s, (165,  65, 155), (stx + 1, BLOCK_SIZE - sth + 1), 4)
+                    for ang in range(0, 360, 45):
+                        px3 = int((stx + 1) + 6 * math.cos(math.radians(ang)))
+                        py3 = int((BLOCK_SIZE - sth + 1) + 6 * math.sin(math.radians(ang)))
+                        pygame.draw.ellipse(s, (198, 100, 185), (px3 - 2, py3 - 1, 4, 2))
+                surfs[bid] = s
+                continue
+            # --- Valerian (white flower clusters) ---
+            if bid == VALERIAN_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(5, 22), (13, 26), (21, 20)]:
+                    pygame.draw.rect(s, (115, 148,  92), (stx, BLOCK_SIZE - sth, 2, sth))
+                surfs[bid] = s
+                continue
+            if bid == VALERIAN_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(7, 14), (15, 18), (22, 12)]:
+                    pygame.draw.rect(s, (115, 148,  92), (stx, BLOCK_SIZE - sth, 2, sth))
+                    pygame.draw.ellipse(s, (125, 158, 102), (stx - 2, BLOCK_SIZE - sth, 6, 4))
+                surfs[bid] = s
+                continue
+            if bid == VALERIAN_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 25), (13, 29), (21, 22)]:
+                    pygame.draw.rect(s, (115, 148,  92), (stx, BLOCK_SIZE - sth, 2, sth))
+                    pygame.draw.circle(s, (230, 230, 225), (stx + 1, BLOCK_SIZE - sth + 1), 4)
+                    for px3, py3 in [(-3,-2),(3,-2),(0,-4),(-3,2),(3,2)]:
+                        pygame.draw.circle(s, (245, 245, 240), (stx + 1 + px3, BLOCK_SIZE - sth + 1 + py3), 2)
+                surfs[bid] = s
+                continue
+            # --- St. John's Wort (yellow star flowers) ---
+            if bid == ST_JOHNS_WORT_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(5, 20), (13, 24), (21, 18)]:
+                    pygame.draw.rect(s, (115, 155,  78), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 4):
+                        pygame.draw.ellipse(s, (125, 165,  88), (stx - 3, ny, 5, 3))
+                surfs[bid] = s
+                continue
+            if bid == ST_JOHNS_WORT_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(7, 14), (15, 18), (22, 12)]:
+                    pygame.draw.rect(s, (115, 155,  78), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 5):
+                        pygame.draw.ellipse(s, (122, 162,  85), (stx - 2, ny, 4, 3))
+                surfs[bid] = s
+                continue
+            if bid == ST_JOHNS_WORT_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 24), (12, 28), (21, 22)]:
+                    pygame.draw.rect(s, (115, 155,  78), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 6, BLOCK_SIZE - 3, 5):
+                        pygame.draw.ellipse(s, (128, 168,  88), (stx - 3, ny, 5, 3))
+                    pygame.draw.circle(s, (228, 210,  55), (stx + 1, BLOCK_SIZE - sth + 1), 4)
+                    for px3, py3 in [(-4,0),(4,0),(0,-4),(0,4)]:
+                        pygame.draw.rect(s, (238, 220,  65), (stx + 1 + px3 - 1, BLOCK_SIZE - sth + 1 + py3 - 1, 2, 2))
+                surfs[bid] = s
+                continue
+            # --- Yarrow (flat white flower clusters) ---
+            if bid == YARROW_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(5, 20), (13, 24), (21, 18)]:
+                    pygame.draw.rect(s, (115, 155,  85), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 4):
+                        pygame.draw.rect(s, (125, 165,  95), (stx - 3, ny, 5, 1))
+                surfs[bid] = s
+                continue
+            if bid == YARROW_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(7, 14), (15, 18), (22, 12)]:
+                    pygame.draw.rect(s, (115, 155,  85), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 5):
+                        pygame.draw.rect(s, (122, 162,  92), (stx - 2, ny, 4, 1))
+                surfs[bid] = s
+                continue
+            if bid == YARROW_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 24), (12, 28), (21, 22)]:
+                    pygame.draw.rect(s, (115, 155,  85), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 6, BLOCK_SIZE - 3, 4):
+                        pygame.draw.rect(s, (128, 168,  95), (stx - 3, ny, 5, 1))
+                    pygame.draw.ellipse(s, (248, 248, 242), (stx - 3, BLOCK_SIZE - sth - 2, 8, 4))
+                surfs[bid] = s
+                continue
+            # --- Bergamot (purple bee balm) ---
+            if bid == BERGAMOT_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(5, 22), (13, 26), (21, 20)]:
+                    pygame.draw.rect(s, ( 98, 148,  88), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 4):
+                        pygame.draw.ellipse(s, (108, 158,  98), (stx - 3, ny, 5, 3))
+                surfs[bid] = s
+                continue
+            if bid == BERGAMOT_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(7, 14), (15, 18), (22, 12)]:
+                    pygame.draw.rect(s, ( 98, 148,  88), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 5):
+                        pygame.draw.ellipse(s, (105, 155,  95), (stx - 2, ny, 4, 3))
+                surfs[bid] = s
+                continue
+            if bid == BERGAMOT_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 24), (12, 28), (21, 22)]:
+                    pygame.draw.rect(s, ( 98, 148,  88), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 6, BLOCK_SIZE - 3, 5):
+                        pygame.draw.ellipse(s, (112, 162, 100), (stx - 3, ny, 5, 3))
+                    pygame.draw.circle(s, (198, 105, 185), (stx + 1, BLOCK_SIZE - sth + 2), 5)
+                    for px3, py3 in [(-5,-2),(5,-2),(-5,2),(5,2),(0,-5)]:
+                        pygame.draw.ellipse(s, (215, 118, 202), (stx + 1 + px3 - 2, BLOCK_SIZE - sth + 2 + py3 - 1, 4, 2))
+                surfs[bid] = s
+                continue
+            # --- Wormwood (silver-grey feathery leaves) ---
+            if bid == WORMWOOD_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(5, 22), (13, 26), (21, 20)]:
+                    pygame.draw.rect(s, (148, 158, 128), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 3):
+                        pygame.draw.rect(s, (165, 175, 145), (stx - 4, ny, 5, 1))
+                        pygame.draw.rect(s, (165, 175, 145), (stx + 2, ny + 1, 5, 1))
+                surfs[bid] = s
+                continue
+            if bid == WORMWOOD_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(7, 14), (15, 18), (22, 12)]:
+                    pygame.draw.rect(s, (148, 158, 128), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 4):
+                        pygame.draw.rect(s, (160, 170, 140), (stx - 2, ny, 3, 1))
+                surfs[bid] = s
+                continue
+            if bid == WORMWOOD_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 24), (12, 28), (20, 22)]:
+                    pygame.draw.rect(s, (148, 158, 128), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 3):
+                        pygame.draw.rect(s, (178, 188, 158), (stx - 4, ny, 5, 1))
+                        pygame.draw.rect(s, (178, 188, 158), (stx + 2, ny + 1, 5, 1))
+                surfs[bid] = s
+                continue
+            # --- Rue (blue-grey lobed leaves) ---
+            if bid == RUE_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(3,16,9,6),(12,12,10,7),(20,17,8,5),(6,22,7,5)]:
+                    pygame.draw.ellipse(s, (118, 148, 155), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, (135, 165, 172), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            if bid == RUE_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(5,19,7,5),(14,17,8,6),(20,22,6,4)]:
+                    pygame.draw.ellipse(s, (105, 135, 142), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, (122, 152, 158), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            if bid == RUE_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(2,13,10,7),(11,10,11,8),(20,15,9,6),(5,21,8,5)]:
+                    pygame.draw.ellipse(s, (122, 152, 160), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, (140, 168, 178), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            # --- Lemon Verbena (bright yellow-green narrow leaves) ---
+            if bid == LEMON_VERBENA_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(5, 22), (13, 26), (21, 20)]:
+                    pygame.draw.rect(s, (172, 195,  70), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 4):
+                        pygame.draw.rect(s, (192, 215,  82), (stx - 4, ny, 5, 2))
+                        pygame.draw.rect(s, (192, 215,  82), (stx + 2, ny + 2, 5, 2))
+                surfs[bid] = s
+                continue
+            if bid == LEMON_VERBENA_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(7, 14), (15, 18), (22, 12)]:
+                    pygame.draw.rect(s, (172, 195,  70), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 5):
+                        pygame.draw.rect(s, (182, 205,  78), (stx - 3, ny, 4, 2))
+                surfs[bid] = s
+                continue
+            if bid == LEMON_VERBENA_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 24), (12, 28), (21, 22)]:
+                    pygame.draw.rect(s, (172, 195,  70), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 3):
+                        pygame.draw.rect(s, (200, 225,  88), (stx - 5, ny, 6, 2))
+                        pygame.draw.rect(s, (200, 225,  88), (stx + 2, ny + 2, 6, 2))
+                surfs[bid] = s
+                continue
+            # --- Hyssop (blue flower spikes) ---
+            if bid == HYSSOP_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(5, 22), (13, 26), (21, 20)]:
+                    pygame.draw.rect(s, ( 92, 140,  88), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 4, 4):
+                        pygame.draw.circle(s, (118, 145, 205), (stx + 1, ny), 2)
+                surfs[bid] = s
+                continue
+            if bid == HYSSOP_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(7, 14), (15, 18), (22, 12)]:
+                    pygame.draw.rect(s, ( 92, 140,  88), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 4, 5):
+                        pygame.draw.circle(s, (105, 140,  95), (stx + 1, ny), 2)
+                surfs[bid] = s
+                continue
+            if bid == HYSSOP_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 24), (12, 28), (21, 22)]:
+                    pygame.draw.rect(s, ( 92, 140,  88), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 4, 3):
+                        pygame.draw.circle(s, (130, 155, 222), (stx + 1, ny), 3)
+                surfs[bid] = s
+                continue
+            # --- Catnip (pale grey-green fuzzy leaves) ---
+            if bid == CATNIP_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(3,16,9,6),(12,12,10,7),(20,17,8,5),(6,22,7,5)]:
+                    pygame.draw.ellipse(s, (148, 168, 138), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, (165, 185, 155), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            if bid == CATNIP_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(5,19,8,5),(14,17,8,6),(20,22,6,4)]:
+                    pygame.draw.ellipse(s, (135, 155, 125), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, (152, 172, 142), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            if bid == CATNIP_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(2,12,11,7),(11,9,11,8),(20,14,9,6),(4,20,9,5)]:
+                    pygame.draw.ellipse(s, (152, 172, 142), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, (170, 190, 158), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            # --- Wood Sorrel (three-lobed clover-like leaves) ---
+            if bid == WOOD_SORREL_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for cx2, cy2 in [(8,20),(16,18),(12,25),(20,23),(6,26)]:
+                    pygame.draw.ellipse(s, ( 72, 168,  72), (cx2-3, cy2-2, 6, 4))
+                    pygame.draw.ellipse(s, ( 72, 168,  72), (cx2-1, cy2-4, 4, 6))
+                    pygame.draw.ellipse(s, ( 72, 168,  72), (cx2+1, cy2-2, 6, 4))
+                surfs[bid] = s
+                continue
+            if bid == WOOD_SORREL_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for cx2, cy2 in [(8,22),(16,20),(12,27)]:
+                    pygame.draw.ellipse(s, ( 62, 152,  62), (cx2-2, cy2-2, 5, 3))
+                    pygame.draw.ellipse(s, ( 62, 152,  62), (cx2-1, cy2-4, 3, 5))
+                    pygame.draw.ellipse(s, ( 62, 152,  62), (cx2+1, cy2-2, 5, 3))
+                surfs[bid] = s
+                continue
+            if bid == WOOD_SORREL_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for cx2, cy2 in [(7,18),(15,16),(11,22),(20,20),(5,24),(18,26)]:
+                    pygame.draw.ellipse(s, ( 78, 178,  78), (cx2-3, cy2-2, 6, 4))
+                    pygame.draw.ellipse(s, ( 78, 178,  78), (cx2-1, cy2-4, 4, 6))
+                    pygame.draw.ellipse(s, ( 78, 178,  78), (cx2+1, cy2-2, 6, 4))
+                surfs[bid] = s
+                continue
+            # --- Marjoram (small oval leaves) ---
+            if bid == MARJORAM_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(6, 20), (14, 24), (22, 18)]:
+                    pygame.draw.rect(s, ( 88, 145,  70), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 4):
+                        pygame.draw.ellipse(s, (105, 162,  82), (stx - 3, ny, 5, 3))
+                        pygame.draw.ellipse(s, (105, 162,  82), (stx + 2, ny + 2, 5, 3))
+                surfs[bid] = s
+                continue
+            if bid == MARJORAM_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(8, 13), (16, 16), (23, 11)]:
+                    pygame.draw.rect(s, ( 88, 145,  70), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 5):
+                        pygame.draw.ellipse(s, (100, 155,  78), (stx - 2, ny, 4, 3))
+                surfs[bid] = s
+                continue
+            if bid == MARJORAM_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 23), (12, 27), (21, 21)]:
+                    pygame.draw.rect(s, ( 88, 145,  70), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 3):
+                        pygame.draw.ellipse(s, (115, 172,  88), (stx - 4, ny, 6, 3))
+                        pygame.draw.ellipse(s, (115, 172,  88), (stx + 2, ny + 2, 6, 3))
+                surfs[bid] = s
+                continue
+            # --- Savory (thin needle-like leaves, compact) ---
+            if bid == SAVORY_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(6, 20), (14, 23), (22, 18)]:
+                    pygame.draw.rect(s, ( 98, 135,  75), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 3):
+                        pygame.draw.rect(s, (115, 152,  88), (stx - 3, ny, 4, 1))
+                        pygame.draw.rect(s, (115, 152,  88), (stx + 2, ny + 1, 4, 1))
+                surfs[bid] = s
+                continue
+            if bid == SAVORY_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(8, 12), (16, 16), (23, 11)]:
+                    pygame.draw.rect(s, ( 98, 135,  75), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 4):
+                        pygame.draw.rect(s, (112, 148,  85), (stx - 2, ny, 3, 1))
+                surfs[bid] = s
+                continue
+            if bid == SAVORY_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 23), (12, 27), (21, 21)]:
+                    pygame.draw.rect(s, ( 98, 135,  75), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 3):
+                        pygame.draw.rect(s, (125, 162,  95), (stx - 4, ny, 5, 1))
+                        pygame.draw.rect(s, (125, 162,  95), (stx + 2, ny + 1, 5, 1))
+                surfs[bid] = s
+                continue
+            # --- Angelica (large compound leaves, tall) ---
+            if bid == ANGELICA_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(6, 24), (14, 28), (22, 22)]:
+                    pygame.draw.rect(s, ( 75, 152,  95), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 4):
+                        pygame.draw.ellipse(s, ( 88, 168, 108), (stx - 4, ny, 6, 4))
+                        pygame.draw.ellipse(s, ( 88, 168, 108), (stx + 2, ny + 2, 6, 4))
+                surfs[bid] = s
+                continue
+            if bid == ANGELICA_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(8, 14), (16, 18), (23, 12)]:
+                    pygame.draw.rect(s, ( 75, 152,  95), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 5):
+                        pygame.draw.ellipse(s, ( 82, 158, 102), (stx - 3, ny, 5, 3))
+                surfs[bid] = s
+                continue
+            if bid == ANGELICA_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 26), (12, 30), (21, 24)]:
+                    pygame.draw.rect(s, ( 75, 152,  95), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 4, BLOCK_SIZE - 2, 4):
+                        pygame.draw.ellipse(s, ( 95, 178, 118), (stx - 5, ny, 7, 4))
+                        pygame.draw.ellipse(s, ( 95, 178, 118), (stx + 2, ny + 2, 7, 4))
+                    pygame.draw.circle(s, (238, 238, 232), (stx + 1, BLOCK_SIZE - sth + 2), 4)
+                surfs[bid] = s
+                continue
+            # --- Borage (bright blue starflowers) ---
+            if bid == BORAGE_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(5, 22), (13, 26), (21, 20)]:
+                    pygame.draw.rect(s, ( 92, 142,  88), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 4):
+                        pygame.draw.ellipse(s, (102, 152,  98), (stx - 3, ny, 5, 3))
+                surfs[bid] = s
+                continue
+            if bid == BORAGE_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(7, 14), (15, 18), (22, 12)]:
+                    pygame.draw.rect(s, ( 92, 142,  88), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 5):
+                        pygame.draw.ellipse(s, (100, 148,  95), (stx - 2, ny, 4, 3))
+                surfs[bid] = s
+                continue
+            if bid == BORAGE_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 24), (12, 28), (21, 22)]:
+                    pygame.draw.rect(s, ( 92, 142,  88), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 6, BLOCK_SIZE - 3, 5):
+                        pygame.draw.ellipse(s, (105, 155,  98), (stx - 3, ny, 5, 3))
+                    pygame.draw.circle(s, (115, 155, 220), (stx + 1, BLOCK_SIZE - sth + 2), 4)
+                    for px3, py3 in [(-4,0),(4,0),(0,-4),(0,4),(-3,-3),(3,-3),(-3,3),(3,3)]:
+                        pygame.draw.rect(s, (128, 168, 235), (stx + 1 + px3 - 1, BLOCK_SIZE - sth + 2 + py3 - 1, 2, 2))
+                surfs[bid] = s
+                continue
+            # --- Comfrey (large leaves, purple bell flowers) ---
+            if bid == COMFREY_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(2,14,13,8),(13,10,12,9),(20,16,10,7),(4,21,10,6)]:
+                    pygame.draw.ellipse(s, ( 90, 148,  85), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, (105, 165,  98), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            if bid == COMFREY_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(4,18,11,7),(13,15,10,8),(20,21,8,6)]:
+                    pygame.draw.ellipse(s, ( 82, 138,  78), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, ( 95, 155,  90), (lx2+1, ly2+1, lw-2, lh-2))
+                surfs[bid] = s
+                continue
+            if bid == COMFREY_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for lx2, ly2, lw, lh in [(1,11,14,9),(12,8,13,10),(20,14,11,8),(4,19,10,7)]:
+                    pygame.draw.ellipse(s, ( 92, 152,  88), (lx2, ly2, lw, lh))
+                    pygame.draw.ellipse(s, (108, 168, 102), (lx2+1, ly2+1, lw-2, lh-2))
+                for px3, py3 in [(8,6),(16,4),(22,8)]:
+                    pygame.draw.ellipse(s, (158, 128, 205), (px3, py3, 4, 6))
+                surfs[bid] = s
+                continue
+            # --- Mugwort (silver-backed upright leaves) ---
+            if bid == MUGWORT_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(5, 22), (13, 26), (21, 20)]:
+                    pygame.draw.rect(s, (132, 148, 112), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 4):
+                        pygame.draw.ellipse(s, (148, 165, 128), (stx - 4, ny, 6, 3))
+                        pygame.draw.ellipse(s, (185, 195, 165), (stx - 4, ny, 6, 2))
+                surfs[bid] = s
+                continue
+            if bid == MUGWORT_CROP_YOUNG:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(7, 14), (15, 18), (22, 12)]:
+                    pygame.draw.rect(s, (132, 148, 112), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 5):
+                        pygame.draw.ellipse(s, (142, 158, 122), (stx - 3, ny, 5, 3))
+                surfs[bid] = s
+                continue
+            if bid == MUGWORT_CROP_MATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                for stx, sth in [(4, 24), (12, 28), (21, 22)]:
+                    pygame.draw.rect(s, (132, 148, 112), (stx, BLOCK_SIZE - sth, 2, sth))
+                    for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 2, 3):
+                        pygame.draw.ellipse(s, (158, 175, 138), (stx - 5, ny, 7, 3))
+                        pygame.draw.ellipse(s, (195, 205, 175), (stx - 5, ny, 7, 2))
                 surfs[bid] = s
                 continue
             if bid == CACTUS_YOUNG:
@@ -2446,6 +3340,4038 @@ class Renderer:
                 pygame.draw.rect(s, lead, s.get_rect(), 1)
                 surfs[bid] = s
                 continue
+            # --- Glass Kiln station ---
+            if bid == GLASS_KILN_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                brick = (160, 80, 50)
+                dark  = (80, 40, 25)
+                s.fill(brick)
+                for row in range(4):
+                    offset_x = 4 if row % 2 == 0 else 0
+                    for col in range(-1, 4):
+                        pygame.draw.rect(s, dark, (offset_x + col * 8, row * 8, 7, 7), 1)
+                # arched furnace mouth
+                mouth_rect = pygame.Rect(7, 14, 18, 14)
+                pygame.draw.rect(s, (30, 20, 15), mouth_rect)
+                pygame.draw.arc(s, (30, 20, 15), (7, 8, 18, 14), 0, math.pi, 3)
+                # orange glow inside arch
+                pygame.draw.circle(s, (240, 130, 40), (16, 20), 4)
+                # chimney
+                pygame.draw.rect(s, dark, (20, 0, 6, 8))
+                pygame.draw.rect(s, (240, 130, 40), (21, 2, 4, 3))
+                pygame.draw.rect(s, _darken(brick, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Pottery Wheel station ---
+            if bid == POTTERY_WHEEL_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                base = (130, 95, 65)
+                dark = _darken(base, 35)
+                s.fill(base)
+                # wooden base frame
+                pygame.draw.rect(s, dark, (4, 20, 24, 10))
+                # wheel disc (top view oval)
+                pygame.draw.ellipse(s, (165, 120, 80), (6, 6, 20, 14))
+                pygame.draw.ellipse(s, dark, (6, 6, 20, 14), 2)
+                # centre hub
+                pygame.draw.circle(s, (100, 70, 45), (16, 13), 3)
+                # spoke lines
+                pygame.draw.line(s, (100, 70, 45), (16, 13), (8,  7), 1)
+                pygame.draw.line(s, (100, 70, 45), (16, 13), (24, 7), 1)
+                pygame.draw.line(s, (100, 70, 45), (16, 13), (16, 6), 1)
+                pygame.draw.rect(s, _darken(base, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Pottery Kiln station ---
+            if bid == POTTERY_KILN_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                brick = (80, 60, 50)
+                dark  = (45, 30, 20)
+                s.fill(brick)
+                # brick row lines
+                for row in range(4):
+                    off = 4 if row % 2 == 0 else 0
+                    for col in range(-1, 4):
+                        pygame.draw.rect(s, dark, (off + col * 8, row * 8, 7, 7), 1)
+                # arched mouth opening
+                mouth = pygame.Rect(8, 15, 16, 13)
+                pygame.draw.rect(s, (20, 12, 8), mouth)
+                pygame.draw.arc(s, (20, 12, 8), (8, 9, 16, 12), 0, math.pi, 3)
+                # orange glow inside
+                pygame.draw.circle(s, (230, 110, 30), (16, 21), 3)
+                # small chimney
+                pygame.draw.rect(s, dark, (21, 1, 5, 7))
+                pygame.draw.rect(s, (200, 100, 30), (22, 2, 3, 3))
+                pygame.draw.rect(s, _darken(brick, 15), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Glass Kiln products: 8 dye-colored stained glass + clear ---
+            if bid in (CLEAR_GLASS, STAINED_GLASS_GOLDEN, STAINED_GLASS_CRIMSON,
+                       STAINED_GLASS_ROSE, STAINED_GLASS_COBALT, STAINED_GLASS_VIOLET,
+                       STAINED_GLASS_VERDANT, STAINED_GLASS_AMBER, STAINED_GLASS_IVORY):
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 40)
+                s.fill(lt)
+                lead = (30, 30, 30)
+                pygame.draw.rect(s, lead, (0, 0, BLOCK_SIZE, BLOCK_SIZE), 3)
+                pygame.draw.line(s, lead, (BLOCK_SIZE//2, 0), (BLOCK_SIZE//2, BLOCK_SIZE), 3)
+                pygame.draw.line(s, lead, (0, BLOCK_SIZE//2), (BLOCK_SIZE, BLOCK_SIZE//2), 3)
+                for qx2, qy2 in [(3,3),(19,3),(3,19),(19,19)]:
+                    pygame.draw.rect(s, c, (qx2+1, qy2+1, 11, 11))
+                    pygame.draw.line(s, lt, (qx2+1, qy2+1), (qx2+7, qy2+1), 1)
+                    pygame.draw.line(s, lt, (qx2+1, qy2+1), (qx2+1, qy2+5), 1)
+                pygame.draw.rect(s, lead, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Cathedral Window ---
+            if bid == CATHEDRAL_WINDOW:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                bg   = (20, 30, 55)
+                pane = ( 55,  90, 185)
+                gold = (190, 160,  50)
+                lead = (30, 30, 30)
+                s.fill(bg)
+                # two colored panes flanking center lead
+                pygame.draw.rect(s, pane, (2, 14, 11, 14))
+                pygame.draw.rect(s, pane, (19, 14, 11, 14))
+                # pointed arch outline
+                cx2 = BLOCK_SIZE // 2
+                pygame.draw.line(s, lead, (2, 28), (cx2, 2), 2)
+                pygame.draw.line(s, lead, (cx2, 2), (BLOCK_SIZE-3, 28), 2)
+                pygame.draw.line(s, lead, (2, 28), (BLOCK_SIZE-3, 28), 2)
+                # central vertical lead bar
+                pygame.draw.line(s, lead, (cx2, 2), (cx2, 30), 2)
+                # gold tracery circle at top
+                pygame.draw.circle(s, gold, (cx2, 10), 5, 1)
+                pygame.draw.circle(s, pane, (cx2, 10), 3)
+                # base fill below arch
+                pygame.draw.rect(s, _darken(bg, 10), (2, 28, BLOCK_SIZE-4, BLOCK_SIZE-30))
+                pygame.draw.rect(s, lead, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Mosaic Glass ---
+            if bid == MOSAIC_GLASS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                base = _lighter(bdata["color"], 30)
+                s.fill(base)
+                lead = (30, 30, 30)
+                tile_colors = [
+                    (215, 175, 40), (55, 90, 185), (220, 110, 155),
+                    (130, 65, 195), (60, 148, 75), (200, 115, 35),
+                    (185, 35, 45),  (245, 240, 220),
+                ]
+                positions = [
+                    (2, 2), (10, 2), (18, 2), (26, 2),
+                    (2,10), (10,10), (18,10), (26,10),
+                    (2,18), (10,18), (18,18), (26,18),
+                    (2,26), (10,26), (18,26), (26,26),
+                ]
+                for i, (tx, ty) in enumerate(positions):
+                    col = tile_colors[i % len(tile_colors)]
+                    pygame.draw.rect(s, col, (tx, ty, 7, 7))
+                    pygame.draw.rect(s, lead, (tx, ty, 7, 7), 1)
+                pygame.draw.rect(s, lead, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Smoked Glass ---
+            if bid == SMOKED_GLASS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c  = bdata["color"]
+                lt = _lighter(c, 18)
+                s.fill(c)
+                pygame.draw.line(s, lt, (0, BLOCK_SIZE), (BLOCK_SIZE, 0), 1)
+                pygame.draw.line(s, lt, (4, BLOCK_SIZE), (BLOCK_SIZE, 4), 1)
+                pygame.draw.line(s, lt, (0, BLOCK_SIZE-4), (BLOCK_SIZE-4, 0), 1)
+                pygame.draw.rect(s, (20, 25, 30), s.get_rect(), 2)
+                surfs[bid] = s
+                continue
+            # --- Ribbed Glass: vertical parallel ribs ---
+            if bid == RIBBED_GLASS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c  = bdata["color"]
+                lt = _lighter(c, 30)
+                dk = _darken(c, 15)
+                s.fill(c)
+                for rx in range(2, BLOCK_SIZE - 1, 5):
+                    pygame.draw.line(s, lt, (rx,   0), (rx,   BLOCK_SIZE), 1)
+                    pygame.draw.line(s, dk, (rx+2, 0), (rx+2, BLOCK_SIZE), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Hammered Glass: irregular faceted bumps ---
+            if bid == HAMMERED_GLASS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c  = bdata["color"]
+                lt = _lighter(c, 28)
+                dk = _darken(c, 18)
+                s.fill(c)
+                import random as _rnd
+                rng = _rnd.Random(42)
+                for _ in range(22):
+                    bx2 = rng.randint(1, BLOCK_SIZE - 5)
+                    by2 = rng.randint(1, BLOCK_SIZE - 5)
+                    w2  = rng.randint(3, 6)
+                    h2  = rng.randint(3, 6)
+                    col2 = lt if rng.random() > 0.5 else dk
+                    pygame.draw.ellipse(s, col2, (bx2, by2, w2, h2))
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Crackled Glass: ice-crack network ---
+            if bid == CRACKLED_GLASS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c  = bdata["color"]
+                lt = _lighter(c, 35)
+                dk = _darken(c, 20)
+                s.fill(lt)
+                crack = dk
+                cx2, cy2 = BLOCK_SIZE // 2, BLOCK_SIZE // 2
+                endpoints = [(3, 3), (BLOCK_SIZE-4, 3), (3, BLOCK_SIZE-4),
+                             (BLOCK_SIZE-4, BLOCK_SIZE-4), (BLOCK_SIZE//2, 2),
+                             (2, BLOCK_SIZE//2), (BLOCK_SIZE-2, BLOCK_SIZE//2)]
+                for ex2, ey2 in endpoints:
+                    pygame.draw.line(s, crack, (cx2, cy2), (ex2, ey2), 1)
+                pygame.draw.circle(s, c, (cx2, cy2), 2)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Oculus Window: circular porthole with spokes ---
+            if bid == OCULUS_WINDOW:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c    = bdata["color"]
+                lt   = _lighter(c, 35)
+                lead = (30, 30, 30)
+                gold = (180, 150, 45)
+                s.fill(_darken(c, 30))
+                r = BLOCK_SIZE // 2 - 2
+                cx2, cy2 = BLOCK_SIZE // 2, BLOCK_SIZE // 2
+                pygame.draw.circle(s, lt, (cx2, cy2), r)
+                pygame.draw.circle(s, lead, (cx2, cy2), r, 2)
+                for i in range(8):
+                    angle = math.pi * i / 4
+                    ex2 = cx2 + int(r * math.cos(angle))
+                    ey2 = cy2 + int(r * math.sin(angle))
+                    pygame.draw.line(s, lead, (cx2, cy2), (ex2, ey2), 1)
+                pygame.draw.circle(s, gold, (cx2, cy2), 3)
+                pygame.draw.rect(s, lead, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Lancet Window: tall narrow pointed arch ---
+            if bid == LANCET_WINDOW:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c    = bdata["color"]
+                lt   = _lighter(c, 40)
+                lead = (30, 30, 30)
+                s.fill(_darken(c, 25))
+                cx2 = BLOCK_SIZE // 2
+                # narrow pane
+                pygame.draw.rect(s, lt, (cx2 - 5, 14, 10, 16))
+                # pointed arch lines
+                pygame.draw.line(s, lead, (cx2 - 5, 30), (cx2,   4), 2)
+                pygame.draw.line(s, lead, (cx2 + 5, 30), (cx2,   4), 2)
+                pygame.draw.line(s, lead, (cx2 - 5, 30), (cx2 + 5, 30), 2)
+                pygame.draw.line(s, lead, (cx2,  4), (cx2, 30), 1)
+                pygame.draw.rect(s, lead, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Diamond Pane: rotated diamond lead grid ---
+            if bid == DIAMOND_PANE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c    = bdata["color"]
+                lt   = _lighter(c, 38)
+                lead = (35, 35, 35)
+                s.fill(lt)
+                for i in range(-1, 3):
+                    ox = i * 8
+                    pygame.draw.line(s, lead, (ox,      0),          (ox + BLOCK_SIZE, BLOCK_SIZE), 1)
+                    pygame.draw.line(s, lead, (ox,      BLOCK_SIZE), (ox + BLOCK_SIZE, 0),          1)
+                pygame.draw.rect(s, lead, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Sea Glass: frosted seafoam with soft bubbles ---
+            if bid == SEA_GLASS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c  = bdata["color"]
+                lt = _lighter(c, 35)
+                dk = _darken(c, 20)
+                s.fill(lt)
+                for bx2, by2, br in [(6, 6, 4), (20, 9, 3), (10, 20, 5), (24, 22, 3), (16, 14, 2)]:
+                    pygame.draw.circle(s, c,  (bx2, by2), br)
+                    pygame.draw.circle(s, lt, (bx2 - 1, by2 - 1), max(1, br - 1), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Mirror Glass: silver reflective with highlight stripe ---
+            if bid == MIRROR_GLASS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c   = bdata["color"]
+                lt  = _lighter(c, 40)
+                dk  = _darken(c, 20)
+                s.fill(c)
+                pygame.draw.rect(s, lt, (3, 2, 6, BLOCK_SIZE - 4))
+                pygame.draw.rect(s, dk, (0, 0, BLOCK_SIZE, BLOCK_SIZE), 2)
+                surfs[bid] = s
+                continue
+            # --- Iridescent Glass: overlapping tinted ovals ---
+            if bid == IRIDESCENT_GLASS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c  = bdata["color"]
+                lt = _lighter(c, 30)
+                s.fill(lt)
+                layers = [
+                    ((215, 175, 40),  (3,  3, 14, 14)),
+                    ((55,  90, 185),  (14, 3, 14, 14)),
+                    ((220,110, 155),  (8, 14, 14, 14)),
+                    ((60, 148,  75),  (3, 14, 10, 10)),
+                    ((130, 65, 195),  (18, 14, 10, 10)),
+                ]
+                for col2, rect2 in layers:
+                    surf2 = pygame.Surface((rect2[2], rect2[3]), pygame.SRCALPHA)
+                    surf2.fill((*col2, 110))
+                    s.blit(surf2, (rect2[0], rect2[1]))
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Sunset Glass: warm horizontal gradient bands ---
+            if bid == SUNSET_GLASS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c     = bdata["color"]
+                bands = [(240, 90, 50), (230, 130, 60), (215, 170, 55), (200, 115, 35)]
+                band_h = BLOCK_SIZE // len(bands)
+                for i, bc in enumerate(bands):
+                    pygame.draw.rect(s, bc, (0, i * band_h, BLOCK_SIZE, band_h + 1))
+                lead = (40, 30, 20)
+                pygame.draw.line(s, lead, (BLOCK_SIZE//2, 0), (BLOCK_SIZE//2, BLOCK_SIZE), 2)
+                pygame.draw.rect(s, lead, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # --- Obsidian Glass: dark with purple depth shimmer ---
+            if bid == OBSIDIAN_GLASS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c  = bdata["color"]
+                lt = _lighter(c, 30)
+                s.fill(c)
+                pygame.draw.ellipse(s, (60, 30, 80), (4, 4, 12, 10))
+                pygame.draw.ellipse(s, lt,            (5, 5, 6,  5))
+                pygame.draw.rect(s, (50, 30, 70), s.get_rect(), 2)
+                surfs[bid] = s
+                continue
+            # --- Crystal Glass: bright clear with sparkle facets ---
+            if bid == CRYSTAL_GLASS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c  = bdata["color"]
+                lt = _lighter(c, 15)
+                dk = _darken(c, 10)
+                s.fill(lt)
+                # sparkle stars at four spots
+                for sx2, sy2 in [(6, 6), (22, 8), (10, 22), (24, 24)]:
+                    for angle in [0, math.pi/2, math.pi/4, 3*math.pi/4]:
+                        ex2 = sx2 + int(4 * math.cos(angle))
+                        ey2 = sy2 + int(4 * math.sin(angle))
+                        pygame.draw.line(s, (255, 255, 255), (sx2, sy2), (ex2, ey2), 1)
+                    pygame.draw.circle(s, (255, 255, 255), (sx2, sy2), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # ── Garden Workshop blocks ─────────────────────────────────────────
+            if bid == GARDEN_WORKSHOP_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(_darken(c, 15))
+                wood = (139, 90, 43)
+                pygame.draw.rect(s, wood, (1, 4, BLOCK_SIZE-2, BLOCK_SIZE//2-4))
+                pygame.draw.line(s, _darken(wood, 20), (1, 4), (BLOCK_SIZE-2, 4), 1)
+                pygame.draw.rect(s, c, (0, BLOCK_SIZE//2, BLOCK_SIZE, BLOCK_SIZE//2))
+                for cx2 in [6, 12, 20, 26]:
+                    pygame.draw.line(s, _darken(wood, 25), (cx2, 8), (cx2+2, 14), 1)
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid in {ZELLIGE_BLUE, ZELLIGE_TERRACOTTA, ZELLIGE_EMERALD, ZELLIGE_WHITE}:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                lt = _lighter(c, 22)
+                dk = _darken(c, 30)
+                cx2, cy2 = BLOCK_SIZE//2, BLOCK_SIZE//2
+                r_out, r_in = 10, 4
+                pts = [(cx2 + (r_out if i%2==0 else r_in)*math.cos(math.pi*i/8 - math.pi/16),
+                        cy2 + (r_out if i%2==0 else r_in)*math.sin(math.pi*i/8 - math.pi/16))
+                       for i in range(16)]
+                pygame.draw.polygon(s, lt, pts)
+                pygame.draw.polygon(s, dk, pts, 1)
+                pygame.draw.rect(s, _darken(c, 15), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == GARDEN_STAR_TILE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                lt = _lighter(c, 28)
+                cx2, cy2 = BLOCK_SIZE//2, BLOCK_SIZE//2
+                o, i2 = 7, 4
+                pygame.draw.rect(s, lt, (cx2-i2, cy2-o, i2*2, o*2))
+                pygame.draw.rect(s, lt, (cx2-o, cy2-i2, o*2, i2*2))
+                dd = 5
+                for dx2, dy2 in [(-dd, -dd), (dd, -dd), (-dd, dd), (dd, dd)]:
+                    pygame.draw.rect(s, lt, (cx2+dx2-2, cy2+dy2-2, 4, 4))
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == GEOMETRIC_MOSAIC:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                cols = [c, _darken(c, 22), _lighter(c, 18), _darken(c, 10)]
+                pygame.draw.polygon(s, cols[0], [(0,0), (BS,0), (BS//2, BS//2)])
+                pygame.draw.polygon(s, cols[1], [(BS,0), (BS,BS), (BS//2, BS//2)])
+                pygame.draw.polygon(s, cols[2], [(0,BS), (BS,BS), (BS//2, BS//2)])
+                pygame.draw.polygon(s, cols[3], [(0,0), (0,BS), (BS//2, BS//2)])
+                pygame.draw.rect(s, _darken(c, 30), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == WATER_CHANNEL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(_darken(c, 20))
+                lt = _lighter(c, 20)
+                pygame.draw.rect(s, c, (2, BLOCK_SIZE//2-4, BLOCK_SIZE-4, 8))
+                for ry in [BLOCK_SIZE//2-2, BLOCK_SIZE//2, BLOCK_SIZE//2+2]:
+                    pygame.draw.line(s, lt, (4, ry), (BLOCK_SIZE-5, ry), 1)
+                pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == ORNAMENTAL_POOL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(_darken(c, 15))
+                lt = _lighter(c, 18)
+                cx2, cy2 = BLOCK_SIZE//2, BLOCK_SIZE//2
+                pygame.draw.ellipse(s, c, (2, 4, BLOCK_SIZE-4, BLOCK_SIZE-8))
+                for r2 in [10, 7, 4]:
+                    pygame.draw.ellipse(s, lt, (cx2-r2, cy2-r2+1, r2*2, r2*2-2), 1)
+                pygame.draw.rect(s, _darken(c, 30), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == FOUNTAIN_BASIN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 15)
+                dk = _darken(c, 20)
+                water = (80, 155, 200)
+                pygame.draw.rect(s, lt, (2, 2, BLOCK_SIZE-4, BLOCK_SIZE//2-2))
+                pygame.draw.rect(s, dk, (1, BLOCK_SIZE//2, BLOCK_SIZE-2, BLOCK_SIZE//2-1))
+                pygame.draw.ellipse(s, water, (5, 16, BLOCK_SIZE-10, 10))
+                pygame.draw.line(s, _lighter(water, 20), (BLOCK_SIZE//2, 14), (BLOCK_SIZE//2, 8), 1)
+                pygame.draw.circle(s, (220, 235, 255), (BLOCK_SIZE//2, 7), 2)
+                pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == TIERED_FOUNTAIN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(_darken(c, 10))
+                water = (80, 155, 200)
+                pygame.draw.ellipse(s, c, (8, 2, 16, 6))
+                pygame.draw.ellipse(s, _darken(c, 15), (8, 2, 16, 6), 1)
+                pygame.draw.ellipse(s, c, (4, 16, 24, 8))
+                pygame.draw.ellipse(s, _darken(c, 15), (4, 16, 24, 8), 1)
+                pygame.draw.ellipse(s, water, (9, 3, 14, 4))
+                pygame.draw.ellipse(s, water, (5, 17, 22, 6))
+                pygame.draw.rect(s, c, (13, 8, 6, 8))
+                pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == HORSESHOE_ARCH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 25)
+                lt = _lighter(c, 10)
+                inside = _darken(c, 45)
+                s.fill(c)
+                ax, aw = 6, BLOCK_SIZE - 12
+                at = 6
+                pygame.draw.rect(s, inside, (ax+1, at+aw//2, aw-2, BLOCK_SIZE - at - aw//2 - 2))
+                pygame.draw.arc(s, dk, (ax, at, aw, aw), 0, math.pi, 3)
+                pygame.draw.line(s, dk, (ax, at+aw//2), (ax, BLOCK_SIZE-2), 3)
+                pygame.draw.line(s, dk, (ax+aw, at+aw//2), (ax+aw, BLOCK_SIZE-2), 3)
+                pygame.draw.line(s, lt, (1, 2), (BLOCK_SIZE-2, 2), 1)
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == MUQARNAS_PANEL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 28)
+                for row in range(3):
+                    for col in range(4):
+                        cx2 = col * 8 + (4 if row % 2 else 0)
+                        cy2 = row * 9 + 3
+                        pygame.draw.arc(s, dk, (cx2-1, cy2, 8, 8), 0, math.pi, 2)
+                        pygame.draw.line(s, dk, (cx2-1, cy2+4), (cx2-1, cy2+8), 1)
+                        pygame.draw.line(s, dk, (cx2+7, cy2+4), (cx2+7, cy2+8), 1)
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == ARABESQUE_SCREEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 50)
+                BS = BLOCK_SIZE
+                half = BS // 2
+                for dx2, dy2 in [(half//2, half//2), (half+half//2, half//2),
+                                 (half//2, half+half//2), (half+half//2, half+half//2)]:
+                    d = 5
+                    pts = [(dx2, dy2-d), (dx2+d, dy2), (dx2, dy2+d), (dx2-d, dy2)]
+                    pygame.draw.polygon(s, dk, pts)
+                pygame.draw.line(s, _darken(c, 15), (0, half), (BS, half), 1)
+                pygame.draw.line(s, _darken(c, 15), (half, 0), (half, BS), 1)
+                pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == GARDEN_COLUMN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 25)
+                lt = _lighter(c, 15)
+                BS = BLOCK_SIZE
+                pygame.draw.rect(s, dk, (1, 1, BS-2, 4))
+                pygame.draw.line(s, lt, (1, 2), (BS-2, 2), 1)
+                pygame.draw.rect(s, dk, (1, BS-5, BS-2, 4))
+                pygame.draw.line(s, lt, (1, BS-4), (BS-2, BS-4), 1)
+                for fx in [5, 10, 15, 20, 25]:
+                    pygame.draw.line(s, dk, (fx, 5), (fx, BS-5), 1)
+                    pygame.draw.line(s, lt, (fx+1, 5), (fx+1, BS-5), 1)
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == MARBLE_PLINTH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 20)
+                lt = _lighter(c, 10)
+                BS = BLOCK_SIZE
+                pygame.draw.rect(s, dk, (0, 0, BS, 3))
+                pygame.draw.line(s, lt, (0, 3), (BS, 3), 1)
+                pygame.draw.rect(s, dk, (0, BS-3, BS, 3))
+                pygame.draw.line(s, lt, (0, BS-4), (BS, BS-4), 1)
+                pygame.draw.rect(s, _darken(c, 12), (3, 6, BS-6, BS-12))
+                pygame.draw.rect(s, lt, (3, 6, BS-6, BS-12), 1)
+                surfs[bid] = s
+                continue
+            if bid == GARDEN_OBELISK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(_darken(c, 30))
+                lt = _lighter(c, 12)
+                dk = _darken(c, 15)
+                BS = BLOCK_SIZE
+                pts = [(BS//2-5, BS-2), (BS//2+5, BS-2), (BS//2+2, 3), (BS//2-2, 3)]
+                pygame.draw.polygon(s, c, pts)
+                pygame.draw.polygon(s, lt, [(BS//2-2, 3), (BS//2+2, 3), (BS//2, 1)])
+                for ly in [8, 14, 20, 26]:
+                    pygame.draw.line(s, dk, (BS//2-4, ly), (BS//2+4, ly), 1)
+                pygame.draw.line(s, lt, (BS//2-1, 4), (BS//2-4, BS-3), 1)
+                surfs[bid] = s
+                continue
+            if bid == TOPIARY_CONE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                trunk = (100, 65, 35)
+                pygame.draw.rect(s, trunk, (BS//2-2, BS-6, 4, 6))
+                pygame.draw.polygon(s, dk, [(BS//2, 1), (BS-3, BS-6), (2, BS-6)])
+                pygame.draw.polygon(s, c, [(BS//2, 1), (BS//2-3, BS//2), (4, BS-6)])
+                for ty in range(10, BS-6, 5):
+                    half_w = max(1, (ty - 1) * (BS//2 - 4) // BS)
+                    for tx in range(BS//2 - half_w, BS//2 + half_w, 3):
+                        pygame.draw.rect(s, lt, (tx, ty, 2, 1))
+                surfs[bid] = s
+                continue
+            if bid == TOPIARY_SPHERE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                trunk = (100, 65, 35)
+                pygame.draw.rect(s, trunk, (BS//2-2, BS-7, 4, 7))
+                pygame.draw.circle(s, dk, (BS//2, BS//2-2), BS//2-4)
+                pygame.draw.circle(s, c, (BS//2-2, BS//2-4), BS//2-6)
+                pygame.draw.circle(s, lt, (BS//2-3, BS//2-6), 3)
+                surfs[bid] = s
+                continue
+            if bid == BOX_HEDGE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 15)
+                dk = _darken(c, 18)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                pygame.draw.rect(s, lt, (0, 0, BS, 5))
+                for ty in range(0, BS, 4):
+                    for tx in range(0, BS, 4):
+                        leaf_c = dk if (tx//4 + ty//4) % 2 == 0 else lt
+                        pygame.draw.rect(s, leaf_c, (tx+1, ty+1, 2, 2))
+                pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == CLIMBING_ROSE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                trellis = (110, 75, 40)
+                pygame.draw.line(s, trellis, (BS//4, 0), (BS//4, BS), 2)
+                pygame.draw.line(s, trellis, (3*BS//4, 0), (3*BS//4, BS), 2)
+                pygame.draw.line(s, trellis, (0, BS//3), (BS, BS//3), 2)
+                pygame.draw.line(s, trellis, (0, 2*BS//3), (BS, 2*BS//3), 2)
+                rose = (200, 70, 90)
+                for rx, ry in [(5, 5), (20, 10), (12, 20), (26, 25), (6, 27)]:
+                    pygame.draw.circle(s, rose, (rx, ry), 3)
+                    pygame.draw.circle(s, _darken(rose, 20), (rx, ry), 2)
+                surfs[bid] = s
+                continue
+            if bid == STONE_BENCH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 12)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 30))
+                pygame.draw.rect(s, c, (1, BS//2-3, BS-2, 6))
+                pygame.draw.line(s, lt, (1, BS//2-3), (BS-2, BS//2-3), 1)
+                pygame.draw.rect(s, dk, (3, BS//2+3, 5, BS//2-4))
+                pygame.draw.rect(s, dk, (BS-8, BS//2+3, 5, BS//2-4))
+                pygame.draw.line(s, lt, (4, BS//2+3), (4, BS-5), 1)
+                surfs[bid] = s
+                continue
+            if bid == STONE_URN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 15)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                pygame.draw.rect(s, dk, (BS//2-4, BS-5, 8, 5))
+                pygame.draw.ellipse(s, c, (4, BS//2-2, BS-8, 14))
+                pygame.draw.ellipse(s, lt, (5, BS//2-1, BS-10, 5))
+                pygame.draw.rect(s, dk, (BS//2-3, BS//2-8, 6, 6))
+                pygame.draw.rect(s, c, (BS//2-6, BS//2-11, 12, 4))
+                pygame.draw.line(s, lt, (BS//2-5, BS//2-11), (BS//2+5, BS//2-11), 1)
+                surfs[bid] = s
+                continue
+            if bid == TERRACOTTA_PLANTER:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 25)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                pts = [(4, BS-3), (BS-4, BS-3), (BS-7, BS//2+2), (7, BS//2+2)]
+                pygame.draw.polygon(s, c, pts)
+                pygame.draw.polygon(s, lt, pts, 1)
+                pygame.draw.rect(s, dk, (5, BS//2-1, BS-10, 3))
+                pygame.draw.line(s, lt, (5, BS//2-1), (BS-5, BS//2-1), 1)
+                pygame.draw.ellipse(s, (80, 55, 35), (7, BS//2-8, BS-14, 7))
+                pygame.draw.line(s, (60, 130, 55), (BS//2, BS//2-7), (BS//2, BS//2-12), 1)
+                pygame.draw.circle(s, (55, 150, 60), (BS//2-3, BS//2-12), 2)
+                pygame.draw.circle(s, (55, 150, 60), (BS//2+3, BS//2-11), 2)
+                surfs[bid] = s
+                continue
+            if bid == SUNDIAL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 15)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                pygame.draw.rect(s, dk, (BS//2-3, BS//2+2, 6, BS//2-3))
+                pygame.draw.rect(s, c, (BS//2-5, BS-5, 10, 5))
+                pygame.draw.circle(s, c, (BS//2, BS//2-2), 9)
+                pygame.draw.circle(s, lt, (BS//2, BS//2-2), 9, 1)
+                pygame.draw.polygon(s, dk, [(BS//2, BS//2-10), (BS//2+8, BS//2-2), (BS//2, BS//2-2)])
+                for ai in range(6):
+                    ang = math.pi * ai / 6 - math.pi / 2
+                    ex2 = BS//2 + int(7 * math.cos(ang))
+                    ey2 = BS//2 - 2 + int(7 * math.sin(ang))
+                    pygame.draw.line(s, dk, (BS//2, BS//2-2), (ex2, ey2), 1)
+                surfs[bid] = s
+                continue
+            if bid == GARDEN_LANTERN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                amber = (200, 140, 50)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 40))
+                pygame.draw.line(s, c, (BS//2, 0), (BS//2, 4), 1)
+                cx2, cy2 = BS//2, BS//2+2
+                r_lan = 9
+                hex_pts = [(cx2 + int(r_lan*math.cos(math.pi*i/3)),
+                            cy2 + int(r_lan*math.sin(math.pi*i/3))) for i in range(6)]
+                pygame.draw.polygon(s, amber, hex_pts)
+                pygame.draw.polygon(s, c, hex_pts, 1)
+                pygame.draw.circle(s, _lighter(amber, 20), (cx2, cy2), 5)
+                pygame.draw.line(s, c, (cx2-5, cy2-r_lan), (cx2+5, cy2-r_lan), 2)
+                pygame.draw.line(s, c, (cx2-5, cy2+r_lan), (cx2+5, cy2+r_lan), 2)
+                surfs[bid] = s
+                continue
+            if bid == GRAVEL_PATH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 18)
+                lt = _lighter(c, 10)
+                BS = BLOCK_SIZE
+                dots = [(3,4),(8,2),(14,7),(20,3),(27,5),(5,11),(12,15),(18,10),(25,13),
+                        (2,19),(9,22),(16,18),(23,24),(6,27),(13,29),(21,26),(28,20),
+                        (4,16),(10,8),(22,17),(29,11),(7,25),(15,21),(26,7),(1,29)]
+                for dx2, dy2 in dots:
+                    if 0 <= dx2 < BS and 0 <= dy2 < BS:
+                        pygame.draw.rect(s, dk if (dx2+dy2)%3!=0 else lt, (dx2, dy2, 2, 1))
+                pygame.draw.rect(s, _darken(c, 15), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == MOSAIC_PATH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                half = BS // 2
+                cols = [c, _darken(c, 20), _lighter(c, 15), _darken(c, 12), _lighter(c, 8), _darken(c, 30)]
+                triangles = [
+                    [(0,0),(BS,0),(half,half)],
+                    [(BS,0),(BS,BS),(half,half)],
+                    [(0,BS),(BS,BS),(half,half)],
+                    [(0,0),(0,BS),(half,half)],
+                    [(0,0),(half,0),(0,half)],
+                    [(half,0),(BS,0),(BS,half)],
+                ]
+                for i, tri in enumerate(triangles):
+                    pygame.draw.polygon(s, cols[i], tri)
+                pygame.draw.line(s, _darken(c, 35), (0,0), (BS,BS), 1)
+                pygame.draw.line(s, _darken(c, 35), (BS,0), (0,BS), 1)
+                pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == TERRACOTTA_PATH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 12)
+                grout = _darken(c, 35)
+                BS = BLOCK_SIZE
+                half = BS // 2
+                for tx, ty in [(0,0),(half,0),(0,half),(half,half)]:
+                    tile_c = c if (tx+ty) % (half*2) == 0 else _darken(c, 8)
+                    pygame.draw.rect(s, tile_c, (tx+1, ty+1, half-2, half-2))
+                    pygame.draw.line(s, lt, (tx+1, ty+1), (tx+half-2, ty+1), 1)
+                pygame.draw.line(s, grout, (half, 0), (half, BS), 1)
+                pygame.draw.line(s, grout, (0, half), (BS, half), 1)
+                pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == COBBLE_CIRCLE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 25)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 20))
+                cx2, cy2 = BS//2, BS//2
+                for i in range(8):
+                    ang = math.pi * i / 4
+                    rx = cx2 + int(10 * math.cos(ang))
+                    ry = cy2 + int(10 * math.sin(ang))
+                    pygame.draw.ellipse(s, c, (rx-3, ry-2, 6, 4))
+                    pygame.draw.ellipse(s, lt, (rx-2, ry-1, 4, 2))
+                pygame.draw.circle(s, dk, (cx2, cy2), 4)
+                pygame.draw.circle(s, c, (cx2, cy2), 3)
+                pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # ── Garden Workshop extension blocks ───────────────────────────────
+            if bid == PERGOLA_POST:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 25)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 40))
+                # vertical timber post
+                pygame.draw.rect(s, c, (BS//2-3, 0, 6, BS))
+                pygame.draw.line(s, lt, (BS//2-2, 0), (BS//2-2, BS), 1)
+                pygame.draw.line(s, dk, (BS//2+2, 0), (BS//2+2, BS), 1)
+                # horizontal crossbeam at top
+                pygame.draw.rect(s, dk, (0, 4, BS, 4))
+                pygame.draw.line(s, lt, (0, 4), (BS, 4), 1)
+                # vine tendrils
+                vine = (55, 110, 45)
+                for vy in [8, 14, 20, 26]:
+                    pygame.draw.line(s, vine, (BS//2+3, vy), (BS//2+8, vy+3), 1)
+                    pygame.draw.line(s, vine, (BS//2-3, vy+2), (BS//2-8, vy+5), 1)
+                surfs[bid] = s
+                continue
+            if bid == WISTERIA_ARCH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 25)
+                lt = _lighter(c, 10)
+                wist = (160, 100, 190)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                inside = _darken(c, 40)
+                ax, aw = 5, BS - 10
+                at = 4
+                pygame.draw.rect(s, inside, (ax+2, at+aw//2, aw-4, BS - at - aw//2 - 2))
+                pygame.draw.arc(s, dk, (ax, at, aw, aw), 0, math.pi, 3)
+                pygame.draw.line(s, dk, (ax, at+aw//2), (ax, BS-2), 3)
+                pygame.draw.line(s, dk, (ax+aw, at+aw//2), (ax+aw, BS-2), 3)
+                # wisteria clusters hanging from arch
+                for wx in range(2, BS-1, 5):
+                    drop_len = 4 + (wx % 3)
+                    pygame.draw.line(s, (80, 55, 30), (wx, 5), (wx, 5+drop_len), 1)
+                    pygame.draw.circle(s, wist, (wx, 5+drop_len+2), 2)
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == GARDEN_GATE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 25)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 50))
+                # top and bottom rails
+                pygame.draw.rect(s, c, (0, 2, BS, 3))
+                pygame.draw.rect(s, c, (0, BS-5, BS, 3))
+                pygame.draw.line(s, lt, (0, 2), (BS, 2), 1)
+                pygame.draw.line(s, lt, (0, BS-5), (BS, BS-5), 1)
+                # vertical bars
+                for bx2 in range(3, BS-1, 5):
+                    pygame.draw.line(s, c, (bx2, 5), (bx2, BS-5), 2)
+                    # spear tips
+                    pygame.draw.polygon(s, lt, [(bx2-1, 3), (bx2+2, 3), (bx2, 0)])
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == LOW_GARDEN_WALL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 12)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # coping stone on top
+                pygame.draw.rect(s, _lighter(c, 18), (0, 0, BS, 6))
+                pygame.draw.line(s, lt, (0, 1), (BS, 1), 1)
+                pygame.draw.line(s, dk, (0, 6), (BS, 6), 1)
+                # coursed stone below
+                for ry in range(7, BS, 6):
+                    pygame.draw.line(s, dk, (0, ry), (BS, ry), 1)
+                for rx in [0, 14, 28]:
+                    pygame.draw.line(s, dk, (rx, 7), (rx, BS), 1)
+                for rx in [7, 21]:
+                    pygame.draw.line(s, dk, (rx, 13), (rx, BS), 1)
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == POOL_COPING:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 15)
+                dk = _darken(c, 18)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # smooth flat stone with subtle shadow on one edge
+                pygame.draw.line(s, lt, (0, 0), (BS, 0), 2)
+                pygame.draw.line(s, lt, (0, 0), (0, BS), 2)
+                pygame.draw.line(s, dk, (0, BS-2), (BS, BS-2), 2)
+                pygame.draw.line(s, dk, (BS-2, 0), (BS-2, BS), 2)
+                pygame.draw.rect(s, _darken(c, 12), (4, 4, BS-8, BS-8), 1)
+                surfs[bid] = s
+                continue
+            if bid == STEPPING_STONE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 15)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                # grass background
+                grass = (60, 105, 45)
+                s.fill(grass)
+                # irregular stone shape using polygon
+                stone_pts = [(5, 8), (BS-6, 6), (BS-4, BS-7), (7, BS-5)]
+                pygame.draw.polygon(s, c, stone_pts)
+                pygame.draw.polygon(s, lt, stone_pts, 1)
+                # surface cracks
+                pygame.draw.line(s, dk, (10, 14), (17, 20), 1)
+                pygame.draw.line(s, dk, (BS-10, 10), (BS-14, 18), 1)
+                surfs[bid] = s
+                continue
+            if bid == OPUS_VERMICULATUM:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # worm-path: sinuous lines of small dark tessera
+                for wy in range(2, BS-1, 5):
+                    ox2 = (wy // 5) % 4
+                    for wx in range(0, BS, 2):
+                        seg_y = wy + int(2 * math.sin((wx + ox2*3) * 0.6))
+                        if 0 <= seg_y < BS:
+                            pygame.draw.rect(s, dk, (wx, seg_y, 2, 2))
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == PORPHYRY_TILE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 20)
+                dk = _darken(c, 15)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # crystal inclusions
+                for px2, py2 in [(4,5),(9,14),(17,8),(22,20),(6,24),(28,12),(14,28)]:
+                    pygame.draw.rect(s, lt, (px2, py2, 2, 2))
+                # polished sheen diagonal
+                pygame.draw.line(s, _lighter(c, 8), (0, 0), (BS, BS), 3)
+                pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == BRICK_EDGING:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                grout = _darken(c, 38)
+                BS = BLOCK_SIZE
+                s.fill(grout)
+                # soldier course: tall narrow bricks on end
+                bw = 5
+                for bx2 in range(1, BS, bw+1):
+                    pygame.draw.rect(s, c, (bx2, 2, bw-1, BS-4))
+                    pygame.draw.line(s, lt, (bx2, 2), (bx2, BS-4), 1)
+                surfs[bid] = s
+                continue
+            if bid == SPIRAL_TOPIARY:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                trunk = (100, 65, 35)
+                pygame.draw.rect(s, trunk, (BS//2-2, BS-6, 4, 6))
+                # spiral: draw ellipses that shrink and shift as they go up
+                for layer in range(4):
+                    t = layer / 3.0
+                    w = int(BS * (0.9 - t * 0.5))
+                    h = 8
+                    x2 = (BS - w) // 2
+                    y2 = BS - 10 - layer * 6
+                    col = lt if layer % 2 == 0 else dk
+                    if w > 2 and y2 > 0:
+                        pygame.draw.ellipse(s, col, (x2, y2, w, h))
+                        pygame.draw.ellipse(s, c, (x2, y2, w, h), 1)
+                surfs[bid] = s
+                continue
+            if bid == MAZE_HEDGE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 12)
+                dk = _darken(c, 25)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # very dense, slightly lighter top surface
+                pygame.draw.rect(s, lt, (0, 0, BS, 4))
+                # deep stipple texture — darker than box hedge to feel taller/denser
+                for ty in range(0, BS, 3):
+                    for tx in range(0, BS, 3):
+                        if (tx//3 + ty//3) % 2 == 0:
+                            pygame.draw.rect(s, dk, (tx+1, ty+1, 2, 2))
+                # subtle vertical shadow bands
+                for sx2 in range(0, BS, 8):
+                    pygame.draw.line(s, dk, (sx2, 4), (sx2, BS), 1)
+                pygame.draw.rect(s, _darken(c, 30), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == WISTERIA_WALL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                wist = (160, 100, 190)
+                wist_lt = _lighter(wist, 18)
+                BS = BLOCK_SIZE
+                # stone wall background
+                stone = (145, 138, 125)
+                s.fill(stone)
+                # cascading wisteria clusters
+                stem = (85, 60, 35)
+                for cx2 in range(3, BS, 7):
+                    drop = 4 + (cx2 % 5)
+                    pygame.draw.line(s, stem, (cx2, 0), (cx2, drop), 1)
+                    for dy2 in range(drop, drop + 10, 3):
+                        if dy2 < BS:
+                            pygame.draw.circle(s, wist, (cx2, dy2), 2)
+                            if dy2 + 2 < BS:
+                                pygame.draw.circle(s, wist_lt, (cx2-1, dy2), 1)
+                # some green leaves between clusters
+                leaf = (65, 110, 50)
+                for lx, ly in [(2,4),(9,2),(16,6),(23,3),(29,5)]:
+                    pygame.draw.circle(s, leaf, (lx, ly), 2)
+                surfs[bid] = s
+                continue
+            if bid == POTTED_CITRUS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 25)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                # pot (same shape as TERRACOTTA_PLANTER)
+                pts = [(5, BS-3), (BS-5, BS-3), (BS-8, BS//2+2), (8, BS//2+2)]
+                pygame.draw.polygon(s, c, pts)
+                pygame.draw.line(s, lt, (5, BS-3), (BS-5, BS-3), 1)
+                # soil
+                pygame.draw.ellipse(s, (75, 52, 30), (8, BS//2-6, BS-16, 6))
+                # trunk
+                trunk = (110, 75, 40)
+                pygame.draw.line(s, trunk, (BS//2, BS//2-5), (BS//2, BS//2-12), 2)
+                # canopy
+                foliage = (50, 120, 45)
+                pygame.draw.circle(s, foliage, (BS//2, BS//2-16), 8)
+                # citrus fruit dots
+                fruit = (230, 140, 30)
+                for fx, fy in [(BS//2-4, BS//2-18), (BS//2+4, BS//2-15), (BS//2, BS//2-13),
+                               (BS//2-5, BS//2-13)]:
+                    if fy > 0:
+                        pygame.draw.circle(s, fruit, (fx, fy), 2)
+                surfs[bid] = s
+                continue
+            if bid == MARBLE_STATUE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 12)
+                dk = _darken(c, 18)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                # base plinth
+                pygame.draw.rect(s, dk, (4, BS-6, BS-8, 6))
+                pygame.draw.line(s, lt, (4, BS-6), (BS-4, BS-6), 1)
+                # figure body (draped form)
+                pygame.draw.rect(s, c, (BS//2-5, BS//2-4, 10, BS//2))
+                # folds
+                pygame.draw.line(s, dk, (BS//2-3, BS//2-2), (BS//2-5, BS-7), 1)
+                pygame.draw.line(s, dk, (BS//2+2, BS//2), (BS//2+4, BS-7), 1)
+                # head
+                pygame.draw.circle(s, c, (BS//2, BS//2-8), 5)
+                pygame.draw.circle(s, lt, (BS//2-1, BS//2-9), 2)
+                # arm raised
+                pygame.draw.line(s, c, (BS//2+5, BS//2-2), (BS-3, BS//2-10), 2)
+                surfs[bid] = s
+                continue
+            if bid == MARBLE_BIRDBATH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 20)
+                water = (100, 165, 210)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                # base
+                pygame.draw.rect(s, dk, (BS//2-5, BS-5, 10, 5))
+                # pedestal shaft
+                pygame.draw.rect(s, c, (BS//2-2, BS//2, 4, BS//2-5))
+                # basin (wide shallow bowl)
+                pygame.draw.ellipse(s, c, (3, BS//2-5, BS-6, 10))
+                pygame.draw.ellipse(s, lt, (3, BS//2-5, BS-6, 10), 1)
+                # water surface
+                pygame.draw.ellipse(s, water, (5, BS//2-3, BS-10, 6))
+                # ripple
+                pygame.draw.ellipse(s, _lighter(water, 18), (BS//2-4, BS//2-2, 8, 3), 1)
+                surfs[bid] = s
+                continue
+            if bid == GARDEN_TABLE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                # legs
+                leg = dk
+                pygame.draw.rect(s, leg, (4, BS//2+1, 3, BS//2-2))
+                pygame.draw.rect(s, leg, (BS-7, BS//2+1, 3, BS//2-2))
+                # tabletop slab
+                pygame.draw.rect(s, c, (1, BS//2-4, BS-2, 6))
+                pygame.draw.line(s, lt, (1, BS//2-4), (BS-2, BS//2-4), 1)
+                pygame.draw.line(s, lt, (1, BS//2-4), (1, BS//2+2), 1)
+                # surface detail: small flower/object on table
+                pygame.draw.circle(s, (190, 155, 60), (BS//2, BS//2-2), 2)
+                surfs[bid] = s
+                continue
+            if bid == IRON_TRELLIS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 28)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 50))
+                # diagonal lattice
+                for i in range(-BS, BS*2, 8):
+                    pygame.draw.line(s, c, (i, 0), (i+BS, BS), 1)
+                    pygame.draw.line(s, c, (i, BS), (i+BS, 0), 1)
+                # border frame
+                pygame.draw.rect(s, lt, (0, 0, BS, 2))
+                pygame.draw.rect(s, lt, (0, BS-2, BS, 2))
+                pygame.draw.rect(s, lt, (0, 0, 2, BS))
+                pygame.draw.rect(s, lt, (BS-2, 0, 2, BS))
+                surfs[bid] = s
+                continue
+            if bid == NASRID_PANEL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 30)
+                lt = _lighter(c, 14)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # dense Nasrid-style geometric inlay: radiating star lines
+                cx2, cy2 = BS//2, BS//2
+                for ai in range(8):
+                    ang = math.pi * ai / 4
+                    ex2 = cx2 + int(12 * math.cos(ang))
+                    ey2 = cy2 + int(12 * math.sin(ang))
+                    pygame.draw.line(s, dk, (cx2, cy2), (ex2, ey2), 1)
+                # concentric octagon
+                r8 = 10
+                oct_pts = [(cx2 + int(r8*math.cos(math.pi*i/4 + math.pi/8)),
+                            cy2 + int(r8*math.sin(math.pi*i/4 + math.pi/8)))
+                           for i in range(8)]
+                pygame.draw.polygon(s, lt, oct_pts, 1)
+                # corner floral motifs
+                for cxf, cyf in [(4,4),(BS-5,4),(4,BS-5),(BS-5,BS-5)]:
+                    pygame.draw.circle(s, dk, (cxf, cyf), 3, 1)
+                    for ai2 in [0, math.pi/2, math.pi, 3*math.pi/2]:
+                        pygame.draw.line(s, dk, (cxf, cyf),
+                                         (cxf+int(3*math.cos(ai2)), cyf+int(3*math.sin(ai2))), 1)
+                pygame.draw.rect(s, _darken(c, 18), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == SCALLOP_NICHE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 28)
+                lt = _lighter(c, 14)
+                inside = _darken(c, 40)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # niche recess (dark interior)
+                pygame.draw.ellipse(s, inside, (4, 4, BS-8, BS-8))
+                # scallop shell ribs radiating from bottom center
+                cx2 = BS//2
+                cy2 = BS - 4
+                for ai in range(-4, 5):
+                    ang = math.pi * ai / 8
+                    ex2 = cx2 + int(12 * math.cos(ang - math.pi/2))
+                    ey2 = cy2 + int(12 * math.sin(ang - math.pi/2))
+                    pygame.draw.line(s, dk, (cx2, cy2), (ex2, ey2), 1)
+                # arch border
+                pygame.draw.arc(s, dk, (3, 3, BS-6, BS-6), 0, math.pi, 2)
+                pygame.draw.line(s, lt, (1, 2), (BS-2, 2), 1)
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == TERRACE_BALUSTRADE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 16)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 30))
+                # top and bottom rail
+                pygame.draw.rect(s, c, (0, 1, BS, 4))
+                pygame.draw.rect(s, c, (0, BS-5, BS, 4))
+                pygame.draw.line(s, lt, (0, 1), (BS, 1), 1)
+                pygame.draw.line(s, lt, (0, BS-5), (BS, BS-5), 1)
+                # classical vase-shaped balusters
+                for bx2 in [4, 12, 20, 28]:
+                    # shaft
+                    pygame.draw.line(s, c, (bx2+1, 5), (bx2+1, BS-5), 2)
+                    # belly swell
+                    pygame.draw.ellipse(s, lt, (bx2-1, BS//2-3, 5, 6))
+                    # top cap
+                    pygame.draw.rect(s, dk, (bx2-1, 4, 4, 2))
+                    # base cap
+                    pygame.draw.rect(s, dk, (bx2-1, BS-7, 4, 2))
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # ── Japanese garden blocks ─────────────────────────────────────────
+            if bid == ZEN_GRAVEL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 18)
+                BS = BLOCK_SIZE
+                # parallel raked lines
+                for ry in range(3, BS, 5):
+                    pygame.draw.line(s, dk, (0, ry), (BS, ry), 1)
+                # perpendicular crossing rakes (lighter)
+                for rx in range(BS//3, BS, BS//3):
+                    pygame.draw.line(s, _darken(c, 8), (rx, 0), (rx, BS), 1)
+                pygame.draw.rect(s, _darken(c, 15), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == KARESANSUI_ROCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 15)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                # sand bed
+                sand = _lighter(c, 30)
+                s.fill(sand)
+                # concentric rings around rock
+                for r2 in [11, 8]:
+                    pygame.draw.ellipse(s, _darken(sand, 10), (BS//2-r2, BS//2-r2+2, r2*2, r2*2-4), 1)
+                # rock mass
+                pts = [(BS//2-5, BS//2+4), (BS//2+5, BS//2+4), (BS//2+7, BS//2-1),
+                       (BS//2+3, BS//2-6), (BS//2-3, BS//2-6), (BS//2-7, BS//2-1)]
+                pygame.draw.polygon(s, c, pts)
+                pygame.draw.polygon(s, lt, pts, 1)
+                pygame.draw.circle(s, lt, (BS//2-2, BS//2-3), 2)
+                surfs[bid] = s
+                continue
+            if bid == MOSS_CARPET:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # bumpy moss texture
+                for ty in range(0, BS, 4):
+                    for tx in range(0, BS, 4):
+                        bump = lt if (tx + ty) % 8 == 0 else dk
+                        pygame.draw.circle(s, bump, (tx+2, ty+2), 2)
+                surfs[bid] = s
+                continue
+            if bid == TSUKUBAI:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                water = (80, 155, 205)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                # low stone basin
+                pygame.draw.rect(s, c, (3, BS//2, BS-6, BS//2-3))
+                pygame.draw.line(s, lt, (3, BS//2), (BS-3, BS//2), 1)
+                # water surface
+                pygame.draw.ellipse(s, water, (5, BS//2+2, BS-10, 8))
+                # bamboo spout above
+                bamboo = (130, 150, 55)
+                pygame.draw.line(s, bamboo, (BS//2+4, 4), (BS//2, BS//2+1), 2)
+                pygame.draw.line(s, _lighter(bamboo, 15), (BS//2+5, 4), (BS//2+5, BS//2-2), 1)
+                surfs[bid] = s
+                continue
+            if bid == TORO_LANTERN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 15)
+                dk = _darken(c, 22)
+                amber = (210, 155, 60)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 40))
+                # base slab
+                pygame.draw.rect(s, dk, (4, BS-5, BS-8, 5))
+                # shaft
+                pygame.draw.rect(s, c, (BS//2-2, BS//2, 4, BS//2-5))
+                # cap platform
+                pygame.draw.rect(s, c, (3, BS//2-3, BS-6, 4))
+                pygame.draw.line(s, lt, (3, BS//2-3), (BS-3, BS//2-3), 1)
+                # lantern chamber
+                pygame.draw.rect(s, _darken(c, 15), (6, 8, BS-12, BS//2-10))
+                pygame.draw.rect(s, amber, (7, 9, BS-14, BS//2-12))
+                # roof cap
+                pygame.draw.rect(s, c, (2, 5, BS-4, 4))
+                pygame.draw.line(s, lt, (2, 5), (BS-2, 5), 1)
+                surfs[bid] = s
+                continue
+            if bid == YUKIMI_LANTERN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 15)
+                dk = _darken(c, 22)
+                amber = (210, 155, 60)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 40))
+                # three short legs
+                for lx in [5, BS//2, BS-7]:
+                    pygame.draw.line(s, dk, (lx, BS-2), (lx, BS//2+4), 2)
+                # wide cap roof (large flat overhang)
+                pygame.draw.rect(s, c, (0, 4, BS, 5))
+                pygame.draw.line(s, lt, (0, 4), (BS, 4), 1)
+                # lantern body
+                pygame.draw.ellipse(s, amber, (5, 9, BS-10, BS//2-4))
+                pygame.draw.ellipse(s, _lighter(amber, 20), (7, 11, BS-14, 6))
+                surfs[bid] = s
+                continue
+            if bid == BAMBOO_FENCE_JP:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 45))
+                # vertical bamboo poles
+                for bx2 in range(3, BS, 6):
+                    pygame.draw.rect(s, c, (bx2, 0, 4, BS))
+                    pygame.draw.line(s, lt, (bx2+1, 0), (bx2+1, BS), 1)
+                    # internodes
+                    for ky in range(6, BS, 8):
+                        pygame.draw.line(s, dk, (bx2, ky), (bx2+4, ky), 1)
+                # horizontal lashing cords
+                for ry in [BS//3, 2*BS//3]:
+                    pygame.draw.line(s, (110, 80, 40), (0, ry), (BS, ry), 1)
+                surfs[bid] = s
+                continue
+            if bid == ROJI_STONE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 16)
+                BS = BLOCK_SIZE
+                moss = (52, 90, 38)
+                s.fill(moss)
+                # irregular stone
+                pts = [(4, 10), (BS-6, 7), (BS-4, BS-8), (6, BS-6)]
+                pygame.draw.polygon(s, c, pts)
+                pygame.draw.polygon(s, lt, pts, 1)
+                # moss edges
+                for mx, my in [(2,8),(BS-4,6),(3,BS-5),(BS-3,BS-4)]:
+                    pygame.draw.circle(s, moss, (mx, my), 2)
+                surfs[bid] = s
+                continue
+            if bid == PINE_TOPIARY_JP:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 15)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                trunk = (100, 65, 35)
+                s.fill(_darken(c, 50))
+                pygame.draw.rect(s, trunk, (BS//2-1, BS-6, 3, 6))
+                # cloud-pruned: 3 rounded cloud puffs at different heights
+                for cx2, cy2, r2 in [(BS//2, BS-10, 6), (BS//2-5, BS-18, 5), (BS//2+5, BS-18, 5),
+                                     (BS//2, BS-26, 5)]:
+                    if cy2 > 0:
+                        pygame.draw.circle(s, dk, (cx2, cy2), r2)
+                        pygame.draw.circle(s, c, (cx2-1, cy2-1), r2-2)
+                        pygame.draw.circle(s, lt, (cx2-2, cy2-2), 2)
+                surfs[bid] = s
+                continue
+            if bid == JAPANESE_MAPLE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 15)
+                BS = BLOCK_SIZE
+                trunk = (90, 60, 35)
+                s.fill(_darken(c, 50))
+                pygame.draw.rect(s, trunk, (BS//2-1, BS-8, 3, 8))
+                # airy maple canopy using scattered small circles
+                for cx2, cy2, r2 in [(BS//2, BS//2-4, 7), (BS//2-6, BS//2-2, 5),
+                                     (BS//2+6, BS//2-2, 5), (BS//2-3, BS//2-10, 4),
+                                     (BS//2+3, BS//2-10, 4)]:
+                    if cy2 > 0:
+                        pygame.draw.circle(s, dk, (cx2, cy2), r2)
+                        pygame.draw.circle(s, c, (cx2, cy2), r2-1)
+                        pygame.draw.circle(s, lt, (cx2-1, cy2-1), 2)
+                surfs[bid] = s
+                continue
+            if bid == SHISHI_ODOSHI:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 45))
+                bamboo = (130, 155, 55)
+                stone = (120, 115, 108)
+                # basin stone
+                pygame.draw.ellipse(s, stone, (2, BS-8, BS-4, 7))
+                pygame.draw.ellipse(s, _lighter(stone, 10), (2, BS-8, BS-4, 7), 1)
+                # pivot post
+                pygame.draw.line(s, bamboo, (BS//2, BS//2), (BS//2, BS-8), 2)
+                # clapper arm (angled)
+                pygame.draw.line(s, bamboo, (4, 8), (BS//2, BS//2), 3)
+                pygame.draw.line(s, _lighter(bamboo, 15), (5, 8), (BS//2+1, BS//2), 1)
+                # water droplet
+                pygame.draw.circle(s, (100, 170, 210), (6, 10), 2)
+                surfs[bid] = s
+                continue
+            if bid == RED_ARCH_BRIDGE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 50))
+                # arch body
+                pts = [(0, BS-4), (BS, BS-4), (BS-2, BS//2), (2, BS//2)]
+                pygame.draw.polygon(s, c, pts)
+                # arch curve underside
+                pygame.draw.arc(s, dk, (2, BS//2-6, BS-4, 12), 0, math.pi, 3)
+                # handrails
+                pygame.draw.line(s, lt, (2, BS//2), (2, BS-4), 2)
+                pygame.draw.line(s, lt, (BS-2, BS//2), (BS-2, BS-4), 2)
+                # deck planks
+                for py in range(BS//2+4, BS-3, 4):
+                    pygame.draw.line(s, lt, (2, py), (BS-2, py), 1)
+                surfs[bid] = s
+                continue
+            if bid == WAVE_CERAMIC:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 25)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 20))
+                # white background
+                bg = (230, 235, 245)
+                pygame.draw.rect(s, bg, (1, 1, BS-2, BS-2))
+                # blue wave arcs
+                for wy in range(4, BS, 8):
+                    for wx in range(-4, BS+4, 12):
+                        pygame.draw.arc(s, c, (wx, wy-2, 12, 8), 0, math.pi, 2)
+                pygame.draw.rect(s, _darken(c, 30), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == ZEN_SAND_RING:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 18)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                cx2, cy2 = BS//2, BS//2
+                # concentric raked circles
+                for r2 in [12, 9, 6, 3]:
+                    pygame.draw.circle(s, dk, (cx2, cy2), r2, 1)
+                # center stone
+                pygame.draw.circle(s, _darken(c, 35), (cx2, cy2), 3)
+                pygame.draw.circle(s, _lighter(c, 10), (cx2-1, cy2-1), 1)
+                surfs[bid] = s
+                continue
+            if bid == BAMBOO_GATE_JP:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 50))
+                bamboo = c
+                # two vertical posts
+                for px2 in [3, BS-7]:
+                    pygame.draw.rect(s, bamboo, (px2, 0, 4, BS))
+                    for ky in range(6, BS, 8):
+                        pygame.draw.line(s, dk, (px2, ky), (px2+4, ky), 1)
+                # horizontal cross rails
+                for ry in [BS//4, BS//2, 3*BS//4]:
+                    pygame.draw.rect(s, bamboo, (7, ry-1, BS-14, 3))
+                    pygame.draw.line(s, lt, (7, ry-1), (BS-7, ry-1), 1)
+                surfs[bid] = s
+                continue
+            if bid == WABI_STONE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 18)
+                BS = BLOCK_SIZE
+                moss = (50, 85, 38)
+                s.fill(_darken(c, 40))
+                # irregular weathered stone
+                pts = [(5, 12), (BS-7, 9), (BS-5, BS-8), (8, BS-5), (3, BS//2)]
+                pygame.draw.polygon(s, c, pts)
+                pygame.draw.polygon(s, lt, pts, 1)
+                # moss patches
+                for mx, my in [(6, 11), (BS-8, 10), (7, BS-7)]:
+                    pygame.draw.circle(s, moss, (mx, my), 3)
+                # cracks
+                pygame.draw.line(s, dk, (10, 16), (16, 22), 1)
+                surfs[bid] = s
+                continue
+            if bid == CHERRY_ARCH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 25)
+                BS = BLOCK_SIZE
+                inside = _darken(c, 40)
+                s.fill(c)
+                ax, aw = 5, BS - 10
+                at = 4
+                pygame.draw.rect(s, inside, (ax+2, at+aw//2, aw-4, BS - at - aw//2 - 2))
+                pygame.draw.arc(s, dk, (ax, at, aw, aw), 0, math.pi, 3)
+                pygame.draw.line(s, dk, (ax, at+aw//2), (ax, BS-2), 3)
+                pygame.draw.line(s, dk, (ax+aw, at+aw//2), (ax+aw, BS-2), 3)
+                # cherry blossoms
+                blossom = (240, 180, 195)
+                for bx2, by2 in [(4,5),(9,3),(14,6),(20,3),(26,5),(7,10),(22,9)]:
+                    pygame.draw.circle(s, blossom, (bx2, by2), 2)
+                    pygame.draw.circle(s, (220, 140, 160), (bx2, by2), 1)
+                surfs[bid] = s
+                continue
+            if bid == TATAMI_PAVING:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 12)
+                dk = _darken(c, 18)
+                border = _darken(c, 30)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                half = BS // 2
+                # two tatami rectangles side by side
+                pygame.draw.rect(s, lt, (1, 1, half-2, BS-2))
+                pygame.draw.rect(s, c, (half+1, 1, half-2, BS-2))
+                # tatami weave lines on each half
+                for ty in range(3, BS-2, 4):
+                    pygame.draw.line(s, dk, (1, ty), (half-2, ty), 1)
+                    pygame.draw.line(s, dk, (half+1, ty), (BS-2, ty), 1)
+                # border strip
+                pygame.draw.line(s, border, (half-1, 0), (half-1, BS), 1)
+                pygame.draw.line(s, border, (half, 0), (half, BS), 1)
+                pygame.draw.rect(s, border, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == IKEBANA_STONE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 30))
+                # flat presentation stone
+                pygame.draw.rect(s, c, (2, BS//2, BS-4, BS//2-3))
+                pygame.draw.line(s, lt, (2, BS//2), (BS-2, BS//2), 1)
+                # simple flower arrangement above
+                stem = (80, 120, 50)
+                pygame.draw.line(s, stem, (BS//2, BS//2-1), (BS//2, 6), 1)
+                pygame.draw.line(s, stem, (BS//2, BS//4), (BS//2-5, 4), 1)
+                pygame.draw.line(s, stem, (BS//2, BS//4), (BS//2+5, 4), 1)
+                pygame.draw.circle(s, (200, 100, 130), (BS//2, 5), 3)
+                pygame.draw.circle(s, (220, 180, 60), (BS//2-6, 3), 2)
+                pygame.draw.circle(s, (200, 100, 130), (BS//2+6, 3), 2)
+                surfs[bid] = s
+                continue
+            if bid == KANJI_STONE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 12)
+                dk = _darken(c, 30)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                pygame.draw.line(s, lt, (1, 2), (BS-2, 2), 1)
+                # brushstroke-style kanji: horizontal bar + vertical + diagonals
+                pygame.draw.line(s, dk, (6, 8), (BS-6, 8), 2)
+                pygame.draw.line(s, dk, (BS//2, 8), (BS//2, BS-6), 2)
+                pygame.draw.line(s, dk, (8, 14), (BS//2-2, 20), 1)
+                pygame.draw.line(s, dk, (BS-8, 14), (BS//2+2, 20), 1)
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == MAPLE_LEAF_TILE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 20)
+                dk = _darken(c, 20)
+                stone = (175, 168, 155)
+                BS = BLOCK_SIZE
+                s.fill(stone)
+                cx2, cy2 = BS//2, BS//2
+                # five-pointed maple leaf using lines from center
+                for ai in range(5):
+                    ang = math.pi * ai * 2 / 5 - math.pi / 2
+                    ex2 = cx2 + int(10 * math.cos(ang))
+                    ey2 = cy2 + int(10 * math.sin(ang))
+                    pygame.draw.line(s, c, (cx2, cy2), (ex2, ey2), 2)
+                    pygame.draw.circle(s, lt, (ex2, ey2), 2)
+                pygame.draw.circle(s, c, (cx2, cy2), 3)
+                pygame.draw.rect(s, _darken(stone, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == NOREN_PANEL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 40))
+                # top rod
+                pygame.draw.rect(s, (100, 80, 50), (0, 2, BS, 3))
+                # two split fabric panels
+                panel_c = c
+                pygame.draw.rect(s, panel_c, (1, 5, BS//2-2, BS-7))
+                pygame.draw.rect(s, _darken(c, 15), (BS//2+1, 5, BS//2-2, BS-7))
+                # fabric stripes
+                for sy in range(8, BS-5, 6):
+                    pygame.draw.line(s, lt, (1, sy), (BS//2-2, sy), 1)
+                    pygame.draw.line(s, lt, (BS//2+1, sy), (BS-2, sy), 1)
+                surfs[bid] = s
+                continue
+            if bid == TSURU_TILE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 25)
+                lt = _lighter(c, 12)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                pygame.draw.line(s, lt, (1, 2), (BS-2, 2), 1)
+                # simplified crane silhouette: body + neck + wing
+                cx2, cy2 = BS//2, BS//2+2
+                # body oval
+                pygame.draw.ellipse(s, dk, (cx2-6, cy2-4, 12, 8))
+                # long neck + head
+                pygame.draw.line(s, dk, (cx2-4, cy2-4), (cx2-8, cy2-12), 2)
+                pygame.draw.circle(s, dk, (cx2-9, cy2-13), 2)
+                # red head dot
+                pygame.draw.circle(s, (180, 30, 30), (cx2-9, cy2-14), 1)
+                # wing spread
+                pygame.draw.line(s, dk, (cx2+4, cy2-2), (cx2+12, cy2-8), 2)
+                pygame.draw.line(s, dk, (cx2+4, cy2-2), (cx2+12, cy2+2), 1)
+                # legs
+                pygame.draw.line(s, dk, (cx2-2, cy2+4), (cx2-4, cy2+10), 1)
+                pygame.draw.line(s, dk, (cx2+2, cy2+4), (cx2+2, cy2+10), 1)
+                pygame.draw.rect(s, _darken(c, 18), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == PINE_SCREEN_JP:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 18)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # shōji grid
+                pygame.draw.line(s, dk, (BS//2, 0), (BS//2, BS), 1)
+                pygame.draw.line(s, dk, (0, BS//3), (BS, BS//3), 1)
+                pygame.draw.line(s, dk, (0, 2*BS//3), (BS, 2*BS//3), 1)
+                # pine bough in upper-right panel
+                pine = (45, 90, 40)
+                pygame.draw.line(s, (100, 70, 40), (BS//2+2, 2), (BS-2, BS//3-2), 1)
+                for nx in range(BS//2+4, BS-2, 4):
+                    pygame.draw.line(s, pine, (nx, 4), (nx+2, 8), 1)
+                    pygame.draw.line(s, pine, (nx, 4), (nx-2, 8), 1)
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == KARE_BRIDGE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                # gravel below
+                gravel = (200, 195, 182)
+                s.fill(gravel)
+                for ry in range(3, BS, 5):
+                    pygame.draw.line(s, _darken(gravel, 12), (0, ry), (BS, ry), 1)
+                # flat stone bridge slabs
+                pygame.draw.rect(s, c, (1, BS//2-4, BS-2, 8))
+                pygame.draw.line(s, lt, (1, BS//2-4), (BS-2, BS//2-4), 1)
+                # plank lines
+                for px2 in range(5, BS-2, 6):
+                    pygame.draw.line(s, dk, (px2, BS//2-4), (px2, BS//2+4), 1)
+                surfs[bid] = s
+                continue
+            # ── Chinese garden blocks ───────────────────────────────────────────
+            if bid == PEBBLE_MOSAIC_CN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 20))
+                # scattered small pebbles in alternating colors
+                peb_cols = [c, _lighter(c, 20), _darken(c, 18), _lighter(c, 8)]
+                positions = [(3,4),(7,2),(12,6),(17,3),(22,5),(27,4),(2,11),(6,9),(11,13),
+                             (16,10),(21,12),(26,9),(4,18),(8,15),(13,19),(18,16),(23,18),
+                             (28,14),(3,24),(7,22),(12,26),(17,23),(22,25),(27,21),(5,29)]
+                for i, (px2, py2) in enumerate(positions):
+                    if px2 < BS and py2 < BS:
+                        pygame.draw.ellipse(s, peb_cols[i%4], (px2-2, py2-1, 4, 3))
+                pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == ZIGZAG_BRIDGE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                water = (60, 130, 175)
+                BS = BLOCK_SIZE
+                s.fill(water)
+                # zigzag planks
+                pts = [(0, BS-6), (BS//3, BS-6), (BS//3, BS//2), (2*BS//3, BS//2),
+                       (2*BS//3, 6), (BS, 6)]
+                for i in range(len(pts)-1):
+                    pygame.draw.line(s, c, pts[i], pts[i+1], 5)
+                    pygame.draw.line(s, lt, pts[i], pts[i+1], 1)
+                surfs[bid] = s
+                continue
+            if bid == CLOUD_WALL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                pygame.draw.line(s, dk, (1, 2), (BS-2, 2), 1)
+                pygame.draw.line(s, dk, (1, BS-3), (BS-2, BS-3), 1)
+                # cloud-shaped window opening (dark inside)
+                inside = _darken(c, 45)
+                cx2, cy2 = BS//2, BS//2
+                # cloud outline: circles
+                pygame.draw.circle(s, inside, (cx2, cy2), 7)
+                pygame.draw.circle(s, inside, (cx2-5, cy2+2), 5)
+                pygame.draw.circle(s, inside, (cx2+5, cy2+2), 5)
+                pygame.draw.circle(s, inside, (cx2-5, cy2-2), 5)
+                pygame.draw.circle(s, inside, (cx2+5, cy2-2), 5)
+                surfs[bid] = s
+                continue
+            if bid == DRAGON_WALL_CN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 22)
+                dk = _darken(c, 25)
+                wall_c = (175, 168, 155)
+                BS = BLOCK_SIZE
+                s.fill(wall_c)
+                pygame.draw.line(s, _darken(wall_c, 15), (0, BS//2), (BS, BS//2), 1)
+                # sinuous dragon crest on top half
+                prev = (0, BS//3)
+                for wx in range(0, BS, 4):
+                    wy = BS//3 + int(4 * math.sin(wx * 0.4))
+                    pygame.draw.line(s, c, prev, (wx, wy), 2)
+                    pygame.draw.line(s, lt, prev, (wx, wy-1), 1)
+                    prev = (wx, wy)
+                # scales: small arcs along the dragon
+                for wx in range(4, BS, 8):
+                    wy = BS//3 + int(4 * math.sin(wx * 0.4))
+                    pygame.draw.arc(s, dk, (wx-3, wy-2, 6, 4), 0, math.pi, 1)
+                surfs[bid] = s
+                continue
+            if bid == LOTUS_POND:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 15))
+                pygame.draw.ellipse(s, c, (1, 3, BS-2, BS-6))
+                # lily pads
+                pad = (45, 115, 50)
+                for px2, py2 in [(6, BS//2-2), (BS-10, BS//2+2), (BS//2, BS//2-4)]:
+                    pygame.draw.circle(s, pad, (px2, py2), 4)
+                    pygame.draw.line(s, _darken(pad, 20), (px2, py2), (px2+2, py2-4), 1)
+                # lotus flowers
+                lotus = (230, 160, 185)
+                pygame.draw.circle(s, lotus, (6, BS//2-2), 2)
+                pygame.draw.circle(s, (240, 240, 200), (BS//2, BS//2-4), 2)
+                surfs[bid] = s
+                continue
+            if bid == HEX_PAVILION_TILE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 15))
+                cx2, cy2 = BS//2, BS//2
+                r2 = 11
+                # hexagon
+                hex_pts = [(cx2 + int(r2*math.cos(math.pi*i/3 - math.pi/6)),
+                            cy2 + int(r2*math.sin(math.pi*i/3 - math.pi/6))) for i in range(6)]
+                pygame.draw.polygon(s, c, hex_pts)
+                pygame.draw.polygon(s, lt, hex_pts, 1)
+                # inner decoration lines
+                for pt in hex_pts:
+                    pygame.draw.line(s, dk, (cx2, cy2), pt, 1)
+                surfs[bid] = s
+                continue
+            if bid == COMPASS_PAVING:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 16)
+                dk = _darken(c, 28)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                cx2, cy2 = BS//2, BS//2
+                # eight compass points
+                for ai in range(8):
+                    ang = math.pi * ai / 4
+                    ex2 = cx2 + int(12 * math.cos(ang))
+                    ey2 = cy2 + int(12 * math.sin(ang))
+                    col = dk if ai % 2 == 0 else _darken(c, 14)
+                    pygame.draw.line(s, col, (cx2, cy2), (ex2, ey2), 2)
+                pygame.draw.circle(s, lt, (cx2, cy2), 4)
+                pygame.draw.circle(s, dk, (cx2, cy2), 4, 1)
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == WAVE_BALUSTRADE_CN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 30))
+                # top and bottom rails
+                pygame.draw.rect(s, c, (0, 1, BS, 4))
+                pygame.draw.rect(s, c, (0, BS-5, BS, 4))
+                pygame.draw.line(s, lt, (0, 1), (BS, 1), 1)
+                # wave-carved middle band
+                prev = (0, BS//2)
+                for wx in range(0, BS):
+                    wy = BS//2 + int(3 * math.sin(wx * 0.5))
+                    pygame.draw.line(s, dk, prev, (wx, wy), 1)
+                    prev = (wx, wy)
+                # cloud motif balusters
+                for bx2 in [6, BS//2, BS-8]:
+                    pygame.draw.ellipse(s, c, (bx2-3, 5, 6, 4))
+                    pygame.draw.line(s, c, (bx2, 9), (bx2, BS-5), 1)
+                surfs[bid] = s
+                continue
+            if bid == CERAMIC_SEAT:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 25)
+                white = (235, 238, 245)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 40))
+                # barrel shape
+                pygame.draw.ellipse(s, white, (4, 2, BS-8, BS-4))
+                pygame.draw.ellipse(s, c, (6, 4, BS-12, BS-8), 1)
+                # blue wave decoration band
+                for wx in range(6, BS-6, 3):
+                    wy = BS//2 + int(3 * math.sin(wx * 0.6))
+                    pygame.draw.circle(s, c, (wx, wy), 1)
+                # top surface
+                pygame.draw.ellipse(s, white, (5, 2, BS-10, 6))
+                surfs[bid] = s
+                continue
+            if bid == BONSAI_TRAY:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                # tray slab
+                pygame.draw.rect(s, c, (2, BS//2+1, BS-4, BS//2-4))
+                pygame.draw.line(s, lt, (2, BS//2+1), (BS-2, BS//2+1), 1)
+                # small tree: trunk + cloud puffs
+                trunk = (90, 60, 35)
+                pygame.draw.line(s, trunk, (BS//2, BS//2), (BS//2, BS//2-12), 2)
+                pygame.draw.line(s, trunk, (BS//2, BS//2-8), (BS//2-5, BS//2-14), 1)
+                foliage = (38, 92, 42)
+                for cx2, cy2, r2 in [(BS//2-4, BS//2-16, 4), (BS//2+4, BS//2-16, 4),
+                                     (BS//2, BS//2-20, 4)]:
+                    if cy2 > 0:
+                        pygame.draw.circle(s, foliage, (cx2, cy2), r2)
+                surfs[bid] = s
+                continue
+            if bid == SCHOLAR_SCREEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 30))
+                # lattice frame
+                pygame.draw.rect(s, c, (1, 1, BS-2, BS-2), 2)
+                for ry in [BS//3, 2*BS//3]:
+                    pygame.draw.line(s, c, (3, ry), (BS-3, ry), 1)
+                for rx in [BS//3, 2*BS//3]:
+                    pygame.draw.line(s, c, (rx, 3), (rx, BS-3), 1)
+                # scholar's rock silhouette in center cell
+                rock = (95, 90, 82)
+                pts = [(BS//2-4, BS//2+3), (BS//2+4, BS//2+3), (BS//2+6, BS//2-2),
+                       (BS//2+2, BS//2-6), (BS//2-2, BS//2-6), (BS//2-6, BS//2-2)]
+                pygame.draw.polygon(s, rock, pts)
+                surfs[bid] = s
+                continue
+            if bid == CHRYSANTHEMUM_TILE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 25)
+                white = (235, 230, 220)
+                BS = BLOCK_SIZE
+                s.fill(white)
+                cx2, cy2 = BS//2, BS//2
+                # petal radiating lines
+                for ai in range(12):
+                    ang = math.pi * ai / 6
+                    ex2 = cx2 + int(11 * math.cos(ang))
+                    ey2 = cy2 + int(11 * math.sin(ang))
+                    pygame.draw.line(s, c, (cx2, cy2), (ex2, ey2), 2)
+                pygame.draw.circle(s, lt, (cx2, cy2), 4)
+                pygame.draw.circle(s, _darken(c, 20), (cx2, cy2), 4, 1)
+                pygame.draw.rect(s, _darken(white, 15), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == PLUM_BLOSSOM_TILE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 22)
+                white = (235, 230, 220)
+                BS = BLOCK_SIZE
+                s.fill(white)
+                cx2, cy2 = BS//2, BS//2
+                # 5 petals around center
+                for ai in range(5):
+                    ang = math.pi * ai * 2 / 5 - math.pi / 2
+                    px2 = cx2 + int(7 * math.cos(ang))
+                    py2 = cy2 + int(7 * math.sin(ang))
+                    pygame.draw.circle(s, c, (px2, py2), 4)
+                pygame.draw.circle(s, lt, (cx2, cy2), 3)
+                pygame.draw.circle(s, (220, 180, 50), (cx2, cy2), 2)
+                pygame.draw.rect(s, _darken(white, 15), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == MOON_PAVEMENT:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 16)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 15))
+                # circular moon-gate paving inset
+                pygame.draw.circle(s, c, (BS//2, BS//2), BS//2-2)
+                pygame.draw.circle(s, lt, (BS//2, BS//2), BS//2-2, 2)
+                pygame.draw.circle(s, _darken(c, 10), (BS//2, BS//2), BS//2-8, 1)
+                # radial spoke lines
+                for ai in range(8):
+                    ang = math.pi * ai / 4
+                    ex2 = BS//2 + int((BS//2-4) * math.cos(ang))
+                    ey2 = BS//2 + int((BS//2-4) * math.sin(ang))
+                    pygame.draw.line(s, dk, (BS//2, BS//2), (ex2, ey2), 1)
+                surfs[bid] = s
+                continue
+            if bid == BAMBOO_GROVE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 50))
+                # multiple bamboo stalks
+                for bx2, boff in [(4, 0), (10, 2), (16, -1), (22, 1), (28, -2)]:
+                    pygame.draw.rect(s, c, (bx2, boff, 4, BS-boff))
+                    pygame.draw.line(s, lt, (bx2+1, boff), (bx2+1, BS), 1)
+                    for ky in range(boff+6, BS, 8):
+                        pygame.draw.line(s, dk, (bx2, ky), (bx2+4, ky), 1)
+                # leaves at top
+                leaf = (70, 130, 48)
+                for lx, ly in [(6, 4), (12, 2), (18, 5), (24, 3)]:
+                    pygame.draw.line(s, leaf, (lx, ly), (lx+6, ly-4), 1)
+                    pygame.draw.line(s, leaf, (lx, ly), (lx-4, ly-3), 1)
+                surfs[bid] = s
+                continue
+            if bid == OSMANTHUS_BUSH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 16)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                trunk = (90, 60, 35)
+                s.fill(_darken(c, 45))
+                pygame.draw.rect(s, trunk, (BS//2-1, BS-7, 3, 7))
+                # rounded bush
+                pygame.draw.circle(s, dk, (BS//2, BS//2-2), BS//2-4)
+                pygame.draw.circle(s, c, (BS//2, BS//2-2), BS//2-6)
+                # tiny golden flower dots
+                flower = (230, 175, 50)
+                for fx, fy in [(BS//2-4, BS//2-6), (BS//2+4, BS//2-4), (BS//2, BS//2-10),
+                               (BS//2-6, BS//2-2), (BS//2+6, BS//2-8)]:
+                    pygame.draw.circle(s, flower, (fx, fy), 2)
+                surfs[bid] = s
+                continue
+            if bid == WATER_LILY_TILE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 15))
+                pygame.draw.ellipse(s, c, (1, 3, BS-2, BS-6))
+                # lily pads (large)
+                pad = (40, 110, 50)
+                for px2, py2, r2 in [(7, BS//2, 6), (BS-9, BS//2+2, 5)]:
+                    pygame.draw.circle(s, pad, (px2, py2), r2)
+                    pygame.draw.line(s, _darken(pad, 20), (px2, py2-r2), (px2, py2+r2), 1)
+                # white lily flower
+                pygame.draw.circle(s, (245, 245, 235), (BS//2, BS//2-2), 4)
+                for ai in range(6):
+                    ang = math.pi * ai / 3
+                    pygame.draw.line(s, (235, 235, 220), (BS//2, BS//2-2),
+                                     (BS//2+int(5*math.cos(ang)), BS//2-2+int(5*math.sin(ang))), 1)
+                surfs[bid] = s
+                continue
+            if bid == KOI_POND:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 15))
+                pygame.draw.ellipse(s, c, (1, 3, BS-2, BS-6))
+                # koi fish
+                koi_cols = [(210, 80, 40), (240, 200, 50), (230, 230, 230)]
+                koi_pos = [(8, BS//2-2, 0), (BS//2, BS//2+2, math.pi/4), (BS-9, BS//2-3, -0.3)]
+                for kx, ky, ka in koi_pos:
+                    col = koi_cols[kx % len(koi_cols)]
+                    pygame.draw.ellipse(s, col, (kx-4, ky-2, 8, 4))
+                    # tail
+                    tx = kx + int(5*math.cos(ka+math.pi))
+                    ty = ky + int(5*math.sin(ka+math.pi))
+                    pygame.draw.line(s, col, (kx, ky), (tx, ty), 2)
+                surfs[bid] = s
+                continue
+            if bid == LAKESIDE_ROCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                BS = BLOCK_SIZE
+                water = (60, 130, 175)
+                s.fill(water)
+                # flat low rock
+                pts = [(2, BS//2), (BS-2, BS//2+2), (BS-3, BS-3), (3, BS-4)]
+                pygame.draw.polygon(s, c, pts)
+                pygame.draw.polygon(s, lt, pts, 1)
+                # water ripple above rock
+                pygame.draw.arc(s, _lighter(water, 20), (4, BS//2-5, BS-8, 6), 0, math.pi, 1)
+                surfs[bid] = s
+                continue
+            if bid == CLOUD_COLLAR_TILE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                cx2, cy2 = BS//2, BS//2
+                # four ruyi cloud-collar lobes
+                for ai in range(4):
+                    ang = math.pi * ai / 2
+                    ox2 = int(7 * math.cos(ang))
+                    oy2 = int(7 * math.sin(ang))
+                    pygame.draw.circle(s, lt, (cx2+ox2, cy2+oy2), 6, 1)
+                pygame.draw.circle(s, dk, (cx2, cy2), 4)
+                pygame.draw.circle(s, lt, (cx2, cy2), 2)
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == IMPERIAL_PAVING:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 12)
+                dk = _darken(c, 18)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # single large-format stone with tight joints
+                pygame.draw.line(s, lt, (0, 0), (BS, 0), 2)
+                pygame.draw.line(s, lt, (0, 0), (0, BS), 2)
+                pygame.draw.line(s, dk, (0, BS-2), (BS, BS-2), 2)
+                pygame.draw.line(s, dk, (BS-2, 0), (BS-2, BS), 2)
+                # subtle grain texture
+                for ty in range(5, BS-3, 6):
+                    pygame.draw.line(s, _darken(c, 5), (2, ty), (BS-3, ty), 1)
+                surfs[bid] = s
+                continue
+            if bid == PAVILION_COLUMN_CN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 20)
+                dk = _darken(c, 25)
+                gold = (210, 165, 50)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 40))
+                # red column shaft
+                pygame.draw.rect(s, c, (BS//2-4, 0, 8, BS))
+                pygame.draw.line(s, lt, (BS//2-3, 0), (BS//2-3, BS), 1)
+                # gold dougong bracket at top
+                pygame.draw.rect(s, gold, (BS//2-8, 3, 16, 4))
+                pygame.draw.rect(s, _darken(gold, 20), (BS//2-6, 7, 12, 3))
+                # cloud motif on shaft
+                for cy2 in [BS//3, 2*BS//3]:
+                    pygame.draw.ellipse(s, lt, (BS//2-3, cy2-2, 6, 4), 1)
+                surfs[bid] = s
+                continue
+            if bid == EIGHT_DIAGRAM:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                cx2, cy2 = BS//2, BS//2
+                # outer octagon
+                r2 = 12
+                oct_pts = [(cx2+int(r2*math.cos(math.pi*i/4)), cy2+int(r2*math.sin(math.pi*i/4)))
+                           for i in range(8)]
+                pygame.draw.polygon(s, lt, oct_pts, 1)
+                # trigram lines (3 lines per sector — simplified)
+                for ai in range(8):
+                    ang = math.pi * ai / 4
+                    for offset in [-2, 0, 2]:
+                        sx2 = cx2 + int((r2-3) * math.cos(ang)) + int(offset * math.cos(ang+math.pi/2))
+                        sy2 = cy2 + int((r2-3) * math.sin(ang)) + int(offset * math.sin(ang+math.pi/2))
+                        ex2 = cx2 + int(6 * math.cos(ang))
+                        ey2 = cy2 + int(6 * math.sin(ang))
+                        pygame.draw.line(s, dk, (sx2, sy2), (ex2, ey2), 1)
+                # yin-yang center (simplified)
+                pygame.draw.circle(s, lt, (cx2, cy2), 4)
+                pygame.draw.circle(s, dk, (cx2, cy2-2), 1)
+                pygame.draw.circle(s, lt, (cx2, cy2+2), 1)
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == TEA_HOUSE_STEP:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 20))
+                # three worn stone steps
+                for i in range(3):
+                    step_y = BS//2 - 4 + i * 6
+                    step_x = 2 + i * 4
+                    pygame.draw.rect(s, _lighter(c, 8-i*3), (step_x, step_y, BS-step_x*2, 6))
+                    pygame.draw.line(s, lt, (step_x, step_y), (BS-step_x, step_y), 1)
+                    pygame.draw.line(s, dk, (step_x, step_y+5), (BS-step_x, step_y+5), 1)
+                surfs[bid] = s
+                continue
+            if bid == LANTERN_FESTIVAL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 50))
+                # cord
+                pygame.draw.line(s, (80, 60, 35), (0, 6), (BS, 6), 1)
+                # multiple red paper lanterns
+                lantern_positions = [3, 10, 18, 25]
+                for lx in lantern_positions:
+                    drop_y = 6 + (lx % 4)
+                    pygame.draw.line(s, (80, 60, 35), (lx+3, 6), (lx+3, drop_y), 1)
+                    pygame.draw.ellipse(s, c, (lx, drop_y, 7, 11))
+                    pygame.draw.ellipse(s, lt, (lx+1, drop_y+1, 5, 4))
+                    # tassel
+                    pygame.draw.line(s, (180, 140, 40), (lx+3, drop_y+11), (lx+3, drop_y+14), 1)
+                surfs[bid] = s
+                continue
+            # ── End Japanese/Chinese garden blocks ─────────────────────────────
+            # ── Renaissance garden blocks ───────────────────────────────────────
+            if bid == IONIC_COLUMN_BASE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # base moulding
+                pygame.draw.rect(s, dk, (0, BS-4, BS, 4))
+                pygame.draw.line(s, lt, (0, BS-4), (BS, BS-4), 1)
+                # shaft with flutes
+                for fx in [5, 10, 15, 20, 25]:
+                    pygame.draw.line(s, dk, (fx, 4), (fx, BS-4), 1)
+                    pygame.draw.line(s, lt, (fx+1, 4), (fx+1, BS-4), 1)
+                # Ionic volute capital (twin scrolls)
+                pygame.draw.arc(s, dk, (3, 1, 8, 8), 0, math.pi*2, 2)
+                pygame.draw.arc(s, dk, (BS-11, 1, 8, 8), 0, math.pi*2, 2)
+                pygame.draw.rect(s, dk, (0, 2, BS, 3))
+                pygame.draw.line(s, lt, (0, 2), (BS, 2), 1)
+                surfs[bid] = s
+                continue
+            if bid == DORIC_ENTABLATURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                pygame.draw.line(s, lt, (0, 2), (BS, 2), 1)
+                pygame.draw.line(s, dk, (0, BS-3), (BS, BS-3), 2)
+                # triglyph channels
+                for tx in [4, 12, 20, 28]:
+                    pygame.draw.rect(s, dk, (tx, 4, 2, BS-8))
+                    pygame.draw.rect(s, dk, (tx+3, 4, 2, BS-8))
+                # metope panels between
+                for mx in [8, 16, 24]:
+                    pygame.draw.rect(s, _lighter(c, 6), (mx, 5, 4, BS-10))
+                surfs[bid] = s
+                continue
+            if bid == RUSTICATED_BASE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 10)
+                dk = _darken(c, 25)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # deep V-joint courses
+                for ry in [BS//3, 2*BS//3]:
+                    pygame.draw.line(s, dk, (0, ry), (BS, ry), 2)
+                    pygame.draw.line(s, lt, (0, ry+2), (BS, ry+2), 1)
+                # vertical joints offset per course
+                for rx in [BS//2]:
+                    pygame.draw.line(s, dk, (rx, 0), (rx, BS//3), 1)
+                for rx in [BS//4, 3*BS//4]:
+                    pygame.draw.line(s, dk, (rx, BS//3), (rx, 2*BS//3), 1)
+                for rx in [BS//2]:
+                    pygame.draw.line(s, dk, (rx, 2*BS//3), (rx, BS), 1)
+                # bold outer border
+                pygame.draw.rect(s, _darken(c, 18), s.get_rect(), 2)
+                surfs[bid] = s
+                continue
+            if bid == GARDEN_LOGGIA:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 28)
+                lt = _lighter(c, 12)
+                inside = _darken(c, 45)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # arch opening
+                ax, aw, at = 5, BS-10, 4
+                pygame.draw.rect(s, inside, (ax+2, at+aw//2, aw-4, BS-at-aw//2-2))
+                pygame.draw.arc(s, dk, (ax, at, aw, aw), 0, math.pi, 3)
+                pygame.draw.line(s, dk, (ax, at+aw//2), (ax, BS-2), 3)
+                pygame.draw.line(s, dk, (ax+aw, at+aw//2), (ax+aw, BS-2), 3)
+                # entablature band at top
+                pygame.draw.rect(s, dk, (0, 0, BS, 4))
+                pygame.draw.line(s, lt, (0, 4), (BS, 4), 1)
+                surfs[bid] = s
+                continue
+            if bid == TRIUMPHAL_ARCH_R:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 25)
+                lt = _lighter(c, 10)
+                inside = _darken(c, 45)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                ax, aw, at = 6, BS-12, 6
+                pygame.draw.rect(s, inside, (ax+2, at+aw//2, aw-4, BS-at-aw//2-2))
+                pygame.draw.arc(s, dk, (ax, at, aw, aw), 0, math.pi, 4)
+                pygame.draw.line(s, dk, (ax, at+aw//2), (ax, BS-2), 4)
+                pygame.draw.line(s, dk, (ax+aw, at+aw//2), (ax+aw, BS-2), 4)
+                # attic storey
+                pygame.draw.rect(s, dk, (0, 0, BS, 5))
+                pygame.draw.line(s, lt, (0, 5), (BS, 5), 1)
+                # keystone
+                pygame.draw.polygon(s, lt, [(BS//2-3, at), (BS//2+3, at), (BS//2, at+5)])
+                surfs[bid] = s
+                continue
+            if bid == EXEDRA_SEAT:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 30))
+                # curved back wall (arc)
+                pygame.draw.arc(s, c, (2, 2, BS-4, BS-4), 0, math.pi, 6)
+                # seat (flat horizontal)
+                pygame.draw.rect(s, c, (1, BS//2, BS-2, 6))
+                pygame.draw.line(s, lt, (1, BS//2), (BS-2, BS//2), 1)
+                # legs
+                pygame.draw.rect(s, dk, (3, BS//2+6, 4, BS//2-7))
+                pygame.draw.rect(s, dk, (BS-7, BS//2+6, 4, BS//2-7))
+                surfs[bid] = s
+                continue
+            if bid == HERM_PILLAR:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                # tapering shaft (wider at base)
+                pygame.draw.polygon(s, c, [(BS//2-4, BS-2), (BS//2+4, BS-2), (BS//2+3, 10), (BS//2-3, 10)])
+                # base block
+                pygame.draw.rect(s, dk, (BS//2-5, BS-5, 10, 5))
+                # head portrait (simplified)
+                pygame.draw.circle(s, c, (BS//2, 7), 6)
+                pygame.draw.circle(s, lt, (BS//2-1, 6), 2)
+                pygame.draw.line(s, dk, (BS//2-2, 10), (BS//2+2, 10), 1)
+                surfs[bid] = s
+                continue
+            if bid == NYMPHAEUM_PANEL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 28)
+                lt = _lighter(c, 12)
+                water = (80, 155, 200)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # shell-shaped niche
+                cx2, cy2 = BS//2, BS//2+2
+                pygame.draw.ellipse(s, _darken(c, 35), (4, 4, BS-8, BS-8))
+                # shell ribs
+                for ai in range(-3, 4):
+                    ang = math.pi * ai / 6
+                    ex2 = cx2 + int(11 * math.cos(ang - math.pi/2))
+                    ey2 = cy2 + int(11 * math.sin(ang - math.pi/2))
+                    pygame.draw.line(s, dk, (cx2, cy2+4), (ex2, ey2), 1)
+                # water cascade line
+                pygame.draw.line(s, water, (cx2, cy2+2), (cx2, BS-3), 2)
+                pygame.draw.ellipse(s, water, (cx2-4, BS-6, 8, 4))
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == GROTTO_STONE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 12)
+                dk = _darken(c, 18)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # rough tufa texture: random bumps and hollows
+                for ty in range(0, BS, 5):
+                    for tx in range(0, BS, 5):
+                        offset = (tx * 7 + ty * 11) % 5
+                        col = lt if offset < 2 else dk
+                        pygame.draw.circle(s, col, (tx+2, ty+2), 2)
+                # stalactite tips at top
+                for sx2 in [4, 10, 17, 23, 29]:
+                    drop = 3 + sx2 % 4
+                    pygame.draw.polygon(s, dk, [(sx2-2, 0), (sx2+2, 0), (sx2, drop)])
+                pygame.draw.rect(s, _darken(c, 22), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == AMPHITHEATER_TIER:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 16)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                stone = (175, 168, 155)
+                s.fill(c)
+                # turf step
+                pygame.draw.rect(s, c, (0, 0, BS, BS//2))
+                # stone riser
+                pygame.draw.rect(s, stone, (0, BS//2, BS, BS//2))
+                pygame.draw.line(s, _lighter(stone, 12), (0, BS//2), (BS, BS//2), 1)
+                pygame.draw.line(s, _darken(stone, 18), (0, BS-2), (BS, BS-2), 1)
+                surfs[bid] = s
+                continue
+            if bid == GIOCHI_ACQUA:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 25)
+                stone = (175, 168, 155)
+                BS = BLOCK_SIZE
+                s.fill(stone)
+                pygame.draw.line(s, _darken(stone, 15), (0, BS//2), (BS, BS//2), 1)
+                pygame.draw.line(s, _darken(stone, 15), (BS//2, 0), (BS//2, BS), 1)
+                # surprise jet at center
+                jet_col = c
+                pygame.draw.line(s, jet_col, (BS//2, BS//2), (BS//2, 4), 2)
+                pygame.draw.line(s, lt, (BS//2-1, BS//2), (BS//2-1, 5), 1)
+                # spray droplets
+                for dx2, dy2 in [(-3, 3), (3, 3), (-5, 6), (5, 6), (0, 2)]:
+                    if 0 < BS//2+dx2 < BS and 0 < 4+dy2 < BS:
+                        pygame.draw.circle(s, lt, (BS//2+dx2, 4+dy2), 1)
+                pygame.draw.circle(s, lt, (BS//2, 3), 2)
+                surfs[bid] = s
+                continue
+            if bid == RILL_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 22)
+                stone = (185, 178, 165)
+                BS = BLOCK_SIZE
+                s.fill(stone)
+                # stone channel edges
+                pygame.draw.rect(s, _darken(stone, 18), (0, 0, BS, 6))
+                pygame.draw.rect(s, _darken(stone, 18), (0, BS-6, BS, 6))
+                # water channel
+                pygame.draw.rect(s, c, (0, 6, BS, BS-12))
+                for ry in [BS//2-1, BS//2+1]:
+                    pygame.draw.line(s, lt, (0, ry), (BS, ry), 1)
+                surfs[bid] = s
+                continue
+            if bid == CASCADE_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                stone = (165, 158, 145)
+                BS = BLOCK_SIZE
+                s.fill(stone)
+                water = (80, 160, 210)
+                # three descending stone shelves
+                for i in range(3):
+                    sy = i * BS//3
+                    pygame.draw.rect(s, stone, (i*3, sy, BS-i*3, BS//3))
+                    pygame.draw.line(s, _lighter(stone, 10), (i*3, sy), (BS-i*3, sy), 1)
+                    pygame.draw.line(s, water, (i*3, sy+BS//3-2), (BS-i*3, sy+BS//3-2), 2)
+                    pygame.draw.line(s, lt, (i*3, sy+BS//3-1), (BS-i*3, sy+BS//3-1), 1)
+                surfs[bid] = s
+                continue
+            if bid == GROTTO_POOL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 20))
+                pygame.draw.ellipse(s, c, (2, 4, BS-4, BS-8))
+                # dark mossy tone
+                for r2 in [10, 7]:
+                    pygame.draw.ellipse(s, lt, (BS//2-r2, BS//2-r2+2, r2*2, r2*2-4), 1)
+                # moss dots at edge
+                moss = (42, 78, 35)
+                for mx, my in [(3,8),(BS-5,9),(4,BS-7),(BS-4,BS-8)]:
+                    pygame.draw.circle(s, moss, (mx, my), 2)
+                surfs[bid] = s
+                continue
+            if bid == WALL_FOUNTAIN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                water = (80, 160, 210)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # mask face (grotesque)
+                pygame.draw.circle(s, dk, (BS//2, 8), 6)
+                pygame.draw.circle(s, lt, (BS//2-1, 7), 2)
+                # open mouth spout
+                pygame.draw.ellipse(s, _darken(c, 40), (BS//2-2, 11, 4, 3))
+                # water stream down
+                pygame.draw.line(s, water, (BS//2, 14), (BS//2, BS//2+2), 2)
+                pygame.draw.line(s, _lighter(water, 20), (BS//2-1, 14), (BS//2-1, BS//2+2), 1)
+                # basin
+                pygame.draw.ellipse(s, c, (4, BS//2+2, BS-8, 8))
+                pygame.draw.ellipse(s, lt, (4, BS//2+2, BS-8, 8), 1)
+                pygame.draw.ellipse(s, water, (6, BS//2+3, BS-12, 5))
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == BASIN_SURROUND:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                water = (80, 155, 205)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # outer carved rim
+                pygame.draw.ellipse(s, dk, (1, 3, BS-2, BS-6), 3)
+                pygame.draw.ellipse(s, lt, (2, 4, BS-4, BS-8), 1)
+                # water inside
+                pygame.draw.ellipse(s, water, (6, 8, BS-12, BS-16))
+                # decorative egg-and-dart moulding hint
+                for ai in range(6):
+                    ang = math.pi * ai / 3
+                    ex2 = BS//2 + int(13 * math.cos(ang))
+                    ey2 = BS//2 + int(7 * math.sin(ang))
+                    pygame.draw.circle(s, dk, (ex2, ey2), 2)
+                surfs[bid] = s
+                continue
+            if bid == CANAL_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 22)
+                stone = (180, 173, 160)
+                BS = BLOCK_SIZE
+                s.fill(stone)
+                pygame.draw.rect(s, c, (3, 0, BS-6, BS))
+                for ry in [BS//3, 2*BS//3]:
+                    pygame.draw.line(s, lt, (3, ry), (BS-3, ry), 1)
+                pygame.draw.line(s, _darker(stone, 15) if hasattr(stone, '__call__') else _darken((180,173,160), 15), (3, 0), (3, BS), 1)
+                pygame.draw.line(s, _darken(stone, 15), (BS-3, 0), (BS-3, BS), 1)
+                surfs[bid] = s
+                continue
+            if bid == TERME_POOL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 22)
+                stone = (175, 168, 155)
+                BS = BLOCK_SIZE
+                s.fill(stone)
+                pygame.draw.rect(s, _darken(stone, 18), (0, 0, BS, 4))
+                pygame.draw.rect(s, _darken(stone, 18), (0, BS-4, BS, 4))
+                pygame.draw.rect(s, _darken(stone, 18), (0, 0, 4, BS))
+                pygame.draw.rect(s, _darken(stone, 18), (BS-4, 0, 4, BS))
+                pygame.draw.rect(s, c, (4, 4, BS-8, BS-8))
+                # steam wisps
+                for sx2 in [8, BS//2, BS-8]:
+                    pygame.draw.arc(s, lt, (sx2-3, 6, 6, 5), 0, math.pi, 1)
+                surfs[bid] = s
+                continue
+            if bid == PARTERRE_BRODERIE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 22)
+                sand = (210, 200, 178)
+                BS = BLOCK_SIZE
+                s.fill(sand)
+                # embroidery curves: S-curves of clipped box
+                for cy2 in range(4, BS, 8):
+                    for cx2 in range(0, BS, 4):
+                        wy = cy2 + int(3 * math.sin(cx2 * 0.5))
+                        if 0 <= wy < BS:
+                            pygame.draw.rect(s, c, (cx2, wy, 3, 3))
+                surfs[bid] = s
+                continue
+            if bid == PARTERRE_COMPARTMENT:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 16)
+                sand = (210, 200, 178)
+                BS = BLOCK_SIZE
+                s.fill(sand)
+                half = BS // 2
+                # four quadrant beds edged with clipped box
+                for (x1, y1, w, h) in [(1,1,half-2,half-2),(half+1,1,half-2,half-2),
+                                        (1,half+1,half-2,half-2),(half+1,half+1,half-2,half-2)]:
+                    pygame.draw.rect(s, c, (x1, y1, w, h), 2)
+                    pygame.draw.rect(s, _darken(sand, 10), (x1+2, y1+2, w-4, h-4))
+                # cross paths
+                pygame.draw.line(s, sand, (half, 0), (half, BS), 1)
+                pygame.draw.line(s, sand, (0, half), (BS, half), 1)
+                surfs[bid] = s
+                continue
+            if bid == ALLEE_TREE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 16)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                trunk = (95, 62, 32)
+                s.fill(_darken(c, 50))
+                pygame.draw.rect(s, trunk, (BS//2-1, BS-7, 3, 7))
+                # clipped cone/column shape — tight formal allée silhouette
+                w = 6
+                for ty in range(4, BS-6, 3):
+                    pygame.draw.rect(s, dk, (BS//2-w//2, ty, w, 3))
+                    pygame.draw.rect(s, c, (BS//2-w//2+1, ty, w-2, 2))
+                    if ty > BS//3:
+                        w = max(4, w)
+                surfs[bid] = s
+                continue
+            if bid == PLEACHED_HEDGE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                trunk = (95, 62, 32)
+                s.fill(_darken(c, 40))
+                # trunks at edges and center
+                for tx in [3, BS//2, BS-5]:
+                    pygame.draw.rect(s, trunk, (tx, BS//2, 3, BS//2))
+                # horizontal pleached canopy band
+                pygame.draw.rect(s, dk, (0, 4, BS, BS//2-4))
+                pygame.draw.rect(s, c, (1, 5, BS-2, BS//2-6))
+                pygame.draw.line(s, lt, (1, 5), (BS-2, 5), 1)
+                # branch lines
+                for bx2 in range(4, BS-3, 7):
+                    pygame.draw.line(s, trunk, (bx2, BS//2), (bx2, BS//4), 1)
+                surfs[bid] = s
+                continue
+            if bid == ESPALIER_WALL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                wall = (185, 175, 158)
+                BS = BLOCK_SIZE
+                s.fill(wall)
+                # horizontal training wires
+                for ry in [BS//4, BS//2, 3*BS//4]:
+                    pygame.draw.line(s, _darken(wall, 18), (0, ry), (BS, ry), 1)
+                # espalier branches and leaves
+                branch = (90, 62, 32)
+                leaf = c
+                pygame.draw.line(s, branch, (BS//2, BS-2), (BS//2, 2), 1)
+                for ly in [BS//4, BS//2, 3*BS//4]:
+                    pygame.draw.line(s, branch, (BS//2, ly), (4, ly-3), 1)
+                    pygame.draw.line(s, branch, (BS//2, ly), (BS-4, ly-3), 1)
+                    for lx in [6, BS-6, 12, BS-12]:
+                        pygame.draw.circle(s, leaf, (lx, ly-3), 3)
+                surfs[bid] = s
+                continue
+            if bid == KNOT_GARDEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                sand = (210, 200, 178)
+                BS = BLOCK_SIZE
+                s.fill(sand)
+                # interlaced knot: two crossing sine waves in clipped box
+                dk = _darken(c, 15)
+                lt = _lighter(c, 10)
+                for cx2 in range(0, BS, 2):
+                    wy1 = BS//2 + int(10 * math.sin(cx2 * 0.4))
+                    wy2 = BS//2 - int(10 * math.sin(cx2 * 0.4 + math.pi/2))
+                    if 0 <= wy1 < BS:
+                        pygame.draw.rect(s, c, (cx2, wy1-1, 2, 3))
+                    if 0 <= wy2 < BS:
+                        pygame.draw.rect(s, dk, (cx2, wy2-1, 2, 3))
+                surfs[bid] = s
+                continue
+            if bid == TURF_THEATER:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 16)
+                stone = (175, 168, 155)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # green turf step with stone riser
+                pygame.draw.rect(s, stone, (0, 2*BS//3, BS, BS//3))
+                pygame.draw.line(s, _lighter(stone, 12), (0, 2*BS//3), (BS, 2*BS//3), 1)
+                # curved arc hint at top edge
+                pygame.draw.arc(s, lt, (2, 2, BS-4, BS//2), 0, math.pi, 2)
+                surfs[bid] = s
+                continue
+            if bid == CARPET_BED:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                cols = [c, _lighter(c, 20), (80, 130, 55), (210, 185, 55), (190, 80, 55)]
+                # tight geometric carpet blocks
+                cell = BS // 4
+                for ty in range(4):
+                    for tx in range(4):
+                        col = cols[(tx + ty*2) % len(cols)]
+                        pygame.draw.rect(s, col, (tx*cell+1, ty*cell+1, cell-2, cell-2))
+                surfs[bid] = s
+                continue
+            if bid == OPUS_SECTILE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 10))
+                # cut marble shapes: diamonds and triangles
+                half = BS // 2
+                pygame.draw.polygon(s, c, [(half, 2), (BS-2, half), (half, BS-2), (2, half)])
+                pygame.draw.polygon(s, lt, [(half, 2), (BS-2, half), (half, BS-2), (2, half)], 1)
+                pygame.draw.polygon(s, dk, [(2, 2), (half, 2), (2, half)])
+                pygame.draw.polygon(s, dk, [(BS-2, 2), (half, 2), (BS-2, half)])
+                pygame.draw.polygon(s, _lighter(c, 8), [(2, BS-2), (half, BS-2), (2, half)])
+                pygame.draw.polygon(s, _lighter(c, 8), [(BS-2, BS-2), (half, BS-2), (BS-2, half)])
+                pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == TRAVERTINE_FLOOR:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 10)
+                dk = _darken(c, 12)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # travertine voids and strata
+                for ty in range(3, BS-2, 6):
+                    pygame.draw.line(s, dk, (0, ty), (BS, ty), 1)
+                    pygame.draw.line(s, lt, (0, ty+1), (BS, ty+1), 1)
+                # small voids
+                for vx, vy in [(5,5),(18,11),(8,19),(24,7),(12,25),(28,22)]:
+                    pygame.draw.ellipse(s, _darken(c, 20), (vx, vy, 4, 2))
+                pygame.draw.rect(s, _darken(c, 15), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == HERRINGBONE_GARDEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 12)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 25))
+                bw, bh = 10, 4
+                for row in range(8):
+                    for col in range(8):
+                        x2 = (col - row) * (bw//2) + row * bh
+                        y2 = row * (bh + 1)
+                        if row % 2 == 0:
+                            pygame.draw.rect(s, c, (x2, y2, bw, bh))
+                            pygame.draw.line(s, lt, (x2, y2), (x2+bw, y2), 1)
+                        else:
+                            pygame.draw.rect(s, dk, (x2, y2, bw, bh))
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == RAMP_STONE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 25))
+                # diagonal ramp surface
+                pygame.draw.polygon(s, c, [(0, BS-2), (BS, 2), (BS, BS-2)])
+                pygame.draw.line(s, lt, (0, BS-2), (BS, 2), 1)
+                # stone texture lines
+                for i in range(1, 4):
+                    y1 = BS-2 - i * BS//4
+                    y2 = max(2, y1 - 2)
+                    pygame.draw.line(s, dk, (i*BS//4, y1), (BS, y2), 1)
+                surfs[bid] = s
+                continue
+            if bid == GARDEN_STEPS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 25))
+                for i in range(4):
+                    step_y = i * BS//4
+                    step_x = i * 4
+                    pygame.draw.rect(s, c, (step_x, step_y, BS-step_x, BS//4))
+                    pygame.draw.line(s, lt, (step_x, step_y), (BS-1, step_y), 1)
+                    pygame.draw.line(s, dk, (step_x, step_y+BS//4-1), (BS-1, step_y+BS//4-1), 1)
+                surfs[bid] = s
+                continue
+            if bid == SAND_ALLEE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 12)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # light compacted sand — subtle rake marks
+                for ry in range(4, BS, 6):
+                    pygame.draw.line(s, dk, (0, ry), (BS, ry), 1)
+                # footprint-like impressions
+                for fx, fy in [(6, 8), (20, 14), (10, 22), (24, 26)]:
+                    pygame.draw.ellipse(s, _darken(c, 18), (fx, fy, 5, 3))
+                pygame.draw.rect(s, _darken(c, 15), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == PATTERNED_PAVEMENT:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                c2 = _darken(c, 28)
+                lt = _lighter(c, 14)
+                BS = BLOCK_SIZE
+                s.fill(c2)
+                # two-tone geometric: alternating diagonal squares
+                cell = BS // 4
+                for ty in range(4):
+                    for tx in range(4):
+                        col = c if (tx + ty) % 2 == 0 else c2
+                        pygame.draw.rect(s, col, (tx*cell+1, ty*cell+1, cell-2, cell-2))
+                        if col == c:
+                            pygame.draw.line(s, lt, (tx*cell+1, ty*cell+1), (tx*cell+cell-2, ty*cell+1), 1)
+                pygame.draw.rect(s, _darken(c, 30), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == INLAID_MARBLE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                inlay = (80, 115, 175)
+                lt = _lighter(c, 12)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                pygame.draw.line(s, lt, (1, 2), (BS-2, 2), 1)
+                # colored marble inlay geometric bands
+                pygame.draw.rect(s, inlay, (3, BS//4, BS-6, 4))
+                pygame.draw.rect(s, inlay, (3, 3*BS//4-4, BS-6, 4))
+                pygame.draw.rect(s, _darken(inlay, 20), (3, BS//4, BS-6, 4), 1)
+                pygame.draw.rect(s, _darken(inlay, 20), (3, 3*BS//4-4, BS-6, 4), 1)
+                # vertical accents
+                pygame.draw.rect(s, inlay, (BS//4, 3, 4, BS-6))
+                pygame.draw.rect(s, inlay, (3*BS//4-4, 3, 4, BS-6))
+                pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == TALL_SUNDIAL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                # ornate pedestal: wider base, narrowing shaft, wider top
+                pygame.draw.rect(s, dk, (BS//2-6, BS-5, 12, 5))
+                pygame.draw.rect(s, c, (BS//2-4, BS//2+2, 8, BS//2-7))
+                pygame.draw.line(s, lt, (BS//2-4, BS//2+2), (BS//2+4, BS//2+2), 1)
+                # decorative knop on shaft
+                pygame.draw.ellipse(s, c, (BS//2-5, BS//2-2, 10, 6))
+                # dial platform
+                pygame.draw.rect(s, c, (BS//2-8, BS//2-5, 16, 4))
+                # gnomon
+                pygame.draw.polygon(s, dk, [(BS//2, BS//2-5), (BS//2+7, BS//2-5), (BS//2, 6)])
+                # hour lines on dial
+                for ai in range(5):
+                    ang = math.pi * ai / 8 - math.pi/4
+                    ex2 = BS//2 + int(6 * math.cos(ang))
+                    ey2 = BS//2 - 3 + int(4 * math.sin(ang))
+                    pygame.draw.line(s, dk, (BS//2, BS//2-3), (ex2, ey2), 1)
+                surfs[bid] = s
+                continue
+            if bid == STONE_VASE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 15)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                # tall amphora shape
+                pygame.draw.rect(s, dk, (BS//2-3, BS-4, 6, 4))
+                pygame.draw.ellipse(s, c, (5, BS//3, BS-10, 2*BS//3-4))
+                pygame.draw.ellipse(s, lt, (6, BS//3+1, BS-12, 8))
+                # narrow neck
+                pygame.draw.rect(s, dk, (BS//2-3, BS//4, 6, BS//3-BS//4+2))
+                # wide lip
+                pygame.draw.rect(s, c, (BS//2-6, BS//4-4, 12, 5))
+                pygame.draw.line(s, lt, (BS//2-5, BS//4-4), (BS//2+5, BS//4-4), 1)
+                # handles
+                pygame.draw.arc(s, dk, (1, BS//3, 6, 8), math.pi*0.5, math.pi*1.5, 2)
+                pygame.draw.arc(s, dk, (BS-7, BS//3, 6, 8), math.pi*1.5, math.pi*2.5, 2)
+                surfs[bid] = s
+                continue
+            if bid == STONE_SPHERE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                # sphere
+                pygame.draw.circle(s, c, (BS//2, BS//2-2), BS//2-5)
+                pygame.draw.circle(s, lt, (BS//2-3, BS//2-5), 5)
+                pygame.draw.circle(s, dk, (BS//2, BS//2-2), BS//2-5, 1)
+                # small plinth base
+                pygame.draw.rect(s, dk, (BS//2-5, BS//2+BS//2-7, 10, 5))
+                pygame.draw.line(s, lt, (BS//2-5, BS//2+BS//2-7), (BS//2+5, BS//2+BS//2-7), 1)
+                surfs[bid] = s
+                continue
+            if bid == CURVED_BENCH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 30))
+                # curved seat (arc-shaped top view)
+                pygame.draw.arc(s, c, (2, BS//4, BS-4, BS//2), 0, math.pi, 6)
+                pygame.draw.arc(s, lt, (3, BS//4+1, BS-6, BS//2-2), 0, math.pi, 1)
+                # legs
+                pygame.draw.rect(s, dk, (3, BS//2+4, 4, BS//2-5))
+                pygame.draw.rect(s, dk, (BS//2-2, BS//2+4, 4, BS//2-5))
+                pygame.draw.rect(s, dk, (BS-7, BS//2+4, 4, BS//2-5))
+                surfs[bid] = s
+                continue
+            if bid == ORNATE_GATE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 28)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 50))
+                # ornate scrollwork arch at top
+                pygame.draw.arc(s, c, (3, 2, BS-6, 12), 0, math.pi, 2)
+                # main bars
+                for bx2 in range(3, BS-1, 5):
+                    pygame.draw.line(s, c, (bx2, 14), (bx2, BS-2), 2)
+                    pygame.draw.polygon(s, lt, [(bx2-1, 13), (bx2+2, 13), (bx2, 10)])
+                # scrollwork between bars
+                for bx2 in range(5, BS-4, 10):
+                    pygame.draw.arc(s, c, (bx2, BS//2-3, 6, 6), 0, math.pi*2, 1)
+                # top and bottom rails
+                pygame.draw.rect(s, c, (0, 13, BS, 2))
+                pygame.draw.rect(s, c, (0, BS-3, BS, 2))
+                surfs[bid] = s
+                continue
+            if bid == LEAD_PLANTER:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 16)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                # rectangular lead box
+                pygame.draw.rect(s, c, (2, BS//3, BS-4, 2*BS//3-3))
+                pygame.draw.rect(s, lt, (2, BS//3, BS-4, 4))
+                # riveted corner decoration
+                for cx2 in [3, BS-4]:
+                    for cy2 in [BS//3+2, BS-5]:
+                        pygame.draw.circle(s, dk, (cx2, cy2), 1)
+                # soil and plant
+                pygame.draw.ellipse(s, (70, 50, 30), (4, BS//3+4, BS-8, 6))
+                pygame.draw.line(s, (55, 110, 45), (BS//2, BS//3+4), (BS//2-4, BS//4), 1)
+                pygame.draw.line(s, (55, 110, 45), (BS//2, BS//3+4), (BS//2+4, BS//4), 1)
+                pygame.draw.circle(s, (80, 140, 55), (BS//2, BS//4+1), 3)
+                surfs[bid] = s
+                continue
+            if bid == TERRACE_URN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 16)
+                dk = _darken(c, 25)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                # tall pedestal
+                pygame.draw.rect(s, dk, (BS//2-3, BS-4, 6, 4))
+                pygame.draw.rect(s, c, (BS//2-2, BS//2+2, 4, BS//2-6))
+                pygame.draw.rect(s, dk, (BS//2-5, BS//2-1, 10, 4))
+                # large urn body
+                pygame.draw.ellipse(s, c, (4, 6, BS-8, 2*BS//5))
+                pygame.draw.ellipse(s, lt, (5, 7, BS-10, 8))
+                # neck
+                pygame.draw.rect(s, dk, (BS//2-3, 3, 6, 4))
+                # wide rim
+                pygame.draw.rect(s, c, (BS//2-7, 1, 14, 4))
+                pygame.draw.line(s, lt, (BS//2-6, 1), (BS//2+6, 1), 1)
+                # handles
+                pygame.draw.arc(s, dk, (1, 10, 6, 8), math.pi*0.5, math.pi*1.5, 1)
+                pygame.draw.arc(s, dk, (BS-7, 10, 6, 8), math.pi*1.5, math.pi*2.5, 1)
+                surfs[bid] = s
+                continue
+            if bid == STONE_PINEAPPLE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 35))
+                # small plinth base
+                pygame.draw.rect(s, dk, (BS//2-4, BS-4, 8, 4))
+                # pineapple body (oval)
+                pygame.draw.ellipse(s, c, (BS//2-6, 10, 12, BS//2))
+                # diamond scale pattern
+                for sy in range(12, 10+BS//2, 4):
+                    for sx2 in range(BS//2-5, BS//2+6, 4):
+                        pygame.draw.rect(s, dk, (sx2, sy, 3, 3), 1)
+                # crown leaves
+                for ai in range(5):
+                    ang = math.pi * ai / 5 - math.pi/2
+                    lx = BS//2 + int(5 * math.cos(ang))
+                    ly = 10 + int(5 * math.sin(ang))
+                    pygame.draw.line(s, (55, 110, 48), (BS//2, 10), (lx, ly), 2)
+                surfs[bid] = s
+                continue
+            if bid == GROTTO_ARCH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 12)
+                dk = _darken(c, 22)
+                inside = _darken(c, 50)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # rough tufa fill
+                for ty in range(0, BS, 5):
+                    for tx in range(0, BS, 5):
+                        bump_c = lt if (tx*3+ty*7)%7 < 3 else dk
+                        pygame.draw.circle(s, bump_c, (tx+2, ty+2), 2)
+                # arch opening
+                ax, aw, at = 6, BS-12, 6
+                pygame.draw.rect(s, inside, (ax+2, at+aw//2, aw-4, BS-at-aw//2-2))
+                pygame.draw.arc(s, _darken(c, 40), (ax, at, aw, aw), 0, math.pi, 3)
+                pygame.draw.line(s, _darken(c, 40), (ax, at+aw//2), (ax, BS-2), 3)
+                pygame.draw.line(s, _darken(c, 40), (ax+aw, at+aw//2), (ax+aw, BS-2), 3)
+                # stalactites
+                for sx2 in [ax+4, ax+aw//2, ax+aw-4]:
+                    drop = 4 + sx2 % 3
+                    pygame.draw.polygon(s, _darken(c, 30), [(sx2-2, at+aw//2), (sx2+2, at+aw//2), (sx2, at+aw//2+drop)])
+                surfs[bid] = s
+                continue
+            if bid == PERGOLA_BEAM:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 18)
+                dk = _darken(c, 25)
+                BS = BLOCK_SIZE
+                s.fill(_darken(c, 40))
+                # horizontal beam (full width)
+                pygame.draw.rect(s, c, (0, BS//2-3, BS, 6))
+                pygame.draw.line(s, lt, (0, BS//2-3), (BS, BS//2-3), 1)
+                pygame.draw.line(s, dk, (0, BS//2+3), (BS, BS//2+3), 1)
+                # grain lines
+                for gx in range(4, BS-2, 6):
+                    pygame.draw.line(s, dk, (gx, BS//2-2), (gx+2, BS//2+2), 1)
+                # vine tendrils hanging down
+                vine = (50, 105, 40)
+                for vx in range(4, BS-2, 8):
+                    drop = 3 + vx % 4
+                    pygame.draw.line(s, vine, (vx, BS//2+3), (vx+1, BS//2+3+drop), 1)
+                    pygame.draw.circle(s, _lighter(vine, 20), (vx+1, BS//2+3+drop), 1)
+                surfs[bid] = s
+                continue
+            if bid == LOGGIA_ARCH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 25)
+                lt = _lighter(c, 12)
+                inside = _darken(c, 45)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                ax, aw, at = 4, BS-8, 3
+                pygame.draw.rect(s, inside, (ax+2, at+aw//2, aw-4, BS-at-aw//2-2))
+                pygame.draw.arc(s, dk, (ax, at, aw, aw), 0, math.pi, 3)
+                pygame.draw.line(s, dk, (ax, at+aw//2), (ax, BS-2), 3)
+                pygame.draw.line(s, dk, (ax+aw, at+aw//2), (ax+aw, BS-2), 3)
+                # column capitals
+                pygame.draw.rect(s, dk, (ax-2, at+aw//2-3, 6, 4))
+                pygame.draw.rect(s, dk, (ax+aw-4, at+aw//2-3, 6, 4))
+                pygame.draw.line(s, lt, (1, 2), (BS-2, 2), 1)
+                surfs[bid] = s
+                continue
+            if bid == GARDEN_WALL_NICHE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 12)
+                dk = _darken(c, 22)
+                inside = _darken(c, 40)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # niche recess
+                pygame.draw.rect(s, inside, (5, 6, BS-10, BS-10))
+                pygame.draw.arc(s, dk, (5, 4, BS-10, 10), 0, math.pi, 2)
+                pygame.draw.line(s, dk, (5, 9), (5, BS-4), 2)
+                pygame.draw.line(s, dk, (BS-5, 9), (BS-5, BS-4), 2)
+                # small statue silhouette inside
+                statue = _lighter(inside, 18)
+                pygame.draw.circle(s, statue, (BS//2, 14), 3)
+                pygame.draw.rect(s, statue, (BS//2-2, 17, 4, 8))
+                pygame.draw.line(s, lt, (1, 2), (BS-2, 2), 1)
+                surfs[bid] = s
+                continue
+            if bid == ORANGERY_WINDOW:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                dk = _darken(c, 22)
+                lt = _lighter(c, 12)
+                glass = (195, 215, 230)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # tall arched window
+                ax, aw, at = 4, BS-8, 4
+                # stone frame
+                pygame.draw.arc(s, dk, (ax, at, aw, aw//2*2), 0, math.pi, 2)
+                pygame.draw.line(s, dk, (ax, at+aw//2), (ax, BS-2), 2)
+                pygame.draw.line(s, dk, (ax+aw, at+aw//2), (ax+aw, BS-2), 2)
+                # glass fill
+                pygame.draw.arc(s, glass, (ax+2, at+2, aw-4, aw//2*2-4), 0, math.pi, 0)
+                pygame.draw.rect(s, glass, (ax+2, at+aw//2, aw-4, BS-at-aw//2-2))
+                # glazing bars
+                pygame.draw.line(s, dk, (BS//2, at+4), (BS//2, BS-2), 1)
+                pygame.draw.line(s, dk, (ax+2, BS//2), (ax+aw-2, BS//2), 1)
+                pygame.draw.line(s, lt, (1, 2), (BS-2, 2), 1)
+                surfs[bid] = s
+                continue
+            if bid == BELVEDERE_PANEL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 12)
+                dk = _darken(c, 20)
+                BS = BLOCK_SIZE
+                s.fill(c)
+                # wall panel with blind arches
+                pygame.draw.line(s, lt, (0, 2), (BS, 2), 1)
+                pygame.draw.line(s, dk, (0, BS-3), (BS, BS-3), 1)
+                # two blind arch panels
+                for ax2 in [3, BS//2+2]:
+                    aw2 = BS//2-5
+                    pygame.draw.arc(s, dk, (ax2, 5, aw2, 12), 0, math.pi, 1)
+                    pygame.draw.line(s, dk, (ax2, 11), (ax2, BS-4), 1)
+                    pygame.draw.line(s, dk, (ax2+aw2, 11), (ax2+aw2, BS-4), 1)
+                    pygame.draw.rect(s, _darken(c, 12), (ax2+1, 11, aw2-2, BS-15))
+                surfs[bid] = s
+                continue
+            if bid == BOSCO_TREE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 16)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                trunk = (90, 58, 28)
+                s.fill(_darken(c, 50))
+                # gnarled wild trunk (offset from center)
+                pygame.draw.line(s, trunk, (BS//2-2, BS-2), (BS//2+1, BS//3), 3)
+                pygame.draw.line(s, trunk, (BS//2+1, BS//3), (BS//2-4, 6), 2)
+                # irregular wild canopy — not formally clipped
+                for cx2, cy2, r2 in [(BS//2-2, BS//4, 8), (BS//2+5, BS//4+3, 6),
+                                     (BS//2-5, BS//4+5, 5), (BS//2+2, BS//4-5, 5)]:
+                    if cy2 > 0:
+                        pygame.draw.circle(s, dk, (cx2, cy2), r2)
+                        pygame.draw.circle(s, c, (cx2-1, cy2-1), r2-2)
+                        pygame.draw.circle(s, lt, (cx2-2, cy2-2), 2)
+                surfs[bid] = s
+                continue
+            if bid == GIARDINO_SEGRETO:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                lt = _lighter(c, 14)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                wall = (170, 162, 148)
+                s.fill(wall)
+                pygame.draw.rect(s, _darken(wall, 15), (0, 0, BS, 4))
+                pygame.draw.rect(s, _darken(wall, 10), (0, BS-4, BS, 4))
+                # ivy/creeper covering
+                ivy = c
+                for ty in range(4, BS-4, 4):
+                    for tx in range(0, BS, 4):
+                        if (tx//4 + ty//4 + tx*3) % 3 != 0:
+                            pygame.draw.circle(s, ivy, (tx+2, ty+2), 2)
+                            pygame.draw.circle(s, lt, (tx+2, ty+1), 1)
+                # hidden gate hint
+                pygame.draw.rect(s, _darken(wall, 25), (BS//2-4, BS//3, 8, 2*BS//3))
+                pygame.draw.arc(s, _darken(wall, 25), (BS//2-4, BS//3-4, 8, 8), 0, math.pi, 2)
+                surfs[bid] = s
+                continue
+            # ── Renaissance palace blocks ───────────────────────────────────────
+            if bid == PIETRA_SERENA:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 18)
+                BS = BLOCK_SIZE
+                # Three coursed stone rows with staggered vertical joints
+                for row, y0 in enumerate([(0, 10), (10, 21), (21, BS)]):
+                    y1, y2 = y0
+                    pygame.draw.line(s, dk, (0, y2), (BS, y2), 1)
+                    offset = (row % 2) * (BS // 3)
+                    for x in range(offset, BS, BS // 3):
+                        pygame.draw.line(s, dk, (x, y1), (x, y2), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == TRAVERTINE_WALL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 14)
+                lt = _lighter(c, 10)
+                BS = BLOCK_SIZE
+                # Ashlar grid 2×2
+                pygame.draw.line(s, dk, (0, BS // 2), (BS, BS // 2), 1)
+                pygame.draw.line(s, dk, (BS // 2, 0), (BS // 2, BS // 2), 1)
+                pygame.draw.line(s, dk, (BS // 4, BS // 2), (BS // 4, BS), 1)
+                pygame.draw.line(s, dk, (3 * BS // 4, BS // 2), (3 * BS // 4, BS), 1)
+                # Travertine pitting dots
+                import random as _rnd
+                _rnd.seed(706)
+                for _ in range(12):
+                    px, py = _rnd.randint(2, BS - 3), _rnd.randint(2, BS - 3)
+                    pygame.draw.circle(s, dk, (px, py), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == MARBLE_FACADE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                vein = (195, 190, 188)
+                BS = BLOCK_SIZE
+                # Diagonal veins
+                pygame.draw.line(s, vein, (0, 8), (BS, 20), 1)
+                pygame.draw.line(s, vein, (4, 0), (BS, 22), 1)
+                pygame.draw.line(s, vein, (0, 20), (18, BS), 1)
+                pygame.draw.line(s, (210, 207, 205), (BS - 8, 0), (BS, 12), 1)
+                pygame.draw.rect(s, _darken(c, 12), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == RUSTICATED_QUOIN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 20)
+                lt = _lighter(c, 10)
+                # Two large bosses
+                for rx, ry, rw, rh in [(2, 2, BS - 4, BS // 2 - 2), (2, BS // 2 + 1, BS - 4, BS // 2 - 3)]:
+                    pygame.draw.rect(s, lt, (rx, ry, rw, rh))
+                    pygame.draw.rect(s, dk, (rx, ry, rw, rh), 2)
+                    pygame.draw.line(s, dk, (rx, ry + rh), (rx + rw, ry + rh), 2)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == BICOLOR_MARBLE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                green = (62, 108, 72)
+                # Diamond grid of green inlay
+                cx2, cy2 = BS // 2, BS // 2
+                pygame.draw.polygon(s, green, [(cx2, 2), (BS - 2, cy2), (cx2, BS - 2), (2, cy2)], 2)
+                pygame.draw.polygon(s, green, [(cx2, 8), (BS - 8, cy2), (cx2, BS - 8), (8, cy2)], 1)
+                pygame.draw.rect(s, _darken(c, 15), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == PINK_GRANITE_BASE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                # Polished look: subtle sparkle flecks
+                import random as _rnd
+                _rnd.seed(710)
+                for _ in range(18):
+                    fx, fy = _rnd.randint(1, BS - 2), _rnd.randint(1, BS - 2)
+                    col = _rnd.choice([(215, 190, 185), (120, 100, 95), (240, 230, 228), (80, 60, 58)])
+                    s.set_at((fx, fy), col)
+                pygame.draw.line(s, _lighter(c, 14), (2, 2), (BS - 3, 2), 1)
+                pygame.draw.rect(s, _darken(c, 18), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == BLIND_ARCH:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 22)
+                BS = BLOCK_SIZE
+                # Wall with recessed blind arch
+                recess = _darken(c, 14)
+                cx2 = BS // 2
+                arch_w, arch_top = 14, BS // 4
+                pygame.draw.rect(s, recess, (cx2 - 7, arch_top + 7, 14, BS - arch_top - 9))
+                pygame.draw.arc(s, recess, (cx2 - 7, arch_top, 14, 14), 0, math.pi, 14)
+                pygame.draw.arc(s, dk, (cx2 - 7, arch_top, 14, 14), 0, math.pi, 2)
+                pygame.draw.rect(s, dk, (cx2 - 7, arch_top + 7, 14, BS - arch_top - 9), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == CONSOLE_CORNICE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 22)
+                lt = _lighter(c, 12)
+                BS = BLOCK_SIZE
+                # Top fascia band
+                pygame.draw.rect(s, lt, (0, 0, BS, 6))
+                pygame.draw.line(s, dk, (0, 6), (BS, 6), 1)
+                # Three console brackets
+                for bx2 in [3, BS // 2 - 4, BS - 12]:
+                    pygame.draw.rect(s, lt, (bx2, 6, 6, BS - 7))
+                    pygame.draw.line(s, dk, (bx2, 6), (bx2, BS - 1), 1)
+                    pygame.draw.line(s, dk, (bx2 + 6, 6), (bx2 + 6, BS - 1), 1)
+                    pygame.draw.line(s, dk, (bx2, BS - 1), (bx2 + 6, BS - 1), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == CORINTHIAN_CAPITAL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 20)
+                lt = _lighter(c, 14)
+                BS = BLOCK_SIZE
+                # Abacus slab at top
+                pygame.draw.rect(s, lt, (0, 0, BS, 5))
+                pygame.draw.line(s, dk, (0, 5), (BS, 5), 1)
+                # Acanthus leaf fan
+                leaf = (172, 160, 130)
+                for lx in [4, 10, 16, 22, 28]:
+                    pygame.draw.line(s, leaf, (BS // 2, BS - 2), (lx, 8), 2)
+                for lx in [1, 7, 15, 23, 31]:
+                    pygame.draw.line(s, dk, (BS // 2, BS - 2), (lx, 12), 1)
+                # Scrolls at corners
+                pygame.draw.arc(s, dk, (0, 4, 8, 8), 0, math.pi, 2)
+                pygame.draw.arc(s, dk, (BS - 8, 4, 8, 8), 0, math.pi, 2)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == GIANT_PILASTER:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 18)
+                lt = _lighter(c, 12)
+                BS = BLOCK_SIZE
+                # Capital band top, base band bottom
+                pygame.draw.rect(s, lt, (0, 0, BS, 4))
+                pygame.draw.rect(s, lt, (0, BS - 4, BS, 4))
+                pygame.draw.line(s, dk, (0, 4), (BS, 4), 1)
+                pygame.draw.line(s, dk, (0, BS - 4), (BS, BS - 4), 1)
+                # Flute grooves
+                for fx in range(4, BS - 2, 5):
+                    pygame.draw.line(s, dk, (fx, 5), (fx, BS - 5), 1)
+                    pygame.draw.line(s, lt, (fx + 1, 5), (fx + 1, BS - 5), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == ENGAGED_COLUMN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(_darken(c, 8))
+                dk = _darken(c, 22)
+                lt = _lighter(c, 14)
+                BS = BLOCK_SIZE
+                cx2 = BS // 2
+                # Half-column drum on left
+                pygame.draw.rect(s, c, (0, 2, cx2, BS - 4))
+                pygame.draw.line(s, lt, (2, 2), (2, BS - 3), 1)
+                for fx in range(5, cx2 - 2, 5):
+                    pygame.draw.line(s, dk, (fx, 2), (fx, BS - 3), 1)
+                pygame.draw.line(s, dk, (cx2, 2), (cx2, BS - 3), 2)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == ATLAS_FIGURE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 22)
+                lt = _lighter(c, 14)
+                BS = BLOCK_SIZE
+                cx2 = BS // 2
+                # Entablature load at top
+                pygame.draw.rect(s, lt, (0, 0, BS, 5))
+                pygame.draw.line(s, dk, (0, 5), (BS, 5), 1)
+                # Simplified figure: head + torso + arms
+                pygame.draw.circle(s, c, (cx2, 10), 4)
+                pygame.draw.line(s, dk, (cx2 - 4, 8), (cx2 + 4, 8), 1)
+                pygame.draw.rect(s, _darken(c, 12), (cx2 - 4, 14, 8, 10))
+                pygame.draw.line(s, dk, (cx2 - 8, 8), (cx2 - 4, 16), 2)
+                pygame.draw.line(s, dk, (cx2 + 8, 8), (cx2 + 4, 16), 2)
+                pygame.draw.rect(s, _darken(c, 8), (cx2 - 3, 24, 6, BS - 26))
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == CARYATID_COLUMN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 22)
+                lt = _lighter(c, 14)
+                BS = BLOCK_SIZE
+                cx2 = BS // 2
+                # Entablature at top
+                pygame.draw.rect(s, lt, (0, 0, BS, 4))
+                pygame.draw.line(s, dk, (0, 4), (BS, 4), 1)
+                # Slender draped figure
+                pygame.draw.circle(s, c, (cx2, 10), 3)
+                pygame.draw.rect(s, _darken(c, 10), (cx2 - 3, 13, 6, 14))
+                # Drapery folds
+                for fold_y in range(14, 27, 3):
+                    pygame.draw.line(s, dk, (cx2 - 3, fold_y), (cx2 + 2, fold_y), 1)
+                pygame.draw.rect(s, _darken(c, 8), (cx2 - 4, 27, 8, BS - 29))
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == COMPOSITE_CAPITAL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                dk = _darken(c, 20)
+                lt = _lighter(c, 14)
+                BS = BLOCK_SIZE
+                # Abacus top
+                pygame.draw.rect(s, lt, (0, 0, BS, 4))
+                pygame.draw.line(s, dk, (0, 4), (BS, 4), 1)
+                # Ionic volutes at corners
+                pygame.draw.arc(s, dk, (1, 3, 8, 8), -math.pi / 2, math.pi / 2, 2)
+                pygame.draw.arc(s, dk, (BS - 9, 3, 8, 8), math.pi / 2, 3 * math.pi / 2, 2)
+                # Acanthus leaves below volutes
+                leaf = (172, 160, 130)
+                for lx in [4, 9, 16, 23, 28]:
+                    pygame.draw.line(s, leaf, (BS // 2, BS - 2), (lx, 10), 2)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == INTARSIA_PANEL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                dark_wood = _darken(c, 30)
+                lt = _lighter(c, 22)
+                # Geometric intarsia: octagon-and-square
+                cx2, cy2 = BS // 2, BS // 2
+                pygame.draw.polygon(s, dark_wood, [(cx2, 2), (BS - 2, cy2), (cx2, BS - 2), (2, cy2)], 2)
+                pygame.draw.rect(s, lt, (cx2 - 5, cy2 - 5, 10, 10))
+                pygame.draw.rect(s, dark_wood, (cx2 - 5, cy2 - 5, 10, 10), 1)
+                # Corner triangles
+                pygame.draw.polygon(s, dark_wood, [(2, 2), (cx2, 2), (2, cy2)], 1)
+                pygame.draw.polygon(s, dark_wood, [(BS - 2, 2), (cx2, 2), (BS - 2, cy2)], 1)
+                pygame.draw.rect(s, _darken(c, 22), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == STUDIOLO_WALL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                dk = _darken(c, 24)
+                lt = _lighter(c, 18)
+                # Trompe-l'oeil cabinet: two doors with keyhole
+                pygame.draw.rect(s, lt, (2, 2, BS // 2 - 3, BS - 4))
+                pygame.draw.rect(s, lt, (BS // 2 + 1, 2, BS // 2 - 3, BS - 4))
+                pygame.draw.rect(s, dk, (2, 2, BS // 2 - 3, BS - 4), 1)
+                pygame.draw.rect(s, dk, (BS // 2 + 1, 2, BS // 2 - 3, BS - 4), 1)
+                # Keyholes
+                for kx in [BS // 4, 3 * BS // 4]:
+                    pygame.draw.circle(s, dk, (kx, BS // 2 - 2), 2)
+                    pygame.draw.rect(s, dk, (kx - 1, BS // 2, 2, 4))
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == GILT_LEATHER:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                dk = _darken(c, 20)
+                lt = _lighter(c, 22)
+                # Embossed diamond grid with rosette dots
+                for gy in range(0, BS, 8):
+                    for gx in range(0 if (gy // 8) % 2 == 0 else 4, BS, 8):
+                        pygame.draw.rect(s, dk, (gx, gy, 6, 6), 1)
+                        s.set_at((gx + 3, gy + 3), lt)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == FRESCO_LUNETTE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                BS = BLOCK_SIZE
+                wall = bdata["color"]
+                s.fill(wall)
+                sky = (155, 180, 212)
+                plaster = _lighter(wall, 8)
+                # Arch border
+                pygame.draw.arc(s, _darken(wall, 18), (3, 2, BS - 6, BS), 0, math.pi, 3)
+                # Sky fill inside arch
+                pygame.draw.ellipse(s, sky, (5, 3, BS - 10, BS - 2))
+                # Simple motif: stylised cloud/figure suggestion
+                pygame.draw.ellipse(s, _lighter(sky, 18), (BS // 2 - 5, 8, 10, 6))
+                pygame.draw.rect(s, _darken(wall, 18), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == WAINSCOT_MARBLE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                # Rose-pink marble with veining
+                vein = (185, 155, 148)
+                pygame.draw.line(s, vein, (0, 6), (BS, 14), 1)
+                pygame.draw.line(s, vein, (0, 18), (BS, 26), 1)
+                # Horizontal banding lines
+                dk = _darken(c, 15)
+                pygame.draw.line(s, dk, (0, 0), (BS, 0), 2)
+                pygame.draw.line(s, dk, (0, BS - 1), (BS, BS - 1), 2)
+                pygame.draw.line(s, dk, (0, BS // 2), (BS, BS // 2), 1)
+                surfs[bid] = s
+                continue
+            if bid == TAPESTRY_FRAME:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                dk = _darken(c, 25)
+                lt = _lighter(c, 22)
+                inner = _darken(c, 35)
+                # Frame border
+                pygame.draw.rect(s, lt, (0, 0, BS, BS), 4)
+                pygame.draw.rect(s, dk, (0, 0, BS, BS), 1)
+                pygame.draw.rect(s, dk, (4, 4, BS - 8, BS - 8), 1)
+                pygame.draw.rect(s, inner, (5, 5, BS - 10, BS - 10))
+                # Corner rosettes
+                for rx2, ry2 in [(2, 2), (BS - 4, 2), (2, BS - 4), (BS - 4, BS - 4)]:
+                    pygame.draw.circle(s, lt, (rx2, ry2), 2)
+                surfs[bid] = s
+                continue
+            if bid == LACUNAR_CEILING:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                dk = _darken(c, 20)
+                lt = _lighter(c, 10)
+                deep = _darken(c, 38)
+                # Four coffers in 2×2 grid
+                for cx2, cy2 in [(BS // 4, BS // 4), (3 * BS // 4, BS // 4),
+                                  (BS // 4, 3 * BS // 4), (3 * BS // 4, 3 * BS // 4)]:
+                    hw = BS // 4 - 2
+                    pygame.draw.rect(s, deep, (cx2 - hw + 2, cy2 - hw + 2, hw * 2 - 4, hw * 2 - 4))
+                    pygame.draw.rect(s, dk, (cx2 - hw + 1, cy2 - hw + 1, hw * 2 - 2, hw * 2 - 2), 1)
+                    pygame.draw.rect(s, lt, (cx2 - hw, cy2 - hw, hw * 2, hw * 2), 1)
+                    pygame.draw.circle(s, lt, (cx2, cy2), 2)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == BARREL_FRESCO:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                BS = BLOCK_SIZE
+                sky = bdata["color"]
+                s.fill(sky)
+                gold = (195, 168, 80)
+                lt = _lighter(sky, 18)
+                # Curved vault ribs
+                for ry in range(0, BS, 8):
+                    pygame.draw.line(s, _darken(sky, 14), (0, ry), (BS, ry + 4), 1)
+                # Painted figure suggestion
+                pygame.draw.ellipse(s, lt, (BS // 2 - 6, 6, 12, 8))
+                pygame.draw.line(s, gold, (0, 0), (BS, 0), 3)
+                pygame.draw.line(s, gold, (0, BS - 1), (BS, BS - 1), 3)
+                pygame.draw.rect(s, gold, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == GOLDEN_CEILING:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                dk = _darken(c, 22)
+                lt = _lighter(c, 22)
+                deep = _darken(c, 38)
+                # Gilded coffers
+                for cx2, cy2 in [(BS // 4, BS // 4), (3 * BS // 4, BS // 4),
+                                  (BS // 4, 3 * BS // 4), (3 * BS // 4, 3 * BS // 4)]:
+                    hw = BS // 4 - 1
+                    pygame.draw.rect(s, deep, (cx2 - hw + 2, cy2 - hw + 2, hw * 2 - 4, hw * 2 - 4))
+                    pygame.draw.rect(s, lt, (cx2 - hw, cy2 - hw, hw * 2, hw * 2), 2)
+                    pygame.draw.circle(s, lt, (cx2, cy2), 2)
+                # Gold grid lines
+                pygame.draw.line(s, dk, (0, BS // 2), (BS, BS // 2), 1)
+                pygame.draw.line(s, dk, (BS // 2, 0), (BS // 2, BS), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == GROTESQUE_VAULT:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                dk = _darken(c, 22)
+                lt = _lighter(c, 10)
+                # Candelabra axis
+                pygame.draw.line(s, dk, (BS // 2, 0), (BS // 2, BS), 1)
+                pygame.draw.line(s, dk, (0, BS // 2), (BS, BS // 2), 1)
+                # Grotesque curls at quadrant corners
+                for ax, ay in [(BS // 4, BS // 4), (3 * BS // 4, BS // 4),
+                                (BS // 4, 3 * BS // 4), (3 * BS // 4, 3 * BS // 4)]:
+                    pygame.draw.circle(s, dk, (ax, ay), 4, 1)
+                    pygame.draw.circle(s, lt, (ax, ay), 2)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == CUPOLA_OCULUS:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                dk = _darken(c, 20)
+                lt = _lighter(c, 22)
+                cx2, cy2 = BS // 2, BS // 2
+                # Painted dome rings
+                for r in range(14, 2, -4):
+                    pygame.draw.circle(s, _darken(c, (14 - r) * 2), (cx2, cy2), r, 1)
+                # Central oculus light
+                pygame.draw.circle(s, (240, 238, 232), (cx2, cy2), 5)
+                pygame.draw.circle(s, lt, (cx2, cy2), 3)
+                pygame.draw.circle(s, dk, (cx2, cy2), 14, 2)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == COSMATESQUE_FLOOR:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                red = (168, 52, 42)
+                green = (52, 108, 62)
+                gold = (195, 162, 58)
+                dk = _darken(c, 18)
+                cx2, cy2 = BS // 2, BS // 2
+                # Central roundel
+                pygame.draw.circle(s, red, (cx2, cy2), 8)
+                pygame.draw.circle(s, dk, (cx2, cy2), 8, 1)
+                # Corner triangles
+                pygame.draw.polygon(s, green, [(0, 0), (10, 0), (0, 10)])
+                pygame.draw.polygon(s, green, [(BS, 0), (BS - 10, 0), (BS, 10)])
+                pygame.draw.polygon(s, green, [(0, BS), (10, BS), (0, BS - 10)])
+                pygame.draw.polygon(s, green, [(BS, BS), (BS - 10, BS), (BS, BS - 10)])
+                # Gold bands
+                pygame.draw.line(s, gold, (0, cy2), (cx2 - 8, cy2), 2)
+                pygame.draw.line(s, gold, (cx2 + 8, cy2), (BS, cy2), 2)
+                pygame.draw.line(s, gold, (cx2, 0), (cx2, cy2 - 8), 2)
+                pygame.draw.line(s, gold, (cx2, cy2 + 8), (cx2, BS), 2)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == TERRAZZO_FLOOR_REN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                import random as _rnd
+                _rnd.seed(738)
+                chips = [(168, 80, 58), (88, 128, 88), (48, 44, 40), (215, 210, 205), (140, 105, 78)]
+                for _ in range(30):
+                    cx2, cy2 = _rnd.randint(1, BS - 2), _rnd.randint(1, BS - 2)
+                    col = _rnd.choice(chips)
+                    sz = _rnd.randint(1, 3)
+                    pygame.draw.rect(s, col, (cx2, cy2, sz, sz))
+                pygame.draw.rect(s, _darken(c, 14), s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == OPUS_ALEXANDRINUM:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                light_stone = (198, 185, 180)
+                dk = _darken(c, 18)
+                cx2, cy2 = BS // 2, BS // 2
+                # Concentric stone rings
+                for r in range(14, 0, -4):
+                    col = c if (r // 4) % 2 == 0 else light_stone
+                    pygame.draw.circle(s, col, (cx2, cy2), r)
+                    pygame.draw.circle(s, dk, (cx2, cy2), r, 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == MARBLE_MEDALLION_REN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                dk = _darken(c, 20)
+                gold = (195, 165, 72)
+                cx2, cy2 = BS // 2, BS // 2
+                # Radiating sections
+                for angle in range(0, 360, 45):
+                    rad = math.radians(angle)
+                    ex = int(cx2 + 14 * math.cos(rad))
+                    ey = int(cy2 + 14 * math.sin(rad))
+                    pygame.draw.line(s, dk, (cx2, cy2), (ex, ey), 1)
+                pygame.draw.circle(s, gold, (cx2, cy2), 14, 2)
+                pygame.draw.circle(s, _lighter(c, 12), (cx2, cy2), 6)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == PALACE_FLOOR_TILE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                dk = _darken(c, 16)
+                lt = _lighter(c, 10)
+                # Large format tile: single joint cross with chamfer corners
+                pygame.draw.line(s, dk, (0, BS // 2), (BS, BS // 2), 1)
+                pygame.draw.line(s, dk, (BS // 2, 0), (BS // 2, BS), 1)
+                pygame.draw.line(s, lt, (2, 2), (BS - 2, 2), 1)
+                pygame.draw.line(s, lt, (2, 2), (2, BS - 2), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == PALACE_PORTAL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                dk = _darken(c, 22)
+                lt = _lighter(c, 10)
+                void = (22, 18, 14)
+                cx2 = BS // 2
+                arch_w = 10
+                # Pilasters either side
+                pygame.draw.rect(s, lt, (1, 4, 5, BS - 5))
+                pygame.draw.rect(s, lt, (BS - 6, 4, 5, BS - 5))
+                # Arch opening
+                pygame.draw.rect(s, void, (cx2 - arch_w // 2, BS // 3, arch_w, 2 * BS // 3))
+                pygame.draw.arc(s, void, (cx2 - arch_w // 2, BS // 3 - arch_w // 2, arch_w, arch_w), 0, math.pi)
+                pygame.draw.arc(s, dk, (cx2 - arch_w // 2, BS // 3 - arch_w // 2, arch_w, arch_w), 0, math.pi, 2)
+                # Keystone
+                pygame.draw.polygon(s, lt, [(cx2 - 3, BS // 3 - 5), (cx2 + 3, BS // 3 - 5), (cx2, BS // 3 + 1)])
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == AEDICULE_FRAME:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                s.fill(c)
+                BS = BLOCK_SIZE
+                dk = _darken(c, 22)
+                lt = _lighter(c, 12)
+                void = (22, 18, 14)
+                cx2 = BS // 2
+                # Pediment triangle at top
+                pygame.draw.polygon(s, lt, [(cx2, 2), (2, 10), (BS - 2, 10)])
+                pygame.draw.polygon(s, dk, [(cx2, 2), (2, 10), (BS - 2, 10)], 1)
+                # Flanking pilasters
+                pygame.draw.rect(s, lt, (2, 10, 4, BS - 12))
+                pygame.draw.rect(s, lt, (BS - 6, 10, 4, BS - 12))
+                # Central opening
+                pygame.draw.rect(s, void, (cx2 - 6, 12, 12, BS - 14))
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == THERMAL_WINDOW:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                glass = (165, 192, 220)
+                dk = _darken(c, 22)
+                cx2 = BS // 2
+                half_h = BS // 2
+                # Semicircular thermal window
+                pygame.draw.ellipse(s, glass, (3, 3, BS - 6, half_h * 2 - 4))
+                pygame.draw.ellipse(s, dk, (3, 3, BS - 6, half_h * 2 - 4), 2)
+                # Three mullion dividers
+                pygame.draw.line(s, dk, (cx2, 3), (cx2, BS // 2 + 5), 2)
+                pygame.draw.line(s, dk, (cx2 - (BS // 4), 8), (cx2 - (BS // 4), BS // 2 + 3), 1)
+                pygame.draw.line(s, dk, (cx2 + (BS // 4), 8), (cx2 + (BS // 4), BS // 2 + 3), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == BIFORA_WINDOW:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                glass = (165, 192, 220)
+                dk = _darken(c, 22)
+                q = BS // 4
+                # Two pointed arch openings
+                for wx2 in [q, 3 * q]:
+                    pygame.draw.rect(s, glass, (wx2 - 5, BS // 4, 10, BS // 2))
+                    pygame.draw.arc(s, glass, (wx2 - 5, BS // 4 - 6, 10, 12), 0, math.pi)
+                    pygame.draw.arc(s, dk, (wx2 - 5, BS // 4 - 6, 10, 12), 0, math.pi, 1)
+                    pygame.draw.rect(s, dk, (wx2 - 5, BS // 4, 10, BS // 2), 1)
+                # Central column
+                pygame.draw.rect(s, _lighter(c, 10), (BS // 2 - 2, BS // 4, 4, BS // 2))
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == SERLIANA_WINDOW:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                glass = (165, 192, 220)
+                dk = _darken(c, 22)
+                cx2 = BS // 2
+                # Central arched opening (wider)
+                pygame.draw.rect(s, glass, (cx2 - 8, BS // 4 + 2, 16, BS - BS // 4 - 4))
+                pygame.draw.arc(s, glass, (cx2 - 8, BS // 4 - 6, 16, 16), 0, math.pi)
+                pygame.draw.arc(s, dk, (cx2 - 8, BS // 4 - 6, 16, 16), 0, math.pi, 1)
+                # Two side square lights
+                for sx in [2, BS - 9]:
+                    pygame.draw.rect(s, glass, (sx, BS // 3, 7, BS - BS // 3 - 3))
+                    pygame.draw.rect(s, dk, (sx, BS // 3, 7, BS - BS // 3 - 3), 1)
+                # Entablature band
+                pygame.draw.line(s, dk, (0, BS // 4), (BS, BS // 4), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == PALAZZO_BALCONY:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 22)
+                lt = _lighter(c, 12)
+                # Projecting floor slab
+                pygame.draw.rect(s, lt, (0, 0, BS, 6))
+                pygame.draw.line(s, dk, (0, 6), (BS, 6), 1)
+                # Baluster shapes
+                for bx2 in range(3, BS - 2, 6):
+                    pygame.draw.line(s, dk, (bx2, 6), (bx2, BS - 6), 1)
+                    pygame.draw.circle(s, dk, (bx2, 12), 2, 1)
+                    pygame.draw.circle(s, dk, (bx2, BS - 12), 2, 1)
+                # Top and bottom rails
+                pygame.draw.line(s, dk, (0, 6), (BS, 6), 2)
+                pygame.draw.line(s, dk, (0, BS - 6), (BS, BS - 6), 2)
+                # Corbel brackets underneath
+                pygame.draw.polygon(s, lt, [(2, BS - 6), (6, BS), (0, BS)])
+                pygame.draw.polygon(s, lt, [(BS - 2, BS - 6), (BS - 6, BS), (BS, BS)])
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == ROMAN_ARCH_REN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 24)
+                lt = _lighter(c, 10)
+                void = (22, 18, 14)
+                cx2 = BS // 2
+                # Arch opening with voussoir lines
+                pygame.draw.rect(s, void, (cx2 - 9, BS // 2, 18, BS // 2 + 1))
+                pygame.draw.arc(s, void, (cx2 - 9, BS // 2 - 9, 18, 18), 0, math.pi)
+                pygame.draw.arc(s, dk, (cx2 - 9, BS // 2 - 9, 18, 18), 0, math.pi, 2)
+                # Voussoir wedge lines on arch extrados
+                for ang_deg in range(20, 170, 25):
+                    rad = math.radians(ang_deg)
+                    ix = int(cx2 + 9 * math.cos(rad))
+                    iy = int(BS // 2 - 9 * math.sin(rad))
+                    ox = int(cx2 + 13 * math.cos(rad))
+                    oy = int(BS // 2 - 13 * math.sin(rad))
+                    pygame.draw.line(s, dk, (ix, iy), (ox, oy), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == BARREL_VAULT_COFFER:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 22)
+                lt = _lighter(c, 10)
+                deep = _darken(c, 38)
+                # Three coffers in a row with curved top suggestion
+                for ci, cx2 in enumerate([BS // 6, BS // 2, 5 * BS // 6]):
+                    w, h = 7, BS - 6
+                    pygame.draw.rect(s, deep, (cx2 - w // 2 + 1, 4, w - 2, h - 2))
+                    pygame.draw.rect(s, dk, (cx2 - w // 2, 3, w, h), 1)
+                    pygame.draw.line(s, lt, (cx2 - w // 2, 3), (cx2 + w // 2, 3), 1)
+                # Curved barrel indication
+                pygame.draw.arc(s, _darken(c, 12), (1, 0, BS - 2, BS), 0, math.pi, 2)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == PENDENTIVE_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 20)
+                deep = _darken(c, 35)
+                lt = _lighter(c, 10)
+                # Triangular pendentive: darker concave triangle in corner
+                pygame.draw.polygon(s, deep, [(0, 0), (BS, 0), (0, BS)])
+                pygame.draw.polygon(s, c, [(4, 4), (BS - 4, 4), (4, BS - 4)])
+                # Curved line suggesting spherical triangle
+                pygame.draw.arc(s, dk, (-BS // 2, -BS // 2, BS * 2, BS * 2), 0, math.pi / 2, 3)
+                pygame.draw.polygon(s, dk, [(0, 0), (BS, 0), (0, BS)], 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == GROIN_VAULT:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 22)
+                lt = _lighter(c, 12)
+                cx2, cy2 = BS // 2, BS // 2
+                # Diagonal groin ribs
+                pygame.draw.line(s, dk, (0, 0), (BS, BS), 2)
+                pygame.draw.line(s, dk, (BS, 0), (0, BS), 2)
+                pygame.draw.line(s, lt, (1, 1), (BS - 1, BS - 1), 1)
+                pygame.draw.line(s, lt, (BS - 1, 1), (1, BS - 1), 1)
+                # Boss at center
+                pygame.draw.circle(s, lt, (cx2, cy2), 4)
+                pygame.draw.circle(s, dk, (cx2, cy2), 4, 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == RENAISSANCE_MANTEL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 20)
+                lt = _lighter(c, 12)
+                black = (18, 14, 10)
+                # Fireplace opening (dark rectangular void)
+                pygame.draw.rect(s, black, (6, BS // 3, BS - 12, BS - BS // 3 - 2))
+                # Pilasters either side of opening
+                pygame.draw.rect(s, lt, (2, BS // 3, 4, BS - BS // 3 - 2))
+                pygame.draw.rect(s, lt, (BS - 6, BS // 3, 4, BS - BS // 3 - 2))
+                # Mantelshelf
+                pygame.draw.rect(s, lt, (0, BS // 3 - 5, BS, 5))
+                pygame.draw.line(s, dk, (0, BS // 3 - 5), (BS, BS // 3 - 5), 1)
+                pygame.draw.line(s, dk, (0, BS // 3), (BS, BS // 3), 1)
+                # Vein on mantelshelf
+                pygame.draw.line(s, (195, 190, 188), (4, BS // 3 - 3), (BS - 4, BS // 3 - 2), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == CHIMNEY_BREAST_REN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 20)
+                lt = _lighter(c, 10)
+                # Projecting central breast (lighter tone)
+                pygame.draw.rect(s, lt, (BS // 4, 0, BS // 2, BS))
+                pygame.draw.line(s, dk, (BS // 4, 0), (BS // 4, BS), 1)
+                pygame.draw.line(s, dk, (3 * BS // 4, 0), (3 * BS // 4, BS), 1)
+                # Herringbone brick pattern in projection
+                brick = _darken(lt, 18)
+                for hy in range(2, BS - 2, 4):
+                    off = (hy // 4) % 2 * 4
+                    for hx in range(BS // 4 + off, 3 * BS // 4, 8):
+                        pygame.draw.line(s, brick, (hx, hy), (hx + 4, hy + 4), 1)
+                # Cornice at top
+                pygame.draw.rect(s, lt, (BS // 4 - 2, 0, BS // 2 + 4, 4))
+                pygame.draw.line(s, dk, (BS // 4 - 2, 4), (3 * BS // 4 + 2, 4), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == PEDIMENTED_NICHE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 22)
+                lt = _lighter(c, 10)
+                recess = _darken(c, 32)
+                cx2 = BS // 2
+                # Triangular pediment
+                pygame.draw.polygon(s, lt, [(cx2, 2), (4, 10), (BS - 4, 10)])
+                pygame.draw.polygon(s, dk, [(cx2, 2), (4, 10), (BS - 4, 10)], 1)
+                # Niche recess
+                pygame.draw.rect(s, recess, (cx2 - 8, 10, 16, BS - 12))
+                pygame.draw.arc(s, recess, (cx2 - 8, 6, 16, 10), 0, math.pi)
+                # Figure hint in niche
+                pygame.draw.circle(s, _lighter(recess, 12), (cx2, 16), 3)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == SHELL_NICHE_REN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 22)
+                lt = _lighter(c, 10)
+                recess = _darken(c, 28)
+                cx2 = BS // 2
+                # Niche opening
+                pygame.draw.rect(s, recess, (cx2 - 8, BS // 4, 16, 3 * BS // 4 - 2))
+                # Scallop shell fan at top
+                pygame.draw.semicircle(s, lt, (cx2, BS // 4), 8, 0) if hasattr(pygame.draw, 'semicircle') else pygame.draw.arc(s, lt, (cx2 - 8, BS // 4 - 8, 16, 16), 0, math.pi, 6)
+                for ray in range(-3, 4):
+                    sx2 = cx2 + ray * 2
+                    pygame.draw.line(s, dk, (cx2, BS // 4), (sx2, BS // 4 - 7), 1)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == CARTOUCHE_REN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 22)
+                lt = _lighter(c, 12)
+                cx2, cy2 = BS // 2, BS // 2
+                # Oval cartouche with scroll edges
+                pygame.draw.ellipse(s, lt, (cx2 - 10, cy2 - 12, 20, 24), 2)
+                pygame.draw.ellipse(s, dk, (cx2 - 10, cy2 - 12, 20, 24), 1)
+                # Scroll curls top and bottom
+                pygame.draw.arc(s, dk, (cx2 - 4, cy2 - 15, 8, 6), 0, math.pi, 2)
+                pygame.draw.arc(s, dk, (cx2 - 4, cy2 + 9, 8, 6), math.pi, 2 * math.pi, 2)
+                # Border
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == PUTTI_FRIEZE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 22)
+                lt = _lighter(c, 14)
+                # Two simplified putti figures
+                for px2 in [BS // 4, 3 * BS // 4]:
+                    # Head
+                    pygame.draw.circle(s, lt, (px2, BS // 2 - 6), 4)
+                    # Wings (arcs)
+                    pygame.draw.arc(s, _darken(c, 12), (px2 - 8, BS // 2 - 10, 6, 10), -math.pi / 4, math.pi / 2, 2)
+                    pygame.draw.arc(s, _darken(c, 12), (px2 + 2, BS // 2 - 10, 6, 10), math.pi / 2, math.pi + math.pi / 4, 2)
+                    # Body
+                    pygame.draw.ellipse(s, lt, (px2 - 3, BS // 2 - 2, 6, 8))
+                # Garland swag below
+                for gx2 in range(2, BS - 2, 4):
+                    gy2 = int(BS * 3 // 4 + 4 * math.sin(gx2 * math.pi / (BS - 4)))
+                    s.set_at((gx2, gy2), dk)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == FESTOON_PANEL:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 20)
+                # Hanging swag curve
+                for gx2 in range(0, BS):
+                    gy2 = int(BS // 3 + (BS // 3) * math.sin(gx2 * math.pi / BS))
+                    s.set_at((gx2, gy2), dk)
+                    if gx2 % 4 == 0:
+                        pygame.draw.circle(s, _darken(c, 14), (gx2, gy2), 2)
+                # Tie ribbons at corners
+                pygame.draw.line(s, dk, (4, 2), (4, BS // 3), 1)
+                pygame.draw.line(s, dk, (BS - 4, 2), (BS - 4, BS // 3), 1)
+                # Bow at center top
+                pygame.draw.arc(s, dk, (BS // 2 - 5, 1, 5, 5), 0, math.pi, 2)
+                pygame.draw.arc(s, dk, (BS // 2, 1, 5, 5), 0, math.pi, 2)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == TROPHY_PANEL_REN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 22)
+                lt = _lighter(c, 12)
+                cx2 = BS // 2
+                # Central oval shield
+                pygame.draw.ellipse(s, lt, (cx2 - 7, BS // 2 - 8, 14, 16))
+                pygame.draw.ellipse(s, dk, (cx2 - 7, BS // 2 - 8, 14, 16), 1)
+                # Helmet at top
+                pygame.draw.ellipse(s, lt, (cx2 - 5, 2, 10, 8))
+                pygame.draw.line(s, dk, (cx2 - 5, 6), (cx2 + 5, 6), 1)
+                # Crossed swords
+                pygame.draw.line(s, dk, (4, 4), (BS - 4, BS - 4), 2)
+                pygame.draw.line(s, dk, (BS - 4, 4), (4, BS - 4), 2)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == MEDALLION_PORTRAIT:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 22)
+                lt = _lighter(c, 14)
+                cx2, cy2 = BS // 2, BS // 2
+                # Carved frame ring with bead molding
+                pygame.draw.circle(s, lt, (cx2, cy2), 13, 3)
+                for ang in range(0, 360, 20):
+                    rad = math.radians(ang)
+                    bx2 = int(cx2 + 12 * math.cos(rad))
+                    by2 = int(cy2 + 12 * math.sin(rad))
+                    pygame.draw.circle(s, dk, (bx2, by2), 1)
+                # Profile bust silhouette inside
+                pygame.draw.ellipse(s, _darken(c, 18), (cx2 - 5, cy2 - 7, 9, 11))
+                pygame.draw.circle(s, _darken(c, 16), (cx2, cy2 - 7), 4)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            if bid == LAUREL_FRIEZE:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                c = bdata["color"]
+                BS = BLOCK_SIZE
+                s.fill(c)
+                dk = _darken(c, 20)
+                leaf_col = (95, 118, 72)
+                berry_col = (145, 52, 42)
+                # Border lines
+                pygame.draw.line(s, dk, (0, 2), (BS, 2), 1)
+                pygame.draw.line(s, dk, (0, BS - 2), (BS, BS - 2), 1)
+                # Wavy stem
+                for sx2 in range(0, BS):
+                    sy2 = int(BS // 2 + 3 * math.sin(sx2 * 2 * math.pi / BS))
+                    s.set_at((sx2, sy2), dk)
+                # Leaves at intervals
+                for lx in range(2, BS - 2, 6):
+                    ly = int(BS // 2 + 3 * math.sin(lx * 2 * math.pi / BS))
+                    pygame.draw.ellipse(s, leaf_col, (lx - 2, ly - 3, 4, 6))
+                # Berries
+                for bx2 in range(5, BS - 2, 12):
+                    by2 = int(BS // 2 + 3 * math.sin(bx2 * 2 * math.pi / BS))
+                    pygame.draw.circle(s, berry_col, (bx2, by2 - 4), 2)
+                pygame.draw.rect(s, dk, s.get_rect(), 1)
+                surfs[bid] = s
+                continue
+            # ── End Renaissance garden blocks ───────────────────────────────────
             if bid == QUARTZ_PILLAR:
                 s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
                 c = bdata["color"]
@@ -5314,6 +10240,155 @@ class Renderer:
             variants[bid] = surfs
         return variants
 
+    def _build_grass_variants(self):
+        # 10 variants: plain, lighter, darker, warm-dry, cool-deep, dirt-fleck,
+        #              mossy-dark, pale, deep-shadow-patches, bright-spotty
+        base = (58, 154, 58)
+        bright_shifts = [0, 16, -14, 0, -8, 0, -20, 24, -10, 10]
+        surfs = []
+        for v in range(10):
+            shift = bright_shifts[v]
+            tone = tuple(max(0, min(255, c + shift)) for c in base)
+            if v == 3:   # warm/dry — yellowish
+                tone = (min(255, tone[0]+22), max(0, tone[1]-8), max(0, tone[2]-18))
+            elif v == 6: # mossy — pull green deeper, slight blue
+                tone = (max(0, tone[0]-8), min(255, tone[1]+6), max(0, tone[2]-4))
+            dark = _darken(tone, 28)
+            s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+            s.fill(tone)
+            if v == 1:   # darker speckles on lighter base
+                for px2, py2 in [(4,7),(18,20),(24,5),(11,14),(27,22)]:
+                    pygame.draw.rect(s, _darken(tone,18), (px2, py2, 3, 3))
+            elif v == 2: # bright spots on darker base
+                for px2, py2 in [(7,4),(22,16),(3,24),(15,10),(28,6)]:
+                    pygame.draw.rect(s, tuple(min(255,c+22) for c in tone), (px2, py2, 2, 2))
+            elif v == 4: # shadow patches
+                for px2, py2, pw, ph in [(3,3,4,3),(13,18,3,4),(22,8,2,2),(8,26,4,2)]:
+                    pygame.draw.rect(s, _darken(tone,18), (px2, py2, pw, ph))
+            elif v == 5: # brown dirt flecks
+                for px2, py2 in [(14,22),(6,10),(23,16)]:
+                    pygame.draw.rect(s, (105,68,30), (px2, py2, 2, 2))
+            elif v == 7: # pale — scattered bright patches
+                for px2, py2, pw, ph in [(2,2,5,3),(16,8,4,4),(8,18,3,5),(22,24,5,3)]:
+                    hi = tuple(min(255,c+14) for c in tone)
+                    pygame.draw.rect(s, hi, (px2, py2, pw, ph))
+            elif v == 8: # deep shadow blobs
+                for px2, py2, pw, ph in [(1,1,6,5),(18,4,5,6),(3,20,7,4),(20,20,6,7)]:
+                    pygame.draw.rect(s, _darken(tone,24), (px2, py2, pw, ph))
+            elif v == 9: # bright spotty — many small highlights
+                for px2, py2 in [(3,5),(10,2),(17,8),(25,3),(6,16),(20,12),(12,22),(27,18),(4,26),(22,27)]:
+                    pygame.draw.rect(s, tuple(min(255,c+20) for c in tone), (px2, py2, 2, 2))
+            pygame.draw.rect(s, dark, s.get_rect(), 1)
+            surfs.append(s)
+        return surfs
+
+    def _build_dirt_variants(self):
+        # 10 variants: plain, lighter, darker, reddish-clay, pebbled, speckled,
+        #              mixed, pale-sandy, dark-wet, coarse-grained
+        base = (115, 77, 38)
+        bright_shifts = [0, 18, -14, 0, 0, 0, 0, 26, -18, 0]
+        surfs = []
+        for v in range(10):
+            shift = bright_shifts[v]
+            tone = tuple(max(0, min(255, c + shift)) for c in base)
+            if v == 3:  # reddish-clay
+                tone = (min(255,tone[0]+20), max(0,tone[1]-6), max(0,tone[2]-10))
+            elif v == 7: # pale-sandy — warm lighter
+                tone = (min(255,tone[0]+8), min(255,tone[1]+14), min(255,tone[2]+22))
+            elif v == 8: # dark-wet — desaturated darker
+                tone = (max(0,tone[0]-5), max(0,tone[1]-3), max(0,tone[2]+4))
+            dark = _darken(tone, 30)
+            s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+            s.fill(tone)
+            if v == 4:   # pebbles
+                for px2, py2 in [(5,5),(16,9),(25,14),(8,22),(20,25),(12,15)]:
+                    pygame.draw.rect(s, _darken(tone,42), (px2, py2, 2, 2))
+            elif v == 5: # light speckles
+                for px2, py2 in [(3,8),(14,3),(22,18),(9,26),(27,6),(18,22)]:
+                    pygame.draw.rect(s, tuple(min(255,c+30) for c in tone), (px2, py2, 2, 2))
+            elif v == 6: # mixed pebbles + speckles
+                for px2, py2 in [(10,12),(5,25),(22,7)]:
+                    pygame.draw.rect(s, _darken(tone,40), (px2, py2, 2, 2))
+                for px2, py2 in [(22,20),(15,28),(3,16)]:
+                    pygame.draw.rect(s, tuple(min(255,c+24) for c in tone), (px2, py2, 2, 2))
+            elif v == 8: # dark-wet — subtle horizontal streaks
+                for py2 in [6, 14, 22]:
+                    pygame.draw.rect(s, _darken(tone,20), (2, py2, BLOCK_SIZE-4, 2))
+            elif v == 9: # coarse grain — small dark patches
+                for px2, py2, pw, ph in [(2,3,4,3),(14,2,3,4),(24,6,3,3),(6,14,4,3),(19,16,3,4),(3,23,4,3),(22,23,3,3)]:
+                    pygame.draw.rect(s, _darken(tone,22), (px2, py2, pw, ph))
+            pygame.draw.rect(s, dark, s.get_rect(), 1)
+            surfs.append(s)
+        return surfs
+
+    def _build_sand_variants(self):
+        # 8 variants: plain, lighter, darker, warm-orange, pale-bleached,
+        #             ripple-lines, tiny pebbles, damp-dark
+        base = (210, 190, 140)
+        surfs = []
+        for v in range(8):
+            tone = base
+            if v == 1:   tone = tuple(min(255,c+16) for c in base)
+            elif v == 2: tone = tuple(max(0,c-14) for c in base)
+            elif v == 3: tone = (min(255,base[0]+18), max(0,base[1]-6), max(0,base[2]-20))  # warm orange
+            elif v == 4: tone = (min(255,base[0]+28), min(255,base[1]+22), min(255,base[2]+18))  # bleached
+            elif v == 7: tone = (max(0,base[0]-20), max(0,base[1]-16), max(0,base[2]-10))  # damp
+            dark = _darken(tone, 26)
+            s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+            s.fill(tone)
+            if v == 5:   # ripple lines
+                for py2 in [5, 12, 19, 26]:
+                    pygame.draw.rect(s, _darken(tone,18), (2, py2, BLOCK_SIZE-4, 1))
+                    pygame.draw.rect(s, tuple(min(255,c+14) for c in tone), (2, py2+1, BLOCK_SIZE-4, 1))
+            elif v == 6: # tiny pebbles
+                for px2, py2 in [(4,4),(13,8),(22,5),(7,17),(18,13),(26,20),(10,25),(20,27),(3,24)]:
+                    pygame.draw.rect(s, _darken(tone,32), (px2, py2, 2, 2))
+            elif v == 7: # damp — diagonal wet streaks
+                for i in range(0, BLOCK_SIZE, 8):
+                    pygame.draw.rect(s, _darken(tone,24), (i, 0, 2, BLOCK_SIZE))
+            pygame.draw.rect(s, dark, s.get_rect(), 1)
+            surfs.append(s)
+        return surfs
+
+    def _build_snow_variants(self):
+        # 8 variants: plain, pure-white, blue-shadow, grey-slush, sparkle,
+        #             wind-ridges, deep-drift, packed
+        base = (220, 232, 245)
+        surfs = []
+        for v in range(8):
+            tone = base
+            if v == 1:   tone = (245, 250, 255)  # pure white
+            elif v == 2: tone = (200, 215, 238)  # blue-shadow
+            elif v == 3: tone = (210, 212, 215)  # grey slush
+            elif v == 4: tone = base
+            elif v == 5: tone = (215, 228, 242)  # slightly darker for ridges
+            elif v == 6: tone = (230, 240, 252)  # deep drift — brighter
+            elif v == 7: tone = (205, 218, 232)  # packed — denser blue
+            dark = _darken(tone, 22)
+            s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+            s.fill(tone)
+            if v == 2:   # blue shadow blobs
+                for px2, py2, pw, ph in [(1,1,7,5),(18,3,6,7),(3,20,8,5),(20,22,7,6)]:
+                    pygame.draw.rect(s, _darken(tone,16), (px2, py2, pw, ph))
+            elif v == 3: # slush — grey smudges
+                for px2, py2, pw, ph in [(2,4,5,4),(15,10,6,3),(8,20,5,5),(22,18,4,6)]:
+                    pygame.draw.rect(s, (190,192,194), (px2, py2, pw, ph))
+            elif v == 4: # sparkle — tiny bright points
+                for px2, py2 in [(5,3),(12,9),(21,5),(8,16),(18,14),(26,8),(3,23),(15,26),(24,22),(10,28)]:
+                    pygame.draw.rect(s, (255,255,255), (px2, py2, 2, 2))
+            elif v == 5: # wind ridges — diagonal lines
+                for i in range(-BLOCK_SIZE, BLOCK_SIZE*2, 7):
+                    pygame.draw.line(s, tuple(min(255,c+12) for c in tone), (max(0,i),0), (min(BLOCK_SIZE,i+BLOCK_SIZE),min(BLOCK_SIZE,BLOCK_SIZE-i)), 1)
+            elif v == 6: # deep drift — subtle highlight blobs
+                for px2, py2, pw, ph in [(4,2,8,4),(2,14,6,6),(16,18,7,5),(20,6,5,5)]:
+                    pygame.draw.rect(s, tuple(min(255,c+10) for c in tone), (px2, py2, pw, ph))
+            elif v == 7: # packed — faint horizontal compression lines
+                for py2 in [7, 16, 24]:
+                    pygame.draw.rect(s, _darken(tone,14), (1, py2, BLOCK_SIZE-2, 1))
+            pygame.draw.rect(s, dark, s.get_rect(), 1)
+            surfs.append(s)
+        return surfs
+
     # ------------------------------------------------------------------
     # Camera
     # ------------------------------------------------------------------
@@ -5393,8 +10468,44 @@ class Renderer:
                     tsurf = self._tilled_soil_surfs[1 if moisture >= 4 else 0]
                     self.screen.blit(tsurf, (bx * BLOCK_SIZE - cam_xi, by * BLOCK_SIZE - cam_yi))
                     continue
+                if bid == ELEVATOR_CABLE_BLOCK:
+                    sx = bx * BLOCK_SIZE - cam_xi
+                    sy = by * BLOCK_SIZE - cam_yi
+                    # Draw thin cable line in center of block
+                    pygame.draw.rect(self.screen, (55, 55, 65), (sx + 14, sy, 4, BLOCK_SIZE))
+                    continue
+                if bid == LADDER:
+                    sx = bx * BLOCK_SIZE - cam_xi
+                    sy = by * BLOCK_SIZE - cam_yi
+                    bg_bid = world.get_bg_block(bx, by)
+                    if bg_bid != AIR:
+                        bg_surf = self._bg_block_surfs.get(bg_bid)
+                        if bg_surf:
+                            self.screen.blit(bg_surf, (sx, sy))
+                    elif by > surface_ys.get(bx, 100):
+                        self.screen.blit(self._cave_wall_surf, (sx, sy))
+                    lsurf = self._block_surfs.get(LADDER)
+                    if lsurf:
+                        self.screen.blit(lsurf, (sx, sy))
+                    continue
+                if bid in (WOOD_DOOR_OPEN, IRON_DOOR_OPEN,
+                           COBALT_DOOR_OPEN, CRIMSON_CEDAR_DOOR_OPEN,
+                           TEAL_DOOR_OPEN, SAFFRON_DOOR_OPEN):
+                    sx = bx * BLOCK_SIZE - cam_xi
+                    sy = by * BLOCK_SIZE - cam_yi
+                    bg_bid = world.get_bg_block(bx, by)
+                    if bg_bid != AIR:
+                        bg_surf = self._bg_block_surfs.get(bg_bid)
+                        if bg_surf:
+                            self.screen.blit(bg_surf, (sx, sy))
+                    elif by > surface_ys.get(bx, 100):
+                        self.screen.blit(self._cave_wall_surf, (sx, sy))
+                    dsurf = self._block_surfs.get(bid)
+                    if dsurf:
+                        self.screen.blit(dsurf, (sx, sy))
+                    continue
                 surf = self._block_surfs.get(bid)
-                # Tree block variants — color + grain/size variation seeded by position
+                # Block variants seeded by position for visual variety
                 if bid in ALL_LOGS:
                     var = self._log_variants.get(bid)
                     if var:
@@ -5403,6 +10514,14 @@ class Renderer:
                     var = self._leaf_variants.get(bid)
                     if var:
                         surf = var[(bx * 97 + by * 31 + world.seed) % len(var)]
+                elif bid == GRASS:
+                    surf = self._grass_variants[(bx * 73 + by * 41 + world.seed) % len(self._grass_variants)]
+                elif bid == DIRT:
+                    surf = self._dirt_variants[(bx * 59 + by * 83 + world.seed) % len(self._dirt_variants)]
+                elif bid == SAND:
+                    surf = self._sand_variants[(bx * 67 + by * 53 + world.seed) % len(self._sand_variants)]
+                elif bid == SNOW:
+                    surf = self._snow_variants[(bx * 43 + by * 79 + world.seed) % len(self._snow_variants)]
                 biome = biomes[bx]
                 biome_stone = self._biome_stone_surfs.get(biome)
                 if bid == STONE and biome_stone:
@@ -5416,7 +10535,12 @@ class Renderer:
                         dist <= warm and _los_clear(world, int(px_blk), int(py_blk), bx, by)
                     )
                     if not ore_visible or dist > warm:
-                        surf = biome_stone or self._block_surfs.get(STONE)
+                        depth = by - surface_ys.get(bx, 0)
+                        strata_id = (LIMESTONE_STONE if depth < 60 else
+                                     GRANITE_STONE   if depth < 120 else
+                                     BASALT_STONE    if depth < 180 else
+                                     MAGMATIC_STONE) if depth >= 15 else STONE
+                        surf = biome_stone or self._block_surfs.get(strata_id, self._block_surfs.get(STONE))
                     elif dist > detect:
                         biome_hints = self._biome_resource_hint_surfs.get(biome, self._resource_hint_surfs)
                         surf = biome_hints.get(bid, self._resource_hint_surfs[bid])
@@ -5434,6 +10558,45 @@ class Renderer:
                                 spx = 1 + (h * (i + 3) * 43) % 28
                                 spy = 1 + (h * (i + 3) * 97) % 28
                                 pygame.draw.rect(self.screen, sc, (sx + spx, sy + spy, 2, 2))
+
+        self._draw_all_sculptures(world)
+
+    # ------------------------------------------------------------------
+    # Draw sculptures (per-instance background art)
+    # ------------------------------------------------------------------
+
+    def _draw_sculpture_at(self, sc, root_bx, root_by):
+        CELL_W = 4   # 8 cols × 4 px = 32 px wide
+        CELL_H = 4   # 4 rows per block × 4 px = 16 px per block section
+        cam_xi = int(self.cam_x)
+        cam_yi = int(self.cam_y)
+        base_color = sc.color
+        hi_color   = tuple(min(255, c + 25) for c in base_color)
+        lo_color   = tuple(max(0,   c - 35) for c in base_color)
+        rows_total = len(sc.grid)
+        for row_idx in range(rows_total - 1, -1, -1):
+            row = sc.grid[row_idx]
+            # row 0 = top of sculpture; row (rows_total-1) = bottom (root block row)
+            rows_from_bottom = rows_total - 1 - row_idx
+            block_offset     = rows_from_bottom // 4   # 0 = root block level
+            local_row        = rows_from_bottom % 4
+            world_y = root_by - block_offset
+            screen_x = root_bx * BLOCK_SIZE - cam_xi
+            screen_y = world_y  * BLOCK_SIZE - cam_yi + local_row * CELL_H
+            for col_idx, filled in enumerate(row):
+                if not filled:
+                    continue
+                # Alternate columns for a subtle chiseled look
+                color = hi_color if col_idx % 2 == 0 else lo_color
+                pygame.draw.rect(self.screen, color,
+                                 (screen_x + col_idx * CELL_W, screen_y, CELL_W, CELL_H))
+
+    def _draw_all_sculptures(self, world):
+        for pos, data in world.sculpture_data.items():
+            if isinstance(data, dict) and "root" in data:
+                continue   # body pointer — skip; root draws the whole sculpture
+            bx, by = pos
+            self._draw_sculpture_at(data, bx, by)
 
     # ------------------------------------------------------------------
     # Draw player
@@ -5474,6 +10637,8 @@ class Renderer:
                 self._draw_cow(sx, sy, e)
             elif e.animal_id == "chicken":
                 self._draw_chicken(sx, sy, e)
+            elif e.animal_id == "goat":
+                self._draw_goat(sx, sy, e)
             elif e.animal_id == "snow_leopard":
                 self._draw_snow_leopard(sx, sy, e)
             elif e.animal_id == "mountain_lion":
@@ -5494,6 +10659,611 @@ class Renderer:
                 self._draw_npc_chef(sx, sy, e)
             elif e.animal_id == "npc_monk":
                 self._draw_npc_monk(sx, sy, e)
+            elif e.animal_id == "deer":
+                self._draw_deer(sx, sy, e)
+            elif e.animal_id == "boar":
+                self._draw_boar(sx, sy, e)
+            elif e.animal_id == "rabbit":
+                self._draw_rabbit(sx, sy, e)
+            elif e.animal_id == "turkey":
+                self._draw_turkey(sx, sy, e)
+            elif e.animal_id == "wolf":
+                self._draw_wolf(sx, sy, e)
+            elif e.animal_id == "bear":
+                self._draw_bear(sx, sy, e)
+            elif e.animal_id == "duck":
+                self._draw_duck(sx, sy, e)
+            elif e.animal_id == "elk":
+                self._draw_elk(sx, sy, e)
+            elif e.animal_id == "bison":
+                self._draw_bison(sx, sy, e)
+            elif e.animal_id == "fox":
+                self._draw_fox(sx, sy, e)
+            elif e.animal_id == "moose":
+                self._draw_moose(sx, sy, e)
+            elif e.animal_id == "bighorn":
+                self._draw_bighorn(sx, sy, e)
+            elif e.animal_id == "pheasant":
+                self._draw_pheasant_animal(sx, sy, e)
+            elif e.animal_id == "warthog":
+                self._draw_warthog(sx, sy, e)
+            elif e.animal_id == "musk_ox":
+                self._draw_musk_ox(sx, sy, e)
+            elif e.animal_id == "crocodile":
+                self._draw_crocodile(sx, sy, e)
+            elif e.animal_id == "goose":
+                self._draw_goose(sx, sy, e)
+            elif e.animal_id == "hare":
+                self._draw_hare(sx, sy, e)
+
+    # ------------------------------------------------------------------
+    # Huntable animal drawing
+    # ------------------------------------------------------------------
+
+    def _draw_deer(self, sx, sy, e):
+        W, H = e.W, e.H  # 28×22
+        s = e.traits.get("size", 1.0)
+        body_col   = (175, 125, 72)
+        leg_col    = (148, 103, 58)
+        antler_col = (108,  72, 32)
+        f = e.facing  # 1 = right
+
+        # Slender body
+        pygame.draw.ellipse(self.screen, body_col,
+                            (sx + 2, sy + int(H * 0.32), W - 4, int(H * 0.52)))
+        # White rump patch (back side, opposite to head)
+        rump_x = sx if f == 1 else sx + W - int(5 * s)
+        pygame.draw.ellipse(self.screen, (242, 228, 205),
+                            (rump_x, sy + int(H * 0.38), int(5 * s), int(4 * s)))
+
+        # Four thin legs, well spaced
+        leg_w = max(2, int(2 * s))
+        for lp in (0.12, 0.30, 0.58, 0.76):
+            lx = sx + int(W * lp)
+            pygame.draw.rect(self.screen, leg_col,
+                             (lx, sy + int(H * 0.72), leg_w, int(H * 0.28)))
+
+        # Neck
+        nw = int(5 * s)
+        nx = (sx + W - int(9 * s)) if f == 1 else (sx + int(4 * s))
+        pygame.draw.rect(self.screen, body_col,
+                         (nx, sy + int(H * 0.10), nw, int(H * 0.32)))
+
+        # Head (elongated oval)
+        hw, hh = int(8 * s), int(6 * s)
+        hx = (sx + W - hw + 1) if f == 1 else (sx - 1)
+        pygame.draw.ellipse(self.screen, body_col, (hx, sy + int(H * 0.05), hw, hh))
+
+        # Nose
+        nose_x = hx + (hw - 2 if f == 1 else 0)
+        pygame.draw.rect(self.screen, (110, 72, 42), (nose_x, sy + int(H * 0.18), 2, 2))
+
+        # Eye
+        eye_x = hx + (int(hw * 0.60) if f == 1 else int(hw * 0.35))
+        pygame.draw.rect(self.screen, (25, 18, 12), (eye_x, sy + int(H * 0.10), 1, 1))
+
+        # Antlers: Y-fork with brow tine, from back of skull
+        ax = hx + (int(hw * 0.30) if f == 1 else int(hw * 0.70))
+        ay = sy + int(H * 0.05)
+        mid_y = ay - int(5 * s)
+        pygame.draw.line(self.screen, antler_col, (ax, ay), (ax, mid_y), 1)
+        pygame.draw.line(self.screen, antler_col, (ax, mid_y),
+                         (ax + (3 if f == 1 else -3), mid_y - int(3 * s)), 1)
+        pygame.draw.line(self.screen, antler_col, (ax, mid_y),
+                         (ax + (-2 if f == 1 else 2), mid_y - int(3 * s)), 1)
+        pygame.draw.line(self.screen, antler_col, (ax, ay - int(2 * s)),
+                         (ax + (4 if f == 1 else -4), ay - int(4 * s)), 1)
+
+        if e.health < 3:
+            pygame.draw.rect(self.screen, (220, 50, 50),
+                             (sx, sy - 5, int(W * e.health / 3), 2))
+
+    def _draw_boar(self, sx, sy, e):
+        W, H = e.W, e.H  # 26×18
+        s = e.traits.get("size", 1.0)
+        body_col  = (82,  62, 48)
+        dark_col  = (58,  42, 32)
+        snout_col = (105, 80, 60)
+        f = e.facing
+
+        # Low-slung body
+        pygame.draw.ellipse(self.screen, body_col,
+                            (sx + 1, sy + int(H * 0.28), W - 2, int(H * 0.58)))
+        # Spine bristle ridge (dark strip along the back)
+        pygame.draw.ellipse(self.screen, dark_col,
+                            (sx + int(W * 0.15), sy + int(H * 0.20),
+                             int(W * 0.70), int(H * 0.22)))
+
+        # Short stocky legs
+        leg_w = max(3, int(4 * s))
+        for lp in (0.12, 0.30, 0.56, 0.74):
+            lx = sx + int(W * lp)
+            pygame.draw.rect(self.screen, dark_col,
+                             (lx, sy + int(H * 0.75), leg_w, int(H * 0.25)))
+
+        # Large low-set head
+        hw, hh = int(9 * s), int(8 * s)
+        hx = (sx + W - hw) if f == 1 else sx
+        pygame.draw.rect(self.screen, body_col,
+                         (hx, sy + int(H * 0.25), hw, hh))
+
+        # Eye (toward front of head)
+        eye_x = hx + (int(hw * 0.60) if f == 1 else int(hw * 0.35))
+        pygame.draw.rect(self.screen, (20, 15, 10),
+                         (eye_x, sy + int(H * 0.30), 2, 2))
+
+        # Wide snout
+        sw, sh = int(6 * s), int(4 * s)
+        snx = hx + (hw - sw if f == 1 else 0)
+        sny = sy + int(H * 0.38)
+        pygame.draw.rect(self.screen, snout_col, (snx, sny, sw, sh))
+        # Nostrils
+        nox = snx + (int(sw * 0.25) if f == 1 else int(sw * 0.45))
+        pygame.draw.rect(self.screen, dark_col, (nox, sny + 1, 1, 1))
+        pygame.draw.rect(self.screen, dark_col, (nox + 2, sny + 1, 1, 1))
+
+        # Two upward-curving tusks
+        tx = snx + (sw - 1 if f == 1 else 1)
+        t_base_y = sny + sh - 1
+        pygame.draw.line(self.screen, (232, 215, 182),
+                         (tx, t_base_y),
+                         (tx + (3 if f == 1 else -3), t_base_y - int(4 * s)), 1)
+        pygame.draw.line(self.screen, (215, 198, 165),
+                         (tx + (-2 if f == 1 else 2), t_base_y),
+                         (tx + (1 if f == 1 else -1), t_base_y - int(3 * s)), 1)
+
+        if e.health < 3:
+            pygame.draw.rect(self.screen, (220, 50, 50),
+                             (sx, sy - 5, int(W * e.health / 3), 2))
+
+    def _draw_rabbit(self, sx, sy, e):
+        W, H = e.W, e.H  # 14×12
+        s = e.traits.get("size", 1.0)
+        col       = (212, 198, 178)
+        ear_inner = (195, 155, 148)
+        f = e.facing
+
+        # Body
+        pygame.draw.ellipse(self.screen, col,
+                            (sx + 1, sy + int(H * 0.42), W - 2, int(H * 0.58)))
+
+        # Head (offset toward facing direction)
+        hw, hh = int(7 * s), int(6 * s)
+        hx = (sx + W - hw) if f == 1 else sx
+        pygame.draw.ellipse(self.screen, col, (hx, sy + int(H * 0.20), hw, hh))
+
+        # Two tall ears, clearly separated
+        e1x = hx + (int(hw * 0.65) if f == 1 else int(hw * 0.20))
+        e2x = hx + (int(hw * 0.25) if f == 1 else int(hw * 0.60))
+        ear_h = int(5 * s)
+        for ex_ in (e1x, e2x):
+            pygame.draw.rect(self.screen, col, (ex_, sy, 2, ear_h))
+        pygame.draw.rect(self.screen, ear_inner, (e1x, sy + 1, 1, ear_h - 2))
+
+        # Fluffy white tail (back side)
+        tail_x = sx if f == 1 else sx + W - 3
+        pygame.draw.ellipse(self.screen, (245, 242, 238),
+                            (tail_x, sy + int(H * 0.50), 3, 3))
+
+        # Eye
+        eye_x = hx + (int(hw * 0.65) if f == 1 else int(hw * 0.25))
+        pygame.draw.rect(self.screen, (38, 22, 18), (eye_x, sy + int(H * 0.28), 1, 1))
+
+        if e.health < 1:
+            pass  # rabbit dies in 1 hit
+        else:
+            pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 5, W, 2))
+
+    def _draw_turkey(self, sx, sy, e):
+        W, H = e.W, e.H  # 20×18
+        s = e.traits.get("size", 1.0)
+        body_col = (95, 72, 48)
+        dark_col = (68, 50, 33)
+        plume1   = (158, 82, 25)
+        plume2   = (108, 52, 18)
+        leg_col  = (128, 98, 50)
+        f = e.facing
+
+        # Fan tail drawn first (behind body)
+        tcx = (sx + int(W * 0.18)) if f == 1 else (sx + int(W * 0.82))
+        tcy = sy + int(H * 0.45)
+        fd = -1 if f == 1 else 1  # fan x-direction (away from head)
+        fan_tips = [
+            (fd * int(6 * s), -int(2 * s)),
+            (fd * int(5 * s), -int(5 * s)),
+            (fd * int(3 * s), -int(7 * s)),
+            (fd * int(1 * s), -int(7 * s)),
+            (0,               -int(6 * s)),
+        ]
+        for i, (dx, dy) in enumerate(fan_tips):
+            pygame.draw.line(self.screen, plume1 if i % 2 == 0 else plume2,
+                             (tcx, tcy), (tcx + dx, tcy + dy), 2)
+
+        # Plump body
+        pygame.draw.ellipse(self.screen, body_col,
+                            (sx + 1, sy + int(H * 0.28), W - 2, int(H * 0.58)))
+        # Wing feather texture (slightly darker ellipse)
+        pygame.draw.ellipse(self.screen, dark_col,
+                            (sx + int(W * 0.25), sy + int(H * 0.36),
+                             int(W * 0.50), int(H * 0.34)))
+
+        # Two legs
+        for i in range(2):
+            lx = sx + int(W * (0.35 + i * 0.22))
+            pygame.draw.line(self.screen, leg_col,
+                             (lx, sy + int(H * 0.78)), (lx + 1, sy + H), 2)
+
+        # Neck
+        nw = int(4 * s)
+        nx = (sx + W - int(6 * s)) if f == 1 else (sx + int(2 * s))
+        pygame.draw.rect(self.screen, body_col,
+                         (nx, sy + int(H * 0.15), nw, int(H * 0.24)))
+
+        # Head
+        hw = int(5 * s)
+        hx = (sx + W - hw) if f == 1 else sx
+        pygame.draw.ellipse(self.screen, body_col,
+                            (hx, sy + int(H * 0.04), hw, int(H * 0.26)))
+
+        # Red wattle/snood
+        snood_x = hx + (hw - 1 if f == 1 else 0)
+        pygame.draw.line(self.screen, (195, 45, 35),
+                         (snood_x, sy + int(H * 0.22)),
+                         (snood_x, sy + int(H * 0.35)), 2)
+
+        # Eye
+        eye_x = hx + (int(hw * 0.35) if f == 1 else int(hw * 0.60))
+        pygame.draw.rect(self.screen, (25, 18, 12),
+                         (eye_x, sy + int(H * 0.10), 1, 1))
+
+        if e.health < 2:
+            pygame.draw.rect(self.screen, (220, 50, 50),
+                             (sx, sy - 5, int(W * e.health / 2), 2))
+
+    def _draw_wolf(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        col     = (110, 100,  90)
+        leg_col = ( 85,  75,  65)
+        # Lean body
+        pygame.draw.rect(self.screen, col, (sx, sy + int(H * 0.3), W, int(H * 0.55)))
+        # Legs
+        for i in range(4):
+            lx = sx + int(W * (0.12 + i * 0.22))
+            pygame.draw.rect(self.screen, leg_col, (lx, sy + int(H * 0.75), max(2, int(3*s)), int(H * 0.25)))
+        # Bushy tail (opposite to facing)
+        tail_x = (sx - int(4*s)) if e.facing == 1 else (sx + W)
+        pygame.draw.ellipse(self.screen, col, (tail_x, sy + int(H * 0.2), int(6*s), int(5*s)))
+        # Head + snout
+        head_w = int(8 * s)
+        hx = (sx + W - head_w) if e.facing == 1 else sx
+        pygame.draw.rect(self.screen, col, (hx, sy + int(H * 0.15), head_w, int(H * 0.45)))
+        # Ears
+        ex = hx + (int(head_w * 0.6) if e.facing == 1 else int(head_w * 0.2))
+        pygame.draw.polygon(self.screen, col, [(ex, sy + int(H*0.15)), (ex-2, sy - int(4*s)), (ex+2, sy - int(4*s))])
+        if e.health < 2:
+            pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 5, int(W * e.health / 2), 2))
+
+    def _draw_bear(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        col     = ( 80,  58,  40)
+        snout_c = (110,  85,  60)
+        # Massive body
+        pygame.draw.ellipse(self.screen, col, (sx, sy + int(H * 0.2), W, int(H * 0.72)))
+        # Short thick legs
+        leg_w = max(3, int(5*s))
+        for i in range(4):
+            lx = sx + int(W * (0.1 + i * 0.25))
+            pygame.draw.rect(self.screen, col, (lx, sy + int(H * 0.75), leg_w, int(H * 0.25)))
+        # Round head
+        head_r = int(8 * s)
+        hx = (sx + W - head_r * 2 + 2) if e.facing == 1 else sx
+        pygame.draw.ellipse(self.screen, col, (hx, sy, head_r * 2, int(head_r * 1.6)))
+        # Snout
+        snout_x = hx + (head_r * 2 - int(4*s) if e.facing == 1 else int(2*s))
+        pygame.draw.ellipse(self.screen, snout_c, (snout_x - 1, sy + int(H * 0.18), int(6*s), int(4*s)))
+        # Ears
+        ex = hx + (int(head_r * 0.4) if e.facing == 1 else int(head_r * 1.2))
+        pygame.draw.circle(self.screen, col, (ex, sy + 2), max(2, int(3*s)))
+        if e.health < 4:
+            pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 6, int(W * e.health / 4), 3))
+
+    def _draw_duck(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        body_col = ( 60,  80,  50)
+        head_col = ( 40,  60,  40)
+        bill_col = (230, 165,  50)
+        # Round body
+        pygame.draw.ellipse(self.screen, body_col, (sx, sy + int(H * 0.35), W, int(H * 0.65)))
+        # Head
+        head_r = int(5 * s)
+        hx = (sx + W - head_r * 2 + 1) if e.facing == 1 else sx
+        pygame.draw.ellipse(self.screen, head_col, (hx, sy, head_r * 2, head_r * 2))
+        # Bill
+        bx = hx + (head_r * 2 - 1 if e.facing == 1 else -int(4*s) + 1)
+        pygame.draw.rect(self.screen, bill_col, (bx, sy + int(H * 0.25), int(4*s), int(2*s)))
+        # Tail curl
+        tail_x = sx if e.facing == 1 else sx + W - int(3*s)
+        pygame.draw.ellipse(self.screen, (80, 100, 70), (tail_x, sy + int(H * 0.2), int(4*s), int(3*s)))
+
+    def _draw_elk(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        body_col = (130, 90, 55)
+        leg_col  = (105, 72, 42)
+        mane_col = ( 85, 55, 30)
+        # Body
+        pygame.draw.rect(self.screen, body_col, (sx, sy + int(H * 0.28), W, int(H * 0.55)))
+        # Neck mane
+        neck_x = (sx + W - int(7*s)) if e.facing == 1 else sx
+        pygame.draw.rect(self.screen, mane_col, (neck_x, sy + int(H * 0.08), int(6*s), int(H * 0.38)))
+        # Legs (longer than deer)
+        for i in range(4):
+            lx = sx + int(W * (0.12 + i * 0.22))
+            pygame.draw.rect(self.screen, leg_col, (lx, sy + int(H * 0.72), max(2, int(3*s)), int(H * 0.28)))
+        # Head
+        head_w = int(8 * s)
+        hx = (sx + W - head_w + 1) if e.facing == 1 else sx
+        pygame.draw.rect(self.screen, body_col, (hx, sy, head_w, int(H * 0.32)))
+        # Large palmate antlers
+        ax = hx + (head_w - 1 if e.facing == 1 else 0)
+        for i in range(3):
+            off = i * 2 * (1 if e.facing == 1 else -1)
+            pygame.draw.line(self.screen, (110, 78, 38),
+                             (ax, sy - 1),
+                             (ax + off + (4 if e.facing == 1 else -4), sy - int(7 + i*2)), 1)
+        if e.health < 3:
+            pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 5, int(W * e.health / 3), 2))
+
+    def _draw_bison(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        col      = ( 65,  48,  32)
+        hump_col = ( 55,  40,  26)
+        # Massive body — low-slung
+        pygame.draw.rect(self.screen, col, (sx, sy + int(H * 0.3), W, int(H * 0.6)))
+        # Shoulder hump
+        hump_x = (sx + W - int(14*s)) if e.facing == 1 else (sx + int(4*s))
+        pygame.draw.ellipse(self.screen, hump_col, (hump_x, sy + int(H * 0.1), int(14*s), int(H * 0.35)))
+        # Short legs
+        leg_w = max(3, int(5*s))
+        for i in range(4):
+            lx = sx + int(W * (0.1 + i * 0.25))
+            pygame.draw.rect(self.screen, (50, 36, 22), (lx, sy + int(H * 0.75), leg_w, int(H * 0.25)))
+        # Large shaggy head
+        head_w = int(10 * s)
+        hx = (sx + W - head_w) if e.facing == 1 else sx
+        pygame.draw.rect(self.screen, hump_col, (hx, sy + int(H * 0.08), head_w, int(H * 0.45)))
+        # Horns
+        horn_x = hx + (int(head_w * 0.3) if e.facing == 1 else int(head_w * 0.5))
+        pygame.draw.line(self.screen, (40, 32, 22), (horn_x, sy + int(H*0.08)), (horn_x + (5 if e.facing == 1 else -5), sy - int(3*s)), 2)
+        if e.health < 3:
+            pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 6, int(W * e.health / 3), 3))
+
+    def _draw_fox(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        col      = (210,  95,  35)
+        belly    = (240, 215, 185)
+        # Slender body
+        pygame.draw.rect(self.screen, col, (sx, sy + int(H * 0.3), W, int(H * 0.52)))
+        # White belly
+        pygame.draw.rect(self.screen, belly, (sx + int(W*0.2), sy + int(H*0.38), int(W*0.6), int(H*0.35)))
+        # Legs
+        for i in range(4):
+            lx = sx + int(W * (0.12 + i * 0.22))
+            pygame.draw.rect(self.screen, (170, 75, 25), (lx, sy + int(H*0.72), max(2, int(2*s)), int(H*0.28)))
+        # Bushy tail
+        tail_x = (sx - int(5*s)) if e.facing == 1 else (sx + W)
+        pygame.draw.ellipse(self.screen, col, (tail_x, sy + int(H*0.25), int(7*s), int(5*s)))
+        pygame.draw.ellipse(self.screen, belly, (tail_x + int(2*s), sy + int(H*0.4), int(3*s), int(2*s)))
+        # Head + pointed snout
+        head_w = int(7 * s)
+        hx = (sx + W - head_w + 1) if e.facing == 1 else sx
+        pygame.draw.rect(self.screen, col, (hx, sy + int(H*0.1), head_w, int(H*0.35)))
+        snout_x = hx + (head_w - 1 if e.facing == 1 else -int(3*s))
+        pygame.draw.polygon(self.screen, col, [
+            (snout_x, sy + int(H*0.22)),
+            (snout_x + (int(3*s) if e.facing == 1 else -int(3*s)), sy + int(H*0.28)),
+            (snout_x, sy + int(H*0.34)),
+        ])
+        # Ear
+        ex = hx + (int(head_w*0.4) if e.facing == 1 else int(head_w*0.5))
+        pygame.draw.polygon(self.screen, col, [(ex, sy + int(H*0.1)), (ex-2, sy - int(5*s)), (ex+2, sy - int(5*s))])
+
+    def _draw_moose(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        col = (90, 65, 42)
+        # Tall body, longer legs than elk
+        pygame.draw.rect(self.screen, col, (sx, sy + int(H * 0.25), W, int(H * 0.52)))
+        for i in range(4):
+            lx = sx + int(W * (0.1 + i * 0.25))
+            pygame.draw.rect(self.screen, (68, 48, 30), (lx, sy + int(H * 0.72), max(2, int(3*s)), int(H * 0.28)))
+        # Distinctive bulbous nose / dewlap
+        hx = (sx + W - int(9*s)) if e.facing == 1 else sx
+        pygame.draw.rect(self.screen, col, (hx, sy + int(H*0.05), int(9*s), int(H*0.32)))
+        snout_x = hx + (int(9*s) - 2 if e.facing == 1 else -int(3*s))
+        pygame.draw.ellipse(self.screen, (75, 52, 33), (snout_x, sy + int(H*0.18), int(5*s), int(5*s)))
+        # Broad palmate antlers
+        ax = hx + (int(9*s) - 2 if e.facing == 1 else 2)
+        for i in range(4):
+            ox = i * 2 * (1 if e.facing == 1 else -1)
+            pygame.draw.line(self.screen, (100, 72, 38), (ax, sy), (ax + ox + (5 if e.facing == 1 else -5), sy - int(8 + i)), 1)
+        if e.health < 4:
+            pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 6, int(W * e.health / 4), 3))
+
+    def _draw_bighorn(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        col = (185, 155, 110)
+        # Stocky body
+        pygame.draw.rect(self.screen, col, (sx, sy + int(H*0.28), W, int(H*0.55)))
+        for i in range(4):
+            lx = sx + int(W * (0.12 + i * 0.22))
+            pygame.draw.rect(self.screen, (155, 128, 88), (lx, sy + int(H*0.75), max(2, int(3*s)), int(H*0.25)))
+        # Head
+        hx = (sx + W - int(7*s)) if e.facing == 1 else sx
+        pygame.draw.rect(self.screen, col, (hx, sy + int(H*0.1), int(7*s), int(H*0.38)))
+        # Curled horns — two arcs
+        hcx = hx + (int(7*s) - 2 if e.facing == 1 else 2)
+        pygame.draw.arc(self.screen, (140, 108, 65),
+                        (hcx - int(5*s), sy - int(3*s), int(8*s), int(8*s)),
+                        0, 3.14, 2)
+        if e.health < 2:
+            pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 5, int(W * e.health / 2), 2))
+
+    def _draw_pheasant_animal(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        # Colourful plumage
+        body_col  = (190, 110, 40)
+        chest_col = (210,  60, 30)
+        tail_col  = (165, 130, 50)
+        pygame.draw.ellipse(self.screen, body_col, (sx + 2, sy + int(H*0.3), W - 4, int(H*0.6)))
+        # Iridescent chest
+        pygame.draw.ellipse(self.screen, chest_col,
+                            (sx + int(W*0.35 if e.facing == 1 else 0.15), sy + int(H*0.35),
+                             int(W*0.35), int(H*0.4)))
+        # Long tail
+        tail_x = sx if e.facing == 1 else sx + W - int(6*s)
+        for i in range(3):
+            pygame.draw.line(self.screen, tail_col,
+                             (tail_x + int(3*s), sy + int(H*0.5)),
+                             (tail_x + int(3*s) + (i-1)*2*(-1 if e.facing == 1 else 1),
+                              sy + int(H*0.1)), 1)
+        # Head + red wattle
+        hx = (sx + W - int(5*s)) if e.facing == 1 else sx
+        pygame.draw.ellipse(self.screen, (80, 55, 30), (hx, sy + int(H*0.1), int(5*s), int(H*0.32)))
+        pygame.draw.line(self.screen, (200, 40, 40),
+                         (hx + (int(5*s)-1 if e.facing == 1 else 0), sy + int(H*0.25)),
+                         (hx + (int(5*s)+1 if e.facing == 1 else -2), sy + int(H*0.38)), 2)
+
+    def _draw_warthog(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        col  = (105,  85,  65)
+        # Low, wide body
+        pygame.draw.rect(self.screen, col, (sx, sy + int(H*0.3), W, int(H*0.58)))
+        for i in range(4):
+            lx = sx + int(W * (0.1 + i * 0.24))
+            pygame.draw.rect(self.screen, (82, 65, 48), (lx, sy + int(H*0.78), max(2, int(4*s)), int(H*0.22)))
+        # Warty head
+        hx = (sx + W - int(9*s)) if e.facing == 1 else sx
+        pygame.draw.rect(self.screen, (118, 95, 72), (hx, sy + int(H*0.15), int(9*s), int(H*0.42)))
+        # Tusks
+        tusk_y = sy + int(H*0.45)
+        tusk_x = hx + (int(9*s) if e.facing == 1 else -int(4*s))
+        pygame.draw.line(self.screen, (235, 225, 195), (tusk_x, tusk_y), (tusk_x + (4 if e.facing == 1 else -4), tusk_y - 3), 2)
+        pygame.draw.line(self.screen, (235, 225, 195), (tusk_x, tusk_y + 2), (tusk_x + (4 if e.facing == 1 else -4), tusk_y - 1), 1)
+        # Mane ridge
+        for i in range(3):
+            mx = sx + int(W * (0.2 + i * 0.25))
+            pygame.draw.line(self.screen, (80, 62, 45), (mx, sy + int(H*0.3)), (mx, sy + int(H*0.15)), 1)
+        if e.health < 2:
+            pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 5, int(W * e.health / 2), 2))
+
+    def _draw_musk_ox(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        col     = (50, 38, 28)
+        skirt_c = (35, 26, 18)
+        # Shaggy skirted body (long fur hangs low)
+        pygame.draw.rect(self.screen, col, (sx, sy + int(H*0.2), W, int(H*0.55)))
+        pygame.draw.rect(self.screen, skirt_c, (sx - 1, sy + int(H*0.55), W + 2, int(H*0.28)))
+        # Thick legs barely visible under skirt
+        for i in range(4):
+            lx = sx + int(W * (0.12 + i * 0.23))
+            pygame.draw.rect(self.screen, (40, 30, 20), (lx, sy + int(H*0.78), max(2, int(4*s)), int(H*0.22)))
+        # Massive shaggy head
+        hx = (sx + W - int(10*s)) if e.facing == 1 else sx
+        pygame.draw.rect(self.screen, skirt_c, (hx, sy + int(H*0.05), int(10*s), int(H*0.42)))
+        # Down-curved horns
+        horn_base = hx + (int(10*s) - int(3*s) if e.facing == 1 else int(3*s))
+        pygame.draw.arc(self.screen, (120, 100, 72),
+                        (horn_base - int(4*s), sy - int(2*s), int(8*s), int(6*s)),
+                        3.14, 2*3.14, 2)
+        if e.health < 3:
+            pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 6, int(W * e.health / 3), 3))
+
+    def _draw_crocodile(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        col      = (60, 88, 52)
+        belly_c  = (95, 118, 80)
+        # Long flat body close to ground
+        pygame.draw.rect(self.screen, col, (sx, sy + int(H*0.4), W, int(H*0.45)))
+        # Belly stripe
+        pygame.draw.rect(self.screen, belly_c, (sx + int(W*0.1), sy + int(H*0.52), int(W*0.8), int(H*0.2)))
+        # Scute ridges
+        for i in range(5):
+            rx = sx + int(W * (0.1 + i * 0.18))
+            pygame.draw.rect(self.screen, (45, 68, 38), (rx, sy + int(H*0.35), max(2, int(2*s)), int(H*0.12)))
+        # Short legs
+        for i in range(4):
+            lx = sx + int(W * (0.12 + i * 0.22))
+            pygame.draw.rect(self.screen, (50, 75, 44), (lx, sy + int(H*0.8), max(2, int(3*s)), int(H*0.2)))
+        # Long flat snout
+        hx = (sx + W - int(12*s)) if e.facing == 1 else sx
+        pygame.draw.rect(self.screen, col, (hx, sy + int(H*0.3), int(12*s), int(H*0.22)))
+        # Teeth line
+        pygame.draw.line(self.screen, (230, 225, 210),
+                         (hx, sy + int(H*0.42)),
+                         (hx + int(12*s), sy + int(H*0.42)), 1)
+        if e.health < 3:
+            pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 5, int(W * e.health / 3), 2))
+
+    def _draw_goose(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        col      = (185, 175, 160)
+        neck_col = (210, 200, 185)
+        bill_col = (200, 145, 50)
+        # Plump body
+        pygame.draw.ellipse(self.screen, col, (sx, sy + int(H*0.3), W, int(H*0.7)))
+        # Long neck
+        nx = (sx + W - int(5*s)) if e.facing == 1 else sx
+        pygame.draw.rect(self.screen, neck_col, (nx, sy, int(4*s), int(H*0.45)))
+        # Head
+        hx = nx + (int(4*s) - int(5*s) + 1 if e.facing == 1 else -int(1*s))
+        pygame.draw.ellipse(self.screen, (50, 50, 50), (hx, sy - int(2*s), int(6*s), int(5*s)))
+        # Orange bill
+        bx = hx + (int(6*s) - 1 if e.facing == 1 else -int(4*s))
+        pygame.draw.rect(self.screen, bill_col, (bx, sy - int(1*s) + int(H*0.1), int(4*s), int(2*s)))
+
+    def _draw_hare(self, sx, sy, e):
+        W, H = e.W, e.H
+        s = e.traits.get("size", 1.0)
+        col = (175, 155, 115)
+        # Leaner than rabbit, longer ears
+        pygame.draw.ellipse(self.screen, col, (sx, sy + int(H*0.25), W, int(H*0.75)))
+        hx = (sx + W - int(8*s) + 1) if e.facing == 1 else sx
+        pygame.draw.ellipse(self.screen, col, (hx, sy, int(8*s), int(H*0.55)))
+        # Long upright ears
+        ex = hx + (int(8*s*0.55) if e.facing == 1 else int(8*s*0.25))
+        pygame.draw.rect(self.screen, col, (ex - 1, sy - int(8*s), 2, int(8*s)))
+        pygame.draw.rect(self.screen, col, (ex + 3, sy - int(7*s), 2, int(7*s)))
+        # Black ear tips
+        pygame.draw.rect(self.screen, (50, 40, 30), (ex - 1, sy - int(8*s), 2, 2))
+        pygame.draw.rect(self.screen, (50, 40, 30), (ex + 3, sy - int(7*s), 2, 2))
+
+    # ------------------------------------------------------------------
+    # Arrow drawing
+    # ------------------------------------------------------------------
+
+    def draw_arrows(self, arrows):
+        for arrow in arrows:
+            if arrow.dead:
+                continue
+            ax = int(arrow.x) - self.cam_x
+            ay = int(arrow.y) - self.cam_y
+            tip_x = ax + (arrow.W if arrow.vx > 0 else -arrow.W)
+            pygame.draw.line(self.screen, (200, 170, 100), (ax, ay), (tip_x, ay), 2)
+            # Small arrowhead
+            head_x = tip_x + (2 if arrow.vx > 0 else -2)
+            pygame.draw.circle(self.screen, (180, 145, 80), (head_x, ay), 2)
 
     @staticmethod
     def _fmt_fuel_time(fuel, fuel_rate):
@@ -5529,6 +11299,34 @@ class Renderer:
     def draw_backhoes(self, backhoes, player):
         for bh in backhoes:
             self._draw_backhoe(bh, is_mounted=(player.mounted_machine is bh))
+
+    def draw_elevator_cars(self, elevator_cars, player=None):
+        for car in elevator_cars:
+            sx = int(car.shaft_x * BLOCK_SIZE - self.cam_x)
+            sy = int(car.car_y - self.cam_y)
+            W, H = car.W, car.H
+            # Car body
+            pygame.draw.rect(self.screen, (85, 88, 108), (sx, sy, W, H))
+            pygame.draw.rect(self.screen, (130, 135, 160), (sx, sy, W, H), 2)
+            # Horizontal cab beam
+            pygame.draw.rect(self.screen, (110, 112, 135), (sx + 3, sy + H // 3, W - 6, 4))
+            # Cable attachment point at top center
+            pygame.draw.rect(self.screen, (55, 55, 65), (sx + W // 2 - 2, sy - 4, 4, 6))
+            # HUD prompts near the car
+            if player is not None and car.in_range(player):
+                if player.riding_elevator is car:
+                    hint = "[W/S] Change floor  [E] Exit"
+                elif car.state == "idle":
+                    car_by = int(round(car.car_y / BLOCK_SIZE))
+                    nearby_stop = player.get_nearby_elevator_stop()
+                    if nearby_stop is not None and nearby_stop[0] == car.shaft_x and nearby_stop[1] == car_by:
+                        hint = "[E] Board"
+                    else:
+                        hint = "[E] Call Elevator"
+                else:
+                    hint = "Arriving..."
+                txt = self._npc_font.render(hint, True, (220, 220, 240))
+                self.screen.blit(txt, (sx + W // 2 - txt.get_width() // 2, sy - 18))
 
     def _draw_backhoe(self, bh, is_mounted=False):
         sx = int(bh.x - self.cam_x)
@@ -5718,13 +11516,24 @@ class Renderer:
             pygame.draw.rect(self.screen, (80, 60, 40),
                              (sx + int(lx_off * s), leg_y, max(1, int(3 * s)), int(8 * s)))
 
+        # Wool color from genetics
+        _WOOL_BASE = {"white": (220, 220, 220), "grey": (175, 175, 175),
+                      "brown": (165, 115, 70),  "black": (50, 45, 42)}
+        _WOOL_SHORN = {"white": (175, 140, 95), "grey": (145, 115, 80),
+                       "brown": (130, 90, 55),  "black": (45, 38, 32)}
+        wc = getattr(sheep, 'traits', {}).get("wool_color", "white")
+        wool_base  = _WOOL_BASE.get(wc, _WOOL_BASE["white"])
+        shorn_base = _WOOL_SHORN.get(wc, _WOOL_SHORN["white"])
         # Body
-        body_color = _tinted((220, 220, 220) if sheep.has_wool else (175, 140, 95), shift)
+        body_color = _tinted(wool_base if sheep.has_wool else shorn_base, shift)
         pygame.draw.rect(self.screen, body_color, (sx, sy, W, body_h))
 
         # Head
         head_w, head_h = int(9 * s), int(9 * s)
-        head_color = _tinted((200, 200, 200) if sheep.has_wool else (155, 125, 85), shift)
+        head_color = _tinted(
+            tuple(max(0, c - 20) for c in wool_base) if sheep.has_wool
+            else tuple(max(0, c - 20) for c in shorn_base), shift
+        )
         hx = (sx + W - int(2 * s)) if sheep.facing == 1 else (sx - head_w + int(2 * s))
         hy = sy - max(1, int(1 * s))
         pygame.draw.rect(self.screen, head_color, (hx, hy, head_w, head_h))
@@ -5751,6 +11560,76 @@ class Renderer:
             pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 13, W, 3))
             pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 13, int(W * sheep.health / 3), 3))
 
+    def _draw_goat(self, sx, sy, goat):
+        W, H = goat.W, goat.H
+        traits = getattr(goat, 'traits', {})
+        shift = traits.get("color_shift", (0, 0, 0))
+        s = traits.get("size", 1.0)
+        body_h = H - int(8 * s)
+        leg_y = sy + body_h
+
+        # Legs
+        for lx_off in [2, 6, 13, 17]:
+            pygame.draw.rect(self.screen, _tinted((90, 70, 50), shift),
+                             (sx + int(lx_off * s), leg_y, max(1, int(3 * s)), int(8 * s)))
+
+        # Body — color from coat_color_gene
+        _GOAT_BASE = {"tan": (195, 180, 155), "white": (235, 232, 225),
+                      "brown": (130, 90, 55),  "black": (45, 40, 35)}
+        gc = traits.get("coat_color", "tan")
+        body_color = _tinted(_GOAT_BASE.get(gc, _GOAT_BASE["tan"]), shift)
+        pygame.draw.rect(self.screen, body_color, (sx, sy, W, body_h))
+
+        # Head
+        head_w, head_h = int(9 * s), int(9 * s)
+        head_color = _tinted(tuple(max(0, c - 12) for c in _GOAT_BASE.get(gc, _GOAT_BASE["tan"])), shift)
+        hx = (sx + W - int(2 * s)) if goat.facing == 1 else (sx - head_w + int(2 * s))
+        hy = sy - int(2 * s)
+        pygame.draw.rect(self.screen, head_color, (hx, hy, head_w, head_h))
+
+        # Horns — two small dark stubs above head
+        horn_color = _tinted((80, 65, 45), shift)
+        if goat.facing == 1:
+            pygame.draw.rect(self.screen, horn_color, (hx + int(1 * s), hy - int(4 * s), max(1, int(2 * s)), int(4 * s)))
+            pygame.draw.rect(self.screen, horn_color, (hx + int(5 * s), hy - int(5 * s), max(1, int(2 * s)), int(5 * s)))
+        else:
+            pygame.draw.rect(self.screen, horn_color, (hx + head_w - int(3 * s), hy - int(4 * s), max(1, int(2 * s)), int(4 * s)))
+            pygame.draw.rect(self.screen, horn_color, (hx + head_w - int(7 * s), hy - int(5 * s), max(1, int(2 * s)), int(5 * s)))
+
+        # Beard — small rectangle below chin
+        beard_x = (hx + int(1 * s)) if goat.facing == 1 else (hx + head_w - int(3 * s))
+        pygame.draw.rect(self.screen, _tinted((155, 140, 115), shift),
+                         (beard_x, hy + head_h, max(1, int(2 * s)), max(1, int(4 * s))))
+
+        # Eye
+        eye_x = (hx + head_w - int(3 * s)) if goat.facing == 1 else (hx + max(1, int(1 * s)))
+        pygame.draw.rect(self.screen, (20, 12, 5), (eye_x, hy + int(3 * s), 2, 2))
+
+        # Milk indicator
+        if goat.has_milk:
+            pygame.draw.rect(self.screen, (235, 225, 205),
+                             (sx + W // 2 - int(3 * s), leg_y - int(3 * s), int(6 * s), int(3 * s)))
+
+        # Tame indicator
+        if getattr(goat, 'tamed', False):
+            pygame.draw.circle(self.screen, (255, 80, 120), (sx + W // 2, sy - 10), 4)
+
+        # Harvest progress bar
+        if goat.being_harvested:
+            if goat._kill_timer > 0:
+                progress = goat._kill_timer / 0.5
+                pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 7, W, 4))
+                pygame.draw.rect(self.screen, (220, 60, 60), (sx, sy - 7, int(W * progress), 4))
+            elif goat._harvest_time > 0:
+                progress = goat._harvest_time / goat.HARVEST_TIME
+                pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 7, W, 4))
+                pygame.draw.rect(self.screen, (80, 160, 220), (sx, sy - 7, int(W * progress), 4))
+
+        # Health bar when damaged
+        if goat.health < 3:
+            pygame.draw.rect(self.screen, (40, 40, 40), (sx, sy - 13, W, 3))
+            pygame.draw.rect(self.screen, (220, 50, 50), (sx, sy - 13, int(W * goat.health / 3), 3))
+
     def _draw_cow(self, sx, sy, cow):
         W, H = cow.W, cow.H
         traits = getattr(cow, 'traits', {})
@@ -5764,13 +11643,23 @@ class Renderer:
             pygame.draw.rect(self.screen, (60, 40, 30),
                              (sx + int(lx_off * s), leg_y, max(1, int(4 * s)), int(8 * s)))
 
-        # Body (brown base + black patches)
+        # Body — color and pattern from hide_gene
+        hide = traits.get("hide", "solid")
         body_color = _tinted((140, 85, 45), shift)
         pygame.draw.rect(self.screen, body_color, (sx, sy, W, body_h))
-        pygame.draw.rect(self.screen, (30, 20, 10),
-                         (sx + int(8 * s), sy + int(2 * s), int(10 * s), int(5 * s)))
-        pygame.draw.rect(self.screen, (30, 20, 10),
-                         (sx + int(20 * s), sy + int(5 * s), int(6 * s), int(4 * s)))
+        if hide == "spotted":
+            patch = _tinted((28, 18, 8), shift)
+            pygame.draw.rect(self.screen, patch, (sx + int(8 * s), sy + int(2 * s), int(10 * s), int(5 * s)))
+            pygame.draw.rect(self.screen, patch, (sx + int(20 * s), sy + int(5 * s), int(6 * s), int(4 * s)))
+        elif hide == "belted":
+            belt_x = sx + int(W * 0.3)
+            belt_w = int(W * 0.38)
+            pygame.draw.rect(self.screen, _tinted((240, 235, 225), shift), (belt_x, sy, belt_w, body_h))
+        elif hide == "piebald":
+            patch = _tinted((28, 18, 8), shift)
+            pygame.draw.rect(self.screen, patch, (sx + int(4 * s), sy + int(1 * s), int(8 * s), int(7 * s)))
+            pygame.draw.rect(self.screen, patch, (sx + int(16 * s), sy + int(3 * s), int(9 * s), int(8 * s)))
+            pygame.draw.rect(self.screen, patch, (sx + int(2 * s), sy + int(9 * s), int(6 * s), int(3 * s)))
 
         # Head
         head_w, head_h = int(11 * s), int(11 * s)
@@ -5821,8 +11710,11 @@ class Renderer:
             pygame.draw.rect(self.screen, (220, 160, 30),
                              (sx + int(lx_off * s), sy + H - int(6 * s), max(1, int(2 * s)), int(6 * s)))
 
-        # Body (cream oval)
-        body_color = _tinted((235, 235, 210), shift)
+        # Body — plumage_gene controls feather color
+        _PLUMAGE_BASE = {"white": (235, 235, 210), "yellow": (230, 210, 130),
+                         "brown": (175, 130, 80),  "black": (38, 34, 30)}
+        pc = traits.get("plumage", "white")
+        body_color = _tinted(_PLUMAGE_BASE.get(pc, _PLUMAGE_BASE["white"]), shift)
         pygame.draw.ellipse(self.screen, body_color,
                             (sx + max(1, int(1 * s)), sy + int(2 * s), W - int(4 * s), H - int(8 * s)))
 
@@ -5873,17 +11765,32 @@ class Renderer:
         coat      = traits.get("coat_color", (160, 115, 65))
         body_color = _tinted(coat, shift)
         dark_coat  = tuple(max(0, c - 40) for c in body_color)
-        mane_color = tuple(max(0, c - 60) for c in body_color)
+        _MANE_COLORS = {
+            "match":  tuple(max(0, c - 60) for c in body_color),
+            "flaxen": _tinted((215, 185, 95), shift),
+            "silver": _tinted((185, 185, 195), shift),
+            "dark":   _tinted((28, 22, 18), shift),
+        }
+        mane_color = _MANE_COLORS.get(traits.get("mane_color", "match"), _MANE_COLORS["match"])
 
         body_h = int(H * 0.65)
         leg_h  = H - body_h
         leg_y  = sy + body_h
 
-        # Legs (4 legs)
+        leg_marking = traits.get("leg_marking", "none")
         leg_w = max(1, int(4 * s))
+        sock_color = (240, 238, 230)
+        # Legs (4 legs) — draw base color then optional white marking on lower half
         for lx_off in [3, 9, 22, 28]:
             pygame.draw.rect(self.screen, dark_coat,
                              (sx + int(lx_off * s), leg_y, leg_w, leg_h))
+            if leg_marking == "stockings":
+                pygame.draw.rect(self.screen, sock_color,
+                                 (sx + int(lx_off * s), leg_y, leg_w, leg_h - 2))
+            elif leg_marking == "socks":
+                sock_h = max(2, leg_h // 2)
+                pygame.draw.rect(self.screen, sock_color,
+                                 (sx + int(lx_off * s), leg_y + leg_h - sock_h, leg_w, sock_h - 2))
         # Hooves
         hoof_c = (30, 25, 20)
         for lx_off in [3, 9, 22, 28]:
@@ -5897,6 +11804,27 @@ class Renderer:
         pygame.draw.rect(self.screen, mane_color,
                          (sx + int(4 * s), sy, int((W - 8) * s), max(2, int(4 * s))))
 
+        # Coat pattern overlay
+        coat_pattern = traits.get("coat_pattern", "solid")
+        if coat_pattern == "dappled":
+            dapple_c = tuple(max(0, c - 30) for c in body_color)
+            for ox, oy, ow, oh in [(6, 4, 6, 4), (16, 2, 5, 4), (10, 9, 5, 3),
+                                    (22, 7, 6, 3), (4, 11, 4, 3)]:
+                px2 = sx + int(ox * s)
+                py2 = sy + int(oy * s)
+                pygame.draw.ellipse(self.screen, dapple_c,
+                                    (px2, py2, max(3, int(ow * s)), max(2, int(oh * s))))
+        elif coat_pattern == "spotted":
+            spot_c = tuple(min(255, c + 50) for c in body_color)
+            for ox, oy, r in [(8, 5, 4), (20, 3, 3), (14, 10, 5), (26, 9, 3)]:
+                pygame.draw.circle(self.screen, spot_c,
+                                   (sx + int(ox * s), sy + int(oy * s)), max(2, int(r * s)))
+        elif coat_pattern == "blanket":
+            blanket_c = tuple(min(255, c + 45) for c in body_color)
+            blanket_x = sx + int(W * 0.55)
+            blanket_w = W - int(W * 0.55)
+            pygame.draw.rect(self.screen, blanket_c, (blanket_x, sy, blanket_w, body_h))
+
         # Tail
         tail_x = sx if horse.facing == 1 else sx + W - int(5 * s)
         pygame.draw.rect(self.screen, mane_color,
@@ -5908,6 +11836,22 @@ class Renderer:
         hx = (sx + W - int(2 * s)) if horse.facing == 1 else (sx - head_w + int(2 * s))
         hy = sy - int(4 * s)
         pygame.draw.rect(self.screen, body_color, (hx, hy, head_w, head_h))
+
+        # Face marking — star/blaze/stripe on forehead
+        face_marking = traits.get("face_marking", "none")
+        mark_c = (245, 242, 238)
+        if face_marking == "star":
+            mark_cx = hx + head_w // 2
+            mark_cy = hy + int(3 * s)
+            pygame.draw.circle(self.screen, mark_c, (mark_cx, mark_cy), max(2, int(2 * s)))
+        elif face_marking == "blaze":
+            blaze_w = max(3, int(4 * s))
+            blaze_x = hx + head_w // 2 - blaze_w // 2
+            pygame.draw.rect(self.screen, mark_c, (blaze_x, hy, blaze_w, head_h))
+        elif face_marking == "stripe":
+            stripe_w = max(1, int(2 * s))
+            stripe_x = hx + head_w // 2 - stripe_w // 2
+            pygame.draw.rect(self.screen, mark_c, (stripe_x, hy, stripe_w, head_h))
 
         # Muzzle
         muzzle_w = int(5 * s)
@@ -6309,7 +12253,17 @@ class Renderer:
                             TEXTILE_TAPESTRY_CRIMSON, TEXTILE_TAPESTRY_ROSE,
                             TEXTILE_TAPESTRY_COBALT, TEXTILE_TAPESTRY_VIOLET,
                             TEXTILE_TAPESTRY_VERDANT, TEXTILE_TAPESTRY_AMBER,
-                            TEXTILE_TAPESTRY_IVORY)
+                            TEXTILE_TAPESTRY_IVORY,
+                            GLASS_KILN_BLOCK,
+                            CLEAR_GLASS, STAINED_GLASS_GOLDEN, STAINED_GLASS_CRIMSON,
+                            STAINED_GLASS_ROSE, STAINED_GLASS_COBALT, STAINED_GLASS_VIOLET,
+                            STAINED_GLASS_VERDANT, STAINED_GLASS_AMBER, STAINED_GLASS_IVORY,
+                            CATHEDRAL_WINDOW, MOSAIC_GLASS, SMOKED_GLASS,
+                            RIBBED_GLASS, HAMMERED_GLASS, CRACKLED_GLASS,
+                            OCULUS_WINDOW, LANCET_WINDOW, DIAMOND_PANE,
+                            SEA_GLASS, MIRROR_GLASS, IRIDESCENT_GLASS,
+                            SUNSET_GLASS, OBSIDIAN_GLASS, CRYSTAL_GLASS,
+                            POTTERY_WHEEL_BLOCK, POTTERY_KILN_BLOCK)
         # Only terrain and surface landmarks show their real color; ores/resources/NPCs
         # blend into stone so the minimap doesn't reveal their locations.
         TERRAIN_IDS = (
@@ -6385,6 +12339,16 @@ class Renderer:
              TEXTILE_TAPESTRY_NATURAL, TEXTILE_TAPESTRY_GOLDEN, TEXTILE_TAPESTRY_CRIMSON,
              TEXTILE_TAPESTRY_ROSE, TEXTILE_TAPESTRY_COBALT, TEXTILE_TAPESTRY_VIOLET,
              TEXTILE_TAPESTRY_VERDANT, TEXTILE_TAPESTRY_AMBER, TEXTILE_TAPESTRY_IVORY,
+             GLASS_KILN_BLOCK,
+             CLEAR_GLASS, STAINED_GLASS_GOLDEN, STAINED_GLASS_CRIMSON,
+             STAINED_GLASS_ROSE, STAINED_GLASS_COBALT, STAINED_GLASS_VIOLET,
+             STAINED_GLASS_VERDANT, STAINED_GLASS_AMBER, STAINED_GLASS_IVORY,
+             CATHEDRAL_WINDOW, MOSAIC_GLASS, SMOKED_GLASS,
+             RIBBED_GLASS, HAMMERED_GLASS, CRACKLED_GLASS,
+             OCULUS_WINDOW, LANCET_WINDOW, DIAMOND_PANE,
+             SEA_GLASS, MIRROR_GLASS, IRIDESCENT_GLASS,
+             SUNSET_GLASS, OBSIDIAN_GLASS, CRYSTAL_GLASS,
+             POTTERY_WHEEL_BLOCK, POTTERY_KILN_BLOCK,
              SNOW, SAND}
             | ALL_LOGS | ALL_LEAVES
         )
