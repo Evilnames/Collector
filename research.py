@@ -406,6 +406,12 @@ class ResearchTree:
             _noop, money_cost=70), 11, 3)
 
         self._add(ResearchNode(
+            "cotton_cultivation", "Cotton Cultivation",
+            "Cultivate cotton plants — a soft, warm-climate fiber for spinning",
+            {"flax_fiber": 3, "coal": 2}, ["fiber_arts"],
+            _noop, money_cost=30), 11, 5)
+
+        self._add(ResearchNode(
             "glassblowing", "Glassblowing",
             "Smelt sand into glass — unlocks Glass Kiln crafting",
             {"sand_grain": 6, "coal": 3}, ["natural_dyes"],
@@ -491,7 +497,7 @@ class ResearchTree:
         self._add(ResearchNode(
             "fine_chiseling", "Fine Chiseling",
             "Increase carving grid resolution: use 6 rows per mineral piece instead of 4",
-            {"limestone_chip": 4, "iron_ingot": 1}, ["stone_carving"],
+            {"limestone_chip": 4, "iron_bar": 1}, ["stone_carving"],
             _noop, money_cost=35), 16, 1)
 
         self._add(ResearchNode(

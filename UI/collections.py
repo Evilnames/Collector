@@ -21,6 +21,7 @@ from wine import (WINE_STYLE_DESCS, WINE_STYLE_COLORS, WINE_TYPE_ORDER,
                   WINE_STYLE_ORDER, VARIETY_DISPLAY_NAMES as WINE_VARIETY_NAMES,
                   BIOME_DISPLAY_NAMES as WINE_BIOME_NAMES)
 from spirits import SPIRIT_TYPE_ORDER
+from salt import SALT_TYPE_ORDER, BIOME_DISPLAY_NAMES as SALT_BIOME_NAMES, GRADES, OUTPUT_DESCS as SALT_OUTPUT_DESCS, OUTPUT_COLORS as SALT_OUTPUT_COLORS, _CODEX_BIOMES as SALT_CODEX_BIOMES
 from constants import SCREEN_W, SCREEN_H
 from ._data import (_MUSHROOM_ORDER, _MUSHROOM_BIOME, _MUSHROOM_DROP_COLOR,
                     _MUSHROOM_SHAPES, _MUSHROOM_NAMES, SPECIAL_DESCS, RARITY_LABEL)
@@ -59,12 +60,14 @@ class CollectionsMixin:
         n_cheese_owned   = len([c for c in getattr(player, "cheese_wheels", []) if c.state == "aged"])
         n_jewelry_owned    = len(getattr(player, "jewelry", []))
         n_sculptures_owned = len(getattr(player, "sculptures_created", []))
+        n_tapestries_owned = len(getattr(player, "tapestries_created", []))
         n_pottery_owned    = len(getattr(player, "pottery_pieces", []))
+        n_salt_owned       = len(getattr(player, "salt_crystals", []))
         total_collected = (len(player.rocks) + len(player.wildflowers) +
                            len(player.fossils) + len(player.gems) + n_mush_owned +
                            n_coffee_owned + n_wine_owned + n_spirits_owned + n_tea_owned +
                            n_potions_owned + n_textiles_owned + n_cheese_owned + n_jewelry_owned +
-                           n_sculptures_owned + n_pottery_owned)
+                           n_sculptures_owned + n_tapestries_owned + n_pottery_owned + n_salt_owned)
 
         # ---- 3 main tabs ----
         self._tab_rects.clear()
@@ -93,8 +96,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -126,7 +129,9 @@ class CollectionsMixin:
                 ("cheese",    f"CHEESE ({n_cheese_owned})",         (38, 30, 10),  (185, 155,  65), (245, 230, 160)),
                 ("jewelry",    f"JEWELRY ({n_jewelry_owned})",        (28, 22,  8),  (180, 150,  60), (240, 205, 100)),
                 ("sculptures", f"SCULPTURES ({n_sculptures_owned})", (35, 30, 22),  (190, 180, 155), (240, 230, 200)),
+                ("tapestries", f"TAPESTRIES ({n_tapestries_owned})", (28, 20, 12),  (195, 165, 110), (245, 215, 165)),
                 ("pottery",    f"POTTERY ({n_pottery_owned})",       (40, 25, 10),  (160, 110,  80), (210, 160, 110)),
+                ("salt",       f"SALT ({n_salt_owned})",             (32, 30, 28),  (190, 185, 165), (235, 232, 215)),
             ]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._collection_filter_rects.clear()
@@ -170,9 +175,10 @@ class CollectionsMixin:
                 ((38, 30, 10),  (185, 155,  65), (245, 230, 160)),
                 ((45, 20, 35),  (190, 100, 155), (250, 170, 220)),   # Jewelry
                 ((40, 25, 10),  (160, 110,  80), (210, 160, 110)),   # Pottery
+                ((32, 30, 28),  (190, 185, 165), (235, 232, 215)),   # Salt
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
-                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY"]
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
             for cat_i, cat_label in enumerate(enc_labels):
@@ -214,6 +220,7 @@ class CollectionsMixin:
                 self._draw_cheese_codex,
                 self._draw_jewelry_codex,
                 self._draw_pottery_codex,
+                self._draw_salt_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)
@@ -266,8 +273,12 @@ class CollectionsMixin:
             items.extend(("jewelry", i) for i in range(len(getattr(player, "jewelry", []))))
         if flt in ("all", "sculptures"):
             items.extend(("sculpture", i) for i in range(len(getattr(player, "sculptures_created", []))))
+        if flt in ("all", "tapestries"):
+            items.extend(("tapestry", i) for i in range(len(getattr(player, "tapestries_created", []))))
         if flt in ("all", "pottery"):
             items.extend(("pottery", i) for i in range(len(getattr(player, "pottery_pieces", []))))
+        if flt in ("all", "salt"):
+            items.extend(("salt", i) for i in range(len(getattr(player, "salt_crystals", []))))
 
         if not items:
             msg = self.font.render("Nothing collected yet!", True, (80, 80, 90))
@@ -536,6 +547,28 @@ class CollectionsMixin:
                 mineral_name = SCULPTABLE_MINERALS.get(sc.mineral, "Stone")
                 label = f"{mineral_name} {sc.height}H"
                 label_col = sc_col
+            elif cat == "tapestry":
+                from tapestry import WEAVABLE_THREADS
+                tp = getattr(player, "tapestries_created", [])[key]
+                tp_col = tuple(tp.color) if tp.color else (210, 195, 160)
+                pygame.draw.rect(self.screen, (32, 24, 14) if selected else (20, 14, 8), rect)
+                pygame.draw.rect(self.screen, tp_col, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                rows = len(tp.grid)
+                cw = max(1, 58 // 16)
+                ch = max(1, 58 // rows)
+                hi = tuple(min(255, c + 22) for c in tp_col)
+                lo = tuple(max(0,   c - 28) for c in tp_col)
+                for ri, row in enumerate(tp.grid):
+                    for ci, filled in enumerate(row):
+                        px2 = ci * cw
+                        py2 = ri * ch
+                        col2 = (hi if ri % 2 == 0 else lo) if filled else (14, 10, 6)
+                        pygame.draw.rect(img, col2, (px2, py2, cw, ch))
+                thread_name = WEAVABLE_THREADS.get(tp.thread, "Thread")
+                label = f"{thread_name} {tp.height}H"
+                label_col = tp_col
             elif cat == "pottery":
                 from pottery import CLAY_BIOME_PROFILES, GLAZE_TYPES
                 piece = getattr(player, "pottery_pieces", [])[key]
@@ -559,6 +592,24 @@ class CollectionsMixin:
                         pygame.draw.rect(img, clay_col, (cx_i - w, ty + ri * row_h, w * 2, row_h - 1))
                 label = f"{piece.shape.title()} ({piece.firing_level[:3]})"
                 label_col = (210, 160, 110)
+            elif cat == "salt":
+                it = getattr(player, "salt_crystals", [])[key]
+                s_col = SALT_OUTPUT_COLORS.get(f"{it.refine_grade or 'coarse'}_salt", (235, 232, 215))
+                pygame.draw.rect(self.screen, (35, 33, 30) if selected else (22, 20, 18), rect)
+                pygame.draw.rect(self.screen, s_col, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                # Crystal polygon icon
+                cx_i, cy_i = 29, 26
+                pts = [(cx_i, cy_i-18), (cx_i+12, cy_i-6), (cx_i+10, cy_i+12),
+                       (cx_i, cy_i+18), (cx_i-10, cy_i+12), (cx_i-12, cy_i-6)]
+                pygame.draw.polygon(img, s_col, pts)
+                pygame.draw.polygon(img, (255, 255, 255, 80), pts, 1)
+                state_char = {"raw": "R", "dried": "D", "finished": "F"}.get(it.state, "?")
+                sc_s = self.small.render(state_char, True, (200, 198, 190))
+                img.blit(sc_s, (img.get_width() - sc_s.get_width() - 2, 2))
+                label = SALT_BIOME_NAMES.get(it.origin_biome, it.origin_biome)
+                label_col = (210, 205, 185)
             else:  # mushroom
                 count = player.mushrooms_found.get(key, 0)
                 pygame.draw.rect(self.screen, (40, 36, 20) if selected else (25, 22, 12), rect)
@@ -972,13 +1023,41 @@ class CollectionsMixin:
                 if stat:
                     bonus = _tgb_fn(it)
                     dlabel(_TGBD2[stat].format(bonus * 100), (120, 220, 140))
+        elif sel_cat == "salt":
+            it = getattr(player, "salt_crystals", [])[sel_key]
+            s_col = SALT_OUTPUT_COLORS.get(f"{it.refine_grade or 'coarse'}_salt", (235, 232, 215))
+            pygame.draw.rect(self.screen, (22, 20, 18), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, s_col, (dx, dy2, dw, dh), 2)
+            # Crystal icon
+            cx_p, cy_p = dx + dw // 2, dy2 + 46
+            pts = [(cx_p, cy_p-36), (cx_p+24, cy_p-12), (cx_p+20, cy_p+24),
+                   (cx_p, cy_p+36), (cx_p-20, cy_p+24), (cx_p-24, cy_p-12)]
+            pygame.draw.polygon(self.screen, s_col, pts)
+            pygame.draw.polygon(self.screen, (255, 255, 255), pts, 2)
+            dlabel(SALT_BIOME_NAMES.get(it.origin_biome, it.origin_biome) + " Salt", s_col)
+            dlabel(f"Variety: {it.variety.title()}", (200, 195, 175))
+            dlabel(f"State: {it.state.title()}", (180, 178, 160))
+            if it.refine_grade:
+                dlabel(f"Grade: {it.refine_grade.replace('_', ' ').title()}", s_col)
+            if it.evap_method:
+                dlabel(f"Evap: {it.evap_method.replace('_', ' ').title()}", (175, 170, 155))
+            if it.flavor_notes:
+                dlabel("Notes:", (190, 185, 160))
+                for note in it.flavor_notes:
+                    dlabel(f"  • {note.title()}", (210, 205, 185))
+            iy[0] += 4
+            stat_bar("Purity",    it.purity,    (235, 232, 215))
+            stat_bar("Salinity",  it.salinity,  (140, 195, 215))
+            stat_bar("Mineral",   it.mineral,   (175, 165, 130))
+            stat_bar("Moisture",  it.moisture,  ( 90, 160, 200))
+            stat_bar("Grain Size",it.grain_size,(200, 185, 145))
         else:  # mushroom
             bid = sel_key
             pygame.draw.rect(self.screen, (16, 14, 8), (dx, dy2, dw, dh))
             pygame.draw.rect(self.screen, (165, 148, 60), (dx, dy2, dw, dh), 2)
             self.screen.blit(render_mushroom_preview(bid, 80), (dx + dw // 2 - 40, dy2 + 8))
             dlabel(BLOCKS[bid]["name"], (235, 220, 130))
-            drop = BLOCKS[bid].get("drop", "")
+            drop = BLOCKS[bid].get("drop") or ""
             dlabel(f"Drop: {drop.replace('_', ' ').title()}",
                    _MUSHROOM_DROP_COLOR.get(drop, (180, 160, 120)))
             dlabel(f"Biome: {_MUSHROOM_BIOME.get(bid, 'Any')}", (170, 195, 150))
@@ -2969,3 +3048,81 @@ class CollectionsMixin:
                 else:
                     unk = self.font.render("?", True, (70, 48, 25))
                     self.screen.blit(unk, (rx + CELL_W // 2 - unk.get_width() // 2, ry + CELL_H // 2 - unk.get_height() // 2))
+
+    def _draw_salt_codex(self, player, gy0=58, gx_off=130):
+        disc = getattr(player, "discovered_salt_origins", set())
+
+        _CELL  = (35, 33, 30)
+        _TITLE = (235, 232, 215)
+        _LABEL = (190, 185, 160)
+        _DIM   = ( 85,  82,  75)
+
+        total     = len(SALT_TYPE_ORDER)
+        disc_count = len(disc)
+
+        sub = self.small.render(f"Discovered: {disc_count} / {total}", True, _LABEL)
+        self.screen.blit(sub, (gx_off + 8, gy0))
+
+        cell_w, cell_h, gap = 115, 52, 6
+
+        # Column headers (grades)
+        col_hdr_y = gy0 + 22
+        for ci, grade in enumerate(GRADES):
+            hx = gx_off + 8 + ci * (cell_w + gap)
+            col = SALT_OUTPUT_COLORS.get(f"{grade}_salt", _CELL)
+            hl = self.small.render(grade.replace("_", " ").title(), True, col)
+            self.screen.blit(hl, (hx, col_hdr_y))
+
+        grid_y0 = col_hdr_y + 18
+        self._salt_codex_rects.clear()
+        for ri, biome in enumerate(SALT_CODEX_BIOMES):
+            row_y = grid_y0 + ri * (cell_h + gap)
+            bnm = SALT_BIOME_NAMES.get(biome, biome.replace("_", " ").title())
+            bl = self.small.render(bnm, True, _LABEL)
+            self.screen.blit(bl, (gx_off, row_y + cell_h // 2 - bl.get_height() // 2))
+            for ci, grade in enumerate(GRADES):
+                key = f"{biome}_{grade}"
+                discovered = key in disc
+                cx_ = gx_off + 8 + ci * (cell_w + gap)
+                crect = pygame.Rect(cx_, row_y, cell_w, cell_h)
+                self._salt_codex_rects[key] = crect
+                col = SALT_OUTPUT_COLORS.get(f"{grade}_salt", _CELL)
+                bg  = _CELL if discovered else (20, 18, 16)
+                brd = col if discovered else _DIM
+                pygame.draw.rect(self.screen, bg, crect)
+                pygame.draw.rect(self.screen, brd, crect, 2)
+                if discovered:
+                    gn = self.small.render(grade.replace("_", " ").title(), True, col)
+                    self.screen.blit(gn, (cx_ + 4, row_y + 6))
+                    bn = self.small.render(bnm, True, _LABEL)
+                    self.screen.blit(bn, (cx_ + 4, row_y + 24))
+                else:
+                    unk = self.small.render("?", True, _DIM)
+                    self.screen.blit(unk, (cx_ + cell_w // 2 - unk.get_width() // 2,
+                                           row_y + cell_h // 2 - unk.get_height() // 2))
+
+        # Detail panel for selected entry
+        sel = self._salt_codex_selected
+        if sel and sel in disc:
+            parts = sel.rsplit("_", 1)
+            if len(parts) == 2:
+                biome_, grade_ = parts[0], parts[1]
+            else:
+                biome_, grade_ = sel, ""
+            dpx = gx_off + 8 + len(GRADES) * (cell_w + gap) + 12
+            dpy = gy0 + 40
+            dw2, dh2 = 200, 110
+            col2 = SALT_OUTPUT_COLORS.get(f"{grade_}_salt", _LABEL)
+            pygame.draw.rect(self.screen, _CELL, (dpx, dpy, dw2, dh2))
+            pygame.draw.rect(self.screen, col2, (dpx, dpy, dw2, dh2), 2)
+            iy2 = dpy + 8
+
+            def dline(txt, c=_LABEL):
+                nonlocal iy2
+                s = self.small.render(txt, True, c)
+                self.screen.blit(s, (dpx + 6, iy2))
+                iy2 += 16
+
+            dline(grade_.replace("_", " ").title(), col2)
+            dline(SALT_BIOME_NAMES.get(biome_, biome_.replace("_", " ").title()), _TITLE)
+            dline("Discovered!", (120, 220, 140))

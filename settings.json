@@ -1,3 +1,4 @@
 {
-  "fullscreen": false
+  "fullscreen": false,
+  "debug": true
 }

@@ -1,7 +1,7 @@
 import pygame
 import copy
 from constants import SCREEN_W, SCREEN_H
-from sculpture import SCULPTABLE_MINERALS, TEMPLATES, BASE_TEMPLATES, MINERAL_COLORS
+from sculpture import SCULPTABLE_MINERALS, TEMPLATES, BASE_TEMPLATES, MINERAL_COLORS, SCULPT_COLS, SCULPT_ROWS_PER_BLOCK
 
 _ACCENT   = (200, 190, 160)
 _DIM      = (120, 110, 90)
@@ -255,11 +255,12 @@ class SculptureMixin:
         self.screen.blit(tag, (SCREEN_W // 2 - tag.get_width() // 2, info_y))
 
     def _draw_mini_grid_preview(self, surf, grid, height, x, y, w, h, color):
-        rows = height * 4
+        rows = len(grid) if grid else height * SCULPT_ROWS_PER_BLOCK
+        cols = len(grid[0]) if grid and grid[0] else SCULPT_COLS
         if grid is None:
             pygame.draw.rect(surf, _CARVED, (x, y, w, h))
             return
-        cw = max(1, w // 8)
+        cw = max(1, w // cols)
         ch = max(1, h // max(1, rows))
         hi = tuple(min(255, c + 22) for c in color)
         lo = tuple(max(0,   c - 28) for c in color)
@@ -276,12 +277,13 @@ class SculptureMixin:
         self._sculpt_cell_rects.clear()
         col  = MINERAL_COLORS.get(self._sculpt_mineral, (180, 170, 155))
         rows = len(self._sculpt_grid)
-        COLS = 8
+        COLS = SCULPT_COLS
 
         # Cell sizing: leave space for panel on right and breadcrumb above
         available_h = SCREEN_H - 100
-        CELL_SIZE   = min(40, available_h // max(1, rows))
-        CELL_SIZE   = max(10, CELL_SIZE)
+        available_w = SCREEN_W - 260
+        CELL_SIZE   = min(available_w // COLS, available_h // max(1, rows))
+        CELL_SIZE   = max(6, CELL_SIZE)
         grid_w = COLS * CELL_SIZE
         grid_h = rows * CELL_SIZE
 
@@ -318,8 +320,8 @@ class SculptureMixin:
                     _bevel(self.screen, cell_col, cr, carved=not filled)
 
                 # Symmetry mirror indicator: highlight the mirror cell faintly
-                if self._sculpt_symmetry and CELL_SIZE >= 14:
-                    mirror_ci = 7 - ci
+                if self._sculpt_symmetry and CELL_SIZE >= 8:
+                    mirror_ci = SCULPT_COLS - 1 - ci
                     if hover and ci != mirror_ci:
                         mr = pygame.Rect(gx + mirror_ci * CELL_SIZE, py, CELL_SIZE, CELL_SIZE)
                         pygame.draw.rect(self.screen, (tint[0] // 2, tint[1] // 2, tint[2] // 2), mr)
@@ -327,7 +329,7 @@ class SculptureMixin:
                 self._sculpt_cell_rects[(ri, ci)] = cr
 
         # ── Block dividers ──
-        rows_per_block = 4
+        rows_per_block = SCULPT_ROWS_PER_BLOCK
         for k in range(1, self._sculpt_count):
             div_y = gy + k * rows_per_block * CELL_SIZE
             pygame.draw.line(self.screen, col, (gx, div_y), (gx + grid_w, div_y), 2)
@@ -429,32 +431,23 @@ class SculptureMixin:
 
     def _draw_sculpt_world_preview(self, px, py, w, mineral_color):
         """Small pixel-accurate preview of the final in-world appearance."""
-        CELL_W = 4   # matches renderer._draw_sculpture_at: 8 cols × 4px
-        CELL_H = 4
-        grid_px_w = 8 * CELL_W   # = 32
+        CELL_W = max(1, 32 // SCULPT_COLS)
+        CELL_H = max(1, 32 // SCULPT_ROWS_PER_BLOCK)
+        grid_px_w = SCULPT_COLS * CELL_W
         grid_px_h = len(self._sculpt_grid) * CELL_H
-        # Draw background
         pygame.draw.rect(self.screen, (12, 10, 8), (px, py, grid_px_w + 4, grid_px_h + 4))
         hi  = tuple(min(255, c + 25) for c in mineral_color)
         lo  = tuple(max(0,   c - 35) for c in mineral_color)
-        rows_total = len(self._sculpt_grid)
-        for row_idx in range(rows_total - 1, -1, -1):
-            row              = self._sculpt_grid[row_idx]
-            rows_from_bottom = rows_total - 1 - row_idx
-            local_row        = rows_from_bottom % 4
-            block_offset     = rows_from_bottom // 4
-            world_py = py + 2 + block_offset * 16 + local_row * CELL_H
+        for row_idx, row in enumerate(self._sculpt_grid):
+            world_py = py + 2 + row_idx * CELL_H
             for ci, filled in enumerate(row):
                 if filled:
                     c = hi if ci % 2 == 0 else lo
                     pygame.draw.rect(self.screen, c,
                                      (px + 2 + ci * CELL_W, world_py, CELL_W, CELL_H))
-
-        # Block separator lines
         for k in range(1, self._sculpt_count):
-            line_y = py + 2 + k * 16
-            pygame.draw.line(self.screen, (50, 45, 35), (px + 2, line_y), (px + 2 + 32, line_y))
-        # Border
+            line_y = py + 2 + k * SCULPT_ROWS_PER_BLOCK * CELL_H
+            pygame.draw.line(self.screen, (50, 45, 35), (px + 2, line_y), (px + 2 + grid_px_w, line_y))
         pygame.draw.rect(self.screen, mineral_color, (px, py, grid_px_w + 4, grid_px_h + 4), 1)
 
     # ── Phase 4: Confirm ─────────────────────────────────────────────────────
@@ -466,8 +459,8 @@ class SculptureMixin:
         sub = self.font.render("Confirm your sculpture?", True, _ACCENT)
         self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 48))
 
-        CELL_SIZE = min(44, max(8, (SCREEN_H - 180) // max(1, rows)))
-        grid_w = 8 * CELL_SIZE
+        CELL_SIZE = min((SCREEN_W - 40) // SCULPT_COLS, max(6, (SCREEN_H - 180) // max(1, rows)))
+        grid_w = SCULPT_COLS * CELL_SIZE
         grid_h = rows * CELL_SIZE
         gx = SCREEN_W // 2 - grid_w // 2
         gy = 70
@@ -482,13 +475,13 @@ class SculptureMixin:
 
         # Block dividers
         for k in range(1, self._sculpt_count):
-            div_y = gy + k * 4 * CELL_SIZE
+            div_y = gy + k * SCULPT_ROWS_PER_BLOCK * CELL_SIZE
             pygame.draw.line(self.screen, col, (gx, div_y), (gx + grid_w, div_y), 2)
 
         pygame.draw.rect(self.screen, col, (gx - 2, gy - 2, grid_w + 4, grid_h + 4), 2)
 
         # Stats
-        total_cells = rows * 8
+        total_cells = rows * SCULPT_COLS
         filled_cells = sum(cell for row in self._sculpt_grid for cell in row)
         coverage_pct = int(100 * filled_cells / max(1, total_cells))
         mn = SCULPTABLE_MINERALS.get(self._sculpt_mineral, "?")
@@ -525,37 +518,44 @@ class SculptureMixin:
             self._handle_sculpt_confirm_click(pos, player)
 
     def _handle_sculpt_mineral_click(self, pos, player):
+        confirm_r = self._sculpt_mineral_rects.get("_confirm")
+        if confirm_r and confirm_r.collidepoint(pos):
+            if self._sculpt_mineral and self._sculpt_count > 0:
+                if player.inventory.get(self._sculpt_mineral, 0) >= self._sculpt_count:
+                    self._sculpt_phase = "select_template"
+            return
+        # Height buttons overlap the mineral card rect, so check them first.
         for key, rect in self._sculpt_mineral_rects.items():
-            if not rect.collidepoint(pos):
+            if "_h" not in str(key):
                 continue
-            if key == "_confirm":
-                if self._sculpt_mineral and self._sculpt_count > 0:
-                    if player.inventory.get(self._sculpt_mineral, 0) >= self._sculpt_count:
-                        self._sculpt_phase = "select_template"
-            elif "_h" in str(key):
+            if rect.collidepoint(pos):
                 parts = key.rsplit("_h", 1)
                 if len(parts) == 2:
                     h   = int(parts[1])
                     mid = parts[0]
                     if player.inventory.get(mid, 0) >= h:
                         self._sculpt_count = h
-            else:
+                return
+        for key, rect in self._sculpt_mineral_rects.items():
+            if "_h" in str(key) or key == "_confirm":
+                continue
+            if rect.collidepoint(pos):
                 self._sculpt_mineral = key
                 if self._sculpt_count == 0:
                     self._sculpt_count = 1
-            return
+                return
 
     def _handle_sculpt_template_click(self, pos, player):
         for opt, rect in self._sculpt_template_rects.items():
             if rect.collidepoint(pos):
                 self._sculpt_template = None if opt == "Custom" else opt
-                rows = self._sculpt_count * 4
+                rows = self._sculpt_count * SCULPT_ROWS_PER_BLOCK
                 if opt == "Custom":
-                    self._sculpt_grid = [[True] * 8 for _ in range(rows)]
+                    self._sculpt_grid = [[True] * SCULPT_COLS for _ in range(rows)]
                 elif opt in TEMPLATES:
                     self._sculpt_grid = TEMPLATES[opt](self._sculpt_count)
                 else:
-                    self._sculpt_grid = [[True] * 8 for _ in range(rows)]
+                    self._sculpt_grid = [[True] * SCULPT_COLS for _ in range(rows)]
                 self._sculpt_undo_stack = []
                 self._sculpt_drag_mode  = None
                 self._sculpt_phase = "carve"
@@ -571,21 +571,22 @@ class SculptureMixin:
         fr = self._sculpt_cell_rects.get("_fill")
         if fr and fr.collidepoint(pos):
             self._push_undo()
-            self._sculpt_grid = [[True] * 8 for _ in range(len(self._sculpt_grid))]
+            self._sculpt_grid = [[True] * SCULPT_COLS for _ in range(len(self._sculpt_grid))]
             return
         cr = self._sculpt_cell_rects.get("_clear")
         if cr and cr.collidepoint(pos):
             self._push_undo()
-            self._sculpt_grid = [[False] * 8 for _ in range(len(self._sculpt_grid))]
+            self._sculpt_grid = [[False] * SCULPT_COLS for _ in range(len(self._sculpt_grid))]
             return
         confirm_r = self._sculpt_cell_rects.get("_confirm")
         if confirm_r and confirm_r.collidepoint(pos):
             self._sculpt_phase = "confirm"
             return
         # Grid cells: start drag (push undo once, paint first cell)
-        for (ri, ci), rect in self._sculpt_cell_rects.items():
-            if not isinstance(ri, int):
+        for key, rect in self._sculpt_cell_rects.items():
+            if not isinstance(key, tuple):
                 continue
+            ri, ci = key
             if rect.collidepoint(pos):
                 self._push_undo()
                 new_val = right   # True = restore, False = carve
@@ -618,11 +619,11 @@ class SculptureMixin:
 
         # Hover tracking (even when not dragging)
         hover_hit = None
-        for (ri, ci), rect in self._sculpt_cell_rects.items():
-            if not isinstance(ri, int):
+        for key, rect in self._sculpt_cell_rects.items():
+            if not isinstance(key, tuple):
                 continue
             if rect.collidepoint(pos):
-                hover_hit = (ri, ci)
+                hover_hit = key
                 break
         self._sculpt_hover_cell = hover_hit
 
@@ -636,7 +637,7 @@ class SculptureMixin:
                 if self._sculpt_grid[ri][ci] != new_val:
                     self._sculpt_grid[ri][ci] = new_val
                     if self._sculpt_symmetry:
-                        self._sculpt_grid[ri][7 - ci] = new_val
+                        self._sculpt_grid[ri][SCULPT_COLS - 1 - ci] = new_val
         else:
             self._sculpt_drag_mode = None
 

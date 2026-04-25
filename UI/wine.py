@@ -2,13 +2,15 @@ import pygame
 from constants import SCREEN_W, SCREEN_H
 from wine import (
     apply_crush_style, apply_press_result, apply_yeast, apply_ferment_result,
-    apply_aging, make_blend,
+    apply_aging, make_blend, generate_flavor_notes,
     get_bottle_output_id, get_bottle_duration_multiplier, get_bottle_quality_bonus,
     CRUSH_STYLES, YEASTS, VESSELS, AGE_DURATIONS,
     SERVING_METHODS, SERVING_TEMPS,
     WINE_STYLE_DESCS, WINE_STYLE_COLORS, BUFF_DESCS,
     BIOME_DISPLAY_NAMES, VARIETY_DISPLAY_NAMES,
 )
+
+_WINE_AGE_TIMES = {"short": 12.0, "medium": 24.0, "long": 40.0}
 
 
 class WineMixin:
@@ -647,7 +649,7 @@ class WineMixin:
     # WINE CELLAR (tabs: blend / age / bottle)
     # ==================================================================
 
-    def _draw_wine_cellar(self, player):
+    def _draw_wine_cellar(self, player, dt=0.0):
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 215))
         self.screen.blit(overlay, (0, 0))
@@ -677,7 +679,7 @@ class WineMixin:
         if self._cellar_tab == "blend":
             self._draw_cellar_blend(player)
         elif self._cellar_tab == "age":
-            self._draw_cellar_age(player)
+            self._draw_cellar_age(player, dt)
         elif self._cellar_tab == "bottle":
             self._draw_cellar_bottle(player)
 
@@ -774,7 +776,14 @@ class WineMixin:
         self.screen.blit(bl, (bbtn.centerx - bl.get_width() // 2, bbtn.centery - bl.get_height() // 2))
         self._blend_wine_btn = bbtn
 
-    def _draw_cellar_age(self, player):
+    def _draw_cellar_age(self, player, dt=0.0):
+        if self._age_phase == "aging":
+            self._draw_cellar_age_active(player, dt)
+            return
+        if self._age_phase == "result":
+            self._draw_cellar_age_result()
+            return
+
         fermented = [(i, g) for i, g in enumerate(player.wine_grapes)
                      if g.state in ("fermented", "blended")]
         LIST_X, LIST_Y, LIST_W = 20, 70, 240
@@ -839,7 +848,86 @@ class WineMixin:
         self.screen.blit(abl, (age_btn.centerx - abl.get_width() // 2, age_btn.centery - abl.get_height() // 2))
         self._age_btn = age_btn
 
+    def _draw_cellar_age_active(self, player, dt):
+        bi = self._age_wine_idx
+        if bi is None or bi >= len(player.wine_grapes):
+            self._age_phase = "select"
+            return
+        g = player.wine_grapes[bi]
+
+        duration_secs = _WINE_AGE_TIMES.get(self._age_duration, 24.0)
+        if not self._age_game_done:
+            self._age_progress = min(1.0, self._age_progress + dt / duration_secs)
+            self._age_care_prompt_timer -= dt
+            if self._age_care_prompt_timer <= 0 and not self._age_care_active:
+                self._age_care_active = True
+                self._age_care_window = 4.0
+            if self._age_care_active:
+                self._age_care_window -= dt
+                if self._age_care_window <= 0:
+                    self._age_care_active = False
+                    self._age_care_prompt_timer = max(5.0, duration_secs / 3)
+            if self._age_progress >= 1.0:
+                self._age_game_done = True
+
+        cx = SCREEN_W // 2
+        col = WINE_STYLE_COLORS.get(g.style, (120, 60, 80))
+        nm = BIOME_DISPLAY_NAMES.get(g.origin_biome, g.origin_biome)
+        vn = VARIETY_DISPLAY_NAMES.get(g.variety, g.variety)
+        tl = self.font.render(f"Aging  {nm} {vn}", True, col)
+        self.screen.blit(tl, (cx - tl.get_width() // 2, SCREEN_H // 2 - 80))
+        vl = self.small.render(
+            f"Vessel: {VESSELS.get(self._age_vessel, {}).get('label', self._age_vessel)}  —  "
+            f"{AGE_DURATIONS.get(self._age_duration, {}).get('label', self._age_duration)}",
+            True, (190, 150, 160))
+        self.screen.blit(vl, (cx - vl.get_width() // 2, SCREEN_H // 2 - 55))
+
+        bar_w = 400
+        bar_x = cx - bar_w // 2
+        bar_y = SCREEN_H // 2 - 10
+        pygame.draw.rect(self.screen, (20, 12, 16), (bar_x, bar_y, bar_w, 30))
+        pygame.draw.rect(self.screen, col, (bar_x, bar_y, int(bar_w * self._age_progress), 30))
+        pygame.draw.rect(self.screen, (180, 130, 140), (bar_x, bar_y, bar_w, 30), 2)
+        pct = int(self._age_progress * 100)
+        pl = self.small.render(f"Aging: {pct}%", True, (200, 160, 170))
+        self.screen.blit(pl, (cx - pl.get_width() // 2, SCREEN_H // 2 + 30))
+        bonus_pct = int(self._age_care_bonus * 100)
+        bl = self.small.render(f"Care bonus: +{bonus_pct}%", True, (170, 140, 150))
+        self.screen.blit(bl, (cx - bl.get_width() // 2, SCREEN_H // 2 + 50))
+
+        if self._age_care_active:
+            flash = int(self._age_care_window * 4) % 2 == 0
+            c_color = (100, 220, 100) if flash else (60, 160, 60)
+            care_msg = self.font.render("PRESS W — Swirl the wine!", True, c_color)
+            self.screen.blit(care_msg, (cx - care_msg.get_width() // 2, SCREEN_H // 2 - 120))
+
+        if self._age_game_done:
+            self._finish_cellar_age(player)
+
+    def _finish_cellar_age(self, player):
+        bi = self._age_wine_idx
+        if bi is None or bi >= len(player.wine_grapes):
+            self._age_phase = "select"
+            return
+        g = player.wine_grapes[bi]
+        apply_aging(g, self._age_vessel, self._age_duration)
+        g.ferment_quality = min(1.0, g.ferment_quality + self._age_care_bonus * 0.15)
+        g.flavor_notes = generate_flavor_notes(g)
+        player.discovered_wine_origins.add(f"{g.origin_biome}_{g.style}")
+        self._age_phase = "result"
+        self._age_wine_idx = None
+
+    def _draw_cellar_age_result(self):
+        cx = SCREEN_W // 2
+        msg = self.font.render("Wine Aged!", True, (230, 180, 190))
+        self.screen.blit(msg, (cx - msg.get_width() // 2, SCREEN_H // 2 - 40))
+        ok = self.small.render("Click anywhere to continue", True, (170, 130, 140))
+        self.screen.blit(ok, (cx - ok.get_width() // 2, SCREEN_H // 2 + 20))
+
     def _draw_cellar_bottle(self, player):
+        if self._bottle_wine_result_id:
+            self._draw_bottle_wine_result()
+            return
         bottleable = [(i, g) for i, g in enumerate(player.wine_grapes)
                       if g.state in ("fermented", "aged", "blended")]
         LIST_X, LIST_Y, LIST_W = 20, 70, 230
@@ -988,7 +1076,24 @@ class WineMixin:
                     self._blend_wine_phase = "result"
                     self._blend_wine_slots = [None, None, None]
 
+    def handle_wine_age_keydown(self, key):
+        if self._cellar_tab != "age" or self._age_phase != "aging":
+            return
+        if key == pygame.K_w and self._age_care_active:
+            self._age_care_bonus = min(1.0, self._age_care_bonus + 0.12)
+            self._age_care_active = False
+            duration_secs = _WINE_AGE_TIMES.get(self._age_duration, 24.0)
+            self._age_care_prompt_timer = max(5.0, duration_secs / 3)
+
     def _handle_cellar_age_click(self, pos, player):
+        if self._age_phase == "result":
+            self._age_phase = "select"
+            self._age_progress = 0.0
+            self._age_care_bonus = 0.0
+            self._age_game_done = False
+            return
+        if self._age_phase == "aging":
+            return
         for bi, rect in self._age_wine_list_rects.items():
             if rect.collidepoint(pos):
                 self._age_wine_idx = bi if self._age_wine_idx != bi else None
@@ -1005,12 +1110,20 @@ class WineMixin:
             bi = self._age_wine_idx
             if (bi is not None and bi < len(player.wine_grapes)
                     and self._age_vessel in VESSELS):
-                g = player.wine_grapes[bi]
-                apply_aging(g, self._age_vessel, self._age_duration)
-                player.discovered_wine_origins.add(f"{g.origin_biome}_{g.style}")
-                self._age_wine_idx = None
+                duration_secs = _WINE_AGE_TIMES.get(self._age_duration, 24.0)
+                self._age_phase = "aging"
+                self._age_progress = 0.0
+                self._age_care_active = False
+                self._age_care_window = 0.0
+                self._age_care_prompt_timer = max(4.0, duration_secs / 3)
+                self._age_care_bonus = 0.0
+                self._age_game_done = False
 
     def _handle_cellar_bottle_click(self, pos, player):
+        if self._bottle_wine_result_id:
+            self._bottle_wine_result_id = None
+            self._bottle_wine_result_g = None
+            return
         for bi, rect in self._bottle_wine_rects.items():
             if rect.collidepoint(pos):
                 self._bottle_wine_idx = bi if self._bottle_wine_idx != bi else None
@@ -1031,24 +1144,33 @@ class WineMixin:
                 return
             g = player.wine_grapes[bi]
             method_data = SERVING_METHODS.get(self._bottle_method, {})
-            # Method style should ideally match wine style; still allow any
             effective_style = method_data.get("style", g.style)
             quality_bonus = get_bottle_quality_bonus(self._bottle_temp)
             eff_quality = min(1.0, g.ferment_quality + quality_bonus)
             output_id = get_bottle_output_id(effective_style, eff_quality)
-            dur_mult = get_bottle_duration_multiplier(self._bottle_temp)
-            from items import ITEMS
-            base_dur = ITEMS.get(output_id, {}).get("wine_buff_duration", 120.0)
-            final_dur = base_dur * dur_mult
             player.wine_grapes.pop(bi)
             self._bottle_wine_idx = None
             player._add_item(output_id)
-            item_data = ITEMS.get(output_id, {})
-            if item_data.get("wine_buff"):
-                player.wine_buffs[item_data["wine_buff"]] = {
-                    "duration": final_dur, "intensity": 1.0
-                }
             player.discovered_wine_origins.add(f"{g.origin_biome}_{effective_style}")
+            self._bottle_wine_result_id = output_id
+            self._bottle_wine_result_g = g
+
+    def _draw_bottle_wine_result(self):
+        from items import ITEMS
+        cx = SCREEN_W // 2
+        out_id = self._bottle_wine_result_id
+        item_name = ITEMS.get(out_id, {}).get("name", out_id)
+        g = self._bottle_wine_result_g
+        col = WINE_STYLE_COLORS.get(g.style if g else "red", (180, 80, 100))
+        msg = self.font.render("Wine Bottled!", True, (230, 180, 190))
+        self.screen.blit(msg, (cx - msg.get_width() // 2, SCREEN_H // 2 - 60))
+        nl = self.font.render(item_name, True, col)
+        self.screen.blit(nl, (cx - nl.get_width() // 2, SCREEN_H // 2 - 20))
+        if g and g.flavor_notes:
+            fn = self.small.render(", ".join(g.flavor_notes[:4]), True, (190, 155, 165))
+            self.screen.blit(fn, (cx - fn.get_width() // 2, SCREEN_H // 2 + 14))
+        ok = self.small.render("Click anywhere to continue", True, (170, 130, 140))
+        self.screen.blit(ok, (cx - ok.get_width() // 2, SCREEN_H // 2 + 45))
 
     # ==================================================================
     # Wine buff HUD (draws alongside coffee buffs)

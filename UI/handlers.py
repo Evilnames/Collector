@@ -261,6 +261,11 @@ class HandlersMixin:
                     if rect.collidepoint(pos):
                         self._cheese_codex_selected = key if self._cheese_codex_selected != key else None
                         return
+            elif self._encyclopedia_cat == 19:
+                for key, rect in self._salt_codex_rects.items():
+                    if rect.collidepoint(pos):
+                        self._salt_codex_selected = key if self._salt_codex_selected != key else None
+                        return
             # cat 5 = bird codex (view only, no selection needed)
         # tab 2 (awards) has no click-to-select items
 
@@ -578,12 +583,15 @@ class HandlersMixin:
         if self.refinery_block_id == ANAEROBIC_TANK_BLOCK:
             self._handle_anaerobic_click(pos, player)
             return
-        from blocks import JEWELRY_WORKBENCH_BLOCK, SCULPTORS_BENCH
+        from blocks import JEWELRY_WORKBENCH_BLOCK, SCULPTORS_BENCH, TAPESTRY_FRAME_BLOCK
         if self.refinery_block_id == JEWELRY_WORKBENCH_BLOCK:
             self._handle_jewelry_workbench_click(pos, player)
             return
         if self.refinery_block_id == SCULPTORS_BENCH:
             self._handle_sculptor_bench_click(pos, player, right=False)
+            return
+        if self.refinery_block_id == TAPESTRY_FRAME_BLOCK:
+            self._handle_tapestry_frame_click(pos, player, right=False)
             return
         from blocks import POTTERY_WHEEL_BLOCK, POTTERY_KILN_BLOCK
         if self.refinery_block_id == POTTERY_WHEEL_BLOCK:
@@ -698,6 +706,13 @@ class HandlersMixin:
             return
         if self.refinery_block_id == COMPOST_BIN_BLOCK:
             self._handle_compost_bin_click(pos, player)
+            return
+        from blocks import EVAPORATION_PAN_BLOCK, SALT_GRINDER_BLOCK
+        if self.refinery_block_id == EVAPORATION_PAN_BLOCK:
+            self._handle_evap_pan_click(pos, player)
+            return
+        if self.refinery_block_id == SALT_GRINDER_BLOCK:
+            self._handle_salt_grinder_click(pos, player)
             return
         for idx, rect in self._refine_rects.items():
             if rect.collidepoint(pos):

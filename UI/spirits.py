@@ -7,6 +7,8 @@ from spirits import (
     SPIRIT_TYPE_DESCS, SPIRIT_TYPE_COLORS, BIOME_DISPLAY_NAMES,
 )
 
+_BARREL_AGE_TIMES = {"short": 12.0, "medium": 24.0, "long": 40.0}
+
 
 class SpiritsMixin:
 
@@ -278,6 +280,13 @@ class SpiritsMixin:
         hint = self.small.render("ESC to close", True, (100, 80, 50))
         self.screen.blit(hint, (SCREEN_W - hint.get_width() - 8, 6))
 
+        if self._barrel_phase == "aging":
+            self._draw_barrel_aging(player, dt)
+            return
+        if self._barrel_phase == "result":
+            self._draw_barrel_result(player)
+            return
+
         CX = SCREEN_W // 2
         distilled = [(i, s) for i, s in enumerate(player.spirits) if s.state == "distilled"]
         if not distilled:
@@ -319,7 +328,6 @@ class SpiritsMixin:
             ls = self.small.render(bdata["label"], True, (230, 185, 80) if is_sel else (160, 120, 50))
             self.screen.blit(ls, (BTN_X + 6, ry + 6))
             ds = self.small.render(bdata["desc"], True, (140, 110, 55) if is_sel else (90, 70, 35))
-            # word-wrap desc to fit
             self.screen.blit(ds, (BTN_X + 6, ry + 24))
 
         # Age duration buttons (right)
@@ -342,15 +350,107 @@ class SpiritsMixin:
                    and self._barrel_spirit_idx < len(player.spirits)
                    and self._barrel_type_sel is not None
                    and self._barrel_duration_sel is not None)
-        self._barrel_age_btn = pygame.Rect(CX - 100, SCREEN_H - 70, 200, 40)
+        self._barrel_age_btn = pygame.Rect(SCREEN_W // 2 - 100, SCREEN_H - 70, 200, 40)
         bc = (30, 50, 22) if can_age else (28, 28, 28)
         bbc = (100, 200, 60) if can_age else (60, 60, 60)
         pygame.draw.rect(self.screen, bc, self._barrel_age_btn)
         pygame.draw.rect(self.screen, bbc, self._barrel_age_btn, 2)
         age_lbl = self.font.render("AGE SPIRIT", True, (140, 220, 80) if can_age else (80, 80, 80))
-        self.screen.blit(age_lbl, (CX - age_lbl.get_width() // 2, SCREEN_H - 62))
+        self.screen.blit(age_lbl, (SCREEN_W // 2 - age_lbl.get_width() // 2, SCREEN_H - 62))
+
+    def _draw_barrel_aging(self, player, dt):
+        si = self._barrel_spirit_idx
+        if si is None or si >= len(player.spirits):
+            self._barrel_phase = "select"
+            return
+        spirit = player.spirits[si]
+
+        duration_secs = _BARREL_AGE_TIMES.get(self._barrel_duration_sel, 24.0)
+        if not self._barrel_age_done:
+            self._barrel_age_progress = min(1.0, self._barrel_age_progress + dt / duration_secs)
+            self._barrel_age_care_timer -= dt
+            if self._barrel_age_care_timer <= 0 and not self._barrel_age_care_active:
+                self._barrel_age_care_active = True
+                self._barrel_age_care_window = 4.0
+            if self._barrel_age_care_active:
+                self._barrel_age_care_window -= dt
+                if self._barrel_age_care_window <= 0:
+                    self._barrel_age_care_active = False
+                    self._barrel_age_care_timer = max(5.0, duration_secs / 3)
+            if self._barrel_age_progress >= 1.0:
+                self._barrel_age_done = True
+
+        CX = SCREEN_W // 2
+        col = SPIRIT_TYPE_COLORS.get(spirit.spirit_type, (180, 140, 60))
+        bm = BIOME_DISPLAY_NAMES.get(spirit.origin_biome, spirit.origin_biome)
+        tl = self.font.render(f"Aging  {bm} {spirit.spirit_type.title()}", True, col)
+        self.screen.blit(tl, (CX - tl.get_width() // 2, SCREEN_H // 2 - 80))
+        bl_lbl = self.small.render(
+            f"Barrel: {BARREL_TYPES.get(self._barrel_type_sel, {}).get('label', self._barrel_type_sel)}  —  "
+            f"{AGE_DURATIONS.get(self._barrel_duration_sel, {}).get('label', self._barrel_duration_sel)}",
+            True, (175, 145, 80))
+        self.screen.blit(bl_lbl, (CX - bl_lbl.get_width() // 2, SCREEN_H // 2 - 55))
+
+        bar_w = 400
+        bar_x = CX - bar_w // 2
+        bar_y = SCREEN_H // 2 - 10
+        pygame.draw.rect(self.screen, (20, 15, 8), (bar_x, bar_y, bar_w, 30))
+        pygame.draw.rect(self.screen, col, (bar_x, bar_y, int(bar_w * self._barrel_age_progress), 30))
+        pygame.draw.rect(self.screen, (160, 130, 55), (bar_x, bar_y, bar_w, 30), 2)
+        pct = int(self._barrel_age_progress * 100)
+        pl = self.small.render(f"Aging: {pct}%", True, (190, 160, 80))
+        self.screen.blit(pl, (CX - pl.get_width() // 2, SCREEN_H // 2 + 30))
+        bonus_pct = int(self._barrel_age_care_bonus * 100)
+        bl2 = self.small.render(f"Care bonus: +{bonus_pct}%", True, (160, 135, 65))
+        self.screen.blit(bl2, (CX - bl2.get_width() // 2, SCREEN_H // 2 + 50))
+
+        if self._barrel_age_care_active:
+            flash = int(self._barrel_age_care_window * 4) % 2 == 0
+            c_color = (100, 220, 100) if flash else (60, 160, 60)
+            care_msg = self.font.render("PRESS W — Sample the cask!", True, c_color)
+            self.screen.blit(care_msg, (CX - care_msg.get_width() // 2, SCREEN_H // 2 - 120))
+
+        if self._barrel_age_done:
+            self._finish_barrel_aging(player)
+
+    def _finish_barrel_aging(self, player):
+        si = self._barrel_spirit_idx
+        if si is None or si >= len(player.spirits):
+            self._barrel_phase = "select"
+            return
+        spirit = player.spirits[si]
+        apply_barrel_aging(spirit, self._barrel_type_sel, self._barrel_duration_sel)
+        spirit.age_quality = min(1.0, spirit.age_quality + self._barrel_age_care_bonus * 0.10)
+        self._barrel_phase = "result"
+        self._barrel_spirit_idx = None
+
+    def _draw_barrel_result(self, player):
+        CX = SCREEN_W // 2
+        msg = self.font.render("Spirit Aged!", True, (220, 185, 80))
+        self.screen.blit(msg, (CX - msg.get_width() // 2, SCREEN_H // 2 - 40))
+        hint = self.small.render("Ready to bottle at the Bottling Station", True, (160, 130, 55))
+        self.screen.blit(hint, (CX - hint.get_width() // 2, SCREEN_H // 2))
+        ok = self.small.render("Click anywhere to continue", True, (140, 110, 50))
+        self.screen.blit(ok, (CX - ok.get_width() // 2, SCREEN_H // 2 + 35))
+
+    def handle_barrel_age_keydown(self, key):
+        if self._barrel_phase != "aging":
+            return
+        if key == pygame.K_w and self._barrel_age_care_active:
+            self._barrel_age_care_bonus = min(1.0, self._barrel_age_care_bonus + 0.12)
+            self._barrel_age_care_active = False
+            duration_secs = _BARREL_AGE_TIMES.get(self._barrel_duration_sel, 24.0)
+            self._barrel_age_care_timer = max(5.0, duration_secs / 3)
 
     def _handle_barrel_room_click(self, pos, player):
+        if self._barrel_phase == "result":
+            self._barrel_phase = "select"
+            self._barrel_age_progress = 0.0
+            self._barrel_age_care_bonus = 0.0
+            self._barrel_age_done = False
+            return
+        if self._barrel_phase == "aging":
+            return
         for idx, rect in self._barrel_select_rects.items():
             if rect.collidepoint(pos):
                 self._barrel_spirit_idx = idx
@@ -367,9 +467,14 @@ class SpiritsMixin:
                 and self._barrel_spirit_idx is not None
                 and self._barrel_spirit_idx < len(player.spirits)
                 and self._barrel_type_sel and self._barrel_duration_sel):
-            spirit = player.spirits[self._barrel_spirit_idx]
-            apply_barrel_aging(spirit, self._barrel_type_sel, self._barrel_duration_sel)
-            self._barrel_spirit_idx = None
+            duration_secs = _BARREL_AGE_TIMES.get(self._barrel_duration_sel, 24.0)
+            self._barrel_phase = "aging"
+            self._barrel_age_progress = 0.0
+            self._barrel_age_care_active = False
+            self._barrel_age_care_window = 0.0
+            self._barrel_age_care_timer = max(4.0, duration_secs / 3)
+            self._barrel_age_care_bonus = 0.0
+            self._barrel_age_done = False
 
     # ------------------------------------------------------------------ #
     #  Bottling Station  (blend + bottle aged spirits)                    #

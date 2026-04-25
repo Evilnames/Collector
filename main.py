@@ -13,8 +13,9 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK
 from elevators import ElevatorCar
+from minecarts import Minecart
 
 SETTINGS_PATH = Path(__file__).parent / "settings.json"
 
@@ -411,6 +412,15 @@ def main():
                     elif val in uid_map:
                         w.sculpture_data[pos] = uid_map[val]
                 del w._pending_sculpture_positions
+            # Resolve tapestry uid pointers
+            if hasattr(w, "_pending_tapestry_positions"):
+                tp_uid_map = {tp.uid: tp for tp in p.tapestries_created}
+                for pos, val in w._pending_tapestry_positions.items():
+                    if isinstance(val, dict) and "root" in val:
+                        w.tapestry_data[pos] = {"root": val["root"]}
+                    elif val in tp_uid_map:
+                        w.tapestry_data[pos] = tp_uid_map[val]
+                del w._pending_tapestry_positions
             return w, p, data["research"]
         world, player, research_data = _run_with_loading_screen(screen, "Loading", _do_load)
         research.apply_save(research_data)
@@ -600,6 +610,19 @@ def main():
                                 car.call(stops[idx + 1], world)
                         continue
 
+                # Minecart direction controls while riding
+                if player.riding_minecart is not None and not _any_ui_open():
+                    cart = player.riding_minecart
+                    if event.key in (pygame.K_a, pygame.K_LEFT):
+                        cart.go(-1)
+                        continue
+                    elif event.key in (pygame.K_d, pygame.K_RIGHT):
+                        cart.go(1)
+                        continue
+                    elif event.key in (pygame.K_s, pygame.K_DOWN):
+                        cart.stop()
+                        continue
+
                 # Roaster: ENTER to stop roasting
                 if ui.refinery_open and ui.refinery_block_id == ROASTER_BLOCK:
                     ui.handle_roaster_keydown(event.key, player)
@@ -636,6 +659,14 @@ def main():
                 if ui.refinery_open and ui.refinery_block_id == AGING_CAVE_BLOCK:
                     ui.handle_aging_cave_keydown(event.key, player)
 
+                # Wine Cellar aging: W to swirl
+                if ui.refinery_open and ui.refinery_block_id == WINE_CELLAR_BLOCK:
+                    ui.handle_wine_age_keydown(event.key)
+
+                # Barrel Room aging: W to sample
+                if ui.refinery_open and ui.refinery_block_id == BARREL_ROOM_BLOCK:
+                    ui.handle_barrel_age_keydown(event.key)
+
                 # Jewelry Workbench: text input for name phase
                 if ui.refinery_open and ui._jw_phase == "name_confirm":
                     ui.handle_jewelry_keydown(event.key, getattr(event, "unicode", ""), player)
@@ -644,11 +675,19 @@ def main():
                 from blocks import SCULPTORS_BENCH as _SCULPTORS_BENCH
                 if ui.refinery_open and ui.refinery_block_id == _SCULPTORS_BENCH:
                     ui.handle_sculptor_keydown(event.key, player)
+                # Tapestry Frame: Z=undo, ENTER=confirm, ESC=back
+                from blocks import TAPESTRY_FRAME_BLOCK as _TAPESTRY_FRAME
+                if ui.refinery_open and ui.refinery_block_id == _TAPESTRY_FRAME:
+                    ui.handle_tapestry_keydown(event.key, player)
 
                 # Pottery Wheel / Kiln: Z=undo, ENTER=confirm, SPACE=heat, ESC=back
                 from blocks import POTTERY_WHEEL_BLOCK as _PWB, POTTERY_KILN_BLOCK as _PKB
                 if ui.refinery_open and ui.refinery_block_id in (_PWB, _PKB):
                     ui.handle_pottery_keydown(event.key, player)
+
+                from blocks import EVAPORATION_PAN_BLOCK as _EVAP_PAN
+                if ui.refinery_open and ui.refinery_block_id == _EVAP_PAN:
+                    ui.handle_evap_pan_keydown(event.key, player)
 
                 # Wardrobe toggle (T = Textiles/Tailoring)
                 if event.key == pygame.K_t:
@@ -735,6 +774,16 @@ def main():
                         ui.collection_open = ui.refinery_open = ui.breeding_open = False
 
                 if event.key == pygame.K_e:
+                    # Dismount minecart if currently riding
+                    if player.riding_minecart is not None:
+                        cart = player.riding_minecart
+                        cart.stop()
+                        cart.rider = None
+                        player.x = cart.cart_x + Minecart.W + 4
+                        player.y = float(cart.track_by * BLOCK_SIZE)
+                        player.riding_minecart = None
+                        continue
+
                     # Dismount elevator if currently riding
                     if player.riding_elevator is not None:
                         car = player.riding_elevator
@@ -776,6 +825,7 @@ def main():
                     nearby_npc = _find_nearby_npc(world, player)
                     nearby_bed = player.get_nearby_bed()
                     nearby_elev_stop = player.get_nearby_elevator_stop()
+                    nearby_track_stop = player.get_nearby_mine_track_stop()
                     if nearby_auto is not None:
                         if ui.automation_open and ui.active_automation is nearby_auto:
                             ui.automation_open = False
@@ -817,8 +867,18 @@ def main():
                             if car.state == "idle" and car_by == by and car.rider is None:
                                 car.rider = player
                                 player.riding_elevator = car
-                            elif car.state != "moving" or car_by != by:
+                            elif (car.state != "moving" or car_by != by) and car.rider is None:
                                 car.call(by, world)
+                    elif nearby_track_stop is not None:
+                        bx, by = nearby_track_stop
+                        cart = next((c for c in world.minecarts if c.track_by == by), None)
+                        if cart is not None:
+                            cart_bx = int(round(cart.cart_x / BLOCK_SIZE))
+                            if cart.state == "idle" and cart_bx == bx and cart.rider is None:
+                                cart.rider = player
+                                player.riding_minecart = cart
+                            else:
+                                cart.call(bx)
                     else:
                         ui.npc_open = False
                         ui.active_npc = None
@@ -1073,6 +1133,11 @@ def main():
                         from blocks import SCULPTORS_BENCH as _SCULPTORS_BENCH_R
                         if ui.refinery_block_id == _SCULPTORS_BENCH_R and ui._sculpt_phase == "carve":
                             ui._handle_sculptor_bench_click(event.pos, player, right=True)
+                    # Tapestry Frame right-click: remove thread in weave phase
+                    if event.button == 3 and ui.refinery_open:
+                        from blocks import TAPESTRY_FRAME_BLOCK as _TAPESTRY_FRAME_R
+                        if ui.refinery_block_id == _TAPESTRY_FRAME_R and ui._tapestry_phase == "weave":
+                            ui._handle_tapestry_frame_click(event.pos, player, right=True)
                     ui.handle_hotbar_click(event.pos, player)
 
         keys = pygame.key.get_pressed()
@@ -1107,11 +1172,21 @@ def main():
             from blocks import SCULPTORS_BENCH as _SCULPTORS_BENCH_PF
             if ui.refinery_block_id == _SCULPTORS_BENCH_PF:
                 ui._sculpt_update_drag(mouse_scr_pos, mouse_btns)
+        # Tapestry Frame: per-frame drag weaving + hover tracking
+        if ui.refinery_open and getattr(ui, '_tapestry_phase', 'idle') == 'weave':
+            from blocks import TAPESTRY_FRAME_BLOCK as _TAPESTRY_FRAME_PF
+            if ui.refinery_block_id == _TAPESTRY_FRAME_PF:
+                ui._tapestry_update_drag(mouse_scr_pos, mouse_btns)
 
         # Pottery: per-frame held key (SPACE for kiln heat) + wheel drag
         from blocks import POTTERY_WHEEL_BLOCK as _PWB_PF, POTTERY_KILN_BLOCK as _PKB_PF
         if ui.refinery_open and ui.refinery_block_id in (_PWB_PF, _PKB_PF):
             ui.handle_pottery_keys(keys, dt, player)
+
+        # Evaporation pan: per-frame held key (SPACE for heat)
+        from blocks import EVAPORATION_PAN_BLOCK as _EVAP_PF
+        if ui.refinery_open and ui.refinery_block_id == _EVAP_PF:
+            ui.handle_evap_pan_keys(keys, dt, player)
         if ui.refinery_open and ui.refinery_block_id == _PWB_PF and ui._wheel_phase == "shaping":
             ui._handle_pottery_wheel_drag(mouse_scr_pos, mouse_btns)
 
@@ -1127,6 +1202,7 @@ def main():
             renderer.draw_farm_bots(world.farm_bots)
             renderer.draw_backhoes(world.backhoes, player)
             renderer.draw_elevator_cars(world.elevator_cars)
+            renderer.draw_minecarts(world.minecarts)
             ui.draw(player, research, dt)
             pygame.display.flip()
             continue
@@ -1289,6 +1365,8 @@ def main():
                 ui._insect_obs_insect = None
         for car in world.elevator_cars:
             car.update(dt, world, player)
+        for cart in world.minecarts:
+            cart.update(dt, world)
         for automation in world.automations:
             automation.update(dt, world)
         for farm_bot in world.farm_bots:
@@ -1296,6 +1374,7 @@ def main():
         for bh in world.backhoes:
             if player.mounted_machine is not bh:
                 bh.apply_gravity(world)
+        world.update_time(dt)
         world.update_water(dt, player)
         world.update_soil(dt)
         world.update_compost_bins(dt)
@@ -1307,6 +1386,7 @@ def main():
         autosave_timer += dt
         if autosave_timer >= AUTOSAVE_INTERVAL:
             autosave_timer = 0.0
+            print("[Autosave] Saving game...")
             _save_and_notify(world, player, research)
 
         renderer.update_camera(player, world)
@@ -1321,6 +1401,7 @@ def main():
         renderer.draw_farm_bots(world.farm_bots)
         renderer.draw_backhoes(world.backhoes, player)
         renderer.draw_elevator_cars(world.elevator_cars, player)
+        renderer.draw_minecarts(world.minecarts, player)
         renderer.draw_dropped_items(world.dropped_items)
         renderer.draw_farm_sense(player, world)
         renderer.draw_mining_indicator(player)
@@ -1329,7 +1410,7 @@ def main():
         renderer.draw_rain(world)
         renderer.tick_float_texts(dt)
         renderer.draw_float_texts()
-        renderer.draw_lighting(player, player.get_depth())
+        renderer.draw_lighting(player, world, player.get_depth(), world.time_of_day)
         ui.draw(player, research, dt)
         if ui._bird_obs_active:
             ui._draw_bird_observation_overlay(player)

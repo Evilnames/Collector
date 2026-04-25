@@ -37,9 +37,9 @@ class SaveManager:
                             "rocks", "wildflowers", "fossils", "gems", "bird_observations",
                             "insect_observations",
                             "fish", "coffee_beans", "wine_grapes", "spirits",
-                            "tea_leaves", "textiles", "cheese_wheels", "jewelry", "sculptures", "pottery_pieces",
+                            "tea_leaves", "textiles", "cheese_wheels", "jewelry", "sculptures", "custom_tapestries", "pottery_pieces", "salt_crystals",
                             "research", "automations",
-                            "farm_bots", "backhoes", "elevator_cars", "entities", "dropped_items", "chests"):
+                            "farm_bots", "backhoes", "elevator_cars", "minecarts", "entities", "dropped_items", "chests"):
                     # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
                 con.commit()
@@ -82,7 +82,9 @@ class SaveManager:
             self._save_cheese_wheels(con, player)
             self._save_jewelry(con, player)
             self._save_sculptures(con, player)
+            self._save_tapestries(con, player)
             self._save_pottery_pieces(con, player)
+            self._save_salt_crystals(con, player)
             self._save_bird_observations(con, player)
             self._save_insect_observations(con, player)
             self._save_research(con, research)
@@ -90,6 +92,7 @@ class SaveManager:
             self._save_farm_bots(con, world)
             self._save_backhoes(con, world)
             self._save_elevator_cars(con, world)
+            self._save_minecarts(con, world)
             self._save_entities(con, world)
             self._save_dropped_items(con, world)
             self._save_chests(con, world)
@@ -111,6 +114,7 @@ class SaveManager:
             farm_bots = self._load_farm_bots(con)
             backhoes = self._load_backhoes(con)
             elevator_cars = self._load_elevator_cars(con)
+            minecarts = self._load_minecarts(con)
             entities = self._load_entities(con)
             research = self._load_research(con)
             dropped_items = self._load_dropped_items(con)
@@ -125,6 +129,7 @@ class SaveManager:
             "compost_bin_data":    world_meta["compost_bin_data"],
             "garden_data":             world_meta["garden_data"],
             "sculpture_positions":     world_meta.get("sculpture_positions", {}),
+            "tapestry_positions":      world_meta.get("tapestry_positions", {}),
             "wildflower_display_data": world_meta.get("wildflower_display_data", {}),
             "pottery_display_data":    world_meta.get("pottery_display_data", {}),
             "unplaced_vase_uids":      world_meta.get("unplaced_vase_uids", []),
@@ -133,6 +138,7 @@ class SaveManager:
             "farm_bots": farm_bots,
             "backhoes": backhoes,
             "elevator_cars": elevator_cars,
+            "minecarts": minecarts,
             "entities": entities,
             "research": research,
             "dropped_items": dropped_items,
@@ -293,6 +299,7 @@ class SaveManager:
             compost_bin_data TEXT,
             garden_data TEXT,
             sculpture_positions TEXT,
+            tapestry_positions TEXT,
             wildflower_display_data TEXT,
             pottery_display_data TEXT,
             unplaced_vase_uids TEXT
@@ -370,6 +377,10 @@ class SaveManager:
         CREATE TABLE IF NOT EXISTS elevator_cars (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             shaft_x INTEGER, stop_by INTEGER, car_by INTEGER
+        );
+        CREATE TABLE IF NOT EXISTS minecarts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            track_by INTEGER, stop_bx INTEGER, cart_bx INTEGER
         );
         CREATE TABLE IF NOT EXISTS entities (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -524,6 +535,17 @@ class SaveManager:
             seed     INTEGER,
             pending  INTEGER DEFAULT 0
         );
+        CREATE TABLE IF NOT EXISTS custom_tapestries (
+            uid      TEXT PRIMARY KEY,
+            thread   TEXT,
+            height   INTEGER,
+            width    INTEGER DEFAULT 1,
+            grid     TEXT,
+            color    TEXT,
+            template TEXT,
+            seed     INTEGER,
+            pending  INTEGER DEFAULT 0
+        );
         CREATE TABLE IF NOT EXISTS pottery_pieces (
             uid            TEXT PRIMARY KEY,
             clay_biome     TEXT,
@@ -538,6 +560,22 @@ class SaveManager:
             seed           INTEGER,
             profile        TEXT,
             blend_components TEXT DEFAULT '[]'
+        );
+        CREATE TABLE IF NOT EXISTS salt_crystals (
+            uid              TEXT PRIMARY KEY,
+            origin_biome     TEXT,
+            variety          TEXT,
+            state            TEXT,
+            purity           REAL,
+            salinity         REAL,
+            mineral          REAL,
+            moisture         REAL,
+            grain_size       REAL,
+            flavor_notes     TEXT,
+            seed             INTEGER,
+            blend_components TEXT DEFAULT '[]',
+            evap_method      TEXT DEFAULT '',
+            refine_grade     TEXT DEFAULT ''
         );
         """)
         for col, default in [("spawn_x", "NULL"), ("spawn_y", "NULL")]:
@@ -572,7 +610,7 @@ class SaveManager:
                 pass
         for col in ("soil_moisture", "crop_progress", "crop_care_sum",
                     "soil_fertility", "compost_bin_data", "garden_data",
-                    "sculpture_positions", "wildflower_display_data",
+                    "sculpture_positions", "tapestry_positions", "wildflower_display_data",
                     "pottery_display_data", "unplaced_vase_uids"):
             try:
                 con.execute(f"ALTER TABLE world_meta ADD COLUMN {col} TEXT")
@@ -611,6 +649,10 @@ class SaveManager:
                 con.execute(f"ALTER TABLE cheese_wheels ADD COLUMN {col} DEFAULT {default}")
             except Exception:
                 pass
+        try:
+            con.execute("ALTER TABLE custom_tapestries ADD COLUMN width INTEGER DEFAULT 1")
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------
     # Achievements (global, cross-save)
@@ -823,6 +865,13 @@ class SaveManager:
                 sculpture_pos[f"{x},{y}"] = {"root": f"{rbx},{rby}"}
             else:
                 sculpture_pos[f"{x},{y}"] = data.uid
+        tapestry_pos = {}
+        for (x, y), data in world.tapestry_data.items():
+            if isinstance(data, dict) and "root" in data:
+                rbx, rby = data["root"]
+                tapestry_pos[f"{x},{y}"] = {"root": f"{rbx},{rby}"}
+            else:
+                tapestry_pos[f"{x},{y}"] = data.uid
         wf_displays = {
             f"{x},{y}": _wf_to_dict(wf)
             for (x, y), wf in world.wildflower_display_data.items()
@@ -837,12 +886,12 @@ class SaveManager:
         con.execute("DELETE FROM world_meta")
         con.execute(
             "INSERT INTO world_meta "
-            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, tapestry_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (json.dumps(water), json.dumps(moisture), json.dumps(progress),
              json.dumps(care_sum), json.dumps(fertility), json.dumps(compost_bins),
-             json.dumps(garden_flowers), json.dumps(sculpture_pos), json.dumps(wf_displays),
-             json.dumps(pottery_displays), json.dumps(unplaced_uids)),
+             json.dumps(garden_flowers), json.dumps(sculpture_pos), json.dumps(tapestry_pos),
+             json.dumps(wf_displays), json.dumps(pottery_displays), json.dumps(unplaced_uids)),
         )
 
     def _save_player(self, con, player):
@@ -1099,6 +1148,18 @@ class SaveManager:
                  1 if sc.uid in pending_uids else 0),
             )
 
+    def _save_tapestries(self, con, player):
+        con.execute("DELETE FROM custom_tapestries")
+        pending_uids = {tp.uid for tp in player.pending_tapestries}
+        for tp in player.tapestries_created:
+            con.execute(
+                "INSERT OR REPLACE INTO custom_tapestries VALUES (?,?,?,?,?,?,?,?,?)",
+                (tp.uid, tp.thread, tp.height, getattr(tp, "width", 1),
+                 json.dumps(tp.grid), json.dumps(list(tp.color)),
+                 tp.template, tp.seed,
+                 1 if tp.uid in pending_uids else 0),
+            )
+
     def _save_pottery_pieces(self, con, player):
         con.execute("DELETE FROM pottery_pieces")
         for p in player.pottery_pieces:
@@ -1111,6 +1172,21 @@ class SaveManager:
                     json.dumps(p.texture_notes), p.seed,
                     json.dumps(p.profile),
                     json.dumps(getattr(p, "blend_components", [])),
+                )
+            )
+
+    def _save_salt_crystals(self, con, player):
+        con.execute("DELETE FROM salt_crystals")
+        for c in player.salt_crystals:
+            con.execute(
+                "INSERT OR REPLACE INTO salt_crystals VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    c.uid, c.origin_biome, c.variety, c.state,
+                    c.purity, c.salinity, c.mineral, c.moisture, c.grain_size,
+                    json.dumps(c.flavor_notes), c.seed,
+                    json.dumps(getattr(c, "blend_components", [])),
+                    getattr(c, "evap_method", ""),
+                    getattr(c, "refine_grade", ""),
                 )
             )
 
@@ -1205,6 +1281,22 @@ class SaveManager:
         except Exception:
             return []
         return [{"shaft_x": r[0], "stop_by": r[1], "car_by": r[2]} for r in rows]
+
+    def _save_minecarts(self, con, world):
+        con.execute("DELETE FROM minecarts")
+        for cart in world.minecarts:
+            cart_bx = int(cart.cart_x // 32)  # BLOCK_SIZE = 32
+            con.execute(
+                "INSERT INTO minecarts (track_by, stop_bx, cart_bx) VALUES (?,?,?)",
+                (cart.track_by, cart_bx, cart_bx)
+            )
+
+    def _load_minecarts(self, con):
+        try:
+            rows = con.execute("SELECT track_by, stop_bx, cart_bx FROM minecarts").fetchall()
+        except Exception:
+            return []
+        return [{"track_by": r[0], "stop_bx": r[2], "cart_bx": r[2]} for r in rows]
 
     def _save_entities(self, con, world):
         from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion
@@ -1306,14 +1398,15 @@ class SaveManager:
             "SELECT water_level, soil_moisture, crop_progress, crop_care_sum, "
             "soil_fertility, compost_bin_data, garden_data, sculpture_positions, "
             "wildflower_display_data, "
-            "COALESCE(pottery_display_data, '{}'), COALESCE(unplaced_vase_uids, '[]') "
+            "COALESCE(pottery_display_data, '{}'), COALESCE(unplaced_vase_uids, '[]'), "
+            "COALESCE(tapestry_positions, '{}') "
             "FROM world_meta LIMIT 1"
         ).fetchone()
         if row is None:
             return {"water_level": {}, "soil_moisture": {}, "crop_progress": {},
                     "crop_care_sum": {}, "soil_fertility": {}, "compost_bin_data": {},
-                    "garden_data": {}, "sculpture_positions": {}, "wildflower_display_data": {},
-                    "pottery_display_data": {}, "unplaced_vase_uids": []}
+                    "garden_data": {}, "sculpture_positions": {}, "tapestry_positions": {},
+                    "wildflower_display_data": {}, "pottery_display_data": {}, "unplaced_vase_uids": []}
 
         def _parse_coord_dict(raw, transform=lambda v: v):
             if raw is None:
@@ -1363,6 +1456,18 @@ class SaveManager:
                 else:
                     sculpture_positions[pos] = val   # uid string
 
+        raw_tapestry = row[11] if len(row) > 11 else None
+        tapestry_positions = {}
+        if raw_tapestry:
+            for key, val in json.loads(raw_tapestry).items():
+                xs, ys = key.split(",")
+                pos = (int(xs), int(ys))
+                if isinstance(val, dict) and "root" in val:
+                    rbx, rby = val["root"].split(",")
+                    tapestry_positions[pos] = {"root": (int(rbx), int(rby))}
+                else:
+                    tapestry_positions[pos] = val   # uid string
+
         def _parse_display_data(raw):
             if not raw:
                 return {}
@@ -1404,6 +1509,7 @@ class SaveManager:
             "compost_bin_data":       _parse_bin_data(row[5]),
             "garden_data":            _parse_garden_data(row[6] if len(row) > 6 else None),
             "sculpture_positions":    sculpture_positions,
+            "tapestry_positions":     tapestry_positions,
             "wildflower_display_data": _parse_display_data(row[8] if len(row) > 8 else None),
             "pottery_display_data":   _parse_pottery_displays(row[9] if len(row) > 9 else None),
             "unplaced_vase_uids":     json.loads(row[10]) if len(row) > 10 and row[10] else [],
@@ -1721,6 +1827,26 @@ class SaveManager:
                 _sculpture_pending.append(sc_dict)
 
         try:
+            tp_rows = con.execute(
+                "SELECT uid, thread, height, width, grid, color, template, seed, pending FROM custom_tapestries"
+            ).fetchall()
+        except Exception:
+            tp_rows = []
+        _tapestry_created = []
+        _tapestry_pending = []
+        for r in tp_rows:
+            tp_dict = {
+                "uid": r[0], "thread": r[1], "height": r[2],
+                "width": r[3] if r[3] is not None else 1,
+                "grid": json.loads(r[4]),
+                "color": tuple(json.loads(r[5])),
+                "template": r[6], "seed": r[7],
+            }
+            _tapestry_created.append(tp_dict)
+            if r[8]:
+                _tapestry_pending.append(tp_dict)
+
+        try:
             pottery_rows = con.execute(
                 "SELECT uid, clay_biome, shape, state, firing_level, firing_quality, "
                 "thickness, evenness, glaze_type, texture_notes, seed, profile, blend_components "
@@ -1739,6 +1865,27 @@ class SaveManager:
                 "seed": r[10],
                 "profile": json.loads(r[11] or "[]"),
                 "blend_components": json.loads(r[12] or "[]"),
+            })
+
+        try:
+            salt_rows = con.execute(
+                "SELECT uid, origin_biome, variety, state, purity, salinity, mineral, "
+                "moisture, grain_size, flavor_notes, seed, blend_components, evap_method, refine_grade "
+                "FROM salt_crystals"
+            ).fetchall()
+        except Exception:
+            salt_rows = []
+        salt_data = []
+        for r in salt_rows:
+            salt_data.append({
+                "uid": r[0], "origin_biome": r[1], "variety": r[2], "state": r[3],
+                "purity": r[4], "salinity": r[5], "mineral": r[6],
+                "moisture": r[7], "grain_size": r[8],
+                "flavor_notes": json.loads(r[9] or "[]"),
+                "seed": r[10],
+                "blend_components": json.loads(r[11] or "[]"),
+                "evap_method": r[12] or "",
+                "refine_grade": r[13] or "",
             })
 
         return {
@@ -1812,10 +1959,17 @@ class SaveManager:
             "roast_profiles":     json.loads(roast_profiles_raw or "[]"),
             "sculptures_created": _sculpture_created,
             "pending_sculptures": _sculpture_pending,
+            "tapestries_created": _tapestry_created,
+            "pending_tapestries": _tapestry_pending,
             "pottery_pieces": pottery_data,
             "discovered_pottery": list({
                 f"{p['clay_biome']}_{p['firing_level']}"
                 for p in pottery_data if p["state"] == "fired" and p["firing_level"] != "cracked"
+            }),
+            "salt_crystals": salt_data,
+            "discovered_salt_origins": list({
+                f"{s['origin_biome']}_{s['refine_grade']}"
+                for s in salt_data if s["state"] == "finished" and s["refine_grade"]
             }),
         }
 

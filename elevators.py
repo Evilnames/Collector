@@ -5,7 +5,7 @@ ELEVATOR_SPEED = 200  # pixels/second — much faster than walking (MOVE_SPEED *
 
 
 class ElevatorCar:
-    W = BLOCK_SIZE * 2
+    W = BLOCK_SIZE
     H = BLOCK_SIZE * 2
 
     def __init__(self, shaft_x, stop_by):
@@ -38,7 +38,19 @@ class ElevatorCar:
         return [by for by in range(top, bot + 1)
                 if world.get_block(self.shaft_x, by) == ELEVATOR_STOP_BLOCK]
 
+    def _path_clear(self, from_by, to_by, world):
+        from blocks import ELEVATOR_STOP_BLOCK, ELEVATOR_CABLE_BLOCK
+        _elev = {ELEVATOR_STOP_BLOCK, ELEVATOR_CABLE_BLOCK}
+        step = 1 if to_by >= from_by else -1
+        for by in range(from_by, to_by + step, step):
+            if world.get_block(self.shaft_x, by) not in _elev:
+                return False
+        return True
+
     def call(self, target_by, world):
+        car_by = int(round(self.car_y / BLOCK_SIZE))
+        if not self._path_clear(car_by, target_by, world):
+            return
         self.target_y = float(target_by * BLOCK_SIZE)
         self.state = "moving"
 
@@ -57,7 +69,7 @@ class ElevatorCar:
             self.rider.y = self.car_y + (self.H - PLAYER_H) // 2
 
     def in_range(self, player):
-        cx = self.shaft_x + 1.0
+        cx = self.shaft_x + 0.5
         cy = self.car_y / BLOCK_SIZE + 1.0
         pcx = (player.x + PLAYER_W / 2) / BLOCK_SIZE
         pcy = (player.y + PLAYER_H / 2) / BLOCK_SIZE

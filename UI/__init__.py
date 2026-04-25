@@ -22,13 +22,15 @@ from .textiles import TextileMixin
 from .cheese import CheeseMixin
 from .jewelry import JewelryMixin
 from .sculpture import SculptureMixin
+from .tapestry import TapestryMixin
 from .pottery import PotteryMixin
+from .salt import SaltMixin
 
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
     CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, MinigamesMixin, CollectionsMixin,
-    HelpMixin, HorseMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, PotteryMixin,
+    HelpMixin, HorseMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -351,6 +353,14 @@ class UI(
         self._age_vessel_rects       = {}
         self._age_duration_rects     = {}
         self._age_btn                = None
+        # Wine aging mini-game
+        self._age_phase              = "select"  # select | aging | result
+        self._age_progress           = 0.0
+        self._age_care_active        = False
+        self._age_care_window        = 0.0
+        self._age_care_prompt_timer  = 12.0
+        self._age_care_bonus         = 0.0
+        self._age_game_done          = False
         # Bottle wine
         self._bottle_wine_idx        = None
         self._bottle_wine_rects      = {}
@@ -359,6 +369,9 @@ class UI(
         self._bottle_temp            = "cellar"
         self._bottle_temp_rects      = {}
         self._bottle_btn             = None
+        # Wine bottling result
+        self._bottle_wine_result_id  = None
+        self._bottle_wine_result_g   = None
         # ----- Copper Still mini-game state -----
         self._still_phase            = "select_spirit"  # select_spirit | distilling | result
         self._still_spirit_idx       = None
@@ -390,6 +403,14 @@ class UI(
         self._barrel_type_rects      = {}
         self._barrel_duration_rects  = {}
         self._barrel_age_btn         = None
+        # Barrel Room aging mini-game
+        self._barrel_phase           = "select"  # select | aging | result
+        self._barrel_age_progress    = 0.0
+        self._barrel_age_care_active = False
+        self._barrel_age_care_window = 0.0
+        self._barrel_age_care_timer  = 12.0
+        self._barrel_age_care_bonus  = 0.0
+        self._barrel_age_done        = False
         # ----- Bottling Station state -----
         self._bottle_phase           = "select"  # select | result
         self._bottle_single_idx      = None
@@ -661,6 +682,21 @@ class UI(
         self._sculpt_drag_mode      = None    # "carve" | "restore" | None
         self._sculpt_hover_cell     = None    # (ri, ci) | None
 
+        # Tapestry mini-game
+        self._tapestry_phase          = "idle"
+        self._tapestry_thread         = None
+        self._tapestry_count          = 0     # height in blocks (1–4)
+        self._tapestry_width          = 1     # width in blocks (1–4)
+        self._tapestry_grid           = []
+        self._tapestry_undo_stack     = []
+        self._tapestry_template       = None
+        self._tapestry_cell_rects     = {}
+        self._tapestry_template_rects = {}
+        self._tapestry_thread_rects   = {}
+        self._tapestry_symmetry       = False
+        self._tapestry_drag_mode      = None   # "weave" | "unweave" | None
+        self._tapestry_hover_cell     = None   # (ri, ci) | None
+
         # Pottery Wheel
         self._wheel_phase        = "select_clay"
         self._wheel_profile      = [3] * 12
@@ -691,6 +727,35 @@ class UI(
         self._glaze_dust_key     = None
         self._glaze_piece_rects  = {}
         self._glaze_dust_rects   = {}
+
+        # ----- Evaporation Pan mini-game state -----
+        self._evap_phase              = "select_crystal"
+        self._evap_current_crystal    = None
+        self._evap_selected_method    = "solar"
+        self._evap_time               = 0.0
+        self._evap_temp               = 0.0
+        self._evap_time_in_sweet      = 0.0
+        self._evap_overheat_penalty   = 0
+        self._evap_overheat_accum     = 0.0
+        self._evap_crystallize_hit    = False
+        self._evap_harvest_hit        = False
+        self._evap_event_flash        = None
+        self._evap_game_done          = False
+        self._evap_result_crystal     = None
+        self._evap_select_rects       = {}
+        self._evap_method_rects       = {}
+        # ----- Salt Grinder state -----
+        self._grinder_phase           = "select_crystal"
+        self._grinder_current_crystal = None
+        self._grinder_select_rects    = {}
+        self._grinder_grade_rects     = {}
+        self._grinder_result_item     = None
+        self._grinder_result_crystal  = None
+        # ----- Salt codex UI state -----
+        self._salt_codex_scroll       = 0
+        self._max_salt_codex_scroll   = 0
+        self._salt_codex_selected     = None
+        self._salt_codex_rects        = {}
 
 
     def draw(self, player, research=None, dt=0.0):
@@ -746,6 +811,7 @@ class UI(
         self._draw_wine_buffs(player)
         self._draw_tea_buffs(player)
         self._draw_herb_buffs(player)
+        self._draw_salt_buffs(player)
         self._drain_notifications(player)
         self._draw_toasts(dt)
         if self._drag_item_id is not None and self.inventory_open:

@@ -10,6 +10,10 @@ import soil as _soil
 
 # Young → mature block mapping for crop maturation. Lifted out of the crop
 # update loop so it isn't rebuilt every tick.
+DAY_DURATION   = 480.0   # 8 minutes of daylight
+NIGHT_DURATION = 300.0   # 5 minutes of night
+CYCLE_DURATION = DAY_DURATION + NIGHT_DURATION
+
 _CROP_MATURE_MAP = {
     STRAWBERRY_CROP_YOUNG:   STRAWBERRY_CROP_MATURE,
     WHEAT_CROP_YOUNG:        WHEAT_CROP_MATURE,
@@ -51,6 +55,49 @@ _CROP_MATURE_MAP = {
     COFFEE_CROP_YOUNG:       COFFEE_CROP_MATURE,
     GRAPEVINE_CROP_YOUNG:    GRAPEVINE_CROP_MATURE,
     FLAX_CROP_YOUNG:         FLAX_CROP_MATURE,
+    COTTON_CROP_YOUNG:       COTTON_CROP_MATURE,
+    CHAMOMILE_CROP_YOUNG:    CHAMOMILE_CROP_MATURE,
+    LAVENDER_CROP_YOUNG:     LAVENDER_CROP_MATURE,
+    MINT_CROP_YOUNG:         MINT_CROP_MATURE,
+    ROSEMARY_CROP_YOUNG:     ROSEMARY_CROP_MATURE,
+    THYME_CROP_YOUNG:        THYME_CROP_MATURE,
+    SAGE_CROP_YOUNG:         SAGE_CROP_MATURE,
+    BASIL_CROP_YOUNG:        BASIL_CROP_MATURE,
+    OREGANO_CROP_YOUNG:      OREGANO_CROP_MATURE,
+    GRAIN_CROP_YOUNG:        GRAIN_CROP_MATURE,
+    TEA_CROP_YOUNG:          TEA_CROP_MATURE,
+    DILL_CROP_YOUNG:         DILL_CROP_MATURE,
+    FENNEL_CROP_YOUNG:       FENNEL_CROP_MATURE,
+    TARRAGON_CROP_YOUNG:     TARRAGON_CROP_MATURE,
+    LEMON_BALM_CROP_YOUNG:   LEMON_BALM_CROP_MATURE,
+    ECHINACEA_CROP_YOUNG:    ECHINACEA_CROP_MATURE,
+    VALERIAN_CROP_YOUNG:     VALERIAN_CROP_MATURE,
+    ST_JOHNS_WORT_CROP_YOUNG:ST_JOHNS_WORT_CROP_MATURE,
+    YARROW_CROP_YOUNG:       YARROW_CROP_MATURE,
+    BERGAMOT_CROP_YOUNG:     BERGAMOT_CROP_MATURE,
+    WORMWOOD_CROP_YOUNG:     WORMWOOD_CROP_MATURE,
+    RUE_CROP_YOUNG:          RUE_CROP_MATURE,
+    LEMON_VERBENA_CROP_YOUNG:LEMON_VERBENA_CROP_MATURE,
+    HYSSOP_CROP_YOUNG:       HYSSOP_CROP_MATURE,
+    CATNIP_CROP_YOUNG:       CATNIP_CROP_MATURE,
+    WOOD_SORREL_CROP_YOUNG:  WOOD_SORREL_CROP_MATURE,
+    MARJORAM_CROP_YOUNG:     MARJORAM_CROP_MATURE,
+    SAVORY_CROP_YOUNG:       SAVORY_CROP_MATURE,
+    ANGELICA_CROP_YOUNG:     ANGELICA_CROP_MATURE,
+    BORAGE_CROP_YOUNG:       BORAGE_CROP_MATURE,
+    COMFREY_CROP_YOUNG:      COMFREY_CROP_MATURE,
+    MUGWORT_CROP_YOUNG:      MUGWORT_CROP_MATURE,
+    CHICKPEA_CROP_YOUNG:     CHICKPEA_CROP_MATURE,
+    LENTIL_CROP_YOUNG:       LENTIL_CROP_MATURE,
+    SESAME_CROP_YOUNG:       SESAME_CROP_MATURE,
+    POMEGRANATE_TREE_YOUNG:  POMEGRANATE_TREE_MATURE,
+    OLIVE_TREE_YOUNG:        OLIVE_TREE_MATURE,
+    SAFFRON_CROP_YOUNG:      SAFFRON_CROP_MATURE,
+    STRAWBERRY_CROP_YOUNG_P: STRAWBERRY_CROP_MATURE_P,
+    TOMATO_CROP_YOUNG_P:     TOMATO_CROP_MATURE_P,
+    WATERMELON_CROP_YOUNG_P: WATERMELON_CROP_MATURE_P,
+    CORN_CROP_YOUNG_P:       CORN_CROP_MATURE_P,
+    RICE_CROP_YOUNG_P:       RICE_CROP_MATURE_P,
 }
 
 
@@ -69,6 +116,7 @@ class World:
         self.farm_bots = []
         self.backhoes = []
         self.elevator_cars = []
+        self.minecarts = []
         self.birds = []
         self.insects = []
         self.dropped_items = []
@@ -93,6 +141,8 @@ class World:
         self.compost_bin_data = {}
         # Sculpture data: root pos -> Sculpture obj; body pos -> {"root": (bx, root_y)}
         self.sculpture_data = {}
+        # Tapestry data: root pos -> Tapestry obj; body pos -> {"root": (bx, root_y)}
+        self.tapestry_data = {}
         # Pottery display pedestals: (bx, by) -> PotteryPiece
         self.pottery_display_data = {}
         # Research-derived world flags (set by research.apply_bonuses)
@@ -104,13 +154,6 @@ class World:
         self._surf_octaves = [(0.015, 6.0), (0.04, 3.0), (0.10, 1.5), (0.22, 0.6)]
         self._surf_phases  = [_rng.uniform(0, 6.28) for _ in self._surf_octaves]
         self._surf_water_cache = {}
-        if preloaded:
-            self._load_from(preloaded, player_x)
-        else:
-            for cx in range(-CHUNK_LOAD_RADIUS, CHUNK_LOAD_RADIUS + 1):
-                self.load_chunk(cx)
-            self._spawn_animals()
-            self._spawn_huntable_animals()
         # Water simulation
         self._water_timer = 0.0
         self._water_interval = 0.12
@@ -129,11 +172,20 @@ class World:
         self._crop_interval = 20.0
         self._crop_rng      = random.Random(seed + 11111)
         self.pending_crops  = set()
+        if preloaded:
+            self._load_from(preloaded, player_x)
+        else:
+            for cx in range(-CHUNK_LOAD_RADIUS, CHUNK_LOAD_RADIUS + 1):
+                self.load_chunk(cx)
+            self._spawn_animals()
+            self._spawn_huntable_animals()
         # Soil moisture tick (independent of crop growth — faster so care feels responsive)
         self._soil_timer    = 0.0
         self._soil_interval = _soil.SOIL_TICK_SECS
         self._soil_rng      = random.Random(seed + 22222)
         self._rain_gap      = self._soil_rng.uniform(_soil.RAIN_MIN_GAP_SECS, _soil.RAIN_MAX_GAP_SECS)
+        # Day/night cycle
+        self.time_of_day = 0.0   # seconds, 0 = start of day, wraps at CYCLE_DURATION
         if not preloaded:
             from cities import generate_cities
             generate_cities(self, self.seed)
@@ -259,6 +311,21 @@ class World:
     # Chunk infrastructure
     # ------------------------------------------------------------------
 
+    def _scan_chunk_for_crops(self, cx: int):
+        """Rebuild pending_crops and pending_saplings for a chunk loaded from the DB."""
+        chunk = self._chunks.get(cx)
+        if chunk is None:
+            return
+        x_base = cx * CHUNK_W
+        for y in range(WORLD_H):
+            row = chunk[y]
+            for lx in range(CHUNK_W):
+                bid = row[lx]
+                if bid in YOUNG_CROP_BLOCKS:
+                    self.pending_crops.add((x_base + lx, y))
+                elif bid == SAPLING:
+                    self.pending_saplings.add((x_base + lx, y))
+
     def load_chunk(self, cx: int):
         """Load chunk from DB, or generate fresh if unseen."""
         if cx in self._chunks:
@@ -267,6 +334,8 @@ class World:
         self._chunks[cx] = data if data is not None else [[AIR] * CHUNK_W for _ in range(WORLD_H)]
         if data is None:
             self._fill_chunk(cx)
+        else:
+            self._scan_chunk_for_crops(cx)
         bg_data = self._save_mgr.load_bg_chunk(cx) if self._save_mgr else None
         if bg_data is not None:
             self._bg_chunks[cx] = bg_data
@@ -324,6 +393,7 @@ class World:
             for cx in to_load:
                 if cx in db_data:
                     self._chunks[cx] = db_data[cx]
+                    self._scan_chunk_for_crops(cx)
                 else:
                     self._chunks[cx] = [[AIR] * CHUNK_W for _ in range(WORLD_H)]
                     self._fill_chunk(cx)
@@ -375,6 +445,7 @@ class World:
         # sculpture_positions loaded here as uid strings; resolved in main.py
         # after player.apply_save (which loads the Sculpture objects)
         self._pending_sculpture_positions = data.get("sculpture_positions", {})
+        self._pending_tapestry_positions  = data.get("tapestry_positions", {})
         self.pottery_display_data = data.get("pottery_display_data", {})
         self._pending_unplaced_vase_uids  = data.get("unplaced_vase_uids", [])
         # Load chunks around the player's saved position
@@ -405,6 +476,9 @@ class World:
         from elevators import ElevatorCar
         for car_data in data.get("elevator_cars", []):
             self.elevator_cars.append(ElevatorCar.from_dict(car_data))
+        from minecarts import Minecart
+        for cart_data in data.get("minecarts", []):
+            self.minecarts.append(Minecart.from_dict(cart_data))
 
         from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion
         from horses import Horse
@@ -582,6 +656,7 @@ class World:
                                RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, BROCCOLI_BUSH,
                                GRAPEVINE_BUSH, GRAPEVINE_BUSH,
                                CHAMOMILE_BUSH, LAVENDER_BUSH, MINT_BUSH, FLAX_BUSH, FLAX_BUSH,
+                               COTTON_BUSH,
                                DILL_BUSH, TARRAGON_BUSH, LEMON_BALM_BUSH, CATNIP_BUSH,
                                ST_JOHNS_WORT_BUSH, YARROW_BUSH, BERGAMOT_BUSH, WOOD_SORREL_BUSH,
                                COMFREY_BUSH],
@@ -609,10 +684,12 @@ class World:
                                WATERMELON_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH, ZUCCHINI_BUSH,
                                COFFEE_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
                                TEA_BUSH, TEA_BUSH, TEA_BUSH, MINT_BUSH,
+                               COTTON_BUSH, COTTON_BUSH,
                                BASIL_BUSH, BASIL_BUSH, LEMON_VERBENA_BUSH],
             "savanna":        [CORN_BUSH, CHILI_BUSH, PEPPER_BUSH, EGGPLANT_BUSH,
                                SWEET_POTATO_BUSH, WATERMELON_BUSH, ONION_BUSH, PUMPKIN_BUSH,
                                COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
+                               COTTON_BUSH, COTTON_BUSH, COTTON_BUSH,
                                MARJORAM_BUSH, LEMON_VERBENA_BUSH],
             "wasteland":      [BEET_BUSH, TURNIP_BUSH, RADISH_BUSH, ONION_BUSH, ROSEMARY_BUSH,
                                WORMWOOD_BUSH, WORMWOOD_BUSH, MUGWORT_BUSH],
@@ -626,7 +703,7 @@ class World:
                                RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, CABBAGE_BUSH, ONION_BUSH,
                                COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH,
                                TEA_BUSH, CHAMOMILE_BUSH, LAVENDER_BUSH, ROSEMARY_BUSH,
-                               FLAX_BUSH, FLAX_BUSH,
+                               FLAX_BUSH, FLAX_BUSH, COTTON_BUSH,
                                THYME_BUSH, THYME_BUSH, OREGANO_BUSH, SAGE_BUSH, MARJORAM_BUSH,
                                YARROW_BUSH, ECHINACEA_BUSH, HYSSOP_BUSH, MUGWORT_BUSH],
             "steep_hills":    [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
@@ -634,11 +711,12 @@ class World:
                                LAVENDER_BUSH, ROSEMARY_BUSH, THYME_BUSH, SAVORY_BUSH, RUE_BUSH],
             "steppe":         [WHEAT_BUSH, CORN_BUSH, RADISH_BUSH, ONION_BUSH,
                                GARLIC_BUSH, TURNIP_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
-                               FLAX_BUSH,
+                               FLAX_BUSH, COTTON_BUSH, COTTON_BUSH,
                                THYME_BUSH, SAGE_BUSH, OREGANO_BUSH, WORMWOOD_BUSH,
                                YARROW_BUSH, MUGWORT_BUSH],
             "arid_steppe":    [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, RADISH_BUSH,
                                SWEET_POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
+                               COTTON_BUSH, COTTON_BUSH,
                                THYME_BUSH, SAGE_BUSH, WORMWOOD_BUSH, RUE_BUSH],
             "tundra":         [BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, RADISH_BUSH, COFFEE_BUSH, TEA_BUSH, CHAMOMILE_BUSH,
                                YARROW_BUSH, ANGELICA_BUSH],
@@ -1254,6 +1332,11 @@ class World:
             clay_n = self._vein_noise(bx, by, 0x3C1A2, scale=5)
             if clay_n >= 0.60 and r < 0.07:
                 return CLAY_DEPOSIT
+        # Salt deposits — mid-depth evaporite beds in arid/sedimentary strata
+        if depth < 60 and biome in ("sedimentary", "arid_steppe", "steppe", "igneous"):
+            salt_n = self._vein_noise(bx, by, 0x5A1C3B, scale=6)
+            if salt_n >= 0.62 and r < 0.045:
+                return SALT_DEPOSIT
         # Marble veins — medium-depth sedimentary pockets; rarer than limestone
         if 25 <= depth < 80 and biome in ("sedimentary", "temperate"):
             marb_n = self._vein_noise(bx, by, 0xD4A1F2, scale=6)
@@ -1430,7 +1513,11 @@ class World:
                 and bid not in BUSH_BLOCKS and bid not in CROP_BLOCKS
                 and bid not in OPEN_DOORS
                 and bid not in ALL_LOGS and bid not in ALL_LEAVES
-                and bid not in EQUIPMENT_BLOCKS)
+                and bid not in EQUIPMENT_BLOCKS
+                and bid != MINE_TRACK_BLOCK and bid != MINE_TRACK_STOP_BLOCK)
+
+    def update_time(self, dt):
+        self.time_of_day = (self.time_of_day + dt) % CYCLE_DURATION
 
     def update_water(self, dt, player):
         self._water_timer += dt
@@ -1934,11 +2021,14 @@ class World:
     def update_compost_bins(self, dt):
         """Advance composting progress; produce compost items when threshold reached."""
         import soil as _s
-        for bin_data in self.compost_bin_data.values():
+        for pos, bin_data in self.compost_bin_data.items():
             total = sum(bin_data["input"].values())
             if total < _s.COMPOST_INPUT_PER_OUTPUT:
                 continue
+            prev = bin_data["progress"]
             bin_data["progress"] += _s.COMPOST_PROGRESS_PER_SEC * dt
+            if int(prev) != int(bin_data["progress"]):
+                print(f"[Compost] {pos}: progress={bin_data['progress']:.0f}/{_s.COMPOST_OUTPUT_THRESHOLD:.0f} items={bin_data['input']}")
             if bin_data["progress"] >= _s.COMPOST_OUTPUT_THRESHOLD:
                 bin_data["progress"] -= _s.COMPOST_OUTPUT_THRESHOLD
                 bin_data["output"] += 1

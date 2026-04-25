@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 @dataclass
 class Textile:
     uid: str
-    fiber_type: str        # "wool" | "linen" | "blend"
+    fiber_type: str        # "wool" | "linen" | "cotton" | "blend"
     state: str             # "thread" | "dyed" | "woven"
     output_type: str       # "cloth" | "rug" | "tapestry" | "garment_hat" | "garment_vest" | "garment_boots"
     texture: str           # "plain" | "twill" | "herringbone" | "diamond"
@@ -21,9 +21,10 @@ class Textile:
 
 # Base fiber attributes per fiber type
 FIBER_PROFILES = {
-    "wool":  {"softness": 0.85, "luster": 0.50, "quality_base": 0.55},
-    "linen": {"softness": 0.50, "luster": 0.72, "quality_base": 0.50},
-    "blend": {"softness": 0.68, "luster": 0.61, "quality_base": 0.60},
+    "wool":   {"softness": 0.85, "luster": 0.50, "quality_base": 0.55},
+    "linen":  {"softness": 0.50, "luster": 0.72, "quality_base": 0.50},
+    "cotton": {"softness": 0.78, "luster": 0.42, "quality_base": 0.58},
+    "blend":  {"softness": 0.68, "luster": 0.61, "quality_base": 0.60},
 }
 
 # Pattern quality modifiers per texture
@@ -88,9 +89,9 @@ OUTPUT_DISPLAY = {
     "garment_boots":"Woven Boots",
 }
 
-_FIBER_DISPLAY = {"wool": "Wool", "linen": "Linen", "blend": "Blend"}
+_FIBER_DISPLAY = {"wool": "Wool", "linen": "Linen", "cotton": "Cotton", "blend": "Blend"}
 _OUTPUT_TYPES  = ["cloth", "rug", "tapestry", "garment_hat", "garment_vest", "garment_boots"]
-_FIBERS        = ["wool", "linen", "blend"]
+_FIBERS        = ["wool", "linen", "cotton", "blend"]
 _DYE_FAMILIES  = list(DYE_FAMILY_COLORS.keys())
 
 TYPE_ORDER = [

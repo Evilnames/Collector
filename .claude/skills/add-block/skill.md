@@ -5,9 +5,26 @@ description: Step-by-step guide for adding a new block type to CollectorBlocks. 
 
 # Add a New Block
 
-Blocks in CollectorBlocks are defined by a numeric ID constant, a `BLOCKS` dict entry, and a renderer surface. Beyond those three things, what else is required depends on the block's category. Read the category that matches your block and follow only those steps.
+## Use the generator first
 
-**Current highest block ID:** 513 (`PORTUGUESE_CORK`). New blocks start at **514**.
+For categories A, B, and C below, run the generator before doing anything manually:
+
+```bash
+python3 generator/new_block.py decorative "Block Name" "R,G,B"
+python3 generator/new_block.py equipment  "Block Name" "R,G,B"
+python3 generator/new_block.py ore        "Block Name" "R,G,B"
+```
+
+Add `--dry-run` to preview without writing. The generator handles:
+- ID constant (auto-detects next free ID)
+- `BLOCKS` dict entry
+- `EQUIPMENT_BLOCKS` / `RESOURCE_BLOCKS` set membership
+- `ITEMS` entry + extends the `from blocks import` in items.py
+- Placeholder `ARTISAN_RECIPES` entry (decorative/equipment)
+
+It prints exactly what still needs manual work when it finishes. The remaining manual steps are always: renderer art, UI wiring (equipment), and world generation (ore). See the relevant category section below for those steps.
+
+Options: `--hardness N`, `--drop item_id` (use `none` for no drop), `--comment "text"`.
 
 ---
 
@@ -15,49 +32,27 @@ Blocks in CollectorBlocks are defined by a numeric ID constant, a `BLOCKS` dict 
 
 A block that can be placed and mined, with an optional item drop. Artisan Bench decorative blocks are the most common example.
 
-### A1 — Assign an ID constant (blocks.py)
+**Run the generator first** — it handles A1–A4 automatically.
 
-Add at the end of the relevant section near line 510 in [blocks.py](../../../blocks.py):
-
-```python
-MY_NEW_BLOCK = 514  # short description of what it is
-```
-
-### A2 — Add to BLOCKS dict (blocks.py)
-
-Find the `BLOCKS = {` definition and add an entry:
-
-```python
-MY_NEW_BLOCK: {"name": "My New Block", "hardness": 2, "color": (180, 160, 130), "drop": "my_new_block_item"},
-```
+### BLOCKS dict field reference
 
 | Field | Notes |
 |-------|-------|
 | `name` | Display name shown in UI |
-| `hardness` | Mining time multiplier. Equipment/decorative = 1, stone ≈ 3, ore = 5, indestructible = `float('inf')` |
-| `color` | RGB fallback. If drawing custom art in renderer, set to `None` |
-| `drop` | Item ID string dropped when mined, or `None` for no drop |
+| `hardness` | Mining time multiplier. Decorative/equipment = 1, stone ≈ 3, ore = 4–7, indestructible = `float('inf')` |
+| `color` | RGB tuple. If using custom renderer art, set to `None` |
+| `drop` | Item ID string dropped when mined, or `None` |
 | `drop_chance` | Optional float 0–1 (default 1.0). Omit unless you want a random drop |
 
-### A3 — Add item entry (items.py)
+### ARTISAN_RECIPES entry format ([crafting.py](../../../crafting.py))
 
-In [items.py](../../../items.py), add the item that places or represents the block:
-
-```python
-"my_new_block_item": {"name": "My New Block", "color": (180, 160, 130), "place_block": MY_NEW_BLOCK},
-```
-
-Import the block constant in items.py — extend the relevant import line at the top of the file.
-
-### A4 — Add crafting recipe (crafting.py)
-
-For Artisan Bench outputs, add to the `ARTISAN_BENCH_RECIPES` list in [crafting.py](../../../crafting.py):
+The generator inserts a placeholder — update the ingredients:
 
 ```python
-{"output": "my_new_block_item", "count": 4, "ingredients": {"stone": 2, "iron_ore": 1}},
+{"name": "My Block", "ingredients": {"stone_chip": 2, "iron_chunk": 1}, "output_id": "my_block", "output_count": 2},
 ```
 
-For other stations, find the matching recipe list (`BAKERY_RECIPES`, `ROASTER_RECIPES`, etc.) and follow the same pattern.
+For non-Artisan-Bench stations, find the matching list (`BAKERY_RECIPES`, `ROASTER_RECIPES`, etc.) and add an entry there instead.
 
 ### A5 — Add renderer surface (renderer.py)
 
@@ -86,21 +81,11 @@ Extend the import block in renderer.py to include the new constant.
 
 A placeable block that opens a UI when the player interacts with it (ovens, fermenters, looms, etc.).
 
-### B1–B3: Follow steps A1–A3
+**Run the generator first** — it handles the ID constant, BLOCKS entry, EQUIPMENT_BLOCKS membership, item, and ARTISAN_RECIPES placeholder automatically.
 
-Use `"hardness": 1` and `"drop": "my_station_item"` in BLOCKS. The item `place_block` links it back to the block ID.
+### B5 — Update crafting recipe (crafting.py)
 
-### B4 — Add to EQUIPMENT_BLOCKS set (blocks.py)
-
-Find `EQUIPMENT_BLOCKS` (around line 621) and add the new constant:
-
-```python
-EQUIPMENT_BLOCKS = {..., MY_STATION_BLOCK}
-```
-
-### B5 — Add crafting recipe (crafting.py)
-
-Add a recipe that outputs the item. Equipment is typically crafted at the basic bench or Artisan Bench.
+The generator adds a placeholder to `ARTISAN_RECIPES`. Update the ingredients to the correct ones. Equipment is typically crafted at the Artisan Bench or a basic bench.
 
 ### B6 — Add renderer surface (renderer.py)
 
@@ -123,15 +108,9 @@ Implement `open_my_station_ui()` following an existing station as a model.
 
 A block that spawns in the world underground and is mined for resources.
 
-### C1–C2: Follow steps A1–A2
+**Run the generator first** — it handles the ID constant, BLOCKS entry, RESOURCE_BLOCKS membership, and drop item automatically.
 
-For ores: `"hardness": 3–7`, `"drop": "ore_item"`. For special deposits (Rock, Fossil, Gem-style): `"drop": None` — the drop is handled in player.py.
-
-### C3 — Add to RESOURCE_BLOCKS set (blocks.py)
-
-```python
-RESOURCE_BLOCKS = {..., MY_ORE_BLOCK}
-```
+For special deposits (Rock, Fossil, Gem-style) that spawn a collectible instead of an item, pass `--drop none` and handle the drop manually in player.py (see C5 below).
 
 ### C4 — Add world generation (world.py)
 
@@ -144,9 +123,9 @@ if depth > 60 and biome in ("ferrous", "sedimentary") and random.random() < 0.04
 
 Place it before the final `return STONE` line. Adjust depth range and probability to taste.
 
-### C5 — Add item and renderer surface
+### C5 — Add renderer surface (renderer.py)
 
-Follow steps A3 and A5. Ores use a custom drawn surface — typically a stone-colored rect with colored crystal/vein shapes on top.
+Ores use a custom drawn surface — typically a stone-colored rect with colored crystal/vein shapes on top. Follow the renderer pattern in Category A step A5.
 
 ### C6 — Special deposit (no item drop)
 
@@ -170,14 +149,18 @@ Three-stage plants that spawn on grass and grow over time. Use the **[add-herb](
 
 ## Verification checklist
 
+**Generator covers (run it first):**
 - [ ] Block ID constant added and is unique
 - [ ] `BLOCKS` dict entry present with `name`, `hardness`, `color`, `drop`
-- [ ] Renderer surface defined (auto from `color`, or custom `if bid ==` block)
+- [ ] `ITEMS` entry created; items.py import extended (decorative/equipment)
+- [ ] Drop item entry added (ore)
+- [ ] Category-specific set updated (`EQUIPMENT_BLOCKS` or `RESOURCE_BLOCKS`)
+- [ ] Placeholder `ARTISAN_RECIPES` entry added (decorative/equipment)
+
+**Manual steps remaining:**
+- [ ] Renderer surface defined — custom `if bid ==` art in `_build_block_surfs()` (renderer.py)
 - [ ] Renderer imports the new block constant
-- [ ] `ITEMS` entry created with `place_block` pointing at the block ID (if placeable)
-- [ ] items.py imports the new block constant
-- [ ] Crafting recipe added (if craftable)
-- [ ] Category-specific sets updated (`EQUIPMENT_BLOCKS`, `RESOURCE_BLOCKS`, etc.)
-- [ ] UI interaction wired in main.py (equipment blocks only)
-- [ ] World generation entry added (terrain blocks only)
+- [ ] Crafting recipe ingredients updated from placeholder (decorative/equipment)
+- [ ] UI interaction wired in main.py (equipment only)
+- [ ] World generation entry added in `_pick_block()` (terrain/ore only)
 - [ ] Run the game and verify the block places, renders, and drops correctly

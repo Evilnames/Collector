@@ -588,7 +588,7 @@ class CraftingMixin:
             self._draw_fermenter(player, dt)
             return
         if self.refinery_block_id == WINE_CELLAR_BLOCK:
-            self._draw_wine_cellar(player)
+            self._draw_wine_cellar(player, dt)
             return
         if self.refinery_block_id == STILL_BLOCK:
             self._draw_still(player, dt)
@@ -725,16 +725,25 @@ class CraftingMixin:
         if self.refinery_block_id == COMPOST_BIN_BLOCK:
             self._draw_compost_bin(player)
             return
-        from blocks import SCULPTORS_BENCH
+        from blocks import SCULPTORS_BENCH, TAPESTRY_FRAME_BLOCK
         if self.refinery_block_id == SCULPTORS_BENCH:
             self._draw_sculptor_bench(player, dt)
             return
-        from blocks import POTTERY_WHEEL_BLOCK, POTTERY_KILN_BLOCK
+        if self.refinery_block_id == TAPESTRY_FRAME_BLOCK:
+            self._draw_tapestry_frame(player, dt)
+            return
+        from blocks import POTTERY_WHEEL_BLOCK, POTTERY_KILN_BLOCK, EVAPORATION_PAN_BLOCK, SALT_GRINDER_BLOCK
         if self.refinery_block_id == POTTERY_WHEEL_BLOCK:
             self._draw_pottery_wheel(player, dt)
             return
         if self.refinery_block_id == POTTERY_KILN_BLOCK:
             self._draw_pottery_kiln(player, dt)
+            return
+        if self.refinery_block_id == EVAPORATION_PAN_BLOCK:
+            self._draw_evap_pan(player, dt)
+            return
+        if self.refinery_block_id == SALT_GRINDER_BLOCK:
+            self._draw_salt_grinder(player, dt)
             return
         equip_data = get_refinery_equipment().get(self.refinery_block_id)
         if equip_data is None:
@@ -914,13 +923,23 @@ class CraftingMixin:
         # --- Progress bar ---
         bar_y = py + 185
         progress = bin_data["progress"]
+        total_items = sum(bin_data["input"].values())
         bar_w = PW - 32
+        is_active = total_items >= _soil.COMPOST_INPUT_PER_OUTPUT
         filled = int(bar_w * progress / _soil.COMPOST_OUTPUT_THRESHOLD)
         pygame.draw.rect(self.screen, (40, 28, 14), (px + 16, bar_y, bar_w, 16))
         if filled > 0:
-            pygame.draw.rect(self.screen, (100, 160, 60), (px + 16, bar_y, filled, 16))
+            bar_color = (100, 160, 60) if is_active else (80, 80, 60)
+            pygame.draw.rect(self.screen, bar_color, (px + 16, bar_y, filled, 16))
         pygame.draw.rect(self.screen, (110, 85, 45), (px + 16, bar_y, bar_w, 16), 1)
-        prog_lbl = self.small.render(f"Composting: {int(progress)}/{int(_soil.COMPOST_OUTPUT_THRESHOLD)}", True, (180, 200, 140))
+        if is_active:
+            prog_text = f"Composting: {int(progress)}/{int(_soil.COMPOST_OUTPUT_THRESHOLD)}"
+            prog_color = (180, 200, 140)
+        else:
+            need = _soil.COMPOST_INPUT_PER_OUTPUT - total_items
+            prog_text = f"Idle — deposit {need} more item{'s' if need != 1 else ''} to begin"
+            prog_color = (160, 120, 80)
+        prog_lbl = self.small.render(prog_text, True, prog_color)
         self.screen.blit(prog_lbl, (px + 16, bar_y - 18))
 
         # --- Output ---

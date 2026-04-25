@@ -450,6 +450,96 @@ CRIMSON_CEDAR_DOOR_OPEN  = 937
 TEAL_DOOR_CLOSED         = 938  # rich teal lacquered door with gold trim
 TEAL_DOOR_OPEN           = 939
 
+# --- Salt supply chain ---
+SALT_DEPOSIT           = 940  # natural salt bed; spawns in arid/sedimentary zones underground
+EVAPORATION_PAN_BLOCK  = 941  # placed Evaporation Pan (evaporation mini-game)
+SALT_GRINDER_BLOCK     = 942  # placed Salt Grinder (grade selection)
+
+# --- Minecart system ---
+MINE_TRACK_BLOCK      = 943  # horizontal rail section
+MINE_TRACK_STOP_BLOCK = 944  # station/stop on the rail where carts can be called
+
+# --- Custom Tapestry system ---
+TAPESTRY_FRAME_BLOCK  = 945  # crafting station for the tapestry design mini-game
+CUSTOM_TAPESTRY_ROOT  = 946  # bottom block of a player-woven hanging tapestry
+CUSTOM_TAPESTRY_BODY  = 947  # upper continuation blocks of a tall tapestry
+
+# --- Gardening blocks ---
+ORNAMENTAL_GRASS    = 948  # decorative feathery grass clump; placed decoration
+FLOWERING_SHRUB     = 949  # rounded ornamental shrub with pink flowers
+HOLLY_SHRUB         = 950  # dark glossy holly with red berries
+TOPIARY_PEACOCK     = 951  # peacock-shaped clipped evergreen topiary
+TOPIARY_BEAR        = 952  # bear-shaped clipped evergreen topiary
+TOPIARY_RABBIT      = 953  # rabbit-shaped clipped evergreen topiary
+ROSE_BED            = 954  # formal rose garden bed with red blooms
+TULIP_BED           = 955  # Dutch-style multi-colour tulip bed
+COTTAGE_GARDEN_BED  = 956  # informal mixed cottage wildflower garden bed
+CHERUB_FOUNTAIN     = 957  # carved stone cherub/putto fountain
+LION_HEAD_FOUNTAIN  = 958  # wall-mounted lion's head water spout
+MOSAIC_FOUNTAIN     = 959  # mosaic-tiled round fountain basin
+LAVENDER_BED        = 960  # rows of purple lavender in soil
+SUNFLOWER_BED       = 961  # tall yellow sunflowers in soil
+DAHLIA_BED          = 962  # mixed colour dahlia blooms in soil
+TOPIARY_SWAN        = 963  # swan-shaped clipped evergreen topiary
+TOPIARY_FOX         = 964  # fox-shaped clipped evergreen topiary
+TOPIARY_ELEPHANT    = 965  # elephant-shaped clipped topiary with raised trunk
+PEONY_BUSH          = 966  # ornamental peony with large fluffy blooms
+FERN_CLUMP          = 967  # decorative shade-loving fern fronds
+RAISED_GARDEN_BED   = 968  # stone-edged raised planting bed with mixed crops
+LILY_PAD_POND       = 969  # small still pond with lily pads and flowers
+BEE_SKEP            = 970  # traditional woven straw beehive decoration
+GARDEN_WHEELBARROW  = 971  # decorative old wooden wheelbarrow filled with soil
+IRIS_BED            = 972  # purple iris flowers with flag petals in soil
+POPPY_BED           = 973  # bright red poppies with black centres in soil
+FOXGLOVE_PATCH      = 974  # tall foxglove flower spires
+SNOWDROP_PATCH      = 975  # delicate white drooping snowdrop bells
+MARIGOLD_BED        = 976  # dense orange/yellow marigold pom-poms
+BOXWOOD_BALL        = 977  # perfectly round clipped boxwood sphere on a stem
+RHODODENDRON_BUSH   = 978  # large flowering rhododendron with pink blooms
+BAMBOO_CLUMP        = 979  # ornamental tall bamboo stems with nodes
+AGAPANTHUS_PATCH    = 980  # slender stems topped with globe blue flower heads
+TOPIARY_DRAGON      = 981  # dragon-shaped clipped topiary with wing silhouette
+TOPIARY_GIRAFFE     = 982  # giraffe-shaped topiary with long neck
+TOPIARY_HEDGEHOG    = 983  # round spiky hedgehog topiary
+BUBBLE_FOUNTAIN     = 984  # rounded boulder with water beading over it
+SHELL_FOUNTAIN      = 985  # scallop shell bowl fountain on stone pedestal
+MILLSTONE_FOUNTAIN  = 986  # flat millstone with water flowing over its rim
+TRELLIS_ARCH        = 987  # wooden arch draped with climbing plants
+COLD_FRAME          = 988  # glass-lidded wooden cold frame for seedlings
+GARDEN_SWING        = 989  # wooden swing seat hanging on rope
+WICKER_FENCE        = 990  # low woven wicker garden fence
+HANGING_BASKET      = 991  # wall-mounted hanging flower basket with trailing blooms
+STANDARD_ROSE       = 992  # rose trained on a tall single stem (lollipop form)
+GARDEN_GNOME        = 993  # cheerful ceramic garden gnome statue
+TOPIARY_ARCH        = 994  # clipped evergreen hedge archway block
+CHAMOMILE_LAWN      = 995  # low fragrant chamomile ground cover with tiny flowers
+CREEPING_THYME      = 996  # dense mat of creeping thyme with purple micro-flowers
+HYDRANGEA_BUSH      = 997  # large mophead hydrangea with blue/pink flower globes
+ALLIUM_PATCH        = 998  # tall stems topped with globe purple allium heads
+SWEET_PEA_TRELLIS   = 999  # climbing sweet peas on bamboo cane trellis
+BLEEDING_HEART_PATCH= 1000 # arching stems with heart-shaped pendant flowers
+ASTILBE_PATCH       = 1001 # feathery plume flowers in pink/red
+WISTERIA_PILLAR     = 1002 # freestanding stone column draped in wisteria
+TOPIARY_SNAIL       = 1003 # snail-shaped clipped topiary
+TOPIARY_MUSHROOM    = 1004 # mushroom-shaped clipped topiary
+TOPIARY_OWL         = 1005 # owl-shaped clipped topiary
+TOPIARY_DINOSAUR    = 1006 # dinosaur-shaped clipped topiary
+KOI_POOL            = 1007 # formal rectangular pond with visible koi
+STONE_TROUGH_PLANTER= 1008 # old stone livestock trough repurposed as planter
+RAIN_BARREL         = 1009 # wooden rain barrel with brass tap
+MOSS_PATCH          = 1010 # lush cushion moss ground cover
+CLOVER_LAWN         = 1011 # white clover ground cover with small flowers
+BARK_MULCH          = 1012 # brown bark chip mulch ground cover
+STONE_FROG          = 1013 # decorative carved stone frog ornament
+GARDEN_DOVECOTE     = 1014 # white domed dovecote on tall timber pole
+STONE_HEDGEHOG      = 1015 # carved stone hedgehog garden ornament
+BIRD_TABLE          = 1016 # wooden bird feeding table on a post
+GARDEN_CLOCK        = 1017 # decorative verdigris garden clock on post
+GARDEN_OBELISK_METAL= 1018 # wrought-iron obelisk frame for climbing plants
+POTTING_TABLE       = 1019 # wooden potting table with tools hanging above
+COMPOST_HEAP        = 1020 # open compost heap with layered organic matter
+GARDEN_TOAD_HOUSE   = 1021 # ceramic arch toad shelter with painted door
+
 
 SAFFRON_DOOR_CLOSED      = 860  # warm golden-yellow with dark carved panels
 SAFFRON_DOOR_OPEN        = 861
@@ -976,6 +1066,11 @@ WILDFLOWER_DISPLAY_BLOCK = 794  # decorative vase; holds one wildflower from the
 
 # --- Córdoba / Umayyad Architecture ---
 MEZQUITA_ARCH          = 907  # alternating red & cream voussoir arch block
+
+# --- Cotton supply chain ---
+COTTON_BUSH         = 908  # surface bush; drops cotton_seed
+COTTON_CROP_YOUNG   = 909
+COTTON_CROP_MATURE  = 910  # harvest → cotton_fiber + cotton_seed
 MIHRAB_TILE            = 795  # golden tessera mosaic mihrab niche panel
 MEDINA_AZAHARA_STONE   = 796  # white marble carved acanthus relief (Medina Azahara)
 CORDOBA_COLUMN         = 797  # slender Umayyad marble column section
@@ -1149,9 +1244,12 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     GLASS_KILN_BLOCK,
                     JEWELRY_WORKBENCH_BLOCK,
                     GARDEN_WORKSHOP_BLOCK,
-                    GARDEN_BLOCK}
+                    GARDEN_BLOCK,
+                    EVAPORATION_PAN_BLOCK, SALT_GRINDER_BLOCK,
+                    SCULPTORS_BENCH,
+                    TAPESTRY_FRAME_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
-                    CLAY_DEPOSIT, LIMESTONE_DEPOSIT}
+                    CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT}
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
                      RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, GARLIC_BUSH, SCALLION_BUSH, CHILI_BUSH,
                      PEPPER_BUSH, ONION_BUSH, POTATO_BUSH, EGGPLANT_BUSH, CABBAGE_BUSH,
@@ -1167,7 +1265,7 @@ BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN
                      BERGAMOT_BUSH, WORMWOOD_BUSH, RUE_BUSH, LEMON_VERBENA_BUSH,
                      HYSSOP_BUSH, CATNIP_BUSH, WOOD_SORREL_BUSH, MARJORAM_BUSH,
                      SAVORY_BUSH, ANGELICA_BUSH, BORAGE_BUSH, COMFREY_BUSH, MUGWORT_BUSH,
-                     FLAX_BUSH}
+                     FLAX_BUSH, COTTON_BUSH}
 YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG, TOMATO_CROP_YOUNG, CORN_CROP_YOUNG, PUMPKIN_CROP_YOUNG, APPLE_CROP_YOUNG,
                      RICE_CROP_YOUNG, GINGER_CROP_YOUNG, BOK_CHOY_CROP_YOUNG, GARLIC_CROP_YOUNG,
                      SCALLION_CROP_YOUNG, CHILI_CROP_YOUNG,
@@ -1189,7 +1287,7 @@ YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG,
                      PRICKLY_PEAR_YOUNG, CHOLLA_YOUNG, PALO_VERDE_YOUNG,
                      STRAWBERRY_CROP_YOUNG_P, TOMATO_CROP_YOUNG_P, WATERMELON_CROP_YOUNG_P,
                      CORN_CROP_YOUNG_P, RICE_CROP_YOUNG_P,
-                     FLAX_CROP_YOUNG}
+                     FLAX_CROP_YOUNG, COTTON_CROP_YOUNG}
 MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATURE, TOMATO_CROP_MATURE, CORN_CROP_MATURE, PUMPKIN_CROP_MATURE, APPLE_CROP_MATURE,
                      RICE_CROP_MATURE, GINGER_CROP_MATURE, BOK_CHOY_CROP_MATURE, GARLIC_CROP_MATURE,
                      SCALLION_CROP_MATURE, CHILI_CROP_MATURE,
@@ -1211,7 +1309,7 @@ MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATU
                      PRICKLY_PEAR_MATURE, CHOLLA_MATURE, PALO_VERDE_MATURE,
                      STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P, WATERMELON_CROP_MATURE_P,
                      CORN_CROP_MATURE_P, RICE_CROP_MATURE_P,
-                     FLAX_CROP_MATURE}
+                     FLAX_CROP_MATURE, COTTON_CROP_MATURE}
 CROP_BLOCKS       = YOUNG_CROP_BLOCKS | MATURE_CROP_BLOCKS
 
 # Perennial crops regrow after harvest (each harvest has ~33% chance to die)
@@ -1230,6 +1328,7 @@ PERENNIAL_CROP_MATURE = {
     PRICKLY_PEAR_MATURE, CHOLLA_MATURE, PALO_VERDE_MATURE,
     STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P,
     FLAX_CROP_MATURE,
+    COTTON_CROP_MATURE,
 }
 
 # Reverse mapping: mature → young, used for perennial regrowth
@@ -1316,8 +1415,100 @@ MATURE_TO_YOUNG_CROP = {
     CORN_CROP_MATURE_P:       CORN_CROP_YOUNG_P,
     RICE_CROP_MATURE_P:       RICE_CROP_YOUNG_P,
     FLAX_CROP_MATURE:         FLAX_CROP_YOUNG,
+    COTTON_CROP_MATURE:       COTTON_CROP_YOUNG,
 }
 
+ALPINE_BALCONY_RAIL          = 1022  # alpine balcony rail
+DARK_TIMBER_BEAM             = 1023  # dark timber beam
+ROUGH_STONE_WALL             = 1024  # rough stone wall
+ALPINE_PLASTER               = 1025  # alpine plaster
+FLOWER_BOX                   = 1026  # flower box
+FIREWOOD_STACK               = 1027  # firewood stack
+SLATE_SHINGLE                = 1028  # slate shingle
+CARVED_SHUTTER               = 1029  # carved shutter
+BEAR_HIDE                    = 1030  # bear hide
+ALPINE_HERB_RACK             = 1031  # alpine herb rack
+HAY_BALE                     = 1032  # hay bale
+PINE_PLANK_WALL              = 1033  # pine plank wall
+GRANITE_ASHLAR               = 1034  # granite ashlar
+CUCKOO_CLOCK                 = 1035  # cuckoo clock
+GERANIUM_BOX                 = 1036  # geranium box
+ARCH_STONE                   = 1037  # arch stone
+SWISS_PANEL                  = 1038  # swiss panel
+COPPER_COWBELL               = 1039  # copper cowbell
+WOODEN_GEAR                  = 1040  # wooden gear
+STONE_BASIN                  = 1041  # stone basin
+MILK_CHURN                   = 1042  # milk churn
+ALPINE_CHEST                 = 1043  # alpine chest
+ALPINE_LANTERN               = 1044  # alpine lantern
+WROUGHT_IRON_RAIL            = 1045  # wrought iron rail
+ALPINE_CHANDELIER            = 1046  # alpine chandelier
+WOVEN_TEXTILE                = 1047  # woven textile
+COWBELL_RACK                 = 1048  # cowbell rack
+ALPINE_STUCCO                = 1049  # alpine stucco
+CARVED_LINTEL                = 1050  # carved lintel
+CHALET_DOOR                  = 1051  # chalet door
+CERAMIC_TILE_STOVE           = 1052  # ceramic tile stove
+CARVED_BARGEBOARD            = 1053  # carved bargeboard
+DORMER_WINDOW                = 1054  # dormer window
+WOODEN_SHINGLE               = 1055  # wooden shingle
+STONE_STEP                   = 1056  # stone step
+WATER_TROUGH                 = 1057  # water trough
+CARVED_BENCH                 = 1058  # carved bench
+CHEESE_WHEEL                 = 1059  # cheese wheel
+ANTLER_MOUNT                 = 1060  # antler mount
+EDELWEISS_WREATH             = 1061  # edelweiss wreath
+BOOT_RACK                    = 1062  # boot rack
+TALLOW_CANDLE                = 1063  # tallow candle
+ALPINE_HEARTH                = 1064  # alpine hearth
+PINE_CONE_GARLAND            = 1065  # pine cone garland
+IRON_HOOK_RACK               = 1066  # iron hook rack
+ALPINE_GATE                  = 1067  # alpine gate
+BUTTER_CHURN                 = 1068  # butter churn
+CARVED_WAINSCOT              = 1069  # carved wainscot
+CHIMNEY_CAP                  = 1070  # chimney cap
+FEATHER_DUVET                = 1071  # feather duvet
+GREEK_AMPHORA                = 1072  # greek amphora
+KRATER                       = 1073  # krater
+HYDRIA                       = 1074  # hydria
+LEKYTHOS                     = 1075  # lekythos
+STORAGE_PITHOS               = 1076  # storage pithos
+KLINE                        = 1077  # kline
+TRIPOD_BRAZIER               = 1078  # tripod brazier
+OLIVE_PRESS                  = 1079  # olive press
+LOOM_FRAME                   = 1080  # loom frame
+MEANDER_BORDER               = 1081  # meander border
+SYMPOSIUM_TABLE              = 1082  # symposium table
+VOTIVE_TABLET                = 1083  # votive tablet
+BRONZE_CUIRASS_STAND         = 1084  # bronze cuirass stand
+CHARIOT_WHEEL                = 1085  # chariot wheel
+TERRACOTTA_ROOF_TILE         = 1086  # terracotta roof tile
+ATTIC_VASE                   = 1087  # attic vase
+GREEK_STONE_BENCH            = 1088  # greek stone bench
+STONE_ALTAR                  = 1089  # stone altar
+BRONZE_MIRROR                = 1090  # bronze mirror
+CLAY_OIL_LAMP                = 1091  # clay oil lamp
+AGORA_SCALE                  = 1092  # agora scale
+LAUREL_WREATH_MOUNT          = 1093  # laurel wreath mount
+HERMES_STELE                 = 1094  # hermes stele
+DORIC_CAPITAL                = 1095  # doric capital
+VICTORY_STELE                = 1096  # victory stele
+BRONZE_SHIELD_MOUNT          = 1097  # bronze shield mount
+EGG_AND_DART                 = 1098  # egg and dart
+OLIVE_BRANCH                 = 1099  # olive branch
+PHILOSOPHERS_SCROLL          = 1100  # philosophers scroll
+GREEK_THEATRE_MASK           = 1101  # greek theatre mask
+TORCH                        = 1102  # basic torch
+WALL_SCONCE                  = 1103  # wall-mounted iron sconce
+BRAZIER                      = 1104  # iron brazier with fire
+CHANDELIER                   = 1105  # hanging iron chandelier
+CANDELABRA                   = 1106  # ornate floor candelabra
+LANTERN_ORB                  = 1107  # glowing crystal orb lantern
+PENDANT_LAMP                 = 1108  # hanging pendant lamp
+FIRE_BOWL                    = 1109  # stone fire bowl
+CROSS_LANTERN                = 1110  # cross-pane iron lantern
+STAR_LAMP                    = 1111  # crystal star lamp
+GLOW_VINE                    = 1112  # bioluminescent glow vine
 BLOCKS = {
     AIR:              {"name": "Air",               "hardness": 0,            "color": None,            "drop": None},
     GRASS:            {"name": "Grass",             "hardness": 1,            "color": (58, 154, 58),   "drop": "dirt_clump"},
@@ -1780,6 +1971,13 @@ BLOCKS = {
     CRIMSON_CEDAR_DOOR_OPEN:   {"name": "Crimson Cedar Door (Open)",    "hardness": 2, "color": (140,  35,  40), "drop": "crimson_cedar_door"},
     TEAL_DOOR_CLOSED:          {"name": "Teal Door",             "hardness": 2, "color": ( 45, 140, 135), "drop": "teal_door"},
     TEAL_DOOR_OPEN:            {"name": "Teal Door (Open)",      "hardness": 2, "color": ( 45, 140, 135), "drop": "teal_door"},
+    # --- Salt supply chain ---
+    SALT_DEPOSIT:          {"name": "Salt Deposit",    "hardness": 0.9, "color": (245, 242, 235), "drop": None},
+    EVAPORATION_PAN_BLOCK: {"name": "Evaporation Pan", "hardness": 1.5, "color": (215, 210, 195), "drop": "evap_pan_item"},
+    SALT_GRINDER_BLOCK:    {"name": "Salt Grinder",    "hardness": 1.5, "color": (190, 185, 175), "drop": "salt_grinder_item"},
+    # --- Minecart system ---
+    MINE_TRACK_BLOCK:      {"name": "Mine Track",      "hardness": 1,   "color": None,            "drop": "mine_track"},
+    MINE_TRACK_STOP_BLOCK: {"name": "Track Stop",      "hardness": 2,   "color": None,            "drop": "mine_track_stop"},
     SAFFRON_DOOR_CLOSED:       {"name": "Saffron Door",          "hardness": 2, "color": (200, 155,  30), "drop": "saffron_door"},
     SAFFRON_DOOR_OPEN:         {"name": "Saffron Door (Open)",   "hardness": 2, "color": (200, 155,  30), "drop": "saffron_door"},
     # --- European architecture blocks ---
@@ -1852,6 +2050,9 @@ BLOCKS = {
     FLAX_BUSH:                {"name": "Flax Bush",           "hardness": 0.5, "color": (170, 185, 210), "drop": "flax_seed",       "drop_chance": 1.0},
     FLAX_CROP_YOUNG:          {"name": "Flax Plant",          "hardness": 0.5, "color": (140, 185, 155), "drop": "flax_seed",       "drop_chance": 1.0},
     FLAX_CROP_MATURE:         {"name": "Flax Plant (Ripe)",   "hardness": 0.5, "color": (155, 185, 215), "drop": None},
+    COTTON_BUSH:              {"name": "Cotton Bush",         "hardness": 0.5, "color": (210, 220, 175), "drop": "cotton_seed",     "drop_chance": 1.0},
+    COTTON_CROP_YOUNG:        {"name": "Cotton Plant",        "hardness": 0.5, "color": (130, 190, 130), "drop": "cotton_seed",     "drop_chance": 1.0},
+    COTTON_CROP_MATURE:       {"name": "Cotton Plant (Ripe)", "hardness": 0.5, "color": (240, 242, 235), "drop": None},
     SPINNING_WHEEL_BLOCK:     {"name": "Spinning Wheel",      "hardness": 1.5, "color": (165, 130,  75), "drop": "spinning_wheel_item"},
     DYE_VAT_BLOCK:            {"name": "Dye Vat",             "hardness": 1.5, "color": ( 85, 110, 155), "drop": "dye_vat_item"},
     LOOM_BLOCK:               {"name": "Loom",                "hardness": 1.5, "color": (140, 100,  55), "drop": "loom_item"},
@@ -2027,6 +2228,10 @@ BLOCKS = {
     SCULPTURE_BLOCK_ROOT:  {"name": "Sculpture",            "hardness": 2.0, "color": (180, 175, 165), "drop": None},
     SCULPTURE_BLOCK_BODY:  {"name": "Sculpture (Body)",     "hardness": 2.0, "color": (180, 175, 165), "drop": None},
     SCULPTORS_BENCH:       {"name": "Sculptor's Bench",     "hardness": 1.0, "color": (160, 130,  90), "drop": "sculptors_bench_item"},
+    # Custom Tapestry system
+    TAPESTRY_FRAME_BLOCK:  {"name": "Tapestry Frame",       "hardness": 1.0, "color": (150, 110,  65), "drop": "tapestry_frame_item"},
+    CUSTOM_TAPESTRY_ROOT:  {"name": "Tapestry",             "hardness": 1.0, "color": (210, 195, 160), "drop": None},
+    CUSTOM_TAPESTRY_BODY:  {"name": "Tapestry (Body)",      "hardness": 1.0, "color": (210, 195, 160), "drop": None},
     # --- Garden Workshop extension ---
     PERGOLA_POST:          {"name": "Pergola Post",         "hardness": 1.0, "color": (140, 100,  55), "drop": "pergola_post"},
     WISTERIA_ARCH:         {"name": "Wisteria Arch",        "hardness": 1.5, "color": (185, 175, 160), "drop": "wisteria_arch"},
@@ -2316,4 +2521,187 @@ BLOCKS = {
     STARBURST_PANEL:      {"name": "Starburst Panel",     "hardness": 2, "color": (225, 215, 182), "drop": "starburst_panel"},
     STACKED_STONE_VENEER: {"name": "Stacked Stone Veneer","hardness": 2, "color": (155, 148, 136), "drop": "stacked_stone_veneer"},
     FIBERGLASS_SHELL:     {"name": "Fiberglass Shell",    "hardness": 1, "color": (228, 218, 198), "drop": "fiberglass_shell"},
+    # --- Gardening blocks ---
+    ORNAMENTAL_GRASS:    {"name": "Ornamental Grass",    "hardness": 0.5, "color": (165, 175,  80), "drop": "ornamental_grass"},
+    FLOWERING_SHRUB:     {"name": "Flowering Shrub",     "hardness": 0.5, "color": ( 55, 110,  50), "drop": "flowering_shrub"},
+    HOLLY_SHRUB:         {"name": "Holly Shrub",         "hardness": 0.5, "color": ( 35,  80,  40), "drop": "holly_shrub"},
+    TOPIARY_PEACOCK:     {"name": "Topiary Peacock",     "hardness": 1.0, "color": ( 42, 100,  48), "drop": "topiary_peacock"},
+    TOPIARY_BEAR:        {"name": "Topiary Bear",        "hardness": 1.0, "color": ( 38,  90,  42), "drop": "topiary_bear"},
+    TOPIARY_RABBIT:      {"name": "Topiary Rabbit",      "hardness": 1.0, "color": ( 48, 110,  52), "drop": "topiary_rabbit"},
+    ROSE_BED:            {"name": "Rose Bed",            "hardness": 0.5, "color": ( 55,  95,  45), "drop": "rose_bed"},
+    TULIP_BED:           {"name": "Tulip Bed",           "hardness": 0.5, "color": ( 60, 105,  50), "drop": "tulip_bed"},
+    COTTAGE_GARDEN_BED:  {"name": "Cottage Garden",      "hardness": 0.5, "color": ( 65, 115,  55), "drop": "cottage_garden_bed"},
+    CHERUB_FOUNTAIN:     {"name": "Cherub Fountain",     "hardness": 2.0, "color": (185, 178, 162), "drop": "cherub_fountain"},
+    LION_HEAD_FOUNTAIN:  {"name": "Lion Head Fountain",  "hardness": 2.0, "color": (175, 165, 148), "drop": "lion_head_fountain"},
+    MOSAIC_FOUNTAIN:     {"name": "Mosaic Fountain",     "hardness": 2.0, "color": ( 55, 115, 168), "drop": "mosaic_fountain"},
+    LAVENDER_BED:        {"name": "Lavender Bed",        "hardness": 0.5, "color": (150, 110, 195), "drop": "lavender_bed"},
+    SUNFLOWER_BED:       {"name": "Sunflower Bed",       "hardness": 0.5, "color": (220, 185,  40), "drop": "sunflower_bed"},
+    DAHLIA_BED:          {"name": "Dahlia Bed",          "hardness": 0.5, "color": (195,  70, 120), "drop": "dahlia_bed"},
+    TOPIARY_SWAN:        {"name": "Topiary Swan",        "hardness": 1.0, "color": ( 40, 100,  46), "drop": "topiary_swan"},
+    TOPIARY_FOX:         {"name": "Topiary Fox",         "hardness": 1.0, "color": ( 36,  88,  40), "drop": "topiary_fox"},
+    TOPIARY_ELEPHANT:    {"name": "Topiary Elephant",    "hardness": 1.0, "color": ( 44, 108,  50), "drop": "topiary_elephant"},
+    PEONY_BUSH:          {"name": "Peony Bush",          "hardness": 0.5, "color": ( 52, 105,  48), "drop": "peony_bush"},
+    FERN_CLUMP:          {"name": "Fern Clump",          "hardness": 0.5, "color": ( 48, 118,  52), "drop": "fern_clump"},
+    RAISED_GARDEN_BED:   {"name": "Raised Garden Bed",   "hardness": 1.0, "color": (115,  80,  45), "drop": "raised_garden_bed"},
+    LILY_PAD_POND:       {"name": "Lily Pad Pond",       "hardness": 0.5, "color": ( 55, 135,  75), "drop": "lily_pad_pond"},
+    BEE_SKEP:            {"name": "Bee Skep",            "hardness": 0.5, "color": (200, 165,  80), "drop": "bee_skep"},
+    GARDEN_WHEELBARROW:  {"name": "Garden Wheelbarrow",  "hardness": 1.0, "color": (115,  75,  40), "drop": "garden_wheelbarrow"},
+    IRIS_BED:            {"name": "Iris Bed",            "hardness": 0.5, "color": ( 90,  80, 190), "drop": "iris_bed"},
+    POPPY_BED:           {"name": "Poppy Bed",           "hardness": 0.5, "color": (210,  45,  45), "drop": "poppy_bed"},
+    FOXGLOVE_PATCH:      {"name": "Foxglove Patch",      "hardness": 0.5, "color": (210, 110, 175), "drop": "foxglove_patch"},
+    SNOWDROP_PATCH:      {"name": "Snowdrop Patch",      "hardness": 0.5, "color": (235, 238, 242), "drop": "snowdrop_patch"},
+    MARIGOLD_BED:        {"name": "Marigold Bed",        "hardness": 0.5, "color": (230, 145,  30), "drop": "marigold_bed"},
+    BOXWOOD_BALL:        {"name": "Boxwood Ball",        "hardness": 1.0, "color": ( 50, 100,  44), "drop": "boxwood_ball"},
+    RHODODENDRON_BUSH:   {"name": "Rhododendron",        "hardness": 0.5, "color": ( 48, 100,  44), "drop": "rhododendron_bush"},
+    BAMBOO_CLUMP:        {"name": "Bamboo Clump",        "hardness": 0.5, "color": ( 88, 148,  58), "drop": "bamboo_clump"},
+    AGAPANTHUS_PATCH:    {"name": "Agapanthus",          "hardness": 0.5, "color": ( 60,  90, 185), "drop": "agapanthus_patch"},
+    TOPIARY_DRAGON:      {"name": "Topiary Dragon",      "hardness": 1.0, "color": ( 36,  88,  42), "drop": "topiary_dragon"},
+    TOPIARY_GIRAFFE:     {"name": "Topiary Giraffe",     "hardness": 1.0, "color": ( 40,  96,  46), "drop": "topiary_giraffe"},
+    TOPIARY_HEDGEHOG:    {"name": "Topiary Hedgehog",    "hardness": 1.0, "color": ( 44, 104,  48), "drop": "topiary_hedgehog"},
+    BUBBLE_FOUNTAIN:     {"name": "Bubble Fountain",     "hardness": 2.0, "color": (155, 148, 135), "drop": "bubble_fountain"},
+    SHELL_FOUNTAIN:      {"name": "Shell Fountain",      "hardness": 2.0, "color": (210, 200, 182), "drop": "shell_fountain"},
+    MILLSTONE_FOUNTAIN:  {"name": "Millstone Fountain",  "hardness": 2.0, "color": (165, 158, 142), "drop": "millstone_fountain"},
+    TRELLIS_ARCH:        {"name": "Trellis Arch",        "hardness": 1.0, "color": (120,  80,  40), "drop": "trellis_arch"},
+    COLD_FRAME:          {"name": "Cold Frame",          "hardness": 1.0, "color": (140,  95,  50), "drop": "cold_frame"},
+    GARDEN_SWING:        {"name": "Garden Swing",        "hardness": 1.0, "color": (130,  85,  45), "drop": "garden_swing"},
+    WICKER_FENCE:        {"name": "Wicker Fence",        "hardness": 0.5, "color": (175, 135,  70), "drop": "wicker_fence"},
+    HANGING_BASKET:      {"name": "Hanging Basket",      "hardness": 0.5, "color": (140,  95,  50), "drop": "hanging_basket"},
+    STANDARD_ROSE:       {"name": "Standard Rose",       "hardness": 0.5, "color": ( 55, 105,  48), "drop": "standard_rose"},
+    GARDEN_GNOME:        {"name": "Garden Gnome",        "hardness": 0.5, "color": (200,  55,  45), "drop": "garden_gnome"},
+    TOPIARY_ARCH:        {"name": "Topiary Arch",        "hardness": 1.0, "color": ( 38,  90,  42), "drop": "topiary_arch"},
+    CHAMOMILE_LAWN:      {"name": "Chamomile Lawn",      "hardness": 0.5, "color": (180, 195, 100), "drop": "chamomile_lawn"},
+    CREEPING_THYME:      {"name": "Creeping Thyme",      "hardness": 0.5, "color": (145, 110, 180), "drop": "creeping_thyme"},
+    HYDRANGEA_BUSH:      {"name": "Hydrangea",           "hardness": 0.5, "color": ( 90, 120, 195), "drop": "hydrangea_bush"},
+    ALLIUM_PATCH:        {"name": "Allium Patch",        "hardness": 0.5, "color": (145,  80, 195), "drop": "allium_patch"},
+    SWEET_PEA_TRELLIS:   {"name": "Sweet Pea Trellis",   "hardness": 0.5, "color": (215, 130, 185), "drop": "sweet_pea_trellis"},
+    BLEEDING_HEART_PATCH:{"name": "Bleeding Heart",      "hardness": 0.5, "color": (210,  80, 130), "drop": "bleeding_heart_patch"},
+    ASTILBE_PATCH:       {"name": "Astilbe Patch",       "hardness": 0.5, "color": (210, 100, 145), "drop": "astilbe_patch"},
+    WISTERIA_PILLAR:     {"name": "Wisteria Pillar",     "hardness": 1.5, "color": (155, 120, 185), "drop": "wisteria_pillar"},
+    TOPIARY_SNAIL:       {"name": "Topiary Snail",       "hardness": 1.0, "color": ( 42, 100,  46), "drop": "topiary_snail"},
+    TOPIARY_MUSHROOM:    {"name": "Topiary Mushroom",    "hardness": 1.0, "color": ( 38,  94,  44), "drop": "topiary_mushroom"},
+    TOPIARY_OWL:         {"name": "Topiary Owl",         "hardness": 1.0, "color": ( 44, 106,  50), "drop": "topiary_owl"},
+    TOPIARY_DINOSAUR:    {"name": "Topiary Dinosaur",    "hardness": 1.0, "color": ( 36,  88,  40), "drop": "topiary_dinosaur"},
+    KOI_POOL:            {"name": "Koi Pool",            "hardness": 1.5, "color": ( 45, 110, 160), "drop": "koi_pool"},
+    STONE_TROUGH_PLANTER:{"name": "Stone Trough",        "hardness": 2.0, "color": (162, 155, 140), "drop": "stone_trough_planter"},
+    RAIN_BARREL:         {"name": "Rain Barrel",         "hardness": 1.0, "color": (105,  65,  35), "drop": "rain_barrel"},
+    MOSS_PATCH:          {"name": "Moss Patch",          "hardness": 0.5, "color": ( 60, 120,  50), "drop": "moss_patch"},
+    CLOVER_LAWN:         {"name": "Clover Lawn",         "hardness": 0.5, "color": ( 75, 150,  60), "drop": "clover_lawn"},
+    BARK_MULCH:          {"name": "Bark Mulch",          "hardness": 0.5, "color": (115,  72,  38), "drop": "bark_mulch"},
+    STONE_FROG:          {"name": "Stone Frog",          "hardness": 1.5, "color": (148, 142, 128), "drop": "stone_frog"},
+    GARDEN_DOVECOTE:     {"name": "Garden Dovecote",     "hardness": 1.0, "color": (225, 220, 210), "drop": "garden_dovecote"},
+    STONE_HEDGEHOG:      {"name": "Stone Hedgehog",      "hardness": 1.5, "color": (150, 144, 130), "drop": "stone_hedgehog"},
+    BIRD_TABLE:          {"name": "Bird Table",          "hardness": 1.0, "color": (130,  85,  45), "drop": "bird_table"},
+    GARDEN_CLOCK:        {"name": "Garden Clock",        "hardness": 1.5, "color": ( 72, 118,  90), "drop": "garden_clock"},
+    GARDEN_OBELISK_METAL:{"name": "Iron Obelisk",        "hardness": 2.0, "color": ( 52,  55,  58), "drop": "garden_obelisk_metal"},
+    POTTING_TABLE:       {"name": "Potting Table",       "hardness": 1.0, "color": (125,  82,  42), "drop": "potting_table"},
+    COMPOST_HEAP:        {"name": "Compost Heap",        "hardness": 0.5, "color": ( 75,  50,  25), "drop": "compost_heap"},
+    GARDEN_TOAD_HOUSE:   {"name": "Toad House",          "hardness": 0.5, "color": (185, 130,  75), "drop": "garden_toad_house"},
+    ALPINE_BALCONY_RAIL:       {"name": "Alpine Balcony Rail", "hardness": 1, "color": (160, 110,  65), "drop": "alpine_balcony_rail"},
+    DARK_TIMBER_BEAM:          {"name": "Dark Timber Beam", "hardness": 1, "color": ( 55,  40,  30), "drop": "dark_timber_beam"},
+    ROUGH_STONE_WALL:          {"name": "Rough Stone Wall", "hardness": 1, "color": (130, 125, 120), "drop": "rough_stone_wall"},
+    ALPINE_PLASTER:            {"name": "Alpine Plaster", "hardness": 1, "color": (230, 220, 205), "drop": "alpine_plaster"},
+    FLOWER_BOX:                {"name": "Flower Box", "hardness": 1, "color": (110,  80,  50), "drop": "flower_box"},
+    FIREWOOD_STACK:            {"name": "Firewood Stack", "hardness": 1, "color": (100,  70,  45), "drop": "firewood_stack"},
+    SLATE_SHINGLE:             {"name": "Slate Shingle", "hardness": 1, "color": ( 65,  75,  90), "drop": "slate_shingle"},
+    CARVED_SHUTTER:            {"name": "Carved Shutter", "hardness": 1, "color": (130,  95,  60), "drop": "carved_shutter"},
+    BEAR_HIDE:                 {"name": "Bear Hide", "hardness": 1, "color": (100,  75,  50), "drop": "bear_hide"},
+    ALPINE_HERB_RACK:          {"name": "Alpine Herb Rack", "hardness": 1, "color": ( 90,  65,  45), "drop": "alpine_herb_rack"},
+    HAY_BALE:                  {"name": "Hay Bale", "hardness": 1, "color": (200, 175,  80), "drop": "hay_bale"},
+    PINE_PLANK_WALL:           {"name": "Pine Plank Wall", "hardness": 1, "color": (210, 190, 150), "drop": "pine_plank_wall"},
+    GRANITE_ASHLAR:            {"name": "Granite Ashlar", "hardness": 1, "color": (140, 130, 130), "drop": "granite_ashlar"},
+    CUCKOO_CLOCK:              {"name": "Cuckoo Clock", "hardness": 1, "color": (110,  80,  55), "drop": "cuckoo_clock"},
+    GERANIUM_BOX:              {"name": "Geranium Box", "hardness": 1, "color": (100,  70,  45), "drop": "geranium_box"},
+    ARCH_STONE:                {"name": "Arch Stone", "hardness": 1, "color": (175, 165, 155), "drop": "arch_stone"},
+    SWISS_PANEL:               {"name": "Swiss Panel", "hardness": 1, "color": (225, 215, 195), "drop": "swiss_panel"},
+    COPPER_COWBELL:            {"name": "Copper Cowbell", "hardness": 1, "color": (185, 120,  70), "drop": "copper_cowbell"},
+    WOODEN_GEAR:               {"name": "Wooden Gear", "hardness": 1, "color": (145, 110,  70), "drop": "wooden_gear"},
+    STONE_BASIN:               {"name": "Stone Basin", "hardness": 1, "color": (150, 145, 140), "drop": "stone_basin"},
+    MILK_CHURN:                {"name": "Milk Churn", "hardness": 1, "color": (190, 195, 200), "drop": "milk_churn"},
+    ALPINE_CHEST:              {"name": "Alpine Chest", "hardness": 1, "color": ( 80,  55,  35), "drop": "alpine_chest"},
+    ALPINE_LANTERN:            {"name": "Alpine Lantern", "hardness": 1, "color": ( 60,  60,  65), "drop": "alpine_lantern"},
+    WROUGHT_IRON_RAIL:         {"name": "Wrought Iron Rail", "hardness": 1, "color": ( 70,  70,  75), "drop": "wrought_iron_rail"},
+    ALPINE_CHANDELIER:         {"name": "Alpine Chandelier", "hardness": 1, "color": ( 65,  65,  70), "drop": "alpine_chandelier"},
+    WOVEN_TEXTILE:             {"name": "Woven Textile", "hardness": 1, "color": (185,  60,  60), "drop": "woven_textile"},
+    COWBELL_RACK:              {"name": "Cowbell Rack", "hardness": 1, "color": (110,  80,  50), "drop": "cowbell_rack"},
+    ALPINE_STUCCO:             {"name": "Alpine Stucco", "hardness": 1, "color": (220, 210, 195), "drop": "alpine_stucco"},
+    CARVED_LINTEL:             {"name": "Carved Lintel", "hardness": 1, "color": (180, 170, 160), "drop": "carved_lintel"},
+    CHALET_DOOR:               {"name": "Chalet Door", "hardness": 1, "color": ( 90,  65,  40), "drop": "chalet_door"},
+    CERAMIC_TILE_STOVE:        {"name": "Ceramic Tile Stove", "hardness": 1, "color": ( 80, 130, 100), "drop": "ceramic_tile_stove"},
+    CARVED_BARGEBOARD:         {"name": "Carved Bargeboard", "hardness": 1, "color": ( 65,  45,  28), "drop": "carved_bargeboard"},
+    DORMER_WINDOW:             {"name": "Dormer Window", "hardness": 1, "color": (130, 165, 190), "drop": "dormer_window"},
+    WOODEN_SHINGLE:            {"name": "Wooden Shingle", "hardness": 1, "color": (165, 130,  80), "drop": "wooden_shingle"},
+    STONE_STEP:                {"name": "Stone Step", "hardness": 1, "color": (155, 150, 145), "drop": "stone_step"},
+    WATER_TROUGH:              {"name": "Water Trough", "hardness": 1, "color": (140, 135, 130), "drop": "water_trough"},
+    CARVED_BENCH:              {"name": "Carved Bench", "hardness": 1, "color": (110,  80,  50), "drop": "carved_bench"},
+    CHEESE_WHEEL:              {"name": "Cheese Wheel", "hardness": 1, "color": (215, 185,  80), "drop": "cheese_wheel"},
+    ANTLER_MOUNT:              {"name": "Antler Mount", "hardness": 1, "color": (160, 125,  80), "drop": "antler_mount"},
+    EDELWEISS_WREATH:          {"name": "Edelweiss Wreath", "hardness": 1, "color": ( 70, 100,  55), "drop": "edelweiss_wreath"},
+    BOOT_RACK:                 {"name": "Boot Rack", "hardness": 1, "color": ( 75,  55,  38), "drop": "boot_rack"},
+    TALLOW_CANDLE:             {"name": "Tallow Candle", "hardness": 1, "color": (235, 220, 185), "drop": "tallow_candle"},
+    ALPINE_HEARTH:             {"name": "Alpine Hearth", "hardness": 1, "color": ( 95,  88,  82), "drop": "alpine_hearth"},
+    PINE_CONE_GARLAND:         {"name": "Pine Cone Garland", "hardness": 1, "color": ( 95,  70,  40), "drop": "pine_cone_garland"},
+    IRON_HOOK_RACK:            {"name": "Iron Hook Rack", "hardness": 1, "color": ( 65,  65,  70), "drop": "iron_hook_rack"},
+    ALPINE_GATE:               {"name": "Alpine Gate", "hardness": 1, "color": ( 85,  60,  38), "drop": "alpine_gate"},
+    BUTTER_CHURN:              {"name": "Butter Churn", "hardness": 1, "color": (130, 105,  70), "drop": "butter_churn"},
+    CARVED_WAINSCOT:           {"name": "Carved Wainscot", "hardness": 1, "color": ( 80,  58,  38), "drop": "carved_wainscot"},
+    CHIMNEY_CAP:               {"name": "Chimney Cap", "hardness": 1, "color": (100,  95,  90), "drop": "chimney_cap"},
+    FEATHER_DUVET:             {"name": "Feather Duvet", "hardness": 1, "color": (235, 230, 240), "drop": "feather_duvet"},
+    GREEK_AMPHORA:             {"name": "Greek Amphora", "hardness": 1, "color": (175,  95,  55), "drop": "greek_amphora"},
+    KRATER:                    {"name": "Krater", "hardness": 1, "color": (170,  88,  48), "drop": "krater"},
+    HYDRIA:                    {"name": "Hydria", "hardness": 1, "color": (165,  85,  50), "drop": "hydria"},
+    LEKYTHOS:                  {"name": "Lekythos", "hardness": 1, "color": (215, 175, 120), "drop": "lekythos"},
+    STORAGE_PITHOS:            {"name": "Storage Pithos", "hardness": 1, "color": (160,  90,  52), "drop": "storage_pithos"},
+    KLINE:                     {"name": "Kline", "hardness": 1, "color": (140, 105,  68), "drop": "kline"},
+    TRIPOD_BRAZIER:            {"name": "Tripod Brazier", "hardness": 1, "color": (100,  78,  50), "drop": "tripod_brazier"},
+    OLIVE_PRESS:               {"name": "Olive Press", "hardness": 1, "color": (120, 100,  68), "drop": "olive_press"},
+    LOOM_FRAME:                {"name": "Loom Frame", "hardness": 1, "color": (130, 100,  65), "drop": "loom_frame"},
+    MEANDER_BORDER:            {"name": "Meander Border", "hardness": 1, "color": (225, 218, 205), "drop": "meander_border"},
+    SYMPOSIUM_TABLE:           {"name": "Symposium Table", "hardness": 1, "color": (140, 108,  70), "drop": "symposium_table"},
+    VOTIVE_TABLET:             {"name": "Votive Tablet", "hardness": 1, "color": (195, 185, 172), "drop": "votive_tablet"},
+    BRONZE_CUIRASS_STAND:      {"name": "Bronze Cuirass Stand", "hardness": 1, "color": (120,  95,  55), "drop": "bronze_cuirass_stand"},
+    CHARIOT_WHEEL:             {"name": "Chariot Wheel", "hardness": 1, "color": (115,  85,  52), "drop": "chariot_wheel"},
+    TERRACOTTA_ROOF_TILE:      {"name": "Terracotta Roof Tile", "hardness": 1, "color": (185, 100,  62), "drop": "terracotta_roof_tile"},
+    ATTIC_VASE:                {"name": "Attic Vase", "hardness": 1, "color": (180,  85,  42), "drop": "attic_vase"},
+    GREEK_STONE_BENCH:         {"name": "Greek Stone Bench", "hardness": 1, "color": (230, 226, 218), "drop": "greek_stone_bench"},
+    STONE_ALTAR:               {"name": "Stone Altar", "hardness": 1, "color": (178, 168, 158), "drop": "stone_altar"},
+    BRONZE_MIRROR:             {"name": "Bronze Mirror", "hardness": 1, "color": (135,  98,  52), "drop": "bronze_mirror"},
+    CLAY_OIL_LAMP:             {"name": "Clay Oil Lamp", "hardness": 1, "color": (170, 120,  72), "drop": "clay_oil_lamp"},
+    AGORA_SCALE:               {"name": "Agora Scale", "hardness": 1, "color": (130, 105,  58), "drop": "agora_scale"},
+    LAUREL_WREATH_MOUNT:       {"name": "Laurel Wreath Mount", "hardness": 1, "color": ( 55,  95,  42), "drop": "laurel_wreath_mount"},
+    HERMES_STELE:              {"name": "Hermes Stele", "hardness": 1, "color": (190, 182, 172), "drop": "hermes_stele"},
+    DORIC_CAPITAL:             {"name": "Doric Capital", "hardness": 1, "color": (232, 228, 218), "drop": "doric_capital"},
+    VICTORY_STELE:             {"name": "Victory Stele", "hardness": 1, "color": (220, 215, 205), "drop": "victory_stele"},
+    BRONZE_SHIELD_MOUNT:       {"name": "Bronze Shield Mount", "hardness": 1, "color": (115,  90,  48), "drop": "bronze_shield_mount"},
+    EGG_AND_DART:              {"name": "Egg and Dart", "hardness": 1, "color": (215, 210, 200), "drop": "egg_and_dart"},
+    OLIVE_BRANCH:              {"name": "Olive Branch", "hardness": 1, "color": ( 62,  98,  45), "drop": "olive_branch"},
+    PHILOSOPHERS_SCROLL:       {"name": "Philosophers Scroll", "hardness": 1, "color": (215, 195, 150), "drop": "philosophers_scroll"},
+    GREEK_THEATRE_MASK:        {"name": "Greek Theatre Mask", "hardness": 1,   "color": (230, 190, 140), "drop": "greek_theatre_mask"},
+    TORCH:                     {"name": "Torch",              "hardness": 0.5, "color": (200, 140,  50), "drop": "torch"},
+    WALL_SCONCE:               {"name": "Wall Sconce",        "hardness": 1.0, "color": ( 55,  55,  60), "drop": "wall_sconce"},
+    BRAZIER:                   {"name": "Brazier",            "hardness": 1.5, "color": ( 65,  60,  55), "drop": "brazier"},
+    CHANDELIER:                {"name": "Chandelier",         "hardness": 1.0, "color": ( 55,  55,  60), "drop": "chandelier"},
+    CANDELABRA:                {"name": "Candelabra",         "hardness": 1.0, "color": ( 60,  55,  50), "drop": "candelabra"},
+    LANTERN_ORB:               {"name": "Lantern Orb",        "hardness": 1.0, "color": (180, 220, 240), "drop": "lantern_orb"},
+    PENDANT_LAMP:              {"name": "Pendant Lamp",       "hardness": 1.0, "color": ( 55,  55,  60), "drop": "pendant_lamp"},
+    FIRE_BOWL:                 {"name": "Fire Bowl",          "hardness": 2.0, "color": ( 90,  85,  80), "drop": "fire_bowl"},
+    CROSS_LANTERN:             {"name": "Cross Lantern",      "hardness": 1.0, "color": ( 55,  55,  60), "drop": "cross_lantern"},
+    STAR_LAMP:                 {"name": "Star Lamp",          "hardness": 1.0, "color": (200, 240, 255), "drop": "star_lamp"},
+    GLOW_VINE:                 {"name": "Glow Vine",          "hardness": 0.5, "color": ( 40, 100,  60), "drop": "glow_vine"},
+}
+
+# Light-emitting blocks: {block_id: (radius_px, pattern)}
+# Patterns: circle, wide_oval, tall_oval, wide_flat, soft, dim,
+#           cone_up, cone_down, cross, star, flicker
+LIGHT_EMITTERS = {
+    TORCH:         (100, "circle"),
+    WALL_SCONCE:   ( 90, "wide_oval"),
+    BRAZIER:       (115, "cone_up"),
+    CHANDELIER:    (130, "wide_flat"),
+    CANDELABRA:    ( 85, "tall_oval"),
+    LANTERN_ORB:   (140, "soft"),
+    PENDANT_LAMP:  (105, "cone_down"),
+    FIRE_BOWL:     ( 95, "flicker"),
+    CROSS_LANTERN: ( 80, "cross"),
+    STAR_LAMP:     ( 75, "star"),
+    GLOW_VINE:     ( 55, "dim"),
 }

@@ -33,7 +33,7 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     CORN_CROP_MATURE_P, RICE_CROP_MATURE_P,
                     OIL, BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK,
                     COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE,
-                    FLAX_CROP_MATURE,
+                    FLAX_CROP_MATURE, COTTON_CROP_MATURE,
                     CHAMOMILE_BUSH, LAVENDER_BUSH, MINT_BUSH, ROSEMARY_BUSH,
                     THYME_BUSH, SAGE_BUSH, BASIL_BUSH, OREGANO_BUSH,
                     DILL_BUSH, FENNEL_BUSH, TARRAGON_BUSH, LEMON_BALM_BUSH,
@@ -47,8 +47,11 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     GARDEN_BLOCK, WILDFLOWER_DISPLAY_BLOCK,
                     COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE,
                     ELEVATOR_STOP_BLOCK,
+                    MINE_TRACK_STOP_BLOCK,
                     SCULPTURE_BLOCK_ROOT, SCULPTURE_BLOCK_BODY,
-                    POTTERY_DISPLAY_BLOCK)
+                    CUSTOM_TAPESTRY_ROOT, CUSTOM_TAPESTRY_BODY,
+                    POTTERY_DISPLAY_BLOCK,
+                    SALT_DEPOSIT)
 import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
@@ -59,12 +62,14 @@ from fish import FishGenerator, Fish
 from coffee import CoffeeGenerator, CoffeeBean
 from wine import WineGenerator, Grape
 from sculpture import SculptureGenerator, Sculpture
+from tapestry import TapestryGenerator, Tapestry
 from pottery import PotteryPiece, PotteryGenerator
 from spirits import SpiritGenerator, Spirit
 from tea import TeaGenerator, TeaLeaf
 from textiles import TextileGenerator, Textile
 from cheese import CheeseGenerator, Cheese
 from jewelry import Jewelry
+from salt import SaltGenerator, SaltCrystal
 from constants import (
     BLOCK_SIZE, PLAYER_W, PLAYER_H,
     GRAVITY, JUMP_FORCE, MOVE_SPEED, MAX_FALL,
@@ -171,6 +176,11 @@ class Player:
         self.discovered_cheese = set()           # "biome_cheesetype" strings
         self._cheese_gen = CheeseGenerator(world.seed)
         self.cheese_buffs = {}                   # buff_name -> {"duration": float}
+        # Salt collection
+        self.salt_crystals = []
+        self.discovered_salt_origins = set()    # "biome_grade" strings
+        self._salt_gen = SaltGenerator(world.seed)
+        self.salt_buffs = {}                    # buff_name -> {"duration": float}
         # Jewelry collection
         self.jewelry = []
         self.discovered_jewelry = set()          # jewelry_type strings
@@ -179,6 +189,10 @@ class Player:
         self.pending_sculptures = []   # Sculpture objects ready to place
         self.sculptures_created = []   # permanent log of all completed sculptures
         self._sculpture_gen     = SculptureGenerator(world.seed)
+        # Tapestry system
+        self.pending_tapestries = []   # Tapestry objects ready to place
+        self.tapestries_created = []   # permanent log of all completed tapestries
+        self._tapestry_gen      = TapestryGenerator(world.seed)
         # Pottery & Ceramics
         self.pottery_pieces       = []   # PotteryPiece objects
         self.discovered_pottery   = set()  # "biome_firinglevel" strings
@@ -234,6 +248,8 @@ class Player:
         self.mounted_machine = None
         # Elevator
         self.riding_elevator = None
+        # Minecart
+        self.riding_minecart = None
         # Doors the player auto-opened by walking into them
         self._auto_opened_doors = set()  # set of (bx, by)
         # Research-derived bonuses (computed by ResearchTree.apply_bonuses)
@@ -322,9 +338,14 @@ class Player:
         self.animals_hunted = d.get("animals_hunted", {})
         self.pending_sculptures = [Sculpture.from_dict(x) for x in d.get("pending_sculptures", [])]
         self.sculptures_created = [Sculpture.from_dict(x) for x in d.get("sculptures_created", [])]
+        self.pending_tapestries = [Tapestry.from_dict(x) for x in d.get("pending_tapestries", [])]
+        self.tapestries_created = [Tapestry.from_dict(x) for x in d.get("tapestries_created", [])]
         self.pottery_pieces     = [PotteryPiece(**x) for x in d.get("pottery_pieces", [])]
         self.discovered_pottery = set(d.get("discovered_pottery", []))
         self.pottery_buffs      = d.get("pottery_buffs", {})
+        self.salt_crystals          = [SaltCrystal(**x) for x in d.get("salt_crystals", [])]
+        self.discovered_salt_origins= set(d.get("discovered_salt_origins", []))
+        self.salt_buffs             = d.get("salt_buffs", {})
         # Reconstruct unplaced_vases from saved UIDs
         _piece_by_uid = {p.uid: p for p in self.pottery_pieces}
         _pending_uids = getattr(self.world, "_pending_unplaced_vase_uids", [])
@@ -357,7 +378,41 @@ class Player:
         for k in range(1, sc.height):
             self.world.set_bg_block(bx, by - k, SCULPTURE_BLOCK_BODY)
             self.world.sculpture_data[(bx, by - k)] = {"root": (bx, by)}
-        self._consume_item("sculpture", 1)
+        return True
+
+    # ------------------------------------------------------------------
+    # Tapestry helpers
+    # ------------------------------------------------------------------
+
+    def _demolish_tapestry(self, root_bx, root_by):
+        tp = self.world.tapestry_data.pop((root_bx, root_by), None)
+        height = tp.height if tp else 1
+        width  = tp.width  if tp else 1
+        for dx in range(width):
+            self.world.set_bg_block(root_bx + dx, root_by, AIR)
+            for k in range(1, height):
+                self.world.tapestry_data.pop((root_bx + dx, root_by - k), None)
+                self.world.set_bg_block(root_bx + dx, root_by - k, AIR)
+            if dx > 0:
+                self.world.tapestry_data.pop((root_bx + dx, root_by), None)
+
+    def _place_tapestry(self, bx, by):
+        if not self.pending_tapestries:
+            return False
+        tp = self.pending_tapestries[0]
+        for dx in range(tp.width):
+            for k in range(tp.height):
+                if self.world.get_bg_block(bx + dx, by - k) != AIR:
+                    return False
+        self.pending_tapestries.pop(0)
+        self.world.set_bg_block(bx, by, CUSTOM_TAPESTRY_ROOT)
+        self.world.tapestry_data[(bx, by)] = tp
+        for dx in range(tp.width):
+            for k in range(tp.height):
+                if dx == 0 and k == 0:
+                    continue
+                self.world.set_bg_block(bx + dx, by - k, CUSTOM_TAPESTRY_BODY)
+                self.world.tapestry_data[(bx + dx, by - k)] = {"root": (bx, by)}
         return True
 
     # ------------------------------------------------------------------
@@ -400,6 +455,8 @@ class Player:
         if self.mounted_machine is not None:
             return
         if self.riding_elevator is not None:
+            return
+        if self.riding_minecart is not None:
             return
         if self.mounted_horse is not None:
             self._handle_horse_input(keys, dt)
@@ -668,6 +725,17 @@ class Player:
                     self._demolish_sculpture(bx, by)
                     self._reset_mine()
                     return
+                if bg_bid == CUSTOM_TAPESTRY_BODY:
+                    ptr = self.world.tapestry_data.get((bx, by))
+                    if ptr and "root" in ptr:
+                        rbx, rby = ptr["root"]
+                        self._demolish_tapestry(rbx, rby)
+                    self._reset_mine()
+                    return
+                if bg_bid == CUSTOM_TAPESTRY_ROOT:
+                    self._demolish_tapestry(bx, by)
+                    self._reset_mine()
+                    return
                 block_data = BLOCKS[bg_bid]
                 drop = block_data["drop"]
                 if drop:
@@ -717,6 +785,11 @@ class Player:
                 self.discovered_gem_types.add(gem.gem_type)
                 self.pending_notifications.append(
                     ("Gem", gem.gem_type.replace("_", " ").title(), gem.rarity))
+            elif block_id == SALT_DEPOSIT:
+                biodome = self.world.get_biodome(bx)
+                crystal = self._salt_gen.generate(biodome)
+                self.salt_crystals.append(crystal)
+                self.pending_notifications.append(("Salt", "Salt Deposit", None))
             elif block_id == COFFEE_CROP_MATURE:
                 biodome = self.world.get_biodome(bx)
                 # Farmed crops: compute terroir from soil below the crop tile.
@@ -753,6 +826,10 @@ class Player:
                 self._add_item("flax_fiber")
                 self._add_item("flax_seed")
                 self.pending_notifications.append(("Textile", "Flax Harvested", None))
+            elif block_id == COTTON_CROP_MATURE:
+                self._add_item("cotton_fiber")
+                self._add_item("cotton_seed")
+                self.pending_notifications.append(("Textile", "Cotton Harvested", None))
             elif block_id in CAVE_MUSHROOMS:
                 self.mushrooms_found[block_id] = self.mushrooms_found.get(block_id, 0) + 1
                 self.discovered_mushroom_types.add(block_id)
@@ -1211,6 +1288,24 @@ class Player:
                             self.hotbar[i] = None
                             break
                 return
+            # Minecart placement — must be near a mine track stop
+            if item_data.get("spawn_minecart"):
+                if self.inventory.get(item_id, 0) <= 0:
+                    return
+                nearby = self.get_nearby_mine_track_stop()
+                if nearby is None:
+                    return
+                from minecarts import Minecart
+                nbx, nby = nearby
+                self.world.minecarts.append(Minecart(nby, nbx))
+                self.inventory[item_id] -= 1
+                if self.inventory[item_id] <= 0:
+                    del self.inventory[item_id]
+                    for i in range(HOTBAR_SIZE):
+                        if self.hotbar[i] == item_id:
+                            self.hotbar[i] = None
+                            break
+                return
             # Backhoe placement
             if item_data.get("spawn_backhoe"):
                 if self.inventory.get(item_id, 0) <= 0:
@@ -1227,8 +1322,24 @@ class Player:
                             break
                 return
         if item_id == "sculpture":
-            if bg:
-                self._place_sculpture(bx, by)
+            if bg and self._place_sculpture(bx, by):
+                self.inventory[item_id] = self.inventory.get(item_id, 1) - 1
+                if self.inventory[item_id] <= 0:
+                    del self.inventory[item_id]
+                    for i in range(HOTBAR_SIZE):
+                        if self.hotbar[i] == item_id:
+                            self.hotbar[i] = None
+                            break
+            return
+        if item_id == "custom_tapestry":
+            if bg and self._place_tapestry(bx, by):
+                self.inventory[item_id] = self.inventory.get(item_id, 1) - 1
+                if self.inventory[item_id] <= 0:
+                    del self.inventory[item_id]
+                    for i in range(HOTBAR_SIZE):
+                        if self.hotbar[i] == item_id:
+                            self.hotbar[i] = None
+                            break
             return
         block_id = item_data.get("place_block")
         if block_id is None:
@@ -1515,6 +1626,8 @@ class Player:
         if self.inventory.get(item_id, 0) <= 0:
             return False
         hunger_restore = item_data.get("hunger_restore", 0)
+        if "preservation" in self.salt_buffs:
+            hunger_restore = int(hunger_restore * 1.25)
         self.hunger = min(100.0, self.hunger + hunger_restore)
         self.health = min(MAX_HEALTH, self.health + hunger_restore * 0.25)
         self._eat_cooldown = 0.5
@@ -1558,6 +1671,10 @@ class Player:
             duration = item_data.get("pottery_buff_duration", 120.0)
             duration *= 1.0 + self.pottery_buff_duration_bonus
             self.pottery_buffs[buff] = {"duration": duration}
+        if item_data.get("salt_buff"):
+            buff = item_data["salt_buff"]
+            duration = item_data.get("salt_buff_duration", 90.0)
+            self.salt_buffs[buff] = {"duration": duration}
         self.inventory[item_id] -= 1
         if self.inventory[item_id] <= 0:
             del self.inventory[item_id]
@@ -1576,6 +1693,11 @@ class Player:
             self.vx = 0.0
             self.on_ground = True
             return  # car.update() sets player x/y each frame
+        if self.riding_minecart is not None:
+            self.vy = 0.0
+            self.vx = 0.0
+            self.on_ground = True
+            return  # cart.update() sets player x/y each frame
         if self.blessing_timer > 0:
             self.blessing_timer -= dt
             if self.blessing_timer <= 0:
@@ -1643,6 +1765,10 @@ class Player:
             self.pottery_buffs[buff]["duration"] -= dt
             if self.pottery_buffs[buff]["duration"] <= 0:
                 del self.pottery_buffs[buff]
+        for buff in list(self.salt_buffs):
+            self.salt_buffs[buff]["duration"] -= dt
+            if self.salt_buffs[buff]["duration"] <= 0:
+                del self.salt_buffs[buff]
         if self._bow_cooldown > 0:
             self._bow_cooldown -= dt
         if not self.god_mode and not self.no_hunger:
@@ -1882,6 +2008,16 @@ class Player:
                     return (cx + dx, cy + dy)
         return None
 
+    def get_nearby_mine_track_stop(self):
+        """Return (bx, by) of a track stop within 2 blocks of the player, or None."""
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        for dy in range(-2, 3):
+            for dx in range(-2, 3):
+                if self.world.get_block(cx + dx, cy + dy) == MINE_TRACK_STOP_BLOCK:
+                    return (cx + dx, cy + dy)
+        return None
+
     def get_depth(self):
         block_y = int(self.y // BLOCK_SIZE)
         surface_y = self.world.surface_y_at(int(self.x // BLOCK_SIZE))
@@ -1902,6 +2038,8 @@ class Player:
         if "mastery" in self.herb_buffs:
             mult *= 1.40
         if "keenness" in self.cheese_buffs:
+            mult *= 1.15
+        if "vitality" in self.salt_buffs:
             mult *= 1.15
         mult += self.get_textile_bonus("focus")
         vigor_bonus = 1 if "vigor" in self.cheese_buffs else 0
