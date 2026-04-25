@@ -7397,9 +7397,9 @@ class Renderer:
                 pygame.draw.line(s, dk, (3 * BS // 4, BS // 2), (3 * BS // 4, BS), 1)
                 # Travertine pitting dots
                 import random as _rnd
-                _rnd.seed(706)
+                _rng = _rnd.Random(706)
                 for _ in range(12):
-                    px, py = _rnd.randint(2, BS - 3), _rnd.randint(2, BS - 3)
+                    px, py = _rng.randint(2, BS - 3), _rng.randint(2, BS - 3)
                     pygame.draw.circle(s, dk, (px, py), 1)
                 pygame.draw.rect(s, dk, s.get_rect(), 1)
                 surfs[bid] = s
@@ -7453,10 +7453,10 @@ class Renderer:
                 BS = BLOCK_SIZE
                 # Polished look: subtle sparkle flecks
                 import random as _rnd
-                _rnd.seed(710)
+                _rng = _rnd.Random(710)
                 for _ in range(18):
-                    fx, fy = _rnd.randint(1, BS - 2), _rnd.randint(1, BS - 2)
-                    col = _rnd.choice([(215, 190, 185), (120, 100, 95), (240, 230, 228), (80, 60, 58)])
+                    fx, fy = _rng.randint(1, BS - 2), _rng.randint(1, BS - 2)
+                    col = _rng.choice([(215, 190, 185), (120, 100, 95), (240, 230, 228), (80, 60, 58)])
                     s.set_at((fx, fy), col)
                 pygame.draw.line(s, _lighter(c, 14), (2, 2), (BS - 3, 2), 1)
                 pygame.draw.rect(s, _darken(c, 18), s.get_rect(), 1)
@@ -7845,12 +7845,12 @@ class Renderer:
                 s.fill(c)
                 BS = BLOCK_SIZE
                 import random as _rnd
-                _rnd.seed(738)
+                _rng = _rnd.Random(738)
                 chips = [(168, 80, 58), (88, 128, 88), (48, 44, 40), (215, 210, 205), (140, 105, 78)]
                 for _ in range(30):
-                    cx2, cy2 = _rnd.randint(1, BS - 2), _rnd.randint(1, BS - 2)
-                    col = _rnd.choice(chips)
-                    sz = _rnd.randint(1, 3)
+                    cx2, cy2 = _rng.randint(1, BS - 2), _rng.randint(1, BS - 2)
+                    col = _rng.choice(chips)
+                    sz = _rng.randint(1, 3)
                     pygame.draw.rect(s, col, (cx2, cy2, sz, sz))
                 pygame.draw.rect(s, _darken(c, 14), s.get_rect(), 1)
                 surfs[bid] = s
