@@ -2583,6 +2583,298 @@ class TropicalCockroach(Insect):
 
 
 # ---------------------------------------------------------------------------
+# Night insects batch 2 (NIGHT_ONLY = True)
+# ---------------------------------------------------------------------------
+
+# -- Moths --
+
+class BlackWitchMoth(Insect):
+    SPECIES      = "black_witch_moth"
+    RARITY       = "rare"
+    BIOMES       = ["tropical", "jungle"]
+    W, H         = 18, 11
+    BODY_COLOR   = (22, 18, 15)
+    WING_COLOR   = (35, 28, 22)
+    ACCENT_COLOR = (58, 45, 35)
+    HOVER_RANGE  = 75
+    SPEED        = 22.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class SaturnidMoth(Insect):
+    SPECIES      = "saturnid_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["redwood", "boreal", "birch_forest"]
+    W, H         = 16, 10
+    BODY_COLOR   = (95, 62, 25)
+    WING_COLOR   = (142, 92, 35)
+    ACCENT_COLOR = (62, 28, 8)
+    HOVER_RANGE  = 68
+    SPEED        = 21.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class SilkMoth(Insect):
+    SPECIES      = "silk_moth"
+    RARITY       = "common"
+    BIOMES       = ["east_asian", "south_asian"]
+    W, H         = 14, 9
+    BODY_COLOR   = (218, 198, 158)
+    WING_COLOR   = (232, 215, 180)
+    ACCENT_COLOR = (175, 142, 88)
+    HOVER_RANGE  = 55
+    SPEED        = 20.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class OwletMoth(Insect):
+    SPECIES      = "owlet_moth"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "steppe", "mediterranean"]
+    W, H         = 12, 7
+    BODY_COLOR   = (82, 78, 65)
+    WING_COLOR   = (105, 100, 85)
+    ACCENT_COLOR = (128, 122, 102)
+    HOVER_RANGE  = 58
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class DesertMoonMoth(Insect):
+    SPECIES      = "desert_moon_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["desert", "arid_steppe"]
+    W, H         = 15, 9
+    BODY_COLOR   = (215, 210, 198)
+    WING_COLOR   = (228, 224, 215)
+    ACCENT_COLOR = (175, 168, 152)
+    HOVER_RANGE  = 65
+    SPEED        = 22.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class AfricanMoonMoth(Insect):
+    SPECIES      = "african_moon_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["savanna", "tropical"]
+    W, H         = 15, 10
+    BODY_COLOR   = (85, 158, 72)
+    WING_COLOR   = (105, 188, 88)
+    ACCENT_COLOR = (145, 218, 125)
+    HOVER_RANGE  = 65
+    SPEED        = 21.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+# -- Fireflies / bioluminescent --
+
+class TropicalFirefly(Insect):
+    SPECIES      = "tropical_firefly"
+    RARITY       = "common"
+    BIOMES       = ["tropical", "savanna"]
+    W, H         = 7, 5
+    BODY_COLOR   = (22, 24, 12)
+    WING_COLOR   = (35, 38, 18)
+    ACCENT_COLOR = (255, 242, 45)
+    HOVER_RANGE  = 45
+    SPEED        = 20.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class MountainFirefly(Insect):
+    SPECIES      = "mountain_firefly"
+    RARITY       = "uncommon"
+    BIOMES       = ["alpine_mountain", "rocky_mountain"]
+    W, H         = 7, 5
+    BODY_COLOR   = (18, 22, 22)
+    WING_COLOR   = (30, 38, 36)
+    ACCENT_COLOR = (75, 238, 195)
+    HOVER_RANGE  = 38
+    SPEED        = 18.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class CaveGlowworm(Insect):
+    SPECIES      = "cave_glowworm"
+    RARITY       = "rare"
+    BIOMES       = ["canyon", "rocky_mountain"]
+    W, H         = 8, 4
+    BODY_COLOR   = (25, 30, 22)
+    WING_COLOR   = (35, 42, 30)
+    ACCENT_COLOR = (88, 218, 148)
+    HOVER_RANGE  = 25
+    SPEED        = 15.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+# -- Beetles --
+
+class DarklingBeetle(Insect):
+    SPECIES      = "darkling_beetle"
+    RARITY       = "common"
+    BIOMES       = ["desert", "arid_steppe"]
+    W, H         = 11, 6
+    BODY_COLOR   = (22, 18, 15)
+    WING_COLOR   = (32, 28, 22)
+    ACCENT_COLOR = (48, 42, 36)
+    HOVER_RANGE  = 32
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+    NIGHT_ONLY   = True
+
+
+class OilBeetle(Insect):
+    SPECIES      = "oil_beetle"
+    RARITY       = "uncommon"
+    BIOMES       = ["mediterranean", "temperate"]
+    W, H         = 12, 7
+    BODY_COLOR   = (32, 25, 48)
+    WING_COLOR   = (42, 32, 62)
+    ACCENT_COLOR = (58, 45, 88)
+    HOVER_RANGE  = 35
+    SPEED        = 20.0
+    WING_TYPE    = "beetle"
+    NIGHT_ONLY   = True
+
+
+class WoodBoringBeetle(Insect):
+    SPECIES      = "wood_boring_beetle"
+    RARITY       = "common"
+    BIOMES       = ["boreal", "redwood"]
+    W, H         = 11, 6
+    BODY_COLOR   = (68, 45, 22)
+    WING_COLOR   = (85, 58, 32)
+    ACCENT_COLOR = (108, 75, 45)
+    HOVER_RANGE  = 32
+    SPEED        = 21.0
+    WING_TYPE    = "beetle"
+    NIGHT_ONLY   = True
+
+
+# -- Other nocturnal insects --
+
+class NightCicada(Insect):
+    SPECIES      = "night_cicada"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "mediterranean", "savanna"]
+    W, H         = 13, 7
+    BODY_COLOR   = (42, 48, 32)
+    WING_COLOR   = (62, 70, 48)
+    ACCENT_COLOR = (85, 95, 65)
+    HOVER_RANGE  = 52
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class JungleKatydid(Insect):
+    SPECIES      = "jungle_katydid"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 7
+    BODY_COLOR   = (45, 118, 35)
+    WING_COLOR   = (58, 148, 45)
+    ACCENT_COLOR = (78, 172, 62)
+    HOVER_RANGE  = 50
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class Earwig(Insect):
+    SPECIES      = "earwig"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills", "steep_hills"]
+    W, H         = 11, 5
+    BODY_COLOR   = (108, 72, 35)
+    WING_COLOR   = (88, 58, 25)
+    ACCENT_COLOR = (148, 105, 58)
+    HOVER_RANGE  = 40
+    SPEED        = 26.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class TundraCricket(Insect):
+    SPECIES      = "tundra_cricket"
+    RARITY       = "uncommon"
+    BIOMES       = ["tundra", "alpine_mountain"]
+    W, H         = 11, 6
+    BODY_COLOR   = (65, 58, 45)
+    WING_COLOR   = (85, 75, 58)
+    ACCENT_COLOR = (110, 98, 78)
+    HOVER_RANGE  = 42
+    SPEED        = 26.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class WaterBoatman(Insect):
+    SPECIES      = "water_boatman"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "beach"]
+    W, H         = 10, 5
+    BODY_COLOR   = (35, 52, 48)
+    WING_COLOR   = (48, 68, 62)
+    ACCENT_COLOR = (65, 92, 85)
+    HOVER_RANGE  = 38
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class NightMantis(Insect):
+    SPECIES      = "night_mantis"
+    RARITY       = "uncommon"
+    BIOMES       = ["savanna", "arid_steppe"]
+    W, H         = 11, 13
+    BODY_COLOR   = (32, 38, 22)
+    WING_COLOR   = (45, 52, 32)
+    ACCENT_COLOR = (62, 72, 46)
+    HOVER_RANGE  = 35
+    SPEED        = 18.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class GlowingMillipede(Insect):
+    SPECIES      = "glowing_millipede"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "fungal"]
+    W, H         = 12, 5
+    BODY_COLOR   = (28, 35, 20)
+    WING_COLOR   = (38, 48, 28)
+    ACCENT_COLOR = (38, 210, 135)
+    HOVER_RANGE  = 25
+    SPEED        = 15.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class SandRoach(Insect):
+    SPECIES      = "sand_roach"
+    RARITY       = "uncommon"
+    BIOMES       = ["desert", "beach"]
+    W, H         = 12, 6
+    BODY_COLOR   = (185, 158, 108)
+    WING_COLOR   = (205, 178, 128)
+    ACCENT_COLOR = (218, 195, 148)
+    HOVER_RANGE  = 40
+    SPEED        = 32.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 
@@ -2652,11 +2944,17 @@ ALL_INSECT_SPECIES = [
     IndianWalkingStick, GiantAfricanMantis, PrairieLocust, TundraBumblebee,
     CarpenterBee, JungleAssassinBug, GiantWeta, AfricanMoleCricket,
     ArcticBumblebee, TropicalMantis,
-    # Night insects
+    # Night insects (batch 1)
     GhostMoth, CometMoth, VampireMoth, BogongMoth, UnderwingMoth,
     RailroadWorm, AsianFirefly,
     NocturnalGroundBeetle,
     CaveCricket, JungleCricket, MadagascarHissingCockroach, TropicalCockroach,
+    # Night insects (batch 2)
+    BlackWitchMoth, SaturnidMoth, SilkMoth, OwletMoth, DesertMoonMoth, AfricanMoonMoth,
+    TropicalFirefly, MountainFirefly, CaveGlowworm,
+    DarklingBeetle, OilBeetle, WoodBoringBeetle,
+    NightCicada, JungleKatydid, Earwig, TundraCricket,
+    WaterBoatman, NightMantis, GlowingMillipede, SandRoach,
 ]
 
 INSECT_SPECIES_BY_ID = {cls.SPECIES: cls for cls in ALL_INSECT_SPECIES}

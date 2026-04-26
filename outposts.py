@@ -334,6 +334,39 @@ OUTPOST_TYPES = {
     },
 }
 
+# Flag pennant color per outpost type (RGB)
+OUTPOST_FLAG_COLORS = {
+    "wine_estate":       (140,  20,  55),
+    "herb_monastery":    (110,  55, 170),
+    "trapper_post":      (130,  75,  35),
+    "boreal_distillery": (190, 130,  20),
+    "coffee_plantation": ( 90,  50,  25),
+    "jungle_herbalist":  ( 50, 140,  70),
+    "tea_house":         ( 50, 150, 120),
+    "pottery_workshop":  (200,  90,  50),
+    "spice_market":      (210, 150,  25),
+    "textile_guild":     (130,  70, 190),
+    "olive_press":       (110, 150,  35),
+    "salt_works":        (130, 175, 210),
+    "desert_glassworks": ( 90, 170, 210),
+    "canyon_forge":      (150, 110,  70),
+    "alpine_monastery":  (190, 200, 215),
+    "cheese_cave":       (215, 195, 110),
+    "fungal_grove":      (155,  70, 195),
+    "swamp_alchemist":   ( 65, 130,  90),
+    "fishing_outpost":   ( 50, 110, 195),
+    "coastal_saltworks": (125, 180, 215),
+    "nomad_camp":        (195, 170,  90),
+    "spirit_distillery": (170,  90,  35),
+    "hillside_vineyard": (155,  25,  45),
+    "sculpture_atelier": (195, 188, 172),
+    "border_garrison":   ( 55,  75, 155),
+    "highland_fortress": ( 90,  90, 120),
+    "desert_legion":     (195, 155,  35),
+    "steppe_warcamp":    (195,  45,  45),
+    "coastal_citadel":   ( 35,  55, 155),
+}
+
 _MILITARY_OUTPOST_TYPES = {
     "border_garrison", "highland_fortress", "desert_legion",
     "steppe_warcamp",  "coastal_citadel",
@@ -559,6 +592,12 @@ def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
                    left_x, sy, bld_w, bld_h, wall, roof, biodome, rng)
     npc_px = (left_x + 1) * BLOCK_SIZE
     npc_py = (sy - 2) * BLOCK_SIZE
+
+    # Flag on the roof ridge of the primary building
+    flag_bx = left_x + bld_w // 2
+    flag_by = sy - bld_h - 1
+    if 0 <= flag_by < world.height:
+        world.set_bg_block(flag_bx, flag_by, OUTPOST_FLAG_BLOCK)
 
     # Secondary house right-of-centre
     bld2_w = rng.randint(4, 6)

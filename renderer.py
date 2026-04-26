@@ -322,7 +322,7 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER, GRASS, DIRT, SA
                     TORCH, WALL_SCONCE, BRAZIER, CHANDELIER, CANDELABRA,
                     LANTERN_ORB, PENDANT_LAMP, FIRE_BOWL, CROSS_LANTERN,
                     STAR_LAMP, GLOW_VINE, LIGHT_EMITTERS,
-                    TOWN_FLAG_BLOCK,
+                    TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK,
                     REED_BLOCK, CATTAIL_BLOCK, BULRUSH_BLOCK,
                     WATER_CRESS_BLOCK, POND_WEED_BLOCK,
                     WATER_HYACINTH_BLOCK, DUCKWEED_BLOCK, LOTUS_BLOCK, FROGBIT_BLOCK,
@@ -504,7 +504,8 @@ class Renderer:
         self._mm_ctable     = self._build_mm_color_table()
         self._floating_texts = []  # list of {x, y, text, color, life, vy}
         self._light_grad_cache = {}  # (radius, pattern, flicker_frame) -> Surface
-        self._town_flag_surfs = {}   # region_id -> Surface (colored pennant, built lazily)
+        self._town_flag_surfs   = {}  # region_id -> Surface (colored pennant, built lazily)
+        self._outpost_flag_surfs = {}  # outpost_type -> Surface (colored pennant, built lazily)
 
     def _build_bg_darken_surf(self):
         s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
@@ -15567,6 +15568,17 @@ class Renderer:
                 pygame.draw.polygon(s, flag_col, pts)
                 pygame.draw.polygon(s, _darken(flag_col), pts, 1)
                 surfs[bid] = s; continue
+            if bid == OUTPOST_FLAG_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                BS = BLOCK_SIZE
+                pole = (120, 100, 70)
+                pygame.draw.rect(s, pole, (BS // 2 - 2, 0, 3, BS))
+                flag_col = (180, 140, 60)
+                pts = [(BS // 2 + 1, 3), (BS - 4, 9), (BS // 2 + 1, 16)]
+                pygame.draw.polygon(s, flag_col, pts)
+                pygame.draw.polygon(s, _darken(flag_col), pts, 1)
+                surfs[bid] = s; continue
             s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
             s.fill(bdata["color"])
             pygame.draw.rect(s, _darken(bdata["color"]), s.get_rect(), 1)
@@ -15635,6 +15647,20 @@ class Renderer:
             pygame.draw.polygon(s, _darken(flag_col), pts, 1)
             self._town_flag_surfs[region_id] = s
         return self._town_flag_surfs[region_id]
+
+    def _get_outpost_flag_surf(self, outpost_type, flag_col):
+        """Return a lazily-built flag surface tinted with the outpost type's color."""
+        if outpost_type not in self._outpost_flag_surfs:
+            BS = BLOCK_SIZE
+            s = pygame.Surface((BS, BS), pygame.SRCALPHA)
+            s.fill((0, 0, 0, 0))
+            pole = (120, 100, 70)
+            pygame.draw.rect(s, pole, (BS // 2 - 2, 0, 3, BS))
+            pts = [(BS // 2 + 1, 3), (BS - 4, 9), (BS // 2 + 1, 16)]
+            pygame.draw.polygon(s, flag_col, pts)
+            pygame.draw.polygon(s, _darken(flag_col), pts, 1)
+            self._outpost_flag_surfs[outpost_type] = s
+        return self._outpost_flag_surfs[outpost_type]
 
     def _build_log_variants(self):
         # 8 variants per log type
@@ -16147,6 +16173,18 @@ class Renderer:
                             if region:
                                 surf = self._get_town_flag_surf(
                                     region.region_id, region.leader_color)
+                    except Exception:
+                        pass  # fall through to default surf
+                if bid == OUTPOST_FLAG_BLOCK:
+                    try:
+                        from outposts import OUTPOSTS, OUTPOST_FLAG_COLORS
+                        best = min(OUTPOSTS.values(),
+                                   key=lambda op: abs(op.center_bx - bx),
+                                   default=None)
+                        if best is not None:
+                            col = OUTPOST_FLAG_COLORS.get(best.outpost_type)
+                            if col:
+                                surf = self._get_outpost_flag_surf(best.outpost_type, col)
                     except Exception:
                         pass  # fall through to default surf
                 if surf:

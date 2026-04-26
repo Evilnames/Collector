@@ -1632,7 +1632,11 @@ class LeaderNPC(NPC):
 # City generation
 # ---------------------------------------------------------------------------
 
-_DESERT_BIOMES    = {"desert", "arid_steppe", "savanna"}
+_DESERT_BIOMES    = {"desert", "arid_steppe"}
+_ARABIA_BIOMES    = {"savanna"}
+_ARABIA_PALETTE   = (SANDSTONE_BLOCK, ADOBE_BRICK)
+_ARABIA_SWAP      = {"house": "tent", "two_story": "tent", "three_story": "tent",
+                     "longhouse": "caravanserai", "inn": "caravanserai"}
 _DESERT_PALETTE   = (SANDSTONE_BLOCK, POLISHED_MARBLE)
 _DOME_SWAP        = {"house": "dome", "two_story": "dome", "three_story": "dome",
                      "longhouse": "dome"}
@@ -1683,7 +1687,7 @@ _CUISINE_POOL_BY_BIOME: dict[str, list[str]] = {
     "south_asian":   ["Indian Dhaba"],
     "desert":        ["Mezze Restaurant"],
     "arid_steppe":   ["Mezze Restaurant"],
-    "savanna":       ["Mezze Restaurant", "BBQ Stall"],
+    "savanna":       ["Mezze Restaurant", "Mezze Restaurant", "BBQ Stall"],
     "alpine_mountain": ["Stew House", "Bakery"],
     "tundra":        ["Stew House", "Bakery"],
     "jungle":        ["BBQ Stall", "Stew House"],
@@ -2006,10 +2010,61 @@ CITY_CONFIGS = {
     },
 }
 
+CITY_CONFIGS["oasis"] = {
+    "half_w": 22,
+    "buildings": [
+        (-21, (5, 7), (3, 4), ["tent", "tent", "market_stall"]),
+        (-13, (4, 5), (3, 4), ["tent", "market_stall"]),
+        ( -4, (5, 6), (4, 5), ["caravanserai"]),
+        (  5, None,   None,   None),          # outdoor merchant in the well square
+        ( 11, (4, 5), (3, 4), ["tent", "tent", "well"]),
+        ( 16, (6, 8), (5, 6), ["shrine"]),
+    ],
+    "npc_types": ["quest_rock", "merchant", "innkeeper",
+                  "trade", "quest_gem", "shrine_npc"],
+    "gardens":  [(-17, 2), (8, 2)],
+    "squares":  [(3, 3)],
+    "growth_slots_tier1": [( 20, (4, 5), (3, 4), ["tent", "market_stall"]),
+                            (-19, (4, 5), (3, 4), ["tent"])],
+    "growth_slots_tier2": [( 22, (5, 6), (4, 5), ["caravanserai"]),
+                            (-21, (5, 7), (4, 5), ["tent", "tent"])],
+    "growth_slots_tier3": [( 24, (6, 7), (5, 6), ["caravanserai"]),
+                            (-23, (4, 6), (3, 4), ["tent", "market_stall"])],
+    "farms":    [(-32, 5), (32, 5)],
+    "ambient_npcs": [(-16, "villager"), (-9, "child"), (7, "villager"),
+                     (14, "child"), (-20, "guard"), (19, "guard")],
+}
+
+CITY_CONFIGS["bedouin_camp"] = {
+    "half_w": 13,
+    "buildings": [
+        (-12, (5, 7), (3, 4), ["tent", "tent"]),
+        ( -3, (4, 5), (3, 4), ["market_stall", "tent"]),
+        (  5, (5, 7), (3, 4), ["tent", "tent"]),
+    ],
+    "npc_types": ["quest_rock", "trade", "restaurant_npc"],
+    "gardens":  [(-7, 2), (9, 2)],
+    "squares":  [],
+    "growth_slots_tier1": [( 11, (4, 5), (3, 4), ["tent"]),
+                            (-11, (4, 5), (3, 4), ["tent"])],
+    "growth_slots_tier2": [( 13, (5, 7), (4, 5), ["caravanserai"]),
+                            (-13, (4, 5), (3, 4), ["market_stall"])],
+    "growth_slots_tier3": [( 15, (5, 7), (4, 5), ["tent", "tent"]),
+                            (-15, (5, 6), (4, 5), ["tent"])],
+    "farms":    [(-20, 4), (20, 4)],
+    "ambient_npcs": [(-8, "villager"), (2, "child"), (10, "villager"),
+                     (-14, "villager"), (14, "child")],
+}
+
 _SIZE_BY_DIFFICULTY = {
     0: ["small", "small", "medium"],
     1: ["medium", "medium", "large"],
     2: ["large", "large", "medium"],
+}
+
+# Biome overrides for city layout — bypasses difficulty-based selection.
+_SIZE_BY_BIOME = {
+    "savanna": ["bedouin_camp", "oasis", "oasis"],
 }
 
 _PLANT_BLOCKS = ALL_LOGS | ALL_LEAVES | BUSH_BLOCKS | {SAPLING}
@@ -3200,6 +3255,74 @@ def _place_dome_house(world, left_x, sy, width, wall_height,
                 world.set_block(rx, row_y, dome_block)
 
 
+def _place_bedouin_tent(world, left_x, sy, width, wall_height, rng):
+    """Bedouin goat-hair tent: two corner poles, sagging fabric canopy, open sides."""
+    fabric   = rng.choice((HOUSE_WALL_DARK, TEXTILE_TAPESTRY_NATURAL,
+                            TEXTILE_TAPESTRY_CRIMSON, TEXTILE_TAPESTRY_AMBER))
+    h        = max(3, min(4, wall_height))
+    center_x = left_x + width // 2
+
+    # Corner support poles
+    for wy in range(sy - h, sy):
+        if 0 <= wy < world.height:
+            world.set_block(left_x,             wy, HOUSE_WALL_DARK)
+            world.set_block(left_x + width - 1, wy, HOUSE_WALL_DARK)
+
+    # Canopy: edges sit at pole-top height, centre sags one row down
+    for wx in range(left_x - 1, left_x + width + 1):
+        sag = 1 if abs(wx - center_x) < width // 3 else 0
+        ry  = sy - h + sag
+        if 0 <= ry < world.height and 0 <= wx < world.width:
+            world.set_block(wx, ry, fabric)
+
+    # Back curtain — bg only so the front stays open to the player
+    for wy in range(sy - h + 1, sy):
+        if 0 <= wy < world.height:
+            world.set_bg_block(left_x + width - 1, wy, fabric)
+
+    # Ground rug
+    rug = rng.choice((TEXTILE_RUG_NATURAL, TEXTILE_RUG_GOLDEN, TEXTILE_RUG_CRIMSON,
+                      TEXTILE_RUG_AMBER,   TEXTILE_RUG_IVORY))
+    for wx in range(left_x + 1, left_x + width - 1):
+        if 0 <= sy < world.height:
+            world.set_block(wx, sy, rug)
+
+
+def _place_caravanserai(world, left_x, sy, width, wall_height):
+    """Caravanserai: thick sandstone walls, crenellated parapet, central arched gate."""
+    h        = min(8, max(5, wall_height + 2))
+    wall     = SANDSTONE_BLOCK
+    center_x = left_x + width // 2
+    gate_w   = max(2, width // 5)
+
+    # Perimeter walls with open interior
+    for wy in range(sy - h, sy):
+        for wx in range(left_x, left_x + width):
+            if not (0 <= wy < world.height):
+                continue
+            is_edge = (wx == left_x) or (wx == left_x + width - 1)
+            in_gate = abs(wx - center_x) <= gate_w and wy >= sy - 3
+            if in_gate:
+                pass                                 # gate arch stays AIR
+            elif is_edge:
+                world.set_block(wx, wy, wall)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, wall)
+
+    # Gate lintel spanning the arch opening
+    lintel_y = sy - 4
+    for wx in range(center_x - gate_w - 1, center_x + gate_w + 2):
+        if 0 <= lintel_y < world.height and 0 <= wx < world.width:
+            world.set_block(wx, lintel_y, wall)
+
+    # Crenellated parapet — alternating merlons above the wall top
+    parapet_y = sy - h - 1
+    for wx in range(left_x, left_x + width):
+        if (wx - left_x) % 2 == 0 and 0 <= parapet_y < world.height:
+            world.set_block(wx, parapet_y, wall)
+
+
 def _place_chapel(world, left_x, sy, width, wall_height):
     """Wood chapel with a single center door and a tall triangular gabled roof."""
     center = left_x + width // 2
@@ -3477,7 +3600,10 @@ def _ensure_city_traversal(world, city_bx, half_w, sy):
 def _build_single_city(world, rng, city_bx, difficulty):
     sy = world.surface_y_at(city_bx)
     biodome = world.biodome_at(city_bx)
-    city_size = rng.choice(_SIZE_BY_DIFFICULTY[difficulty])
+    if biodome in _SIZE_BY_BIOME:
+        city_size = rng.choice(_SIZE_BY_BIOME[biodome])
+    else:
+        city_size = rng.choice(_SIZE_BY_DIFFICULTY[difficulty])
     # Frontier biomes have a 30% chance to spawn as a military garrison instead
     if biodome in _FRONTIER_BIOMES and city_size in ("medium", "large") and rng.random() < 0.30:
         city_size = "military"
@@ -3514,6 +3640,7 @@ def _build_single_city(world, rng, city_bx, difficulty):
         if world.get_block(bx, sy) != BEDROCK:
             world.set_block(bx, sy, STONE)
 
+    is_arabia        = biodome in _ARABIA_BIOMES
     is_desert        = biodome in _DESERT_BIOMES
     is_himalayan     = biodome in _HIMALAYAN_BIOMES
     is_mediterranean = biodome in _MEDITERRANEAN_BIOMES
@@ -3523,7 +3650,11 @@ def _build_single_city(world, rng, city_bx, difficulty):
 
     for (offset, w_range, h_range, variants), npc_type in zip(cfg["buildings"], cfg["npc_types"]):
         left_x = city_bx + offset
-        if is_desert:
+        if is_arabia:
+            wall_block, roof_block = _ARABIA_PALETTE
+            if variants:
+                variants = [_ARABIA_SWAP.get(v, v) for v in variants]
+        elif is_desert:
             wall_block, roof_block = _DESERT_PALETTE
             if variants:
                 variants = [_DOME_SWAP.get(v, v) for v in variants]
@@ -3549,7 +3680,11 @@ def _build_single_city(world, rng, city_bx, difficulty):
             height  = rng.randint(*h_range)
             variant = rng.choice(variants) if variants else "house"
 
-            if variant == "dome":
+            if variant == "tent":
+                _place_bedouin_tent(world, left_x, sy, width, height, rng)
+            elif variant == "caravanserai":
+                _place_caravanserai(world, left_x, sy, width, height)
+            elif variant == "dome":
                 _place_dome_house(world, left_x, sy, width, height, wall_block)
             elif variant == "himalayan":
                 _place_himalayan_house(world, left_x, sy, width, height)

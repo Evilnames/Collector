@@ -52,7 +52,7 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     CUSTOM_TAPESTRY_ROOT, CUSTOM_TAPESTRY_BODY,
                     POTTERY_DISPLAY_BLOCK,
                     SALT_DEPOSIT,
-                    TOWN_FLAG_BLOCK)
+                    TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK)
 import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
