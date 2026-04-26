@@ -122,6 +122,7 @@ class World:
         self.insects = []
         self.dropped_items = []
         self.chest_data = {}     # (bx, by) -> {item_id: count}
+        self.light_traps = {}    # (bx, by) -> {"accumulated": [species_id, ...]}
         self.garden_data = {}    # (bx, by) -> [Wildflower, ...]
         self.wildflower_display_data = {}  # (bx, by) -> Wildflower | None
         self._surface_height_cache = {}
@@ -175,6 +176,11 @@ class World:
         self._crop_interval = 20.0
         self._crop_rng      = random.Random(seed + 11111)
         self.pending_crops  = set()
+        # Fruit tree regrowth — tracks leaf positions that may regrow a fruit cluster
+        self._fruit_timer    = 0.0
+        self._fruit_interval = 30.0
+        self._fruit_rng      = random.Random(seed + 33333)
+        self.pending_fruit_leaves = set()
         if preloaded:
             self._load_from(preloaded, player_x)
         else:
@@ -339,6 +345,8 @@ class World:
                     self.pending_crops.add((x_base + lx, y))
                 elif bid == SAPLING or bid in ALL_FRUIT_SAPLINGS:
                     self.pending_saplings.add((x_base + lx, y))
+                elif bid in LEAF_FRUIT_CLUSTER_MAP:
+                    self.pending_fruit_leaves.add((x_base + lx, y))
 
     def load_chunk(self, cx: int):
         """Load chunk from DB, or generate fresh if unseen."""
@@ -1577,6 +1585,14 @@ class World:
             self.pending_saplings.add((x, y))
         elif old_bid == SAPLING or old_bid in ALL_FRUIT_SAPLINGS:
             self.pending_saplings.discard((x, y))
+        # Fruit clusters live in the bg_block layer; clear them when their leaf is destroyed.
+        if old_bid in LEAF_FRUIT_CLUSTER_MAP and block_id == AIR:
+            self.set_bg_block(x, y, AIR)
+            self.pending_fruit_leaves.discard((x, y))
+        elif block_id in LEAF_FRUIT_CLUSTER_MAP:
+            self.pending_fruit_leaves.add((x, y))
+        elif old_bid in LEAF_FRUIT_CLUSTER_MAP and block_id not in LEAF_FRUIT_CLUSTER_MAP:
+            self.pending_fruit_leaves.discard((x, y))
         if block_id in YOUNG_CROP_BLOCKS:
             self.pending_crops.add((x, y))
             if old_bid not in YOUNG_CROP_BLOCKS:
@@ -1609,6 +1625,11 @@ class World:
                 nx, ny = x + ddx, y + ddy
                 if self._chunk_get(nx, ny) == WATER:
                     self._drain_unsustained_water(nx, ny)
+        from blocks import LIGHT_TRAP_BLOCK as _LTB
+        if block_id == _LTB:
+            self.light_traps.setdefault((x, y), {"accumulated": []})
+        elif old_bid == _LTB:
+            self.light_traps.pop((x, y), None)
 
     def get_bg_block(self, x, y):
         if y < 0 or y >= WORLD_H or abs(x) > WORLD_MAX_X:
@@ -1646,6 +1667,33 @@ class World:
             advance_day(self)
             from outposts import tick_outpost_day
             tick_outpost_day(self.day_count)
+        self._tick_light_traps(dt)
+
+    def _tick_light_traps(self, dt):
+        if not self.light_traps:
+            return
+        is_night = self.time_of_day >= DAY_DURATION
+        if not is_night:
+            return
+        self._light_trap_timer = getattr(self, "_light_trap_timer", 0.0) + dt
+        if self._light_trap_timer < 20.0:
+            return
+        self._light_trap_timer = 0.0
+        import random as _rnd
+        from constants import BLOCK_SIZE as _BS
+        for pos, trap in self.light_traps.items():
+            if len(trap["accumulated"]) >= 4:
+                continue
+            tx = pos[0] * _BS
+            ty = pos[1] * _BS
+            candidates = [ins for ins in self.insects
+                          if ins.NIGHT_ONLY
+                          and abs(ins.x - tx) < 6 * _BS
+                          and abs(ins.y - ty) < 6 * _BS
+                          and ins.SPECIES not in trap["accumulated"]]
+            if candidates:
+                sp = _rnd.choice(candidates).SPECIES
+                trap["accumulated"].append(sp)
 
     def update_water(self, dt, player):
         self._water_timer += dt
@@ -1751,6 +1799,18 @@ class World:
                 if self.get_block(lx, ly) == AIR:
                     if rng is None or density >= 1.0 or rng.random() < density:
                         self.set_block(lx, ly, leaf_bid)
+
+    def _scatter_fruit_clusters(self, layers, leaf_bid, rng, chance=0.25):
+        """Place fruit cluster bg_blocks on a fraction of freshly placed leaf_bid tiles."""
+        fruit_bid = LEAF_FRUIT_CLUSTER_MAP.get(leaf_bid)
+        if fruit_bid is None:
+            return
+        for ly, lx_range in layers:
+            if ly < 0 or ly >= WORLD_H:
+                continue
+            for lx in lx_range:
+                if self.get_block(lx, ly) == leaf_bid and rng.random() < chance:
+                    self.set_bg_block(lx, ly, fruit_bid)
 
     def _add_branch_stubs(self, bx, by, h, log_bid, rng, count=2):
         used = set()
@@ -2066,12 +2126,14 @@ class World:
         rng = rng or self._sapling_rng
         h = rng.randint(3, 6)
         top_y = self._place_trunk(bx, by, h, PEAR_LOG)
-        self._place_canopy([
+        layers = [
             (top_y - 1, range(bx - 1, bx + 2)),
             (top_y,     range(bx - 2, bx + 3)),
             (top_y + 1, range(bx - 2, bx + 3)),
             (top_y + 2, range(bx - 1, bx + 2)),
-        ], PEAR_LEAVES, rng, density=0.85)
+        ]
+        self._place_canopy(layers, PEAR_LEAVES, rng, density=0.85)
+        self._scatter_fruit_clusters(layers, PEAR_LEAVES, rng, chance=0.25)
         if rng.random() < 0.5:
             self._add_branch_stubs(bx, by, h, PEAR_LOG, rng, count=1)
 
@@ -2079,38 +2141,42 @@ class World:
         rng = rng or self._sapling_rng
         h = rng.randint(3, 6)
         top_y = self._place_trunk(bx, by, h, FIG_LOG)
-        # Irregular spreading crown
         off = rng.randint(-1, 1)
-        self._place_canopy([
+        layers = [
             (top_y - 1, range(bx + off - 1, bx + off + 2)),
             (top_y,     range(bx + off - 3, bx + off + 4)),
             (top_y + 1, range(bx + off - 3, bx + off + 4)),
             (top_y + 2, range(bx + off - 2, bx + off + 3)),
-        ], FIG_LEAVES, rng, density=0.75)
+        ]
+        self._place_canopy(layers, FIG_LEAVES, rng, density=0.75)
+        self._scatter_fruit_clusters(layers, FIG_LEAVES, rng, chance=0.25)
         self._add_branch_stubs(bx, by, h, FIG_LOG, rng, count=rng.randint(1, 2))
 
     def _grow_citrus(self, bx, by, rng=None):
         rng = rng or self._sapling_rng
         h = rng.randint(3, 5)
         top_y = self._place_trunk(bx, by, h, CITRUS_LOG)
-        # Compact evergreen dome
-        self._place_canopy([
+        layers = [
             (top_y - 1, range(bx - 1, bx + 2)),
             (top_y,     range(bx - 2, bx + 3)),
             (top_y + 1, range(bx - 2, bx + 3)),
             (top_y + 2, range(bx - 1, bx + 2)),
-        ], CITRUS_LEAVES, rng, density=0.90)
+        ]
+        self._place_canopy(layers, CITRUS_LEAVES, rng, density=0.90)
+        self._scatter_fruit_clusters(layers, CITRUS_LEAVES, rng, chance=0.25)
 
     def _grow_apple(self, bx, by, rng=None):
         rng = rng or self._sapling_rng
         h = rng.randint(3, 6)
         top_y = self._place_trunk(bx, by, h, APPLE_LOG)
-        self._place_canopy([
+        layers = [
             (top_y - 1, range(bx - 1, bx + 2)),
             (top_y,     range(bx - 2, bx + 3)),
             (top_y + 1, range(bx - 2, bx + 3)),
             (top_y + 2, range(bx - 1, bx + 2)),
-        ], APPLE_LEAVES, rng, density=0.88)
+        ]
+        self._place_canopy(layers, APPLE_LEAVES, rng, density=0.88)
+        self._scatter_fruit_clusters(layers, APPLE_LEAVES, rng, chance=0.25)
         if rng.random() < 0.5:
             self._add_branch_stubs(bx, by, h, APPLE_LOG, rng, count=1)
 
@@ -2118,14 +2184,15 @@ class World:
         rng = rng or self._sapling_rng
         h = rng.randint(3, 5)
         top_y = self._place_trunk(bx, by, h, POMEGRANATE_LOG)
-        # Rounded shrubby crown, slight random offset
         off = rng.randint(-1, 1)
-        self._place_canopy([
+        layers = [
             (top_y - 1, range(bx + off - 1, bx + off + 2)),
             (top_y,     range(bx + off - 2, bx + off + 3)),
             (top_y + 1, range(bx + off - 2, bx + off + 3)),
             (top_y + 2, range(bx + off - 1, bx + off + 2)),
-        ], POMEGRANATE_LEAVES, rng, density=0.82)
+        ]
+        self._place_canopy(layers, POMEGRANATE_LEAVES, rng, density=0.82)
+        self._scatter_fruit_clusters(layers, POMEGRANATE_LEAVES, rng, chance=0.25)
 
     def _dispatch_grow(self, bx, by, biodome, rng=None):
         rng = rng or self._sapling_rng
@@ -2281,6 +2348,28 @@ class World:
                 self._crop_progress[(x, y)] = progress
                 still_pending.add((x, y))
         self.pending_crops = still_pending
+
+    def update_fruit_trees(self, dt):
+        """Slowly regrow fruit clusters on bare fruit-tree leaf blocks."""
+        self._fruit_timer += dt
+        if self._fruit_timer < self._fruit_interval:
+            return
+        self._fruit_timer -= self._fruit_interval
+
+        candidates = list(self.pending_fruit_leaves)
+        self._fruit_rng.shuffle(candidates)
+        # Process up to 60 candidates per tick to keep it cheap
+        for (x, y) in candidates[:60]:
+            bid = self._chunk_get(x, y)
+            if bid not in LEAF_FRUIT_CLUSTER_MAP:
+                self.pending_fruit_leaves.discard((x, y))
+                continue
+            if self.get_bg_block(x, y) in ALL_FRUIT_CLUSTERS:
+                self.pending_fruit_leaves.discard((x, y))
+                continue
+            if self._fruit_rng.random() < 0.15:
+                self.set_bg_block(x, y, LEAF_FRUIT_CLUSTER_MAP[bid])
+                self.pending_fruit_leaves.discard((x, y))
 
     def update_soil(self, dt):
         """Per-tick moisture decay, water-adjacency top-up, rain events, and fallow cleanup."""
@@ -2489,10 +2578,13 @@ class World:
             for y in range(WORLD_H):
                 for lx in range(CHUNK_W):
                     bid = chunk[y][lx]
-                    if bid not in ALL_LEAVES:
+                    if bid in ALL_LEAVES:
+                        log_bid = LEAF_LOG_MAP.get(bid)
+                        if log_bid is None:
+                            continue
+                    else:
                         continue
                     x = base_x + lx
-                    log_bid = LEAF_LOG_MAP[bid]
                     has_wood = False
                     for dy in range(-2, 3):
                         for dx in range(-2, 3):
@@ -2660,6 +2752,10 @@ class World:
             (Goose,     GOOSE_BIOMES,    0.06),
             (Hare,      HARE_BIOMES,     0.07),
         ]
+        # Region.danger scales predator density: calm 0.5x, rough 1.0x, wild 1.5x.
+        _PREDATORS = (Wolf, Bear, Crocodile)
+        _DANGER_MULT = {"calm": 0.5, "rough": 1.0, "wild": 1.5}
+        from towns import region_for_bx
         rng = random.Random(self.seed + 74193)
         for cx in sorted(self._chunks.keys()):
             chunk  = self._chunks[cx]
@@ -2672,8 +2768,11 @@ class World:
                 biodome = self.biodome_at(x)
                 surf = chunk[sy][lx] if 0 < sy < WORLD_H else AIR
                 if 0 < sy < WORLD_H and surf in (GRASS, SNOW) and chunk[sy - 1][lx] == AIR:
+                    region = region_for_bx(self, x)
+                    danger_mult = _DANGER_MULT.get(region.danger, 1.0) if region else 1.0
                     for cls, biomes, rate in _HUNTABLE_MAP:
-                        if biodome in biomes and rng.random() < rate:
+                        eff_rate = rate * danger_mult if cls in _PREDATORS else rate
+                        if biodome in biomes and rng.random() < eff_rate:
                             ax = x * BLOCK_SIZE + (BLOCK_SIZE - cls.ANIMAL_W) // 2
                             ay = sy * BLOCK_SIZE - cls.ANIMAL_H
                             self.entities.append(cls(ax, ay, self))
@@ -2840,6 +2939,10 @@ class World:
             (Goose,     GOOSE_BIOMES,    0.06),
             (Hare,      HARE_BIOMES,     0.07),
         ]
+        # Region.danger scales predator density: calm 0.5x, rough 1.0x, wild 1.5x.
+        _PREDATORS = (Wolf, Bear, Crocodile)
+        _DANGER_MULT = {"calm": 0.5, "rough": 1.0, "wild": 1.5}
+        from towns import region_for_bx
         hunt_rng = random.Random(self.seed + 74193 + cx * 8317)
         x = base_x + 3
         while x < base_x + CHUNK_W - 3:
@@ -2848,8 +2951,11 @@ class World:
             biodome = self.biodome_at(x)
             surf = chunk[sy][lx] if 0 < sy < WORLD_H else AIR
             if 0 < sy < WORLD_H and surf in (GRASS, SNOW) and chunk[sy - 1][lx] == AIR:
+                region = region_for_bx(self, x)
+                danger_mult = _DANGER_MULT.get(region.danger, 1.0) if region else 1.0
                 for cls, biomes, rate in _HUNTABLE_MAP:
-                    if biodome in biomes and hunt_rng.random() < rate:
+                    eff_rate = rate * danger_mult if cls in _PREDATORS else rate
+                    if biodome in biomes and hunt_rng.random() < eff_rate:
                         ax = x * BLOCK_SIZE + (BLOCK_SIZE - cls.ANIMAL_W) // 2
                         ay = sy * BLOCK_SIZE - cls.ANIMAL_H
                         self.entities.append(cls(ax, ay, self))

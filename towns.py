@@ -476,6 +476,21 @@ def rival_region_ids(region_id: int) -> list:
     return [rid for rid, rel in region.relations.items() if rel == "rival"]
 
 
+def region_for_bx(world, bx: int) -> Optional["Region"]:
+    """Find the region whose nearest town center owns the column at `bx`.
+
+    Returns None if no towns exist yet.
+    """
+    centers = getattr(world, "town_centers", [])
+    if not centers or not TOWNS:
+        return None
+    nearest_idx = min(range(len(centers)), key=lambda i: abs(centers[i] - bx))
+    town = TOWNS.get(nearest_idx)
+    if town is None:
+        return None
+    return REGIONS.get(town.region_id)
+
+
 def region_total_rep(region_id: int) -> int:
     region = REGIONS.get(region_id)
     if region is None:
@@ -888,6 +903,7 @@ class Region:
     relations:       dict = field(default_factory=dict)      # other_region_id → "allied" | "rival"
     wealth:          str = "modest"                          # "poor" | "modest" | "rich"
     danger:          str = "calm"                            # "calm" | "rough" | "wild"
+    landmark_used_day: int = -1                              # in-game day a landmark last fired (-1 = never)
     # reputation is computed on read: sum of member town reps
 
 
@@ -1197,8 +1213,10 @@ def _palace_type_for(palace_left: int, world_seed: int) -> str:
 def _respawn_leader_npcs(world) -> None:
     """Re-create LeaderNPC entities for capital towns after loading from DB.
     Blocks are already in loaded chunks; only the entity needs to be spawned."""
-    from cities import PALACE_NPC_OFFSET, LeaderNPC
+    from cities import PALACE_NPC_OFFSET, LeaderNPC, LandmarkNPC
+    from landmarks import landmark_for, place_landmark
     from constants import BLOCK_SIZE
+    from blocks import LANDMARK_FLAG_BLOCK
 
     for town in TOWNS.values():
         if not town.is_capital:
@@ -1220,6 +1238,34 @@ def _respawn_leader_npcs(world) -> None:
                       leader_color= region.leader_color,
                       palace_type = ptype)
         )
+
+        # Landmark NPC — find or build the landmark structure on the
+        # opposite side of town, then spawn the NPC at the flag.
+        if not region.agenda:
+            continue
+        spec = landmark_for(region.agenda)
+
+        # Look for an existing flag block left of town. If a save predates
+        # Vector D the flag won't exist — build the landmark now.
+        flag_bx = -1
+        search_lo = town.center_bx - town.half_w - 12
+        search_hi = town.center_bx - town.half_w
+        for bx in range(search_lo, search_hi):
+            sy_bx = world.surface_y_at(bx)
+            if world.get_bg_block(bx, sy_bx - 2) == LANDMARK_FLAG_BLOCK:
+                flag_bx = bx
+                break
+        if flag_bx < 0:
+            flag_bx = place_landmark(world, town, region)
+
+        if flag_bx >= 0:
+            landmark_sy = world.surface_y_at(flag_bx)
+            world.entities.append(
+                LandmarkNPC(flag_bx * BLOCK_SIZE, (landmark_sy - 3) * BLOCK_SIZE, world,
+                            region_id    = region.region_id,
+                            landmark_name= spec["name"],
+                            tagline      = spec["tagline"])
+            )
 
 
 def _place_capital_structures(town: Town, world) -> None:
@@ -1320,6 +1366,23 @@ def _place_capital_structures(town: Town, world) -> None:
                   leader_color= region.leader_color,
                   palace_type = ptype)
     )
+
+    # Capital landmark (Vector D) — placed on the opposite side of town from
+    # the palace. Form and effect key off region.agenda; size off region.wealth.
+    from landmarks import place_landmark, landmark_for
+    from cities import LandmarkNPC
+    flag_bx = place_landmark(world, town, region)
+    if flag_bx >= 0:
+        landmark_sy = world.surface_y_at(flag_bx)
+        spec = landmark_for(region.agenda)
+        npc_px = flag_bx * BLOCK_SIZE
+        npc_py = (landmark_sy - 3) * BLOCK_SIZE
+        world.entities.append(
+            LandmarkNPC(npc_px, npc_py, world,
+                        region_id    = region.region_id,
+                        landmark_name= spec["name"],
+                        tagline      = spec["tagline"])
+        )
 
 
 def _coa_rng(world_seed: int, region_id: int, leader_color: tuple) -> random.Random:
@@ -1463,6 +1526,10 @@ def advance_day(world) -> None:
             growth_mult = 1.0
             if region and region.agenda == "builder" and town.reputation >= 200:
                 growth_mult = 1.5
+            # Wealth tier modulates growth pace too: rich +25%, poor -25%.
+            if region:
+                if   region.wealth == "rich": growth_mult *= 1.25
+                elif region.wealth == "poor": growth_mult *= 0.75
             town.growth_progress += growth_mult / DAYS_PER_TIER
             if town.growth_progress >= 1.0:
                 _tier_up(town, world)
@@ -1622,6 +1689,9 @@ def serialize_all() -> tuple[list[dict], list[dict]]:
             "leader_title":         r.leader_title,
             "agenda":               r.agenda,
             "relations_json":       json.dumps({str(k): v for k, v in r.relations.items()}),
+            "wealth":               r.wealth,
+            "danger":               r.danger,
+            "landmark_used_day":    r.landmark_used_day,
         })
     return town_rows, region_rows
 
@@ -1673,19 +1743,20 @@ def deserialize_all(town_rows: list[dict], region_rows: list[dict]) -> None:
         except Exception:
             relations = {}
         r = Region(
-            region_id       = row["region_id"],
-            name            = row["name"],
-            capital_town_id = row["capital_town_id"],
-            member_town_ids = json.loads(row["member_town_ids_json"]),
-            leader_color    = lcolor,
-            coat_of_arms    = coa,
-            biome_group     = row.get("biome_group") or _DEFAULT_BIOME_GROUP,
-            tagline         = row.get("tagline") or "",
-            leader_title    = row.get("leader_title") or "Lord",
-            agenda          = row.get("agenda") or "",
-            relations       = relations,
-            wealth          = row.get("wealth") or "",
-            danger          = row.get("danger") or "",
+            region_id         = row["region_id"],
+            name              = row["name"],
+            capital_town_id   = row["capital_town_id"],
+            member_town_ids   = json.loads(row["member_town_ids_json"]),
+            leader_color      = lcolor,
+            coat_of_arms      = coa,
+            biome_group       = row.get("biome_group") or _DEFAULT_BIOME_GROUP,
+            tagline           = row.get("tagline") or "",
+            leader_title      = row.get("leader_title") or "Lord",
+            agenda            = row.get("agenda") or "",
+            relations         = relations,
+            wealth            = row.get("wealth") or "",
+            danger            = row.get("danger") or "",
+            landmark_used_day = row.get("landmark_used_day") if row.get("landmark_used_day") is not None else -1,
         )
         REGIONS[r.region_id] = r
 

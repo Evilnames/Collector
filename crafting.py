@@ -1459,6 +1459,16 @@ RECIPES = [
         "output_count": 1,
     },
     {
+        "name": "Light Trap",
+        "pattern": [
+            ["clear_glass",   "iron_lantern",  "clear_glass"],
+            [None,            "sugar_lump",    None         ],
+            [None,            "lumber",        None         ],
+        ],
+        "output_id":    "light_trap",
+        "output_count": 1,
+    },
+    {
         "name": "Garden Block",
         "pattern": [
             [None,          None,          None        ],
@@ -2551,7 +2561,7 @@ RECIPE_GROUPS = {
         "fishing_pole", "bait_station_item",
     ],
     "Wildlife": [
-        "bird_feeder", "bird_bath", "bug_net", "insect_display_case",
+        "bird_feeder", "bird_bath", "bug_net", "insect_display_case", "light_trap",
         "wildflower_display",
     ],
     "Horses": [
@@ -2616,6 +2626,7 @@ RESEARCH_LOCKED_RECIPES = {
     "bird_bath":             "bird_sanctuary",
     "bug_net":               "entomology_basics",
     "insect_display_case":   "entomology_basics",
+    "light_trap":            "entomology_basics",
     "wildflower_display":    "garden_workshop",
     "saddle":                "saddle_craft",
     "stable_item":           "saddle_craft",

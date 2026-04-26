@@ -21,7 +21,7 @@ def _wf_to_dict(wf):
         "fragrance": wf.fragrance, "vibrancy": wf.vibrancy,
         "specials": wf.specials, "biodome_found": wf.biodome_found, "seed": wf.seed,
     }
-SAVE_VERSION = 2
+SAVE_VERSION = 3
 
 
 class SaveManager:
@@ -350,7 +350,8 @@ class SaveManager:
             species_id TEXT PRIMARY KEY, count INTEGER, biome TEXT
         );
         CREATE TABLE IF NOT EXISTS insect_observations (
-            species_id TEXT PRIMARY KEY, count INTEGER, biome TEXT
+            species_id TEXT PRIMARY KEY, count INTEGER, biome TEXT,
+            best_condition TEXT, morph TEXT
         );
         CREATE TABLE IF NOT EXISTS fish (
             uid TEXT PRIMARY KEY, species TEXT, rarity TEXT,
@@ -619,7 +620,10 @@ class SaveManager:
             tagline              TEXT DEFAULT '',
             leader_title         TEXT DEFAULT 'Lord',
             agenda               TEXT DEFAULT '',
-            relations_json       TEXT DEFAULT '{}'
+            relations_json       TEXT DEFAULT '{}',
+            wealth               TEXT DEFAULT '',
+            danger               TEXT DEFAULT '',
+            landmark_used_day    INTEGER DEFAULT -1
         );
         CREATE TABLE IF NOT EXISTS outposts (
             outpost_id        INTEGER PRIMARY KEY,
@@ -703,6 +707,18 @@ class SaveManager:
             pass
         try:
             con.execute("ALTER TABLE regions ADD COLUMN relations_json TEXT DEFAULT '{}'")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE regions ADD COLUMN wealth TEXT DEFAULT ''")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE regions ADD COLUMN danger TEXT DEFAULT ''")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE regions ADD COLUMN landmark_used_day INTEGER DEFAULT -1")
         except Exception:
             pass
         for col, default in [
@@ -1331,21 +1347,37 @@ class SaveManager:
         return {row[0]: {"count": row[1], "biome": row[2]} for row in rows}
 
     def _save_insect_observations(self, con, player):
+        # Add columns to old saves that predate condition/morph tracking.
+        for col, typedef in (("best_condition", "TEXT"), ("morph", "TEXT")):
+            try:
+                con.execute(f"ALTER TABLE insect_observations ADD COLUMN {col} {typedef}")
+            except Exception:
+                pass
         con.execute("DELETE FROM insect_observations")
         for species_id, data in player.insects_observed.items():
             con.execute(
-                "INSERT INTO insect_observations VALUES (?,?,?)",
-                (species_id, data.get("count", 0), data.get("biome", "")),
+                "INSERT INTO insect_observations VALUES (?,?,?,?,?)",
+                (species_id, data.get("count", 0), data.get("biome", ""),
+                 data.get("best_condition"), data.get("morph")),
             )
 
     def _load_insect_observations(self, con):
         try:
             rows = con.execute(
-                "SELECT species_id, count, biome FROM insect_observations"
+                "SELECT species_id, count, biome, best_condition, morph "
+                "FROM insect_observations"
             ).fetchall()
         except Exception:
-            return {}
-        return {row[0]: {"count": row[1], "biome": row[2]} for row in rows}
+            try:
+                rows = con.execute(
+                    "SELECT species_id, count, biome FROM insect_observations"
+                ).fetchall()
+                return {row[0]: {"count": row[1], "biome": row[2],
+                                 "best_condition": None, "morph": None} for row in rows}
+            except Exception:
+                return {}
+        return {row[0]: {"count": row[1], "biome": row[2],
+                         "best_condition": row[3], "morph": row[4]} for row in rows}
 
     def _save_towns(self, con):
         from towns import serialize_all
@@ -1369,8 +1401,8 @@ class SaveManager:
                 "INSERT INTO regions "
                 "(region_id, name, capital_town_id, member_town_ids_json, "
                 " leader_color_json, coat_of_arms_json, biome_group, tagline, "
-                " leader_title, agenda, relations_json) "
-                "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                " leader_title, agenda, relations_json, wealth, danger, landmark_used_day) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (r["region_id"], r["name"], r["capital_town_id"],
                  r["member_town_ids_json"], r["leader_color_json"],
                  r.get("coat_of_arms_json", "null"),
@@ -1378,7 +1410,10 @@ class SaveManager:
                  r.get("tagline", ""),
                  r.get("leader_title", "Lord"),
                  r.get("agenda", ""),
-                 r.get("relations_json", "{}")),
+                 r.get("relations_json", "{}"),
+                 r.get("wealth", ""),
+                 r.get("danger", ""),
+                 r.get("landmark_used_day", -1)),
             )
 
     def _save_outposts(self, con):

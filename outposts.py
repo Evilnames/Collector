@@ -3,7 +3,7 @@ import random
 from dataclasses import dataclass
 
 from constants import CHUNK_W, BLOCK_SIZE
-from blocks import STONE, BEDROCK, AIR, OUTPOST_FLAG_BLOCK
+from blocks import STONE, BEDROCK, AIR, OUTPOST_FLAG_BLOCK, COBBLESTONE
 
 # ---------------------------------------------------------------------------
 # Spawn constants
@@ -30,7 +30,7 @@ OUTPOST_TYPES = {
         "buys":  [("red_wine_reserve", 90, 2), ("white_wine_reserve", 85, 2)],
         "needs": [("lumber", 20), ("iron_chunk", 5)],
         "base_stock": 5, "clothing_key": "winemaker",
-        "building_style": "house", "half_w": 18,
+        "building_style": "house", "half_w": 18, "layout": "estate",
     },
 
     "herb_monastery": {
@@ -38,21 +38,21 @@ OUTPOST_TYPES = {
         "eligible_biomes": ["temperate", "birch_forest", "rolling_hills",
                             "redwood", "alpine_mountain", "rocky_mountain"],
         "sells": [("philosophers_scroll", 28), ("votive_tablet", 22),
-                  ("rare_mushroom", 35), ("olive_branch", 15)],
+                  ("olive_branch", 15)],
         "buys":  [("rare_mushroom", 40, 6), ("mushroom", 8, 12)],
         "needs": [("lumber", 12), ("coal", 8)],
         "base_stock": 5, "clothing_key": "monk",
-        "building_style": "shrine", "half_w": 16,
+        "building_style": "shrine", "half_w": 16, "layout": "monastery",
     },
 
     "trapper_post": {
         "display_name":    "Trapper Post",
         "eligible_biomes": ["boreal", "tundra", "steppe", "wasteland"],
-        "sells": [("rabbit_pelt", 18), ("fox_pelt", 22)],
+        "sells": [],
         "buys":  [("rabbit_pelt", 20, 8), ("fox_pelt", 26, 6), ("bear_pelt", 42, 3)],
         "needs": [("lumber", 15), ("iron_chunk", 5)],
         "base_stock": 6, "clothing_key": "trapper",
-        "building_style": "house", "half_w": 14,
+        "building_style": "house", "half_w": 14, "layout": "watchtower",
     },
 
     "boreal_distillery": {
@@ -63,29 +63,29 @@ OUTPOST_TYPES = {
         "buys":  [("whiskey_reserve", 95, 2), ("bourbon_reserve", 95, 2)],
         "needs": [("lumber", 25), ("coal", 10), ("iron_chunk", 8)],
         "base_stock": 4, "clothing_key": "distiller",
-        "building_style": "smithy", "half_w": 15,
+        "building_style": "smithy", "half_w": 15, "layout": "default",
     },
 
     "coffee_plantation": {
         "display_name":    "Coffee Plantation",
         "eligible_biomes": ["jungle", "tropical", "wetland", "savanna", "south_asian"],
         "sells": [("drip_coffee", 14), ("espresso", 18),
-                  ("pour_over", 16), ("drip_coffee_fine", 30)],
+                  ("pour_over", 16)],
         "buys":  [("drip_coffee_fine", 38, 4), ("espresso_fine", 35, 4),
                   ("pour_over_fine", 35, 4)],
         "needs": [("lumber", 12), ("iron_chunk", 6)],
         "base_stock": 5, "clothing_key": "plantation_worker",
-        "building_style": "house", "half_w": 16,
+        "building_style": "house", "half_w": 16, "layout": "estate",
     },
 
     "jungle_herbalist": {
         "display_name":    "Jungle Herbalist",
         "eligible_biomes": ["jungle", "tropical", "wetland", "swamp"],
-        "sells": [("rare_mushroom", 30), ("mushroom", 6), ("olive_branch", 12)],
+        "sells": [("olive_branch", 12)],
         "buys":  [("mushroom", 8, 15), ("rare_mushroom", 36, 8)],
         "needs": [("lumber", 10)],
         "base_stock": 6, "clothing_key": "jungle_healer",
-        "building_style": "house", "half_w": 13,
+        "building_style": "house", "half_w": 13, "layout": "default",
     },
 
     "tea_house": {
@@ -95,71 +95,71 @@ OUTPOST_TYPES = {
         "buys":  [("wine_amphora", 22, 4), ("pottery_vase", 18, 4)],
         "needs": [("lumber", 8), ("coal", 6)],
         "base_stock": 5, "clothing_key": "tea_master",
-        "building_style": "shrine", "half_w": 14,
+        "building_style": "shrine", "half_w": 14, "layout": "monastery",
     },
 
     "pottery_workshop": {
         "display_name":    "Pottery Workshop",
         "eligible_biomes": ["east_asian", "south_asian", "mediterranean", "steppe",
                             "rolling_hills"],
-        "sells": [("clay_cooking_pot", 18), ("clay_cooking_pot_fine", 40),
+        "sells": [("clay_cooking_pot", 18),
                   ("pottery_vase", 22), ("wine_amphora", 28)],
         "buys":  [("clay_cooking_pot_fine", 50, 3), ("pottery_vase_fine", 58, 3),
                   ("wine_amphora_fine", 70, 2)],
         "needs": [("coal", 15), ("stone_chip", 20)],
         "base_stock": 4, "clothing_key": "potter",
-        "building_style": "smithy", "half_w": 13,
+        "building_style": "smithy", "half_w": 13, "layout": "default",
     },
 
     "spice_market": {
         "display_name":    "Spice Market",
         "eligible_biomes": ["south_asian", "tropical", "jungle", "savanna"],
-        "sells": [("rare_mushroom", 28), ("mushroom", 5), ("votive_tablet", 18)],
+        "sells": [("votive_tablet", 18)],
         "buys":  [("mushroom", 7, 15), ("rare_mushroom", 34, 8)],
         "needs": [("lumber", 8), ("coal", 5)],
         "base_stock": 6, "clothing_key": "south_asian",
-        "building_style": "house", "half_w": 14,
+        "building_style": "house", "half_w": 14, "layout": "market",
     },
 
     "textile_guild": {
         "display_name":    "Textile Guild",
         "eligible_biomes": ["south_asian", "east_asian", "mediterranean", "temperate"],
-        "sells": [("rabbit_pelt", 16), ("fox_pelt", 20)],
+        "sells": [],
         "buys":  [("rabbit_pelt", 18, 10), ("fox_pelt", 22, 8)],
         "needs": [("iron_chunk", 6), ("lumber", 10)],
         "base_stock": 6, "clothing_key": "weaver",
-        "building_style": "house", "half_w": 13,
+        "building_style": "house", "half_w": 13, "layout": "market",
     },
 
     "olive_press": {
         "display_name":    "Olive Press",
         "eligible_biomes": ["mediterranean", "arid_steppe", "savanna"],
-        "sells": [("wine_amphora", 28), ("red_wine", 15), ("white_wine", 14)],
+        "sells": [("wine_amphora", 28)],
         "buys":  [("red_wine", 20, 8), ("white_wine", 18, 8), ("red_wine_fine", 48, 4)],
         "needs": [("lumber", 18), ("stone_chip", 15)],
         "base_stock": 5, "clothing_key": "mediterranean",
-        "building_style": "house", "half_w": 15,
+        "building_style": "house", "half_w": 15, "layout": "estate",
     },
 
     "salt_works": {
         "display_name":    "Salt Works",
         "eligible_biomes": ["mediterranean", "beach", "wetland", "swamp"],
-        "sells": [("coarse_salt", 8), ("fine_salt", 12)],
+        "sells": [("fine_salt", 12)],
         "buys":  [("coarse_salt", 10, 10)],
         "needs": [("coal", 12), ("iron_chunk", 5)],
         "base_stock": 7, "clothing_key": "saltworker",
-        "building_style": "smithy", "half_w": 12,
+        "building_style": "smithy", "half_w": 12, "layout": "default",
     },
 
     "desert_glassworks": {
         "display_name":    "Desert Glassworks",
         "eligible_biomes": ["desert", "arid_steppe", "canyon"],
-        "sells": [("crystal_shard", 18), ("obsidian_slab", 25)],
+        "sells": [],
         "buys":  [("crystal_shard", 20, 8), ("obsidian_slab", 30, 5),
                   ("stone_chip", 3, 20)],
         "needs": [("coal", 20), ("iron_chunk", 8)],
         "base_stock": 5, "clothing_key": "desert",
-        "building_style": "smithy", "half_w": 14,
+        "building_style": "smithy", "half_w": 14, "layout": "default",
     },
 
     "canyon_forge": {
@@ -169,78 +169,78 @@ OUTPOST_TYPES = {
         "buys":  [("iron_chunk", 5, 15), ("gold_nugget", 12, 8)],
         "needs": [("coal", 25), ("iron_chunk", 10)],
         "base_stock": 4, "clothing_key": "blacksmith",
-        "building_style": "smithy", "half_w": 13,
+        "building_style": "smithy", "half_w": 13, "layout": "underground",
     },
 
     "alpine_monastery": {
         "display_name":    "Alpine Monastery",
         "eligible_biomes": ["alpine_mountain", "rocky_mountain", "tundra"],
         "sells": [("philosophers_scroll", 28), ("votive_tablet", 22),
-                  ("rare_mushroom", 35), ("olive_branch", 15)],
+                  ("olive_branch", 15)],
         "buys":  [("rare_mushroom", 40, 6), ("mushroom", 8, 10)],
         "needs": [("lumber", 12), ("coal", 8)],
         "base_stock": 5, "clothing_key": "monk",
-        "building_style": "shrine", "half_w": 16,
+        "building_style": "shrine", "half_w": 16, "layout": "monastery",
     },
 
     "cheese_cave": {
         "display_name":    "Cheese Cave",
         "eligible_biomes": ["alpine_mountain", "rocky_mountain", "rolling_hills", "boreal"],
-        "sells": [("cheese", 14)],
+        "sells": [],
         "buys":  [("cheese", 18, 8)],
         "needs": [("lumber", 10), ("iron_chunk", 6), ("coarse_salt", 8)],
         "base_stock": 7, "clothing_key": "alpine",
-        "building_style": "house", "half_w": 13,
+        "building_style": "house", "half_w": 13, "layout": "underground",
     },
 
     "fungal_grove": {
         "display_name":    "Fungal Grove",
         "eligible_biomes": ["fungal", "swamp", "wetland"],
-        "sells": [("mushroom", 5), ("rare_mushroom", 28)],
+        "sells": [],
         "buys":  [("mushroom", 7, 20), ("rare_mushroom", 35, 8)],
         "needs": [("lumber", 10)],
         "base_stock": 7, "clothing_key": "fungi_keeper",
-        "building_style": "house", "half_w": 12,
+        "building_style": "house", "half_w": 12, "layout": "default",
     },
 
     "swamp_alchemist": {
         "display_name":    "Swamp Alchemist",
         "eligible_biomes": ["swamp", "wetland", "fungal"],
-        "sells": [("rare_mushroom", 30), ("philosophers_scroll", 24), ("votive_tablet", 18)],
+        "sells": [("philosophers_scroll", 24), ("votive_tablet", 18)],
         "buys":  [("mushroom", 7, 12), ("rare_mushroom", 36, 8)],
         "needs": [("coal", 10), ("iron_chunk", 4)],
         "base_stock": 5, "clothing_key": "alchemist",
-        "building_style": "smithy", "half_w": 12,
+        "building_style": "smithy", "half_w": 12, "layout": "default",
     },
 
     "fishing_outpost": {
         "display_name":    "Fishing Outpost",
         "eligible_biomes": ["beach", "wetland", "tropical"],
-        "sells": [("bread", 8), ("cooked_beef", 14), ("fish", 12)],
+        "sells": [("bread", 8), ("cooked_beef", 14)],
         "buys":  [("fish", 15, 8)],
         "needs": [("lumber", 15), ("iron_chunk", 5)],
         "base_stock": 6, "clothing_key": "coastal",
-        "building_style": "house", "half_w": 13,
+        "building_style": "house", "half_w": 13, "layout": "default",
     },
 
     "coastal_saltworks": {
         "display_name":    "Coastal Salt Works",
         "eligible_biomes": ["beach", "mediterranean", "tropical"],
-        "sells": [("coarse_salt", 7), ("fine_salt", 10)],
+        "sells": [("fine_salt", 10)],
         "buys":  [("coarse_salt", 9, 12)],
         "needs": [("lumber", 10), ("stone_chip", 10)],
         "base_stock": 7, "clothing_key": "saltworker",
-        "building_style": "house", "half_w": 12,
+        "building_style": "house", "half_w": 12, "layout": "default",
     },
 
     "nomad_camp": {
         "display_name":    "Nomad Camp",
         "eligible_biomes": ["steppe", "arid_steppe", "savanna", "wasteland"],
-        "sells": [("rabbit_pelt", 16), ("fox_pelt", 20), ("cooked_beef", 12)],
+        "sells": [("cooked_beef", 12)],
         "buys":  [("rabbit_pelt", 18, 10), ("fox_pelt", 22, 8), ("bear_pelt", 38, 3)],
         "needs": [("coal", 10), ("iron_chunk", 8)],
         "base_stock": 6, "clothing_key": "steppe_nomad",
-        "building_style": "house", "half_w": 14,
+        "building_style": "house", "half_w": 14, "layout": "warcamp",
     },
 
     "spirit_distillery": {
@@ -252,7 +252,7 @@ OUTPOST_TYPES = {
                   ("brandy_aged", 55, 3)],
         "needs": [("lumber", 20), ("coal", 15), ("iron_chunk", 6)],
         "base_stock": 4, "clothing_key": "distiller",
-        "building_style": "smithy", "half_w": 15,
+        "building_style": "smithy", "half_w": 15, "layout": "default",
     },
 
     "hillside_vineyard": {
@@ -262,18 +262,18 @@ OUTPOST_TYPES = {
         "buys":  [("red_wine_reserve", 92, 2), ("white_wine_reserve", 88, 2)],
         "needs": [("lumber", 15), ("iron_chunk", 5)],
         "base_stock": 5, "clothing_key": "winemaker",
-        "building_style": "house", "half_w": 16,
+        "building_style": "house", "half_w": 16, "layout": "estate",
     },
 
     "sculpture_atelier": {
         "display_name":    "Sculpture Atelier",
         "eligible_biomes": ["steep_hills", "rocky_mountain", "canyon",
                             "mediterranean", "east_asian"],
-        "sells": [("votive_tablet", 20), ("crystal_shard", 16), ("stone_chip", 3)],
+        "sells": [("votive_tablet", 20)],
         "buys":  [("stone_chip", 4, 20), ("crystal_shard", 18, 8)],
         "needs": [("iron_chunk", 8), ("coal", 5)],
         "base_stock": 5, "clothing_key": "artisan",
-        "building_style": "smithy", "half_w": 13,
+        "building_style": "smithy", "half_w": 13, "layout": "default",
     },
 
     # --- Military outposts ---
@@ -281,56 +281,56 @@ OUTPOST_TYPES = {
     "border_garrison": {
         "display_name":    "Border Garrison",
         "eligible_biomes": ["temperate", "rolling_hills", "steep_hills", "birch_forest"],
-        "sells": [("recurve_bow", 25), ("iron_arrow", 8), ("flint_arrow", 5), ("iron_bar", 22)],
+        "sells": [("recurve_bow", 25), ("flint_arrow", 5), ("iron_bar", 22)],
         "buys":  [("iron_chunk", 6, 15), ("lumber", 3, 20), ("coal", 4, 12),
                   ("iron_arrow", 5, 20), ("wood_arrow", 2, 30)],
         "needs": [("iron_chunk", 10), ("coal", 15)],
         "base_stock": 4, "clothing_key": "soldier",
-        "building_style": "smithy", "half_w": 16,
+        "building_style": "smithy", "half_w": 16, "layout": "military_fort",
     },
 
     "highland_fortress": {
         "display_name":    "Highland Fortress",
         "eligible_biomes": ["rocky_mountain", "alpine_mountain", "steep_hills", "canyon"],
-        "sells": [("longbow", 55), ("broadhead_arrow", 12), ("tempered_iron", 60), ("iron_arrow", 8)],
+        "sells": [("longbow", 55), ("tempered_iron", 60)],
         "buys":  [("iron_chunk", 6, 15), ("coal", 4, 15), ("stone_chip", 3, 20),
                   ("broadhead_arrow", 10, 15), ("iron_arrow", 5, 15)],
         "needs": [("iron_chunk", 12), ("coal", 20)],
         "base_stock": 3, "clothing_key": "fortress_guard",
-        "building_style": "smithy", "half_w": 18,
+        "building_style": "smithy", "half_w": 18, "layout": "military_fort",
     },
 
     "desert_legion": {
         "display_name":    "Desert Legion",
         "eligible_biomes": ["desert", "arid_steppe", "canyon", "savanna"],
-        "sells": [("crossbow", 80), ("composite_bow", 45), ("iron_arrow", 8), ("iron_bar", 22)],
+        "sells": [("crossbow", 80), ("composite_bow", 45), ("iron_bar", 22)],
         "buys":  [("iron_chunk", 6, 15), ("gold_nugget", 10, 5), ("coal", 4, 12),
                   ("iron_arrow", 5, 15), ("flint_arrow", 4, 20)],
         "needs": [("iron_chunk", 12), ("coal", 18)],
         "base_stock": 3, "clothing_key": "legion",
-        "building_style": "smithy", "half_w": 17,
+        "building_style": "smithy", "half_w": 17, "layout": "military_fort",
     },
 
     "steppe_warcamp": {
         "display_name":    "Steppe Warcamp",
         "eligible_biomes": ["steppe", "wasteland", "savanna", "arid_steppe"],
-        "sells": [("composite_bow", 40), ("flint_arrow", 6), ("wood_arrow", 4), ("iron_chunk", 7)],
+        "sells": [("composite_bow", 40)],
         "buys":  [("rabbit_pelt", 16, 10), ("wolf_pelt", 28, 6), ("iron_chunk", 6, 10),
                   ("wood_arrow", 3, 25), ("flint_arrow", 4, 20)],
         "needs": [("lumber", 15), ("coal", 8)],
         "base_stock": 5, "clothing_key": "warlord",
-        "building_style": "house", "half_w": 15,
+        "building_style": "house", "half_w": 15, "layout": "warcamp",
     },
 
     "coastal_citadel": {
         "display_name":    "Coastal Citadel",
         "eligible_biomes": ["beach", "mediterranean", "tropical"],
-        "sells": [("recurve_bow", 25), ("iron_arrow", 8), ("iron_bar", 20), ("wood_bow", 14)],
+        "sells": [("iron_bar", 20), ("wood_bow", 14)],
         "buys":  [("lumber", 3, 20), ("iron_chunk", 6, 15), ("coal", 4, 10),
                   ("recurve_bow", 18, 3), ("iron_arrow", 5, 20)],
         "needs": [("lumber", 20), ("iron_chunk", 10)],
         "base_stock": 4, "clothing_key": "naval_guard",
-        "building_style": "smithy", "half_w": 16,
+        "building_style": "smithy", "half_w": 16, "layout": "military_fort",
     },
 
     # --- Region-flavored outposts ---
@@ -338,71 +338,70 @@ OUTPOST_TYPES = {
     "timber_camp": {
         "display_name":    "Timber Camp",
         "eligible_biomes": ["redwood", "boreal", "birch_forest", "temperate"],
-        "sells": [("lumber", 4), ("sapling", 6), ("wood_arrow", 3), ("wood_bow", 14)],
+        "sells": [("wood_arrow", 3), ("wood_bow", 14)],
         "buys":  [("lumber", 5, 25), ("sapling", 4, 15), ("elk_antler", 12, 6),
                   ("deer_hide", 14, 8)],
         "needs": [("iron_chunk", 8), ("coal", 6)],
         "base_stock": 8, "clothing_key": "lumberjack",
-        "building_style": "smithy", "half_w": 15,
+        "building_style": "smithy", "half_w": 15, "layout": "warcamp",
     },
 
     "reed_weaver": {
         "display_name":    "Reed Weaver",
         "eligible_biomes": ["wetland", "swamp", "tropical"],
         "sells": [("woven_rug", 22), ("textile_rug_natural", 26),
-                  ("linen_fold", 18), ("reed_bundle", 6)],
+                  ("linen_fold", 18)],
         "buys":  [("reed_bundle", 7, 20), ("cattail", 5, 15), ("bulrush", 5, 15),
                   ("sedge", 4, 20), ("horsetail", 4, 15)],
         "needs": [("lumber", 10), ("iron_chunk", 4)],
         "base_stock": 6, "clothing_key": "weaver",
-        "building_style": "house", "half_w": 13,
+        "building_style": "house", "half_w": 13, "layout": "default",
     },
 
     "silk_pavilion": {
         "display_name":    "Silk Pavilion",
         "eligible_biomes": ["east_asian", "south_asian", "jungle", "tropical"],
         "sells": [("textile_rug_amber", 32), ("textile_tapestry_amber", 38),
-                  ("andean_textile", 28), ("golden_wool", 22)],
+                  ("andean_textile", 28)],
         "buys":  [("wool", 5, 20), ("golden_wool", 18, 8), ("cotton_fiber", 7, 20)],
         "needs": [("lumber", 10), ("coal", 6)],
         "base_stock": 5, "clothing_key": "silk_master",
-        "building_style": "house", "half_w": 14,
+        "building_style": "house", "half_w": 14, "layout": "market",
     },
 
     "incense_lodge": {
         "display_name":    "Incense Lodge",
         "eligible_biomes": ["south_asian", "tropical", "jungle", "east_asian"],
-        "sells": [("votive_tablet", 22), ("philosophers_scroll", 28),
-                  ("dye_extract_amber", 16), ("dye_extract_violet", 18)],
+        "sells": [("votive_tablet", 22), ("philosophers_scroll", 28)],
         "buys":  [("lotus_petal", 8, 15), ("water_iris", 6, 15), ("marsh_marigold", 6, 15),
                   ("dye_extract_amber", 18, 6), ("dye_extract_violet", 20, 6)],
         "needs": [("lumber", 8), ("coal", 5)],
         "base_stock": 5, "clothing_key": "south_asian",
-        "building_style": "shrine", "half_w": 14,
+        "building_style": "shrine", "half_w": 14, "layout": "monastery",
     },
 
     "glacier_camp": {
         "display_name":    "Glacier Camp",
         "eligible_biomes": ["tundra", "alpine_mountain", "boreal"],
-        "sells": [("cheese", 16), ("fish", 14), ("cooked_venison", 18),
+        "sells": [("cheese", 16), ("cooked_venison", 18),
                   ("cooked_bear", 22), ("coarse_salt", 9)],
         "buys":  [("bear_pelt", 44, 4), ("fox_pelt", 28, 6), ("deer_hide", 16, 8),
                   ("fish", 14, 10)],
         "needs": [("lumber", 18), ("coal", 12)],
         "base_stock": 6, "clothing_key": "alpine",
-        "building_style": "house", "half_w": 14,
+        "building_style": "house", "half_w": 14, "layout": "warcamp",
     },
 
     "bog_apothecary": {
         "display_name":    "Bog Apothecary",
         "eligible_biomes": ["swamp", "fungal", "wetland"],
         "sells": [("green_tea", 18), ("oolong_tea", 20), ("black_tea", 22),
-                  ("puerh_tea", 26), ("rare_mushroom", 30)],
+                  ("puerh_tea", 26)],
         "buys":  [("tea_leaf", 6, 20), ("rare_mushroom", 36, 6), ("mushroom", 7, 15),
                   ("marsh_marigold", 6, 12)],
         "needs": [("lumber", 8), ("coal", 6)],
         "base_stock": 5, "clothing_key": "fungi_keeper",
-        "building_style": "shrine", "half_w": 13,
+        "building_style": "shrine", "half_w": 13, "layout": "default",
     },
 }
 
@@ -684,6 +683,225 @@ def _pick_palette(biodome: str, rng):
     return rng.choice(BUILDING_PALETTES)
 
 # ---------------------------------------------------------------------------
+# LEGO piece system — layout pieces + cursor placer
+# ---------------------------------------------------------------------------
+
+_CAMP_LONGHOUSE_BIOMES = {
+    "tundra", "alpine_mountain", "boreal", "rocky_mountain",
+    "temperate", "birch_forest", "redwood", "wasteland",
+}
+
+
+def _place_mine_shaft(world, left_x, sy, width, depth):
+    """Carve an open mine shaft downward from the surface."""
+    for d in range(1, depth + 1):
+        by = sy + d
+        if not (0 <= by < world.height):
+            break
+        for bx in range(left_x, left_x + width):
+            world.set_block(bx, by, AIR)
+        # Cobblestone support beams every 4 rows; centre column stays open
+        if d % 4 == 0:
+            world.set_block(left_x,             by, COBBLESTONE)
+            world.set_block(left_x + width - 1, by, COBBLESTONE)
+
+
+def _dispatch_piece(world, rng, piece, left_x, sy, biodome, wall, roof):
+    from cities import (
+        _place_house, _place_house_two_story, _place_longhouse,
+        _place_barn, _place_tower, _place_shrine_for_biome,
+        _place_market_stall, _place_pavilion, _place_ruin,
+        _place_standing_stones, _place_bedouin_tent,
+        _place_farm_plot, _place_garden_plot,
+    )
+    ptype  = piece["type"]
+    width  = piece["width"]
+    height = piece.get("height", 3)
+    if ptype == "gap":
+        pass
+    elif ptype == "primary":
+        _place_primary(world, piece.get("style", "house"),
+                       left_x, sy, width, height, wall, roof, biodome, rng)
+    elif ptype == "house":
+        _place_house(world, left_x, sy, width, height, wall, roof, rng)
+    elif ptype == "house_2story":
+        _place_house_two_story(world, left_x, sy, width,
+                               piece.get("floor1", 3), piece.get("floor2", 3),
+                               wall, roof, rng)
+    elif ptype == "longhouse":
+        _place_longhouse(world, left_x, sy, width, height, wall, roof, rng)
+    elif ptype == "barn":
+        _place_barn(world, left_x, sy, width, height, rng)
+    elif ptype == "tower":
+        _place_tower(world, left_x, sy, width, height, wall, roof)
+    elif ptype == "shrine":
+        _place_shrine_for_biome(world, left_x, sy, width, height, biodome)
+    elif ptype == "stall":
+        _place_market_stall(world, rng, left_x, sy, width, height)
+    elif ptype == "pavilion":
+        _place_pavilion(world, left_x, sy, width, height, wall, roof)
+    elif ptype == "tent":
+        _place_bedouin_tent(world, left_x, sy, width, height, rng)
+    elif ptype == "ruin":
+        _place_ruin(world, left_x, sy, width, height)
+    elif ptype == "standing_stones":
+        _place_standing_stones(world, left_x, sy, width, height)
+    elif ptype == "garden":
+        _place_garden_plot(world, rng, left_x + width // 2, sy, biodome, width // 2)
+    elif ptype == "farm":
+        _place_farm_plot(world, rng, left_x + width // 2, biodome, width // 2)
+    elif ptype == "mine":
+        _place_mine_shaft(world, left_x, sy, width, piece.get("depth", 12))
+
+
+def _place_outpost_pieces(world, rng, start_x, sy, biodome, wall, roof, pieces):
+    """Walk pieces left-to-right (mirrors city cursor), return NPC and flag coords."""
+    cursor  = start_x
+    npc_px  = npc_py = None
+    flag_bx = flag_by = None
+    for piece in pieces:
+        _dispatch_piece(world, rng, piece, cursor, sy, biodome, wall, roof)
+        if piece.get("npc"):
+            npc_px = (cursor + 1) * BLOCK_SIZE
+            npc_py = (sy - 2)     * BLOCK_SIZE
+        if piece.get("flag"):
+            flag_bx = cursor - 2
+            flag_by = sy - piece.get("flag_dy", 1)
+        cursor += piece["width"]
+    return npc_px, npc_py, flag_bx, flag_by
+
+
+# ---------------------------------------------------------------------------
+# Layout builders — each returns a piece list
+# ---------------------------------------------------------------------------
+
+def _layout_default(half_w, wall, roof, rng, biodome, cfg):
+    bld_w  = rng.randint(5, 7)
+    bld_h  = rng.randint(3, 5)
+    bld2_w = rng.randint(4, 6)
+    bld2_h = rng.randint(3, 4)
+    avail  = half_w * 2 - 1
+    trail  = max(0, avail - bld_w - 2 - 7 - 2 - bld2_w)
+    return [
+        {"type": "primary", "width": bld_w,  "height": bld_h,
+         "style": cfg["building_style"], "npc": True, "flag": True},
+        {"type": "gap",     "width": 2},
+        {"type": "garden",  "width": 7},
+        {"type": "gap",     "width": 2},
+        {"type": "house",   "width": bld2_w, "height": bld2_h},
+        {"type": "gap",     "width": trail},
+    ]
+
+
+def _layout_military_fort(half_w, wall, roof, rng, biodome, cfg):
+    inner = max(8, half_w * 2 - 11)
+    return [
+        {"type": "tower",    "width": 3, "height": 5,
+         "flag": True, "flag_dy": 7},
+        {"type": "gap",      "width": 2},
+        {"type": "longhouse","width": inner, "height": 4, "npc": True},
+        {"type": "gap",      "width": 2},
+        {"type": "tower",    "width": 3, "height": 5},
+    ]
+
+
+def _layout_warcamp(half_w, wall, roof, rng, biodome, cfg):
+    avail = half_w * 2 - 1
+    if biodome in _CAMP_LONGHOUSE_BIOMES:
+        trail = max(0, avail - 22)
+        return [
+            {"type": "longhouse", "width": 8, "height": 3, "npc": True, "flag": True},
+            {"type": "gap",       "width": 2},
+            {"type": "ruin",      "width": 6, "height": 3},
+            {"type": "gap",       "width": 2},
+            {"type": "house",     "width": 4, "height": 3},
+            {"type": "gap",       "width": trail},
+        ]
+    else:
+        trail = max(0, avail - 22)
+        return [
+            {"type": "tent", "width": 5, "height": 3, "flag": True},
+            {"type": "gap",  "width": 3},
+            {"type": "tent", "width": 5, "height": 3, "npc": True},
+            {"type": "gap",  "width": 3},
+            {"type": "ruin", "width": 6, "height": 3},
+            {"type": "gap",  "width": trail},
+        ]
+
+
+def _layout_estate(half_w, wall, roof, rng, biodome, cfg):
+    farm_w = max(6, half_w * 2 - 18)
+    return [
+        {"type": "house_2story", "width": 7, "floor1": 3, "floor2": 3,
+         "npc": True, "flag": True},
+        {"type": "gap",  "width": 2},
+        {"type": "farm", "width": farm_w},
+        {"type": "gap",  "width": 2},
+        {"type": "barn", "width": 6, "height": 4},
+    ]
+
+
+def _layout_monastery(half_w, wall, roof, rng, biodome, cfg):
+    garden_w = max(5, half_w * 2 - 23)
+    return [
+        {"type": "house",          "width": 4, "height": 3},
+        {"type": "gap",            "width": 2},
+        {"type": "shrine",         "width": 7, "height": 5, "npc": True, "flag": True},
+        {"type": "gap",            "width": 2},
+        {"type": "standing_stones","width": 5, "height": 4},
+        {"type": "gap",            "width": 2},
+        {"type": "garden",         "width": garden_w},
+    ]
+
+
+def _layout_watchtower(half_w, wall, roof, rng, biodome, cfg):
+    trail = max(1, half_w * 2 - 12)
+    return [
+        {"type": "tower", "width": 3, "height": 6, "flag": True, "flag_dy": 8},
+        {"type": "gap",   "width": 3},
+        {"type": "house", "width": 5, "height": 3, "npc": True},
+        {"type": "gap",   "width": trail},
+    ]
+
+
+def _layout_market(half_w, wall, roof, rng, biodome, cfg):
+    trail = max(0, half_w * 2 - 22)
+    return [
+        {"type": "stall",   "width": 4, "height": 3, "flag": True},
+        {"type": "gap",     "width": 1},
+        {"type": "stall",   "width": 4, "height": 3, "npc": True},
+        {"type": "gap",     "width": 1},
+        {"type": "stall",   "width": 4, "height": 3},
+        {"type": "gap",     "width": 2},
+        {"type": "pavilion","width": 5, "height": 3},
+        {"type": "gap",     "width": trail},
+    ]
+
+
+def _layout_underground(half_w, wall, roof, rng, biodome, cfg):
+    trail = max(0, half_w * 2 - 20)
+    return [
+        {"type": "house", "width": 5, "height": 4, "npc": True, "flag": True},
+        {"type": "gap",   "width": 2},
+        {"type": "mine",  "width": 4, "depth": 14},
+        {"type": "gap",   "width": 2},
+        {"type": "ruin",  "width": 6, "height": 3},
+        {"type": "gap",   "width": trail},
+    ]
+
+
+_LAYOUT_FNS = {
+    "default":       _layout_default,
+    "military_fort": _layout_military_fort,
+    "warcamp":       _layout_warcamp,
+    "estate":        _layout_estate,
+    "monastery":     _layout_monastery,
+    "watchtower":    _layout_watchtower,
+    "market":        _layout_market,
+    "underground":   _layout_underground,
+}
+
+# ---------------------------------------------------------------------------
 # Structure generation
 # ---------------------------------------------------------------------------
 
@@ -698,8 +916,6 @@ def _place_primary(world, style: str, left_x, sy, width, height, wall, roof, bio
 
 
 def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
-    from cities import _place_house, _place_garden_plot
-
     from cities import _PLANT_BLOCKS
 
     cfg    = OUTPOST_TYPES[otype]
@@ -742,29 +958,20 @@ def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
 
     wall, roof = _pick_palette(biodome, rng)
 
-    # Primary building left-of-centre
-    bld_w  = rng.randint(5, 7)
-    bld_h  = rng.randint(3, 5)
-    left_x = out_bx - half_w + 2
-    _place_primary(world, cfg["building_style"],
-                   left_x, sy, bld_w, bld_h, wall, roof, biodome, rng)
-    npc_px = (left_x + 1) * BLOCK_SIZE
-    npc_py = (sy - 2) * BLOCK_SIZE
+    layout_fn = _LAYOUT_FNS.get(cfg.get("layout", "default"), _layout_default)
+    pieces    = layout_fn(half_w, wall, roof, rng, biodome, cfg)
+    start_x   = out_bx - half_w + 1
+    npc_px, npc_py, flag_bx, flag_by = _place_outpost_pieces(
+        world, rng, start_x, sy, biodome, wall, roof, pieces)
 
-    # Flag planted to the left of the primary building, one block above the
-    # flattened outpost floor (matches city flag placement).
-    flag_bx = left_x - 2
-    flag_by = sy - 1
-    if 0 <= flag_by < world.height and world.get_block(flag_bx, flag_by) == AIR:
-        world.set_bg_block(flag_bx, flag_by, OUTPOST_FLAG_BLOCK)
+    # Fallback NPC position if no piece tagged npc
+    if npc_px is None:
+        npc_px = (start_x + 1) * BLOCK_SIZE
+        npc_py = (sy - 2)      * BLOCK_SIZE
 
-    # Secondary house right-of-centre
-    bld2_w = rng.randint(4, 6)
-    bld2_h = rng.randint(3, 4)
-    _place_house(world, out_bx + 4, sy, bld2_w, bld2_h, wall, roof)
-
-    # Decorative garden between the two buildings
-    _place_garden_plot(world, rng, out_bx, sy, biodome, 3)
+    if flag_bx is not None and 0 <= flag_by < world.height:
+        if world.get_block(flag_bx, flag_by) == AIR:
+            world.set_bg_block(flag_bx, flag_by, OUTPOST_FLAG_BLOCK)
 
     # Build initial stock dict
     initial_stock = {item_id: cfg["base_stock"] for item_id, _ in cfg["sells"]}

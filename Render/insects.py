@@ -6,11 +6,18 @@ from constants import SCREEN_W, SCREEN_H
 
 # ------------------------------------------------------------------
 
-def draw_insects(screen, cam_x, cam_y, insects, night_alpha=0):
+def draw_insects(screen, cam_x, cam_y, insects, night_alpha=0, time_of_day=0.0):
+    from world import DAY_DURATION
+    _dawn = time_of_day < 60.0
+    _dusk = DAY_DURATION - 60.0 <= time_of_day < DAY_DURATION
     for ins in insects:
         if ins.spooked or ins.hidden:
             continue
         if ins.NIGHT_ONLY and night_alpha < 30:
+            continue
+        if ins.DAWN_ONLY and not _dawn:
+            continue
+        if ins.DUSK_ONLY and not _dusk:
             continue
         sx = int(ins.x - cam_x)
         sy = int(ins.y - cam_y)

@@ -1518,7 +1518,11 @@ class MerchantNPC(NPC):
         region = _region_for_npc(self)
         if region and region.agenda == "mercantile":
             pool.extend(MERCHANT_TIER_TABLE.get(3, []))
-        n = rng.randint(3, 4) + (1 if tier >= 2 else 0) + _shop_size_bonus(self, "mercantile")
+        n = (rng.randint(3, 4)
+             + (1 if tier >= 2 else 0)
+             + _shop_size_bonus(self, "mercantile")
+             + _wealth_stock_bonus(self))
+        n = max(1, n)
         self.shop = rng.sample(pool, min(n, len(pool)))
 
     def discounted_cost(self, idx):
@@ -1705,7 +1709,7 @@ class BlacksmithNPC(NPC):
     def __init__(self, x, y, world, rng, biodome="temperate"):
         super().__init__(x, y, world, "npc_blacksmith")
         self.clothing = _npc_clothing(biodome)
-        n = rng.randint(3, 4) + _shop_size_bonus(self, "martial")
+        n = max(1, rng.randint(3, 4) + _shop_size_bonus(self, "martial") + _wealth_stock_bonus(self))
         self.shop = rng.sample(BLACKSMITH_SHOP_TABLE,
                                min(n, len(BLACKSMITH_SHOP_TABLE)))
 
@@ -1794,7 +1798,7 @@ class ScholarNPC(NPC):
     def __init__(self, x, y, world, rng, biodome="temperate"):
         super().__init__(x, y, world, "npc_scholar")
         self.clothing = _npc_clothing(biodome)
-        n = rng.randint(2, 3) + _shop_size_bonus(self, "scholarly")
+        n = max(1, rng.randint(2, 3) + _shop_size_bonus(self, "scholarly") + _wealth_stock_bonus(self))
         self.shop = rng.sample(SCHOLAR_SHOP_TABLE,
                                min(n, len(SCHOLAR_SHOP_TABLE)))
 
@@ -1904,6 +1908,16 @@ def _pick_contract_for_region(rng, region):
 
     contract = list(chosen)
 
+    # Wealth multiplier on reward — rich regions pay more, poor pay less.
+    if region is not None:
+        if   region.wealth == "rich": contract[2] = int(contract[2] * 1.25)
+        elif region.wealth == "poor": contract[2] = int(contract[2] * 0.80)
+
+    # Danger premium — wild regions pay a hazard bonus on top of any other modifiers.
+    if region is not None and region.danger == "wild":
+        contract[2] = int(contract[2] * 1.20)
+        contract[3] = f"☠ {contract[3]}"   # ☠ marks wild-region hazard pay
+
     # Rival-export smuggling premium: if the contract item is an export of any
     # region this leader rivals, the reward gets +50% and the name is marked.
     if region is not None and region.relations:
@@ -1980,6 +1994,23 @@ class LeaderNPC(NPC):
         if region is None:
             return 0
         return sum(TOWNS[tid].reputation for tid in region.member_town_ids if tid in TOWNS)
+
+
+class LandmarkNPC(NPC):
+    """Stands at a capital's landmark; fires a one-per-day agenda-keyed effect."""
+    def __init__(self, x, y, world, region_id: int, landmark_name: str, tagline: str):
+        super().__init__(x, y, world, "npc_landmark")
+        self.region_id     = region_id
+        self.landmark_name = landmark_name
+        self.tagline       = tagline
+        self.display_name  = landmark_name
+
+    def trigger(self, player) -> tuple[bool, str, str]:
+        """Run the landmark's agenda effect for the player. Returns (ok, title, detail)."""
+        from landmarks import apply_effect
+        from towns import REGIONS
+        region = REGIONS.get(self.region_id)
+        return apply_effect(player, region, getattr(self.world, "day_count", 0))
 
 
 # ---------------------------------------------------------------------------

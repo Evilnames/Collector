@@ -19,8 +19,12 @@ class Insect:
     ACCENT_COLOR = (200, 200, 100)
     HOVER_RANGE  = 40       # pixel radius around spawn point
     SPEED        = 28.0
-    WING_TYPE    = "butterfly"  # butterfly | moth | beetle | dragonfly | firefly | other
-    NIGHT_ONLY   = False        # if True, only visible and catchable at night
+    WING_TYPE      = "butterfly"  # butterfly | moth | beetle | dragonfly | firefly | other
+    NIGHT_ONLY     = False        # if True, only visible and catchable at night
+    DAWN_ONLY      = False        # if True, only visible during dawn transition
+    DUSK_ONLY      = False        # if True, only visible during dusk transition
+    HAS_MORPH      = False        # if True, spawn position may seed a rare color morph
+    MORPH_VARIANTS = ()           # tuple of morph names; used when HAS_MORPH = True
 
     def __init__(self, x, y, world):
         self.x        = float(x)
@@ -128,14 +132,16 @@ class Swallowtail(Insect):
     WING_TYPE    = "butterfly"
 
 class BlueMorpho(Insect):
-    SPECIES      = "blue_morpho"
-    RARITY       = "rare"
-    BIOMES       = ["jungle", "tropical"]
-    W, H         = 14, 10
-    BODY_COLOR   = (20, 30, 20)
-    WING_COLOR   = (40, 130, 255)
-    ACCENT_COLOR = (80, 200, 255)
-    WING_TYPE    = "butterfly"
+    SPECIES        = "blue_morpho"
+    RARITY         = "rare"
+    BIOMES         = ["jungle", "tropical"]
+    W, H           = 14, 10
+    BODY_COLOR     = (20, 30, 20)
+    WING_COLOR     = (40, 130, 255)
+    ACCENT_COLOR   = (80, 200, 255)
+    WING_TYPE      = "butterfly"
+    HAS_MORPH      = True
+    MORPH_VARIANTS = ("melanistic", "golden")
 
 class PaintedLady(Insect):
     SPECIES      = "painted_lady"
@@ -398,14 +404,16 @@ class AfricanMigrant(Insect):
     WING_TYPE    = "butterfly"
 
 class PurpleEmperor(Insect):
-    SPECIES      = "purple_emperor"
-    RARITY       = "rare"
-    BIOMES       = ["boreal", "birch_forest", "temperate"]
-    W, H         = 14, 10
-    BODY_COLOR   = (25, 18, 35)
-    WING_COLOR   = (70, 40, 110)
-    ACCENT_COLOR = (160, 100, 220)
-    WING_TYPE    = "butterfly"
+    SPECIES        = "purple_emperor"
+    RARITY         = "rare"
+    BIOMES         = ["boreal", "birch_forest", "temperate"]
+    W, H           = 14, 10
+    BODY_COLOR     = (25, 18, 35)
+    WING_COLOR     = (70, 40, 110)
+    ACCENT_COLOR   = (160, 100, 220)
+    WING_TYPE      = "butterfly"
+    HAS_MORPH      = True
+    MORPH_VARIANTS = ("leucistic", "melanistic")
 
 class ChalkHillBlue(Insect):
     SPECIES      = "chalkhill_blue"
@@ -1054,23 +1062,27 @@ class GreatDivingBeetle(Insect):
     WING_TYPE    = "beetle"
 
 class GoliathBeetle(Insect):
-    SPECIES      = "goliath_beetle"
-    RARITY       = "rare"
-    BIOMES       = ["jungle", "tropical"]
-    W, H         = 16, 9
-    BODY_COLOR   = (18, 18, 18)
-    WING_COLOR   = (28, 28, 28)
-    ACCENT_COLOR = (230, 225, 215)
-    WING_TYPE    = "beetle"
+    SPECIES        = "goliath_beetle"
+    RARITY         = "rare"
+    BIOMES         = ["jungle", "tropical"]
+    W, H           = 16, 9
+    BODY_COLOR     = (18, 18, 18)
+    WING_COLOR     = (28, 28, 28)
+    ACCENT_COLOR   = (230, 225, 215)
+    WING_TYPE      = "beetle"
+    HAS_MORPH      = True
+    MORPH_VARIANTS = ("golden", "albino")
 
 class HerculesBeetle(Insect):
-    SPECIES      = "hercules_beetle"
-    RARITY       = "rare"
-    BIOMES       = ["jungle"]
-    W, H         = 16, 8
-    BODY_COLOR   = (45, 55, 18)
-    WING_COLOR   = (65, 80, 25)
-    ACCENT_COLOR = (18, 16, 14)
+    SPECIES        = "hercules_beetle"
+    RARITY         = "rare"
+    BIOMES         = ["jungle"]
+    W, H           = 16, 8
+    BODY_COLOR     = (45, 55, 18)
+    WING_COLOR     = (65, 80, 25)
+    ACCENT_COLOR   = (18, 16, 14)
+    HAS_MORPH      = True
+    MORPH_VARIANTS = ("melanistic", "blue")
     WING_TYPE    = "beetle"
 
 class RainbowWeevil(Insect):
@@ -1505,24 +1517,28 @@ class AmericanFirefly(Insect):
 # ---------------------------------------------------------------------------
 
 class LunaMoth(Insect):
-    SPECIES      = "luna_moth"
-    RARITY       = "rare"
-    BIOMES       = ["boreal", "birch_forest", "redwood"]
-    W, H         = 15, 10
-    BODY_COLOR   = (180, 230, 180)
-    WING_COLOR   = (120, 210, 140)
-    ACCENT_COLOR = (200, 245, 200)
-    WING_TYPE    = "moth"
+    SPECIES        = "luna_moth"
+    RARITY         = "rare"
+    BIOMES         = ["boreal", "birch_forest", "redwood"]
+    W, H           = 15, 10
+    BODY_COLOR     = (180, 230, 180)
+    WING_COLOR     = (120, 210, 140)
+    ACCENT_COLOR   = (200, 245, 200)
+    WING_TYPE      = "moth"
+    HAS_MORPH      = True
+    MORPH_VARIANTS = ("golden", "leucistic")
 
 class AtlasMoth(Insect):
-    SPECIES      = "atlas_moth"
-    RARITY       = "rare"
-    BIOMES       = ["jungle", "tropical"]
-    W, H         = 16, 11
-    BODY_COLOR   = (80, 45, 20)
-    WING_COLOR   = (180, 110, 50)
-    ACCENT_COLOR = (240, 200, 120)
-    WING_TYPE    = "moth"
+    SPECIES        = "atlas_moth"
+    RARITY         = "rare"
+    BIOMES         = ["jungle", "tropical"]
+    W, H           = 16, 11
+    BODY_COLOR     = (80, 45, 20)
+    WING_COLOR     = (180, 110, 50)
+    ACCENT_COLOR   = (240, 200, 120)
+    WING_TYPE      = "moth"
+    HAS_MORPH      = True
+    MORPH_VARIANTS = ("melanistic", "albino")
 
 class HawkMoth(Insect):
     SPECIES      = "hawk_moth"
@@ -1533,6 +1549,7 @@ class HawkMoth(Insect):
     WING_COLOR   = (120, 100, 65)
     ACCENT_COLOR = (180, 155, 95)
     WING_TYPE    = "moth"
+    DUSK_ONLY    = True
 
 class PepperedMoth(Insect):
     SPECIES      = "peppered_moth"
@@ -2875,6 +2892,679 @@ class SandRoach(Insect):
 
 
 # ---------------------------------------------------------------------------
+# Water insects
+# ---------------------------------------------------------------------------
+
+class PondSkater(Insect):
+    SPECIES      = "pond_skater"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 13, 4
+    BODY_COLOR   = (42, 50, 58)
+    WING_COLOR   = (62, 72, 82)
+    ACCENT_COLOR = (120, 148, 168)
+    HOVER_RANGE  = 50
+    SPEED        = 36.0
+    WING_TYPE    = "other"
+
+
+class WhirligigBeetle(Insect):
+    SPECIES      = "whirligig_beetle"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "beach"]
+    W, H         = 8, 5
+    BODY_COLOR   = (18, 22, 18)
+    WING_COLOR   = (32, 38, 32)
+    ACCENT_COLOR = (80, 105, 80)
+    HOVER_RANGE  = 35
+    SPEED        = 38.0
+    WING_TYPE    = "beetle"
+
+
+class MayflySilver(Insect):
+    SPECIES      = "mayfly_silver"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 12, 5
+    BODY_COLOR   = (185, 195, 210)
+    WING_COLOR   = (215, 228, 248)
+    ACCENT_COLOR = (240, 248, 255)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "dragonfly"
+    DAWN_ONLY    = True
+
+
+class StoneflyRiver(Insect):
+    SPECIES      = "stonefly_river"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "boreal"]
+    W, H         = 11, 5
+    BODY_COLOR   = (72, 62, 45)
+    WING_COLOR   = (105, 92, 70)
+    ACCENT_COLOR = (148, 132, 100)
+    HOVER_RANGE  = 30
+    SPEED        = 22.0
+    WING_TYPE    = "moth"
+    DAWN_ONLY    = True
+
+
+class CaddisflyGold(Insect):
+    SPECIES      = "caddisfly_gold"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 11, 6
+    BODY_COLOR   = (115, 92, 38)
+    WING_COLOR   = (168, 138, 68)
+    ACCENT_COLOR = (210, 178, 105)
+    HOVER_RANGE  = 40
+    SPEED        = 25.0
+    WING_TYPE    = "moth"
+    DUSK_ONLY    = True
+
+
+class WaterMeasurer(Insect):
+    SPECIES      = "water_measurer"
+    RARITY       = "rare"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 14, 3
+    BODY_COLOR   = (52, 48, 38)
+    WING_COLOR   = (78, 72, 58)
+    ACCENT_COLOR = (130, 120, 95)
+    HOVER_RANGE  = 28
+    SPEED        = 18.0
+    WING_TYPE    = "other"
+
+
+class MarshSpreadwing(Insect):
+    SPECIES      = "marsh_spreadwing"
+    RARITY       = "uncommon"
+    BIOMES       = ["swamp", "wetland"]
+    W, H         = 13, 5
+    BODY_COLOR   = (55, 105, 68)
+    WING_COLOR   = (88, 162, 108)
+    ACCENT_COLOR = (140, 210, 165)
+    HOVER_RANGE  = 48
+    SPEED        = 28.0
+    WING_TYPE    = "dragonfly"
+
+
+class RiverHawker(Insect):
+    SPECIES      = "river_hawker"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 15, 6
+    BODY_COLOR   = (28, 70, 125)
+    WING_COLOR   = (68, 128, 195)
+    ACCENT_COLOR = (145, 195, 248)
+    HOVER_RANGE  = 65
+    SPEED        = 35.0
+    WING_TYPE    = "dragonfly"
+
+
+class TealGlosskirt(Insect):
+    SPECIES      = "teal_glosskirt"
+    RARITY       = "rare"
+    BIOMES       = ["swamp", "wetland"]
+    W, H         = 13, 6
+    BODY_COLOR   = (20, 88, 85)
+    WING_COLOR   = (35, 148, 142)
+    ACCENT_COLOR = (75, 210, 200)
+    HOVER_RANGE  = 42
+    SPEED        = 27.0
+    WING_TYPE    = "dragonfly"
+
+
+class PlumedMidge(Insect):
+    SPECIES      = "plumed_midge"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "swamp", "beach"]
+    W, H         = 7, 5
+    BODY_COLOR   = (55, 62, 52)
+    WING_COLOR   = (115, 128, 110)
+    ACCENT_COLOR = (175, 192, 168)
+    HOVER_RANGE  = 60
+    SPEED        = 40.0
+    WING_TYPE    = "other"
+
+
+class BogSkimmer(Insect):
+    SPECIES      = "bog_skimmer"
+    RARITY       = "uncommon"
+    BIOMES       = ["swamp", "wetland"]
+    W, H         = 13, 5
+    BODY_COLOR   = (88, 58, 28)
+    WING_COLOR   = (140, 95, 48)
+    ACCENT_COLOR = (200, 155, 85)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "dragonfly"
+
+
+class MarshFirefly(Insect):
+    SPECIES      = "marsh_firefly"
+    RARITY       = "uncommon"
+    BIOMES       = ["swamp", "wetland"]
+    W, H         = 8, 5
+    BODY_COLOR   = (28, 38, 22)
+    WING_COLOR   = (45, 58, 35)
+    ACCENT_COLOR = (80, 230, 80)
+    HOVER_RANGE  = 52
+    SPEED        = 24.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class WetlandGlowfly(Insect):
+    SPECIES      = "wetland_glowfly"
+    RARITY       = "rare"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 9, 5
+    BODY_COLOR   = (22, 32, 28)
+    WING_COLOR   = (38, 55, 48)
+    ACCENT_COLOR = (60, 235, 185)
+    HOVER_RANGE  = 58
+    SPEED        = 22.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class RiverDivingBeetle(Insect):
+    SPECIES      = "river_diving_beetle"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "beach"]
+    W, H         = 10, 6
+    BODY_COLOR   = (32, 50, 38)
+    WING_COLOR   = (48, 72, 55)
+    ACCENT_COLOR = (85, 125, 95)
+    HOVER_RANGE  = 32
+    SPEED        = 26.0
+    WING_TYPE    = "beetle"
+
+
+class SwampRiflebeetle(Insect):
+    SPECIES      = "swamp_riflebeetle"
+    RARITY       = "uncommon"
+    BIOMES       = ["swamp", "wetland"]
+    W, H         = 11, 5
+    BODY_COLOR   = (25, 40, 28)
+    WING_COLOR   = (40, 62, 45)
+    ACCENT_COLOR = (72, 108, 80)
+    HOVER_RANGE  = 28
+    SPEED        = 20.0
+    WING_TYPE    = "beetle"
+
+
+class WaterScavengerBeetle(Insect):
+    SPECIES      = "water_scavenger_beetle"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 11, 6
+    BODY_COLOR   = (20, 28, 22)
+    WING_COLOR   = (35, 48, 38)
+    ACCENT_COLOR = (62, 85, 68)
+    HOVER_RANGE  = 30
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class ReedMarshMoth(Insect):
+    SPECIES      = "reed_marsh_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["swamp", "wetland"]
+    W, H         = 13, 7
+    BODY_COLOR   = (95, 82, 55)
+    WING_COLOR   = (148, 130, 90)
+    ACCENT_COLOR = (192, 175, 128)
+    HOVER_RANGE  = 42
+    SPEED        = 22.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class BeachFoamMoth(Insect):
+    SPECIES      = "beach_foam_moth"
+    RARITY       = "common"
+    BIOMES       = ["beach", "wetland"]
+    W, H         = 12, 6
+    BODY_COLOR   = (195, 188, 172)
+    WING_COLOR   = (228, 222, 208)
+    ACCENT_COLOR = (248, 244, 236)
+    HOVER_RANGE  = 45
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    DUSK_ONLY    = True
+
+
+class ReedMaiden(Insect):
+    SPECIES        = "reed_maiden"
+    RARITY         = "rare"
+    BIOMES         = ["wetland"]
+    W, H           = 14, 5
+    BODY_COLOR     = (38, 110, 95)
+    WING_COLOR     = (72, 175, 155)
+    ACCENT_COLOR   = (155, 235, 218)
+    HOVER_RANGE    = 45
+    SPEED          = 26.0
+    WING_TYPE      = "dragonfly"
+    HAS_MORPH      = True
+    MORPH_VARIANTS = ("golden", "albino")
+
+
+class BrookJewel(Insect):
+    SPECIES        = "brook_jewel"
+    RARITY         = "rare"
+    BIOMES         = ["wetland", "swamp"]
+    W, H           = 13, 6
+    BODY_COLOR     = (15, 75, 35)
+    WING_COLOR     = (28, 148, 72)
+    ACCENT_COLOR   = (88, 225, 138)
+    HOVER_RANGE    = 40
+    SPEED          = 28.0
+    WING_TYPE      = "dragonfly"
+    HAS_MORPH      = True
+    MORPH_VARIANTS = ("melanistic", "golden")
+
+
+class CraneFly(Insect):
+    SPECIES      = "crane_fly"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "swamp", "beach"]
+    W, H         = 14, 5
+    BODY_COLOR   = (105, 88, 58)
+    WING_COLOR   = (175, 162, 138)
+    ACCENT_COLOR = (215, 205, 185)
+    HOVER_RANGE  = 55
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+
+
+class WaterGnat(Insect):
+    SPECIES      = "water_gnat"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "swamp", "beach"]
+    W, H         = 7, 4
+    BODY_COLOR   = (38, 42, 38)
+    WING_COLOR   = (88, 98, 88)
+    ACCENT_COLOR = (155, 172, 155)
+    HOVER_RANGE  = 65
+    SPEED        = 42.0
+    WING_TYPE    = "other"
+
+
+class SwampDragonlet(Insect):
+    SPECIES      = "swamp_dragonlet"
+    RARITY       = "uncommon"
+    BIOMES       = ["swamp", "wetland"]
+    W, H         = 11, 5
+    BODY_COLOR   = (95, 28, 28)
+    WING_COLOR   = (148, 48, 48)
+    ACCENT_COLOR = (210, 105, 85)
+    HOVER_RANGE  = 45
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+
+
+class BluetailPondfly(Insect):
+    SPECIES      = "bluetail_pondfly"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 12, 5
+    BODY_COLOR   = (28, 52, 105)
+    WING_COLOR   = (55, 98, 175)
+    ACCENT_COLOR = (120, 175, 245)
+    HOVER_RANGE  = 48
+    SPEED        = 30.0
+    WING_TYPE    = "dragonfly"
+
+
+class MoonlitPondskipper(Insect):
+    SPECIES      = "moonlit_pondskipper"
+    RARITY       = "rare"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 10, 5
+    BODY_COLOR   = (38, 42, 55)
+    WING_COLOR   = (72, 80, 108)
+    ACCENT_COLOR = (178, 188, 228)
+    HOVER_RANGE  = 50
+    SPEED        = 25.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class GreatPondDamsel(Insect):
+    SPECIES      = "great_pond_damsel"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 13, 5
+    BODY_COLOR   = (30, 88, 148)
+    WING_COLOR   = (62, 138, 210)
+    ACCENT_COLOR = (145, 200, 255)
+    HOVER_RANGE  = 52
+    SPEED        = 28.0
+    WING_TYPE    = "dragonfly"
+
+
+class CopperDemoiselle(Insect):
+    SPECIES      = "copper_demoiselle"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "beach"]
+    W, H         = 12, 5
+    BODY_COLOR   = (120, 65, 12)
+    WING_COLOR   = (188, 108, 28)
+    ACCENT_COLOR = (240, 170, 75)
+    HOVER_RANGE  = 45
+    SPEED        = 26.0
+    WING_TYPE    = "dragonfly"
+
+
+class BlacktipReedfly(Insect):
+    SPECIES      = "blacktip_reedfly"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 12, 5
+    BODY_COLOR   = (18, 18, 18)
+    WING_COLOR   = (50, 65, 55)
+    ACCENT_COLOR = (100, 130, 108)
+    HOVER_RANGE  = 40
+    SPEED        = 30.0
+    WING_TYPE    = "dragonfly"
+
+
+class SilverPondHawker(Insect):
+    SPECIES      = "silver_pond_hawker"
+    RARITY       = "rare"
+    BIOMES       = ["wetland"]
+    W, H         = 15, 6
+    BODY_COLOR   = (165, 178, 195)
+    WING_COLOR   = (205, 218, 235)
+    ACCENT_COLOR = (240, 245, 255)
+    HOVER_RANGE  = 68
+    SPEED        = 36.0
+    WING_TYPE    = "dragonfly"
+
+
+class FenSkimmer(Insect):
+    SPECIES      = "fen_skimmer"
+    RARITY       = "uncommon"
+    BIOMES       = ["swamp", "wetland"]
+    W, H         = 13, 5
+    BODY_COLOR   = (78, 42, 10)
+    WING_COLOR   = (128, 72, 22)
+    ACCENT_COLOR = (188, 125, 58)
+    HOVER_RANGE  = 48
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+
+
+class MudMinnowfly(Insect):
+    SPECIES      = "mud_minnowfly"
+    RARITY       = "common"
+    BIOMES       = ["swamp", "wetland"]
+    W, H         = 8, 4
+    BODY_COLOR   = (68, 55, 32)
+    WING_COLOR   = (105, 88, 55)
+    ACCENT_COLOR = (148, 128, 88)
+    HOVER_RANGE  = 35
+    SPEED        = 34.0
+    WING_TYPE    = "other"
+
+
+class WillowEmerald(Insect):
+    SPECIES      = "willow_emerald"
+    RARITY       = "rare"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 14, 5
+    BODY_COLOR   = (22, 88, 48)
+    WING_COLOR   = (42, 158, 88)
+    ACCENT_COLOR = (105, 228, 148)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "dragonfly"
+
+
+class WaterTreader(Insect):
+    SPECIES      = "water_treader"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 11, 3
+    BODY_COLOR   = (45, 52, 42)
+    WING_COLOR   = (68, 78, 62)
+    ACCENT_COLOR = (112, 128, 102)
+    HOVER_RANGE  = 30
+    SPEED        = 20.0
+    WING_TYPE    = "other"
+
+
+class HoverCaddis(Insect):
+    SPECIES      = "hover_caddis"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "boreal"]
+    W, H         = 10, 6
+    BODY_COLOR   = (82, 70, 48)
+    WING_COLOR   = (122, 105, 72)
+    ACCENT_COLOR = (165, 145, 105)
+    HOVER_RANGE  = 38
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+
+
+class SwampLantern(Insect):
+    SPECIES      = "swamp_lantern"
+    RARITY       = "rare"
+    BIOMES       = ["swamp"]
+    W, H         = 9, 6
+    BODY_COLOR   = (25, 35, 25)
+    WING_COLOR   = (40, 55, 40)
+    ACCENT_COLOR = (105, 240, 108)
+    HOVER_RANGE  = 55
+    SPEED        = 20.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class PondshoreGlimmer(Insect):
+    SPECIES      = "pondshore_glimmer"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "beach"]
+    W, H         = 8, 5
+    BODY_COLOR   = (28, 38, 30)
+    WING_COLOR   = (45, 60, 48)
+    ACCENT_COLOR = (165, 230, 110)
+    HOVER_RANGE  = 48
+    SPEED        = 22.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class MarshCricket(Insect):
+    SPECIES      = "marsh_cricket"
+    RARITY       = "common"
+    BIOMES       = ["swamp", "wetland"]
+    W, H         = 11, 6
+    BODY_COLOR   = (55, 72, 42)
+    WING_COLOR   = (78, 102, 60)
+    ACCENT_COLOR = (118, 148, 92)
+    HOVER_RANGE  = 35
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+
+
+class WetlandKatydid(Insect):
+    SPECIES      = "wetland_katydid"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 13, 7
+    BODY_COLOR   = (48, 82, 38)
+    WING_COLOR   = (72, 118, 58)
+    ACCENT_COLOR = (115, 172, 92)
+    HOVER_RANGE  = 38
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+
+
+class TidalFlatBeetle(Insect):
+    SPECIES      = "tidal_flat_beetle"
+    RARITY       = "uncommon"
+    BIOMES       = ["beach", "wetland"]
+    W, H         = 10, 6
+    BODY_COLOR   = (105, 92, 72)
+    WING_COLOR   = (152, 135, 108)
+    ACCENT_COLOR = (195, 178, 148)
+    HOVER_RANGE  = 30
+    SPEED        = 28.0
+    WING_TYPE    = "beetle"
+
+
+class SaltmarshWeevil(Insect):
+    SPECIES      = "saltmarsh_weevil"
+    RARITY       = "common"
+    BIOMES       = ["beach", "wetland"]
+    W, H         = 9, 5
+    BODY_COLOR   = (88, 72, 48)
+    WING_COLOR   = (125, 105, 72)
+    ACCENT_COLOR = (165, 142, 98)
+    HOVER_RANGE  = 28
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class ReedBeetle(Insect):
+    SPECIES      = "reed_beetle"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 9, 5
+    BODY_COLOR   = (32, 55, 28)
+    WING_COLOR   = (50, 82, 44)
+    ACCENT_COLOR = (90, 138, 78)
+    HOVER_RANGE  = 32
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class DuskReedmoth(Insect):
+    SPECIES      = "dusk_reedmoth"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 12, 7
+    BODY_COLOR   = (60, 50, 35)
+    WING_COLOR   = (98, 82, 58)
+    ACCENT_COLOR = (148, 125, 88)
+    HOVER_RANGE  = 42
+    SPEED        = 20.0
+    WING_TYPE    = "moth"
+    DUSK_ONLY    = True
+
+
+class FogMothlet(Insect):
+    SPECIES      = "fog_mothlet"
+    RARITY       = "common"
+    BIOMES       = ["swamp", "beach"]
+    W, H         = 10, 6
+    BODY_COLOR   = (128, 128, 128)
+    WING_COLOR   = (175, 175, 175)
+    ACCENT_COLOR = (218, 218, 218)
+    HOVER_RANGE  = 40
+    SPEED        = 22.0
+    WING_TYPE    = "moth"
+    DUSK_ONLY    = True
+
+
+class GoldenRushfly(Insect):
+    SPECIES      = "golden_rushfly"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 11, 5
+    BODY_COLOR   = (148, 118, 28)
+    WING_COLOR   = (205, 172, 55)
+    ACCENT_COLOR = (248, 222, 105)
+    HOVER_RANGE  = 52
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+
+
+class CinnabarMarshfly(Insect):
+    SPECIES      = "cinnabar_marshfly"
+    RARITY       = "rare"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 12, 5
+    BODY_COLOR   = (148, 22, 22)
+    WING_COLOR   = (205, 48, 38)
+    ACCENT_COLOR = (248, 115, 95)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "dragonfly"
+
+
+class StoneflyMoss(Insect):
+    SPECIES      = "stonefly_moss"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "boreal"]
+    W, H         = 10, 5
+    BODY_COLOR   = (42, 58, 38)
+    WING_COLOR   = (68, 90, 58)
+    ACCENT_COLOR = (108, 138, 90)
+    HOVER_RANGE  = 28
+    SPEED        = 20.0
+    WING_TYPE    = "moth"
+    DAWN_ONLY    = True
+
+
+class VioletWaterfly(Insect):
+    SPECIES      = "violet_waterfly"
+    RARITY       = "rare"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 14, 6
+    BODY_COLOR   = (65, 18, 105)
+    WING_COLOR   = (118, 42, 185)
+    ACCENT_COLOR = (195, 130, 255)
+    HOVER_RANGE  = 55
+    SPEED        = 28.0
+    WING_TYPE    = "dragonfly"
+
+
+class SpottedMayfly(Insect):
+    SPECIES      = "spotted_mayfly"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "beach"]
+    W, H         = 11, 5
+    BODY_COLOR   = (155, 148, 118)
+    WING_COLOR   = (198, 188, 158)
+    ACCENT_COLOR = (235, 225, 195)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "dragonfly"
+    DAWN_ONLY    = True
+
+
+class MidnightMarshSkater(Insect):
+    SPECIES      = "midnight_marsh_skater"
+    RARITY       = "rare"
+    BIOMES       = ["swamp", "wetland"]
+    W, H         = 14, 4
+    BODY_COLOR   = (18, 20, 25)
+    WING_COLOR   = (35, 38, 52)
+    ACCENT_COLOR = (88, 108, 178)
+    HOVER_RANGE  = 55
+    SPEED        = 38.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class ElmPondButterfly(Insect):
+    SPECIES      = "elm_pond_butterfly"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 13, 8
+    BODY_COLOR   = (62, 88, 45)
+    WING_COLOR   = (105, 148, 78)
+    ACCENT_COLOR = (175, 218, 138)
+    HOVER_RANGE  = 50
+    SPEED        = 26.0
+    WING_TYPE    = "butterfly"
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 
@@ -2955,6 +3645,18 @@ ALL_INSECT_SPECIES = [
     DarklingBeetle, OilBeetle, WoodBoringBeetle,
     NightCicada, JungleKatydid, Earwig, TundraCricket,
     WaterBoatman, NightMantis, GlowingMillipede, SandRoach,
+    # Water insects
+    PondSkater, WhirligigBeetle, MayflySilver, StoneflyRiver, CaddisflyGold,
+    WaterMeasurer, MarshSpreadwing, RiverHawker, TealGlosskirt, PlumedMidge,
+    BogSkimmer, MarshFirefly, WetlandGlowfly, RiverDivingBeetle, SwampRiflebeetle,
+    WaterScavengerBeetle, ReedMarshMoth, BeachFoamMoth, ReedMaiden, BrookJewel,
+    CraneFly, WaterGnat, SwampDragonlet, BluetailPondfly, MoonlitPondskipper,
+    # Water insects (batch 2)
+    GreatPondDamsel, CopperDemoiselle, BlacktipReedfly, SilverPondHawker, FenSkimmer,
+    MudMinnowfly, WillowEmerald, WaterTreader, HoverCaddis, SwampLantern,
+    PondshoreGlimmer, MarshCricket, WetlandKatydid, TidalFlatBeetle, SaltmarshWeevil,
+    ReedBeetle, DuskReedmoth, FogMothlet, GoldenRushfly, CinnabarMarshfly,
+    StoneflyMoss, VioletWaterfly, SpottedMayfly, MidnightMarshSkater, ElmPondButterfly,
 ]
 
 INSECT_SPECIES_BY_ID = {cls.SPECIES: cls for cls in ALL_INSECT_SPECIES}

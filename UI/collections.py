@@ -2318,6 +2318,14 @@ class CollectionsMixin:
                 cnt = obs.get("count", 0)
                 cb = self.small.render(f"×{cnt}", True, (150, 230, 160))
                 self.screen.blit(cb, (x + CELL - cb.get_width() - 3, y + 3))
+                cond = obs.get("best_condition")
+                if cond == "perfect":
+                    cs = self.small.render("★", True, (255, 230, 80))
+                    self.screen.blit(cs, (x + 3, y + 3))
+                morph = obs.get("morph")
+                if morph:
+                    ms = self.small.render(morph[:3].upper(), True, (210, 140, 255))
+                    self.screen.blit(ms, (x + 3, y + CELL - 28))
 
     # ------------------------------------------------------------------
     # Fish codex

@@ -20,6 +20,54 @@ from minecarts import Minecart
 SETTINGS_PATH = Path(__file__).parent / "settings.json"
 
 
+def _nearby_light_trap(world, player):
+    """Return (bx, by) of a light trap block within 2 blocks of the player, or None."""
+    from blocks import LIGHT_TRAP_BLOCK as _LTB
+    px = int(player.x // BLOCK_SIZE)
+    py = int(player.y // BLOCK_SIZE)
+    for dy in range(-2, 3):
+        for dx in range(-2, 3):
+            bx, by = px + dx, py + dy
+            if world.get_block(bx, by) == _LTB:
+                return (bx, by)
+    return None
+
+
+def _insect_morph_at(ins, world_seed):
+    """Return morph name if this insect's position seeds a color morph, else None."""
+    if not ins.HAS_MORPH:
+        return None
+    import random as _rnd
+    rng = _rnd.Random(world_seed ^ int(ins._spawn_x * 7919) ^ int(ins._spawn_y * 3571))
+    if rng.random() < 0.15:
+        return rng.choice(ins.MORPH_VARIANTS)
+    return None
+
+
+# Items dropped into inventory when the player successfully observes a species.
+INSECT_DROP_TABLE = {
+    "silk_moth":          "silk_thread",
+    "honeybee":           "beeswax",
+    "carpenter_bee":      "beeswax",
+    "tundra_bumblebee":   "beeswax",
+    "arctic_bumblebee":   "beeswax",
+    "common_firefly":     "bioluminescent_gel",
+    "blue_firefly":       "bioluminescent_gel",
+    "golden_firefly":     "bioluminescent_gel",
+    "asian_firefly":      "bioluminescent_gel",
+    "tropical_firefly":   "bioluminescent_gel",
+    "marsh_firefly":      "bioluminescent_gel",
+    "wetland_glowfly":    "bioluminescent_gel",
+    "swamp_lantern":      "bioluminescent_gel",
+    "giant_hornet":       "venom_sac",
+    "asian_giant_hornet": "venom_sac",
+    "european_hornet":    "venom_sac",
+    "atlas_moth":         "moth_dust",
+    "comet_moth":         "moth_dust",
+    "bogong_moth":        "moth_dust",
+}
+
+
 def _load_settings():
     try:
         if SETTINGS_PATH.exists():
@@ -879,14 +927,21 @@ def main():
                             _close_all_ui()
                             ui.open_backhoe(nearby_bh)
                     elif nearby_npc is not None:
-                        if ui.npc_open and ui.active_npc is nearby_npc:
+                        from cities import LeaderNPC, LandmarkNPC
+                        # Capital landmarks fire their effect inline — no panel needed.
+                        if isinstance(nearby_npc, LandmarkNPC):
+                            ok, title, detail = nearby_npc.trigger(player)
+                            if not hasattr(world, "_town_toasts"):
+                                world._town_toasts = []
+                            msg = title if not detail else f"{title} {detail}"
+                            world._town_toasts.append(msg)
+                        elif ui.npc_open and ui.active_npc is nearby_npc:
                             ui.npc_open = False
                             ui.active_npc = None
                         else:
                             _close_all_ui()
                             ui.npc_open = True
                             ui.active_npc = nearby_npc
-                            from cities import LeaderNPC
                             if isinstance(nearby_npc, LeaderNPC):
                                 from towns import REGIONS
                                 region = REGIONS.get(nearby_npc.region_id)
@@ -986,7 +1041,26 @@ def main():
                             else:
                                 player.pending_notifications.append(("Pottery", "No vases available to display", None))
                         else:
-                            equip = player.get_nearby_equipment()
+                            _lt_pos = _nearby_light_trap(world, player)
+                            if _lt_pos is not None:
+                                trap = world.light_traps.get(_lt_pos)
+                                if trap and trap["accumulated"]:
+                                    biome = world.biodome_at(int(player.x // BLOCK_SIZE))
+                                    for _sp in trap["accumulated"]:
+                                        obs = player.insects_observed.get(_sp)
+                                        if obs is None:
+                                            player.insects_observed[_sp] = {"count": 1, "biome": biome,
+                                                                             "best_condition": "good", "morph": None}
+                                        else:
+                                            obs["count"] += 1
+                                        player.discovered_insect_types.add(_sp)
+                                        player.pending_notifications.append(
+                                            ("Insect", _sp.replace("_", " ").title(), None))
+                                    trap["accumulated"].clear()
+                                else:
+                                    player.pending_notifications.append(
+                                        ("Light Trap", "No insects gathered yet", None))
+                            equip = None if _lt_pos is not None else player.get_nearby_equipment()
                             if equip is not None:
                                 ui.refinery_open = True
                                 ui.refinery_block_id = equip
@@ -1224,10 +1298,18 @@ def main():
                             and held == "bug_net"):
                         mx, my = event.pos
                         _night_a = renderer._sky_night_alpha(world.time_of_day)
+                        from world import DAY_DURATION as _DAY_DUR
+                        _tod = world.time_of_day
+                        _is_dawn = _tod < 60.0
+                        _is_dusk = _DAY_DUR - 60.0 <= _tod < _DAY_DUR
                         for ins in world.insects:
                             if ins.spooked:
                                 continue
                             if ins.NIGHT_ONLY and _night_a < 30:
+                                continue
+                            if ins.DAWN_ONLY and not _is_dawn:
+                                continue
+                            if ins.DUSK_ONLY and not _is_dusk:
                                 continue
                             isx = int(ins.x - renderer.cam_x)
                             isy = int(ins.y - renderer.cam_y)
@@ -1255,6 +1337,26 @@ def main():
                                         if drops:
                                             for item_id, count in drops:
                                                 player._add_item(item_id, count)
+                                    break
+                    # Landmark flag right-click: show landmark info toast
+                    if event.button == 3:
+                        from blocks import LANDMARK_FLAG_BLOCK as _LFB
+                        from landmarks import landmark_for
+                        from towns import REGIONS, TOWNS
+                        mx_w = event.pos[0] + renderer.cam_x
+                        my_w = event.pos[1] + renderer.cam_y
+                        _lbx = int(mx_w // BLOCK_SIZE)
+                        _lby = int(my_w // BLOCK_SIZE)
+                        if world.get_bg_block(_lbx, _lby) == _LFB or world.get_bg_block(_lbx, _lby + 1) == _LFB:
+                            for _twn in TOWNS.values():
+                                if abs(_twn.center_bx - _lbx) < 20:
+                                    _reg = REGIONS.get(_twn.region_id)
+                                    if _reg and _reg.agenda:
+                                        _spec = landmark_for(_reg.agenda, getattr(_reg, "biome_group", ""))
+                                        if not hasattr(world, "_town_toasts"):
+                                            world._town_toasts = []
+                                        world._town_toasts.append(
+                                            f"{_spec['name']} — {_spec['tagline']}")
                                     break
                     # Sculptor right-click: restore stone in carve phase
                     if event.button == 3 and ui.refinery_open:
@@ -1489,6 +1591,8 @@ def main():
         if ui._insect_obs_active and ui._insect_obs_insect is not None:
             ins = ui._insect_obs_insect
             player_moving = abs(player.vx) > 0.5
+            if player_moving:
+                ui._insect_obs_moved = True
             if ins.spooked:
                 if not ui._insect_obs_failed:
                     ui._insect_obs_failed = True
@@ -1499,11 +1603,25 @@ def main():
             if ui._insect_obs_timer >= 1.5:
                 sp = ins.SPECIES
                 biome = world.biodome_at(int(ins.x // BLOCK_SIZE))
-                player.insects_observed.setdefault(sp, {"count": 0, "biome": biome})
-                player.insects_observed[sp]["count"] += 1
+                condition = "perfect" if not ui._insect_obs_moved else "good"
+                morph = _insect_morph_at(ins, world.seed)
+                existing = player.insects_observed.get(sp)
+                if existing is None:
+                    player.insects_observed[sp] = {"count": 1, "biome": biome,
+                                                   "best_condition": condition, "morph": morph}
+                else:
+                    existing["count"] += 1
+                    _cond_rank = {"perfect": 2, "good": 1, "worn": 0}
+                    if _cond_rank[condition] > _cond_rank.get(existing.get("best_condition", "good"), 1):
+                        existing["best_condition"] = condition
+                    if morph and not existing.get("morph"):
+                        existing["morph"] = morph
                 player.discovered_insect_types.add(sp)
                 player.pending_notifications.append(
                     ("Insect", sp.replace("_", " ").title(), ins.RARITY))
+                drop = INSECT_DROP_TABLE.get(sp)
+                if drop:
+                    player.inventory[drop] = player.inventory.get(drop, 0) + 1
                 ins.spook()
                 ui._insect_obs_active = False
                 ui._insect_obs_insect = None
@@ -1531,6 +1649,7 @@ def main():
         world.update_trade_blocks(dt, player)
         world.update_saplings(dt)
         world.update_crops(dt)
+        world.update_fruit_trees(dt)
         world.update_leaves(dt, player)
         world.update_dropped_items(dt, player)
 

@@ -101,6 +101,7 @@ class MinigamesMixin:
         self._insect_obs_timer      = 0.0
         self._insect_obs_failed     = False
         self._insect_obs_fail_timer = 0.0
+        self._insect_obs_moved      = False
 
     def _draw_insect_observation_overlay(self, player):
         import math

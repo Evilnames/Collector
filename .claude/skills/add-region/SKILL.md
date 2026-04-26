@@ -139,9 +139,32 @@ _NEED_WEIGHTS = {
 
 ---
 
+## Step 10 — (Optional) Tune danger bias
+
+Regions also carry a `danger` tier (`"calm"`, `"rough"`, `"wild"`) derived from `biome_group` at world gen. The default weighting is `(3, 5, 2)` — mostly rough with some calm and a little wild.
+
+If your new biome group should skew dangerous (or peaceful), add an entry to `_DANGER_WEIGHTS` near the top of [towns.py](../../../towns.py):
+
+```python
+_DANGER_WEIGHTS = {
+    ...
+    "volcanic": (1, 3, 6),   # mostly wild — predator spawn ×1.5
+}
+```
+
+Tuples are weights for `(calm, rough, wild)`. Wild regions:
+- spawn predators (Wolf / Bear / Crocodile) at 1.5× rate
+- pay a +20% danger premium on contracts (marked with ☠ in the contract list)
+
+Wealth bias (`_WEALTH_WEIGHTS`) is keyed on **agenda**, not biome group, so you generally don't need to touch it when adding a new biome group.
+
+---
+
 ## Verification checklist
 
 - [ ] All new biome keys in `_BIOME_GROUP` exist in [biomes.py](../../../biomes.py)
 - [ ] Every dict (`_REGION_NAMES`, `_TOWN_NAMES`, `_TAGLINES`, `_CHARGES`, `_LEADER_TITLES`, `_LEADER_GREETINGS`, `_LUXURY_SPECIALTY`, `_NEED_WEIGHTS`) has an entry for the new group key
+- [ ] (Optional) `_DANGER_WEIGHTS` entry tuned if the biome group should skew calm or wild
 - [ ] Generate a new world — towns in the new biomes should have region-appropriate names and a coat of arms
 - [ ] Palace leader NPC greets the player with one of the new lines
+- [ ] Leader info card shows Wealth and Danger lines for the new region

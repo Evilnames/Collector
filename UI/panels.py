@@ -1042,9 +1042,20 @@ class PanelsMixin:
             True, rank_col)
         self.screen.blit(rep_s, (px + 16, py + 114))
 
-        pygame.draw.line(self.screen, border_col, (px + 10, py + 132), (px + PW - 10, py + 132))
+        # Wealth + danger pills — region's economic and physical identity.
+        if region:
+            _WEALTH_COL = {"poor": (170, 130, 80), "modest": (180, 175, 140), "rich": (220, 200, 90)}
+            _DANGER_COL = {"calm": (140, 200, 160), "rough": (200, 180, 110), "wild": (220, 110, 100)}
+            wcol = _WEALTH_COL.get(region.wealth, (180, 180, 180))
+            dcol = _DANGER_COL.get(region.danger, (180, 180, 180))
+            wd_s = self.small.render(
+                f"Wealth: {region.wealth.title()}   |   Danger: {region.danger.title()}",
+                True, dcol if region.danger == "wild" else wcol)
+            self.screen.blit(wd_s, (px + 16, py + 132))
 
-        cy = py + 140
+        pygame.draw.line(self.screen, border_col, (px + 10, py + 152), (px + PW - 10, py + 152))
+
+        cy = py + 160
         if region:
             for tid in region.member_town_ids:
                 town = TOWNS.get(tid)

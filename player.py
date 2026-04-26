@@ -17,6 +17,7 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     STONE_SLAB_DOOR_CLOSED, STONE_SLAB_DOOR_OPEN,
                     WOOD_FENCE, IRON_FENCE, WOOD_FENCE_OPEN, IRON_FENCE_OPEN,
                     SAPLING, GRASS, DIRT, ALL_LOGS, ALL_LEAVES,
+                    ALL_FRUIT_CLUSTERS, FRUIT_CLUSTER_LEAF_MAP,
                     YOUNG_CROP_BLOCKS, MATURE_CROP_BLOCKS, BUSH_BLOCKS,
                     STRAWBERRY_BUSH, WHEAT_BUSH,
                     CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
@@ -867,6 +868,26 @@ class Player:
         if block_id in YOUNG_CROP_BLOCKS:
             self._reset_mine()
             return
+
+        # Harvest fruit cluster from bg_block layer (leaf stays, only cluster is removed).
+        if block_id in FRUIT_CLUSTER_LEAF_MAP:
+            fc_bid = self.world.get_bg_block(bx, by)
+            if fc_bid in ALL_FRUIT_CLUSTERS:
+                hardness = BLOCKS[fc_bid]["hardness"]
+                if self.mining_block != (bx, by):
+                    self.mining_block = (bx, by)
+                    self._mine_time = 0.0
+                    self._mine_total = hardness / self._mining_power_for(fc_bid)
+                self._mine_time += dt
+                self.mine_progress = min(1.0, self._mine_time / self._mine_total)
+                if self.mine_progress >= 1.0:
+                    drop = BLOCKS[fc_bid].get("drop")
+                    if drop:
+                        self._add_item(drop)
+                    self.world.set_bg_block(bx, by, AIR)
+                    self.world.pending_fruit_leaves.add((bx, by))
+                    self._reset_mine()
+                return
 
         hardness = BLOCKS[block_id]["hardness"]
         if hardness == float('inf'):

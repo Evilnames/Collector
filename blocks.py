@@ -318,9 +318,9 @@ OREGANO_CROP_MATURE     = 325
 DILL_BUSH               = 326
 DILL_CROP_YOUNG         = 327
 DILL_CROP_MATURE        = 328
-FENNEL_BUSH             = 908
+FENNEL_BUSH             = 1179
 
-FENNEL_CROP_YOUNG       = 909
+FENNEL_CROP_YOUNG       = 1180
 
 FENNEL_CROP_MATURE      = 331
 TARRAGON_BUSH           = 332
@@ -380,7 +380,7 @@ COMFREY_CROP_MATURE     = 385
 MUGWORT_BUSH            = 386
 MUGWORT_CROP_YOUNG      = 387
 MUGWORT_CROP_MATURE     = 388
-BAIT_STATION_BLOCK      = 910  # placed Bait Station; crafts fishing bait
+BAIT_STATION_BLOCK      = 1181  # placed Bait Station; crafts fishing bait
 CHICKPEA_CROP_YOUNG     = 911
 
 
@@ -539,9 +539,9 @@ GARDEN_OBELISK_METAL= 1018 # wrought-iron obelisk frame for climbing plants
 POTTING_TABLE       = 1019 # wooden potting table with tools hanging above
 COMPOST_HEAP        = 1020 # open compost heap with layered organic matter
 GARDEN_TOAD_HOUSE   = 1021 # ceramic arch toad shelter with painted door
-TRADE_BLOCK         = 1022 # Trade Post: assign horse+cart, link to city, auto-deliver goods
-FORGE_BLOCK         = 1023 # Smithing station — heat metal and hammer weapon parts
-WEAPON_RACK_BLOCK   = 1024 # Weapon rack — equip and browse crafted weapons
+TRADE_BLOCK         = 1182 # Trade Post: assign horse+cart, link to city, auto-deliver goods
+FORGE_BLOCK         = 1183 # Smithing station — heat metal and hammer weapon parts
+WEAPON_RACK_BLOCK   = 1184 # Weapon rack — equip and browse crafted weapons
 
 
 SAFFRON_DOOR_CLOSED      = 860  # warm golden-yellow with dark carved panels
@@ -1211,6 +1211,29 @@ SANDALWOOD_DOOR_CLOSED    = 1167
 SANDALWOOD_DOOR_OPEN      = 1168
 STONE_SLAB_DOOR_CLOSED    = 1169
 STONE_SLAB_DOOR_OPEN      = 1170
+LANDMARK_FLAG_BLOCK       = 1171  # capital landmark interaction marker (non-mineable)
+
+# --- Fruit tree harvest clusters (appear in canopy; mine to pick fruit) ---
+APPLE_FRUIT_CLUSTER       = 1172  # ripe apple clusters; drops apple
+PEAR_FRUIT_CLUSTER        = 1173  # ripe pear clusters; drops pear
+FIG_FRUIT_CLUSTER         = 1174  # ripe fig clusters; drops fig
+CITRUS_FRUIT_CLUSTER      = 1175  # ripe citrus/lemon clusters; drops lemon
+POMEGRANATE_FRUIT_CLUSTER = 1176  # ripe pomegranate clusters; drops pomegranate
+LIGHT_TRAP_BLOCK          = 1177  # craftable trap; attracts NIGHT_ONLY insects at night
+
+ALL_FRUIT_CLUSTERS = {APPLE_FRUIT_CLUSTER, PEAR_FRUIT_CLUSTER, FIG_FRUIT_CLUSTER,
+                      CITRUS_FRUIT_CLUSTER, POMEGRANATE_FRUIT_CLUSTER}
+
+# Maps each fruit cluster to the plain leaf block it sits within
+FRUIT_CLUSTER_LEAF_MAP = {
+    APPLE_FRUIT_CLUSTER:       APPLE_LEAVES,
+    PEAR_FRUIT_CLUSTER:        PEAR_LEAVES,
+    FIG_FRUIT_CLUSTER:         FIG_LEAVES,
+    CITRUS_FRUIT_CLUSTER:      CITRUS_LEAVES,
+    POMEGRANATE_FRUIT_CLUSTER: POMEGRANATE_LEAVES,
+}
+# Reverse: leaf → fruit cluster
+LEAF_FRUIT_CLUSTER_MAP = {v: k for k, v in FRUIT_CLUSTER_LEAF_MAP.items()}
 
 HOUSE_WALL           = 108  # city house wall block
 HOUSE_ROOF           = 109  # city house roof block
@@ -1603,7 +1626,7 @@ CROSS_LANTERN                = 1110  # cross-pane iron lantern
 STAR_LAMP                    = 1111  # crystal star lamp
 GLOW_VINE                    = 1112  # bioluminescent glow vine
 TOWN_FLAG_BLOCK              = 1113  # town identity flag (non-mineable)
-OUTPOST_FLAG_BLOCK           = 1114  # outpost identity flag (non-mineable)
+OUTPOST_FLAG_BLOCK           = 1178  # outpost identity flag (non-mineable)
 BLOCKS = {
     AIR:              {"name": "Air",               "hardness": 0,            "color": None,            "drop": None},
     GRASS:            {"name": "Grass",             "hardness": 1,            "color": (58, 154, 58),   "drop": "dirt_clump"},
@@ -1706,6 +1729,11 @@ BLOCKS = {
     FIG_SAPLING:         {"name": "Fig Sapling",         "hardness": 1, "color": (42,  152, 52),  "drop": "fig_sapling"},
     CITRUS_SAPLING:      {"name": "Citrus Sapling",      "hardness": 1, "color": (38,  178, 62),  "drop": "citrus_sapling"},
     POMEGRANATE_SAPLING: {"name": "Pomegranate Sapling", "hardness": 1, "color": (55,  145, 55),  "drop": "pomegranate_sapling"},
+    APPLE_FRUIT_CLUSTER:       {"name": "Apple Cluster",       "hardness": 0.3, "color": (180, 40,  40),  "drop": "apple",       "drop_chance": 1.0},
+    PEAR_FRUIT_CLUSTER:        {"name": "Pear Cluster",        "hardness": 0.3, "color": (175, 195, 65),  "drop": "pear",        "drop_chance": 1.0},
+    FIG_FRUIT_CLUSTER:         {"name": "Fig Cluster",         "hardness": 0.3, "color": (110, 55,  100), "drop": "fig",         "drop_chance": 1.0},
+    CITRUS_FRUIT_CLUSTER:      {"name": "Citrus Cluster",      "hardness": 0.3, "color": (230, 180, 30),  "drop": "lemon",       "drop_chance": 1.0},
+    POMEGRANATE_FRUIT_CLUSTER: {"name": "Pomegranate Cluster", "hardness": 0.3, "color": (175, 35,  55),  "drop": "pomegranate", "drop_chance": 1.0},
     JUICER_BLOCK:        {"name": "Juicer",              "hardness": 1, "color": (220, 160, 60),  "drop": "juicer_item"},
     NPC_QUEST_BLOCK: {"name": "Rock Collector", "hardness": float('inf'), "color": (200, 160, 80),  "drop": None},
     NPC_TRADE_BLOCK: {"name": "Trader",         "hardness": float('inf'), "color": (80,  150, 200), "drop": None},
@@ -1936,6 +1964,7 @@ BLOCKS = {
     RICE_CROP_YOUNG_P:         {"name": "Premium Rice",              "hardness": 0.5, "color": (200, 235, 180), "drop": "rice_seed_premium",        "drop_chance": 1.0},
     RICE_CROP_MATURE_P:        {"name": "Premium Rice (Ripe)",       "hardness": 0.5, "color": (200, 235, 180), "drop": "rice",                     "drop_chance": 1.0},
     INSECT_DISPLAY_CASE_BLOCK: {"name": "Insect Display Case",       "hardness": 1.5, "color": (180, 160, 120), "drop": "insect_display_case"},
+    LIGHT_TRAP_BLOCK:          {"name": "Light Trap",                "hardness": 1.0, "color": (220, 190,  80), "drop": "light_trap", "interact": True},
     STAIRS_RIGHT:              {"name": "Stairs (Right)",            "hardness": 1.5, "color": (139, 100,  60), "drop": "wood_stairs"},
     STAIRS_LEFT:               {"name": "Stairs (Left)",             "hardness": 1.5, "color": (139, 100,  60), "drop": "wood_stairs"},
     GARDEN_BLOCK:              {"name": "Garden Block",              "hardness": 1.0, "color": ( 80, 140,  60), "drop": "garden_block"},
@@ -2847,6 +2876,7 @@ BLOCKS = {
     GLOW_VINE:                 {"name": "Glow Vine",          "hardness": 0.5, "color": ( 40, 100,  60), "drop": "glow_vine"},
     TOWN_FLAG_BLOCK:           {"name": "Town Flag",          "hardness": float('inf'), "color": (200, 80, 40), "drop": None},
     OUTPOST_FLAG_BLOCK:        {"name": "Outpost Flag",       "hardness": float('inf'), "color": (180, 140, 60), "drop": None},
+    LANDMARK_FLAG_BLOCK:       {"name": "Landmark Flag",      "hardness": float('inf'), "color": (190, 150,  60), "drop": None},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}
