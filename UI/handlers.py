@@ -445,7 +445,8 @@ class HandlersMixin:
                             MerchantNPC, RestaurantNPC, ShrineKeeperNPC, JewelryMerchantNPC,
                             LeaderNPC, BlacksmithNPC, InnkeeperNPC, ScholarNPC,
                             RoyalPaleontologistNPC, RoyalAnglerNPC,
-                            WeaponArmorerNPC, QuartermasterNPC, GarrisonCommanderNPC)
+                            WeaponArmorerNPC, QuartermasterNPC, GarrisonCommanderNPC,
+                            DoctorNPC)
         from outpost_npcs import OutpostKeeperNPC
         npc = self.active_npc
         if isinstance(npc, RockQuestNPC):
@@ -537,6 +538,9 @@ class HandlersMixin:
                     break
         elif isinstance(npc, GarrisonCommanderNPC):
             self._handle_garrison_commander_click(pos, player, npc)
+        elif isinstance(npc, DoctorNPC):
+            if self._trade_rects.get(0) and self._trade_rects[0].collidepoint(pos):
+                npc.execute_heal(player)
         elif isinstance(npc, OutpostKeeperNPC):
             for key, value in self._trade_rects.items():
                 idx, action = key

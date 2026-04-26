@@ -99,7 +99,8 @@ from blocks import (STONE, BEDROCK, HOUSE_WALL, HOUSE_ROOF, AIR, LADDER,
                     STUDDED_OAK_DOOR_CLOSED, VERMILION_DOOR_CLOSED, SHOJI_DOOR_CLOSED,
                     GILDED_DOOR_CLOSED, BRONZE_DOOR_CLOSED, SWAHILI_DOOR_CLOSED,
                     SANDALWOOD_DOOR_CLOSED, STONE_SLAB_DOOR_CLOSED,
-                    BED, CHEST_BLOCK, BAKERY_BLOCK, STABLE_BLOCK, STORAGE_PITHOS)
+                    BED, CHEST_BLOCK, BAKERY_BLOCK, STABLE_BLOCK, STORAGE_PITHOS,
+                    TAPESTRY_BLOCK, WOVEN_TEXTILE, OAK_PANEL)
 from constants import (BLOCK_SIZE, PLAYER_W, PLAYER_H, CITY_SPACING, CITY_COUNT,
                        NPC_INTERACT_RANGE, CHUNK_W, GRAVITY, MAX_FALL, SURFACE_Y)
 from rocks import ROCK_TYPES
@@ -1137,7 +1138,31 @@ MERCHANT_SHOP_TABLE = [
     ("tempered_iron", 60,  "Tempered Iron", "iron_chunk",  10),
 ]
 
+COFFEE_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("coffee_seed",          12, "Coffee Seed",          "lumber",        3),
+    ("coffee_cherry",         8, "Coffee Cherry",        "dirt_clump",    6),
+    ("drip_coffee",          20, "Drip Coffee",          "wheat",         5),
+    ("espresso",             25, "Espresso",            "coffee_cherry", 10),
+    ("pour_over",            30, "Pour Over",           "coffee_cherry", 12),
+    ("cold_brew",            35, "Cold Brew",           "coffee_cherry", 15),
+    ("french_press",         32, "French Press",        "coffee_cherry", 14),
+    ("roaster_item",        150, "Coffee Roaster",      "iron_chunk",    15),
+]
+
+WINE_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("red_wine",             25, "Red Wine",             "apple",        10),
+    ("white_wine",           25, "White Wine",           "apple",        10),
+    ("rose_wine",            30, "Rosé Wine",            "strawberry",   15),
+    ("sparkling_wine",       45, "Sparkling Wine",       "bread",         5),
+    ("wine_amphora",         60, "Wine Amphora",         "clay",         20),
+    ("wine_cellar_item",    200, "Wine Cellar",          "lumber",       40),
+]
+
+
 # Items unlocked in merchant shops as the host town grows in tier.
+
 MERCHANT_TIER_TABLE = {
     2: [
         ("rare_mushroom",    40, "Rare Mushroom",    "lumber",        22),
@@ -1371,9 +1396,11 @@ def rep_rank(rep):
 def _rep_discount(rep, npc=None):
     """Reputation discount multiplier for purchases.
 
-    Optional `npc` lets the caller pick up the region's Mercantile-leader buff:
-    once the local town's reputation crosses 200, a Mercantile region stacks
-    an extra 10% off on top of the rep curve.
+    Optional `npc` lets the caller pick up two region-level modifiers:
+    - Mercantile leader buff: once the local town's reputation crosses 200,
+      a Mercantile region stacks an extra 10% off.
+    - Diplomatic anchor: shops in regions allied to the player's anchor region
+      grant 10% off; rival regions add 10%.
     """
     if   rep >= 1000: base = 0.60
     elif rep >=  500: base = 0.70
@@ -1381,13 +1408,18 @@ def _rep_discount(rep, npc=None):
     elif rep >=   50: base = 0.90
     else:             base = 1.0
     if npc is not None:
-        from towns import TOWNS, REGIONS
+        from towns import TOWNS, REGIONS, anchor_region_id, relation_between
         tid = npc._nearest_town_id()
         if tid is not None and tid in TOWNS:
             town   = TOWNS[tid]
             region = REGIONS.get(town.region_id)
             if region and region.agenda == "mercantile" and town.reputation >= 200:
                 base *= 0.90
+            anchor = anchor_region_id()
+            if anchor is not None and region is not None and anchor != region.region_id:
+                rel = relation_between(anchor, region.region_id)
+                if   rel == "allied": base *= 0.90
+                elif rel == "rival":  base *= 1.10
     return base
 
 
@@ -1455,6 +1487,16 @@ def _shop_size_bonus(npc, agenda_match: str) -> int:
     return 1 if (region and region.agenda == agenda_match) else 0
 
 
+def _wealth_stock_bonus(npc) -> int:
+    """Region wealth modifier on shop stock count: rich +1, poor -1, modest 0."""
+    region = _region_for_npc(npc)
+    if region is None:
+        return 0
+    if region.wealth == "rich": return  1
+    if region.wealth == "poor": return -1
+    return 0
+
+
 def _rep_buy_bonus(rep):
     if rep >= 1000: return 1.50
     if rep >= 500:  return 1.40
@@ -1518,7 +1560,57 @@ class MerchantNPC(NPC):
         return True
 
 
+class CoffeeMerchantNPC(MerchantNPC):
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, rng, biodome)
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (101, 67, 33) # Coffee brown
+        n = rng.randint(4, 5)
+        self.shop = rng.sample(COFFEE_SHOP_TABLE, min(n, len(COFFEE_SHOP_TABLE)))
+
+
+class WineMerchantNPC(MerchantNPC):
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, rng, biodome)
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (114, 47, 55) # Wine red
+        n = rng.randint(4, 5)
+        self.shop = rng.sample(WINE_SHOP_TABLE, min(n, len(WINE_SHOP_TABLE)))
+
+
+class DoctorNPC(NPC):
+    def __init__(self, x, y, world, biodome="temperate"):
+        super().__init__(x, y, world, "npc_doctor")
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (245, 245, 245) # White coat
+        self.heal_cost = 50
+
+    def can_heal(self, player):
+        return player.money >= self.heal_cost and player.health < player.MAX_HEALTH
+
+    def execute_heal(self, player):
+        if self.can_heal(player):
+            player.money -= self.heal_cost
+            player.health = player.MAX_HEALTH
+            return True
+        return False
+
+
+class MusicianNPC(NPC):
+    def __init__(self, x, y, world, biodome="temperate"):
+        super().__init__(x, y, world, "npc_musician")
+        self.clothing = _npc_clothing(biodome)
+
+
+class TownCrierNPC(NPC):
+    def __init__(self, x, y, world, biodome="temperate"):
+        super().__init__(x, y, world, "npc_crier")
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (180, 40, 40) # Royal red herald
+
+
 class RestaurantNPC(NPC):
+
     def __init__(self, x, y, world, rng, biodome="temperate"):
         super().__init__(x, y, world, "npc_chef")
         self.clothing = _npc_clothing(biodome)
@@ -1778,10 +1870,22 @@ _CONTRACT_TAGS: dict[str, tuple] = {
 }
 
 
-def _pick_contract_for_region(rng, region) -> list:
+def _pick_contract_for_region(rng, region):
     """Pick a contract for `region`, weighted by leader agenda + region imports.
     Adds a smuggling premium when the chosen item happens to be a rival
-    region's signature export."""
+    region's signature export.
+
+    Returns None if the player's diplomatic anchor is rival to this region and
+    a 50% refusal roll fires — surfaces as an empty contract slot in the UI.
+    """
+    if region is not None:
+        from towns import anchor_region_id, relation_between
+        anchor = anchor_region_id()
+        if (anchor is not None and anchor != region.region_id
+                and relation_between(anchor, region.region_id) == "rival"
+                and rng.random() < 0.5):
+            return None
+
     pool = LEADER_CONTRACT_TABLE
     preferred: set = set()
     if region is not None:
@@ -1840,7 +1944,10 @@ class LeaderNPC(NPC):
         return _pick_contract_for_region(self._rng, REGIONS.get(self.region_id))
 
     def can_fulfill(self, idx, player):
-        item_id, give_count, _, _, min_rep, _ = self.contracts[idx]
+        contract = self.contracts[idx]
+        if contract is None:
+            return False
+        item_id, give_count, _, _, min_rep, _ = contract
         return (self._town_rep() >= min_rep and
                 player.inventory.get(item_id, 0) >= give_count)
 
@@ -1855,25 +1962,15 @@ class LeaderNPC(NPC):
                 if player.hotbar[i] == item_id:
                     player.hotbar[i] = None
         player.money += reward_gold
-        from towns import TOWNS, REGIONS
+        from towns import TOWNS, REGIONS, _cascade_rep
         region = REGIONS.get(self.region_id)
         if region:
             for tid in region.member_town_ids:
                 town = TOWNS.get(tid)
                 if town:
                     town.reputation += rep_bonus
-            # Allied regions share in the rep gain at quarter strength
-            ally_bonus = max(1, rep_bonus // 4)
-            for ally_rid, rel in region.relations.items():
-                if rel != "allied":
-                    continue
-                ally_region = REGIONS.get(ally_rid)
-                if ally_region is None:
-                    continue
-                for tid in ally_region.member_town_ids:
-                    town = TOWNS.get(tid)
-                    if town:
-                        town.reputation += ally_bonus
+            # Allies/rivals feel the ripple — allies +¼, rivals -1/10.
+            _cascade_rep(self.region_id, rep_bonus)
         self.contracts[idx] = self._new_contract()
         return True
 
@@ -2217,10 +2314,10 @@ CITY_CONFIGS = {
         "half_w": 16,
         "buildings": [
             (-15, (4, 6), (3, 5), ["house", "house", "two_story", "three_story", "tower",
-                                    "ruin", "market_stall", "well", "inn", "smithy"]),
+                                    "ruin", "market_stall", "well", "inn", "smithy", "vignette"]),
             ( -3, (4, 5), (3, 4), ["restaurant", "restaurant", "apothecary"]),
             (  5, (4, 6), (3, 5), ["house", "house", "two_story", "three_story", "longhouse",
-                                    "ruin", "market_stall", "well", "inn"]),
+                                    "ruin", "market_stall", "well", "inn", "vignette"]),
         ],
         "npc_types": ["quest_rock", "restaurant_npc", "innkeeper"],
         # (center_offset, half_w) — small garden plots tucked between buildings.
@@ -2254,14 +2351,14 @@ CITY_CONFIGS = {
             ( -8, (4, 5), (3, 4), ["inn", "inn", "restaurant", "apothecary"]),
             ( -2, None,   None,   None),    # outdoor NPC — stands in the town square
             (  5, (4, 6), (3, 4), ["house", "house", "two_story", "three_story", "ruin",
-                                    "tower", "market_stall", "well"]),
+                                    "tower", "market_stall", "well", "vignette"]),
             ( 13, (4, 6), (3, 5), ["library", "library", "house", "two_story", "tower",
-                                    "longhouse", "ruin", "pavilion", "apothecary"]),
+                                    "longhouse", "ruin", "pavilion", "apothecary", "coffee_shop"]),
             ( 19, (6, 7), (5, 7), ["shrine"]),
         ],
         "npc_types": ["quest_rock", "blacksmith", "innkeeper", "merchant",
                       ["quest_gem", "quest_gem", "villager"],
-                      ["scholar", "villager", "villager"],
+                      ["scholar", "villager", "villager", "coffee_merchant"],
                       "shrine_npc"],
         "gardens": [(-21, 2), (-12, 2), (16, 2)],
         # (center_offset, half_w) — paved plaza with a centre sculpture.
@@ -2275,7 +2372,7 @@ CITY_CONFIGS = {
         "farms": [(-36, 7), (36, 7)],
         "ambient_npcs": [(-12, ["villager", "villager", "elder", "none"]),
                          (-6,  ["child", "child", "none"]),
-                         (9,   ["villager", "villager", "drunkard"]),
+                         (9,   ["villager", "villager", "drunkard", "musician"]),
                          (15,  ["child", "child", "villager", "none"]),
                          (-18, ["guard", "none"]),
                          (20,  ["guard", "guard", "none"]),
@@ -2289,24 +2386,24 @@ CITY_CONFIGS = {
         "half_w": 36,
         "buildings": [
             (-35, (5, 7), (4, 5), ["house", "two_story", "three_story", "tower", "longhouse",
-                                    "pavilion", "inn", "inn"]),
+                                    "pavilion", "inn", "inn", "hospital"]),
             (-27, (4, 6), (3, 5), ["smithy", "smithy", "smithy", "house", "ruin", "tower",
-                                    "two_story", "market_stall"]),
+                                    "two_story", "market_stall", "wine_shop"]),
             (-19, (4, 5), (3, 4), ["house", "house", "two_story", "three_story", "ruin",
-                                    "longhouse", "pavilion", "apothecary"]),
+                                    "longhouse", "pavilion", "apothecary", "coffee_shop"]),
             ( -8, None,   None,   None),    # outdoor NPC — left square
             ( -2, (4, 5), (3, 4), ["house", "two_story", "three_story", "ruin", "tower",
                                     "longhouse", "market_stall"]),
             (  5, (4, 5), (3, 4), ["inn", "inn", "inn", "restaurant"]),
             ( 11, None,   None,   None),    # outdoor NPC — right square
             ( 18, (4, 6), (3, 5), ["library", "library", "house", "tower", "ruin",
-                                    "two_story", "market_stall", "apothecary", "barn"]),
+                                    "two_story", "market_stall", "apothecary", "barn", "vignette"]),
             ( 26, (7, 9), (5, 7), ["shrine"]),
         ],
-        "npc_types": ["quest_rock", "blacksmith",
-                      ["quest_wildflower", "quest_wildflower", "villager"],
+        "npc_types": [["quest_rock", "doctor"], "blacksmith",
+                      ["quest_wildflower", "quest_wildflower", "villager", "wine_merchant"],
                       "merchant",
-                      ["quest_gem", "quest_gem", "villager"],
+                      ["quest_gem", "quest_gem", "villager", "coffee_merchant"],
                       "innkeeper",
                       ["trade", "merchant", "villager"],
                       ["scholar", "scholar", "villager"],
@@ -2323,9 +2420,9 @@ CITY_CONFIGS = {
         "farms": [(-48, 8), (48, 8)],
         "ambient_npcs": [(-30, ["villager", "villager", "elder", "none"]),
                          (-14, ["child", "child", "none"]),
-                         (0,   ["villager", "noble", "villager", "none"]),
+                         (0,   ["villager", "noble", "villager", "none", "town_crier"]),
                          (8,   ["child", "child", "villager", "none"]),
-                         (22,  ["villager", "drunkard", "villager"]),
+                         (22,  ["villager", "drunkard", "villager", "musician"]),
                          (28,  ["guard", "guard", "none"]),
                          (-22, ["villager", "pilgrim", "none"]),
                          (-36, ["guard", "none", "none"]),
@@ -2340,9 +2437,9 @@ CITY_CONFIGS = {
     "metropolitan": {
         "half_w": 55,
         "buildings": [
-            (-50, (6, 8), (5, 7), ["three_story", "tower", "library", "barn"]),
-            (-42, (5, 7), (4, 6), ["house", "two_story", "inn", "barn"]),
-            (-34, (4, 6), (3, 5), ["smithy", "smithy", "apothecary", "barn"]),
+            (-50, (6, 8), (5, 7), ["three_story", "tower", "library", "barn", "hospital"]),
+            (-42, (5, 7), (4, 6), ["house", "two_story", "inn", "barn", "wine_shop"]),
+            (-34, (4, 6), (3, 5), ["smithy", "smithy", "apothecary", "barn", "coffee_shop"]),
             (-26, (5, 7), (4, 6), ["library", "library", "house"]),
             (-18, None,   None,   None),    # Outdoor scholar
             (-12, (7, 9), (5, 8), ["shrine"]),
@@ -2350,13 +2447,13 @@ CITY_CONFIGS = {
             (  6, None,   None,   None),    # Outdoor merchant
             ( 14, (5, 7), (4, 6), ["house", "two_story", "three_story", "jewelry_store"]),
             ( 22, (6, 8), (5, 7), ["tower", "library", "longhouse", "barn"]),
-            ( 30, (4, 6), (3, 5), ["smithy", "apothecary", "jewelry_store", "house"]),
+            ( 30, (4, 6), (3, 5), ["smithy", "apothecary", "jewelry_store", "house", "vignette"]),
             ( 38, None,   None,   None),    # Outdoor noble
             ( 46, (7, 10), (6, 9), ["shrine", "shrine"]),
         ],
-        "npc_types": [["scholar", "villager"], "innkeeper", "blacksmith", "scholar",
+        "npc_types": [["scholar", "doctor"], "innkeeper", "blacksmith", "scholar",
                       "scholar", "shrine_npc", "restaurant_npc", "merchant",
-                      "villager", ["scholar", "library_npc", "villager"], "jewelry_merchant",
+                      "villager", ["scholar", "library_npc", "villager", "wine_merchant"], "jewelry_merchant",
                       "noble", "shrine_npc"],
         "gardens": [(-46, 3), (-22, 2), (10, 2), (34, 3)],
         "squares": [(-30, 5), (0, 6), (26, 5)],
@@ -2367,11 +2464,11 @@ CITY_CONFIGS = {
         "growth_slots_tier3": [( 54, (6, 8), (5, 6), ["tower", "three_story"]),
                                (-54, (5, 7), (4, 6), ["tower", "three_story"])],
         "farms": [(-70, 10), (70, 10)],
-        "ambient_npcs": [(-45, ["villager", "noble", "guard"]),
-                         (-25, ["child", "villager", "none"]),
-                         (0,   ["noble", "noble", "guard", "none"]),
-                         (15,  ["child", "child", "none"]),
-                         (35,  ["villager", "drunkard", "beggar"]),
+        "ambient_npcs": [(-45, ["villager", "noble", "guard", "town_crier"]),
+                         (-25, ["child", "villager", "none", "musician"]),
+                         (0,   ["noble", "noble", "guard", "none", "town_crier"]),
+                         (15,  ["child", "child", "none", "musician"]),
+                         (35,  ["villager", "drunkard", "beggar", "musician"]),
                          (45,  ["guard", "guard", "guard"]),
                          (-10, ["scholar", "villager", "none"]),
                          (25,  ["noble", "none", "none"]),
@@ -3444,6 +3541,38 @@ def _place_apothecary(world, left_x, sy, width, wall_height, rng):
         world.set_bg_block(left_x + width // 2,     sy - wall_height + 2, WALL_SCONCE)
 
 
+def _place_hospital(world, left_x, sy, width, wall_height, rng):
+    """Clean, stone medical facility: white stone walls, multiple beds, orderly interior."""
+    _place_house(world, left_x, sy, width, wall_height, HOUSE_WALL_STONE, HOUSE_ROOF_STONE)
+    # Interior: hospital beds and medical supplies
+    for bx in range(left_x + 1, left_x + width - 1, 3):
+        if 0 <= sy - 1 < world.height:
+             world.set_bg_block(bx, sy - 1, BED)
+             if bx + 1 < left_x + width - 1:
+                  world.set_bg_block(bx + 1, sy - 1, AIR) # Clear space next to bed
+
+    # Sconces for light
+    if 0 <= sy - wall_height + 2 < world.height:
+        world.set_bg_block(left_x + 1, sy - wall_height + 2, WALL_SCONCE)
+        world.set_bg_block(left_x + width - 2, sy - wall_height + 2, WALL_SCONCE)
+
+
+def _place_coffee_shop(world, left_x, sy, width, wall_height, rng):
+    """Coffee shop: warm wood paneling, counter, and aromatic vibe."""
+    _place_house(world, left_x, sy, width, wall_height, PINE_PLANK_WALL, HOUSE_ROOF_DARK)
+    if 0 <= sy - 2 < world.height:
+        world.set_bg_block(left_x + 1, sy - 2, STORAGE_PITHOS)
+        world.set_bg_block(left_x + width - 2, sy - 2, STONE_BASIN)
+
+
+def _place_wine_shop(world, left_x, sy, width, wall_height, rng):
+    """Wine shop: elegant stone/wood, amphorae on display."""
+    _place_house(world, left_x, sy, width, wall_height, HOUSE_WALL_BRICK, HOUSE_ROOF_DARK)
+    if 0 <= sy - 1 < world.height:
+        world.set_bg_block(left_x + 1, sy - 1, GREEK_AMPHORA)
+        world.set_bg_block(left_x + width - 2, sy - 1, GREEK_AMPHORA)
+
+
 def _set_bg_furniture(world, bx, by, bid):
     """Set a background furniture block if in-bounds and empty."""
     if 0 <= by < world.height and world.get_block(bx, by) == AIR:
@@ -4060,6 +4189,59 @@ def _place_dzong(world, left_x, sy, width, wall_height):
             world.set_block(fx, flag_y, PRAYER_FLAG_BLOCK)
 
 
+def _place_bridge(world, lx, rx, by):
+    """Wooden plank bridge connecting two buildings."""
+    for x in range(lx, rx):
+        if 0 <= by < world.height:
+            world.set_block(x, by, OAK_PANEL)
+            world.set_bg_block(x, by, LADDER) # railing-like look
+
+
+def _place_vignette(world, rng, left_x, sy, width, height, theme=None):
+    """Small atmospheric scene: laundry, stalled carts, or construction."""
+    if theme is None:
+        theme = rng.choice(["laundry", "cart", "scaffold", "firewood"])
+    
+    if theme == "laundry":
+        # Two posts with a clothesline
+        for wy in range(sy - 3, sy):
+            if 0 <= wy < world.height:
+                world.set_block(left_x, wy, HOUSE_WALL_DARK)
+                world.set_block(left_x + width - 1, wy, HOUSE_WALL_DARK)
+        line_y = sy - 3
+        if 0 <= line_y < world.height:
+            for wx in range(left_x + 1, left_x + width - 1):
+                world.set_bg_block(wx, line_y, WOVEN_TEXTILE)
+                
+    elif theme == "cart":
+        # A supply cart (bg blocks) and some barrels
+        mid_x = left_x + width // 2
+        for wx in range(left_x, left_x + width):
+            if 0 <= sy - 1 < world.height:
+                world.set_bg_block(wx, sy - 1, HOUSE_WALL_DARK) # cart body
+        if 0 <= sy - 1 < world.height:
+            world.set_bg_block(left_x, sy - 1, COBBLESTONE) # wheel
+            world.set_bg_block(left_x + width - 1, sy - 1, COBBLESTONE) # wheel
+            _set_bg_furniture(world, mid_x, sy - 1, STORAGE_PITHOS)
+            _set_bg_furniture(world, mid_x - 1, sy - 1, RAIN_BARREL)
+
+    elif theme == "scaffold":
+        # Construction site: ladder and some planks
+        for wy in range(sy - height, sy):
+            if 0 <= wy < world.height:
+                world.set_block(left_x, wy, LADDER)
+        for wx in range(left_x, left_x + width):
+            if 0 <= sy - height // 2 < world.height:
+                world.set_block(wx, sy - height // 2, HOUSE_WALL)
+        _set_bg_furniture(world, left_x + 1, sy - 1, FIREWOOD_STACK)
+
+    elif theme == "firewood":
+        # Large stack of wood for the winter
+        for wx in range(left_x, left_x + width):
+            for wy in range(sy - 2, sy):
+                _set_bg_furniture(world, wx, wy, FIREWOOD_STACK)
+
+
 def _place_shrine_for_biome(world, left_x, sy, width, wall_height, biodome):
     _, style = RELIGION_BY_BIOME.get(biodome, ("Forest Chapel", "chapel"))
     if style == "dzong":
@@ -4270,6 +4452,9 @@ def _build_single_city(world, rng, city_bx, difficulty):
 
     # 3. Place items sequentially
     current_x = city_bx - half_w + 1
+    prev_right_x = None
+    prev_height = None
+
     for i, item in enumerate(layout_items):
         left_x = current_x
         width  = item["width"]
@@ -4344,8 +4529,34 @@ def _build_single_city(world, rng, city_bx, difficulty):
                 _place_library(world, left_x, sy, width, height, rng, wall_block, roof_block)
             elif variant == "barn":
                 _place_barn(world, left_x, sy, width, height, rng)
+            elif variant == "vignette":
+                _place_vignette(world, rng, left_x, sy, width, height)
+            elif variant == "hospital":
+                _place_hospital(world, left_x, sy, width, height, rng)
+            elif variant == "coffee_shop":
+                _place_coffee_shop(world, left_x, sy, width, height, rng)
+            elif variant == "wine_shop":
+                _place_wine_shop(world, left_x, sy, width, height, rng)
             else:
                 _place_house(world, left_x, sy, width, height, wall_block, roof_block, rng)
+
+            # Bridge logic: occasionally connect buildings with roof bridges or clotheslines
+            if prev_right_x is not None and prev_height is not None:
+                gap = left_x - prev_right_x
+                if 1 <= gap <= 3 and rng.random() < 0.5:
+                    # Determine bridge height
+                    low_h = min(height, prev_height)
+                    if low_h >= 4:
+                        bridge_y = sy - low_h + 1
+                        _place_bridge(world, prev_right_x, left_x, bridge_y)
+                    elif gap <= 2:
+                        # Low-level clothesline
+                        for bx in range(prev_right_x, left_x):
+                            if 0 <= sy - 3 < world.height:
+                                world.set_bg_block(bx, sy - 3, rng.choice([TAPESTRY_BLOCK, WOVEN_TEXTILE]))
+
+            prev_right_x = left_x + width
+            prev_height = height
 
             npc_bx = left_x + 1
             if variant in ("house", "two_story", "three_story", "longhouse", "tower"):
@@ -4412,6 +4623,16 @@ def _build_single_city(world, rng, city_bx, difficulty):
                 world.entities.append(QuartermasterNPC(npc_px, npc_py, world, rng, biodome))
             elif npc_type == "garrison_commander":
                 world.entities.append(GarrisonCommanderNPC(npc_px, npc_py, world, rng, difficulty, biodome))
+            elif npc_type == "doctor":
+                world.entities.append(DoctorNPC(npc_px, npc_py, world, biodome=biodome))
+            elif npc_type == "coffee_merchant":
+                world.entities.append(CoffeeMerchantNPC(npc_px, npc_py, world, rng, biodome=biodome))
+            elif npc_type == "wine_merchant":
+                world.entities.append(WineMerchantNPC(npc_px, npc_py, world, rng, biodome=biodome))
+            elif npc_type == "musician":
+                world.entities.append(MusicianNPC(npc_px, npc_py, world, biodome=biodome))
+            elif npc_type == "town_crier":
+                world.entities.append(TownCrierNPC(npc_px, npc_py, world, biodome=biodome))
 
         current_x += width + gaps[i]
 
@@ -4423,7 +4644,8 @@ def _build_single_city(world, rng, city_bx, difficulty):
     # 4. Final dynamic elements
     _ambient_npc_cls = {"villager": VillagerNPC, "child": ChildNPC, "guard": GuardNPC,
                         "elder": ElderNPC, "beggar": BeggarNPC, "noble": NobleNPC,
-                        "pilgrim": PilgrimNPC, "drunkard": DrunkardNPC}
+                        "pilgrim": PilgrimNPC, "drunkard": DrunkardNPC,
+                        "musician": MusicianNPC, "town_crier": TownCrierNPC}
     
     # Ambient NPCs now roam randomly between the city walls
     for _, npc_type in cfg.get("ambient_npcs", ()):

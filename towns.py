@@ -476,6 +476,26 @@ def rival_region_ids(region_id: int) -> list:
     return [rid for rid, rel in region.relations.items() if rel == "rival"]
 
 
+def region_total_rep(region_id: int) -> int:
+    region = REGIONS.get(region_id)
+    if region is None:
+        return 0
+    return sum(TOWNS[tid].reputation for tid in region.member_town_ids if tid in TOWNS)
+
+
+def anchor_region_id() -> Optional[int]:
+    """The player's diplomatic anchor: the region with highest aggregate reputation.
+
+    Returns None if no region has positive rep yet.
+    """
+    best_rid, best_rep = None, 0
+    for rid in REGIONS:
+        rep = region_total_rep(rid)
+        if rep > best_rep:
+            best_rid, best_rep = rid, rep
+    return best_rid
+
+
 def compute_relations(seed: int = 0) -> None:
     """Fill REGIONS[*].relations using agenda compat + a small deterministic flip.
 
@@ -866,7 +886,59 @@ class Region:
     leader_title:    str = "Lord"
     agenda:          str = ""                                # leader personality (LEADER_AGENDAS key)
     relations:       dict = field(default_factory=dict)      # other_region_id → "allied" | "rival"
+    wealth:          str = "modest"                          # "poor" | "modest" | "rich"
+    danger:          str = "calm"                            # "calm" | "rough" | "wild"
     # reputation is computed on read: sum of member town reps
+
+
+# Wealth bias by leader agenda (weights for poor / modest / rich)
+_WEALTH_WEIGHTS = {
+    "mercantile": (1, 3, 6),
+    "builder":    (1, 4, 5),
+    "pious":      (4, 5, 1),
+    "scholarly":  (3, 6, 1),
+    "martial":    (3, 5, 2),
+    "hedonist":   (3, 4, 3),
+}
+_DEFAULT_WEALTH_WEIGHTS = (3, 5, 2)
+
+# Danger bias by biome_group (weights for calm / rough / wild)
+_DANGER_WEIGHTS = {
+    "steppe":        (1, 3, 6),
+    "jungle":        (1, 3, 6),
+    "desert":        (1, 4, 5),
+    "wasteland":     (1, 2, 7),
+    "mediterranean": (6, 3, 1),
+    "coastal":       (6, 3, 1),
+    "levant":        (5, 4, 1),
+    "east_asian":    (4, 5, 1),
+}
+_DEFAULT_DANGER_WEIGHTS = (3, 5, 2)
+
+
+def _weighted_pick(rng, choices: tuple, weights: tuple):
+    total = sum(weights)
+    r = rng.random() * total
+    acc = 0
+    for c, w in zip(choices, weights):
+        acc += w
+        if r < acc:
+            return c
+    return choices[-1]
+
+
+def derive_wealth(agenda: str, region_id: int, seed: int) -> str:
+    """Deterministic wealth tier — same (agenda, region_id, seed) always yields the same result."""
+    rng = random.Random((seed ^ (region_id * 5197) ^ 0xA13F4C) & 0xFFFFFFFF)
+    weights = _WEALTH_WEIGHTS.get(agenda, _DEFAULT_WEALTH_WEIGHTS)
+    return _weighted_pick(rng, ("poor", "modest", "rich"), weights)
+
+
+def derive_danger(biome_group: str, region_id: int, seed: int) -> str:
+    """Deterministic danger tier — same (biome_group, region_id, seed) always yields the same result."""
+    rng = random.Random((seed ^ (region_id * 9001) ^ 0xD7E2B3) & 0xFFFFFFFF)
+    weights = _DANGER_WEIGHTS.get(biome_group, _DEFAULT_DANGER_WEIGHTS)
+    return _weighted_pick(rng, ("calm", "rough", "wild"), weights)
 
 
 # ---------------------------------------------------------------------------
@@ -992,6 +1064,7 @@ def init_towns(world) -> None:
         coa = heraldry.generate(random.Random(), lcolor,
                                 charge_pool=_CHARGES_BY_GROUP.get(bg))
 
+        agenda = pick_agenda(rng_r)
         REGIONS[rid] = Region(
             region_id       = rid,
             name            = rname,
@@ -1002,7 +1075,9 @@ def init_towns(world) -> None:
             biome_group     = bg,
             tagline         = tagline,
             leader_title    = title,
-            agenda          = pick_agenda(rng_r),
+            agenda          = agenda,
+            wealth          = derive_wealth(agenda, rid, world.seed),
+            danger          = derive_danger(bg,    rid, world.seed),
         )
 
     # Compute inter-region relations once all agendas are set
@@ -1055,6 +1130,7 @@ def register_new_town(world, city_bx: int, city_size: str,
         title   = leader_title_for(bg, rng_r)
         coa     = heraldry.generate(random.Random(), lcolor,
                                     charge_pool=_CHARGES_BY_GROUP.get(bg))
+        agenda = pick_agenda(rng_r)
         REGIONS[region_id] = Region(
             region_id       = region_id,
             name            = rname,
@@ -1065,7 +1141,9 @@ def register_new_town(world, city_bx: int, city_size: str,
             biome_group     = bg,
             tagline         = tagline,
             leader_title    = title,
-            agenda          = pick_agenda(rng_r),
+            agenda          = agenda,
+            wealth          = derive_wealth(agenda, region_id, world.seed),
+            danger          = derive_danger(bg,     region_id, world.seed),
         )
         if is_capital:
             TOWNS[town_id].leader_name = lname
@@ -1304,6 +1382,34 @@ def _assign_initial_needs(town: Town) -> None:
 # Supply
 # ---------------------------------------------------------------------------
 
+def _cascade_rep(source_region_id: int, rep: int) -> None:
+    """Spread `rep` to allied/rival regions of the source.
+
+    Allies gain +25%, rivals lose -10%. Quiet no-op if rep <= 0.
+    """
+    if rep <= 0:
+        return
+    source = REGIONS.get(source_region_id)
+    if source is None:
+        return
+    ally_share = max(1, rep // 4)
+    rival_loss = max(1, rep // 10)
+    for other_rid, rel in source.relations.items():
+        other = REGIONS.get(other_rid)
+        if other is None:
+            continue
+        if rel == "allied":
+            for tid in other.member_town_ids:
+                t = TOWNS.get(tid)
+                if t:
+                    t.reputation += ally_share
+        elif rel == "rival":
+            for tid in other.member_town_ids:
+                t = TOWNS.get(tid)
+                if t:
+                    t.reputation = max(0, t.reputation - rival_loss)
+
+
 def supply_need(town: Town, player, category: str, amount: int) -> tuple[int, int]:
     """
     Deliver `amount` units of `category` from player to town.
@@ -1338,6 +1444,7 @@ def supply_need(town: Town, player, category: str, amount: int) -> tuple[int, in
     if nd["supplied"] >= nd["required"]:
         rep = REP_PER_LUXURY_FILLED if category in LUXURY_CATEGORIES else REP_PER_NEED_FILLED
         town.reputation += rep
+        _cascade_rep(town.region_id, rep)
 
     return gold, rep
 
@@ -1577,6 +1684,8 @@ def deserialize_all(town_rows: list[dict], region_rows: list[dict]) -> None:
             leader_title    = row.get("leader_title") or "Lord",
             agenda          = row.get("agenda") or "",
             relations       = relations,
+            wealth          = row.get("wealth") or "",
+            danger          = row.get("danger") or "",
         )
         REGIONS[r.region_id] = r
 
@@ -1590,6 +1699,14 @@ def deserialize_all(town_rows: list[dict], region_rows: list[dict]) -> None:
             r.agenda = pick_agenda(random.Random(r.region_id * 31337 + 88888))
     if needs_backfill:
         compute_relations(seed=0)
+
+    # Backfill wealth/danger for saves predating Vector C. Idempotent —
+    # uses the same seeded function the create path uses.
+    for r in REGIONS.values():
+        if not r.wealth:
+            r.wealth = derive_wealth(r.agenda, r.region_id, seed=0)
+        if not r.danger:
+            r.danger = derive_danger(r.biome_group, r.region_id, seed=0)
 
 
 def _load_from_db(save_mgr) -> Optional[bool]:

@@ -33,7 +33,8 @@ class PanelsMixin:
                             LeaderNPC, BlacksmithNPC, InnkeeperNPC, ScholarNPC,
                             RoyalCuratorNPC, RoyalFloristNPC, RoyalJewelerNPC,
                             RoyalPaleontologistNPC, RoyalAnglerNPC,
-                            WeaponArmorerNPC, QuartermasterNPC, GarrisonCommanderNPC)
+                            WeaponArmorerNPC, QuartermasterNPC, GarrisonCommanderNPC,
+                            DoctorNPC)
         from outpost_npcs import OutpostKeeperNPC
         npc = self.active_npc
         if isinstance(npc, LeaderNPC):
@@ -128,6 +129,8 @@ class PanelsMixin:
             self._draw_trade_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, GarrisonCommanderNPC):
             self._draw_garrison_commander_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, DoctorNPC):
+            self._draw_doctor_content(player, npc, px, py, PW, PH)
         elif is_outpost:
             self._draw_outpost_keeper_content(player, npc, px, py, PW, PH)
 
@@ -137,6 +140,87 @@ class PanelsMixin:
         name, color = rep_rank(rep)
         s = self.small.render(f"{name}  [{rep} rep]", True, color)
         self.screen.blit(s, (px + 14, py + 10))
+
+    def _draw_garrison_commander_content(self, player, npc, px, py, PW, PH):
+        title = self.large.render("GARRISON COMMANDER", True, (210, 110, 90))
+        self.screen.blit(title, (px + 20, py + 20))
+        self._draw_rep_rank(npc, px, py)
+
+        desc = _wrap_text("The crown requires weapons of fine craftsmanship to secure our borders. "
+                          "Provide the following gear to receive your reward.", self.small, PW - 40)
+        for i, line in enumerate(desc):
+            s = self.small.render(line, True, (200, 190, 180))
+            self.screen.blit(s, (px + 20, py + 65 + i * 20))
+
+        self._trade_rects = {}
+        for i, quest in enumerate(npc.quests):
+            qy = py + 140 + i * 150
+            pygame.draw.rect(self.screen, (35, 35, 45), (px + 15, qy, PW - 30, 140))
+            pygame.draw.rect(self.screen, (160, 90, 70), (px + 15, qy, PW - 30, 140), 1)
+
+            wtype = quest["weapon_type"].replace("_", " ").title() if quest["weapon_type"] else "Any Weapons"
+            q_title = self.medium.render(f"Requirement: {quest['count']}x {quest['min_tier']} {wtype}", True, (255, 255, 255))
+            self.screen.blit(q_title, (px + 30, qy + 15))
+
+            reward_txt = f"Reward: {quest['reward']} gold"
+            r_s = self.medium.render(reward_txt, True, (240, 200, 40))
+            self.screen.blit(r_s, (px + 30, qy + 45))
+
+            # Matching weapons count
+            matches = len(npc.matching_weapons(player, quest))
+            m_txt = f"In Inventory: {matches} / {quest['count']}"
+            m_s = self.small.render(m_txt, True, (120, 220, 120) if matches >= quest["count"] else (180, 180, 180))
+            self.screen.blit(m_s, (px + 30, qy + 75))
+
+            btn_rect = pygame.Rect(px + PW - 160, qy + 40, 130, 60)
+            can_finish = matches >= quest["count"]
+            btn_col = (160, 90, 70) if can_finish else (80, 80, 80)
+            pygame.draw.rect(self.screen, btn_col, btn_rect)
+            pygame.draw.rect(self.screen, (255, 255, 255), btn_rect, 2)
+
+            btn_txt = self.small.render("DELIVER", True, (255, 255, 255))
+            self.screen.blit(btn_txt, (btn_rect.centerx - btn_txt.get_width() // 2,
+                                       btn_rect.centery - btn_txt.get_height() // 2))
+            self._trade_rects[i] = btn_rect
+
+    def _draw_doctor_content(self, player, npc, px, py, PW, PH):
+        # Header
+        title = self.large.render("TOWN DOCTOR", True, (240, 240, 240))
+        self.screen.blit(title, (px + 20, py + 20))
+
+        desc = _wrap_text("I can tend to your wounds and restore your vitality. For a modest fee, of course.", self.small, PW - 60)
+        for i, line in enumerate(desc):
+            s = self.small.render(line, True, (200, 200, 210))
+            self.screen.blit(s, (px + 20, py + 65 + i * 20))
+
+        # Stats
+        health_txt = f"Current Health: {player.health} / {player.MAX_HEALTH}"
+        h_s = self.medium.render(health_txt, True, (220, 80, 80))
+        self.screen.blit(h_s, (px + 20, py + 140))
+
+        cost_txt = f"Treatment Cost: {npc.heal_cost} gold"
+        c_s = self.medium.render(cost_txt, True, (220, 200, 40))
+        self.screen.blit(c_s, (px + 20, py + 180))
+
+        # Heal Button
+        btn_w, btn_h = 240, 60
+        btn_rect = pygame.Rect(px + (PW - btn_w) // 2, py + PH - 100, btn_w, btn_h)
+
+        can_afford = player.money >= npc.heal_cost
+        can_heal = player.health < player.MAX_HEALTH
+
+        btn_col = (60, 140, 70) if (can_afford and can_heal) else (80, 80, 80)
+        pygame.draw.rect(self.screen, btn_col, btn_rect)
+        pygame.draw.rect(self.screen, (255, 255, 255), btn_rect, 2)
+
+        txt = "HEAL ME" if can_heal else "FULLY HEALED"
+        if not can_afford and can_heal:
+            txt = "INSUFFICIENT GOLD"
+
+        t_s = self.small.render(txt, True, (255, 255, 255))
+        self.screen.blit(t_s, (btn_rect.centerx - t_s.get_width() // 2, btn_rect.centery - t_s.get_height() // 2))
+
+        self._trade_rects = {0: btn_rect}
 
     def _draw_quest_content(self, player, npc, px, py, PW, PH):
         from cities import quest_display, quest_hint, RARITY_ORDER, RoyalCuratorNPC, ROYAL_QUEST_REP
@@ -935,17 +1019,32 @@ class PanelsMixin:
                                      True, (210, 175,  80))
             self.screen.blit(ag_s, (px + 16, py + 56))
 
+        # Diplomacy: allies and rivals from the relations graph
+        if region:
+            allies = [REGIONS[r].name for r in region.relations
+                      if region.relations[r] == "allied" and r in REGIONS]
+            rivals = [REGIONS[r].name for r in region.relations
+                      if region.relations[r] == "rival"  and r in REGIONS]
+            ally_text = ", ".join(allies[:3]) + ("…" if len(allies) > 3 else "") if allies else "none"
+            rival_text = ", ".join(rivals[:3]) + ("…" if len(rivals) > 3 else "") if rivals else "none"
+            self.screen.blit(
+                self.small.render(f"Allied: {ally_text}", True, (140, 200, 130)),
+                (px + 16, py + 76))
+            self.screen.blit(
+                self.small.render(f"Rival:  {rival_text}", True, (210, 120, 110)),
+                (px + 16, py + 94))
+
         # Regional rep + rank
         total_rep = npc.regional_rep()
         rank_name, rank_col = rep_rank(npc._town_rep())
         rep_s = self.small.render(
             f"Regional reputation: {total_rep}   |   Your standing: {rank_name}",
             True, rank_col)
-        self.screen.blit(rep_s, (px + 16, py + 76))
+        self.screen.blit(rep_s, (px + 16, py + 114))
 
-        pygame.draw.line(self.screen, border_col, (px + 10, py + 94), (px + PW - 10, py + 94))
+        pygame.draw.line(self.screen, border_col, (px + 10, py + 132), (px + PW - 10, py + 132))
 
-        cy = py + 102
+        cy = py + 140
         if region:
             for tid in region.member_town_ids:
                 town = TOWNS.get(tid)
@@ -967,13 +1066,26 @@ class PanelsMixin:
 
         self._trade_rects.clear()
         for idx, contract in enumerate(npc.contracts):
+            row_h = 60
+            row_rect = pygame.Rect(px + 12, cy, PW - 24, row_h)
+
+            if contract is None:
+                # Rival embargo: anchor region is rival to this leader's, and
+                # the slot rolled refusal at generation time.
+                pygame.draw.rect(self.screen, (30, 18, 18), row_rect)
+                pygame.draw.rect(self.screen, (110,  60,  60), row_rect, 2)
+                emb_s = self.font.render("— Slot embargoed —", True, (180, 110, 110))
+                why_s = self.small.render(
+                    "Your home region is at odds with this court.", True, (140,  90,  90))
+                self.screen.blit(emb_s, (px + 22, cy +  8))
+                self.screen.blit(why_s, (px + 22, cy + 32))
+                cy += row_h + 6
+                continue
+
             item_id, give_count, reward_gold, display_name, min_rep, rep_bonus = contract
             rep_locked = npc._town_rep() < min_rep
             can = npc.can_fulfill(idx, player)
             have = player.inventory.get(item_id, 0)
-
-            row_h = 60
-            row_rect = pygame.Rect(px + 12, cy, PW - 24, row_h)
             if rep_locked:
                 bg, bdr = (28, 24, 10), (140, 110, 30)
             else:
