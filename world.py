@@ -186,9 +186,15 @@ class World:
         self._rain_gap      = self._soil_rng.uniform(_soil.RAIN_MIN_GAP_SECS, _soil.RAIN_MAX_GAP_SECS)
         # Day/night cycle
         self.time_of_day = 0.0   # seconds, 0 = start of day, wraps at CYCLE_DURATION
+        self.day_count = 0
+        self.town_centers: list[int] = []  # city_bx values from generate_cities
+        self.city_slot_xs: list[int] = []  # un-jittered slot centers, parallel to town_centers
+        self.city_zones:   list     = []   # (lo, hi) block ranges occupied by cities
         if not preloaded:
             from cities import generate_cities
             generate_cities(self, self.seed)
+        from towns import init_towns
+        init_towns(self)
         self._spawn_birds()
         self._spawn_insects()
 
@@ -448,6 +454,7 @@ class World:
         self._pending_tapestry_positions  = data.get("tapestry_positions", {})
         self.pottery_display_data = data.get("pottery_display_data", {})
         self._pending_unplaced_vase_uids  = data.get("unplaced_vase_uids", [])
+        self.day_count = data.get("day_count", 0)
         # Load chunks around the player's saved position
         player_cx = int(player_x // BLOCK_SIZE) // CHUNK_W
         for cx in range(player_cx - CHUNK_LOAD_RADIUS, player_cx + CHUNK_LOAD_RADIUS + 1):
@@ -559,8 +566,8 @@ class World:
                 entity._synthesize_genotype_from_traits()
             self.entities.append(entity)
 
-        from cities import generate_cities
-        generate_cities(self, self.seed)
+        # world.town_centers / city_zones are restored in init_towns from the
+        # DB-loaded TOWNS data; no block placement needed on load.
 
         from dropped_item import DroppedItem
         for d in data.get("dropped_items", []):
@@ -1515,6 +1522,7 @@ class World:
         bid = self.get_block(x, y)
         return (bid != AIR and bid != LADDER
                 and bid != WATER and bid != OIL and bid != SAPLING
+                and bid != WILDFLOWER_PATCH
                 and bid not in BUSH_BLOCKS and bid not in CROP_BLOCKS
                 and bid not in OPEN_DOORS
                 and bid not in ALL_LOGS and bid not in ALL_LEAVES
@@ -1523,7 +1531,12 @@ class World:
                 and bid != ELEVATOR_CABLE_BLOCK)
 
     def update_time(self, dt):
+        prev = self.time_of_day
         self.time_of_day = (self.time_of_day + dt) % CYCLE_DURATION
+        if self.time_of_day < prev:
+            self.day_count += 1
+            from towns import advance_day
+            advance_day(self)
 
     def update_water(self, dt, player):
         self._water_timer += dt
@@ -1952,25 +1965,33 @@ class World:
             if y + 1 >= WORLD_H:
                 still_pending.add((x, y))
                 continue
-            # Crops require tilled soil underneath. Existing old-save crops on
-            # plain dirt/grass simply stall until the player re-tills.
-            if self.get_block(x, y + 1) != TILLED_SOIL:
-                still_pending.add((x, y))
-                continue
-            if not self._has_sky_view(x, y):
-                still_pending.add((x, y))
-                continue
-            moisture  = self._soil_moisture.get((x, y + 1), 0)
-            fertility = self._soil_fertility.get((x, y + 1), self.max_fertility)
-            prefs     = _soil.get_prefs(bid)
-            delta     = _soil.growth_delta(prefs, moisture, fertility)
-            # Record care quality for yield scaling at harvest, even if delta is 0.
-            care = _soil.care_score(prefs, moisture, fertility)
-            csum, ccount = self._crop_care_sum.get((x, y), (0.0, 0))
-            self._crop_care_sum[(x, y)] = (csum + care, ccount + 1)
-            if delta <= 0:
-                still_pending.add((x, y))
-                continue
+            below = self.get_block(x, y + 1)
+            # Wild desert plants grow on SAND without tilled soil.
+            if bid in WILD_DESERT_PLANT_BLOCKS and below == SAND:
+                if not self._has_sky_view(x, y):
+                    still_pending.add((x, y))
+                    continue
+                delta = max(1, int(_soil.GROWTH_DELTA_MAX * _soil.DESERT_GROWTH_SPEED))
+            else:
+                # Crops require tilled soil underneath. Existing old-save crops on
+                # plain dirt/grass simply stall until the player re-tills.
+                if below != TILLED_SOIL:
+                    still_pending.add((x, y))
+                    continue
+                if not self._has_sky_view(x, y):
+                    still_pending.add((x, y))
+                    continue
+                moisture  = self._soil_moisture.get((x, y + 1), 0)
+                fertility = self._soil_fertility.get((x, y + 1), self.max_fertility)
+                prefs     = _soil.get_prefs(bid)
+                delta     = _soil.growth_delta(prefs, moisture, fertility)
+                # Record care quality for yield scaling at harvest, even if delta is 0.
+                care = _soil.care_score(prefs, moisture, fertility)
+                csum, ccount = self._crop_care_sum.get((x, y), (0.0, 0))
+                self._crop_care_sum[(x, y)] = (csum + care, ccount + 1)
+                if delta <= 0:
+                    still_pending.add((x, y))
+                    continue
             # Pollination bonus: nearby non-spooked insects boost growth
             player = getattr(self, '_player_ref', None)
             poll_mult = getattr(player, 'insect_pollination_mult', 1.1)
@@ -1979,10 +2000,11 @@ class World:
                 delta *= poll_mult
             progress = self._crop_progress.get((x, y), 0) + delta
             if progress >= _soil.GROWTH_PROGRESS_MAX:
-                # Drain fertility from soil on maturation
-                fert = self._soil_fertility.get((x, y + 1), self.max_fertility)
-                drain = prefs.get("fertility_drain", _soil.FERTILITY_DRAIN_PER_HARVEST)
-                self._soil_fertility[(x, y + 1)] = max(0, fert - drain)
+                if bid not in WILD_DESERT_PLANT_BLOCKS or below != SAND:
+                    # Drain fertility from soil on maturation (not for wild sand plants)
+                    fert = self._soil_fertility.get((x, y + 1), self.max_fertility)
+                    drain = prefs.get("fertility_drain", _soil.FERTILITY_DRAIN_PER_HARVEST)
+                    self._soil_fertility[(x, y + 1)] = max(0, fert - drain)
                 self.set_block(x, y, _CROP_MATURE_MAP[bid])
             else:
                 self._crop_progress[(x, y)] = progress
@@ -2238,7 +2260,7 @@ class World:
     def _spawn_birds(self):
         from birds import ALL_SPECIES, COMMON_SPECIES
         self.birds.clear()
-        rng = random.Random(self.seed + 77777)
+        rng = random.Random()
         max_birds = 150
         spacing = 15  # blocks between spawn attempts
 
@@ -2400,7 +2422,7 @@ class World:
     def _spawn_birds_for_chunk(self, cx: int):
         from birds import ALL_SPECIES, COMMON_SPECIES
         base_x = cx * CHUNK_W
-        rng = random.Random(self.seed + 77777 + cx * 5381)
+        rng = random.Random()
         spacing = 15
         x = base_x + 2
         while x < base_x + CHUNK_W - 2:

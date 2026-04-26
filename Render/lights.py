@@ -164,4 +164,25 @@ def draw_lighting(renderer, player, world, depth, time_of_day=0.0):
                 renderer._light_surf.blit(grad, (sx - gw // 2, sy - gh // 2),
                                           special_flags=pygame.BLEND_RGBA_MIN)
 
+    # Firefly glow — punch soft holes in the darkness overlay
+    if night_alpha > 30 and world is not None and hasattr(world, 'insects'):
+        for ins in world.insects:
+            if ins.WING_TYPE != "firefly" or ins.spooked or ins.NIGHT_ONLY and night_alpha < 30:
+                continue
+            sx = int(ins.x) - cam_xi
+            sy = int(ins.y) - cam_yi
+            if sx < -80 or sx > SCREEN_W + 80 or sy < -80 or sy > SCREEN_H + 80:
+                continue
+            pulse = abs(_m.sin(ins._hover_phase * 0.5))
+            r = 10 + int(pulse * 12)
+            key = ("ff", r)
+            if key not in renderer._light_grad_cache:
+                renderer._light_grad_cache[key] = build_block_gradient("soft", r)
+            grad = renderer._light_grad_cache[key]
+            gw, gh = grad.get_size()
+            tail_sx = sx + ins.W - 3
+            tail_sy = sy + ins.H // 2
+            renderer._light_surf.blit(grad, (tail_sx - gw // 2, tail_sy - gh // 2),
+                                      special_flags=pygame.BLEND_RGBA_MIN)
+
     renderer.screen.blit(renderer._light_surf, (0, 0))

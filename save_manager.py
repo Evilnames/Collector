@@ -39,6 +39,7 @@ class SaveManager:
                             "fish", "coffee_beans", "wine_grapes", "spirits",
                             "tea_leaves", "textiles", "cheese_wheels", "jewelry", "sculptures", "custom_tapestries", "pottery_pieces", "salt_crystals",
                             "research", "automations",
+                            "towns", "regions",
                             "farm_bots", "backhoes", "elevator_cars", "minecarts", "entities", "dropped_items", "chests"):
                     # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
@@ -68,6 +69,8 @@ class SaveManager:
             self._save_meta(con, world.seed)
             self._save_dirty_chunks(con, world)
             self._save_world_meta(con, world, player)
+            self._save_towns(con)
+            self._save_regions(con)
             self._save_player(con, player)
             self._save_rocks(con, player)
             self._save_wildflowers(con, player)
@@ -577,6 +580,33 @@ class SaveManager:
             evap_method      TEXT DEFAULT '',
             refine_grade     TEXT DEFAULT ''
         );
+        CREATE TABLE IF NOT EXISTS towns (
+            town_id          INTEGER PRIMARY KEY,
+            region_id        INTEGER,
+            is_capital       INTEGER,
+            center_bx        INTEGER,
+            half_w           INTEGER,
+            biome            TEXT,
+            name             TEXT,
+            leader_name      TEXT,
+            tier             INTEGER,
+            reputation       INTEGER,
+            growth_progress  REAL,
+            founded_day      INTEGER,
+            size             TEXT DEFAULT 'medium',
+            needs_json       TEXT,
+            grown_buildings_json TEXT
+        );
+        CREATE TABLE IF NOT EXISTS regions (
+            region_id            INTEGER PRIMARY KEY,
+            name                 TEXT,
+            capital_town_id      INTEGER,
+            member_town_ids_json TEXT,
+            leader_color_json    TEXT,
+            coat_of_arms_json    TEXT,
+            biome_group          TEXT DEFAULT 'highland',
+            tagline              TEXT DEFAULT ''
+        );
         """)
         for col, default in [("spawn_x", "NULL"), ("spawn_y", "NULL")]:
             try:
@@ -616,6 +646,26 @@ class SaveManager:
                 con.execute(f"ALTER TABLE world_meta ADD COLUMN {col} TEXT")
             except Exception:
                 pass
+        try:
+            con.execute("ALTER TABLE world_meta ADD COLUMN day_count INTEGER DEFAULT 0")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE regions ADD COLUMN coat_of_arms_json TEXT")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE regions ADD COLUMN biome_group TEXT DEFAULT 'highland'")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE regions ADD COLUMN tagline TEXT DEFAULT ''")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE regions ADD COLUMN leader_title TEXT DEFAULT 'Lord'")
+        except Exception:
+            pass
         for col, default in [
             ("horses_tamed", "0"),
             ("horses_bred", "0"),
@@ -626,6 +676,7 @@ class SaveManager:
             ("roast_profiles", "'[]'"),
             ("discovered_pairings", "'[]'"),
             ("aging_vessels", "'[]'"),
+            ("visited_town_ids", "'[]'"),
         ]:
             try:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT {default}")
@@ -888,12 +939,13 @@ class SaveManager:
         con.execute("DELETE FROM world_meta")
         con.execute(
             "INSERT INTO world_meta "
-            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, tapestry_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, tapestry_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids, day_count) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (json.dumps(water), json.dumps(moisture), json.dumps(progress),
              json.dumps(care_sum), json.dumps(fertility), json.dumps(compost_bins),
              json.dumps(garden_flowers), json.dumps(sculpture_pos), json.dumps(tapestry_pos),
-             json.dumps(wf_displays), json.dumps(pottery_displays), json.dumps(unplaced_uids)),
+             json.dumps(wf_displays), json.dumps(pottery_displays), json.dumps(unplaced_uids),
+             getattr(world, 'day_count', 0)),
         )
 
     def _save_player(self, con, player):
@@ -909,8 +961,8 @@ class SaveManager:
                 discovered_foods, foods_cooked,
                 horses_tamed, horses_bred, horse_records, discovered_coat_biomes,
                 discovered_recipes, animals_hunted, roast_profiles,
-                discovered_pairings, aging_vessels)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                discovered_pairings, aging_vessels, visited_town_ids)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 player.x, player.y, player.vx, player.vy, player.facing,
                 player.health, player.hunger, player.pick_power, player.money,
@@ -937,6 +989,7 @@ class SaveManager:
                 json.dumps(getattr(player, "roast_profiles", [])),
                 json.dumps(list(getattr(player, "discovered_pairings", set()))),
                 json.dumps(getattr(player, "aging_vessels", [])),
+                json.dumps(list(getattr(player, "visited_town_ids", set()))),
             )
         )
 
@@ -1229,6 +1282,34 @@ class SaveManager:
             return {}
         return {row[0]: {"count": row[1], "biome": row[2]} for row in rows}
 
+    def _save_towns(self, con):
+        from towns import serialize_all
+        town_rows, _ = serialize_all()
+        con.execute("DELETE FROM towns")
+        for r in town_rows:
+            con.execute(
+                "INSERT INTO towns VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (r["town_id"], r["region_id"], r["is_capital"], r["center_bx"],
+                 r["half_w"], r["biome"], r["name"], r["leader_name"],
+                 r["tier"], r["reputation"], r["growth_progress"],
+                 r["founded_day"], r["size"], r["needs_json"], r["grown_buildings_json"]),
+            )
+
+    def _save_regions(self, con):
+        from towns import serialize_all
+        _, region_rows = serialize_all()
+        con.execute("DELETE FROM regions")
+        for r in region_rows:
+            con.execute(
+                "INSERT INTO regions VALUES (?,?,?,?,?,?,?,?,?)",
+                (r["region_id"], r["name"], r["capital_town_id"],
+                 r["member_town_ids_json"], r["leader_color_json"],
+                 r.get("coat_of_arms_json", "null"),
+                 r.get("biome_group", "highland"),
+                 r.get("tagline", ""),
+                 r.get("leader_title", "Lord")),
+            )
+
     def _save_research(self, con, research):
         con.execute("DELETE FROM research")
         for node_id, node in research.nodes.items():
@@ -1404,7 +1485,7 @@ class SaveManager:
             "soil_fertility, compost_bin_data, garden_data, sculpture_positions, "
             "wildflower_display_data, "
             "COALESCE(pottery_display_data, '{}'), COALESCE(unplaced_vase_uids, '[]'), "
-            "COALESCE(tapestry_positions, '{}') "
+            "COALESCE(tapestry_positions, '{}'), COALESCE(day_count, 0) "
             "FROM world_meta LIMIT 1"
         ).fetchone()
         if row is None:
@@ -1518,6 +1599,7 @@ class SaveManager:
             "wildflower_display_data": _parse_display_data(row[8] if len(row) > 8 else None),
             "pottery_display_data":   _parse_pottery_displays(row[9] if len(row) > 9 else None),
             "unplaced_vase_uids":     json.loads(row[10]) if len(row) > 10 and row[10] else [],
+            "day_count":              int(row[12]) if len(row) > 12 and row[12] is not None else 0,
         }
 
     def _load_player(self, con, bird_obs=None, insect_obs=None):
@@ -1534,7 +1616,8 @@ class SaveManager:
                    COALESCE(animals_hunted, '{}'),
                    COALESCE(roast_profiles, '[]'),
                    COALESCE(discovered_pairings, '[]'),
-                   COALESCE(aging_vessels, '[]')
+                   COALESCE(aging_vessels, '[]'),
+                   COALESCE(visited_town_ids, '[]')
             FROM player LIMIT 1
         """).fetchone()
 
@@ -1546,7 +1629,7 @@ class SaveManager:
          discovered_foods, foods_cooked,
          horses_tamed, horses_bred, horse_records_raw, discovered_coat_biomes_raw,
          discovered_recipes_raw, worn_raw, animals_hunted_raw, roast_profiles_raw,
-         discovered_pairings_raw, aging_vessels_raw) = row
+         discovered_pairings_raw, aging_vessels_raw, visited_town_ids_raw) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -1967,6 +2050,7 @@ class SaveManager:
             "roast_profiles":     json.loads(roast_profiles_raw or "[]"),
             "discovered_pairings": json.loads(discovered_pairings_raw or "[]"),
             "aging_vessels": json.loads(aging_vessels_raw or "[]"),
+            "visited_town_ids": json.loads(visited_town_ids_raw or "[]"),
             "sculptures_created": _sculpture_created,
             "pending_sculptures": _sculpture_pending,
             "tapestries_created": _tapestry_created,

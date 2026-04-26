@@ -1732,6 +1732,17 @@ RECIPES = [
         "output_id":    "bait_station_item",
         "output_count": 1,
     },
+    # --- Hunting ---
+    {
+        "name": "Fletching Table",
+        "pattern": [
+            ["lumber",     "lumber",     "lumber"    ],
+            ["stone_chip", None,         "stone_chip"],
+            [None,         None,         None        ],
+        ],
+        "output_id":    "fletching_table_item",
+        "output_count": 1,
+    },
     # --- Elevator system ---
     {
         "name": "Elevator Stop",
@@ -1918,10 +1929,21 @@ SMELTER_RECIPES = [
 ]
 
 FLETCHING_RECIPES = [
-    {"name": "Fletching Table", "ingredients": {"lumber": 4, "stone_chip": 2},                         "output_id": "fletching_table_item", "output_count": 1},
-    {"name": "Wood Bow",        "ingredients": {"lumber": 3, "wool": 2},                                "output_id": "wood_bow",    "output_count": 1},
-    {"name": "Wood Arrows",     "ingredients": {"lumber": 2, "feather": 1, "stone_chip": 1},            "output_id": "wood_arrow",  "output_count": 8},
-    {"name": "Iron Arrows",     "ingredients": {"iron_chunk": 1, "feather": 1, "lumber": 1},            "output_id": "iron_arrow",  "output_count": 6},
+    # Bows
+    {"name": "Wood Bow",         "ingredients": {"lumber": 3, "wool": 2},                               "output_id": "wood_bow",        "output_count": 1},
+    {"name": "Recurve Bow",      "ingredients": {"lumber": 3, "stone_chip": 2, "wool": 2},              "output_id": "recurve_bow",     "output_count": 1},
+    {"name": "Composite Bow",    "ingredients": {"lumber": 4, "iron_chunk": 2, "wool": 2},              "output_id": "composite_bow",   "output_count": 1},
+    {"name": "Longbow",          "ingredients": {"lumber": 6, "wool": 3, "deer_hide": 1},               "output_id": "longbow",         "output_count": 1},
+    {"name": "Crossbow",         "ingredients": {"lumber": 4, "iron_chunk": 4, "stone_chip": 2},        "output_id": "crossbow",        "output_count": 1},
+    # Arrows
+    {"name": "Wood Arrows",      "ingredients": {"lumber": 2, "feather": 1, "stone_chip": 1},           "output_id": "wood_arrow",      "output_count": 8},
+    {"name": "Bone Arrows",      "ingredients": {"bone": 2, "feather": 1},                              "output_id": "bone_arrow",      "output_count": 8},
+    {"name": "Flint Arrows",     "ingredients": {"stone_chip": 2, "feather": 1},                        "output_id": "flint_arrow",     "output_count": 8},
+    {"name": "Iron Arrows",      "ingredients": {"iron_chunk": 1, "feather": 1, "lumber": 1},           "output_id": "iron_arrow",      "output_count": 6},
+    {"name": "Barbed Arrows",    "ingredients": {"iron_chunk": 1, "bone": 1, "feather": 1},             "output_id": "barbed_arrow",    "output_count": 6},
+    {"name": "Broadhead Arrows", "ingredients": {"iron_chunk": 2, "feather": 1, "lumber": 1},           "output_id": "broadhead_arrow", "output_count": 4},
+    {"name": "Poison Arrows",    "ingredients": {"bone": 1, "iron_chunk": 1, "feather": 2, "wool": 1},  "output_id": "poison_arrow",    "output_count": 4},
+    {"name": "Gold Arrows",      "ingredients": {"gold_nugget": 1, "feather": 2},                       "output_id": "gold_arrow",      "output_count": 4},
 ]
 
 # ---------------------------------------------------------------------------
@@ -2305,7 +2327,10 @@ RECIPE_GROUPS = {
         "stable_item", "horse_trough_item",
     ],
     "Hunting": [
-        "fletching_table_item", "wood_bow", "wood_arrow", "iron_arrow",
+        "fletching_table_item",
+        "wood_bow", "recurve_bow", "composite_bow", "longbow", "crossbow",
+        "wood_arrow", "bone_arrow", "flint_arrow", "iron_arrow",
+        "barbed_arrow", "broadhead_arrow", "poison_arrow", "gold_arrow",
     ],
     "Jewelry": [
         "jewelry_workbench_item",
@@ -2375,7 +2400,17 @@ RESEARCH_LOCKED_RECIPES = {
     "fletching_table_item":    "basic_archery",
     "wood_bow":                "basic_archery",
     "wood_arrow":              "basic_archery",
+    "bone_arrow":              "basic_archery",
+    "flint_arrow":             "flint_arrows",
     "iron_arrow":              "iron_arrows",
+    "recurve_bow":             "recurve_bow",
+    "barbed_arrow":            "barbed_arrows",
+    "composite_bow":           "composite_bow",
+    "broadhead_arrow":         "broadhead_arrows",
+    "longbow":                 "longbow",
+    "poison_arrow":            "poison_arrows",
+    "crossbow":                "crossbow",
+    "gold_arrow":              "gold_arrows",
     "jewelry_workbench_item":  "goldsmithing",
     "garden_workshop_item":    "garden_workshop",
     "sculptors_bench_item":    "stone_carving",

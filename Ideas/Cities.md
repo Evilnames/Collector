@@ -197,7 +197,7 @@ def update_time(self, dt):
 
 - **Existing saves**: no `towns`/`regions` rows → `init_towns` creates fresh state on first load. `day_count` defaults to 0. Safe.
 - **Town with no square** (small towns have `"squares": []`): handled by the small-town fallback in step 6 — flag goes at city center.
-- **Chunk-streamed cities** (`generate_city_for_chunk`): not part of v1 scope. They get no flag and no town record. Documented limitation.
+- **Chunk-streamed cities** (`generate_city_for_chunk`): fully supported. They receive a town record, region membership (lazily created), flag block, and are growth-eligible. Region assignment is slot-index-based: `region_id = (slot_x // CITY_SPACING) // 3`, capital when `slot_index % 3 == 1`.
 - **Capital changes when a non-capital town grows**: capital is **locked at world generation**, not re-evaluated on tier-up. Otherwise the LeaderNPC would teleport between towns. This is a deliberate simplification.
 - **Live in-place growth touching player-edited blocks**: `_grow_town_buildings` should check that the target growth slot is mostly empty/natural before placing — if blocked (player built there), skip silently and try the next slot. Failing that, defer until next chunk regen.
 - **Day length**: `CYCLE_DURATION = 960s` (16 min real-time per day). With `DAYS_PER_TIER = 5`, tiering up takes ~80 min real-time of fully satisfied needs. Tunable.

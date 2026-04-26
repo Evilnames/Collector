@@ -25,12 +25,15 @@ from .sculpture import SculptureMixin
 from .tapestry import TapestryMixin
 from .pottery import PotteryMixin
 from .salt import SaltMixin
+from .town_menu import TownMenuMixin
+from .reputation_screen import ReputationScreenMixin
 
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
     CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, MinigamesMixin, CollectionsMixin,
     HelpMixin, HorseMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin,
+    TownMenuMixin, ReputationScreenMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -159,6 +162,14 @@ class UI(
         self.active_npc = None
         self._trade_rects = {}
         self._quest_btn   = None
+        # Town menu
+        self.town_menu_open  = False
+        self.active_town     = None
+        self._town_supply_btns = {}
+        # Reputation / kingdoms screen
+        self.reputation_screen_open = False
+        self._rep_scroll     = 0
+        self._rep_max_scroll = 0
         self.automation_open   = False
         self.active_automation = None
         self._auto_deposit1_btn    = None
@@ -786,6 +797,10 @@ class UI(
             self._draw_refinery(player, dt)
         if self.npc_open and self.active_npc is not None:
             self._draw_npc_panel(player)
+        if self.town_menu_open and self.active_town is not None:
+            self._draw_town_menu(player)
+        if self.reputation_screen_open:
+            self._draw_reputation_screen(player)
         if self.automation_open and self.active_automation is not None:
             self._draw_automation_panel(player)
         if self.farm_bot_open and self.active_farm_bot is not None:

@@ -460,6 +460,7 @@ def main():
         ui.research_open = ui.inventory_open = ui.crafting_open = False
         ui.collection_open = ui.refinery_open = ui.npc_open = False
         ui.breeding_open = False
+        ui.reputation_screen_open = False
         ui.automation_open = False
         ui.active_automation = None
         ui.farm_bot_open = False
@@ -482,18 +483,23 @@ def main():
         ui._jw_phase = "idle"
         ui._jw_drag_uid = None
         ui._sculpt_phase = "idle"
+        ui.town_menu_open = False
+        ui.active_town = None
 
     def _any_ui_open():
         return any([ui.pause_open, ui.help_open, ui.research_open, ui.inventory_open, ui.crafting_open,
                     ui.collection_open, ui.refinery_open, ui.npc_open,
                     ui.automation_open, ui.farm_bot_open, ui.chest_open,
                     ui.backhoe_open, ui.breeding_open, ui.garden_open, ui.wildflower_display_open,
-                    ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open])
+                    ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open,
+                    ui.town_menu_open, ui.reputation_screen_open])
 
     def _find_nearby_npc(world, player):
         from cities import NPC
         for entity in world.entities:
             if isinstance(entity, NPC) and entity.in_range(player):
+                if getattr(entity, 'is_ambient', False):
+                    continue
                 return entity
         return None
 
@@ -767,6 +773,12 @@ def main():
                     ui.research_open = ui.inventory_open = ui.crafting_open = False
                     ui.equipment_crafting_open = ui.collection_open = ui.refinery_open = False
 
+                if event.key == pygame.K_k:
+                    ui.reputation_screen_open = not ui.reputation_screen_open
+                    if ui.reputation_screen_open:
+                        ui.research_open = ui.inventory_open = ui.crafting_open = False
+                        ui.collection_open = ui.refinery_open = ui.breeding_open = False
+
                 if event.key == pygame.K_h:
                     ui.help_open = not ui.help_open
                     if ui.help_open:
@@ -822,6 +834,7 @@ def main():
                     nearby_bh = next(
                         (bh for bh in world.backhoes if bh.in_range(player)), None
                     )
+                    nearby_flag = player.get_nearby_town_flag()
                     nearby_npc = _find_nearby_npc(world, player)
                     nearby_bed = player.get_nearby_bed()
                     nearby_elev_stop = player.get_nearby_elevator_stop()
@@ -856,6 +869,15 @@ def main():
                             _close_all_ui()
                             ui.npc_open = True
                             ui.active_npc = nearby_npc
+                    elif nearby_flag is not None:
+                        from towns import get_town_for_block
+                        town = get_town_for_block(world, *nearby_flag)
+                        if town is not None:
+                            if ui.town_menu_open and ui.active_town is town:
+                                ui.close_town_menu()
+                            else:
+                                _close_all_ui()
+                                ui.open_town_menu(town, player)
                     elif nearby_bed is not None:
                         player.set_spawn(*nearby_bed)
                         print("Spawn point set to bed.")
@@ -980,7 +1002,9 @@ def main():
 
             if event.type == pygame.MOUSEWHEEL:
                 if not player.dead and not ui.cheat_open:
-                    if ui.help_open:
+                    if ui.reputation_screen_open:
+                        ui.handle_reputation_screen_scroll(-event.y * 20)
+                    elif ui.help_open:
                         ui._help_scroll = max(0, min(ui._help_max_scroll, ui._help_scroll - event.y * 20))
                     elif ui.wildflower_display_open:
                         max_s = max(0, len(player.wildflowers) - 6)
@@ -1073,6 +1097,8 @@ def main():
                         world.backhoes.remove(bh)
                         player._add_item("backhoe_item")
                         ui.close_backhoe()
+                elif ui.town_menu_open:
+                    ui.handle_town_menu_click(event.pos, player)
                 elif ui.npc_open:
                     ui.handle_npc_click(event.pos, player)
                 elif ui.research_open:
@@ -1127,8 +1153,11 @@ def main():
                     if (event.button == 1 and not ui._insect_obs_active
                             and held == "bug_net"):
                         mx, my = event.pos
+                        _night_a = renderer._sky_night_alpha(world.time_of_day)
                         for ins in world.insects:
                             if ins.spooked:
+                                continue
+                            if ins.NIGHT_ONLY and _night_a < 30:
                                 continue
                             isx = int(ins.x - renderer.cam_x)
                             isy = int(ins.y - renderer.cam_y)
@@ -1207,7 +1236,7 @@ def main():
             renderer.draw_entities(world.entities)
             renderer.draw_arrows(world.arrows)
             renderer.draw_birds(world.birds)
-            renderer.draw_insects(world.insects)
+            renderer.draw_insects(world.insects, world.time_of_day)
             renderer.draw_automations(world.automations)
             renderer.draw_farm_bots(world.farm_bots)
             renderer.draw_backhoes(world.backhoes, player)
@@ -1296,9 +1325,11 @@ def main():
                 for entity in world.entities:
                     if isinstance(entity, HuntableAnimal) and not entity.dead:
                         if arrow_rect.colliderect(entity.rect):
-                            drops = entity.on_arrow_hit(arrow.damage)
+                            drops = entity.on_arrow_hit(arrow.damage, poison=arrow.poison, barb=arrow.barb)
                             arrow.dead = True
                             if drops:
+                                if arrow.extra_drops:
+                                    drops = [(iid, cnt + 1) for iid, cnt in drops]
                                 if getattr(player, "master_hunter", False):
                                     drops[0] = (drops[0][0], drops[0][1] + 1)
                                 for item_id, count in drops:
@@ -1422,6 +1453,11 @@ def main():
         renderer.draw_float_texts()
         renderer.draw_lighting(player, world, player.get_depth(), world.time_of_day)
         ui.draw(player, research, dt)
+        # Drain town tier-up toasts
+        if hasattr(world, '_town_toasts') and world._town_toasts:
+            for msg in world._town_toasts:
+                player.pending_notifications.append(("Town", msg, None))
+            world._town_toasts.clear()
         if ui._bird_obs_active:
             ui._draw_bird_observation_overlay(player)
         if ui._insect_obs_active:
@@ -1439,11 +1475,4 @@ def main():
 
         pygame.display.flip()
 
-    print("Auto-saving...")
-    save_mgr.save(world, player, research)  # on exit: skip notifications, just save
-    pygame.quit()
-    sys.exit()
-
-
-if __name__ == "__main__":
-    main()
+    p

@@ -461,6 +461,60 @@ class ResearchTree:
             {"gold_nugget": 1, "iron_chunk": 3}, ["iron_arrows"],
             _noop, money_cost=55), 13, 2)
 
+        self._add(ResearchNode(
+            "composite_bow", "Composite Bow",
+            "Laminated wood and sinew — craft a bow that fires 40% faster with greater range",
+            {"lumber": 4, "iron_chunk": 2, "wool": 3}, ["master_hunter"],
+            _noop, money_cost=70), 13, 3)
+
+        self._add(ResearchNode(
+            "broadhead_arrows", "Broadhead Arrows",
+            "Wide iron tips — 3 damage and +1 to every drop on kill",
+            {"iron_chunk": 5, "bone": 3}, ["composite_bow"],
+            _noop, money_cost=90), 13, 4)
+
+        self._add(ResearchNode(
+            "longbow", "Longbow",
+            "Tall stave bow — faster arrows and 36-block range, trades fire rate",
+            {"lumber": 6, "deer_hide": 2, "wool": 3}, ["broadhead_arrows"],
+            _noop, money_cost=85), 13, 5)
+
+        self._add(ResearchNode(
+            "poison_arrows", "Poison Arrows",
+            "Treated tips — stun animals for 3 seconds on hit, preventing escape",
+            {"bone": 3, "iron_chunk": 2, "feather": 2}, ["longbow"],
+            _noop, money_cost=110), 13, 6)
+
+        self._add(ResearchNode(
+            "flint_arrows", "Flint Arrows",
+            "Chipped stone tips — craft iron-strength arrows without needing metal",
+            {"stone_chip": 6, "feather": 2}, ["basic_archery"],
+            _noop, money_cost=18), 13, 7)
+
+        self._add(ResearchNode(
+            "recurve_bow", "Recurve Bow",
+            "Curved limbs store more energy — faster draw than a wood bow",
+            {"lumber": 3, "stone_chip": 2, "wool": 2}, ["flint_arrows"],
+            _noop, money_cost=38), 13, 8)
+
+        self._add(ResearchNode(
+            "barbed_arrows", "Barbed Arrows",
+            "Hooked tips slow fleeing animals to 40% speed for 5 seconds",
+            {"iron_chunk": 3, "bone": 2}, ["iron_arrows"],
+            _noop, money_cost=48), 13, 9)
+
+        self._add(ResearchNode(
+            "crossbow", "Crossbow",
+            "Mechanical draw — slow to reload but adds +1 damage to every arrow fired",
+            {"lumber": 4, "iron_chunk": 4, "stone_chip": 2}, ["longbow"],
+            _noop, money_cost=130), 13, 10)
+
+        self._add(ResearchNode(
+            "gold_arrows", "Gold Arrows",
+            "Dense gold tips — 4 damage, one-shots most prey",
+            {"gold_nugget": 3, "feather": 3}, ["crossbow"],
+            _noop, money_cost=160), 13, 11)
+
         # --- Jewelry Arts (column 14) ---
         self._add(ResearchNode(
             "goldsmithing", "Goldsmithing",

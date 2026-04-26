@@ -51,7 +51,8 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     SCULPTURE_BLOCK_ROOT, SCULPTURE_BLOCK_BODY,
                     CUSTOM_TAPESTRY_ROOT, CUSTOM_TAPESTRY_BODY,
                     POTTERY_DISPLAY_BLOCK,
-                    SALT_DEPOSIT)
+                    SALT_DEPOSIT,
+                    TOWN_FLAG_BLOCK)
 import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
@@ -229,6 +230,7 @@ class Player:
         self.known_recipes = set()
         self.known_crops   = set()   # young block IDs the player has harvested at least once
         self.pending_harvest_floats = []  # (world_x, world_y, text, color) consumed by renderer
+        self.visited_town_ids = set()
         # Water state
         self._drowning_timer = 0.0
         # Hunger
@@ -356,6 +358,7 @@ class Player:
         self.salt_buffs             = d.get("salt_buffs", {})
         self.discovered_pairings    = set(d.get("discovered_pairings", []))
         self.aging_vessels          = d.get("aging_vessels", [])
+        self.visited_town_ids       = set(d.get("visited_town_ids", []))
         # Reconstruct unplaced_vases from saved UIDs
         _piece_by_uid = {p.uid: p for p in self.pottery_pieces}
         _pending_uids = getattr(self.world, "_pending_unplaced_vase_uids", [])
@@ -437,7 +440,8 @@ class Player:
         if self._bow_cooldown > 0:
             return False
         arrow_id = None
-        for aid in ("iron_arrow", "wood_arrow"):
+        for aid in ("gold_arrow", "broadhead_arrow", "barbed_arrow", "poison_arrow",
+                    "iron_arrow", "flint_arrow", "bone_arrow", "wood_arrow"):
             if self.inventory.get(aid, 0) > 0:
                 arrow_id = aid
                 break
@@ -450,11 +454,25 @@ class Player:
                 if self.hotbar[i] == arrow_id and self.inventory.get(arrow_id, 0) == 0:
                     pass  # keep bow in slot; arrows are separate inventory items
         from hunting import Arrow
+        from constants import BLOCK_SIZE as _BS
         cx = self.x + PLAYER_W / 2
         cy = self.y + PLAYER_H / 2 - 4
-        damage = ITEMS.get(arrow_id, {}).get("arrow_damage", 1)
-        self.world.arrows.append(Arrow(cx, cy, self.facing, self.world, damage))
-        self._bow_cooldown = 0.45
+        arrow_data    = ITEMS.get(arrow_id, {})
+        bow_data      = ITEMS.get(tool, {})
+        damage        = arrow_data.get("arrow_damage", 1) + bow_data.get("bow_damage_bonus", 0)
+        poison        = arrow_data.get("arrow_poison", False)
+        extra_drops   = arrow_data.get("arrow_extra_drops", False)
+        barb          = arrow_data.get("arrow_barb", False)
+        color         = arrow_data.get("color", (200, 170, 100))
+        speed         = bow_data.get("arrow_speed", None)
+        bow_range     = bow_data.get("arrow_range", None)
+        max_range     = bow_range * _BS if bow_range else None
+        cooldown      = bow_data.get("bow_cooldown", 0.45)
+        self.world.arrows.append(Arrow(cx, cy, self.facing, self.world, damage,
+                                       speed=speed, max_range=max_range,
+                                       poison=poison, extra_drops=extra_drops,
+                                       barb=barb, color=color))
+        self._bow_cooldown = cooldown
         return True
 
     # ------------------------------------------------------------------
@@ -2063,6 +2081,45 @@ class Player:
                 if self.world.get_block(cx + dx, cy + dy) == CHEST_BLOCK:
                     return (cx + dx, cy + dy)
         return None
+
+    def get_nearby_town_flag(self):
+        """Return (bx, by) of a TOWN_FLAG_BLOCK within 3 blocks of the player, or None."""
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        for dy in range(-3, 4):
+            for dx in range(-3, 4):
+                if self.world.get_bg_block(cx + dx, cy + dy) == TOWN_FLAG_BLOCK:
+                    return (cx + dx, cy + dy)
+        return None
+
+    def count_items_in_category(self, category: str) -> int:
+        """Return total count of inventory items belonging to category."""
+        from town_needs import ITEM_TO_CATEGORY
+        return sum(
+            count for item_id, count in self.inventory.items()
+            if ITEM_TO_CATEGORY.get(item_id) == category
+        )
+
+    def remove_items_in_category(self, category: str, amount: int) -> int:
+        """Remove up to `amount` units of items in category. Returns amount actually removed."""
+        from town_needs import ITEM_TO_CATEGORY
+        remaining = amount
+        for item_id in list(self.inventory.keys()):
+            if remaining <= 0:
+                break
+            if ITEM_TO_CATEGORY.get(item_id) != category:
+                continue
+            have = self.inventory[item_id]
+            take = min(have, remaining)
+            self.inventory[item_id] -= take
+            if self.inventory[item_id] <= 0:
+                del self.inventory[item_id]
+            remaining -= take
+            # Clear hotbar slots that pointed to depleted item
+            for i, hitem in enumerate(self.hotbar):
+                if hitem == item_id and self.inventory.get(item_id, 0) == 0:
+                    self.hotbar[i] = None
+        return amount - remaining
 
     def get_nearby_garden(self):
         """Return (bx, by) of a garden block within 2 blocks of the player, or None."""

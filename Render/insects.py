@@ -6,9 +6,11 @@ from constants import SCREEN_W, SCREEN_H
 
 # ------------------------------------------------------------------
 
-def draw_insects(screen, cam_x, cam_y, insects):
+def draw_insects(screen, cam_x, cam_y, insects, night_alpha=0):
     for ins in insects:
         if ins.spooked:
+            continue
+        if ins.NIGHT_ONLY and night_alpha < 30:
             continue
         sx = int(ins.x - cam_x)
         sy = int(ins.y - cam_y)
@@ -81,18 +83,17 @@ def _draw_insect_dragonfly(screen, ins, sx, sy, wf):
 
 def _draw_insect_firefly(screen, ins, sx, sy):
     W, H = ins.W, ins.H
+    pulse = abs(math.sin(ins._hover_phase * 0.5))
     # Small oval body
     pygame.draw.ellipse(screen, ins.BODY_COLOR, (sx, sy + 1, W, H - 2))
     pygame.draw.ellipse(screen, ins.WING_COLOR, (sx + 1, sy + 2, W - 2, H - 4))
-    # Glowing tail — pulse with hover_phase
-    glow_a = int(abs(math.sin(ins._hover_phase * 0.5)) * 200 + 55)
-    gc = (
-        min(255, ins.ACCENT_COLOR[0]),
-        min(255, ins.ACCENT_COLOR[1]),
-        min(255, ins.ACCENT_COLOR[2]),
-    )
+    # Glowing tail — pulsing radius and brightness
+    r = 2 + int(pulse)
+    brightness = int(pulse * 200 + 55)
+    gc = tuple(min(255, int(c * brightness / 255)) for c in ins.ACCENT_COLOR)
     tail_x = sx + W - 3
-    pygame.draw.circle(screen, gc, (tail_x, sy + H // 2), 2)
+    tail_y = sy + H // 2
+    pygame.draw.circle(screen, gc, (tail_x, tail_y), r)
 
 def _draw_insect_beetle(screen, ins, sx, sy):
     W, H = ins.W, ins.H

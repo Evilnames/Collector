@@ -106,13 +106,22 @@ class Animal:
     def rect(self):
         return pygame.Rect(int(self.x), int(self.y), self.W, self.H)
 
+    def _has_jump_clearance(self):
+        left  = int(self.x // BLOCK_SIZE)
+        right = int((self.x + self.W - 1) // BLOCK_SIZE)
+        top   = int(self.y // BLOCK_SIZE)
+        for bx in range(left, right + 1):
+            if self.world.is_solid(bx, top - 1):
+                return False
+        return True
+
     def _move_x(self, dx):
         self.x += dx
         if self._collides():
             hit_fence = self._collides_with_fence()
             self.x -= dx
             self.vx = 0.0
-            if self.on_ground and not hit_fence:
+            if self.on_ground and not hit_fence and self._has_jump_clearance():
                 self.vy = JUMP_FORCE
             else:
                 self._wander_dir = -self._wander_dir
@@ -880,6 +889,11 @@ HUNTABLE_FLEE_SPEED  = 2.2
 class HuntableAnimal(Animal):
     """Prey animal: flees the player and can only be killed by arrows."""
 
+    def __init__(self, x, y, world, animal_id):
+        super().__init__(x, y, world, animal_id)
+        self._stunned_timer = 0.0
+        self._barbed_timer  = 0.0
+
     def try_harvest(self, player, dt):
         self.reset_harvest()
         return None
@@ -893,14 +907,23 @@ class HuntableAnimal(Animal):
     def update(self, dt):
         if self.dead:
             return
+        if self._stunned_timer > 0:
+            self._stunned_timer -= dt
+            self.vx = 0
+            self.vy = min(self.vy + GRAVITY, MAX_FALL)
+            self._move_y(self.vy)
+            return
         player = getattr(self.world, '_player_ref', None)
+        if self._barbed_timer > 0:
+            self._barbed_timer -= dt
         if player is not None:
             pdx = (player.x + PLAYER_W / 2) - (self.x + self.W / 2)
             pdy = (player.y + PLAYER_H / 2) - (self.y + self.H / 2)
             dist = ((pdx / BLOCK_SIZE) ** 2 + (pdy / BLOCK_SIZE) ** 2) ** 0.5
             if dist < HUNTABLE_FLEE_RADIUS:
                 flee_dir = -1 if pdx > 0 else 1
-                self.vx = flee_dir * HUNTABLE_FLEE_SPEED
+                flee_speed = HUNTABLE_FLEE_SPEED * (0.4 if self._barbed_timer > 0 else 1.0)
+                self.vx = flee_dir * flee_speed
                 self.facing = 1 if self.vx > 0 else -1
                 self.vy = min(self.vy + GRAVITY, MAX_FALL)
                 self._move_x(self.vx)
@@ -917,9 +940,13 @@ class HuntableAnimal(Animal):
         self._move_x(self.vx)
         self._move_y(self.vy)
 
-    def on_arrow_hit(self, damage=1):
+    def on_arrow_hit(self, damage=1, poison=False, barb=False):
         """Deal arrow damage. Returns drop list when dead, else None."""
         self.health -= damage
+        if poison:
+            self._stunned_timer = 3.0
+        if barb:
+            self._barbed_timer = 5.0
         if self.health <= 0:
             self.dead = True
             return list(self.MEAT_DROP)

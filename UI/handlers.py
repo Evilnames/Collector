@@ -451,9 +451,13 @@ class HandlersMixin:
                     npc.complete_quest(player, quest_idx)
                     break
         elif isinstance(npc, MerchantNPC):
-            for i, rect in self._trade_rects.items():
+            for key, rect in self._trade_rects.items():
                 if rect.collidepoint(pos):
-                    npc.execute_purchase(i, player)
+                    idx, action = key
+                    if action == "buy":
+                        npc.execute_purchase(idx, player)
+                    else:
+                        npc.execute_barter(idx, player)
                     break
         elif isinstance(npc, RestaurantNPC):
             for i, rect in self._trade_rects.items():

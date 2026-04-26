@@ -17,6 +17,7 @@ class Insect:
     HOVER_RANGE  = 40       # pixel radius around spawn point
     SPEED        = 28.0
     WING_TYPE    = "butterfly"  # butterfly | moth | beetle | dragonfly | firefly | other
+    NIGHT_ONLY   = False        # if True, only visible and catchable at night
 
     def __init__(self, x, y, world):
         self.x        = float(x)
@@ -1406,6 +1407,7 @@ class CommonFirefly(Insect):
     WING_COLOR   = (50, 55, 35)
     ACCENT_COLOR = (220, 255, 80)
     WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
 
 class BlueFirefly(Insect):
     SPECIES      = "blue_firefly"
@@ -1416,6 +1418,7 @@ class BlueFirefly(Insect):
     WING_COLOR   = (40, 50, 70)
     ACCENT_COLOR = (80, 160, 255)
     WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
 
 class GoldenFirefly(Insect):
     SPECIES      = "golden_firefly"
@@ -1426,6 +1429,7 @@ class GoldenFirefly(Insect):
     WING_COLOR   = (60, 52, 28)
     ACCENT_COLOR = (255, 220, 60)
     WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
 
 class SyrianFirefly(Insect):
     SPECIES      = "syrian_firefly"
@@ -1436,6 +1440,7 @@ class SyrianFirefly(Insect):
     WING_COLOR   = (45, 50, 35)
     ACCENT_COLOR = (255, 230, 60)
     WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
 
 class LevantineFirefly(Insect):
     SPECIES      = "levantine_firefly"
@@ -1446,6 +1451,7 @@ class LevantineFirefly(Insect):
     WING_COLOR   = (48, 54, 38)
     ACCENT_COLOR = (160, 230, 100)
     WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
 
 class ItalianFirefly(Insect):
     SPECIES      = "italian_firefly"
@@ -1456,6 +1462,7 @@ class ItalianFirefly(Insect):
     WING_COLOR   = (55, 48, 30)
     ACCENT_COLOR = (255, 200, 80)
     WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
 
 class AmericanFirefly(Insect):
     SPECIES      = "american_firefly"
@@ -1466,6 +1473,7 @@ class AmericanFirefly(Insect):
     WING_COLOR   = (52, 48, 35)
     ACCENT_COLOR = (240, 240, 80)
     WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
 
 
 # ---------------------------------------------------------------------------
@@ -2157,6 +2165,7 @@ class GlowWorm(Insect):
     SPEED        = 18.0
     HOVER_RANGE  = 25
     WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
 
 class EuropeanMantis(Insect):
     SPECIES      = "european_mantis"

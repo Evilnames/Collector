@@ -321,7 +321,8 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER, GRASS, DIRT, SA
                     EGG_AND_DART, OLIVE_BRANCH, PHILOSOPHERS_SCROLL, GREEK_THEATRE_MASK,
                     TORCH, WALL_SCONCE, BRAZIER, CHANDELIER, CANDELABRA,
                     LANTERN_ORB, PENDANT_LAMP, FIRE_BOWL, CROSS_LANTERN,
-                    STAR_LAMP, GLOW_VINE, LIGHT_EMITTERS)
+                    STAR_LAMP, GLOW_VINE, LIGHT_EMITTERS,
+                    TOWN_FLAG_BLOCK)
 import math
 import soil as _soil
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE
@@ -498,6 +499,7 @@ class Renderer:
         self._mm_ctable     = self._build_mm_color_table()
         self._floating_texts = []  # list of {x, y, text, color, life, vy}
         self._light_grad_cache = {}  # (radius, pattern, flicker_frame) -> Surface
+        self._town_flag_surfs = {}   # region_id -> Surface (colored pennant, built lazily)
 
     def _build_bg_darken_surf(self):
         s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
@@ -15293,6 +15295,19 @@ class Renderer:
                     pygame.draw.circle(s, glow_c,  (bx2, by2), 3)
                     pygame.draw.circle(s, glow_lt, (bx2, by2), 1)
                 surfs[bid] = s; continue
+            if bid == TOWN_FLAG_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                BS = BLOCK_SIZE
+                pole = (120, 100, 70)
+                # Flagpole — thin vertical bar
+                pygame.draw.rect(s, pole, (BS // 2 - 2, 0, 3, BS))
+                # Pennant: triangle jutting right from pole top
+                flag_col = (200, 55, 40)
+                pts = [(BS // 2 + 1, 3), (BS - 4, 9), (BS // 2 + 1, 16)]
+                pygame.draw.polygon(s, flag_col, pts)
+                pygame.draw.polygon(s, _darken(flag_col), pts, 1)
+                surfs[bid] = s; continue
             s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
             s.fill(bdata["color"])
             pygame.draw.rect(s, _darken(bdata["color"]), s.get_rect(), 1)
@@ -15347,6 +15362,20 @@ class Renderer:
             pygame.draw.rect(s, _darken(color), s.get_rect(), 1)
             surfs[biome] = s
         return surfs
+
+    def _get_town_flag_surf(self, region_id, flag_col):
+        """Return a lazily-built flag surface tinted with the region's primary color."""
+        if region_id not in self._town_flag_surfs:
+            BS = BLOCK_SIZE
+            s = pygame.Surface((BS, BS), pygame.SRCALPHA)
+            s.fill((0, 0, 0, 0))
+            pole = (120, 100, 70)
+            pygame.draw.rect(s, pole, (BS // 2 - 2, 0, 3, BS))
+            pts = [(BS // 2 + 1, 3), (BS - 4, 9), (BS // 2 + 1, 16)]
+            pygame.draw.polygon(s, flag_col, pts)
+            pygame.draw.polygon(s, _darken(flag_col), pts, 1)
+            self._town_flag_surfs[region_id] = s
+        return self._town_flag_surfs[region_id]
 
     def _build_log_variants(self):
         # 8 variants per log type
@@ -15850,6 +15879,17 @@ class Renderer:
                     elif dist > detect:
                         biome_hints = self._biome_resource_hint_surfs.get(biome, self._resource_hint_surfs)
                         surf = biome_hints.get(bid, self._resource_hint_surfs[bid])
+                if bid == TOWN_FLAG_BLOCK:
+                    try:
+                        from towns import REGIONS, get_town_for_block
+                        town = get_town_for_block(world, bx, by)
+                        if town:
+                            region = REGIONS.get(town.region_id)
+                            if region:
+                                surf = self._get_town_flag_surf(
+                                    region.region_id, region.leader_color)
+                    except Exception:
+                        pass  # fall through to default surf
                 if surf:
                     sx = bx * BLOCK_SIZE - cam_xi
                     sy = by * BLOCK_SIZE - cam_yi
@@ -16064,6 +16104,12 @@ class Renderer:
                 continue
             sx = int(e.x - self.cam_x)
             sy = int(e.y - self.cam_y)
+            if getattr(e, '_stunned_timer', 0) > 0:
+                pygame.draw.circle(self.screen, (100, 200, 80),
+                                   (sx + e.W // 2, sy - 6), 4)
+            if getattr(e, '_barbed_timer', 0) > 0:
+                pygame.draw.circle(self.screen, (210, 80, 60),
+                                   (sx + e.W // 2 + 8, sy - 6), 3)
             if e.animal_id == "sheep":
                 self._draw_sheep(sx, sy, e)
             elif e.animal_id == "cow":
@@ -16092,6 +16138,16 @@ class Renderer:
                 self._draw_npc_chef(sx, sy, e)
             elif e.animal_id == "npc_monk":
                 self._draw_npc_monk(sx, sy, e)
+            elif e.animal_id == "npc_leader":
+                self._draw_npc_leader(sx, sy, e)
+            elif e.animal_id == "npc_farmer":
+                self._draw_npc_farmer(sx, sy, e)
+            elif e.animal_id == "npc_villager":
+                self._draw_npc_villager(sx, sy, e)
+            elif e.animal_id == "npc_child":
+                self._draw_npc_child(sx, sy, e)
+            elif e.animal_id == "npc_guard":
+                self._draw_npc_guard(sx, sy, e)
             elif e.animal_id == "deer":
                 self._draw_deer(sx, sy, e)
             elif e.animal_id == "boar":
@@ -16693,10 +16749,11 @@ class Renderer:
             ax = int(arrow.x) - self.cam_x
             ay = int(arrow.y) - self.cam_y
             tip_x = ax + (arrow.W if arrow.vx > 0 else -arrow.W)
-            pygame.draw.line(self.screen, (200, 170, 100), (ax, ay), (tip_x, ay), 2)
-            # Small arrowhead
+            shaft_col = getattr(arrow, "color", (200, 170, 100))
+            head_col  = tuple(max(0, c - 20) for c in shaft_col)
+            pygame.draw.line(self.screen, shaft_col, (ax, ay), (tip_x, ay), 2)
             head_x = tip_x + (2 if arrow.vx > 0 else -2)
-            pygame.draw.circle(self.screen, (180, 145, 80), (head_x, ay), 2)
+            pygame.draw.circle(self.screen, head_col, (head_x, ay), 2)
 
     @staticmethod
     def _fmt_fuel_time(fuel, fuel_rate):
@@ -16861,42 +16918,55 @@ class Renderer:
 
     def _draw_npc_quest(self, sx, sy, npc):
         bob = int(npc._bob_offset)
-        # Body
-        pygame.draw.rect(self.screen, (190, 140, 70), (sx, sy + bob, 20, 18))
+        c = getattr(npc, 'clothing', {})
+        body = c.get('body', (190, 140, 70))
+        skin = c.get('skin', (255, 215, 160))
+        trim = c.get('trim', (130,  90, 30))
+        # Body + belt
+        pygame.draw.rect(self.screen, body, (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, trim, (sx, sy + 11 + bob, 20, 3))
         # Head
-        pygame.draw.rect(self.screen, (255, 215, 160), (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
         # Eyes
-        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4, sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
         pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
-        # Exclamation marker above head
+        # Exclamation marker
         txt = self._npc_font.render("!", True, (255, 220, 30))
         self.screen.blit(txt, (sx + 7, sy - 24 + bob))
 
     def _draw_npc_trade(self, sx, sy, npc):
         bob = int(npc._bob_offset)
-        # Body
-        pygame.draw.rect(self.screen, (60, 120, 175), (sx, sy + bob, 20, 18))
+        c = getattr(npc, 'clothing', {})
+        body = c.get('body', (60, 120, 175))
+        skin = c.get('skin', (255, 215, 160))
+        trim = c.get('trim', (40,  80, 130))
+        # Body + lapel
+        pygame.draw.rect(self.screen, body, (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, trim, (sx + 8, sy + bob, 4, 12))
         # Head
-        pygame.draw.rect(self.screen, (255, 215, 160), (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
         # Eyes
-        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4, sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
         pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
-        # Dollar marker above head
+        # Dollar marker
         txt = self._npc_font.render("$", True, (80, 230, 120))
         self.screen.blit(txt, (sx + 6, sy - 24 + bob))
 
     def _draw_npc_herbalist(self, sx, sy, npc):
         bob = int(npc._bob_offset)
-        # Body — earthy green tunic
-        pygame.draw.rect(self.screen, (60, 140, 70), (sx, sy + bob, 20, 18))
-        # Belt
-        pygame.draw.rect(self.screen, (90, 55, 20), (sx, sy + 11 + bob, 20, 3))
+        c = getattr(npc, 'clothing', {})
+        body = c.get('body', (60, 140, 70))
+        skin = c.get('skin', (255, 215, 160))
+        trim = c.get('trim', (90,  55, 20))
+        # Body + belt
+        pygame.draw.rect(self.screen, body, (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, trim, (sx, sy + 11 + bob, 20, 3))
         # Head
-        pygame.draw.rect(self.screen, (255, 215, 160), (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
         # Eyes
-        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4, sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
         pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
-        # Flower indicator above head (4 petals + centre)
+        # Flower indicator
         fx, fy = sx + 10, sy - 22 + bob
         for dx, dy in ((0, -4), (0, 4), (-4, 0), (4, 0)):
             pygame.draw.circle(self.screen, (100, 220, 100), (fx + dx, fy + dy), 2)
@@ -16904,16 +16974,21 @@ class Renderer:
 
     def _draw_npc_jeweler(self, sx, sy, npc):
         bob = int(npc._bob_offset)
-        # Body — deep purple coat
-        pygame.draw.rect(self.screen, (110, 50, 160), (sx, sy + bob, 20, 18))
-        # Coat trim
-        pygame.draw.rect(self.screen, (160, 90, 210), (sx + 8, sy + bob, 4, 18))
+        c = getattr(npc, 'clothing', {})
+        body = c.get('body', (110, 50, 160))
+        skin = c.get('skin', (255, 215, 160))
+        # Deep purple coat is the jeweler's signature — tint toward it while respecting palette
+        coat  = tuple(max(0, min(255, (v + 110) // 2)) for v in body)
+        coat2 = tuple(max(0, min(255, v + 50)) for v in coat)
+        # Body + trim stripe
+        pygame.draw.rect(self.screen, coat,  (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, coat2, (sx + 8, sy + bob, 4, 18))
         # Head
-        pygame.draw.rect(self.screen, (255, 215, 160), (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
         # Eyes
-        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4, sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
         pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
-        # Diamond indicator above head
+        # Diamond indicator (always purple — it's the craft, not the culture)
         gx, gy = sx + 10, sy - 22 + bob
         pygame.draw.polygon(self.screen, (190, 110, 255),
                             [(gx, gy - 5), (gx + 4, gy), (gx, gy + 5), (gx - 4, gy)])
@@ -16922,53 +16997,222 @@ class Renderer:
 
     def _draw_npc_merchant(self, sx, sy, npc):
         bob = int(npc._bob_offset)
-        # Body — dark brown merchant coat
-        pygame.draw.rect(self.screen, (90, 55, 25), (sx, sy + bob, 20, 18))
-        # Coat lapel stripe
-        pygame.draw.rect(self.screen, (120, 75, 35), (sx + 8, sy + bob, 4, 12))
+        c = getattr(npc, 'clothing', {})
+        body = c.get('body', (90, 55, 25))
+        skin = c.get('skin', (255, 215, 160))
+        trim = c.get('trim', (120, 75, 35))
+        lapel = tuple(min(255, v + 30) for v in body)
+        # Body + lapel
+        pygame.draw.rect(self.screen, body,  (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, lapel, (sx + 8, sy + bob, 4, 12))
         # Head
-        pygame.draw.rect(self.screen, (255, 215, 160), (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
         # Eyes
-        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4, sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
         pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
-        # Gold coin above head
+        # Gold coin marker (universal)
         gx, gy = sx + 10, sy - 21 + bob
         pygame.draw.circle(self.screen, (220, 175, 40), (gx, gy), 5)
         pygame.draw.circle(self.screen, (180, 140, 20), (gx, gy), 5, 1)
 
     def _draw_npc_chef(self, sx, sy, npc):
         bob = int(npc._bob_offset)
-        # Body — white apron over dark tunic
-        pygame.draw.rect(self.screen, (70, 55, 45), (sx, sy + bob, 20, 18))
+        c = getattr(npc, 'clothing', {})
+        body = c.get('body', (70, 55, 45))
+        skin = c.get('skin', (255, 215, 160))
+        trim = c.get('trim', (60,  45, 30))
+        # Dark tunic + white apron (apron is always white — chef's mark)
+        pygame.draw.rect(self.screen, body, (sx, sy + bob, 20, 18))
         pygame.draw.rect(self.screen, (240, 235, 220), (sx + 5, sy + bob, 10, 18))
-        # Chef's hat (tall white rectangle above head)
+        # Chef's hat (always white)
         pygame.draw.rect(self.screen, (245, 242, 235), (sx + 4, sy - 18 + bob, 12, 10))
         pygame.draw.rect(self.screen, (200, 195, 185), (sx + 4, sy - 18 + bob, 12, 2))
         # Head
-        pygame.draw.rect(self.screen, (255, 215, 160), (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
         # Eyes
-        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4, sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
         pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
-        # Tilde food indicator above hat
+        # Tilde food indicator
         txt = self._npc_font.render("~", True, (240, 120, 30))
         self.screen.blit(txt, (sx + 6, sy - 28 + bob))
 
     def _draw_npc_monk(self, sx, sy, npc):
         bob = int(npc._bob_offset)
-        # Body — saffron robe
-        pygame.draw.rect(self.screen, (210, 130, 40), (sx, sy + bob, 20, 18))
-        # Robe inner fold
-        pygame.draw.rect(self.screen, (175, 100, 25), (sx + 8, sy + bob, 5, 18))
-        # Head — slightly different skin tone (warmer)
-        pygame.draw.rect(self.screen, (240, 200, 150), (sx + 2, sy - 10 + bob, 16, 12))
+        c = getattr(npc, 'clothing', {})
+        body = c.get('body', (210, 130, 40))
+        skin = c.get('skin', (240, 200, 150))
+        fold = tuple(max(0, v - 35) for v in body)
+        # Robe + inner fold
+        pygame.draw.rect(self.screen, body, (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, fold, (sx + 8, sy + bob, 5, 18))
+        # Head
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
         # Eyes
-        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4, sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
         pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
         # 4-pointed star above head
         gx, gy = sx + 10, sy - 22 + bob
         for dx, dy in ((0, -5), (0, 5), (-5, 0), (5, 0)):
             pygame.draw.line(self.screen, (240, 220, 100), (gx, gy), (gx + dx, gy + dy), 2)
         pygame.draw.circle(self.screen, (255, 240, 130), (gx, gy), 2)
+
+    def _draw_npc_leader(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        lc  = getattr(npc, 'leader_color', (140, 30, 40))
+
+        def _dim(c, f=0.55):
+            return tuple(int(v * f) for v in c)
+        def _lite(c, amt=60):
+            return tuple(min(255, v + amt) for v in c)
+        def _gold(a=255):
+            return (218, 175, 40)
+
+        robe  = _dim(lc, 0.7)
+        trim  = lc
+        mantle = _lite(lc, 40)
+
+        # ── Robe / body (tall, majestic)
+        pygame.draw.rect(self.screen, robe,   (sx + 1,  sy + bob,      18, 20))
+        # Mantle drape over shoulders
+        pygame.draw.rect(self.screen, mantle, (sx,      sy + bob,       5, 14))
+        pygame.draw.rect(self.screen, mantle, (sx + 15, sy + bob,       5, 14))
+        # Gold belt
+        pygame.draw.rect(self.screen, _gold(), (sx + 1, sy + 11 + bob,  18, 3))
+        # Robe hem pattern (alternating trim lines)
+        for i in range(0, 18, 4):
+            pygame.draw.rect(self.screen, trim, (sx + 1 + i, sy + 17 + bob, 2, 3))
+
+        # ── Ermine collar (white with black spots)
+        pygame.draw.rect(self.screen, (240, 238, 232), (sx + 3, sy - 2 + bob, 14, 6))
+        for spot_x in (sx + 5, sx + 9, sx + 13):
+            pygame.draw.rect(self.screen, (30, 25, 20), (spot_x, sy - 1 + bob, 2, 2))
+
+        # ── Head
+        pygame.draw.rect(self.screen, (255, 210, 155), (sx + 2, sy - 12 + bob, 16, 13))
+        # Beard / jaw shadow
+        pygame.draw.rect(self.screen, (200, 160, 110), (sx + 3, sy - 4 + bob,  14, 5))
+        # Eyes (stern, regal)
+        pygame.draw.rect(self.screen, (35, 25, 15), (sx + 4,  sy - 10 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (35, 25, 15), (sx + 11, sy - 10 + bob, 3, 3))
+        # Eye-glint
+        pygame.draw.rect(self.screen, (255, 255, 255), (sx + 5,  sy - 10 + bob, 1, 1))
+        pygame.draw.rect(self.screen, (255, 255, 255), (sx + 12, sy - 10 + bob, 1, 1))
+
+        # ── Crown (gold with 3 points and gem at centre)
+        crown_y = sy - 20 + bob
+        pygame.draw.rect(self.screen, _gold(), (sx + 3,  crown_y + 3, 14, 5))   # crown band
+        pygame.draw.rect(self.screen, _gold(), (sx + 3,  crown_y,     3, 7))    # left point
+        pygame.draw.rect(self.screen, _gold(), (sx + 8,  crown_y - 2, 4, 9))   # centre point (tallest)
+        pygame.draw.rect(self.screen, _gold(), (sx + 14, crown_y,     3, 7))   # right point
+        # Crown gems
+        pygame.draw.rect(self.screen, trim,    (sx + 9,  crown_y,     2, 3))   # centre gem
+        pygame.draw.rect(self.screen, (80, 200, 220), (sx + 4, crown_y + 1, 2, 2))  # left gem
+        pygame.draw.rect(self.screen, (80, 200, 220), (sx + 14, crown_y + 1, 2, 2)) # right gem
+        # Crown rim detail
+        pygame.draw.rect(self.screen, _lite(_gold(), 30), (sx + 3, crown_y + 3, 14, 2))
+
+        # ── Sceptre (held in right hand, extends upward)
+        sceptre_x = sx + 18
+        pygame.draw.rect(self.screen, (160, 130, 50),  (sceptre_x, sy - 14 + bob, 3, 32))  # shaft
+        pygame.draw.rect(self.screen, _gold(),          (sceptre_x - 1, sy - 18 + bob, 5, 5)) # orb mount
+        pygame.draw.circle(self.screen, _gold(),        (sceptre_x + 1, sy - 20 + bob), 4)    # orb
+        pygame.draw.circle(self.screen, trim,           (sceptre_x + 1, sy - 20 + bob), 2)    # gem
+
+        # ── Crown indicator floating above (★)
+        if not hasattr(self, '_crown_font'):
+            self._crown_font = pygame.font.SysFont("consolas", 13, bold=True)
+        crown_surf = self._crown_font.render("★", True, _gold())
+        self.screen.blit(crown_surf, (sx + 6, sy - 32 + bob))
+
+    def _draw_npc_farmer(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        facing = getattr(npc, 'facing', 1)
+        c = getattr(npc, 'clothing', {})
+        body  = c.get('body',  (175, 135, 85))
+        trim  = c.get('trim',  (110,  75, 35))
+        skin  = c.get('skin',  (230, 185, 135))
+        hat   = c.get('hat',   (200, 175, 80))
+        # Body with braces
+        pygame.draw.rect(self.screen, body,  (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, trim,  (sx + 7,  sy + bob, 3, 18))
+        pygame.draw.rect(self.screen, trim,  (sx + 12, sy + bob, 3, 18))
+        # Head
+        pygame.draw.rect(self.screen, skin,  (sx + 2, sy - 10 + bob, 16, 12))
+        # Eyes
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+        # Hat — wide brim + crown, mirrored by facing
+        hat_dark = tuple(max(0, v - 25) for v in hat)
+        brim_x = sx - 3 if facing == 1 else sx - 1
+        pygame.draw.rect(self.screen, hat,      (brim_x, sy - 14 + bob, 26, 3))
+        pygame.draw.rect(self.screen, hat,      (sx + 3, sy - 20 + bob, 14, 8))
+        pygame.draw.rect(self.screen, hat_dark, (sx + 3, sy - 14 + bob, 14, 2))
+
+    def _draw_npc_villager(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        facing = getattr(npc, 'facing', 1)
+        c = getattr(npc, 'clothing', {})
+        body  = c.get('body', (100, 125, 80))
+        trim  = c.get('trim', (110,  75, 35))
+        skin  = c.get('skin', (255, 215, 160))
+        # Body
+        pygame.draw.rect(self.screen, body, (sx, sy + bob, 20, 18))
+        # Collar strip in a lighter trim tone
+        collar = tuple(min(255, v + 100) for v in trim)
+        pygame.draw.rect(self.screen, collar, (sx + 7, sy + bob, 6, 7))
+        # Head
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
+        # Eyes
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+        # Small basket at the side (carried in direction of travel)
+        bx_off = 18 if facing == 1 else -6
+        basket = tuple(min(255, v + 60) for v in trim)
+        pygame.draw.rect(self.screen, basket, (sx + bx_off, sy + 4 + bob, 6, 5))
+        pygame.draw.rect(self.screen, trim,   (sx + bx_off, sy + 4 + bob, 6, 1))
+
+    def _draw_npc_child(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        c = getattr(npc, 'clothing', {})
+        body = c.get('body', (200, 70, 70))
+        leg  = c.get('leg',  (80, 60, 120))
+        skin = c.get('skin', (255, 210, 160))
+        w = npc.NPC_W   # 14
+        # Body — bright short shirt using body color, short legs in leg color
+        pygame.draw.rect(self.screen, body, (sx, sy + bob, w, 11))
+        pygame.draw.rect(self.screen, leg,  (sx + 1, sy + 11 + bob, w - 2, 9))
+        # Proportionally large head
+        pygame.draw.rect(self.screen, skin, (sx + 1, sy - 12 + bob, 12, 13))
+        # Big eyes
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 2, sy - 9 + bob, 3, 4))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 8, sy - 9 + bob, 3, 4))
+        # Rosy cheeks
+        pygame.draw.circle(self.screen, (230, 150, 140), (sx + 3,  sy - 4 + bob), 2)
+        pygame.draw.circle(self.screen, (230, 150, 140), (sx + 10, sy - 4 + bob), 2)
+
+    def _draw_npc_guard(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        facing = getattr(npc, 'facing', 1)
+        c = getattr(npc, 'clothing', {})
+        armor = c.get('armor', (55, 55, 75))
+        plate = c.get('plate', (155, 160, 165))
+        trim  = c.get('trim',  (140, 35, 35))
+        # Body — tabard + chest plate
+        pygame.draw.rect(self.screen, armor, (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, plate, (sx + 8, sy + bob, 5, 18))
+        # Helmet (same as armor color, slightly lighter)
+        helm = tuple(min(255, v + 10) for v in armor)
+        pygame.draw.rect(self.screen, helm,        (sx + 2, sy - 12 + bob, 16, 14))
+        pygame.draw.rect(self.screen, (20, 20, 30), (sx + 3, sy - 8 + bob, 14, 3))
+        # Crest (trim color)
+        pygame.draw.rect(self.screen, trim, (sx + 7, sy - 18 + bob, 6, 8))
+        # Spear on weapon side
+        spear_x = sx + 19 if facing == 1 else sx - 1
+        pygame.draw.rect(self.screen, (130, 110, 70), (spear_x, sy - 20 + bob, 2, 38))
+        pygame.draw.polygon(self.screen, plate,
+                            [(spear_x + 1, sy - 28 + bob),
+                             (spear_x + 5, sy - 20 + bob),
+                             (spear_x - 3, sy - 20 + bob)])
 
     def _draw_sheep(self, sx, sy, sheep):
         W, H = sheep.W, sheep.H
@@ -17920,7 +18164,8 @@ class Renderer:
     # Insects
     # ------------------------------------------------------------------
 
-    def draw_insects(self, insects):
+    def draw_insects(self, insects, time_of_day=0.0):
         from Render.insects import draw_insects as _draw_insects
-        _draw_insects(self.screen, self.cam_x, self.cam_y, insects)
+        night_alpha = self._sky_night_alpha(time_of_day)
+        _draw_insects(self.screen, self.cam_x, self.cam_y, insects, night_alpha)
 

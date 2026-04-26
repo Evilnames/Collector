@@ -1288,6 +1288,11 @@ YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG,
                      STRAWBERRY_CROP_YOUNG_P, TOMATO_CROP_YOUNG_P, WATERMELON_CROP_YOUNG_P,
                      CORN_CROP_YOUNG_P, RICE_CROP_YOUNG_P,
                      FLAX_CROP_YOUNG, COTTON_CROP_YOUNG}
+# Desert plants that grow wild on SAND — bypass tilled-soil requirement
+WILD_DESERT_PLANT_BLOCKS = {
+    CACTUS_YOUNG, SAGUARO_YOUNG, BARREL_CACTUS_YOUNG, OCOTILLO_YOUNG,
+    PRICKLY_PEAR_YOUNG, CHOLLA_YOUNG, PALO_VERDE_YOUNG,
+}
 MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATURE, TOMATO_CROP_MATURE, CORN_CROP_MATURE, PUMPKIN_CROP_MATURE, APPLE_CROP_MATURE,
                      RICE_CROP_MATURE, GINGER_CROP_MATURE, BOK_CHOY_CROP_MATURE, GARLIC_CROP_MATURE,
                      SCALLION_CROP_MATURE, CHILI_CROP_MATURE,
@@ -1509,6 +1514,7 @@ FIRE_BOWL                    = 1109  # stone fire bowl
 CROSS_LANTERN                = 1110  # cross-pane iron lantern
 STAR_LAMP                    = 1111  # crystal star lamp
 GLOW_VINE                    = 1112  # bioluminescent glow vine
+TOWN_FLAG_BLOCK              = 1113  # town identity flag (non-mineable)
 BLOCKS = {
     AIR:              {"name": "Air",               "hardness": 0,            "color": None,            "drop": None},
     GRASS:            {"name": "Grass",             "hardness": 1,            "color": (58, 154, 58),   "drop": "dirt_clump"},
@@ -2687,6 +2693,7 @@ BLOCKS = {
     CROSS_LANTERN:             {"name": "Cross Lantern",      "hardness": 1.0, "color": ( 55,  55,  60), "drop": "cross_lantern"},
     STAR_LAMP:                 {"name": "Star Lamp",          "hardness": 1.0, "color": (200, 240, 255), "drop": "star_lamp"},
     GLOW_VINE:                 {"name": "Glow Vine",          "hardness": 0.5, "color": ( 40, 100,  60), "drop": "glow_vine"},
+    TOWN_FLAG_BLOCK:           {"name": "Town Flag",          "hardness": float('inf'), "color": (200, 80, 40), "drop": None},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}
