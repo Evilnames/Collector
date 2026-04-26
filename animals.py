@@ -17,8 +17,555 @@ MANE_COLOR_ORDER    = ["match", "flaxen", "silver", "dark"]
 FACE_MARKING_ORDER  = ["none", "star", "blaze", "stripe"]
 HIDE_ORDER          = ["solid", "spotted", "belted", "piebald"]
 GOAT_COLOR_ORDER    = ["tan", "white", "brown", "black"]
-PLUMAGE_ORDER       = ["white", "yellow", "brown", "black"]
-BIRTH_ORDER         = ["single", "twin"]    # twin fully recessive
+GOAT_PATTERN_ORDER  = ["solid", "chamoisee", "broken", "sundgau"]
+GOAT_HORN_ORDER     = ["curved", "straight", "scurred", "polled"]
+GOAT_EAR_ORDER      = ["upright", "drooping", "gopher"]
+GOAT_BEARD_ORDER    = ["small", "full", "none"]
+PLUMAGE_ORDER          = ["white", "yellow", "brown", "black"]
+CHICKEN_PATTERN_ORDER  = ["solid", "barred", "laced", "speckled"]
+CHICKEN_COMB_ORDER     = ["single", "rose", "pea", "walnut"]
+CHICKEN_LEG_ORDER      = ["yellow", "white", "dark", "feathered"]
+
+# lay_rate_gene:        divides into REFILL_TIME — higher = lays more often
+# constitution_gene:    sets starting health (0.7–1.3)
+# feather_density_gene: coat fluffiness — visual + display (0.0–1.0)
+CHICKEN_BREED_PROFILES = {
+    # ── High production ───────────────────────────────────────────────────
+    "Leghorn": {
+        "biomes": {"temperate", "rolling_hills", "savanna"},
+        "genes": {"lay_rate_gene": (1.2, 1.5), "constitution_gene": (0.8, 1.1), "feather_density_gene": (0.0, 0.2)},
+        "plumage_weights": [70, 5, 20, 5], "pattern_weights": [90, 5, 5, 0],
+        "comb_weights": [85, 10, 5, 0], "leg_weights": [85, 10, 5, 0],
+        "egg_tint": (245, 235, 200),
+    },
+    "Australorp": {
+        "biomes": {"temperate", "rolling_hills"},
+        "genes": {"lay_rate_gene": (1.1, 1.4), "constitution_gene": (0.9, 1.2), "feather_density_gene": (0.0, 0.2)},
+        "plumage_weights": [0, 0, 5, 95], "pattern_weights": [90, 0, 10, 0],
+        "comb_weights": [85, 10, 5, 0], "leg_weights": [15, 5, 75, 5],
+        "egg_tint": (245, 235, 200),
+    },
+    # ── Dual-purpose ──────────────────────────────────────────────────────
+    "Rhode Island Red": {
+        "biomes": {"temperate", "rolling_hills"},
+        "genes": {"lay_rate_gene": (1.0, 1.3), "constitution_gene": (0.9, 1.2), "feather_density_gene": (0.0, 0.2)},
+        "plumage_weights": [5, 15, 70, 10], "pattern_weights": [88, 5, 7, 0],
+        "comb_weights": [85, 10, 5, 0], "leg_weights": [80, 5, 15, 0],
+        "egg_tint": (245, 228, 200),
+    },
+    "Plymouth Rock": {
+        "biomes": {"temperate", "rolling_hills", "birch_forest"},
+        "genes": {"lay_rate_gene": (0.9, 1.2), "constitution_gene": (0.9, 1.2), "feather_density_gene": (0.0, 0.2)},
+        "plumage_weights": [10, 5, 50, 35], "pattern_weights": [5, 80, 10, 5],
+        "comb_weights": [85, 10, 5, 0], "leg_weights": [85, 10, 5, 0],
+        "egg_tint": (245, 230, 200),
+    },
+    "Sussex": {
+        "biomes": {"temperate", "rolling_hills"},
+        "genes": {"lay_rate_gene": (0.9, 1.2), "constitution_gene": (0.9, 1.2), "feather_density_gene": (0.1, 0.3)},
+        "plumage_weights": [60, 10, 20, 10], "pattern_weights": [40, 10, 20, 30],
+        "comb_weights": [85, 10, 5, 0], "leg_weights": [20, 70, 10, 0],
+        "egg_tint": (245, 232, 205),
+    },
+    "Wyandotte": {
+        "biomes": {"boreal", "temperate", "birch_forest"},
+        "genes": {"lay_rate_gene": (0.9, 1.2), "constitution_gene": (1.0, 1.3), "feather_density_gene": (0.1, 0.3)},
+        "plumage_weights": [20, 30, 30, 20], "pattern_weights": [20, 20, 55, 5],
+        "comb_weights": [5, 85, 10, 0], "leg_weights": [75, 20, 5, 0],
+        "egg_tint": (245, 230, 200),
+    },
+    "Orpington": {
+        "biomes": {"temperate", "boreal"},
+        "genes": {"lay_rate_gene": (0.9, 1.2), "constitution_gene": (0.9, 1.2), "feather_density_gene": (0.5, 0.8)},
+        "plumage_weights": [20, 35, 35, 10], "pattern_weights": [90, 0, 10, 0],
+        "comb_weights": [85, 10, 5, 0], "leg_weights": [20, 75, 5, 0],
+        "egg_tint": (245, 232, 205),
+    },
+    # ── Cold-hardy ────────────────────────────────────────────────────────
+    "Brahma": {
+        "biomes": {"boreal", "tundra"},
+        "genes": {"lay_rate_gene": (0.8, 1.1), "constitution_gene": (1.0, 1.3), "feather_density_gene": (0.4, 0.7)},
+        "plumage_weights": [20, 20, 30, 30], "pattern_weights": [30, 20, 45, 5],
+        "comb_weights": [5, 10, 80, 5], "leg_weights": [10, 10, 10, 70],
+        "egg_tint": (245, 232, 205),
+    },
+    # ── Ornamental ────────────────────────────────────────────────────────
+    "Silkie": {
+        "biomes": {"temperate", "rolling_hills"},
+        "genes": {"lay_rate_gene": (0.6, 0.9), "constitution_gene": (0.7, 1.0), "feather_density_gene": (0.8, 1.0)},
+        "plumage_weights": [30, 30, 20, 20], "pattern_weights": [95, 0, 5, 0],
+        "comb_weights": [5, 10, 10, 75], "leg_weights": [10, 10, 10, 70],
+        "egg_tint": (245, 232, 210),
+    },
+    "Barbu d'Uccle": {
+        "biomes": {"temperate", "rolling_hills"},
+        "genes": {"lay_rate_gene": (0.7, 1.0), "constitution_gene": (0.7, 1.0), "feather_density_gene": (0.5, 0.8)},
+        "plumage_weights": [25, 25, 30, 20], "pattern_weights": [40, 10, 20, 30],
+        "comb_weights": [85, 10, 5, 0], "leg_weights": [10, 10, 10, 70],
+        "egg_tint": (245, 232, 205),
+    },
+    # ── Tropical / gamefowl ───────────────────────────────────────────────
+    "Malay": {
+        "biomes": {"tropical", "savanna"},
+        "genes": {"lay_rate_gene": (0.6, 0.9), "constitution_gene": (1.0, 1.3), "feather_density_gene": (0.0, 0.1)},
+        "plumage_weights": [5, 15, 40, 40], "pattern_weights": [85, 0, 5, 10],
+        "comb_weights": [5, 10, 10, 75], "leg_weights": [70, 10, 20, 0],
+        "egg_tint": (245, 228, 198),
+    },
+    # ── Heritage / special ────────────────────────────────────────────────
+    "Araucana": {
+        "biomes": {"rolling_hills", "arid_steppe"},
+        "genes": {"lay_rate_gene": (0.9, 1.2), "constitution_gene": (0.9, 1.2), "feather_density_gene": (0.2, 0.4)},
+        "plumage_weights": [20, 20, 35, 25], "pattern_weights": [70, 10, 15, 5],
+        "comb_weights": [5, 10, 80, 5], "leg_weights": [30, 20, 45, 5],
+        "egg_tint": (195, 220, 205),   # blue-green eggs
+    },
+}
+
+CHICKEN_BIOME_MAP: dict = {}
+for _chk_breed, _chk_profile in CHICKEN_BREED_PROFILES.items():
+    for _chk_biome in _chk_profile["biomes"]:
+        CHICKEN_BIOME_MAP.setdefault(_chk_biome, []).append(_chk_breed)
+BIRTH_ORDER              = ["single", "twin"]    # twin fully recessive
+
+# milk_volume_gene:  bottles per milking — round() gives count (0.5–2.5)
+# milk_richness_gene: quality stat (0.7–1.3)
+# refill_rate_gene:  divides into REFILL_TIME — higher = refills faster
+# constitution_gene: hardiness → starting health on spawn (0.7–1.3)
+# fiber_gene:        fleece density for Angora/Cashmere — visual + future shearing (0.0–1.0)
+GOAT_BREED_PROFILES = {
+    # ── Dairy leaders ─────────────────────────────────────────────────────
+    "Nubian": {
+        "biomes": {"temperate", "savanna", "tropical"},
+        "genes": {
+            "milk_volume_gene":   (1.5, 2.2), "milk_richness_gene": (1.0, 1.3),
+            "refill_rate_gene":   (1.0, 1.4), "constitution_gene":  (0.8, 1.1),
+            "fiber_gene": (0.0, 0.1),
+        },
+        "coat_color_weights": [35, 20, 30, 15], "pattern_weights": [60, 10, 25, 5],
+        "horn_weights": [70, 10, 10, 10], "ear_weights": [0, 100, 0], "beard_weights": [40, 30, 30],
+    },
+    "Saanen": {
+        "biomes": {"temperate", "rolling_hills"},
+        "genes": {
+            "milk_volume_gene":   (2.0, 2.5), "milk_richness_gene": (0.9, 1.1),
+            "refill_rate_gene":   (1.1, 1.5), "constitution_gene":  (0.9, 1.2),
+            "fiber_gene": (0.0, 0.1),
+        },
+        "coat_color_weights": [5, 90, 4, 1], "pattern_weights": [90, 5, 5, 0],
+        "horn_weights": [60, 15, 5, 20], "ear_weights": [90, 5, 5], "beard_weights": [50, 20, 30],
+    },
+    "Alpine": {
+        "biomes": {"temperate", "rolling_hills", "alpine_mountain"},
+        "genes": {
+            "milk_volume_gene":   (1.5, 2.0), "milk_richness_gene": (0.9, 1.2),
+            "refill_rate_gene":   (1.0, 1.3), "constitution_gene":  (0.9, 1.2),
+            "fiber_gene": (0.0, 0.1),
+        },
+        "coat_color_weights": [20, 15, 40, 25], "pattern_weights": [30, 40, 25, 5],
+        "horn_weights": [20, 60, 10, 10], "ear_weights": [90, 5, 5], "beard_weights": [50, 30, 20],
+    },
+    "Toggenburg": {
+        "biomes": {"boreal", "alpine_mountain"},
+        "genes": {
+            "milk_volume_gene":   (1.5, 2.0), "milk_richness_gene": (0.9, 1.1),
+            "refill_rate_gene":   (1.0, 1.3), "constitution_gene":  (1.0, 1.3),
+            "fiber_gene": (0.0, 0.1),
+        },
+        "coat_color_weights": [15, 10, 65, 10], "pattern_weights": [20, 60, 10, 10],
+        "horn_weights": [10, 70, 10, 10], "ear_weights": [90, 5, 5], "beard_weights": [60, 20, 20],
+    },
+    "Oberhasli": {
+        "biomes": {"alpine_mountain", "boreal"},
+        "genes": {
+            "milk_volume_gene":   (1.3, 1.9), "milk_richness_gene": (1.0, 1.2),
+            "refill_rate_gene":   (1.0, 1.3), "constitution_gene":  (0.9, 1.2),
+            "fiber_gene": (0.0, 0.1),
+        },
+        "coat_color_weights": [20, 5, 65, 10], "pattern_weights": [10, 80, 5, 5],
+        "horn_weights": [10, 70, 10, 10], "ear_weights": [90, 5, 5], "beard_weights": [50, 30, 20],
+    },
+    "Nigerian Dwarf": {
+        "biomes": {"temperate", "rolling_hills"},
+        "genes": {
+            "milk_volume_gene":   (0.8, 1.3), "milk_richness_gene": (1.1, 1.3),
+            "refill_rate_gene":   (1.0, 1.4), "constitution_gene":  (0.8, 1.1),
+            "fiber_gene": (0.0, 0.1),
+        },
+        "coat_color_weights": [35, 25, 25, 15], "pattern_weights": [45, 20, 30, 5],
+        "horn_weights": [60, 15, 10, 15], "ear_weights": [90, 5, 5], "beard_weights": [45, 25, 30],
+    },
+    "LaMancha": {
+        "biomes": {"temperate", "rolling_hills"},
+        "genes": {
+            "milk_volume_gene":   (1.5, 2.0), "milk_richness_gene": (1.0, 1.2),
+            "refill_rate_gene":   (1.0, 1.4), "constitution_gene":  (0.9, 1.2),
+            "fiber_gene": (0.0, 0.1),
+        },
+        "coat_color_weights": [30, 20, 30, 20], "pattern_weights": [50, 15, 30, 5],
+        "horn_weights": [50, 20, 10, 20], "ear_weights": [0, 0, 100], "beard_weights": [40, 30, 30],
+    },
+    # ── Meat breeds ───────────────────────────────────────────────────────
+    "Boer": {
+        "biomes": {"arid_steppe", "savanna", "desert"},
+        "genes": {
+            "milk_volume_gene":   (0.6, 1.0), "milk_richness_gene": (0.7, 0.9),
+            "refill_rate_gene":   (0.8, 1.1), "constitution_gene":  (1.0, 1.3),
+            "fiber_gene": (0.0, 0.1),
+        },
+        "coat_color_weights": [10, 60, 25, 5], "pattern_weights": [20, 0, 70, 10],
+        "horn_weights": [70, 15, 10, 5], "ear_weights": [10, 85, 5], "beard_weights": [50, 20, 30],
+    },
+    "Kiko": {
+        "biomes": {"savanna", "tropical", "arid_steppe"},
+        "genes": {
+            "milk_volume_gene":   (0.6, 1.0), "milk_richness_gene": (0.7, 0.9),
+            "refill_rate_gene":   (0.9, 1.2), "constitution_gene":  (1.0, 1.3),
+            "fiber_gene": (0.0, 0.1),
+        },
+        "coat_color_weights": [20, 50, 25, 5], "pattern_weights": [65, 10, 20, 5],
+        "horn_weights": [60, 25, 10, 5], "ear_weights": [80, 15, 5], "beard_weights": [50, 20, 30],
+    },
+    "Myotonic": {
+        "biomes": {"temperate", "rolling_hills"},
+        "genes": {
+            "milk_volume_gene":   (0.7, 1.2), "milk_richness_gene": (0.8, 1.0),
+            "refill_rate_gene":   (0.8, 1.1), "constitution_gene":  (0.8, 1.1),
+            "fiber_gene": (0.0, 0.15),
+        },
+        "coat_color_weights": [25, 25, 30, 20], "pattern_weights": [50, 10, 35, 5],
+        "horn_weights": [50, 25, 15, 10], "ear_weights": [85, 10, 5], "beard_weights": [40, 25, 35],
+    },
+    # ── Fiber breeds ──────────────────────────────────────────────────────
+    "Angora": {
+        "biomes": {"temperate", "birch_forest", "rolling_hills"},
+        "genes": {
+            "milk_volume_gene":   (0.5, 0.9), "milk_richness_gene": (0.7, 1.0),
+            "refill_rate_gene":   (0.8, 1.1), "constitution_gene":  (0.8, 1.1),
+            "fiber_gene": (0.7, 1.0),
+        },
+        "coat_color_weights": [10, 80, 8, 2], "pattern_weights": [90, 5, 5, 0],
+        "horn_weights": [15, 65, 10, 10], "ear_weights": [85, 10, 5], "beard_weights": [30, 50, 20],
+    },
+    "Cashmere": {
+        "biomes": {"tundra", "alpine_mountain", "boreal"},
+        "genes": {
+            "milk_volume_gene":   (0.5, 0.9), "milk_richness_gene": (0.8, 1.1),
+            "refill_rate_gene":   (0.8, 1.2), "constitution_gene":  (1.0, 1.3),
+            "fiber_gene": (0.6, 1.0),
+        },
+        "coat_color_weights": [30, 30, 25, 15], "pattern_weights": [85, 8, 5, 2],
+        "horn_weights": [70, 15, 10, 5], "ear_weights": [85, 10, 5], "beard_weights": [35, 45, 20],
+    },
+}
+
+GOAT_BIOME_MAP: dict = {}
+for _goat_breed, _goat_profile in GOAT_BREED_PROFILES.items():
+    for _goat_biome in _goat_profile["biomes"]:
+        GOAT_BIOME_MAP.setdefault(_goat_biome, []).append(_goat_breed)
+SHEEP_WOOL_PATTERN_ORDER = ["solid", "spotted", "badgerface", "piebald"]
+SHEEP_FACE_WOOL_ORDER    = ["open", "covered"]   # open = bare face, covered = wool-covered face
+SHEEP_HORN_ORDER         = ["none", "single_curved", "double_curved", "spiral"]
+SHEEP_EAR_ORDER          = ["upright", "drooping"]
+SHEEP_TAIL_ORDER         = ["normal", "fat_tailed", "stub"]
+
+# fleece_weight_gene:  raw float — round() gives wool bundle count (0.5–3.5)
+# wool_fineness_gene:  quality stat for display / future items (0.7–1.3)
+# wool_length_gene:    staple length — drives visual puff + small yield modifier (0.0–1.0)
+# regrow_rate_gene:    divides into REGROW_TIME — higher = fleece grows back faster
+# milk_yield_gene:     sheep milk bottles per bucket — round() gives count (0.5–1.8)
+# constitution_gene:   hardiness — sets starting health on spawn (0.7–1.3 → 2–4 hp)
+SHEEP_BREED_PROFILES = {
+    # ── Premium wool ─────────────────────────────────────────────────────
+    "Merino": {
+        "biomes": {"temperate", "rolling_hills", "savanna"},
+        "genes": {
+            "fleece_weight_gene": (2.0, 3.0), "wool_fineness_gene": (1.1, 1.3),
+            "wool_length_gene":   (0.3, 0.6),  "regrow_rate_gene":   (0.8, 1.1),
+            "milk_yield_gene":    (0.5, 0.8),  "constitution_gene":  (0.8, 1.1),
+        },
+        "wool_color_weights": [80, 15, 4, 1], "pattern_weights": [92, 4, 4, 0],
+        "face_wool_weights": [20, 80], "horn_weights": [75, 20, 5, 0],
+        "ear_weights": [20, 80], "tail_weights": [95, 0, 5], "dark_face": False,
+    },
+    "Rambouillet": {
+        "biomes": {"alpine_mountain", "temperate", "boreal"},
+        "genes": {
+            "fleece_weight_gene": (2.0, 2.8), "wool_fineness_gene": (1.0, 1.3),
+            "wool_length_gene":   (0.3, 0.5),  "regrow_rate_gene":   (0.9, 1.2),
+            "milk_yield_gene":    (0.6, 0.9),  "constitution_gene":  (0.9, 1.2),
+        },
+        "wool_color_weights": [85, 12, 2, 1], "pattern_weights": [95, 2, 3, 0],
+        "face_wool_weights": [30, 70], "horn_weights": [60, 30, 10, 0],
+        "ear_weights": [30, 70], "tail_weights": [95, 0, 5], "dark_face": False,
+    },
+    # ── Long / coarse wool ───────────────────────────────────────────────
+    "Lincoln": {
+        "biomes": {"temperate", "birch_forest", "rolling_hills"},
+        "genes": {
+            "fleece_weight_gene": (1.5, 2.5), "wool_fineness_gene": (0.7, 0.9),
+            "wool_length_gene":   (0.7, 1.0),  "regrow_rate_gene":   (0.6, 0.9),
+            "milk_yield_gene":    (0.5, 0.8),  "constitution_gene":  (0.9, 1.2),
+        },
+        "wool_color_weights": [60, 30, 8, 2], "pattern_weights": [90, 5, 5, 0],
+        "face_wool_weights": [85, 15], "horn_weights": [70, 25, 5, 0],
+        "ear_weights": [85, 15], "tail_weights": [92, 0, 8], "dark_face": False,
+    },
+    # ── Medium / dual-purpose ─────────────────────────────────────────────
+    "Corriedale": {
+        "biomes": {"temperate", "rolling_hills"},
+        "genes": {
+            "fleece_weight_gene": (1.5, 2.2), "wool_fineness_gene": (0.9, 1.1),
+            "wool_length_gene":   (0.4, 0.7),  "regrow_rate_gene":   (0.9, 1.2),
+            "milk_yield_gene":    (0.7, 1.0),  "constitution_gene":  (0.9, 1.2),
+        },
+        "wool_color_weights": [70, 20, 8, 2], "pattern_weights": [88, 7, 5, 0],
+        "face_wool_weights": [80, 20], "horn_weights": [65, 25, 10, 0],
+        "ear_weights": [80, 20], "tail_weights": [92, 0, 8], "dark_face": False,
+    },
+    "Icelandic": {
+        "biomes": {"tundra", "alpine_mountain"},
+        "genes": {
+            "fleece_weight_gene": (1.8, 2.8), "wool_fineness_gene": (0.9, 1.2),
+            "wool_length_gene":   (0.5, 0.8),  "regrow_rate_gene":   (1.0, 1.4),
+            "milk_yield_gene":    (1.0, 1.5),  "constitution_gene":  (1.0, 1.3),
+        },
+        "wool_color_weights": [45, 25, 20, 10], "pattern_weights": [65, 15, 15, 5],
+        "face_wool_weights": [70, 30], "horn_weights": [55, 35, 10, 0],
+        "ear_weights": [85, 15], "tail_weights": [92, 0, 8], "dark_face": False,
+    },
+    "Churro": {
+        "biomes": {"arid_steppe", "steppe"},
+        "genes": {
+            "fleece_weight_gene": (1.2, 2.0), "wool_fineness_gene": (0.8, 1.1),
+            "wool_length_gene":   (0.5, 0.8),  "regrow_rate_gene":   (1.0, 1.4),
+            "milk_yield_gene":    (0.7, 1.1),  "constitution_gene":  (0.9, 1.2),
+        },
+        "wool_color_weights": [55, 20, 20, 5], "pattern_weights": [75, 10, 15, 0],
+        "face_wool_weights": [80, 20], "horn_weights": [20, 35, 40, 5],
+        "ear_weights": [75, 25], "tail_weights": [88, 5, 7], "dark_face": False,
+    },
+    # ── Meat breeds ───────────────────────────────────────────────────────
+    "Suffolk": {
+        "biomes": {"temperate", "savanna", "rolling_hills"},
+        "genes": {
+            "fleece_weight_gene": (0.8, 1.5), "wool_fineness_gene": (0.8, 1.0),
+            "wool_length_gene":   (0.1, 0.3),  "regrow_rate_gene":   (1.0, 1.4),
+            "milk_yield_gene":    (0.6, 1.0),  "constitution_gene":  (0.9, 1.2),
+        },
+        "wool_color_weights": [90, 8, 2, 0], "pattern_weights": [95, 2, 3, 0],
+        "face_wool_weights": [100, 0], "horn_weights": [100, 0, 0, 0],
+        "ear_weights": [90, 10], "tail_weights": [92, 0, 8], "dark_face": True,
+    },
+    "Dorper": {
+        "biomes": {"arid_steppe", "desert", "savanna"},
+        "genes": {
+            "fleece_weight_gene": (0.5, 1.0),  "wool_fineness_gene": (0.7, 0.9),
+            "wool_length_gene":   (0.0, 0.2),   "regrow_rate_gene":   (1.2, 1.8),
+            "milk_yield_gene":    (0.5, 0.8),   "constitution_gene":  (1.0, 1.3),
+        },
+        "wool_color_weights": [70, 5, 5, 20], "pattern_weights": [65, 10, 10, 15],
+        "face_wool_weights": [100, 0], "horn_weights": [55, 30, 15, 0],
+        "ear_weights": [85, 15], "tail_weights": [90, 0, 10], "dark_face": True,
+    },
+    # ── Primitive / heritage ──────────────────────────────────────────────
+    "Soay": {
+        "biomes": {"boreal", "tundra", "alpine_mountain"},
+        "genes": {
+            "fleece_weight_gene": (0.8, 1.3), "wool_fineness_gene": (0.8, 1.1),
+            "wool_length_gene":   (0.2, 0.5),  "regrow_rate_gene":   (0.9, 1.3),
+            "milk_yield_gene":    (0.5, 0.8),  "constitution_gene":  (1.0, 1.3),
+        },
+        "wool_color_weights": [5, 15, 65, 15], "pattern_weights": [50, 20, 30, 0],
+        "face_wool_weights": [90, 10], "horn_weights": [20, 50, 30, 0],
+        "ear_weights": [90, 10], "tail_weights": [90, 0, 10], "dark_face": False,
+    },
+    "Karakul": {
+        "biomes": {"arid_steppe", "desert"},
+        "genes": {
+            "fleece_weight_gene": (0.8, 1.4), "wool_fineness_gene": (0.8, 1.1),
+            "wool_length_gene":   (0.3, 0.6),  "regrow_rate_gene":   (0.9, 1.2),
+            "milk_yield_gene":    (0.6, 1.0),  "constitution_gene":  (1.0, 1.3),
+        },
+        "wool_color_weights": [5, 35, 20, 40], "pattern_weights": [80, 5, 10, 5],
+        "face_wool_weights": [90, 10], "horn_weights": [30, 35, 30, 5],
+        "ear_weights": [25, 75], "tail_weights": [10, 85, 5], "dark_face": False,
+    },
+    "Hebridean": {
+        "biomes": {"boreal", "tundra"},
+        "genes": {
+            "fleece_weight_gene": (0.7, 1.2), "wool_fineness_gene": (0.8, 1.1),
+            "wool_length_gene":   (0.3, 0.6),  "regrow_rate_gene":   (0.9, 1.3),
+            "milk_yield_gene":    (0.5, 0.8),  "constitution_gene":  (1.0, 1.3),
+        },
+        "wool_color_weights": [0, 10, 10, 80], "pattern_weights": [70, 15, 10, 5],
+        "face_wool_weights": [85, 15], "horn_weights": [5, 25, 50, 20],
+        "ear_weights": [90, 10], "tail_weights": [92, 0, 8], "dark_face": False,
+    },
+    "Jacob": {
+        "biomes": {"temperate", "rolling_hills", "birch_forest"},
+        "genes": {
+            "fleece_weight_gene": (1.0, 1.8), "wool_fineness_gene": (0.9, 1.2),
+            "wool_length_gene":   (0.4, 0.7),  "regrow_rate_gene":   (0.9, 1.3),
+            "milk_yield_gene":    (0.7, 1.1),  "constitution_gene":  (0.9, 1.2),
+        },
+        "wool_color_weights": [40, 15, 20, 25], "pattern_weights": [10, 60, 10, 20],
+        "face_wool_weights": [80, 20], "horn_weights": [5, 15, 50, 30],
+        "ear_weights": [85, 15], "tail_weights": [92, 0, 8], "dark_face": False,
+    },
+}
+
+SHEEP_BIOME_MAP: dict = {}
+for _sheep_breed, _sheep_profile in SHEEP_BREED_PROFILES.items():
+    for _sheep_biome in _sheep_profile["biomes"]:
+        SHEEP_BIOME_MAP.setdefault(_sheep_biome, []).append(_sheep_breed)
+
+# horn_length_gene: 0.0 = polled, 1.0 = maximum Longhorn spread
+# hair_length_gene: 0.0 = bare, 1.0 = maximum shaggy (Yak/Highland)
+# milk_volume_gene: expected bottles per milking — round() gives actual count (1-3+)
+# milk_richness_gene: quality multiplier used for display and future cream/butter items
+# refill_rate_gene: divides into REFILL_TIME — higher = refills faster
+COW_BREED_PROFILES = {
+    # ── Dairy leaders ─────────────────────────────────────────────────────
+    "Holstein": {
+        "biomes": {"temperate", "rolling_hills", "birch_forest"},
+        "genes": {
+            "milk_volume_gene":   (2.0, 3.0), "milk_richness_gene": (1.0, 1.2),
+            "refill_rate_gene":   (1.1, 1.5), "beef_quality_gene":  (0.7, 1.0),
+            "horn_length_gene":   (0.0, 0.05), "hair_length_gene":  (0.0, 0.15),
+        },
+        "coat_colors": [(220, 218, 215), (235, 232, 228)],
+        "hide_weights": [10, 20, 10, 60],
+    },
+    "Jersey": {
+        "biomes": {"temperate", "rolling_hills"},
+        "genes": {
+            "milk_volume_gene":   (1.3, 2.0), "milk_richness_gene": (1.1, 1.3),
+            "refill_rate_gene":   (1.0, 1.4), "beef_quality_gene":  (0.6, 0.9),
+            "horn_length_gene":   (0.05, 0.25), "hair_length_gene": (0.0, 0.15),
+        },
+        "coat_colors": [(190, 155, 95), (175, 140, 80), (205, 168, 108)],
+        "hide_weights": [60, 30, 10, 0],
+    },
+    "Brown Swiss": {
+        "biomes": {"boreal", "alpine_mountain", "temperate"},
+        "genes": {
+            "milk_volume_gene":   (1.8, 2.8), "milk_richness_gene": (0.9, 1.2),
+            "refill_rate_gene":   (1.0, 1.4), "beef_quality_gene":  (0.8, 1.1),
+            "horn_length_gene":   (0.15, 0.45), "hair_length_gene": (0.1, 0.3),
+        },
+        "coat_colors": [(145, 120, 100), (160, 135, 110), (130, 108, 90)],
+        "hide_weights": [75, 20, 5, 0],
+    },
+    "Guernsey": {
+        "biomes": {"temperate", "rolling_hills"},
+        "genes": {
+            "milk_volume_gene":   (1.5, 2.3), "milk_richness_gene": (1.1, 1.3),
+            "refill_rate_gene":   (1.0, 1.4), "beef_quality_gene":  (0.7, 1.0),
+            "horn_length_gene":   (0.05, 0.3), "hair_length_gene":  (0.0, 0.15),
+        },
+        "coat_colors": [(210, 165, 85), (195, 150, 70), (225, 180, 100)],
+        "hide_weights": [20, 30, 10, 40],
+    },
+    # ── Dual-purpose ──────────────────────────────────────────────────────
+    "Simmental": {
+        "biomes": {"temperate", "rolling_hills", "birch_forest"},
+        "genes": {
+            "milk_volume_gene":   (1.3, 2.0), "milk_richness_gene": (0.9, 1.1),
+            "refill_rate_gene":   (0.9, 1.2), "beef_quality_gene":  (0.9, 1.2),
+            "horn_length_gene":   (0.15, 0.45), "hair_length_gene": (0.0, 0.2),
+        },
+        "coat_colors": [(195, 130, 55), (180, 115, 45), (210, 145, 65)],
+        "hide_weights": [20, 10, 20, 50],
+    },
+    "Dexter": {
+        "biomes": {"temperate", "birch_forest", "boreal"},
+        "genes": {
+            "milk_volume_gene":   (1.0, 1.8), "milk_richness_gene": (0.9, 1.2),
+            "refill_rate_gene":   (0.9, 1.3), "beef_quality_gene":  (0.9, 1.2),
+            "horn_length_gene":   (0.1, 0.4),  "hair_length_gene":  (0.0, 0.25),
+        },
+        "coat_colors": [(50, 35, 22), (65, 45, 28), (28, 18, 12)],
+        "hide_weights": [85, 10, 5, 0],
+    },
+    # ── Beef / range ──────────────────────────────────────────────────────
+    "Angus": {
+        "biomes": {"temperate", "boreal", "rolling_hills", "birch_forest"},
+        "genes": {
+            "milk_volume_gene":   (0.7, 1.2), "milk_richness_gene": (0.7, 1.0),
+            "refill_rate_gene":   (0.7, 1.0), "beef_quality_gene":  (1.1, 1.3),
+            "horn_length_gene":   (0.0, 0.05), "hair_length_gene":  (0.0, 0.15),
+        },
+        "coat_colors": [(30, 22, 18), (40, 30, 24)],
+        "hide_weights": [100, 0, 0, 0],
+    },
+    "Hereford": {
+        "biomes": {"temperate", "rolling_hills", "savanna"},
+        "genes": {
+            "milk_volume_gene":   (0.8, 1.5), "milk_richness_gene": (0.8, 1.1),
+            "refill_rate_gene":   (0.8, 1.1), "beef_quality_gene":  (0.9, 1.2),
+            "horn_length_gene":   (0.2, 0.5),  "hair_length_gene":  (0.0, 0.2),
+        },
+        "coat_colors": [(175, 75, 35), (160, 65, 30), (185, 85, 40)],
+        "hide_weights": [30, 0, 30, 40],
+    },
+    "Longhorn": {
+        "biomes": {"arid_steppe", "savanna", "steppe", "desert"},
+        "genes": {
+            "milk_volume_gene":   (0.6, 1.1), "milk_richness_gene": (0.7, 1.0),
+            "refill_rate_gene":   (0.7, 1.0), "beef_quality_gene":  (0.8, 1.1),
+            "horn_length_gene":   (0.75, 1.0), "hair_length_gene":  (0.0, 0.15),
+        },
+        "coat_colors": [(170, 115, 60), (145, 95, 45), (110, 75, 35)],
+        "hide_weights": [50, 30, 0, 20],
+    },
+    "Zebu": {
+        "biomes": {"tropical", "desert"},
+        "genes": {
+            "milk_volume_gene":   (0.6, 1.0), "milk_richness_gene": (0.7, 1.0),
+            "refill_rate_gene":   (0.7, 1.0), "beef_quality_gene":  (0.8, 1.1),
+            "horn_length_gene":   (0.2, 0.5),  "hair_length_gene":  (0.0, 0.15),
+        },
+        "coat_colors": [(185, 178, 170), (200, 193, 185), (165, 158, 150)],
+        "hide_weights": [85, 10, 5, 0],
+    },
+    # ── Cold/mountain ─────────────────────────────────────────────────────
+    "Highland": {
+        "biomes": {"boreal", "tundra", "alpine_mountain"},
+        "genes": {
+            "milk_volume_gene":   (0.7, 1.2), "milk_richness_gene": (0.8, 1.1),
+            "refill_rate_gene":   (0.7, 1.0), "beef_quality_gene":  (0.9, 1.2),
+            "horn_length_gene":   (0.2, 0.55), "hair_length_gene":  (0.7, 1.0),
+        },
+        "coat_colors": [(185, 100, 45), (155, 80, 35), (210, 170, 100)],
+        "hide_weights": [80, 10, 10, 0],
+    },
+    "Brahman": {
+        "biomes": {"tropical", "savanna", "desert"},
+        "genes": {
+            "milk_volume_gene":   (0.6, 1.1), "milk_richness_gene": (0.7, 1.0),
+            "refill_rate_gene":   (0.7, 1.0), "beef_quality_gene":  (0.8, 1.1),
+            "horn_length_gene":   (0.2, 0.55), "hair_length_gene":  (0.0, 0.2),
+        },
+        "coat_colors": [(200, 195, 190), (175, 170, 165), (220, 215, 210)],
+        "hide_weights": [85, 10, 5, 0],
+    },
+    "Yak": {
+        "biomes": {"tundra", "alpine_mountain"},
+        "genes": {
+            "milk_volume_gene":   (1.0, 1.8), "milk_richness_gene": (1.0, 1.2),
+            "refill_rate_gene":   (0.9, 1.2), "beef_quality_gene":  (0.8, 1.1),
+            "horn_length_gene":   (0.3, 0.65), "hair_length_gene":  (0.75, 1.0),
+        },
+        "coat_colors": [(30, 22, 16), (45, 32, 22), (20, 15, 10)],
+        "hide_weights": [90, 5, 5, 0],
+    },
+}
+
+COW_BIOME_MAP: dict = {}
+for _cow_breed, _cow_profile in COW_BREED_PROFILES.items():
+    for _cow_biome in _cow_profile["biomes"]:
+        COW_BIOME_MAP.setdefault(_cow_biome, []).append(_cow_breed)
 
 
 def _expressed_categorical(allele_pair, order):
@@ -59,6 +606,7 @@ class Animal:
             "size": random.uniform(0.87, 1.13),
             "productivity": random.uniform(0.80, 1.20),
             "mutation": None,
+            "sex": random.choice(["female", "male"]),
         }
         self._init_base_genotype()
 
@@ -274,6 +822,8 @@ class Animal:
         self._move_y(self.vy)
 
     def _breed(self, other, world):
+        if self.traits.get("sex") == other.traits.get("sex"):
+            return
         cls = type(self)
         offspring = cls((self.x + other.x) / 2, (self.y + other.y) / 2, world)
 
@@ -453,49 +1003,118 @@ class Sheep(Animal):
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "sheep")
-        self.has_wool  = True
-        self.has_milk  = True
+        self.has_wool = True
         self._regrow_timer = 0.0
         self._milk_refill_timer = 0.0
-        self._init_sheep_genotype()
 
-    def _init_sheep_genotype(self):
+        bx = int(float(x) // BLOCK_SIZE)
+        biodome = world.biodome_at(bx) if world is not None else "temperate"
+        eligible = SHEEP_BIOME_MAP.get(biodome, list(SHEEP_BREED_PROFILES.keys()))
+        breed = random.choice(eligible) if eligible else "Merino"
+        self.traits["breed"] = breed
+
+        # Only females produce milk
+        self.has_milk = (self.traits["sex"] == "female")
+
+        profile = SHEEP_BREED_PROFILES.get(breed, SHEEP_BREED_PROFILES["Merino"])
+        self._init_sheep_genotype(profile)
+
+    def _init_sheep_genotype(self, profile=None):
+        if profile is None:
+            breed = self.traits.get("breed", "Merino")
+            profile = SHEEP_BREED_PROFILES.get(breed, SHEEP_BREED_PROFILES["Merino"])
+
+        for gene_key, (lo, hi) in profile["genes"].items():
+            self.genotype[gene_key] = [
+                round(random.uniform(lo, hi), 3),
+                round(random.uniform(lo, hi), 3),
+            ]
+
+        wcw = profile["wool_color_weights"]
         self.genotype["wool_color_gene"] = [
-            random.choices(WOOL_COLOR_ORDER, weights=[55, 25, 15, 5])[0],
-            random.choices(WOOL_COLOR_ORDER, weights=[55, 25, 15, 5])[0],
+            random.choices(WOOL_COLOR_ORDER, weights=wcw)[0],
+            random.choices(WOOL_COLOR_ORDER, weights=wcw)[0],
         ]
-        self.genotype["fleece_gene"] = [
-            round(random.uniform(0.8, 1.2), 3),
-            round(random.uniform(0.8, 1.2), 3),
+        pw = profile["pattern_weights"]
+        self.genotype["wool_pattern_gene"] = [
+            random.choices(SHEEP_WOOL_PATTERN_ORDER, weights=pw)[0],
+            random.choices(SHEEP_WOOL_PATTERN_ORDER, weights=pw)[0],
         ]
-        # twin is fully recessive — rare in wild population
+        fw = profile["face_wool_weights"]
+        self.genotype["face_wool_gene"] = [
+            random.choices(SHEEP_FACE_WOOL_ORDER, weights=fw)[0],
+            random.choices(SHEEP_FACE_WOOL_ORDER, weights=fw)[0],
+        ]
+        hw = profile["horn_weights"]
+        self.genotype["horn_type_gene"] = [
+            random.choices(SHEEP_HORN_ORDER, weights=hw)[0],
+            random.choices(SHEEP_HORN_ORDER, weights=hw)[0],
+        ]
+        ew = profile["ear_weights"]
+        self.genotype["ear_type_gene"] = [
+            random.choices(SHEEP_EAR_ORDER, weights=ew)[0],
+            random.choices(SHEEP_EAR_ORDER, weights=ew)[0],
+        ]
+        tw = profile["tail_weights"]
+        self.genotype["tail_type_gene"] = [
+            random.choices(SHEEP_TAIL_ORDER, weights=tw)[0],
+            random.choices(SHEEP_TAIL_ORDER, weights=tw)[0],
+        ]
         self.genotype["birth_gene"] = [
             "single",
             "twin" if random.random() < 0.08 else "single",
         ]
         self._apply_genotype_to_traits()
+        self.traits["dark_face"] = profile.get("dark_face", False)
+        # Constitution sets starting health (2–4 hp range)
+        self.health = max(2, round(self.traits.get("constitution", 1.0) * 3))
 
     def _apply_genotype_to_traits(self):
         super()._apply_genotype_to_traits()
-        if "wool_color_gene" in self.genotype:
-            self.traits["wool_color"] = _expressed_categorical(
-                self.genotype["wool_color_gene"], WOOL_COLOR_ORDER
-            )
-        if "fleece_gene" in self.genotype:
-            avg = (self.genotype["fleece_gene"][0] + self.genotype["fleece_gene"][1]) / 2
-            self.traits["fleece"] = round(max(0.7, min(1.3, avg)), 3)
-        if "birth_gene" in self.genotype:
-            self.traits["birth"] = _expressed_categorical(self.genotype["birth_gene"], BIRTH_ORDER)
+        for gene, trait, lo, hi in [
+            ("fleece_weight_gene", "fleece_weight", 0.5, 3.5),
+            ("wool_fineness_gene", "wool_fineness", 0.7, 1.3),
+            ("wool_length_gene",   "wool_length",   0.0, 1.0),
+            ("regrow_rate_gene",   "regrow_rate",   0.5, 2.0),
+            ("milk_yield_gene",    "milk_yield",    0.5, 1.8),
+            ("constitution_gene",  "constitution",  0.7, 1.3),
+            ("fleece_gene",        "fleece",        0.7, 1.3),
+        ]:
+            if gene in self.genotype:
+                avg = sum(self.genotype[gene]) / 2
+                self.traits[trait] = round(max(lo, min(hi, avg)), 3)
+        for gene, trait, order in [
+            ("wool_color_gene",   "wool_color",   WOOL_COLOR_ORDER),
+            ("wool_pattern_gene", "wool_pattern", SHEEP_WOOL_PATTERN_ORDER),
+            ("face_wool_gene",    "face_wool",    SHEEP_FACE_WOOL_ORDER),
+            ("horn_type_gene",    "horn_type",    SHEEP_HORN_ORDER),
+            ("ear_type_gene",     "ear_type",     SHEEP_EAR_ORDER),
+            ("tail_type_gene",    "tail_type",    SHEEP_TAIL_ORDER),
+            ("birth_gene",        "birth",        BIRTH_ORDER),
+        ]:
+            if gene in self.genotype:
+                self.traits[trait] = _expressed_categorical(self.genotype[gene], order)
 
     def _synthesize_genotype_from_traits(self):
         super()._synthesize_genotype_from_traits()
-        wc = self.traits.get("wool_color", "white")
-        self.genotype["wool_color_gene"] = [wc, wc]
-        v = self.traits.get("fleece", self.traits.get("productivity", 1.0))
-        noise = random.uniform(-0.04, 0.04)
-        self.genotype["fleece_gene"] = [round(max(0.7, v + noise), 3), round(max(0.7, v - noise), 3)]
-        b = self.traits.get("birth", "single")
-        self.genotype["birth_gene"] = [b, b]
+        for gene, trait, lo, hi in [
+            ("fleece_weight_gene", "fleece_weight", 0.5, 3.5),
+            ("wool_fineness_gene", "wool_fineness", 0.7, 1.3),
+            ("wool_length_gene",   "wool_length",   0.0, 1.0),
+            ("regrow_rate_gene",   "regrow_rate",   0.5, 2.0),
+            ("milk_yield_gene",    "milk_yield",    0.5, 1.8),
+            ("constitution_gene",  "constitution",  0.7, 1.3),
+        ]:
+            v = self.traits.get(trait, (lo + hi) / 2)
+            n = random.uniform(-0.03, 0.03)
+            self.genotype[gene] = [round(max(lo, min(hi, v + n)), 3), round(max(lo, min(hi, v - n)), 3)]
+        self.genotype["wool_color_gene"]   = [self.traits.get("wool_color", "white")] * 2
+        self.genotype["wool_pattern_gene"] = [self.traits.get("wool_pattern", "solid")] * 2
+        self.genotype["face_wool_gene"]    = [self.traits.get("face_wool", "open")] * 2
+        self.genotype["horn_type_gene"]    = [self.traits.get("horn_type", "none")] * 2
+        self.genotype["ear_type_gene"]     = [self.traits.get("ear_type", "upright")] * 2
+        self.genotype["tail_type_gene"]    = [self.traits.get("tail_type", "normal")] * 2
+        self.genotype["birth_gene"]        = [self.traits.get("birth", "single")] * 2
 
     def _breed(self, other, world):
         super()._breed(other, world)
@@ -528,7 +1147,7 @@ class Sheep(Animal):
             self._regrow_timer -= dt
             if self._regrow_timer <= 0:
                 self.has_wool = True
-        if not self.has_milk:
+        if self.traits.get("sex", "female") == "female" and not self.has_milk:
             self._milk_refill_timer -= dt
             if self._milk_refill_timer <= 0:
                 self.has_milk = True
@@ -544,10 +1163,13 @@ class Sheep(Animal):
             if self._harvest_time >= self.HARVEST_TIME:
                 self.reset_harvest()
                 self.has_wool = False
-                self._regrow_timer = self.REGROW_TIME
-                fleece = self.traits.get("fleece", self.traits.get("productivity", 1.0))
-                mut    = self.traits.get("mutation")
-                count  = max(1, round(random.randint(1, 3) * fleece))
+                regrow_rate = self.traits.get("regrow_rate", 1.0)
+                self._regrow_timer = self.REGROW_TIME / max(0.3, regrow_rate)
+                weight = self.traits.get("fleece_weight",
+                         self.traits.get("fleece",
+                         self.traits.get("productivity", 1.0)))
+                mut   = self.traits.get("mutation")
+                count = max(1, round(weight))
                 if mut == "giant":
                     count += 1
                 drops = [("wool", count)]
@@ -564,7 +1186,8 @@ class Sheep(Animal):
                 self.reset_harvest()
                 self.has_milk = False
                 self._milk_refill_timer = self.MILK_REFILL_TIME
-                prod = self.traits.get("productivity", 1.0)
+                prod = self.traits.get("milk_yield",
+                       self.traits.get("productivity", 1.0))
                 mut  = self.traits.get("mutation")
                 count = max(1, round(prod))
                 if mut == "giant":
@@ -589,42 +1212,95 @@ class Goat(Animal):
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "goat")
-        self.has_milk = True
         self._refill_timer = 0.0
-        self._init_goat_genotype()
 
-    def _init_goat_genotype(self):
-        self.genotype["milk_richness_gene"] = [
-            round(random.uniform(0.8, 1.2), 3),
-            round(random.uniform(0.8, 1.2), 3),
-        ]
+        bx = int(float(x) // BLOCK_SIZE)
+        biodome = world.biodome_at(bx) if world is not None else "temperate"
+        eligible = GOAT_BIOME_MAP.get(biodome, list(GOAT_BREED_PROFILES.keys()))
+        breed = random.choice(eligible) if eligible else "Alpine"
+        self.traits["breed"] = breed
+
+        self.has_milk = (self.traits["sex"] == "female")
+
+        profile = GOAT_BREED_PROFILES.get(breed, GOAT_BREED_PROFILES["Alpine"])
+        self._init_goat_genotype(profile)
+
+    def _init_goat_genotype(self, profile=None):
+        if profile is None:
+            breed = self.traits.get("breed", "Alpine")
+            profile = GOAT_BREED_PROFILES.get(breed, GOAT_BREED_PROFILES["Alpine"])
+
+        for gene_key, (lo, hi) in profile["genes"].items():
+            self.genotype[gene_key] = [
+                round(random.uniform(lo, hi), 3),
+                round(random.uniform(lo, hi), 3),
+            ]
+
+        ccw = profile["coat_color_weights"]
         self.genotype["coat_color_gene"] = [
-            random.choices(GOAT_COLOR_ORDER, weights=[50, 20, 20, 10])[0],
-            random.choices(GOAT_COLOR_ORDER, weights=[50, 20, 20, 10])[0],
+            random.choices(GOAT_COLOR_ORDER, weights=ccw)[0],
+            random.choices(GOAT_COLOR_ORDER, weights=ccw)[0],
         ]
+        for key, order, wkey in [
+            ("coat_pattern_gene", GOAT_PATTERN_ORDER, "pattern_weights"),
+            ("horn_type_gene",    GOAT_HORN_ORDER,    "horn_weights"),
+            ("ear_type_gene",     GOAT_EAR_ORDER,     "ear_weights"),
+            ("beard_gene",        GOAT_BEARD_ORDER,   "beard_weights"),
+        ]:
+            w = profile[wkey]
+            self.genotype[key] = [
+                random.choices(order, weights=w)[0],
+                random.choices(order, weights=w)[0],
+            ]
+
         self._apply_genotype_to_traits()
+        self.health = max(2, round(self.traits.get("constitution", 1.0) * 3))
 
     def _apply_genotype_to_traits(self):
         super()._apply_genotype_to_traits()
-        if "milk_richness_gene" in self.genotype:
-            avg = (self.genotype["milk_richness_gene"][0] + self.genotype["milk_richness_gene"][1]) / 2
-            self.traits["milk_richness"] = round(max(0.7, min(1.3, avg)), 3)
-        if "coat_color_gene" in self.genotype:
-            self.traits["coat_color"] = _expressed_categorical(self.genotype["coat_color_gene"], GOAT_COLOR_ORDER)
+        for gene, trait, lo, hi in [
+            ("milk_volume_gene",   "milk_volume",   0.5, 2.5),
+            ("milk_richness_gene", "milk_richness", 0.7, 1.3),
+            ("refill_rate_gene",   "refill_rate",   0.5, 2.0),
+            ("constitution_gene",  "constitution",  0.7, 1.3),
+            ("fiber_gene",         "fiber",         0.0, 1.0),
+        ]:
+            if gene in self.genotype:
+                avg = sum(self.genotype[gene]) / 2
+                self.traits[trait] = round(max(lo, min(hi, avg)), 3)
+        for gene, trait, order in [
+            ("coat_color_gene",   "coat_color",   GOAT_COLOR_ORDER),
+            ("coat_pattern_gene", "coat_pattern", GOAT_PATTERN_ORDER),
+            ("horn_type_gene",    "horn_type",    GOAT_HORN_ORDER),
+            ("ear_type_gene",     "ear_type",     GOAT_EAR_ORDER),
+            ("beard_gene",        "beard",        GOAT_BEARD_ORDER),
+        ]:
+            if gene in self.genotype:
+                self.traits[trait] = _expressed_categorical(self.genotype[gene], order)
 
     def _synthesize_genotype_from_traits(self):
         super()._synthesize_genotype_from_traits()
-        v = self.traits.get("milk_richness", self.traits.get("productivity", 1.0))
-        noise = random.uniform(-0.04, 0.04)
-        self.genotype["milk_richness_gene"] = [round(max(0.7, v + noise), 3), round(max(0.7, v - noise), 3)]
-        cc = self.traits.get("coat_color", "tan")
-        self.genotype["coat_color_gene"] = [cc, cc]
+        for gene, trait, lo, hi in [
+            ("milk_volume_gene",   "milk_volume",   0.5, 2.5),
+            ("milk_richness_gene", "milk_richness", 0.7, 1.3),
+            ("refill_rate_gene",   "refill_rate",   0.5, 2.0),
+            ("constitution_gene",  "constitution",  0.7, 1.3),
+            ("fiber_gene",         "fiber",         0.0, 1.0),
+        ]:
+            v = self.traits.get(trait, (lo + hi) / 2)
+            n = random.uniform(-0.03, 0.03)
+            self.genotype[gene] = [round(max(lo, min(hi, v + n)), 3), round(max(lo, min(hi, v - n)), 3)]
+        self.genotype["coat_color_gene"]   = [self.traits.get("coat_color", "tan")] * 2
+        self.genotype["coat_pattern_gene"] = [self.traits.get("coat_pattern", "solid")] * 2
+        self.genotype["horn_type_gene"]    = [self.traits.get("horn_type", "curved")] * 2
+        self.genotype["ear_type_gene"]     = [self.traits.get("ear_type", "upright")] * 2
+        self.genotype["beard_gene"]        = [self.traits.get("beard", "small")] * 2
 
     def update(self, dt):
         super().update(dt)
         if self.dead:
             return
-        if not self.has_milk:
+        if self.traits.get("sex", "female") == "female" and not self.has_milk:
             self._refill_timer -= dt
             if self._refill_timer <= 0:
                 self.has_milk = True
@@ -642,10 +1318,13 @@ class Goat(Animal):
         if self._harvest_time >= self.HARVEST_TIME:
             self.reset_harvest()
             self.has_milk = False
-            self._refill_timer = self.REFILL_TIME
-            richness = self.traits.get("milk_richness", self.traits.get("productivity", 1.0))
-            mut      = self.traits.get("mutation")
-            count    = max(1, round(richness))
+            refill_rate = self.traits.get("refill_rate", 1.0)
+            self._refill_timer = self.REFILL_TIME / max(0.3, refill_rate)
+            volume = self.traits.get("milk_volume",
+                     self.traits.get("milk_richness",
+                     self.traits.get("productivity", 1.0)))
+            mut   = self.traits.get("mutation")
+            count = max(1, round(volume))
             if mut == "giant":
                 count += 1
             drops = [("goat_milk", count)]
@@ -668,45 +1347,162 @@ class Cow(Animal):
         super().__init__(x, y, world, "cow")
         self.has_milk = True
         self._refill_timer = 0.0
-        self._init_cow_genotype()
 
-    def _init_cow_genotype(self):
-        self.genotype["milk_richness_gene"] = [
-            round(random.uniform(0.8, 1.2), 3),
-            round(random.uniform(0.8, 1.2), 3),
-        ]
+        bx = int(float(x) // BLOCK_SIZE)
+        biodome = world.biodome_at(bx) if world is not None else "temperate"
+        eligible = COW_BIOME_MAP.get(biodome, list(COW_BREED_PROFILES.keys()))
+        breed = random.choice(eligible) if eligible else "Holstein"
+        self.traits["breed"] = breed
+
+        profile = COW_BREED_PROFILES.get(breed, COW_BREED_PROFILES["Holstein"])
+        self._init_cow_genotype(profile)
+
+        # Only females produce milk
+        self.has_milk = (self.traits["sex"] == "female")
+        self._milking = None   # mini-game state dict while active
+
+    def _init_cow_genotype(self, profile=None):
+        if profile is None:
+            breed = self.traits.get("breed", "Holstein")
+            profile = COW_BREED_PROFILES.get(breed, COW_BREED_PROFILES["Holstein"])
+
+        for gene_key, (lo, hi) in profile["genes"].items():
+            self.genotype[gene_key] = [
+                round(random.uniform(lo, hi), 3),
+                round(random.uniform(lo, hi), 3),
+            ]
+
+        hw = profile["hide_weights"]
         self.genotype["hide_gene"] = [
-            random.choices(HIDE_ORDER, weights=[50, 30, 12, 8])[0],
-            random.choices(HIDE_ORDER, weights=[50, 30, 12, 8])[0],
+            random.choices(HIDE_ORDER, weights=hw)[0],
+            random.choices(HIDE_ORDER, weights=hw)[0],
         ]
         self._apply_genotype_to_traits()
+        self.traits["coat_color"] = random.choice(profile["coat_colors"])
 
     def _apply_genotype_to_traits(self):
         super()._apply_genotype_to_traits()
-        if "milk_richness_gene" in self.genotype:
-            avg = (self.genotype["milk_richness_gene"][0] + self.genotype["milk_richness_gene"][1]) / 2
-            self.traits["milk_richness"] = round(max(0.7, min(1.3, avg)), 3)
+        for gene, trait, lo, hi in [
+            ("milk_volume_gene",   "milk_volume",   0.5, 3.5),
+            ("milk_richness_gene", "milk_richness", 0.7, 1.3),
+            ("refill_rate_gene",   "refill_rate",   0.5, 2.0),
+            ("beef_quality_gene",  "beef_quality",  0.7, 1.3),
+            ("horn_length_gene",   "horn_length",   0.0, 1.0),
+            ("hair_length_gene",   "hair_length",   0.0, 1.0),
+        ]:
+            if gene in self.genotype:
+                avg = sum(self.genotype[gene]) / 2
+                self.traits[trait] = round(max(lo, min(hi, avg)), 3)
         if "hide_gene" in self.genotype:
             self.traits["hide"] = _expressed_categorical(self.genotype["hide_gene"], HIDE_ORDER)
 
     def _synthesize_genotype_from_traits(self):
         super()._synthesize_genotype_from_traits()
-        v = self.traits.get("milk_richness", self.traits.get("productivity", 1.0))
-        noise = random.uniform(-0.04, 0.04)
-        self.genotype["milk_richness_gene"] = [round(max(0.7, v + noise), 3), round(max(0.7, v - noise), 3)]
-        h = self.traits.get("hide", "solid")
-        self.genotype["hide_gene"] = [h, h]
+        for gene, trait, lo, hi in [
+            ("milk_volume_gene",   "milk_volume",   0.5, 3.5),
+            ("milk_richness_gene", "milk_richness", 0.7, 1.3),
+            ("refill_rate_gene",   "refill_rate",   0.5, 2.0),
+            ("beef_quality_gene",  "beef_quality",  0.7, 1.3),
+            ("horn_length_gene",   "horn_length",   0.0, 1.0),
+            ("hair_length_gene",   "hair_length",   0.0, 1.0),
+        ]:
+            v = self.traits.get(trait, (lo + hi) / 2)
+            n = random.uniform(-0.03, 0.03)
+            self.genotype[gene] = [round(max(lo, min(hi, v + n)), 3), round(max(lo, min(hi, v - n)), 3)]
+        self.genotype["hide_gene"] = [self.traits.get("hide", "solid")] * 2
+
+    # ------------------------------------------------------------------
+    # Milking mini-game
+    # ------------------------------------------------------------------
+
+    def start_milking(self, player):
+        volume = self.traits.get("milk_volume", 1.0)
+        # Faster-refilling breeds have a slightly tighter pull window
+        window = max(0.7, 1.8 - self.traits.get("refill_rate", 1.0) * 0.25)
+        self._milking = {
+            "teat":   0,       # which of 4 teats is currently extended
+            "timer":  0.0,     # time current teat has been open
+            "window": window,  # seconds before teat retracts (= miss)
+            "phase":  "open",  # "open" | "hit" | "miss"
+            "flash":  0.0,     # brief feedback timer
+            "hits":   0,
+            "player": player,
+            "volume": volume,
+        }
+        self.being_harvested = True
+
+    def handle_milking_press(self):
+        m = self._milking
+        if m is None or m["phase"] != "open":
+            return
+        m["phase"] = "hit"
+        m["flash"] = 0.28
+        m["hits"] += 1
+
+    def _advance_milking_teat(self):
+        m = self._milking
+        if m["teat"] >= 3:
+            self._finish_milking()
+        else:
+            m["teat"] += 1
+            m["timer"] = 0.0
+            m["phase"] = "open"
+
+    def _finish_milking(self):
+        m = self._milking
+        self._milking = None
+        self.being_harvested = False
+        self.has_milk = False
+        refill_rate = self.traits.get("refill_rate", 1.0)
+        self._refill_timer = self.REFILL_TIME / max(0.3, refill_rate)
+
+        hits   = m["hits"]
+        volume = m["volume"]
+        mut    = self.traits.get("mutation")
+
+        if hits == 0:
+            return
+
+        count = max(1, round(volume * hits / 4))
+        if mut == "giant":
+            count += 1
+        drops = [("milk", count)]
+        if mut == "golden":
+            drops.append(("golden_milk", 1))
+
+        player = m["player"]
+        player._consume_tool_use()
+        for item_id, qty in drops:
+            for _ in range(qty):
+                player._add_item(item_id)
+        if hasattr(player, "_on_milk_harvested"):
+            player._on_milk_harvested(self, drops)
 
     def update(self, dt):
         super().update(dt)
         if self.dead:
             return
-        if not self.has_milk:
+        # Advance milking mini-game
+        m = self._milking
+        if m is not None:
+            if m["phase"] in ("hit", "miss"):
+                m["flash"] -= dt
+                if m["flash"] <= 0:
+                    self._advance_milking_teat()
+            else:  # "open"
+                m["timer"] += dt
+                if m["timer"] >= m["window"]:
+                    m["phase"] = "miss"
+                    m["flash"] = 0.28
+        if self.traits.get("sex", "female") == "female" and not self.has_milk:
             self._refill_timer -= dt
             if self._refill_timer <= 0:
                 self.has_milk = True
 
     def _try_harvest_resource(self, player, dt):
+        # Mini-game already running — held mouse does nothing; SPACE drives input
+        if self._milking is not None:
+            return None
         if not self.has_milk:
             self.reset_harvest()
             return None
@@ -714,21 +1510,8 @@ class Cow(Animal):
         if tool != self.HARVEST_TOOL:
             self.reset_harvest()
             return None
-        self._harvest_time += dt
-        self.being_harvested = True
-        if self._harvest_time >= self.HARVEST_TIME:
-            self.reset_harvest()
-            self.has_milk = False
-            self._refill_timer = self.REFILL_TIME
-            richness = self.traits.get("milk_richness", self.traits.get("productivity", 1.0))
-            mut      = self.traits.get("mutation")
-            count    = max(1, round(richness))
-            if mut == "giant":
-                count += 1
-            drops = [("milk", count)]
-            if mut == "golden":
-                drops.append(("golden_milk", 1))
-            return drops
+        # Click with bucket starts the mini-game
+        self.start_milking(player)
         return None
 
 
@@ -743,42 +1526,90 @@ class Chicken(Animal):
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "chicken")
-        self.has_egg = True
         self._refill_timer = 0.0
-        self._init_chicken_genotype()
 
-    def _init_chicken_genotype(self):
-        self.genotype["lay_rate_gene"] = [
-            round(random.uniform(0.8, 1.2), 3),
-            round(random.uniform(0.8, 1.2), 3),
-        ]
+        bx = int(float(x) // BLOCK_SIZE)
+        biodome = world.biodome_at(bx) if world is not None else "temperate"
+        eligible = CHICKEN_BIOME_MAP.get(biodome, list(CHICKEN_BREED_PROFILES.keys()))
+        breed = random.choice(eligible) if eligible else "Leghorn"
+        self.traits["breed"] = breed
+
+        # Only hens lay eggs
+        self.has_egg = (self.traits["sex"] == "female")
+
+        profile = CHICKEN_BREED_PROFILES.get(breed, CHICKEN_BREED_PROFILES["Leghorn"])
+        self._init_chicken_genotype(profile)
+
+    def _init_chicken_genotype(self, profile=None):
+        if profile is None:
+            breed = self.traits.get("breed", "Leghorn")
+            profile = CHICKEN_BREED_PROFILES.get(breed, CHICKEN_BREED_PROFILES["Leghorn"])
+
+        for gene_key, (lo, hi) in profile["genes"].items():
+            self.genotype[gene_key] = [
+                round(random.uniform(lo, hi), 3),
+                round(random.uniform(lo, hi), 3),
+            ]
+
+        pw = profile["plumage_weights"]
         self.genotype["plumage_gene"] = [
-            random.choices(PLUMAGE_ORDER, weights=[40, 25, 25, 10])[0],
-            random.choices(PLUMAGE_ORDER, weights=[40, 25, 25, 10])[0],
+            random.choices(PLUMAGE_ORDER, weights=pw)[0],
+            random.choices(PLUMAGE_ORDER, weights=pw)[0],
         ]
+        for key, order, wkey in [
+            ("pattern_gene",  CHICKEN_PATTERN_ORDER, "pattern_weights"),
+            ("comb_type_gene", CHICKEN_COMB_ORDER,   "comb_weights"),
+            ("leg_type_gene",  CHICKEN_LEG_ORDER,    "leg_weights"),
+        ]:
+            w = profile[wkey]
+            self.genotype[key] = [
+                random.choices(order, weights=w)[0],
+                random.choices(order, weights=w)[0],
+            ]
+
         self._apply_genotype_to_traits()
+        self.traits["egg_tint"] = profile.get("egg_tint", (245, 235, 200))
+        self.health = max(2, round(self.traits.get("constitution", 1.0) * 3))
 
     def _apply_genotype_to_traits(self):
         super()._apply_genotype_to_traits()
-        if "lay_rate_gene" in self.genotype:
-            avg = (self.genotype["lay_rate_gene"][0] + self.genotype["lay_rate_gene"][1]) / 2
-            self.traits["lay_rate"] = round(max(0.7, min(1.3, avg)), 3)
-        if "plumage_gene" in self.genotype:
-            self.traits["plumage"] = _expressed_categorical(self.genotype["plumage_gene"], PLUMAGE_ORDER)
+        for gene, trait, lo, hi in [
+            ("lay_rate_gene",        "lay_rate",        0.5, 2.0),
+            ("constitution_gene",    "constitution",    0.7, 1.3),
+            ("feather_density_gene", "feather_density", 0.0, 1.0),
+        ]:
+            if gene in self.genotype:
+                avg = sum(self.genotype[gene]) / 2
+                self.traits[trait] = round(max(lo, min(hi, avg)), 3)
+        for gene, trait, order in [
+            ("plumage_gene",  "plumage",   PLUMAGE_ORDER),
+            ("pattern_gene",  "pattern",   CHICKEN_PATTERN_ORDER),
+            ("comb_type_gene","comb_type", CHICKEN_COMB_ORDER),
+            ("leg_type_gene", "leg_type",  CHICKEN_LEG_ORDER),
+        ]:
+            if gene in self.genotype:
+                self.traits[trait] = _expressed_categorical(self.genotype[gene], order)
 
     def _synthesize_genotype_from_traits(self):
         super()._synthesize_genotype_from_traits()
-        v = self.traits.get("lay_rate", self.traits.get("productivity", 1.0))
-        noise = random.uniform(-0.04, 0.04)
-        self.genotype["lay_rate_gene"] = [round(max(0.7, v + noise), 3), round(max(0.7, v - noise), 3)]
-        p = self.traits.get("plumage", "white")
-        self.genotype["plumage_gene"] = [p, p]
+        for gene, trait, lo, hi in [
+            ("lay_rate_gene",        "lay_rate",        0.5, 2.0),
+            ("constitution_gene",    "constitution",    0.7, 1.3),
+            ("feather_density_gene", "feather_density", 0.0, 1.0),
+        ]:
+            v = self.traits.get(trait, (lo + hi) / 2)
+            n = random.uniform(-0.03, 0.03)
+            self.genotype[gene] = [round(max(lo, min(hi, v + n)), 3), round(max(lo, min(hi, v - n)), 3)]
+        self.genotype["plumage_gene"]   = [self.traits.get("plumage", "white")] * 2
+        self.genotype["pattern_gene"]   = [self.traits.get("pattern", "solid")] * 2
+        self.genotype["comb_type_gene"] = [self.traits.get("comb_type", "single")] * 2
+        self.genotype["leg_type_gene"]  = [self.traits.get("leg_type", "yellow")] * 2
 
     def update(self, dt):
         super().update(dt)
         if self.dead:
             return
-        if not self.has_egg:
+        if self.traits.get("sex", "female") == "female" and not self.has_egg:
             self._refill_timer -= dt
             if self._refill_timer <= 0:
                 self.has_egg = True

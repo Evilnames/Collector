@@ -2104,6 +2104,33 @@ RECIPES = [
         "output_id":    "pottery_display",
         "output_count": 1,
     },
+    # --- Logic & Automation ---
+    {"name": "Wire",          "ingredients": {"iron_chunk": 2, "tempered_iron": 1},              "output_id": "wire",                "output_count": 16},
+    {"name": "Switch",        "ingredients": {"iron_chunk": 2, "wire": 1},                       "output_id": "switch_item",         "output_count": 1},
+    {"name": "Toggle Latch",  "ingredients": {"iron_chunk": 3, "wire": 2},                       "output_id": "latch_item",          "output_count": 1},
+    {"name": "AND Gate",      "ingredients": {"tempered_iron": 2, "wire": 2},                    "output_id": "and_gate_item",       "output_count": 1},
+    {"name": "OR Gate",       "ingredients": {"tempered_iron": 2, "wire": 1},                    "output_id": "or_gate_item",        "output_count": 1},
+    {"name": "NOT Gate",      "ingredients": {"tempered_iron": 2, "iron_chunk": 1, "wire": 1},   "output_id": "not_gate_item",       "output_count": 1},
+    {"name": "Dam",           "ingredients": {"stone_chip": 6, "iron_chunk": 2},                 "output_id": "dam_item",            "output_count": 1},
+    {"name": "Pump",          "ingredients": {"iron_chunk": 4, "tempered_iron": 2, "wire": 2},   "output_id": "pump_item",           "output_count": 1},
+    {"name": "Iron Gate",     "ingredients": {"iron_chunk": 6},                                  "output_id": "iron_gate_item",      "output_count": 1},
+    {"name": "Pressure Plate","ingredients": {"stone_chip": 4, "wire": 1},                       "output_id": "pressure_plate_item", "output_count": 1},
+    {"name": "Day Sensor",    "ingredients": {"glass": 2, "wire": 2},                            "output_id": "day_sensor_item",     "output_count": 1},
+    {"name": "Water Sensor",  "ingredients": {"iron_chunk": 2, "wire": 1},                       "output_id": "water_sensor_item",   "output_count": 1},
+    {"name": "Crop Sensor",   "ingredients": {"iron_chunk": 1, "wire": 2},                       "output_id": "crop_sensor_item",    "output_count": 1},
+    {"name": "Repeater",      "ingredients": {"iron_chunk": 2, "wire": 3},                       "output_id": "repeater_item",       "output_count": 1},
+    {"name": "Pulse Gen",     "ingredients": {"tempered_iron": 2, "wire": 2},                    "output_id": "pulse_gen_item",      "output_count": 1},
+    {"name": "RS Latch",      "ingredients": {"tempered_iron": 3, "wire": 2},                    "output_id": "rs_latch_item",       "output_count": 1},
+    {"name": "Powered Lantern","ingredients": {"glass": 2, "iron_chunk": 2, "wire": 1},          "output_id": "powered_lantern_item","output_count": 1},
+    {"name": "Alarm Bell",    "ingredients": {"iron_chunk": 4, "wire": 1},                       "output_id": "alarm_bell_item",     "output_count": 1},
+    {"name": "Water Bucket",       "ingredients": {"iron_chunk": 2},                              "output_id": "water_bucket",           "output_count": 1},
+    {"name": "Irrigation Channel", "ingredients": {"stone_chip": 3, "iron_chunk": 1},             "output_id": "irrigation_channel_item","output_count": 4},
+    {"name": "Counter",    "ingredients": {"tempered_iron": 2, "wire": 2, "iron_chunk": 1},    "output_id": "counter_item",    "output_count": 1},
+    {"name": "Comparator", "ingredients": {"tempered_iron": 2, "wire": 1, "quartz": 1},        "output_id": "comparator_item", "output_count": 1},
+    {"name": "Observer",   "ingredients": {"tempered_iron": 1, "wire": 2, "quartz": 1},        "output_id": "observer_item",   "output_count": 1},
+    {"name": "Sequencer",  "ingredients": {"tempered_iron": 3, "wire": 3},                     "output_id": "sequencer_item",  "output_count": 1},
+    {"name": "T Flip-Flop","ingredients": {"tempered_iron": 2, "wire": 2},                     "output_id": "t_flipflop_item", "output_count": 1},
+    {"name": "Deposit Trigger","ingredients": {"tempered_iron": 3, "wire": 2, "chest_item": 1},"output_id": "deposit_trigger_item", "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -2542,6 +2569,9 @@ RECIPE_GROUPS = {
     "Spirits": [
         "still_item", "barrel_room_item", "bottling_item",
     ],
+    "Brewery": [
+        "brew_kettle_item", "ferm_vessel_item", "taproom_item",
+    ],
     "Tea": [
         "withering_rack_item", "oxidation_station_item", "tea_cellar_item",
     ],
@@ -2622,6 +2652,9 @@ RESEARCH_LOCKED_RECIPES = {
     "still_item":            "distillation_basics",
     "barrel_room_item":      "distillation_basics",
     "bottling_item":         "distillation_basics",
+    "brew_kettle_item":      "brewing_basics",
+    "ferm_vessel_item":      "brewing_basics",
+    "taproom_item":          "brewing_basics",
     "bird_feeder":           "bird_watching",
     "bird_bath":             "bird_sanctuary",
     "bug_net":               "entomology_basics",

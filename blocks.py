@@ -543,6 +543,54 @@ TRADE_BLOCK         = 1182 # Trade Post: assign horse+cart, link to city, auto-d
 FORGE_BLOCK         = 1183 # Smithing station — heat metal and hammer weapon parts
 WEAPON_RACK_BLOCK   = 1184 # Weapon rack — equip and browse crafted weapons
 
+# Logic & Automation blocks (1185–1224); next free: 1225
+SWITCH_BLOCK_OFF        = 1185   # lever — player toggles with E
+SWITCH_BLOCK_ON         = 1186
+LATCH_BLOCK_OFF         = 1187   # toggle flip-flop — player toggles with E
+LATCH_BLOCK_ON          = 1188
+AND_GATE_BLOCK          = 1189   # visual powered state read from logic_state
+OR_GATE_BLOCK           = 1190
+NOT_GATE_BLOCK          = 1191
+DAM_BLOCK_CLOSED        = 1192   # water barrier — opaque, solid when closed
+DAM_BLOCK_OPEN          = 1193   # passable gap when open
+PUMP_BLOCK_OFF          = 1194
+PUMP_BLOCK_ON           = 1195
+IRON_GATE_BLOCK_CLOSED  = 1196   # 1-tall controllable gate
+IRON_GATE_BLOCK_OPEN    = 1197
+
+# --- Brewery supply chain ---
+HOP_VINE_BUSH        = 1198   # surface bush; drops hop_seed
+HOP_VINE_YOUNG       = 1199
+HOP_VINE_MATURE      = 1200   # special: mine → Beer object + hop_seed drop
+BREW_KETTLE_BLOCK    = 1201   # placed Brew Kettle (mash + boil mini-game)
+FERM_VESSEL_BLOCK    = 1202   # placed Fermentation Vessel (yeast + ferment mini-game)
+TAPROOM_BLOCK        = 1203   # placed Taproom (conditioning + bottle)
+
+# Logic & Automation — extended sensors, timers, RS latch, outputs
+PRESSURE_PLATE_OFF   = 1204
+PRESSURE_PLATE_ON    = 1205
+DAY_SENSOR_BLOCK     = 1206   # outputs 1 during day; right-click to toggle day/night mode
+NIGHT_SENSOR_BLOCK   = 1207
+WATER_SENSOR_BLOCK   = 1208   # outputs 1 when adjacent water
+CROP_SENSOR_BLOCK    = 1209   # outputs 1 when block below is mature crop
+REPEATER_BLOCK       = 1210   # delays signal; right-click to cycle delay (0.25–4s)
+PULSE_GEN_BLOCK      = 1211   # emits periodic pulses; right-click to cycle period
+RS_LATCH_Q0          = 1212   # RS latch, Q=False
+RS_LATCH_Q1          = 1213   # RS latch, Q=True
+POWERED_LANTERN_OFF  = 1214
+POWERED_LANTERN_ON   = 1215
+ALARM_BELL_OFF       = 1216
+ALARM_BELL_ON        = 1217
+IRRIGATION_CHANNEL_BLOCK = 1218
+
+# Redstone-style memory & state blocks
+COUNTER_BLOCK        = 1219   # counts N input pulses → holds output; reset pin; right-click cycles threshold
+COMPARATOR_BLOCK     = 1220   # reads adjacent chest fill (0-8), outputs when level ≥ threshold
+OBSERVER_BLOCK       = 1221   # emits 1-tick pulse when watched block changes; facing = watch dir
+SEQUENCER_BLOCK      = 1222   # 4-step round-robin; each pulse rotates active output; right-click = manual step
+T_FLIPFLOP_BLOCK     = 1223   # toggles Q on every rising edge; right-click = manual toggle
+DEPOSIT_TRIGGER_BLOCK = 1224  # rising-edge: dumps nearby bot inventories into adjacent chest; next free: 1225
+
 
 SAFFRON_DOOR_CLOSED      = 860  # warm golden-yellow with dark carved panels
 SAFFRON_DOOR_OPEN        = 861
@@ -1358,16 +1406,40 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     TAPESTRY_FRAME_BLOCK,
                     JUICER_BLOCK,
                     KENNEL_BLOCK, DOG_BOWL_BLOCK,
-                    FORGE_BLOCK, WEAPON_RACK_BLOCK}
+                    FORGE_BLOCK, WEAPON_RACK_BLOCK,
+                    SWITCH_BLOCK_OFF, LATCH_BLOCK_OFF,
+                    BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT}
+
+LOGIC_SOURCE_BLOCKS  = {SWITCH_BLOCK_ON, LATCH_BLOCK_ON, PRESSURE_PLATE_ON, RS_LATCH_Q1}
+LOGIC_GATE_BLOCKS    = {AND_GATE_BLOCK, OR_GATE_BLOCK, NOT_GATE_BLOCK}
+LOGIC_SENSOR_BLOCKS  = {DAY_SENSOR_BLOCK, NIGHT_SENSOR_BLOCK, WATER_SENSOR_BLOCK, CROP_SENSOR_BLOCK}
+LOGIC_TIMER_BLOCKS   = {REPEATER_BLOCK, PULSE_GEN_BLOCK}
+LOGIC_ROTATEABLE_BLOCKS = {AND_GATE_BLOCK, OR_GATE_BLOCK, NOT_GATE_BLOCK,
+                            REPEATER_BLOCK, RS_LATCH_Q0, RS_LATCH_Q1,
+                            COUNTER_BLOCK, COMPARATOR_BLOCK, OBSERVER_BLOCK,
+                            SEQUENCER_BLOCK, T_FLIPFLOP_BLOCK}
+LOGIC_OUTPUT_PAIRS  = {
+    DAM_BLOCK_CLOSED:       DAM_BLOCK_OPEN,
+    DAM_BLOCK_OPEN:         DAM_BLOCK_CLOSED,
+    PUMP_BLOCK_OFF:         PUMP_BLOCK_ON,
+    PUMP_BLOCK_ON:          PUMP_BLOCK_OFF,
+    IRON_GATE_BLOCK_CLOSED: IRON_GATE_BLOCK_OPEN,
+    IRON_GATE_BLOCK_OPEN:   IRON_GATE_BLOCK_CLOSED,
+    POWERED_LANTERN_OFF:    POWERED_LANTERN_ON,
+    POWERED_LANTERN_ON:     POWERED_LANTERN_OFF,
+    ALARM_BELL_OFF:         ALARM_BELL_ON,
+    ALARM_BELL_ON:          ALARM_BELL_OFF,
+}
+LOGIC_OUTPUT_BLOCKS = set(LOGIC_OUTPUT_PAIRS)
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
                      RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, GARLIC_BUSH, SCALLION_BUSH, CHILI_BUSH,
                      PEPPER_BUSH, ONION_BUSH, POTATO_BUSH, EGGPLANT_BUSH, CABBAGE_BUSH,
                      BEET_BUSH, TURNIP_BUSH, LEEK_BUSH, ZUCCHINI_BUSH, SWEET_POTATO_BUSH,
                      WATERMELON_BUSH, RADISH_BUSH, PEA_BUSH, CELERY_BUSH, BROCCOLI_BUSH,
                      DATE_PALM_BUSH, AGAVE_BUSH,
-                     COFFEE_BUSH, GRAPEVINE_BUSH, GRAIN_CROP_BUSH,
+                     COFFEE_BUSH, GRAPEVINE_BUSH, GRAIN_CROP_BUSH, HOP_VINE_BUSH,
                      TEA_BUSH,
                      CHAMOMILE_BUSH, LAVENDER_BUSH, MINT_BUSH, ROSEMARY_BUSH,
                      THYME_BUSH, SAGE_BUSH, BASIL_BUSH, OREGANO_BUSH,
@@ -1384,7 +1456,7 @@ YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG,
                      BEET_CROP_YOUNG, TURNIP_CROP_YOUNG, LEEK_CROP_YOUNG, ZUCCHINI_CROP_YOUNG, SWEET_POTATO_CROP_YOUNG,
                      WATERMELON_CROP_YOUNG, RADISH_CROP_YOUNG, PEA_CROP_YOUNG, CELERY_CROP_YOUNG, BROCCOLI_CROP_YOUNG,
                      CACTUS_YOUNG, DATE_PALM_CROP_YOUNG, AGAVE_CROP_YOUNG,
-                     COFFEE_CROP_YOUNG, GRAPEVINE_CROP_YOUNG, GRAIN_CROP_YOUNG, TEA_CROP_YOUNG,
+                     COFFEE_CROP_YOUNG, GRAPEVINE_CROP_YOUNG, GRAIN_CROP_YOUNG, TEA_CROP_YOUNG, HOP_VINE_YOUNG,
                      CHAMOMILE_CROP_YOUNG, LAVENDER_CROP_YOUNG, MINT_CROP_YOUNG, ROSEMARY_CROP_YOUNG,
                      THYME_CROP_YOUNG, SAGE_CROP_YOUNG, BASIL_CROP_YOUNG, OREGANO_CROP_YOUNG,
                      DILL_CROP_YOUNG, FENNEL_CROP_YOUNG, TARRAGON_CROP_YOUNG, LEMON_BALM_CROP_YOUNG,
@@ -1411,7 +1483,7 @@ MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATU
                      BEET_CROP_MATURE, TURNIP_CROP_MATURE, LEEK_CROP_MATURE, ZUCCHINI_CROP_MATURE, SWEET_POTATO_CROP_MATURE,
                      WATERMELON_CROP_MATURE, RADISH_CROP_MATURE, PEA_CROP_MATURE, CELERY_CROP_MATURE, BROCCOLI_CROP_MATURE,
                      CACTUS_MATURE, DATE_PALM_CROP_MATURE, AGAVE_CROP_MATURE,
-                     COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE,
+                     COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE, HOP_VINE_MATURE,
                      CHAMOMILE_CROP_MATURE, LAVENDER_CROP_MATURE, MINT_CROP_MATURE, ROSEMARY_CROP_MATURE,
                      THYME_CROP_MATURE, SAGE_CROP_MATURE, BASIL_CROP_MATURE, OREGANO_CROP_MATURE,
                      DILL_CROP_MATURE, FENNEL_CROP_MATURE, TARRAGON_CROP_MATURE, LEMON_BALM_CROP_MATURE,
@@ -1432,7 +1504,7 @@ CROP_BLOCKS       = YOUNG_CROP_BLOCKS | MATURE_CROP_BLOCKS
 PERENNIAL_CROP_MATURE = {
     STRAWBERRY_CROP_MATURE, APPLE_CROP_MATURE, TOMATO_CROP_MATURE,
     PEPPER_CROP_MATURE, CHILI_CROP_MATURE, EGGPLANT_CROP_MATURE,
-    CACTUS_MATURE, COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE,
+    CACTUS_MATURE, COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE, HOP_VINE_MATURE,
     CHAMOMILE_CROP_MATURE, LAVENDER_CROP_MATURE, MINT_CROP_MATURE, ROSEMARY_CROP_MATURE,
     THYME_CROP_MATURE, SAGE_CROP_MATURE, BASIL_CROP_MATURE, OREGANO_CROP_MATURE,
     DILL_CROP_MATURE, FENNEL_CROP_MATURE, TARRAGON_CROP_MATURE, LEMON_BALM_CROP_MATURE,
@@ -2783,6 +2855,41 @@ BLOCKS = {
     TRADE_BLOCK:         {"name": "Trade Post",          "hardness": 2.0, "color": (120,  85,  55), "drop": "trade_block"},
     FORGE_BLOCK:         {"name": "Forge",               "hardness": 3.0, "color": ( 80,  65,  55), "drop": "forge_item"},
     WEAPON_RACK_BLOCK:   {"name": "Weapon Rack",         "hardness": 1.5, "color": (100,  80,  60), "drop": "weapon_rack_item"},
+    # Logic blocks
+    SWITCH_BLOCK_OFF:       {"name": "Switch (Off)",    "hardness": 2.0, "color": ( 90,  80,  75), "drop": "switch_item"},
+    SWITCH_BLOCK_ON:        {"name": "Switch (On)",     "hardness": 2.0, "color": ( 90,  80,  75), "drop": "switch_item"},
+    LATCH_BLOCK_OFF:        {"name": "Toggle Latch (Off)", "hardness": 2.0, "color": ( 85,  85,  95), "drop": "latch_item"},
+    LATCH_BLOCK_ON:         {"name": "Toggle Latch (On)",  "hardness": 2.0, "color": ( 85,  85,  95), "drop": "latch_item"},
+    AND_GATE_BLOCK:         {"name": "AND Gate",        "hardness": 2.0, "color": ( 70,  90, 110), "drop": "and_gate_item"},
+    OR_GATE_BLOCK:          {"name": "OR Gate",         "hardness": 2.0, "color": ( 70, 110,  90), "drop": "or_gate_item"},
+    NOT_GATE_BLOCK:         {"name": "NOT Gate",        "hardness": 2.0, "color": (110,  70,  70), "drop": "not_gate_item"},
+    DAM_BLOCK_CLOSED:       {"name": "Dam",             "hardness": 2.0, "color": (140, 130, 110), "drop": "dam_item"},
+    DAM_BLOCK_OPEN:         {"name": "Dam (Open)",      "hardness": 2.0, "color": (140, 130, 110), "drop": "dam_item"},
+    PUMP_BLOCK_OFF:         {"name": "Pump",            "hardness": 2.0, "color": ( 95, 100, 105), "drop": "pump_item"},
+    PUMP_BLOCK_ON:          {"name": "Pump (On)",       "hardness": 2.0, "color": ( 95, 100, 105), "drop": "pump_item"},
+    IRON_GATE_BLOCK_CLOSED: {"name": "Iron Gate",       "hardness": 2.0, "color": ( 75,  80,  85), "drop": "iron_gate_item"},
+    IRON_GATE_BLOCK_OPEN:   {"name": "Iron Gate (Open)","hardness": 2.0, "color": ( 75,  80,  85), "drop": "iron_gate_item"},
+    PRESSURE_PLATE_OFF:     {"name": "Pressure Plate",     "hardness": 1.0, "color": (160, 155, 145), "drop": "pressure_plate_item"},
+    PRESSURE_PLATE_ON:      {"name": "Pressure Plate (On)", "hardness": 1.0, "color": (160, 155, 145), "drop": "pressure_plate_item"},
+    DAY_SENSOR_BLOCK:       {"name": "Day Sensor",         "hardness": 1.5, "color": (220, 190,  60), "drop": "day_sensor_item"},
+    NIGHT_SENSOR_BLOCK:     {"name": "Night Sensor",       "hardness": 1.5, "color": ( 60,  70, 140), "drop": "day_sensor_item"},
+    WATER_SENSOR_BLOCK:     {"name": "Water Sensor",       "hardness": 1.5, "color": ( 60, 130, 200), "drop": "water_sensor_item"},
+    CROP_SENSOR_BLOCK:      {"name": "Crop Sensor",        "hardness": 1.5, "color": ( 60, 160,  80), "drop": "crop_sensor_item"},
+    REPEATER_BLOCK:         {"name": "Signal Repeater",    "hardness": 2.0, "color": ( 90,  90, 120), "drop": "repeater_item"},
+    PULSE_GEN_BLOCK:        {"name": "Pulse Generator",    "hardness": 2.0, "color": (120,  80, 120), "drop": "pulse_gen_item"},
+    RS_LATCH_Q0:            {"name": "RS Latch (Q=0)",     "hardness": 2.0, "color": ( 80, 100, 100), "drop": "rs_latch_item"},
+    RS_LATCH_Q1:            {"name": "RS Latch (Q=1)",     "hardness": 2.0, "color": ( 80, 100, 100), "drop": "rs_latch_item"},
+    POWERED_LANTERN_OFF:    {"name": "Powered Lantern",    "hardness": 1.5, "color": (180, 160,  80), "drop": "powered_lantern_item"},
+    POWERED_LANTERN_ON:     {"name": "Powered Lantern (On)","hardness": 1.5, "color": (255, 220,  80), "drop": "powered_lantern_item"},
+    ALARM_BELL_OFF:         {"name": "Alarm Bell",         "hardness": 1.5, "color": (170,  80,  40), "drop": "alarm_bell_item"},
+    ALARM_BELL_ON:          {"name": "Alarm Bell (On)",    "hardness": 1.5, "color": (220, 100,  40), "drop": "alarm_bell_item"},
+    IRRIGATION_CHANNEL_BLOCK: {"name": "Irrigation Channel", "hardness": 1.5, "color": (130, 110,  90), "drop": "irrigation_channel_item"},
+    COUNTER_BLOCK:        {"name": "Counter",      "hardness": 2.0, "color": ( 80, 110, 140), "drop": "counter_item"},
+    COMPARATOR_BLOCK:     {"name": "Comparator",   "hardness": 2.0, "color": (140,  80, 100), "drop": "comparator_item"},
+    OBSERVER_BLOCK:       {"name": "Observer",     "hardness": 2.0, "color": ( 60,  80,  70), "drop": "observer_item"},
+    SEQUENCER_BLOCK:      {"name": "Sequencer",    "hardness": 2.0, "color": (100,  80, 140), "drop": "sequencer_item"},
+    T_FLIPFLOP_BLOCK:     {"name": "T Flip-Flop",  "hardness": 2.0, "color": (140, 120,  60), "drop": "t_flipflop_item"},
+    DEPOSIT_TRIGGER_BLOCK: {"name": "Deposit Trigger", "hardness": 2.0, "color": (200, 140,  50), "drop": "deposit_trigger_item"},
     ALPINE_BALCONY_RAIL:       {"name": "Alpine Balcony Rail", "hardness": 1, "color": (160, 110,  65), "drop": "alpine_balcony_rail"},
     DARK_TIMBER_BEAM:          {"name": "Dark Timber Beam", "hardness": 1, "color": ( 55,  40,  30), "drop": "dark_timber_beam"},
     ROUGH_STONE_WALL:          {"name": "Rough Stone Wall", "hardness": 1, "color": (130, 125, 120), "drop": "rough_stone_wall"},
@@ -2877,6 +2984,13 @@ BLOCKS = {
     TOWN_FLAG_BLOCK:           {"name": "Town Flag",          "hardness": float('inf'), "color": (200, 80, 40), "drop": None},
     OUTPOST_FLAG_BLOCK:        {"name": "Outpost Flag",       "hardness": float('inf'), "color": (180, 140, 60), "drop": None},
     LANDMARK_FLAG_BLOCK:       {"name": "Landmark Flag",      "hardness": float('inf'), "color": (190, 150,  60), "drop": None},
+    # --- Brewery supply chain ---
+    HOP_VINE_BUSH:             {"name": "Hop Vine Bush",      "hardness": 0.5, "color": ( 90, 145,  55), "drop": "hop_seed",          "drop_chance": 1.0},
+    HOP_VINE_YOUNG:            {"name": "Hop Vine",           "hardness": 0.5, "color": (100, 160,  60), "drop": "hop_seed",          "drop_chance": 1.0},
+    HOP_VINE_MATURE:           {"name": "Hop Vine (Ripe)",    "hardness": 0.5, "color": (160, 195,  55), "drop": None},
+    BREW_KETTLE_BLOCK:         {"name": "Brew Kettle",        "hardness": 1.5, "color": (185, 130,  55), "drop": "brew_kettle_item"},
+    FERM_VESSEL_BLOCK:         {"name": "Fermentation Vessel","hardness": 1.5, "color": ( 95, 130,  80), "drop": "ferm_vessel_item"},
+    TAPROOM_BLOCK:             {"name": "Taproom",            "hardness": 1.5, "color": ( 95,  65,  40), "drop": "taproom_item"},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}
@@ -2905,4 +3019,6 @@ LIGHT_EMITTERS = {
     LANTERN_FESTIVAL:(105, "wide_oval"),
     ALPINE_LANTERN:  ( 85, "circle"),
     ALPINE_CHANDELIER:(125, "wide_flat"),
+    # Logic output
+    POWERED_LANTERN_ON: (80, "circle"),
 }

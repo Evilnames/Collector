@@ -53,6 +53,7 @@ class CollectionsMixin:
         n_coffee_owned  = len(player.coffee_beans)
         n_wine_owned    = len(getattr(player, "wine_grapes", []))
         n_spirits_owned = len(getattr(player, "spirits", []))
+        n_beer_owned    = len(getattr(player, "beers", []))
         n_tea_owned     = len(getattr(player, "tea_leaves", []))
         from herbalism import ALL_POTION_IDS
         n_potions_owned = sum(player.inventory.get(k, 0) for k in ALL_POTION_IDS)
@@ -67,7 +68,7 @@ class CollectionsMixin:
         n_weapons_crafted  = len(getattr(player, "crafted_weapons", []))
         total_collected = (len(player.rocks) + len(player.wildflowers) +
                            len(player.fossils) + len(player.gems) + n_mush_owned +
-                           n_coffee_owned + n_wine_owned + n_spirits_owned + n_tea_owned +
+                           n_coffee_owned + n_wine_owned + n_spirits_owned + n_beer_owned + n_tea_owned +
                            n_potions_owned + n_textiles_owned + n_cheese_owned + n_jewelry_owned +
                            n_sculptures_owned + n_tapestries_owned + n_pottery_owned + n_salt_owned +
                            n_dogs_tamed + n_weapons_crafted)
@@ -99,8 +100,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX", "BEER CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165), (155, 215, 90)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -126,6 +127,7 @@ class CollectionsMixin:
                 ("coffee",    f"COFFEE ({n_coffee_owned})",        (40, 25, 10),  (140,  90,  35), (210, 150,  70)),
                 ("wine",      f"WINE ({n_wine_owned})",            (40, 15, 22),  (175,  85, 110), (235, 155, 175)),
                 ("spirits",   f"SPIRITS ({n_spirits_owned})",      (30, 22,  8),  (175, 115,  45), (230, 170,  80)),
+                ("beer",      f"BEER ({len(player.beers)})",       (18, 28, 10),  (110, 160,  55), (155, 210,  80)),
                 ("tea",       f"TEA ({n_tea_owned})",              (25, 45, 20),  ( 65, 160,  75), (130, 215, 140)),
                 ("herbs",     f"POTIONS ({n_potions_owned})",      (10, 28, 24),  ( 70, 175, 140), (140, 235, 200)),
                 ("textiles",  f"TEXTILES ({n_textiles_owned})",    (25, 12, 32),  (160,  90, 190), (220, 160, 250)),
@@ -198,9 +200,10 @@ class CollectionsMixin:
                 ((28, 20, 10),  (170, 130,  60), (215, 180, 110)),   # Dogs
                 ((45, 35, 20),  (180, 120,  60), (220, 170, 100)),   # Hunting
                 ((30, 22, 12),  (155, 140, 120), (210, 195, 165)),   # Weapons
+                ((18, 28, 10),  (110, 160,  55), (155, 215,  80)),   # Beer
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
-                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS"]
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
             total_sb_h = len(enc_labels) * (SB_BTN_H + SB_GAP)
@@ -260,6 +263,7 @@ class CollectionsMixin:
                 self._draw_dog_codex,
                 self._draw_hunting_codex,
                 self._draw_weapons_codex,
+                self._draw_beer_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)

@@ -8,6 +8,7 @@ from Render.blocks_crops import build_crop_surfs
 from Render.blocks_crafting import build_crafting_surfs
 from Render.blocks_decor import build_decor_surfs
 from Render.blocks_structures import build_structure_surfs
+from Render.logic_blocks import build_logic_surfs
 
 
 def build_all_block_surfs():
@@ -18,6 +19,7 @@ def build_all_block_surfs():
     surfs.update(build_crafting_surfs())
     surfs.update(build_decor_surfs())
     surfs.update(build_structure_surfs())
+    surfs.update(build_logic_surfs())
 
     # Fallback: generic solid-fill for any block with color not yet rendered
     for bid, bdata in BLOCKS.items():

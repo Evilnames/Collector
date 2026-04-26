@@ -110,6 +110,11 @@ class World:
         self._dirty_chunks = set()
         self._bg_chunks = {}        # background layer: chunk_x -> [[block_id]*CHUNK_W]*WORLD_H
         self._dirty_bg_chunks = set()
+        self._wire_chunks = {}      # chunk_x -> [[uint8]*CHUNK_W]*WORLD_H (0=empty 1=wire)
+        self._dirty_wire_chunks = set()
+        self.logic_state = {}       # (bx,by) -> {"facing": str, "latch_state": bool, "prev_input": bool}
+        self.powered_wires = set()  # (bx,by) of currently-powered wire/gate tiles
+        self.wire_mode = False      # True = wire layer visible
         self.entities = []
         self.arrows   = []
         self.automations = []
@@ -361,6 +366,9 @@ class World:
         bg_data = self._save_mgr.load_bg_chunk(cx) if self._save_mgr else None
         if bg_data is not None:
             self._bg_chunks[cx] = bg_data
+        wire_data = self._save_mgr.load_wire_chunk(cx) if self._save_mgr else None
+        if wire_data is not None:
+            self._wire_chunks[cx] = wire_data
 
     def unload_chunk(self, cx: int):
         """Save dirty chunk to DB and evict from memory."""
@@ -411,6 +419,7 @@ class World:
             from cities import generate_city_for_chunk
             db_data = self._save_mgr.load_chunks_batch(to_load) if self._save_mgr else {}
             bg_db_data = self._save_mgr.load_bg_chunks_batch(to_load) if self._save_mgr else {}
+            wire_db_data = self._save_mgr.load_wire_chunks_batch(to_load) if self._save_mgr else {}
             newly_generated = []
             for cx in to_load:
                 if cx in db_data:
@@ -422,6 +431,8 @@ class World:
                     newly_generated.append(cx)
                 if cx in bg_db_data:
                     self._bg_chunks[cx] = bg_db_data[cx]
+                if cx in wire_db_data:
+                    self._wire_chunks[cx] = wire_db_data[cx]
                 self._spawn_insects_for_chunk(cx)
                 self._spawn_garden_insects_in_chunk(cx)
             for cx in newly_generated:
@@ -473,6 +484,7 @@ class World:
         self.pottery_display_data = data.get("pottery_display_data", {})
         self._pending_unplaced_vase_uids  = data.get("unplaced_vase_uids", [])
         self.day_count = data.get("day_count", 0)
+        self.logic_state = data.get("logic_state", {})
         raw_trade = data.get("trade_block_data", {})
         self.trade_block_data = {
             tuple(int(v) for v in k.split(",")): td
@@ -1620,6 +1632,13 @@ class World:
                     nb = self._chunk_get(nx, ny)
                     if nb == WATER:
                         self._pending_water.add((nx, ny))
+        elif old_bid in (DAM_BLOCK_CLOSED,) and block_id == DAM_BLOCK_OPEN:
+            # DAM open: release water pooled above the dam
+            for check_y in range(y - 1, max(0, y - 20), -1):
+                if self._chunk_get(x, check_y) == WATER:
+                    self._pending_water.add((x, check_y))
+                elif self._chunk_get(x, check_y) != AIR:
+                    break
         elif block_id != WATER:
             for ddx, ddy in ((-1, 0), (1, 0), (0, 1)):
                 nx, ny = x + ddx, y + ddy
@@ -1645,6 +1664,24 @@ class World:
             self._bg_chunks[cx] = [[AIR] * CHUNK_W for _ in range(WORLD_H)]
         self._bg_chunks[cx][y][x % CHUNK_W] = block_id
         self._dirty_bg_chunks.add(cx)
+
+    def get_wire(self, x, y) -> int:
+        if y < 0 or y >= WORLD_H or abs(x) > WORLD_MAX_X:
+            return 0
+        chunk = self._wire_chunks.get(x // CHUNK_W)
+        return chunk[y][x % CHUNK_W] if chunk is not None else 0
+
+    def set_wire(self, x, y, val: int):
+        if y < 0 or y >= WORLD_H or abs(x) > WORLD_MAX_X:
+            return
+        cx = x // CHUNK_W
+        if cx not in self._wire_chunks:
+            self._wire_chunks[cx] = [[0] * CHUNK_W for _ in range(WORLD_H)]
+        self._wire_chunks[cx][y][x % CHUNK_W] = val
+        self._dirty_wire_chunks.add(cx)
+
+    def toggle_wire_mode(self):
+        self.wire_mode = not self.wire_mode
 
     def is_solid(self, x, y):
         bid = self.get_block(x, y)
@@ -1695,11 +1732,47 @@ class World:
                 sp = _rnd.choice(candidates).SPECIES
                 trap["accumulated"].append(sp)
 
+    def _update_pumps(self):
+        """When a pump block is on and adjacent to water, push water one tile upward."""
+        from blocks import PUMP_BLOCK_ON as _PMP, WATER as _W, AIR as _A
+        for (bx, by) in list(getattr(self, 'logic_state', {}).keys()):
+            if self.get_block(bx, by) != _PMP:
+                continue
+            has_water = any(self.get_block(bx + dx, by + dy) == _W
+                            for dx, dy in ((0, 1), (-1, 0), (1, 0)))
+            if not has_water:
+                continue
+            target_y = by - 1
+            if target_y >= 0 and self.get_block(bx, target_y) == _A:
+                self.set_block(bx, target_y, _W)
+                self._water_level[(bx, target_y)] = 7
+                self._pending_water.add((bx, target_y))
+
+    def update_irrigation(self, dt):
+        """Passively moisten tilled soil near water sources."""
+        from soil import MAX_MOISTURE as _MAXM
+        from blocks import TILLED_SOIL as _TS, WATER as _W
+        self._irr_timer = getattr(self, '_irr_timer', 0.0) + dt
+        if self._irr_timer < 8.0:
+            return
+        self._irr_timer = 0.0
+        for (wx, wy), level in list(self._water_level.items()):
+            if level < 4:
+                continue
+            for dy in range(0, 4):
+                for dx in range(-3, 4):
+                    sx, sy = wx + dx, wy + dy
+                    if self.get_block(sx, sy) == _TS:
+                        cur = self._soil_moisture.get((sx, sy), 0)
+                        if cur < _MAXM:
+                            self._soil_moisture[(sx, sy)] = min(_MAXM, cur + 8)
+
     def update_water(self, dt, player):
         self._water_timer += dt
         if self._water_timer < self._water_interval:
             return
         self._water_timer -= self._water_interval
+        self._update_pumps()
 
         if not self._pending_water:
             return
@@ -1736,15 +1809,20 @@ class World:
                 spreads += 1
                 continue
 
-            # Blocked below — spread sideways at reduced level (level > 1 only)
+            # Blocked below — spread sideways
             if level > 1:
+                from blocks import IRRIGATION_CHANNEL_BLOCK as _ICB
+                source_in_channel = self.get_bg_block(x, y) == _ICB
                 for dx in (-1, 1):
                     nx = x + dx
                     if self._chunk_get(nx, y) == AIR:
-                        self._chunk_set(nx, y, WATER)
-                        self._water_level[(nx, y)] = level - 1
-                        new_water.add((nx, y))
-                        spreads += 1
+                        dest_in_channel = self.get_bg_block(nx, y) == _ICB
+                        spread_level = level if (source_in_channel and dest_in_channel) else level - 1
+                        if spread_level > 0:
+                            self._chunk_set(nx, y, WATER)
+                            self._water_level[(nx, y)] = spread_level
+                            new_water.add((nx, y))
+                            spreads += 1
 
         self._pending_water.update(new_water)
 

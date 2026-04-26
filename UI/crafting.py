@@ -557,6 +557,7 @@ class CraftingMixin:
                             ARTISAN_BENCH_BLOCK,
                             GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
                             STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
+                            BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK,
                             COMPOST_BIN_BLOCK,
                             WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK,
                             DRYING_RACK_BLOCK, KILN_BLOCK, RESONANCE_BLOCK,
@@ -598,6 +599,15 @@ class CraftingMixin:
             return
         if self.refinery_block_id == BOTTLING_BLOCK:
             self._draw_bottling_station(player, dt)
+            return
+        if self.refinery_block_id == BREW_KETTLE_BLOCK:
+            self._draw_brew_kettle(player, dt)
+            return
+        if self.refinery_block_id == FERM_VESSEL_BLOCK:
+            self._draw_ferm_vessel(player, dt)
+            return
+        if self.refinery_block_id == TAPROOM_BLOCK:
+            self._draw_taproom(player, dt)
             return
         if self.refinery_block_id == WITHERING_RACK_BLOCK:
             self._draw_withering_rack(player, dt)

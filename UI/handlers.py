@@ -15,6 +15,7 @@ from blocks import (BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BB
                     ARTISAN_BENCH_BLOCK, JUICER_BLOCK,
                     GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
                     STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
+                    BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK,
                     COMPOST_BIN_BLOCK, GARDEN_BLOCK,
                     WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK,
                     DRYING_RACK_BLOCK, KILN_BLOCK, RESONANCE_BLOCK,
@@ -440,6 +441,25 @@ class HandlersMixin:
                             player.world.spawn_insects_near_garden(*garden_pos)
                         return
 
+def _deliver_farmer_seeds(player, world):
+    """If any Beloved farmer donors exist, give the player 1–3 random crop seeds."""
+    donors = getattr(player, "farm_seed_donors", set())
+    if not donors:
+        return
+    import random
+    _SEED_POOL = [
+        "wheat_seed", "carrot_seed", "tomato_seed", "corn_seed", "pumpkin_seed",
+        "rice_seed", "ginger_seed", "chili_seed", "pepper_seed", "apple_seed",
+        "strawberry_seed", "bok_choy_seed", "garlic_seed", "scallion_seed",
+    ]
+    count = random.randint(1, min(3, len(donors) + 1))
+    chosen = random.sample(_SEED_POOL, min(count, len(_SEED_POOL)))
+    for seed_id in chosen:
+        player._add_item(seed_id)
+    names = ", ".join(seed_id.replace("_", " ").title() for seed_id in chosen)
+    player.pending_notifications.append(("Gift", f"A farmer sent seeds: {names}", "uncommon"))
+
+
     def handle_npc_click(self, pos, player):
         from cities import (RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC,
                             MerchantNPC, RestaurantNPC, ShrineKeeperNPC, JewelryMerchantNPC,
@@ -511,7 +531,8 @@ class HandlersMixin:
             for key, rect in self._trade_rects.items():
                 if rect.collidepoint(pos):
                     if key == "rest":
-                        npc.give_rest(player)
+                        if npc.give_rest(player):
+                            _deliver_farmer_seeds(player, player.world)
                     else:
                         npc.execute_purchase(key, player)
                     break
@@ -633,6 +654,15 @@ class HandlersMixin:
             return
         if self.refinery_block_id == BOTTLING_BLOCK:
             self._handle_bottling_click(pos, player)
+            return
+        if self.refinery_block_id == BREW_KETTLE_BLOCK:
+            self._handle_brew_kettle_click(pos, player)
+            return
+        if self.refinery_block_id == FERM_VESSEL_BLOCK:
+            self._handle_ferm_vessel_click(pos, player)
+            return
+        if self.refinery_block_id == TAPROOM_BLOCK:
+            self._handle_taproom_click(pos, player)
             return
         if self.refinery_block_id == WITHERING_RACK_BLOCK:
             self._handle_withering_rack_click(pos, player)

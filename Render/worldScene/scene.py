@@ -28,6 +28,22 @@ _OPEN_DOORS = (WOOD_DOOR_OPEN, IRON_DOOR_OPEN,
 
 _SHIMMER_BLOCKS = None
 
+_wire_hud_font = None
+_wire_hud_surf = None
+
+
+def _draw_wire_mode_hud(screen):
+    global _wire_hud_font, _wire_hud_surf
+    if _wire_hud_surf is None:
+        _wire_hud_font = pygame.font.SysFont(None, 20)
+        lbl = _wire_hud_font.render(" WIRE MODE  [\\] to exit ", True, (0, 220, 255))
+        bg = pygame.Surface((lbl.get_width() + 6, lbl.get_height() + 4))
+        bg.fill((8, 8, 24))
+        pygame.draw.rect(bg, (0, 180, 210), bg.get_rect(), 1)
+        bg.blit(lbl, (3, 2))
+        _wire_hud_surf = bg
+    screen.blit(_wire_hud_surf, (8, 8))
+
 def _get_shimmer_blocks():
     global _SHIMMER_BLOCKS
     if _SHIMMER_BLOCKS is None:
@@ -316,6 +332,14 @@ def draw_world(renderer, world, player=None):
                         if var:
                             fc_surf = var[(bx * 97 + by * 31 + world.seed) % len(var)]
                             screen.blit(fc_surf, (sx, sy))
+
+    if getattr(world, "wire_mode", False):
+        from Render.logic_blocks import draw_wire_tile
+        for by in range(by0, by1):
+            for bx in range(bx0, bx1):
+                if world.get_wire(bx, by):
+                    draw_wire_tile(screen, bx, by, world, cam_xi, cam_yi)
+        _draw_wire_mode_hud(screen)
 
     draw_all_sculptures(screen, renderer.cam_x, renderer.cam_y, world)
     draw_all_tapestries(screen, renderer.cam_x, renderer.cam_y, world)

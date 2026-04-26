@@ -152,6 +152,19 @@ class Automation:
         self._state = "halted"
         self._halt_reason = reason
 
+    def _check_wire_enabled(self, world):
+        """Return False if a logic wire is adjacent but none are powered (explicit disable)."""
+        bx = int((self.x + self.W / 2) // BLOCK_SIZE)
+        by = int((self.y + self.H / 2) // BLOCK_SIZE)
+        powered = getattr(world, 'powered_wires', set())
+        has_wire = False
+        for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
+            if world.get_wire(bx + dx, by + dy) == 1:
+                has_wire = True
+                if (bx + dx, by + dy) in powered:
+                    return True
+        return not has_wire
+
     def _target_block(self):
         dx, dy = self.direction
         bx = int(self.x // BLOCK_SIZE) + dx
@@ -160,6 +173,15 @@ class Automation:
 
     def update(self, dt, world):
         adef = self._def
+
+        # --- Wire-enable pin: halt if wires exist but none are powered ---
+        if not self._check_wire_enabled(world):
+            if self._halt_reason != "wire_disabled":
+                self._halt("wire_disabled")
+            return
+        if self._halt_reason == "wire_disabled":
+            self._state = "moving"
+            self._halt_reason = ""
 
         # --- Halted: check if conditions have cleared ---
         if self._state == "halted":
@@ -357,6 +379,19 @@ class FarmBot:
             return "active"
         return {"fuel": "halted_fuel", "full": "halted_full"}.get(self._halt_reason, "active")
 
+    def _check_wire_enabled(self, world):
+        """Return False if a logic wire is adjacent but none are powered (explicit disable)."""
+        bx = int((self.x + self.W / 2) // BLOCK_SIZE)
+        by = int((self.y + self.H / 2) // BLOCK_SIZE)
+        powered = getattr(world, 'powered_wires', set())
+        has_wire = False
+        for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
+            if world.get_wire(bx + dx, by + dy) == 1:
+                has_wire = True
+                if (bx + dx, by + dy) in powered:
+                    return True
+        return not has_wire
+
     def _get_mature_to_seed(self):
         if self._mature_to_seed is None:
             from items import ITEMS
@@ -371,6 +406,17 @@ class FarmBot:
 
     def update(self, dt, world):
         adef = self._def
+
+        # --- Wire-enable pin: halt if wires exist but none are powered ---
+        if not self._check_wire_enabled(world):
+            if self._halt_reason != "wire_disabled":
+                self._state = "halted"
+                self._halt_reason = "wire_disabled"
+            return
+        if self._halt_reason == "wire_disabled":
+            self._state = "active"
+            self._halt_reason = ""
+
         if self._state == "halted":
             if self._halt_reason == "fuel" and self.fuel > 0:
                 self._state = "active"

@@ -243,6 +243,30 @@ OUTPOST_TYPES = {
         "building_style": "house", "half_w": 14, "layout": "warcamp",
     },
 
+    "craft_brewery": {
+        "display_name":    "Craft Brewery",
+        "eligible_biomes": ["rolling_hills", "temperate", "canyon", "alpine_mountain",
+                            "steep_hills", "birch_forest"],
+        "sells": [("ale", 18), ("stout", 22), ("ipa", 24), ("porter", 20)],
+        "buys":  [("ale_reserve", 72, 2), ("stout_reserve", 78, 2),
+                  ("ipa_reserve", 88, 2), ("porter_reserve", 78, 2)],
+        "needs": [("lumber", 20), ("coal", 8), ("iron_chunk", 6)],
+        "base_stock": 4, "clothing_key": "distiller",
+        "building_style": "smithy", "half_w": 15, "layout": "default",
+    },
+
+    "hill_taproom": {
+        "display_name":    "Hill Taproom",
+        "eligible_biomes": ["tropical", "savanna", "beach", "wetland", "swamp",
+                            "jungle", "south_asian"],
+        "sells": [("lager", 16), ("wheat_beer", 18), ("saison", 20), ("pilsner", 16)],
+        "buys":  [("lager_reserve", 62, 2), ("wheat_beer_reserve", 70, 2),
+                  ("saison_reserve", 82, 2)],
+        "needs": [("lumber", 15), ("coal", 6), ("iron_chunk", 5)],
+        "base_stock": 5, "clothing_key": "winemaker",
+        "building_style": "house", "half_w": 14, "layout": "estate",
+    },
+
     "spirit_distillery": {
         "display_name":    "Spirit Distillery",
         "eligible_biomes": ["steppe", "arid_steppe", "savanna", "temperate",

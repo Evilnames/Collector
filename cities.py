@@ -543,6 +543,55 @@ class NPC:
         self.animal_id = npc_id
         self._bob_timer = 0.0
         self._bob_offset = 0.0
+        # Identity / relationship fields — populated by _setup_identity() after spawn
+        self.npc_uid     = None
+        self.town_id     = None
+        self.identity    = None   # dict: first_name, family_name, gender, display_name, blurb
+        self.preferences = None   # dict from npc_preferences.derive_preferences
+        self.family_id    = None
+        self.family_role  = "singleton"
+        self.spouse_uid   = None
+        self.parent_uids  = []
+        self.sibling_uids = []
+
+    def _setup_identity(self, town_id: int, npc_index: int, world_seed: int):
+        """Called once after spawn to assign stable name, lineage, and preferences."""
+        import npc_identity
+        import npc_preferences
+        self.town_id  = town_id
+        self.npc_uid  = f"{town_id}_{npc_index}"
+        self.identity = npc_identity.generate_identity(
+            self.npc_uid, town_id,
+            getattr(self, "display_name", self.animal_id),
+            world_seed,
+        )
+        self.preferences = npc_preferences.derive_preferences(self.npc_uid, world_seed)
+
+    def _beloved_price_mult(self, player) -> float:
+        """Return 0.90 if player has a beloved discount in this NPC's town, else 1.0."""
+        if player is None:
+            return 1.0
+        tid = getattr(self, "town_id", None) or self._nearest_town_id()
+        if tid in getattr(player, "merchant_beloved_towns", set()):
+            return 0.90
+        return 1.0
+
+    def _dynasty_price_mult(self, player) -> float:
+        """Return discount multiplier from dynasty favor (5% at Favored, 10% at Champion)."""
+        if player is None:
+            return 1.0
+        from towns import TOWNS
+        tid   = getattr(self, "town_id", None) or self._nearest_town_id()
+        town  = TOWNS.get(tid)
+        if town is None:
+            return 1.0
+        rid  = getattr(town, "region_id", None)
+        mult = 1.0
+        if rid in getattr(player, "favored_dynasty_regions",  set()):
+            mult *= 0.95
+        if rid in getattr(player, "champion_dynasty_regions", set()):
+            mult *= 0.95
+        return mult
 
     @property
     def rect(self):
@@ -1160,6 +1209,55 @@ WINE_SHOP_TABLE = [
     ("wine_cellar_item",    200, "Wine Cellar",          "lumber",       40),
 ]
 
+BEER_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("hop_seed",              8, "Hop Seed",             "lumber",        3),
+    ("hop_cluster",           6, "Hop Cluster",          "dirt_clump",    6),
+    ("brew_kettle_item",    180, "Brew Kettle",           "iron_chunk",   18),
+    ("ferm_vessel_item",    200, "Ferm. Vessel",          "iron_chunk",   20),
+    ("taproom_item",        220, "Taproom",               "iron_chunk",   22),
+    ("ale",                  20, "Ale",                   "wheat",         6),
+    ("lager",                18, "Lager",                 "wheat",         5),
+    ("stout",                22, "Stout",                 "coal",          4),
+    ("ipa",                  25, "IPA",                   "wheat",         7),
+    ("wheat_beer",           20, "Wheat Beer",            "wheat",         6),
+    ("saison",               24, "Saison",                "wheat",         7),
+    ("porter",               22, "Porter",                "coal",          4),
+    ("amber_ale",            20, "Amber Ale",             "wheat",         6),
+    ("pilsner",              18, "Pilsner",               "wheat",         5),
+    ("brown_ale",            20, "Brown Ale",             "wheat",         6),
+    ("sour",                 24, "Sour",                  "mushroom",      4),
+    ("barleywine",           28, "Barleywine",            "wheat",         8),
+]
+
+# Prices BeerMerchantNPC / TavernkeeperNPC pay when buying beers from the player.
+TAVERN_BUY_TABLE = {
+    "ale": 16,            "lager": 14,          "stout": 18,
+    "ipa": 20,            "wheat_beer": 16,     "saison": 19,
+    "porter": 18,         "amber_ale": 16,      "pilsner": 14,
+    "brown_ale": 16,      "sour": 19,           "barleywine": 22,
+    "ale_fine": 36,       "lager_fine": 33,     "stout_fine": 40,
+    "ipa_fine": 46,       "wheat_beer_fine": 36,"saison_fine": 43,
+    "porter_fine": 40,    "amber_ale_fine": 36, "pilsner_fine": 33,
+    "brown_ale_fine": 36, "sour_fine": 43,      "barleywine_fine": 50,
+    "ale_reserve": 70,    "lager_reserve": 62,  "stout_reserve": 78,
+    "ipa_reserve": 88,    "wheat_beer_reserve": 70, "saison_reserve": 82,
+    "porter_reserve": 78, "amber_ale_reserve": 70,  "pilsner_reserve": 62,
+    "brown_ale_reserve": 70, "sour_reserve": 82, "barleywine_reserve": 92,
+}
+
+TAVERN_MENU = [
+    # (item_id, gold_cost)
+    ("bread",          8),
+    ("cooked_beef",   16),
+    ("cooked_chicken",13),
+    ("cheese",         9),
+    ("ale",           12),
+    ("lager",         11),
+    ("stout",         14),
+    ("ipa",           15),
+]
+
 
 # Items unlocked in merchant shops as the host town grows in tier.
 
@@ -1525,24 +1623,26 @@ class MerchantNPC(NPC):
         n = max(1, n)
         self.shop = rng.sample(pool, min(n, len(pool)))
 
-    def discounted_cost(self, idx):
+    def discounted_cost(self, idx, player=None):
         _, cost, *_ = self.shop[idx]
         item_id = self.shop[idx][0]
         return max(1, round(cost
                             * _rep_discount(self._town_rep(), self)
-                            * _specialty_price_mult(self, item_id)))
+                            * _specialty_price_mult(self, item_id)
+                            * self._beloved_price_mult(player)
+                            * self._dynasty_price_mult(player)))
 
     def rep_discount_pct(self):
         return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
 
     def can_buy(self, idx, player):
-        return player.money >= self.discounted_cost(idx)
+        return player.money >= self.discounted_cost(idx, player)
 
     def execute_purchase(self, idx, player):
         if not self.can_buy(idx, player):
             return False
         item_id = self.shop[idx][0]
-        player.money -= self.discounted_cost(idx)
+        player.money -= self.discounted_cost(idx, player)
         player._add_item(item_id)
         return True
 
@@ -1582,6 +1682,66 @@ class WineMerchantNPC(MerchantNPC):
         self.shop = rng.sample(WINE_SHOP_TABLE, min(n, len(WINE_SHOP_TABLE)))
 
 
+class BeerMerchantNPC(MerchantNPC):
+    """Sells brewing supplies and beers; also buys fine/reserve beers from the player."""
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, rng, biodome)
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (180, 140, 60)  # Golden ale amber
+        self.display_name = "Beer Merchant"
+        n = rng.randint(5, 7)
+        self.shop = rng.sample(BEER_SHOP_TABLE, min(n, len(BEER_SHOP_TABLE)))
+
+    def beer_buy_price(self, item_id):
+        base = TAVERN_BUY_TABLE.get(item_id, 0)
+        return max(1, round(base * _rep_buy_bonus(self._town_rep())))
+
+    def can_sell_beer(self, item_id, player):
+        return TAVERN_BUY_TABLE.get(item_id, 0) > 0 and player.inventory.get(item_id, 0) > 0
+
+    def sell_beer(self, item_id, player):
+        if not self.can_sell_beer(item_id, player):
+            return 0
+        price = self.beer_buy_price(item_id)
+        player.inventory[item_id] -= 1
+        if player.inventory[item_id] <= 0:
+            del player.inventory[item_id]
+            for i in range(len(player.hotbar)):
+                if player.hotbar[i] == item_id:
+                    player.hotbar[i] = None
+        player.money += price
+        return price
+
+
+class TavernkeeperNPC(InnkeeperNPC):
+    """Runs a tavern — serves food and beer, buys quality beer from the player."""
+    def __init__(self, x, y, world, rng, difficulty=0, biodome="temperate"):
+        super().__init__(x, y, world, rng, difficulty, biodome)
+        self.clothing["body"] = (120, 75, 35)  # Tavern brown
+        self.display_name = "Tavernkeeper"
+        self.menu = TAVERN_MENU
+
+    def beer_buy_price(self, item_id):
+        base = TAVERN_BUY_TABLE.get(item_id, 0)
+        return max(1, round(base * _rep_buy_bonus(self._town_rep())))
+
+    def can_sell_beer(self, item_id, player):
+        return TAVERN_BUY_TABLE.get(item_id, 0) > 0 and player.inventory.get(item_id, 0) > 0
+
+    def sell_beer(self, item_id, player):
+        if not self.can_sell_beer(item_id, player):
+            return 0
+        price = self.beer_buy_price(item_id)
+        player.inventory[item_id] -= 1
+        if player.inventory[item_id] <= 0:
+            del player.inventory[item_id]
+            for i in range(len(player.hotbar)):
+                if player.hotbar[i] == item_id:
+                    player.hotbar[i] = None
+        player.money += price
+        return price
+
+
 class DoctorNPC(NPC):
     def __init__(self, x, y, world, biodome="temperate"):
         super().__init__(x, y, world, "npc_doctor")
@@ -1589,12 +1749,19 @@ class DoctorNPC(NPC):
         self.clothing["body"] = (245, 245, 245) # White coat
         self.heal_cost = 50
 
+    def _is_free(self, player):
+        tid = getattr(self, "town_id", None) or self._nearest_town_id()
+        return tid in getattr(player, "doctor_beloved_towns", set())
+
     def can_heal(self, player):
+        if self._is_free(player):
+            return player.health < player.MAX_HEALTH
         return player.money >= self.heal_cost and player.health < player.MAX_HEALTH
 
     def execute_heal(self, player):
         if self.can_heal(player):
-            player.money -= self.heal_cost
+            if not self._is_free(player):
+                player.money -= self.heal_cost
             player.health = player.MAX_HEALTH
             return True
         return False
@@ -1622,23 +1789,25 @@ class RestaurantNPC(NPC):
         self.cuisine = rng.choice(pool)
         self.menu = CUISINE_MENUS[self.cuisine]
 
-    def discounted_cost(self, idx):
+    def discounted_cost(self, idx, player=None):
         item_id, cost = self.menu[idx]
         return max(1, round(cost
                             * _rep_discount(self._town_rep(), self)
-                            * _specialty_price_mult(self, item_id)))
+                            * _specialty_price_mult(self, item_id)
+                            * self._beloved_price_mult(player)
+                            * self._dynasty_price_mult(player)))
 
     def rep_discount_pct(self):
         return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
 
     def can_buy(self, idx, player):
-        return player.money >= self.discounted_cost(idx)
+        return player.money >= self.discounted_cost(idx, player)
 
     def execute_purchase(self, idx, player):
         if not self.can_buy(idx, player):
             return False
         item_id, _ = self.menu[idx]
-        player.money -= self.discounted_cost(idx)
+        player.money -= self.discounted_cost(idx, player)
         player._add_item(item_id)
         return True
 
@@ -1713,24 +1882,26 @@ class BlacksmithNPC(NPC):
         self.shop = rng.sample(BLACKSMITH_SHOP_TABLE,
                                min(n, len(BLACKSMITH_SHOP_TABLE)))
 
-    def discounted_cost(self, idx):
+    def discounted_cost(self, idx, player=None):
         _, cost, *_ = self.shop[idx]
         item_id = self.shop[idx][0]
         return max(1, round(cost
                             * _rep_discount(self._town_rep(), self)
-                            * _specialty_price_mult(self, item_id)))
+                            * _specialty_price_mult(self, item_id)
+                            * self._beloved_price_mult(player)
+                            * self._dynasty_price_mult(player)))
 
     def rep_discount_pct(self):
         return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
 
     def can_buy(self, idx, player):
-        return player.money >= self.discounted_cost(idx)
+        return player.money >= self.discounted_cost(idx, player)
 
     def execute_purchase(self, idx, player):
         if not self.can_buy(idx, player):
             return False
         item_id = self.shop[idx][0]
-        player.money -= self.discounted_cost(idx)
+        player.money -= self.discounted_cost(idx, player)
         player._add_item(item_id)
         return True
 
@@ -1759,38 +1930,47 @@ class InnkeeperNPC(NPC):
         self.rest_cost = 15 + difficulty * 10
         self.menu = INN_MENU
 
-    def discounted_cost(self, idx=None):
+    def discounted_cost(self, idx=None, player=None):
         if idx is None:
-            return max(1, round(self.rest_cost * _rep_discount(self._town_rep(), self)))
+            return max(1, round(self.rest_cost
+                                * _rep_discount(self._town_rep(), self)
+                                * self._beloved_price_mult(player)
+                            * self._dynasty_price_mult(player)))
         item_id, cost = self.menu[idx]
         return max(1, round(cost
                             * _rep_discount(self._town_rep(), self)
-                            * _specialty_price_mult(self, item_id)))
+                            * _specialty_price_mult(self, item_id)
+                            * self._beloved_price_mult(player)
+                            * self._dynasty_price_mult(player)))
 
     def rep_discount_pct(self):
         return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
 
     def can_buy(self, idx, player):
-        return player.money >= self.discounted_cost(idx)
+        return player.money >= self.discounted_cost(idx, player)
 
     def execute_purchase(self, idx, player):
         if not self.can_buy(idx, player):
             return False
         item_id, _ = self.menu[idx]
-        player.money -= self.discounted_cost(idx)
+        player.money -= self.discounted_cost(idx, player)
         player._add_item(item_id)
         return True
 
     def can_rest(self, player):
-        return player.money >= self.discounted_cost()
+        return player.money >= self.discounted_cost(None, player)
 
     def give_rest(self, player):
         if not self.can_rest(player):
             return False
-        player.money -= self.discounted_cost()
-        # Slightly weaker but longer than shrine blessing
-        player.blessing_timer = 240.0
-        player.blessing_mult  = 1.15
+        player.money -= self.discounted_cost(None, player)
+        if getattr(player, "inn_beloved", False):
+            player.health = player.MAX_HEALTH
+            player.blessing_timer = 480.0
+            player.blessing_mult  = 1.20
+        else:
+            player.blessing_timer = 240.0
+            player.blessing_mult  = 1.15
         return True
 
 
@@ -1802,24 +1982,26 @@ class ScholarNPC(NPC):
         self.shop = rng.sample(SCHOLAR_SHOP_TABLE,
                                min(n, len(SCHOLAR_SHOP_TABLE)))
 
-    def discounted_cost(self, idx):
+    def discounted_cost(self, idx, player=None):
         _, cost, *_ = self.shop[idx]
         item_id = self.shop[idx][0]
         return max(1, round(cost
                             * _rep_discount(self._town_rep(), self)
-                            * _specialty_price_mult(self, item_id)))
+                            * _specialty_price_mult(self, item_id)
+                            * self._beloved_price_mult(player)
+                            * self._dynasty_price_mult(player)))
 
     def rep_discount_pct(self):
         return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
 
     def can_buy(self, idx, player):
-        return player.money >= self.discounted_cost(idx)
+        return player.money >= self.discounted_cost(idx, player)
 
     def execute_purchase(self, idx, player):
         if not self.can_buy(idx, player):
             return False
         item_id = self.shop[idx][0]
-        player.money -= self.discounted_cost(idx)
+        player.money -= self.discounted_cost(idx, player)
         player._add_item(item_id)
         return True
 
@@ -1851,6 +2033,7 @@ LEADER_CONTRACT_TABLE = [
     ("coffee",         8,  380, "Coffee Reserve",   250,  4),
     ("tea",           10,  340, "Tea Consignment",  250,  4),
     ("red_wine",       8,  360, "Regional Wine",    200,  5),
+    ("ale",            8,  300, "Craft Beer Cask",  150,  4),
     ("spirits",        6,  450, "Premium Spirits",  300,  5),
     ("tempered_iron",  5,  500, "Forged Steel",     400,  6),
     ("crystal_shard",  3,  600, "Crystal Cache",    500,  8),
@@ -1868,6 +2051,7 @@ _CONTRACT_TAGS: dict[str, tuple] = {
     "coffee":        ("coffee",),
     "tea":           ("tea",),
     "red_wine":      ("wine",),
+    "ale":           ("beer",),
     "spirits":       ("spirits",),
     "tempered_iron": ("metal", "weapons"),
     "crystal_shard": ("gems",),
@@ -2389,7 +2573,7 @@ CITY_CONFIGS = {
         ],
         "npc_types": ["quest_rock", "blacksmith", "innkeeper", "merchant",
                       ["quest_gem", "quest_gem", "villager"],
-                      ["scholar", "villager", "villager", "coffee_merchant"],
+                      ["scholar", "villager", "villager", "coffee_merchant", "beer_merchant"],
                       "shrine_npc"],
         "gardens": [(-21, 2), (-12, 2), (16, 2)],
         # (center_offset, half_w) — paved plaza with a centre sculpture.
@@ -2435,8 +2619,8 @@ CITY_CONFIGS = {
                       ["quest_wildflower", "quest_wildflower", "villager", "wine_merchant"],
                       "merchant",
                       ["quest_gem", "quest_gem", "villager", "coffee_merchant"],
-                      "innkeeper",
-                      ["trade", "merchant", "villager"],
+                      ["innkeeper", "innkeeper", "tavern"],
+                      ["trade", "merchant", "villager", "beer_merchant"],
                       ["scholar", "scholar", "villager"],
                       "shrine_npc",
                       ["jewelry_merchant", "villager", "villager"]],
@@ -2482,8 +2666,8 @@ CITY_CONFIGS = {
             ( 38, None,   None,   None),    # Outdoor noble
             ( 46, (7, 10), (6, 9), ["shrine", "shrine"]),
         ],
-        "npc_types": [["scholar", "doctor"], "innkeeper", "blacksmith", "scholar",
-                      "scholar", "shrine_npc", "restaurant_npc", "merchant",
+        "npc_types": [["scholar", "doctor"], ["innkeeper", "tavern"], "blacksmith", "scholar",
+                      "scholar", "shrine_npc", "restaurant_npc", ["merchant", "beer_merchant"],
                       "villager", ["scholar", "library_npc", "villager", "wine_merchant"], "jewelry_merchant",
                       "noble", "shrine_npc"],
         "gardens": [(-46, 3), (-22, 2), (10, 2), (34, 3)],
@@ -4355,6 +4539,9 @@ def _ensure_city_traversal(world, city_bx, half_w, sy):
 def _build_single_city(world, rng, city_bx, difficulty):
     sy = world.surface_y_at(city_bx)
     biodome = world.biodome_at(city_bx)
+    # town_id is the index this city will occupy in world.town_centers (appended after return)
+    _current_town_id = len(getattr(world, "town_centers", []))
+    _entities_before = len(world.entities)
     if biodome in _SIZE_BY_BIOME:
         city_size = rng.choice(_SIZE_BY_BIOME[biodome])
     else:
@@ -4660,6 +4847,10 @@ def _build_single_city(world, rng, city_bx, difficulty):
                 world.entities.append(CoffeeMerchantNPC(npc_px, npc_py, world, rng, biodome=biodome))
             elif npc_type == "wine_merchant":
                 world.entities.append(WineMerchantNPC(npc_px, npc_py, world, rng, biodome=biodome))
+            elif npc_type == "beer_merchant":
+                world.entities.append(BeerMerchantNPC(npc_px, npc_py, world, rng, biodome=biodome))
+            elif npc_type == "tavern":
+                world.entities.append(TavernkeeperNPC(npc_px, npc_py, world, rng, difficulty, biodome=biodome))
             elif npc_type == "musician":
                 world.entities.append(MusicianNPC(npc_px, npc_py, world, biodome=biodome))
             elif npc_type == "town_crier":
@@ -4700,6 +4891,18 @@ def _build_single_city(world, rng, city_bx, difficulty):
     _place_city_walls(world, rng, city_bx - half_w, city_bx + half_w, sy,
                       biodome, city_size)
     _ensure_city_traversal(world, city_bx, half_w, sy)
+
+    # Assign identity, preferences, and family links to all NPCs spawned for this city
+    import npc_identity
+    city_npcs = world.entities[_entities_before:]
+    for idx, npc in enumerate(city_npcs):
+        if hasattr(npc, "_setup_identity"):
+            npc._setup_identity(_current_town_id, idx, world.seed)
+    npc_identity.assign_families(
+        [n for n in city_npcs if hasattr(n, "family_id")],
+        _current_town_id,
+        world.seed,
+    )
 
     return city_size
 
@@ -8681,6 +8884,9 @@ def generate_cities(world, seed):
         placed += 1
         x += CITY_SPACING
 
+    import npc_identity
+    npc_identity.assign_ruling_dynasties(world, seed)
+
 
 def generate_city_for_chunk(world, seed, cx):
     """Build a city in newly-generated chunk cx if a city slot falls there."""
@@ -8705,6 +8911,8 @@ def generate_city_for_chunk(world, seed, cx):
     world.city_sizes.append(city_size)
     world.city_slot_xs.append(slot_x)
     from towns import register_new_town
+    import npc_identity
     register_new_town(world, city_bx, city_size,
                       region_id=meta["region_id"],
                       is_capital=meta["is_capital"])
+    npc_identity.assign_ruling_dynasties(world, seed)

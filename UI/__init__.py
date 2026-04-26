@@ -12,6 +12,7 @@ from .crafting import CraftingMixin
 from .coffee import CoffeeMixin
 from .wine import WineMixin
 from .spirits import SpiritsMixin
+from .beer import BeerMixin
 from .minigames import MinigamesMixin
 from .collections import CollectionsMixin
 from .help import HelpMixin
@@ -34,7 +35,7 @@ from .weapons import SmithingMixin
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
-    CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, MinigamesMixin, CollectionsMixin,
+    CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, BeerMixin, MinigamesMixin, CollectionsMixin,
     HelpMixin, HorseMixin, DogsMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin,
     TownMenuMixin, OutpostMenuMixin, ReputationScreenMixin, SmithingMixin,
 ):
@@ -58,6 +59,7 @@ class UI(
         self.active_compost_bin_pos  = None   # (bx, by) when compost bin is open
         self._compost_deposit_btn    = None
         self._compost_collect_btn    = None
+        self.npc_inspect_open        = False   # I: NPC inspect overlay
         self.trade_block_open        = False
         self.active_trade_pos        = None   # (bx, by) of open trade block
         self._trade_goods_rects      = {}     # item_id -> Rect for stored goods grid
@@ -462,6 +464,75 @@ class UI(
         self._max_spirits_codex_scroll  = 0
         self._spirits_codex_selected    = None
         self._spirits_codex_rects       = {}
+        # ----- Brew Kettle state -----
+        self._brew_phase          = "select_hop"  # select_hop | select_mash | brewing | result
+        self._brew_beer_idx       = None
+        self._brew_mash_sel       = None
+        self._brew_hop_add        = "early"
+        self._brew_temp           = 0.0
+        self._brew_temp_vel       = 0.0
+        self._brew_heat_held      = False
+        self._brew_time           = 0.0
+        self._brew_mash_set       = False
+        self._brew_hop_set        = False
+        self._brew_mash_quality   = 0.0
+        self._brew_hop_quality    = 0.0
+        self._brew_mash_zone_hit  = False
+        self._brew_boil_zone_hit  = False
+        self._brew_event_flash    = None
+        self._brew_hop_rects      = {}
+        self._brew_mash_rects     = {}
+        self._brew_start_btn      = None
+        self._brew_action_btn     = None
+        self._brew_result_beer    = None
+        self._brew_result_done_btn = None
+        # ----- Fermentation Vessel state -----
+        self._ferm_phase          = "select_beer"  # select_beer | select_yeast | fermenting | result
+        self._ferm_beer_idx       = None
+        self._ferm_yeast_sel      = None
+        self._ferm_temp           = 0.15
+        self._ferm_temp_vel       = 0.0
+        self._ferm_cool_held      = False
+        self._ferm_time           = 0.0
+        self._ferm_duration       = 45.0
+        self._ferm_time_in_optimal = 0.0
+        self._ferm_rack_timer     = 10.0
+        self._ferm_rack_active    = False
+        self._ferm_rack_window    = 0.0
+        self._ferm_rack_bonus     = 0.0
+        self._ferm_penalties      = 0
+        self._ferm_done           = False
+        self._ferm_beer_rects     = {}
+        self._ferm_yeast_rects    = {}
+        self._ferm_start_btn      = None
+        self._ferm_result_beer    = None
+        self._ferm_result_done_btn = None
+        # ----- Taproom state -----
+        self._tap_phase           = "select"  # select | configure | conditioning | result
+        self._tap_beer_idx        = None
+        self._tap_vessel_sel      = None
+        self._tap_duration_sel    = None
+        self._tap_dry_hop         = False
+        self._tap_cond_progress   = 0.0
+        self._tap_cond_done       = False
+        self._tap_dryhop_active   = False
+        self._tap_dryhop_done     = False
+        self._tap_dryhop_bonus    = 0.0
+        self._tap_beer_rects      = {}
+        self._tap_vessel_rects    = {}
+        self._tap_duration_rects  = {}
+        self._tap_dryhop_btn      = None
+        self._tap_start_btn       = None
+        self._tap_result_id       = None
+        self._tap_result_beer_type = None
+        self._tap_result_quality  = 0.0
+        self._tap_result_notes    = []
+        self._tap_result_done_btn = None
+        # ----- Beer codex UI state -----
+        self._beer_codex_scroll      = 0
+        self._max_beer_codex_scroll  = 0
+        self._beer_codex_selected    = None
+        self._beer_codex_rects       = {}
         # Fossil prep table mini-game state
         self._fprep_phase      = "select"   # "select" | "prep" | "reveal"
         self._fprep_fossil     = None       # Fossil being prepared
@@ -914,4 +985,14 @@ class UI(
         if self._jw_detail_jewelry is not None:
             self._draw_jewelry_detail(player)
         self.draw_smith_hud(player)
+        # NPC inspect overlay — drawn on top of everything else
+        if getattr(player, "inspecting_npc", None) is not None:
+            if getattr(player, "dynasty_panel_open", False):
+                self._draw_dynasty_chronicle(player, player.world)
+            elif getattr(player, "fulfill_request_open", False):
+                self._draw_npc_fulfill_request(player, player.world)
+            elif getattr(player, "gift_panel_open", False):
+                self._draw_npc_gift(player, player.world)
+            else:
+                self._draw_npc_inspect(player, player.world)
 

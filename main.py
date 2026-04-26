@@ -13,7 +13,7 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK, BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK
 from elevators import ElevatorCar
 from minecarts import Minecart
 
@@ -469,6 +469,8 @@ def main():
                     elif val in tp_uid_map:
                         w.tapestry_data[pos] = tp_uid_map[val]
                 del w._pending_tapestry_positions
+            import logic as _logic
+            _logic.evaluate_full_network(w)
             return w, p, data["research"]
         world, player, research_data = _run_with_loading_screen(screen, "Loading", _do_load)
         research.apply_save(research_data)
@@ -537,6 +539,10 @@ def main():
         ui.active_outpost = None
         ui.trade_block_open = False
         ui.active_trade_pos = None
+        player.inspecting_npc = None
+        player.gift_panel_open = False
+        player.fulfill_request_open = False
+        player.dynasty_panel_open = False
 
     def _any_ui_open():
         return any([ui.pause_open, ui.help_open, ui.research_open, ui.inventory_open, ui.crafting_open,
@@ -545,7 +551,8 @@ def main():
                     ui.backhoe_open, ui.breeding_open, ui.garden_open, ui.wildflower_display_open,
                     ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open,
                     ui.town_menu_open, ui.outpost_menu_open, ui.reputation_screen_open, ui.trade_block_open,
-                    ui.dog_view_open, ui.dog_breeding_open])
+                    ui.dog_view_open, ui.dog_breeding_open,
+                    getattr(player, "inspecting_npc", None) is not None])
 
     def _find_nearby_npc(world, player):
         from cities import NPC
@@ -553,6 +560,14 @@ def main():
             if isinstance(entity, NPC) and entity.in_range(player):
                 if getattr(entity, 'is_ambient', False):
                     continue
+                return entity
+        return None
+
+    def _find_any_nearby_npc(world, player):
+        """Like _find_nearby_npc but also returns ambient NPCs (for inspect)."""
+        from cities import NPC
+        for entity in world.entities:
+            if isinstance(entity, NPC) and entity.in_range(player):
                 return entity
         return None
 
@@ -726,6 +741,18 @@ def main():
                 if ui.refinery_open and ui.refinery_block_id == BARREL_ROOM_BLOCK:
                     ui.handle_barrel_age_keydown(event.key)
 
+                # Brew Kettle: ENTER to set mash / add hops / finish
+                if ui.refinery_open and ui.refinery_block_id == BREW_KETTLE_BLOCK:
+                    ui.handle_brew_keydown(event.key, player)
+
+                # Fermentation Vessel: W to rack; SPACE held to cool
+                if ui.refinery_open and ui.refinery_block_id == FERM_VESSEL_BLOCK:
+                    ui.handle_ferm_keydown(event.key, player)
+
+                # Taproom: W to dry-hop during conditioning
+                if ui.refinery_open and ui.refinery_block_id == TAPROOM_BLOCK:
+                    ui.handle_tap_keydown(event.key, player)
+
                 # Jewelry Workbench: text input for name phase
                 if ui.refinery_open and ui._jw_phase == "name_confirm":
                     ui.handle_jewelry_keydown(event.key, getattr(event, "unicode", ""), player)
@@ -752,6 +779,14 @@ def main():
                 from blocks import FORGE_BLOCK as _FORGE_BLOCK
                 if ui.refinery_open and ui.refinery_block_id == _FORGE_BLOCK:
                     ui.handle_forge_keydown(event.key, player)
+
+                # Milking mini-game: SPACE pulls the currently lit teat
+                if event.key == pygame.K_SPACE and not _any_ui_open():
+                    from animals import Cow as _Cow
+                    for _ent in world.entities:
+                        if isinstance(_ent, _Cow) and _ent._milking is not None:
+                            _ent.handle_milking_press()
+                            break
 
                 # Weapon Rack: ESC to close
                 from blocks import WEAPON_RACK_BLOCK as _WEAPON_RACK_BLOCK
@@ -848,6 +883,29 @@ def main():
                     if ui.help_open:
                         ui.research_open = ui.inventory_open = ui.crafting_open = False
                         ui.collection_open = ui.refinery_open = ui.breeding_open = False
+
+                if event.key == pygame.K_i:
+                    nearby_any = _find_any_nearby_npc(world, player)
+                    if nearby_any is not None:
+                        if getattr(player, "inspecting_npc", None) is nearby_any:
+                            player.inspecting_npc = None
+                            player.gift_panel_open = False
+                            player.fulfill_request_open = False
+                        else:
+                            _close_all_ui()
+                            player.inspecting_npc = nearby_any
+                            player.gift_panel_open = False
+                            player.fulfill_request_open = False
+                            # Rival dynasty first-meeting penalty
+                            _uid = getattr(nearby_any, "npc_uid", None)
+                            if (_uid and _uid not in player.npc_relationships):
+                                _rid = getattr(nearby_any, "dynasty_id", None)
+                                if _rid in getattr(player, "rival_dynasty_regions", set()):
+                                    player.npc_relationships[_uid] = -20
+                            import npc_preferences as _npc_prefs
+                            _npc_prefs.maybe_generate_request(
+                                player, nearby_any, getattr(world, "day_count", 0)
+                            )
 
                 if event.key == pygame.K_e:
                     # Dismount minecart if currently riding
@@ -1060,7 +1118,27 @@ def main():
                                 else:
                                     player.pending_notifications.append(
                                         ("Light Trap", "No insects gathered yet", None))
-                            equip = None if _lt_pos is not None else player.get_nearby_equipment()
+                            _switch_toggled = False
+                            if _lt_pos is None:
+                                from blocks import SWITCH_BLOCK_OFF, SWITCH_BLOCK_ON, LATCH_BLOCK_OFF, LATCH_BLOCK_ON
+                                import logic as _logic
+                                _sw_pos = player.get_nearby_equipment_pos(SWITCH_BLOCK_OFF) or \
+                                          player.get_nearby_equipment_pos(SWITCH_BLOCK_ON)
+                                _lt2_pos = player.get_nearby_equipment_pos(LATCH_BLOCK_OFF) or \
+                                           player.get_nearby_equipment_pos(LATCH_BLOCK_ON)
+                                if _sw_pos is not None:
+                                    sbx, sby = _sw_pos
+                                    sbid = world.get_block(sbx, sby)
+                                    world.set_block(sbx, sby, SWITCH_BLOCK_ON if sbid == SWITCH_BLOCK_OFF else SWITCH_BLOCK_OFF)
+                                    _logic.evaluate_full_network(world)
+                                    _switch_toggled = True
+                                elif _lt2_pos is not None:
+                                    lbx, lby = _lt2_pos
+                                    lbid = world.get_block(lbx, lby)
+                                    world.set_block(lbx, lby, LATCH_BLOCK_ON if lbid == LATCH_BLOCK_OFF else LATCH_BLOCK_OFF)
+                                    _logic.evaluate_full_network(world)
+                                    _switch_toggled = True
+                            equip = None if (_lt_pos is not None or _switch_toggled) else player.get_nearby_equipment()
                             if equip is not None:
                                 ui.refinery_open = True
                                 ui.refinery_block_id = equip
@@ -1106,6 +1184,9 @@ def main():
                                     ui.active_compost_bin_pos = None
                             else:
                                 ui.refinery_open = False
+
+                if event.key == pygame.K_BACKSLASH:
+                    world.toggle_wire_mode()
 
                 if event.key == pygame.K_g and not _any_ui_open():
                     # Toggle stay/follow for all tamed dogs within 8 blocks
@@ -1237,6 +1318,8 @@ def main():
                     ui.handle_town_menu_click(event.pos, player)
                 elif ui.outpost_menu_open:
                     pass  # diplomatic-only — clicks consumed but do nothing
+                elif getattr(player, "inspecting_npc", None) is not None:
+                    ui.handle_inspect_click(event.pos, player, world)
                 elif ui.npc_open:
                     ui.handle_npc_click(event.pos, player)
                 elif ui.research_open:
@@ -1358,6 +1441,84 @@ def main():
                                         world._town_toasts.append(
                                             f"{_spec['name']} — {_spec['tagline']}")
                                     break
+                    # Logic block right-click: rotate gates / toggle sensor mode / cycle pulse period
+                    if event.button == 3 and not _any_ui_open():
+                        from blocks import (LOGIC_ROTATEABLE_BLOCKS as _LRB,
+                                            DAY_SENSOR_BLOCK as _DSB, NIGHT_SENSOR_BLOCK as _NSB,
+                                            PULSE_GEN_BLOCK as _PGBR)
+                        import logic as _logicr
+                        _rx_w = event.pos[0] + renderer.cam_x
+                        _ry_w = event.pos[1] + renderer.cam_y
+                        _rbx = int(_rx_w // BLOCK_SIZE)
+                        _rby = int(_ry_w // BLOCK_SIZE)
+                        _rbid = world.get_block(_rbx, _rby)
+                        if _rbid in _LRB:
+                            _gs = world.logic_state.get((_rbx, _rby), {})
+                            _gs["facing"] = _logicr._rotate_facing(_gs.get("facing", "right"))
+                            world.logic_state[(_rbx, _rby)] = _gs
+                            _logicr.evaluate_full_network(world)
+                        elif _rbid == _DSB:
+                            world.set_block(_rbx, _rby, _NSB)
+                            _logicr.evaluate_full_network(world)
+                        elif _rbid == _NSB:
+                            world.set_block(_rbx, _rby, _DSB)
+                            _logicr.evaluate_full_network(world)
+                        elif _rbid == _PGBR:
+                            _pgs = world.logic_state.get((_rbx, _rby), {})
+                            _periods = [0.25, 0.5, 1.0, 2.0, 4.0, 8.0]
+                            _cur = _pgs.get("period", 2.0)
+                            try:
+                                _pidx = _periods.index(_cur)
+                            except ValueError:
+                                _pidx = 3
+                            _pgs["period"] = _periods[(_pidx + 1) % len(_periods)]
+                            world.logic_state[(_rbx, _rby)] = _pgs
+                        # Repeater right-click: cycle delay
+                        from blocks import (REPEATER_BLOCK as _RPTBR,
+                                            COUNTER_BLOCK as _CTRBR,
+                                            COMPARATOR_BLOCK as _CMPBR,
+                                            SEQUENCER_BLOCK as _SEQBR,
+                                            T_FLIPFLOP_BLOCK as _TFFBR)
+                        if _rbid == _RPTBR:
+                            _rgs = world.logic_state.get((_rbx, _rby), {})
+                            _delays = [0.25, 0.5, 1.0, 2.0, 4.0]
+                            _dcur = _rgs.get("delay", 0.5)
+                            try:
+                                _didx = _delays.index(_dcur)
+                            except ValueError:
+                                _didx = 1
+                            _rgs["delay"] = _delays[(_didx + 1) % len(_delays)]
+                            world.logic_state[(_rbx, _rby)] = _rgs
+                        # Counter right-click: cycle threshold 2-3-4-5-6-8-10-12-16
+                        elif _rbid == _CTRBR:
+                            _cgs = world.logic_state.get((_rbx, _rby), {})
+                            _thresholds = [2, 3, 4, 5, 6, 8, 10, 12, 16]
+                            _ct = _cgs.get("threshold", 4)
+                            try:
+                                _cidx = _thresholds.index(_ct)
+                            except ValueError:
+                                _cidx = 2
+                            _cgs["threshold"] = _thresholds[(_cidx + 1) % len(_thresholds)]
+                            world.logic_state[(_rbx, _rby)] = _cgs
+                            _logicr.evaluate_full_network(world)
+                        # Comparator right-click: cycle threshold 1-8
+                        elif _rbid == _CMPBR:
+                            _mpgs = world.logic_state.get((_rbx, _rby), {})
+                            _mpgs["threshold"] = (_mpgs.get("threshold", 4) % 8) + 1
+                            world.logic_state[(_rbx, _rby)] = _mpgs
+                            _logicr.evaluate_full_network(world)
+                        # Sequencer right-click: manually advance step
+                        elif _rbid == _SEQBR:
+                            _sgs = world.logic_state.get((_rbx, _rby), {})
+                            _sgs["step"] = (_sgs.get("step", 0) + 1) % 4
+                            world.logic_state[(_rbx, _rby)] = _sgs
+                            _logicr.evaluate_full_network(world)
+                        # T-Flip-Flop right-click: manual toggle
+                        elif _rbid == _TFFBR:
+                            _tgs = world.logic_state.get((_rbx, _rby), {})
+                            _tgs["q"] = not _tgs.get("q", False)
+                            world.logic_state[(_rbx, _rby)] = _tgs
+                            _logicr.evaluate_full_network(world)
                     # Sculptor right-click: restore stone in carve phase
                     if event.button == 3 and ui.refinery_open:
                         from blocks import SCULPTORS_BENCH as _SCULPTORS_BENCH_R
@@ -1390,6 +1551,12 @@ def main():
         # Copper Still: poll SPACE for heat
         if ui.refinery_open and ui.refinery_block_id == STILL_BLOCK:
             ui.handle_still_keys(keys)
+        # Brew Kettle: poll SPACE for heat
+        if ui.refinery_open and ui.refinery_block_id == BREW_KETTLE_BLOCK:
+            ui.handle_brew_keys(keys)
+        # Fermentation Vessel: poll SPACE to cool
+        if ui.refinery_open and ui.refinery_block_id == FERM_VESSEL_BLOCK:
+            ui.handle_ferm_keys(keys)
         # Oxidation Station: poll SPACE to slow oxidation
         if ui.refinery_open and ui.refinery_block_id == OXIDATION_STATION_BLOCK:
             ui.handle_oxidation_keys(keys, dt, player)
@@ -1647,6 +1814,9 @@ def main():
         world.update_soil(dt)
         world.update_compost_bins(dt)
         world.update_trade_blocks(dt, player)
+        import logic as _ltm
+        _ltm.logic_tick(world, dt, player)
+        world.update_irrigation(dt)
         world.update_saplings(dt)
         world.update_crops(dt)
         world.update_fruit_trees(dt)

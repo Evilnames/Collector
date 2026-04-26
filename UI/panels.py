@@ -1,4 +1,4 @@
-import pygame
+﻿import pygame
 from items import ITEMS
 from item_icons import render_item_icon
 from rocks import (render_rock, RARITY_COLORS, ROCK_TYPE_ORDER, ROCK_TYPE_DESCRIPTIONS,
@@ -7,6 +7,46 @@ from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE
 from automations import AUTOMATION_ITEM
 from ._data import RARITY_LABEL, SPECIAL_DESCS
 from Render.dogs import draw_dog
+
+
+def _item_matches_system(item, system_id: str) -> bool:
+    """Return True if item belongs to the given preference system."""
+    try:
+        if system_id == "fish":
+            from fish import Fish; return isinstance(item, Fish)
+        if system_id == "fossil":
+            from fossils import Fossil; return isinstance(item, Fossil)
+        if system_id == "rock":
+            from rocks import Rock; return isinstance(item, Rock)
+        if system_id == "gem":
+            from gemstones import Gemstone; return isinstance(item, Gemstone)
+        if system_id == "wildflower":
+            from wildflowers import Wildflower; return isinstance(item, Wildflower)
+        if system_id == "wine":
+            from wine import Grape; return isinstance(item, Grape)
+        if system_id == "coffee":
+            from coffee import CoffeeBean; return isinstance(item, CoffeeBean)
+        if system_id == "tea":
+            from tea import TeaLeaf; return isinstance(item, TeaLeaf)
+        if system_id == "spirit":
+            from spirits import Spirit; return isinstance(item, Spirit)
+        if system_id == "cheese":
+            from cheese import Cheese; return isinstance(item, Cheese)
+        if system_id == "pottery":
+            from pottery import PotteryPiece; return isinstance(item, PotteryPiece)
+        if system_id == "salt":
+            from salt import SaltCrystal; return isinstance(item, SaltCrystal)
+        if system_id == "weapon":
+            from weapons import Weapon; return isinstance(item, Weapon)
+        if system_id == "textile":
+            from textiles import Textile; return isinstance(item, Textile)
+        if system_id == "jewelry":
+            from jewelry import Jewelry; return isinstance(item, Jewelry)
+        if system_id == "food":
+            return isinstance(item, tuple) and len(item) == 2
+    except Exception:
+        pass
+    return False
 
 
 def _wrap_text(text, font, max_w):
@@ -3136,3 +3176,701 @@ class PanelsMixin:
             self.screen.blit(icon, (rx + 4, ry + (PCH - 32) // 2))
             self.screen.blit(self.small.render(item.get("name", item_id), True, (215, 195, 165)), (rx + 40, ry + 8))
             self.screen.blit(self.small.render(f"x{count}", True, (150, 210, 150)), (rx + 40, ry + 26))
+
+# NPC inspect overlay (I key)
+def _draw_npc_inspect(self, player, world):
+    pass
+
+
+    # -----------------------------------------------------------------------
+    # NPC inspect overlay (I key)
+    # -----------------------------------------------------------------------
+
+    def _draw_npc_inspect(self, player, world):
+        import npc_preferences as npc_prefs_mod
+        npc = getattr(player, "inspecting_npc", None)
+        if npc is None:
+            return
+
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 200))
+        self.screen.blit(overlay, (0, 0))
+
+        has_dynasty = bool(getattr(npc, "dynasty_name", None))
+        npc_uid_pre = getattr(npc, "npc_uid", None) or ""
+        _pre_rel    = player.npc_relationships.get(npc_uid_pre, 0)
+        _pre_ident  = getattr(npc, "identity", None) or {}
+        has_rumour  = bool(_pre_ident.get("personal_tension")) and _pre_rel >= 50
+        PW = 620
+        PH = 560
+        if has_dynasty:
+            PH += 140
+        if has_rumour:
+            PH += 55
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+
+        pygame.draw.rect(self.screen, (18, 18, 26), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (90, 80, 140), (px, py, PW, PH), 2)
+
+        hint = self.small.render("I or ESC to close", True, (90, 90, 110))
+        self.screen.blit(hint, (px + PW - hint.get_width() - 8, py + 8))
+
+        identity = getattr(npc, "identity", None) or {}
+        first  = identity.get("first_name", "???")
+        family = identity.get("family_name", "")
+        blurb  = identity.get("blurb", "")
+        role   = getattr(npc, "display_name", npc.animal_id)
+
+        cy = py + 18
+        name_s = self.font.render(f"{first} {family}", True, (240, 220, 160))
+        self.screen.blit(name_s, (px + 16, cy))
+        cy += 26
+        role_s = self.small.render(role, True, (170, 150, 110))
+        self.screen.blit(role_s, (px + 16, cy))
+        cy += 20
+        bio = identity.get("bio", blurb)
+        if bio:
+            for line in _wrap_text(bio, self.small, PW - 32):
+                self.screen.blit(self.small.render(line, True, (140, 133, 120)), (px + 16, cy))
+                cy += 16
+        cy += 6
+
+        pygame.draw.line(self.screen, (60, 55, 80), (px + 8, cy), (px + PW - 8, cy))
+        cy += 10
+
+        self.screen.blit(self.small.render("FAMILY", True, (110, 110, 160)), (px + 16, cy))
+        cy += 18
+        if npc.spouse_uid:
+            spouse_name = self._resolve_npc_name(npc.spouse_uid, world)
+            self.screen.blit(self.small.render(f"Spouse:   {spouse_name}", True, (195, 185, 165)), (px + 24, cy))
+            cy += 16
+        if npc.parent_uids:
+            parents = [self._resolve_npc_name(u, world) for u in npc.parent_uids[:2]]
+            self.screen.blit(self.small.render(f"Parents:  {', '.join(parents)}", True, (195, 185, 165)), (px + 24, cy))
+            cy += 16
+        if npc.sibling_uids:
+            sibs = [self._resolve_npc_name(u, world) for u in npc.sibling_uids[:3]]
+            extra = len(npc.sibling_uids) - 3
+            sib_str = ", ".join(sibs) + (f" +{extra}" if extra > 0 else "")
+            self.screen.blit(self.small.render(f"Siblings: {sib_str}", True, (195, 185, 165)), (px + 24, cy))
+            cy += 16
+        if not npc.spouse_uid and not npc.parent_uids and not npc.sibling_uids:
+            self.screen.blit(self.small.render("No known family in this town.", True, (120, 115, 100)), (px + 24, cy))
+            cy += 16
+        cy += 4
+
+        # ---- Dynasty section (nobles and elders only) ----
+        dynasty_name    = getattr(npc, "dynasty_name", None)
+        dynasty_role    = getattr(npc, "dynasty_role", None)
+        dynasty_kin     = getattr(npc, "dynasty_kin", None) or []
+        dynasty_history = getattr(npc, "dynasty_history", None)
+        dynasty_tension = getattr(npc, "dynasty_tension", None)
+        dynasty_rival   = getattr(npc, "dynasty_rival", None)
+        if dynasty_name:
+            pygame.draw.line(self.screen, (60, 55, 80), (px + 8, cy), (px + PW - 8, cy))
+            cy += 10
+            header = f"DYNASTY  —  {dynasty_name}  ({dynasty_role.title()} of House)"
+            self.screen.blit(self.small.render(header, True, (180, 160, 90)), (px + 16, cy))
+            cy += 18
+            # Kin across towns
+            if dynasty_kin:
+                for kin in dynasty_kin[:4]:
+                    label = (f"{kin['display_name']}  ·  {kin['dynasty_role'].title()}"
+                             f"  in  {kin['town_name']}")
+                    self.screen.blit(self.small.render(label, True, (195, 185, 140)), (px + 24, cy))
+                    cy += 16
+                if len(dynasty_kin) > 4:
+                    extra = self.small.render(f"  +{len(dynasty_kin) - 4} more kin…", True, (120, 115, 100))
+                    self.screen.blit(extra, (px + 24, cy))
+                    cy += 16
+            else:
+                self.screen.blit(self.small.render("Sole ruler of this dynasty.", True, (120, 115, 100)), (px + 24, cy))
+                cy += 16
+            # Origin and current tension
+            cy += 4
+            if dynasty_history:
+                for line in _wrap_text(dynasty_history, self.small, PW - 40):
+                    self.screen.blit(self.small.render(line, True, (150, 140, 95)), (px + 24, cy))
+                    cy += 15
+            if dynasty_tension:
+                for line in _wrap_text(dynasty_tension, self.small, PW - 40):
+                    self.screen.blit(self.small.render(line, True, (190, 120, 95)), (px + 24, cy))
+                    cy += 15
+            if dynasty_rival:
+                self.screen.blit(
+                    self.small.render(f"Long rivals with: {dynasty_rival}", True, (170, 75, 75)),
+                    (px + 24, cy))
+                cy += 16
+            # Rival/favored status for this player
+            dynasty_region_id = getattr(npc, "dynasty_id", None)
+            if dynasty_region_id in getattr(player, "rival_dynasty_regions", set()):
+                self.screen.blit(
+                    self.small.render("⚠ You are allied with their enemy.", True, (210, 80, 70)),
+                    (px + 24, cy))
+                cy += 16
+            elif dynasty_region_id in getattr(player, "champion_dynasty_regions", set()):
+                self.screen.blit(
+                    self.small.render("★ You are Champion of this house.", True, (220, 190, 60)),
+                    (px + 24, cy))
+                cy += 16
+            elif dynasty_region_id in getattr(player, "favored_dynasty_regions", set()):
+                self.screen.blit(
+                    self.small.render("✦ You are Favored by this house.", True, (140, 200, 120)),
+                    (px + 24, cy))
+                cy += 16
+            cy += 4
+
+        pygame.draw.line(self.screen, (60, 55, 80), (px + 8, cy), (px + PW - 8, cy))
+        cy += 10
+
+        npc_uid = getattr(npc, "npc_uid", None) or ""
+        rel_score = player.npc_relationships.get(npc_uid, 0)
+        tier_name, tier_col = npc_prefs_mod.relationship_tier(rel_score)
+
+        self.screen.blit(self.small.render("RELATIONSHIP", True, (110, 110, 160)), (px + 16, cy))
+        cy += 18
+
+        BAR_W, BAR_H = PW - 160, 14
+        bar_x = px + 24
+        pygame.draw.rect(self.screen, (35, 30, 45), (bar_x, cy, BAR_W, BAR_H))
+        filled = int((rel_score + 100) / 200 * BAR_W)
+        if filled > 0:
+            pygame.draw.rect(self.screen, tier_col, (bar_x, cy, filled, BAR_H))
+        pygame.draw.rect(self.screen, (80, 70, 100), (bar_x, cy, BAR_W, BAR_H), 1)
+        tier_s = self.small.render(f"{tier_name}  ({rel_score:+d})", True, tier_col)
+        self.screen.blit(tier_s, (bar_x + BAR_W + 8, cy))
+        cy += BAR_H + 10
+
+        pygame.draw.line(self.screen, (60, 55, 80), (px + 8, cy), (px + PW - 8, cy))
+        cy += 10
+
+        prefs = getattr(npc, "preferences", None) or {}
+        self.screen.blit(self.small.render("PREFERENCES", True, (110, 110, 160)), (px + 16, cy))
+        cy += 18
+
+        if rel_score >= 20:
+            liked    = npc_prefs_mod.preferred_system_labels(prefs, 4)
+            disliked = npc_prefs_mod.disliked_system_labels(prefs)
+            if liked:
+                self.screen.blit(self.small.render("Loves: " + " . ".join(liked), True, (140, 210, 120)), (px + 24, cy))
+                cy += 18
+            if disliked:
+                self.screen.blit(self.small.render("Dislikes: " + ", ".join(disliked), True, (200, 100, 90)), (px + 24, cy))
+                cy += 18
+        else:
+            self.screen.blit(self.small.render("Get to know them better...", True, (100, 95, 90)), (px + 24, cy))
+            cy += 18
+
+        # ---- Rumour section (Friendly tier and above) ----
+        personal_tension = identity.get("personal_tension", None)
+        if personal_tension and rel_score >= 50:
+            pygame.draw.line(self.screen, (60, 55, 80), (px + 8, cy), (px + PW - 8, cy))
+            cy += 10
+            self.screen.blit(self.small.render("RUMOUR", True, (160, 120, 60)), (px + 16, cy))
+            cy += 18
+            rumour_text = f"Word has it that {first} {personal_tension}"
+            for line in _wrap_text(rumour_text, self.small, PW - 32):
+                self.screen.blit(self.small.render(line, True, (165, 150, 105)), (px + 24, cy))
+                cy += 16
+            cy += 4
+
+        # ---- Active request section ----
+        npc_uid2 = getattr(npc, "npc_uid", None) or ""
+        active_req = getattr(player, "npc_requests", {}).get(npc_uid2)
+        if active_req:
+            pygame.draw.line(self.screen, (60, 55, 80), (px + 8, cy), (px + PW - 8, cy))
+            cy += 10
+            self.screen.blit(self.small.render("REQUEST", True, (200, 175, 90)), (px + 16, cy))
+            cy += 18
+            hint_lines = _wrap_text(f'"{active_req["hint_label"]}"', self.small, PW - 48)
+            for line in hint_lines:
+                self.screen.blit(self.small.render(line, True, (195, 185, 135)), (px + 24, cy))
+                cy += 16
+            reward_s = self.small.render(f"Reward: {active_req['reward_gold']} gold", True, (180, 210, 130))
+            self.screen.blit(reward_s, (px + 24, cy))
+            cy += 18
+
+        # ---- Buttons ----
+        BTN_W, BTN_H = 100, 28
+        close_rect   = pygame.Rect(px + PW - BTN_W - 12, py + PH - BTN_H - 12, BTN_W, BTN_H)
+        gift_rect    = pygame.Rect(px + PW - BTN_W * 2 - 20, py + PH - BTN_H - 12, BTN_W, BTN_H)
+        fulfill_rect = pygame.Rect(px + PW - BTN_W * 3 - 28, py + PH - BTN_H - 12, BTN_W, BTN_H)
+        # History button — left side, only for dynasty rulers
+        history_rect = (pygame.Rect(px + 12, py + PH - BTN_H - 12, BTN_W, BTN_H)
+                        if dynasty_name else None)
+
+        pygame.draw.rect(self.screen, (40, 55, 40), gift_rect)
+        pygame.draw.rect(self.screen, (80, 130, 80), gift_rect, 1)
+        g_s = self.small.render("Gift", True, (160, 220, 140))
+        self.screen.blit(g_s, (gift_rect.x + (BTN_W - g_s.get_width()) // 2,
+                                gift_rect.y + (BTN_H - g_s.get_height()) // 2))
+
+        if active_req:
+            pygame.draw.rect(self.screen, (55, 50, 25), fulfill_rect)
+            pygame.draw.rect(self.screen, (160, 140, 60), fulfill_rect, 1)
+            f_s = self.small.render("Fulfill", True, (230, 210, 120))
+            self.screen.blit(f_s, (fulfill_rect.x + (BTN_W - f_s.get_width()) // 2,
+                                    fulfill_rect.y + (BTN_H - f_s.get_height()) // 2))
+        else:
+            fulfill_rect = None
+
+        pygame.draw.rect(self.screen, (40, 35, 50), close_rect)
+        pygame.draw.rect(self.screen, (100, 90, 120), close_rect, 1)
+        c_s = self.small.render("Close", True, (200, 190, 210))
+        self.screen.blit(c_s, (close_rect.x + (BTN_W - c_s.get_width()) // 2,
+                                close_rect.y + (BTN_H - c_s.get_height()) // 2))
+        if history_rect:
+            pygame.draw.rect(self.screen, (30, 40, 55), history_rect)
+            pygame.draw.rect(self.screen, (70, 110, 150), history_rect, 1)
+            h_s = self.small.render("History", True, (140, 190, 220))
+            self.screen.blit(h_s, (history_rect.x + (BTN_W - h_s.get_width()) // 2,
+                                    history_rect.y + (BTN_H - h_s.get_height()) // 2))
+
+        self._inspect_gift_btn    = gift_rect
+        self._inspect_close_btn   = close_rect
+        self._inspect_fulfill_btn = fulfill_rect
+        self._inspect_history_btn = history_rect
+
+    def _resolve_npc_name(self, npc_uid, world):
+        for e in world.entities:
+            if getattr(e, "npc_uid", None) == npc_uid:
+                ident = getattr(e, "identity", None) or {}
+                name = ident.get("display_name", npc_uid)
+                role = getattr(e, "display_name", "")
+                return f"{name}" + (f" ({role})" if role else "")
+        return npc_uid
+
+    def _draw_dynasty_chronicle(self, player, world):
+        npc = getattr(player, "inspecting_npc", None)
+        if npc is None:
+            return
+
+        chronicle = getattr(npc, "dynasty_chronicle", None)
+        if not chronicle:
+            return
+
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 210))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 700, 660
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+
+        pygame.draw.rect(self.screen, (12, 12, 20), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (70, 110, 150), (px, py, PW, PH), 2)
+
+        dynasty_name  = getattr(npc, "dynasty_name", "Unknown House")
+        dynasty_rival = getattr(npc, "dynasty_rival", None)
+        npc_uid       = getattr(npc, "npc_uid", "") or ""
+        rel_score     = player.npc_relationships.get(npc_uid, 0)
+        identity      = getattr(npc, "identity", None) or {}
+
+        def _section(label, col=(140, 190, 220)):
+            nonlocal cy
+            pygame.draw.line(self.screen, (45, 65, 90), (px + 10, cy), (px + PW - 10, cy))
+            cy += 8
+            self.screen.blit(self.small.render(label, True, col), (px + 14, cy))
+            cy += 20
+
+        def _body(text, col=(190, 183, 168), indent=14):
+            nonlocal cy
+            for line in _wrap_text(text, self.small, PW - indent - 28):
+                self.screen.blit(self.small.render(line, True, col), (px + indent, cy))
+                cy += 15
+            cy += 4
+
+        import npc_dynasty as _dyn
+
+        cy = py + 14
+        title_s = self.font.render(dynasty_name.upper(), True, (220, 200, 130))
+        self.screen.blit(title_s, (px + 14, cy))
+        cy += 28
+
+        # ---- Favor bar ----
+        region_id = getattr(npc, "dynasty_id", None)
+        favor     = _dyn.calculate_dynasty_favor(player, region_id, world) if region_id is not None else 0
+        tier      = _dyn.favor_tier(favor)
+        BAR_W, BAR_H = PW - 160, 12
+        bar_x = px + 14
+        pygame.draw.rect(self.screen, (30, 28, 35), (bar_x, cy, BAR_W, BAR_H))
+        filled = int((favor + 100) / 200 * BAR_W)
+        if filled > 0:
+            pygame.draw.rect(self.screen, tier["color"], (bar_x, cy, max(filled, 2), BAR_H))
+        pygame.draw.rect(self.screen, (70, 65, 80), (bar_x, cy, BAR_W, BAR_H), 1)
+        tier_s = self.small.render(f"Favor: {tier['name']}  ({favor:+d})", True, tier["color"])
+        self.screen.blit(tier_s, (bar_x + BAR_W + 8, cy))
+        cy += BAR_H + 4
+        if tier["perk"]:
+            for line in _wrap_text(tier["perk"], self.small, PW - 32):
+                self.screen.blit(self.small.render(line, True, (120, 115, 95)), (px + 14, cy))
+                cy += 14
+        cy += 8
+
+        # ---- FOUNDING ----
+        _section("THE FOUNDING")
+        founder = chronicle.get("founder_full", "")
+        if founder:
+            self.screen.blit(self.small.render(f'"{founder}"', True, (215, 200, 145)), (px + 20, cy))
+            cy += 18
+        _body(chronicle.get("founder_act", ""), col=(185, 178, 160), indent=20)
+        _body(chronicle.get("founder_legacy", ""), col=(155, 148, 130), indent=20)
+
+        # ---- SECOND GENERATION ----
+        _section("THE SECOND GENERATION")
+        _body(chronicle.get("gen2", ""), indent=20)
+
+        # ---- TODAY ----
+        _section("TODAY")
+        _body(chronicle.get("current_era", ""), indent=20)
+        dynasty_tension = getattr(npc, "dynasty_tension", None)
+        if dynasty_tension:
+            _body(dynasty_tension, col=(200, 140, 110), indent=20)
+        cy += 4
+
+        # Members of the house
+        self.screen.blit(self.small.render("Members of the house:", True, (130, 125, 115)), (px + 20, cy))
+        cy += 17
+        # Current NPC first
+        npc_display  = identity.get("display_name", "?")
+        npc_role_str = getattr(npc, "dynasty_role", "").title()
+        from towns import TOWNS
+        npc_town = TOWNS.get(getattr(npc, "town_id", -1))
+        npc_town_name = npc_town.name if npc_town else "Unknown"
+        member_line = f"  {npc_display}  ·  {npc_role_str}  ·  {npc_town_name}"
+        self.screen.blit(self.small.render(member_line, True, (230, 215, 160)), (px + 20, cy))
+        cy += 16
+        ambition = getattr(npc, "dynasty_ambition", None)
+        if ambition:
+            for line in _wrap_text(f'    "{ambition}"', self.small, PW - 48):
+                self.screen.blit(self.small.render(line, True, (155, 148, 115)), (px + 20, cy))
+                cy += 14
+            cy += 4
+        # Kin
+        for kin in getattr(npc, "dynasty_kin", []):
+            kin_line = (f"  {kin['display_name']}  ·  {kin['dynasty_role'].title()}"
+                        f"  ·  {kin['town_name']}")
+            self.screen.blit(self.small.render(kin_line, True, (190, 183, 155)), (px + 20, cy))
+            cy += 16
+        cy += 4
+
+        # ---- RIVALRY ----
+        rivalry_text = chronicle.get("rivalry_text")
+        if rivalry_text and dynasty_rival:
+            _section(f"RIVALRY WITH {dynasty_rival.upper()}", col=(200, 110, 90))
+            _body(rivalry_text, col=(195, 160, 145), indent=20)
+
+        # ---- DARK SECRET (Beloved only) ----
+        _section("THE HIDDEN TRUTH", col=(120, 100, 140))
+        if rel_score >= 80:
+            dark = chronicle.get("dark_secret", "")
+            _body(dark, col=(175, 155, 185), indent=20)
+        else:
+            self.screen.blit(
+                self.small.render("Reach Beloved to learn what those closest to the house will say.",
+                                  True, (90, 85, 100)),
+                (px + 20, cy))
+            cy += 16
+
+        # ---- Dynasty Quest (Champion only, head of house, not yet completed) ----
+        world_seed  = getattr(world, "seed", 0)
+        completed   = getattr(player, "dynasty_quests_completed", set())
+        is_champion = region_id in getattr(player, "champion_dynasty_regions", set())
+        quest_fulfilled_btn = None
+        if is_champion and region_id not in completed:
+            quest = _dyn.generate_dynasty_quest(region_id, world_seed)
+            attr  = quest["attr"]
+            need  = quest["count"]
+            have  = len(getattr(player, attr, []))
+            _section("DYNASTY QUEST", col=(220, 190, 80))
+            self.screen.blit(
+                self.small.render(f"The house requires: {quest['label']}.", True, (210, 195, 145)),
+                (px + 20, cy))
+            cy += 16
+            have_col = (130, 200, 100) if have >= need else (200, 130, 80)
+            self.screen.blit(
+                self.small.render(f"You have {have} / {need}  ·  Reward: {quest['gold']} gold",
+                                  True, have_col),
+                (px + 20, cy))
+            cy += 18
+            if have >= need:
+                BTN_W2, BTN_H2 = 140, 26
+                quest_fulfilled_btn = pygame.Rect(px + 20, cy, BTN_W2, BTN_H2)
+                pygame.draw.rect(self.screen, (50, 60, 25), quest_fulfilled_btn)
+                pygame.draw.rect(self.screen, (160, 200, 60), quest_fulfilled_btn, 1)
+                qf_s = self.small.render("Fulfill Dynasty Quest", True, (200, 240, 100))
+                self.screen.blit(qf_s, (quest_fulfilled_btn.x + (BTN_W2 - qf_s.get_width()) // 2,
+                                        quest_fulfilled_btn.y + (BTN_H2 - qf_s.get_height()) // 2))
+                cy += BTN_H2 + 6
+        self._chronicle_quest_btn  = quest_fulfilled_btn
+        self._chronicle_quest_data = quest if (is_champion and region_id not in completed) else None
+
+        # ---- Back button ----
+        BTN_W, BTN_H = 100, 28
+        back_rect = pygame.Rect(px + PW - BTN_W - 12, py + PH - BTN_H - 12, BTN_W, BTN_H)
+        pygame.draw.rect(self.screen, (30, 40, 55), back_rect)
+        pygame.draw.rect(self.screen, (70, 110, 150), back_rect, 1)
+        b_s = self.small.render("Back", True, (140, 190, 220))
+        self.screen.blit(b_s, (back_rect.x + (BTN_W - b_s.get_width()) // 2,
+                                back_rect.y + (BTN_H - b_s.get_height()) // 2))
+        self._chronicle_back_btn = back_rect
+
+    def _draw_npc_gift(self, player, world):
+        import npc_preferences as npc_prefs_mod
+        npc = getattr(player, "inspecting_npc", None)
+        if npc is None:
+            return
+        PW, PH = 560, 480
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (14, 14, 20), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (70, 130, 70), (px, py, PW, PH), 2)
+        title_name = (getattr(npc, "identity", None) or {}).get("first_name", "NPC")
+        title_s = self.font.render(f"Gift to {title_name}", True, (210, 200, 160))
+        self.screen.blit(title_s, (px + 16, py + 14))
+        hint = self.small.render("Click item to give . ESC to cancel", True, (90, 90, 100))
+        self.screen.blit(hint, (px + PW - hint.get_width() - 8, py + 16))
+        prefs = getattr(npc, "preferences", None) or {}
+        giftable = self._gather_giftable_items(player)
+        scored = sorted(giftable, key=lambda x: npc_prefs_mod.score_gift(prefs, x[1]), reverse=True)
+        ROW_H = 38
+        area_top = py + 52
+        max_rows = (PH - 70) // ROW_H
+        self._gift_item_rects = {}
+        for i, (label, item) in enumerate(scored[:max_rows]):
+            raw_score = npc_prefs_mod.score_gift(prefs, item)
+            tier_label, tier_col = npc_prefs_mod.gift_tier_label(raw_score)
+            ry = area_top + i * ROW_H
+            rect = pygame.Rect(px + 8, ry, PW - 16, ROW_H - 4)
+            bg = (25, 35, 25) if raw_score > 0.1 else (35, 25, 25) if raw_score < -0.1 else (28, 28, 30)
+            pygame.draw.rect(self.screen, bg, rect)
+            pygame.draw.rect(self.screen, (55, 50, 65), rect, 1)
+            name_s = self.small.render(label, True, (210, 200, 180))
+            self.screen.blit(name_s, (rect.x + 8, rect.y + (ROW_H - 4 - name_s.get_height()) // 2))
+            tier_s = self.small.render(tier_label, True, tier_col)
+            self.screen.blit(tier_s, (rect.right - tier_s.get_width() - 8,
+                                       rect.y + (ROW_H - 4 - tier_s.get_height()) // 2))
+            self._gift_item_rects[i] = (rect, item)
+        if not scored:
+            empty_s = self.small.render("Nothing to give right now.", True, (130, 120, 100))
+            self.screen.blit(empty_s, (px + PW // 2 - empty_s.get_width() // 2, py + PH // 2))
+
+    def _draw_npc_fulfill_request(self, player, world):
+        import npc_preferences as npc_prefs_mod
+        npc = getattr(player, "inspecting_npc", None)
+        if npc is None:
+            return
+        uid = getattr(npc, "npc_uid", None) or ""
+        request = getattr(player, "npc_requests", {}).get(uid)
+        if request is None:
+            player.fulfill_request_open = False
+            return
+        PW, PH = 560, 480
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (14, 14, 18), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (160, 140, 60), (px, py, PW, PH), 2)
+        first_name = (getattr(npc, "identity", None) or {}).get("first_name", "NPC")
+        title_s = self.font.render(f"Fulfill {first_name}'s Request", True, (230, 210, 120))
+        self.screen.blit(title_s, (px + 16, py + 14))
+        hint_lines = _wrap_text(f'"{request["hint_label"]}"', self.small, PW - 32)
+        hy = py + 44
+        for line in hint_lines:
+            self.screen.blit(self.small.render(line, True, (195, 185, 135)), (px + 16, hy))
+            hy += 16
+        reward_s = self.small.render(f"Reward: {request['reward_gold']} gold", True, (180, 210, 130))
+        self.screen.blit(reward_s, (px + 16, hy))
+        cancel_hint = self.small.render("Click item to fulfill . ESC to cancel", True, (90, 90, 100))
+        self.screen.blit(cancel_hint, (px + PW - cancel_hint.get_width() - 8, py + 16))
+
+        system_id = request.get("system_id", "")
+        giftable = self._gather_giftable_items(player)
+        prefs = getattr(npc, "preferences", None) or {}
+        matching = [(lbl, item) for lbl, item in giftable
+                    if _item_matches_system(item, system_id)]
+        if not matching:
+            matching = giftable  # fallback: show everything
+        scored = sorted(matching, key=lambda x: npc_prefs_mod.score_gift(prefs, x[1]), reverse=True)
+        ROW_H = 38
+        area_top = hy + 22
+        max_rows = max(1, (py + PH - area_top - 16) // ROW_H)
+        self._fulfill_item_rects = {}
+        for i, (label, item) in enumerate(scored[:max_rows]):
+            raw_score = npc_prefs_mod.score_gift(prefs, item)
+            tier_label, tier_col = npc_prefs_mod.gift_tier_label(raw_score)
+            ry = area_top + i * ROW_H
+            rect = pygame.Rect(px + 8, ry, PW - 16, ROW_H - 4)
+            bg = (30, 40, 20) if raw_score > 0.1 else (40, 28, 20) if raw_score < -0.1 else (28, 28, 30)
+            pygame.draw.rect(self.screen, bg, rect)
+            pygame.draw.rect(self.screen, (100, 90, 40), rect, 1)
+            name_s = self.small.render(label, True, (210, 200, 180))
+            self.screen.blit(name_s, (rect.x + 8, rect.y + (ROW_H - 4 - name_s.get_height()) // 2))
+            tier_s = self.small.render(tier_label, True, tier_col)
+            self.screen.blit(tier_s, (rect.right - tier_s.get_width() - 8,
+                                       rect.y + (ROW_H - 4 - tier_s.get_height()) // 2))
+            self._fulfill_item_rects[i] = (rect, item)
+        if not scored:
+            empty_s = self.small.render("Nothing matching in your inventory.", True, (130, 120, 100))
+            self.screen.blit(empty_s, (px + PW // 2 - empty_s.get_width() // 2, py + PH // 2))
+
+    def _gather_giftable_items(self, player):
+        items = []
+        for fish in getattr(player, "fish_caught", []):
+            items.append((f"Fish: {fish.species.title()} ({fish.rarity})", fish))
+        for fossil in getattr(player, "fossils", []):
+            items.append((f"Fossil: {fossil.fossil_type.replace('_', ' ').title()} ({fossil.rarity})", fossil))
+        for rock in getattr(player, "rocks", []):
+            items.append((f"Rock: {rock.base_type.replace('_', ' ').title()} ({rock.rarity})", rock))
+        for gem in getattr(player, "gems", []):
+            items.append((f"Gem: {gem.gem_type.replace('_', ' ').title()} ({gem.rarity})", gem))
+        for wf in getattr(player, "wildflowers", []):
+            items.append((f"Flower: {wf.flower_type.replace('_', ' ').title()} ({wf.rarity})", wf))
+        for grape in getattr(player, "wine_grapes", []):
+            if getattr(grape, "state", "") in ("fermented", "aged", "blended"):
+                items.append((f"Wine: {grape.style.title()} from {grape.origin_biome}", grape))
+        for bean in getattr(player, "coffee_beans", []):
+            if getattr(bean, "state", "") in ("roasted", "blended"):
+                items.append((f"Coffee: {bean.roast_level.title()} roast", bean))
+        for leaf in getattr(player, "tea_leaves", []):
+            if getattr(leaf, "state", "") in ("oxidized", "brewed", "blended"):
+                label = f"Tea: {leaf.tea_type.title()}" if hasattr(leaf, "tea_type") else "Tea"
+                items.append((label, leaf))
+        for spirit in getattr(player, "spirits", []):
+            if getattr(spirit, "state", "") in ("aged", "blended"):
+                items.append((f"Spirit: {spirit.spirit_type.title()}", spirit))
+        for cheese in getattr(player, "cheese_wheels", []):
+            if getattr(cheese, "state", "") in ("pressed", "aged"):
+                items.append((f"Cheese: {cheese.cheese_type.replace('_', ' ').title()}", cheese))
+        for pot in getattr(player, "pottery_pieces", []):
+            if getattr(pot, "state", "") in ("fired", "glazed"):
+                items.append((f"Pottery: {pot.shape.title()} ({pot.firing_level})", pot))
+        for salt in getattr(player, "salt_crystals", []):
+            if getattr(salt, "state", "") == "finished":
+                items.append((f"Salt: {salt.refine_grade.replace('_', ' ').title()}", salt))
+        for weapon in getattr(player, "crafted_weapons", []):
+            items.append((f"Weapon: {weapon.weapon_type.title()}", weapon))
+        for textile in getattr(player, "textiles", []):
+            if getattr(textile, "state", "") == "woven":
+                items.append((f"Textile: {textile.output_type.replace('_', ' ').title()}", textile))
+        for jewel in getattr(player, "jewelry", []):
+            items.append((f"Jewelry: {jewel.jewelry_type.title()}", jewel))
+        from items import ITEMS
+        for item_id, count in player.inventory.items():
+            if count > 0:
+                data = ITEMS.get(item_id, {})
+                if data.get("edible"):
+                    items.append((f"Food: {data.get('name', item_id)} x{count}", (item_id, count)))
+        return items
+
+    def handle_inspect_click(self, pos, player, world):
+        import npc_preferences as npc_prefs_mod
+
+        # ---- Fulfill-request sub-panel ----
+        if getattr(player, "fulfill_request_open", False):
+            for i, (rect, item) in getattr(self, "_fulfill_item_rects", {}).items():
+                if rect.collidepoint(pos):
+                    npc = player.inspecting_npc
+                    delta, gold = npc_prefs_mod.fulfill_request(player, npc, item, world)
+                    self._remove_gifted_item(player, item)
+                    player.pending_notifications.append(
+                        ("Gift", f"Request fulfilled! +{gold} gold  ({delta:+d} rep)", "rare")
+                    )
+                    player.fulfill_request_open = False
+                    return
+            player.fulfill_request_open = False
+            return
+
+        # ---- Gift sub-panel ----
+        if getattr(player, "gift_panel_open", False):
+            for i, (rect, item) in getattr(self, "_gift_item_rects", {}).items():
+                if rect.collidepoint(pos):
+                    npc = player.inspecting_npc
+                    delta, label = npc_prefs_mod.apply_gift(player, npc, item, world)
+                    self._remove_gifted_item(player, item)
+                    player.pending_notifications.append(("Gift", f"{label}  ({delta:+d})", "common"))
+                    player.gift_panel_open = False
+                    return
+            player.gift_panel_open = False
+            return
+
+        # ---- Dynasty chronicle panel ----
+        if getattr(player, "dynasty_panel_open", False):
+            import npc_dynasty as _dyn
+            quest_btn  = getattr(self, "_chronicle_quest_btn",  None)
+            quest_data = getattr(self, "_chronicle_quest_data", None)
+            if quest_btn and quest_data and quest_btn.collidepoint(pos):
+                npc       = player.inspecting_npc
+                region_id = getattr(npc, "dynasty_id", None)
+                attr      = quest_data["attr"]
+                need      = quest_data["count"]
+                lst       = getattr(player, attr, [])
+                if region_id is not None and len(lst) >= need:
+                    del lst[:need]
+                    player.money += quest_data["gold"]
+                    if not hasattr(player, "dynasty_quests_completed"):
+                        player.dynasty_quests_completed = set()
+                    player.dynasty_quests_completed.add(region_id)
+                    dynasty_name = getattr(npc, "dynasty_name", "the house")
+                    player.pending_notifications.append((
+                        "Dynasty",
+                        f"Dynasty Quest complete! {dynasty_name} grants you {quest_data['gold']} gold.",
+                        "epic",
+                    ))
+                return
+            back_btn = getattr(self, "_chronicle_back_btn", None)
+            if back_btn is None or back_btn.collidepoint(pos):
+                player.dynasty_panel_open = False
+            return
+
+        # ---- Main inspect panel buttons ----
+        fulfill_btn = getattr(self, "_inspect_fulfill_btn", None)
+        if fulfill_btn and fulfill_btn.collidepoint(pos):
+            player.fulfill_request_open = True
+            return
+        history_btn = getattr(self, "_inspect_history_btn", None)
+        if history_btn and history_btn.collidepoint(pos):
+            player.dynasty_panel_open = True
+            return
+        if hasattr(self, "_inspect_gift_btn") and self._inspect_gift_btn.collidepoint(pos):
+            player.gift_panel_open = True
+            return
+        if hasattr(self, "_inspect_close_btn") and self._inspect_close_btn.collidepoint(pos):
+            player.inspecting_npc = None
+            player.gift_panel_open = False
+            player.fulfill_request_open = False
+            player.dynasty_panel_open = False
+            return
+
+    def _remove_gifted_item(self, player, item):
+        from fish import Fish
+        from fossils import Fossil
+        from rocks import Rock
+        from gemstones import Gemstone
+
+        def _try_remove(lst, obj):
+            try:
+                lst.remove(obj)
+            except (ValueError, AttributeError):
+                pass
+
+        if isinstance(item, Fish):
+            _try_remove(player.fish_caught, item)
+        elif isinstance(item, Fossil):
+            _try_remove(player.fossils, item)
+        elif isinstance(item, Rock):
+            _try_remove(player.rocks, item)
+        elif isinstance(item, Gemstone):
+            _try_remove(player.gems, item)
+        elif isinstance(item, tuple) and len(item) == 2:
+            item_id, _ = item
+            if player.inventory.get(item_id, 0) > 0:
+                player.inventory[item_id] -= 1
+        else:
+            for attr in ("wine_grapes", "coffee_beans", "tea_leaves", "spirits",
+                         "cheese_wheels", "pottery_pieces", "salt_crystals",
+                         "crafted_weapons", "textiles", "jewelry", "wildflowers"):
+                lst = getattr(player, attr, None)
+                if lst is not None and item in lst:
+                    _try_remove(lst, item)
+                    break

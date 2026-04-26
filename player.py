@@ -41,7 +41,7 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P, WATERMELON_CROP_MATURE_P,
                     CORN_CROP_MATURE_P, RICE_CROP_MATURE_P,
                     OIL, BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK,
-                    COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE,
+                    COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE, HOP_VINE_MATURE,
                     FLAX_CROP_MATURE, COTTON_CROP_MATURE,
                     CHAMOMILE_BUSH, LAVENDER_BUSH, MINT_BUSH, ROSEMARY_BUSH,
                     THYME_BUSH, SAGE_BUSH, BASIL_BUSH, OREGANO_BUSH,
@@ -76,6 +76,7 @@ from weapons import WeaponGenerator, Weapon, weapon_damage, WEAPON_TYPES
 from tapestry import TapestryGenerator, Tapestry
 from pottery import PotteryPiece, PotteryGenerator
 from spirits import SpiritGenerator, Spirit
+from beer import BeerGenerator, Beer
 from tea import TeaGenerator, TeaLeaf
 from textiles import TextileGenerator, Textile
 from cheese import CheeseGenerator, Cheese
@@ -204,6 +205,12 @@ class Player:
         self._spirit_gen = SpiritGenerator(world.seed)
         # Active buffs from drinking spirits (separate pool, stacks with coffee/wine)
         self.spirit_buffs = {}  # buff_name -> {"duration": float}
+        # Beer collection
+        self.beers = []
+        self.discovered_beers = set()  # "biome_tier" strings e.g. "canyon_fine"
+        self._beer_gen = BeerGenerator(world.seed)
+        # Active buffs from drinking beer (separate pool)
+        self.beer_buffs = {}  # buff_name -> {"duration": float}
         # Textile collection
         self.textiles = []
         self.discovered_textiles = set()         # "fiber_dye_output" strings
@@ -268,6 +275,25 @@ class Player:
         self.known_crops   = set()   # young block IDs the player has harvested at least once
         self.pending_harvest_floats = []  # (world_x, world_y, text, color) consumed by renderer
         self.visited_town_ids = set()
+        self.npc_relationships: dict = {}   # npc_uid (str) → relationship score (int, -100..+100)
+        self.npc_requests: dict = {}        # npc_uid → {system_id, hint_label, reward_gold, posted_day}
+        self.npc_request_cooldowns: dict = {}  # npc_uid → world_day when next request allowed
+        self.beloved_perks: set = set()     # npc_uids whose Beloved perk has been granted
+        self.merchant_beloved_towns: set = set()  # town_ids with 10% shop discount
+        self.doctor_beloved_towns: set = set()    # town_ids with free healing
+        self.inn_beloved: bool = False      # inn rest restores full HP
+        self.farm_seed_donors: set = set()  # npc_uids who send seeds periodically
+        self.known_dynasty_regions:    set  = set()   # region_ids at Known favor tier
+        self.favored_dynasty_regions:  set  = set()   # region_ids at Favored tier (5% discount)
+        self.champion_dynasty_regions: set  = set()   # region_ids at Champion tier (10% discount)
+        self.rival_dynasty_regions:    set  = set()   # region_ids that are hostile
+        self.dynasty_tiers_reached:    dict = {}      # region_id → tier name
+        self.dynasty_titles:           list = []      # e.g. ["Champion of House Voss"]
+        self.dynasty_quests_completed: set  = set()   # region_ids with completed dynasty quest
+        self.inspecting_npc   = None        # NPC ref while inspect overlay is open
+        self.gift_panel_open  = False       # True when gift sub-panel is visible
+        self.fulfill_request_open = False   # True when fulfill-request sub-panel is visible
+        self.dynasty_panel_open   = False
         # Water state
         self._drowning_timer = 0.0
         # Hunger
@@ -375,6 +401,8 @@ class Player:
         self.discovered_recipes = set(d.get("discovered_recipes", []))
         self.spirits = [Spirit(**s) for s in d.get("spirits", [])]
         self.discovered_spirit_types = set(d.get("discovered_spirit_types", []))
+        self.beers = [Beer(**b) for b in d.get("beers", [])]
+        self.discovered_beers = set(d.get("discovered_beers", []))
         self.textiles = [Textile(**x) for x in d.get("textiles", [])]
         self.discovered_textiles = set(d.get("discovered_textiles", []))
         self.worn = d.get("worn", {"head": None, "chest": None, "feet": None})
@@ -422,6 +450,21 @@ class Player:
         self.discovered_pairings    = set(d.get("discovered_pairings", []))
         self.aging_vessels          = d.get("aging_vessels", [])
         self.visited_town_ids       = set(d.get("visited_town_ids", []))
+        self.npc_relationships      = d.get("npc_relationships", {})
+        self.npc_requests           = d.get("npc_requests", {})
+        self.npc_request_cooldowns  = d.get("npc_request_cooldowns", {})
+        self.beloved_perks          = set(d.get("beloved_perks", []))
+        self.merchant_beloved_towns = set(d.get("merchant_beloved_towns", []))
+        self.doctor_beloved_towns   = set(d.get("doctor_beloved_towns", []))
+        self.inn_beloved            = d.get("inn_beloved", False)
+        self.farm_seed_donors       = set(d.get("farm_seed_donors", []))
+        self.known_dynasty_regions    = set(d.get("known_dynasty_regions", []))
+        self.favored_dynasty_regions  = set(d.get("favored_dynasty_regions", []))
+        self.champion_dynasty_regions = set(d.get("champion_dynasty_regions", []))
+        self.rival_dynasty_regions    = set(d.get("rival_dynasty_regions", []))
+        self.dynasty_tiers_reached    = {int(k): v for k, v in d.get("dynasty_tiers_reached", {}).items()}
+        self.dynasty_titles           = d.get("dynasty_titles", [])
+        self.dynasty_quests_completed = set(d.get("dynasty_quests_completed", []))
         # Reconstruct unplaced_vases from saved UIDs
         _piece_by_uid = {p.uid: p for p in self.pottery_pieces}
         _pending_uids = getattr(self.world, "_pending_unplaced_vase_uids", [])
@@ -572,6 +615,10 @@ class Player:
             return
         self.vx = 0.0
         speed = MOVE_SPEED * (1.25 if "rush" in self.active_buffs else 1.0)
+        if "swiftness" in self.beer_buffs:
+            speed *= 1.15
+        if "refreshment" in self.beer_buffs:
+            speed *= 1.10
         if "swiftness" in self.herb_buffs:
             speed *= 1.50
         elif "haste" in self.herb_buffs:
@@ -602,7 +649,7 @@ class Player:
                 self.vy = -3   # swim up
             self.vx *= 0.55    # water drag on horizontal movement
         elif (keys[pygame.K_w] or keys[pygame.K_UP] or keys[pygame.K_SPACE]) and self.on_ground:
-            self.vy = JUMP_FORCE * (1.25 if "vivacity" in self.wine_buffs else 1.0)
+            self.vy = JUMP_FORCE * (1.25 if "vivacity" in self.wine_buffs else 1.0) * (1.20 if "swiftness" in self.beer_buffs else 1.0)
             self.on_ground = False
 
         mining = False
@@ -797,6 +844,20 @@ class Player:
     def _mine_at(self, bx, by, dt):
         block_id = self.world.get_block(bx, by)
         if block_id == AIR:
+            if getattr(self.world, 'wire_mode', False) and self.world.get_wire(bx, by) == 1:
+                if self.mining_block != (bx, by):
+                    self.mining_block = (bx, by)
+                    self._mine_time = 0.0
+                    self._mine_total = 0.3
+                self._mine_time += dt
+                self.mine_progress = min(1.0, self._mine_time / self._mine_total)
+                if self.mine_progress >= 1.0:
+                    self.world.set_wire(bx, by, 0)
+                    self._add_item('wire')
+                    import logic as _logic
+                    _logic.evaluate_full_network(self.world)
+                    self._reset_mine()
+                return
             if not self._shift_held:
                 self._reset_mine()
                 return
@@ -970,6 +1031,12 @@ class Player:
                 self.spirits.append(spirit)
                 self._add_item("grain_seed")
                 self.pending_notifications.append(("Spirits", "Grain Harvest", None))
+            elif block_id == HOP_VINE_MATURE:
+                biodome = self.world.get_biodome(bx)
+                beer = self._beer_gen.generate(biodome)
+                self.beers.append(beer)
+                self._add_item("hop_seed")
+                self.pending_notifications.append(("Brewery", "Hop Cluster", None))
             elif block_id == TEA_CROP_MATURE:
                 biodome = self.world.get_biodome(bx)
                 leaf = self._tea_gen.generate(biodome)
@@ -1266,6 +1333,23 @@ class Player:
                     self._add_item("comfrey")
                 elif block_id == MUGWORT_BUSH and random.random() < 0.25:
                     self._add_item("mugwort")
+            from blocks import (LOGIC_GATE_BLOCKS as _LGB, SWITCH_BLOCK_OFF, SWITCH_BLOCK_ON,
+                                LATCH_BLOCK_OFF, LATCH_BLOCK_ON, LOGIC_OUTPUT_BLOCKS as _LOB,
+                                LOGIC_SENSOR_BLOCKS as _LSB, LOGIC_TIMER_BLOCKS as _LTB,
+                                RS_LATCH_Q0 as _RSQ0m, RS_LATCH_Q1 as _RSQ1m,
+                                PRESSURE_PLATE_OFF as _PPOm, PRESSURE_PLATE_ON as _PPNm,
+                                COUNTER_BLOCK as _CTRm, COMPARATOR_BLOCK as _CMPm,
+                                OBSERVER_BLOCK as _OBSm, SEQUENCER_BLOCK as _SEQm,
+                                T_FLIPFLOP_BLOCK as _TFFm,
+                                DEPOSIT_TRIGGER_BLOCK as _DTRm)
+            _all_logic = (_LGB | _LOB | _LSB | _LTB
+                          | {SWITCH_BLOCK_OFF, SWITCH_BLOCK_ON, LATCH_BLOCK_OFF, LATCH_BLOCK_ON,
+                             _RSQ0m, _RSQ1m, _PPOm, _PPNm,
+                             _CTRm, _CMPm, _OBSm, _SEQm, _TFFm, _DTRm})
+            if block_id in _all_logic:
+                self.world.logic_state.pop((bx, by), None)
+                import logic as _logicm
+                _logicm.evaluate_full_network(self.world)
             if block_id in PERENNIAL_CROP_MATURE and random.random() > 0.33:
                 self.world.set_block(bx, by, MATURE_TO_YOUNG_CROP[block_id])
             else:
@@ -1357,6 +1441,34 @@ class Player:
         if item_data.get("edible", False):
             self._try_eat()
             return
+        # Water bucket full: place a water source, return empty bucket
+        if item_data.get("is_water_source"):
+            if self.world.get_block(bx, by) in (AIR, WATER):
+                self.world.set_block(bx, by, WATER)
+                self.world._water_level[(bx, by)] = 8
+                self.world._pending_water.add((bx, by))
+                self.inventory[item_id] = self.inventory.get(item_id, 1) - 1
+                if self.inventory[item_id] <= 0:
+                    del self.inventory[item_id]
+                    for i in range(HOTBAR_SIZE):
+                        if self.hotbar[i] == item_id:
+                            self.hotbar[i] = None
+                            break
+                self._add_item("water_bucket")
+            return
+        # Irrigation channel: force bg-layer placement
+        if item_data.get("bg_only"):
+            block_id = item_data.get("place_block")
+            if block_id is not None and self.world.get_bg_block(bx, by) in (AIR, SKY_OPENING):
+                self.world.set_bg_block(bx, by, block_id)
+                self.inventory[item_id] = self.inventory.get(item_id, 1) - 1
+                if self.inventory[item_id] <= 0:
+                    del self.inventory[item_id]
+                    for i in range(HOTBAR_SIZE):
+                        if self.hotbar[i] == item_id:
+                            self.hotbar[i] = None
+                            break
+            return
         if not bg:
             spawn_type = item_data.get("spawn_automation")
             if spawn_type:
@@ -1392,6 +1504,18 @@ class Player:
                 if self.inventory.get(item_id, 0) > 0:
                     self.world.set_block(bx, by, AIR)
                     self._add_item("oil_barrel")
+                    self.inventory[item_id] -= 1
+                    if self.inventory[item_id] <= 0:
+                        del self.inventory[item_id]
+                        for i in range(HOTBAR_SIZE):
+                            if self.hotbar[i] == item_id:
+                                self.hotbar[i] = None
+                                break
+                return
+            # Water bucket fill: left-click on water to fill bucket
+            if item_data.get("harvest_water") and self.world.get_block(bx, by) == WATER:
+                if self.inventory.get(item_id, 0) > 0:
+                    self._add_item("water_bucket_full")
                     self.inventory[item_id] -= 1
                     if self.inventory[item_id] <= 0:
                         del self.inventory[item_id]
@@ -1509,6 +1633,19 @@ class Player:
                             self.hotbar[i] = None
                             break
             return
+        if item_data.get("wire_layer"):
+            if not bg:
+                import logic as _logic
+                self.world.set_wire(bx, by, 0 if self.world.get_wire(bx, by) else 1)
+                self.inventory[item_id] -= 1
+                if self.inventory[item_id] <= 0:
+                    del self.inventory[item_id]
+                    for i in range(HOTBAR_SIZE):
+                        if self.hotbar[i] == item_id:
+                            self.hotbar[i] = None
+                            break
+                _logic.evaluate_full_network(self.world)
+            return
         block_id = item_data.get("place_block")
         if block_id is None:
             return
@@ -1536,6 +1673,46 @@ class Player:
                 if block_px.colliderect(self.rect):
                     return
             self.world.set_block(bx, by, block_id)
+            from blocks import (LOGIC_GATE_BLOCKS as _LGB, SWITCH_BLOCK_OFF, LATCH_BLOCK_OFF,
+                                LOGIC_OUTPUT_BLOCKS as _LOB, LOGIC_SENSOR_BLOCKS as _LSB,
+                                REPEATER_BLOCK as _RPT, PULSE_GEN_BLOCK as _PGN,
+                                RS_LATCH_Q0 as _RSQ0, PRESSURE_PLATE_OFF as _PPO)
+            import logic as _logic
+            _facing = "right" if self.facing == 1 else "left"
+            if block_id in _LGB | {SWITCH_BLOCK_OFF, LATCH_BLOCK_OFF}:
+                self.world.logic_state[(bx, by)] = {
+                    "facing": _facing, "latch_state": False, "prev_input": False,
+                }
+                _logic.evaluate_full_network(self.world)
+            elif block_id in _LOB:
+                _logic.register_output_block(self.world, bx, by)
+                _logic.evaluate_full_network(self.world)
+            elif block_id in _LSB or block_id == _PPO:
+                _logic.register_sensor_block(self.world, bx, by)
+            elif block_id == _RPT:
+                _logic.register_repeater(self.world, bx, by, _facing)
+            elif block_id == _PGN:
+                _logic.register_pulse_gen(self.world, bx, by)
+            elif block_id == _RSQ0:
+                _logic.register_rs_latch(self.world, bx, by, _facing)
+            else:
+                from blocks import (COUNTER_BLOCK as _CTR, COMPARATOR_BLOCK as _CMP,
+                                    OBSERVER_BLOCK as _OBS, SEQUENCER_BLOCK as _SEQ,
+                                    T_FLIPFLOP_BLOCK as _TFF)
+                if block_id == _CTR:
+                    _logic.register_counter(self.world, bx, by, _facing)
+                elif block_id == _CMP:
+                    _logic.register_comparator(self.world, bx, by, _facing)
+                elif block_id == _OBS:
+                    _logic.register_observer(self.world, bx, by, _facing)
+                elif block_id == _SEQ:
+                    _logic.register_sequencer(self.world, bx, by, _facing)
+                elif block_id == _TFF:
+                    _logic.register_t_flipflop(self.world, bx, by, _facing)
+                else:
+                    from blocks import DEPOSIT_TRIGGER_BLOCK as _DTR
+                    if block_id == _DTR:
+                        _logic.register_deposit_trigger(self.world, bx, by)
         self.inventory[item_id] -= 1
         if self.inventory[item_id] <= 0:
             del self.inventory[item_id]
@@ -1863,6 +2040,8 @@ class Player:
         hunger_restore = item_data.get("hunger_restore", 0)
         if "preservation" in self.salt_buffs:
             hunger_restore = int(hunger_restore * 1.25)
+        if "abundance" in self.beer_buffs:
+            hunger_restore = int(hunger_restore * 1.20)
         self.hunger = min(100.0, self.hunger + hunger_restore)
         self.health = min(MAX_HEALTH, self.health + hunger_restore * 0.25)
         self._eat_cooldown = 0.5
@@ -1918,6 +2097,10 @@ class Player:
             duration = item_data.get("salt_buff_duration", 90.0)
             self.salt_buffs[buff] = {"duration": duration}
             apply_pairing_to_buff(self, "salt", buff)
+        if item_data.get("beer_buff"):
+            buff = item_data["beer_buff"]
+            duration = item_data.get("beer_buff_duration", 110.0)
+            self.beer_buffs[buff] = {"duration": duration}
         self.inventory[item_id] -= 1
         if self.inventory[item_id] <= 0:
             del self.inventory[item_id]
@@ -1961,6 +2144,10 @@ class Player:
             # Fall damage only applies outside water (wine "vivacity" negates it)
             if landed and prev_vy > 10 and not in_water and "vivacity" not in self.wine_buffs:
                 dmg = int((prev_vy - 10) * 5)
+                if "wanderlust" in self.beer_buffs:
+                    dmg = int(dmg * 0.60)
+                if "resilience" in self.beer_buffs:
+                    dmg = int(dmg * 0.50)
                 if "tranquility" in self.tea_buffs:
                     dmg = int(dmg * 0.7)
                 resilience = self.get_textile_bonus("resilience")
@@ -2012,6 +2199,10 @@ class Player:
             self.salt_buffs[buff]["duration"] -= dt
             if self.salt_buffs[buff]["duration"] <= 0:
                 del self.salt_buffs[buff]
+        for buff in list(self.beer_buffs):
+            self.beer_buffs[buff]["duration"] -= dt
+            if self.beer_buffs[buff]["duration"] <= 0:
+                del self.beer_buffs[buff]
         self.tick_aging_vessels(dt)
         if self._bow_cooldown > 0:
             self._bow_cooldown -= dt
@@ -2027,8 +2218,14 @@ class Player:
                 drain_mult *= 0.45
             if "satiation" in self.cheese_buffs:
                 drain_mult *= 0.60
+            if "refreshment" in self.beer_buffs:
+                drain_mult *= 0.50
+            if "steadiness" in self.beer_buffs:
+                drain_mult *= 0.65
         if "vitality" in self.cheese_buffs and self.hunger > 20.0:
             self.health = min(MAX_HEALTH, self.health + 1.0 * dt)
+        if "immunity" in self.beer_buffs and self.hunger > 10.0:
+            self.health = min(MAX_HEALTH, self.health + 0.8 * dt)
         if not self.god_mode and not self.no_hunger:
             self.hunger = max(0.0, self.hunger - self._hunger_drain_rate * drain_mult * dt)
             if self.hunger == 0.0:
@@ -2326,6 +2523,12 @@ class Player:
             mult *= 1.15
         if "vitality" in self.salt_buffs:
             mult *= 1.15
+        if "fortitude" in self.beer_buffs:
+            mult *= 1.20
+        if "precision" in self.beer_buffs:
+            mult *= 1.15
+        if "endurance" in self.beer_buffs:
+            mult *= 1.10
         mult += self.get_textile_bonus("focus")
         vigor_bonus = 1 if "vigor" in self.cheese_buffs else 0
         return base * mult + vigor_bonus

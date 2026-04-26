@@ -73,6 +73,7 @@ class SaveManager:
             self._save_regions(con)
             self._save_outposts(con)
             self._save_player(con, player)
+            self._save_npc_relationships(con, player)
             self._save_rocks(con, player)
             self._save_wildflowers(con, player)
             self._save_fossils(con, player)
@@ -81,6 +82,7 @@ class SaveManager:
             self._save_coffee_beans(con, player)
             self._save_wine_grapes(con, player)
             self._save_spirits(con, player)
+            self._save_beers(con, player)
             self._save_tea_leaves(con, player)
             self._save_textiles(con, player)
             self._save_cheese_wheels(con, player)
@@ -138,6 +140,7 @@ class SaveManager:
             "wildflower_display_data": world_meta.get("wildflower_display_data", {}),
             "pottery_display_data":    world_meta.get("pottery_display_data", {}),
             "unplaced_vase_uids":      world_meta.get("unplaced_vase_uids", []),
+            "logic_state":             world_meta.get("logic_state", {}),
             "player": player_data,
             "automations": automations,
             "farm_bots": farm_bots,
@@ -229,6 +232,38 @@ class SaveManager:
         return [[flat[y * CHUNK_W + lx] for lx in range(CHUNK_W)]
                 for y in range(WORLD_H)]
 
+    def load_wire_chunk(self, chunk_x):
+        """Load a single wire chunk from DB. Returns 2-D list or None."""
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                row = con.execute(
+                    "SELECT data FROM wire_chunks WHERE chunk_x=?", (chunk_x,)
+                ).fetchone()
+        except Exception:
+            return None
+        if row is None:
+            return None
+        flat = struct.unpack(f"<{CHUNK_W * WORLD_H}B", zlib.decompress(row[0]))
+        return [[flat[y * CHUNK_W + lx] for lx in range(CHUNK_W)]
+                for y in range(WORLD_H)]
+
+    def load_wire_chunks_batch(self, chunk_xs):
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                placeholders = ",".join("?" * len(chunk_xs))
+                rows = con.execute(
+                    f"SELECT chunk_x, data FROM wire_chunks WHERE chunk_x IN ({placeholders})",
+                    list(chunk_xs),
+                ).fetchall()
+        except Exception:
+            return {}
+        result = {}
+        for cx, data in rows:
+            flat = struct.unpack(f"<{CHUNK_W * WORLD_H}B", zlib.decompress(data))
+            result[cx] = [[flat[y * CHUNK_W + lx] for lx in range(CHUNK_W)]
+                          for y in range(WORLD_H)]
+        return result
+
     def save_bg_chunk(self, chunk_x, chunk):
         """Immediately persist a single background chunk to DB."""
         raw = struct.pack(
@@ -295,6 +330,10 @@ class SaveManager:
             chunk_x INTEGER PRIMARY KEY,
             data    BLOB NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS wire_chunks (
+            chunk_x INTEGER PRIMARY KEY,
+            data    BLOB NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS world_meta (
             water_level TEXT,
             soil_moisture TEXT,
@@ -307,7 +346,8 @@ class SaveManager:
             tapestry_positions TEXT,
             wildflower_display_data TEXT,
             pottery_display_data TEXT,
-            unplaced_vase_uids TEXT
+            unplaced_vase_uids TEXT,
+            logic_state TEXT
         );
         CREATE TABLE IF NOT EXISTS player (
             x REAL, y REAL, vx REAL, vy REAL, facing INTEGER,
@@ -458,6 +498,29 @@ class SaveManager:
             blend_components  TEXT,
             barrel_type       TEXT DEFAULT '',
             age_duration      TEXT DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS beers (
+            uid               TEXT PRIMARY KEY,
+            origin_biome      TEXT,
+            grain_type        TEXT,
+            beer_type         TEXT,
+            state             TEXT,
+            bitterness        REAL,
+            maltiness         REAL,
+            clarity           REAL,
+            body              REAL,
+            carbonation       REAL,
+            aroma             REAL,
+            ferment_quality   REAL,
+            condition_quality REAL,
+            flavor_notes      TEXT,
+            seed              INTEGER,
+            blend_components  TEXT,
+            mash_type         TEXT DEFAULT '',
+            hop_addition      TEXT DEFAULT '',
+            yeast_type        TEXT DEFAULT '',
+            vessel            TEXT DEFAULT '',
+            condition_duration TEXT DEFAULT ''
         );
         CREATE TABLE IF NOT EXISTS tea_leaves (
             uid               TEXT PRIMARY KEY,
@@ -625,6 +688,10 @@ class SaveManager:
             danger               TEXT DEFAULT '',
             landmark_used_day    INTEGER DEFAULT -1
         );
+        CREATE TABLE IF NOT EXISTS npc_relationships (
+            npc_uid  TEXT PRIMARY KEY,
+            score    INTEGER NOT NULL DEFAULT 0
+        );
         CREATE TABLE IF NOT EXISTS outposts (
             outpost_id        INTEGER PRIMARY KEY,
             outpost_type      TEXT,
@@ -738,6 +805,20 @@ class SaveManager:
             ("aging_vessels", "'[]'"),
             ("visited_town_ids", "'[]'"),
             ("equipped_weapon_uid", "NULL"),
+            ("npc_requests", "'{}'"),
+            ("npc_request_cooldowns", "'{}'"),
+            ("beloved_perks", "'[]'"),
+            ("merchant_beloved_towns", "'[]'"),
+            ("doctor_beloved_towns", "'[]'"),
+            ("inn_beloved", "0"),
+            ("farm_seed_donors", "'[]'"),
+            ("known_dynasty_regions",    "'[]'"),
+            ("favored_dynasty_regions",  "'[]'"),
+            ("champion_dynasty_regions", "'[]'"),
+            ("rival_dynasty_regions",    "'[]'"),
+            ("dynasty_tiers_reached",    "'{}'"),
+            ("dynasty_titles",           "'[]'"),
+            ("dynasty_quests_completed", "'[]'"),
         ]:
             try:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT {default}")
@@ -958,6 +1039,17 @@ class SaveManager:
             data = zlib.compress(raw, level=1)
             con.execute("INSERT OR REPLACE INTO bg_chunks VALUES (?,?)", (cx, data))
         world._dirty_bg_chunks.clear()
+        for cx in list(getattr(world, "_dirty_wire_chunks", set())):
+            if cx not in getattr(world, "_wire_chunks", {}):
+                continue
+            chunk = world._wire_chunks[cx]
+            raw = struct.pack(
+                f"<{CHUNK_W * WORLD_H}B",
+                *[chunk[y][lx] for y in range(WORLD_H) for lx in range(CHUNK_W)],
+            )
+            data = zlib.compress(raw, level=1)
+            con.execute("INSERT OR REPLACE INTO wire_chunks VALUES (?,?)", (cx, data))
+        getattr(world, "_dirty_wire_chunks", set()).clear()
 
     def _save_world_meta(self, con, world, player=None):
         water        = {f"{x},{y}": lvl    for (x, y), lvl   in world._water_level.items()}
@@ -998,16 +1090,21 @@ class SaveManager:
         }
         unplaced_uids = [p.uid for p in (player.unplaced_vases if player else [])]
         trade_blocks = {f"{x},{y}": d for (x, y), d in world.trade_block_data.items()}
+        logic_state_out = {
+            f"{bx},{by}": v
+            for (bx, by), v in getattr(world, "logic_state", {}).items()
+        }
         con.execute("DELETE FROM world_meta")
         con.execute(
             "INSERT INTO world_meta "
-            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, tapestry_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids, day_count, trade_block_data) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, tapestry_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids, day_count, trade_block_data, logic_state) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (json.dumps(water), json.dumps(moisture), json.dumps(progress),
              json.dumps(care_sum), json.dumps(fertility), json.dumps(compost_bins),
              json.dumps(garden_flowers), json.dumps(sculpture_pos), json.dumps(tapestry_pos),
              json.dumps(wf_displays), json.dumps(pottery_displays), json.dumps(unplaced_uids),
-             getattr(world, 'day_count', 0), json.dumps(trade_blocks)),
+             getattr(world, 'day_count', 0), json.dumps(trade_blocks),
+             json.dumps(logic_state_out)),
         )
 
     def _save_player(self, con, player):
@@ -1061,6 +1158,41 @@ class SaveManager:
                 getattr(player, "equipped_weapon_uid", None),
             )
         )
+
+        con.execute(
+            """UPDATE player SET
+               npc_requests=?, npc_request_cooldowns=?,
+               beloved_perks=?, merchant_beloved_towns=?,
+               doctor_beloved_towns=?, inn_beloved=?, farm_seed_donors=?,
+               known_dynasty_regions=?, favored_dynasty_regions=?,
+               champion_dynasty_regions=?, rival_dynasty_regions=?,
+               dynasty_tiers_reached=?, dynasty_titles=?,
+               dynasty_quests_completed=?""",
+            (
+                json.dumps(getattr(player, "npc_requests", {})),
+                json.dumps(getattr(player, "npc_request_cooldowns", {})),
+                json.dumps(list(getattr(player, "beloved_perks", set()))),
+                json.dumps(list(getattr(player, "merchant_beloved_towns", set()))),
+                json.dumps(list(getattr(player, "doctor_beloved_towns", set()))),
+                int(getattr(player, "inn_beloved", False)),
+                json.dumps(list(getattr(player, "farm_seed_donors", set()))),
+                json.dumps(list(getattr(player, "known_dynasty_regions",    set()))),
+                json.dumps(list(getattr(player, "favored_dynasty_regions",  set()))),
+                json.dumps(list(getattr(player, "champion_dynasty_regions", set()))),
+                json.dumps(list(getattr(player, "rival_dynasty_regions",    set()))),
+                json.dumps({str(k): v for k, v in getattr(player, "dynasty_tiers_reached", {}).items()}),
+                json.dumps(getattr(player, "dynasty_titles", [])),
+                json.dumps(list(getattr(player, "dynasty_quests_completed", set()))),
+            )
+        )
+
+    def _save_npc_relationships(self, con, player):
+        con.execute("DELETE FROM npc_relationships")
+        for uid, score in getattr(player, "npc_relationships", {}).items():
+            con.execute(
+                "INSERT INTO npc_relationships (npc_uid, score) VALUES (?, ?)",
+                (uid, int(score)),
+            )
 
     def _save_rocks(self, con, player):
         con.execute("DELETE FROM rocks")
@@ -1201,6 +1333,25 @@ class SaveManager:
                     json.dumps(s.blend_components),
                     getattr(s, "barrel_type", ""),
                     getattr(s, "age_duration", ""),
+                )
+            )
+
+    def _save_beers(self, con, player):
+        con.execute("DELETE FROM beers")
+        for b in player.beers:
+            con.execute(
+                "INSERT OR REPLACE INTO beers VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    b.uid, b.origin_biome, b.grain_type, b.beer_type, b.state,
+                    b.bitterness, b.maltiness, b.clarity, b.body, b.carbonation,
+                    b.aroma, b.ferment_quality, b.condition_quality,
+                    json.dumps(b.flavor_notes), b.seed,
+                    json.dumps(b.blend_components),
+                    getattr(b, "mash_type", ""),
+                    getattr(b, "hop_addition", ""),
+                    getattr(b, "yeast_type", ""),
+                    getattr(b, "vessel", ""),
+                    getattr(b, "condition_duration", ""),
                 )
             )
 
@@ -1750,6 +1901,19 @@ class SaveManager:
                 result[(int(xs), int(ys))] = PotteryPiece(**p)
             return result
 
+        raw_logic = None
+        try:
+            r = con.execute("SELECT logic_state FROM world_meta LIMIT 1").fetchone()
+            if r:
+                raw_logic = r[0]
+        except Exception:
+            pass
+        logic_state_loaded = {}
+        if raw_logic:
+            for key, val in json.loads(raw_logic).items():
+                bx, by = key.split(",")
+                logic_state_loaded[(int(bx), int(by))] = val
+
         return {
             "water_level":            _parse_coord_dict(row[0]),
             "soil_moisture":          _parse_coord_dict(row[1]),
@@ -1765,6 +1929,7 @@ class SaveManager:
             "unplaced_vase_uids":     json.loads(row[10]) if len(row) > 10 and row[10] else [],
             "day_count":              int(row[12]) if len(row) > 12 and row[12] is not None else 0,
             "trade_block_data":       json.loads(row[13]) if len(row) > 13 and row[13] else {},
+            "logic_state":            logic_state_loaded,
         }
 
     def _load_player(self, con, bird_obs=None, insect_obs=None):
@@ -1786,7 +1951,21 @@ class SaveManager:
                    COALESCE(discovered_pairings, '[]'),
                    COALESCE(aging_vessels, '[]'),
                    COALESCE(visited_town_ids, '[]'),
-                   COALESCE(equipped_weapon_uid, NULL)
+                   COALESCE(equipped_weapon_uid, NULL),
+                   COALESCE(npc_requests, '{}'),
+                   COALESCE(npc_request_cooldowns, '{}'),
+                   COALESCE(beloved_perks, '[]'),
+                   COALESCE(merchant_beloved_towns, '[]'),
+                   COALESCE(doctor_beloved_towns, '[]'),
+                   COALESCE(inn_beloved, 0),
+                   COALESCE(farm_seed_donors, '[]'),
+                   COALESCE(known_dynasty_regions,    '[]'),
+                   COALESCE(favored_dynasty_regions,  '[]'),
+                   COALESCE(champion_dynasty_regions, '[]'),
+                   COALESCE(rival_dynasty_regions,    '[]'),
+                   COALESCE(dynasty_tiers_reached,    '{}'),
+                   COALESCE(dynasty_titles,           '[]'),
+                   COALESCE(dynasty_quests_completed, '[]')
             FROM player LIMIT 1
         """).fetchone()
 
@@ -1800,7 +1979,14 @@ class SaveManager:
          dogs_tamed, dogs_bred, dog_records_raw, discovered_dog_breeds_raw,
          discovered_recipes_raw, worn_raw, animals_hunted_raw, hunt_trophies_raw, roast_profiles_raw,
          discovered_pairings_raw, aging_vessels_raw, visited_town_ids_raw,
-         equipped_weapon_uid) = row
+         equipped_weapon_uid,
+         npc_requests_raw, npc_request_cooldowns_raw,
+         beloved_perks_raw, merchant_beloved_towns_raw,
+         doctor_beloved_towns_raw, inn_beloved_raw, farm_seed_donors_raw,
+         known_dynasty_regions_raw, favored_dynasty_regions_raw,
+         champion_dynasty_regions_raw, rival_dynasty_regions_raw,
+         dynasty_tiers_reached_raw, dynasty_titles_raw,
+         dynasty_quests_completed_raw) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -2013,6 +2199,37 @@ class SaveManager:
             })
 
         try:
+            beer_rows = con.execute("""
+                SELECT uid, origin_biome, grain_type, beer_type, state,
+                       bitterness, maltiness, clarity, body, carbonation,
+                       aroma, ferment_quality, condition_quality,
+                       flavor_notes, seed, blend_components,
+                       COALESCE(mash_type, ''), COALESCE(hop_addition, ''),
+                       COALESCE(yeast_type, ''), COALESCE(vessel, ''),
+                       COALESCE(condition_duration, '')
+                FROM beers
+            """).fetchall()
+        except Exception:
+            beer_rows = []
+        beer_data = []
+        for b in beer_rows:
+            beer_data.append({
+                "uid": b[0], "origin_biome": b[1], "grain_type": b[2],
+                "beer_type": b[3], "state": b[4],
+                "bitterness": b[5], "maltiness": b[6], "clarity": b[7],
+                "body": b[8], "carbonation": b[9], "aroma": b[10],
+                "ferment_quality": b[11], "condition_quality": b[12],
+                "flavor_notes": json.loads(b[13]) if b[13] else [],
+                "seed": b[14],
+                "blend_components": json.loads(b[15]) if b[15] else [],
+                "mash_type": b[16] or "",
+                "hop_addition": b[17] or "",
+                "yeast_type": b[18] or "",
+                "vessel": b[19] or "",
+                "condition_duration": b[20] or "",
+            })
+
+        try:
             textile_rows = con.execute(
                 "SELECT uid, fiber_type, state, output_type, texture, dye_family, "
                 "dye_color, quality, softness, luster, pattern_quality, seed FROM textiles"
@@ -2204,6 +2421,11 @@ class SaveManager:
                 f"{s['origin_biome']}_{('reserve' if s['age_quality'] >= 0.70 else 'aged' if s['age_quality'] >= 0.40 else 'young')}"
                 for s in spirit_data if s["state"] in ("aged", "blended")
             }),
+            "beers": beer_data,
+            "discovered_beers": list({
+                f"{b['origin_biome']}_{('reserve' if b['condition_quality'] >= 0.70 else 'fine' if b['condition_quality'] >= 0.40 else 'standard')}"
+                for b in beer_data if b["state"] in ("conditioned", "blended")
+            }),
             "textiles": textile_data,
             "discovered_textiles": list({
                 f"{t['fiber_type']}_{t['dye_family']}_{t['output_type']}"
@@ -2237,6 +2459,24 @@ class SaveManager:
             "discovered_pairings": json.loads(discovered_pairings_raw or "[]"),
             "aging_vessels": json.loads(aging_vessels_raw or "[]"),
             "visited_town_ids": json.loads(visited_town_ids_raw or "[]"),
+            "npc_relationships": {
+                row[0]: row[1]
+                for row in con.execute("SELECT npc_uid, score FROM npc_relationships")
+            },
+            "npc_requests":           json.loads(npc_requests_raw or "{}"),
+            "npc_request_cooldowns":  json.loads(npc_request_cooldowns_raw or "{}"),
+            "beloved_perks":          json.loads(beloved_perks_raw or "[]"),
+            "merchant_beloved_towns": json.loads(merchant_beloved_towns_raw or "[]"),
+            "doctor_beloved_towns":   json.loads(doctor_beloved_towns_raw or "[]"),
+            "inn_beloved":            bool(inn_beloved_raw),
+            "farm_seed_donors":       json.loads(farm_seed_donors_raw or "[]"),
+            "known_dynasty_regions":    json.loads(known_dynasty_regions_raw    or "[]"),
+            "favored_dynasty_regions":  json.loads(favored_dynasty_regions_raw  or "[]"),
+            "champion_dynasty_regions": json.loads(champion_dynasty_regions_raw or "[]"),
+            "rival_dynasty_regions":    json.loads(rival_dynasty_regions_raw    or "[]"),
+            "dynasty_tiers_reached":    json.loads(dynasty_tiers_reached_raw    or "{}"),
+            "dynasty_titles":           json.loads(dynasty_titles_raw           or "[]"),
+            "dynasty_quests_completed": json.loads(dynasty_quests_completed_raw or "[]"),
             "crafted_weapons": weapons_data,
             "equipped_weapon_uid": equipped_weapon_uid,
             "sculptures_created": _sculpture_created,
