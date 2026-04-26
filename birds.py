@@ -377,8 +377,14 @@ class GroundBird(Bird):
 
     def _ground_y(self):
         bx = int(self.x // BLOCK_SIZE)
-        sy = self._surface_y_at(bx)
-        return float((sy - 1) * BLOCK_SIZE)
+        sy_guess = self._surface_y_at(bx)
+        # Scan for the actual topmost solid block — terrain may have been
+        # built up (towns, walls) or dug out, so the procedural surface alone
+        # leaves birds floating or buried.
+        for by in range(max(0, sy_guess - 24), sy_guess + 32):
+            if self.world.is_solid(bx, by):
+                return float((by - 1) * BLOCK_SIZE)
+        return float((sy_guess - 1) * BLOCK_SIZE)
 
     def spook(self):
         player = getattr(self.world, '_player_ref', None)

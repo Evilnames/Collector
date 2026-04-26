@@ -485,6 +485,8 @@ def main():
         ui._sculpt_phase = "idle"
         ui.town_menu_open = False
         ui.active_town = None
+        ui.outpost_menu_open = False
+        ui.active_outpost = None
         ui.trade_block_open = False
         ui.active_trade_pos = None
 
@@ -494,7 +496,7 @@ def main():
                     ui.automation_open, ui.farm_bot_open, ui.chest_open,
                     ui.backhoe_open, ui.breeding_open, ui.garden_open, ui.wildflower_display_open,
                     ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open,
-                    ui.town_menu_open, ui.reputation_screen_open, ui.trade_block_open,
+                    ui.town_menu_open, ui.outpost_menu_open, ui.reputation_screen_open, ui.trade_block_open,
                     ui.dog_view_open, ui.dog_breeding_open])
 
     def _find_nearby_npc(world, player):
@@ -849,6 +851,7 @@ def main():
                         (bh for bh in world.backhoes if bh.in_range(player)), None
                     )
                     nearby_flag = player.get_nearby_town_flag()
+                    nearby_outpost_flag = player.get_nearby_outpost_flag()
                     nearby_npc = _find_nearby_npc(world, player)
                     nearby_bed = player.get_nearby_bed()
                     nearby_elev_stop = player.get_nearby_elevator_stop()
@@ -883,6 +886,12 @@ def main():
                             _close_all_ui()
                             ui.npc_open = True
                             ui.active_npc = nearby_npc
+                            from cities import LeaderNPC
+                            if isinstance(nearby_npc, LeaderNPC):
+                                from towns import REGIONS
+                                region = REGIONS.get(nearby_npc.region_id)
+                                if region is not None:
+                                    player.visited_town_ids.add(region.capital_town_id)
                     elif nearby_flag is not None:
                         from towns import get_town_for_block
                         town = get_town_for_block(world, *nearby_flag)
@@ -892,6 +901,15 @@ def main():
                             else:
                                 _close_all_ui()
                                 ui.open_town_menu(town, player)
+                    elif nearby_outpost_flag is not None:
+                        from outposts import get_outpost_for_block
+                        op = get_outpost_for_block(*nearby_outpost_flag)
+                        if op is not None:
+                            if ui.outpost_menu_open and ui.active_outpost is op:
+                                ui.close_outpost_menu()
+                            else:
+                                _close_all_ui()
+                                ui.open_outpost_menu(op)
                     elif nearby_bed is not None:
                         player.set_spawn(*nearby_bed)
                         print("Spawn point set to bed.")
@@ -1143,6 +1161,8 @@ def main():
                         ui.close_backhoe()
                 elif ui.town_menu_open:
                     ui.handle_town_menu_click(event.pos, player)
+                elif ui.outpost_menu_open:
+                    pass  # diplomatic-only — clicks consumed but do nothing
                 elif ui.npc_open:
                     ui.handle_npc_click(event.pos, player)
                 elif ui.research_open:

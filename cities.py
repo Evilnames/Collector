@@ -715,11 +715,84 @@ class ChildNPC(AmbientNPC):
         self._pause_max  = 1.5
 
 
+_GUARD_KIT_POOL = (["spearman"] * 5 + ["swordsman"] * 5
+                   + ["halberdier"] * 3 + ["crossbowman"] * 3
+                   + ["axeman"] * 3 + ["macer"] * 3
+                   + ["archer"] * 3 + ["pikeman"] * 2
+                   + ["lancer"] * 2 + ["watchman"] * 3
+                   + ["captain"] * 1)
+_GUARD_HELMETS  = ["pot", "pot", "kettle", "sallet", "plumed", "coif", "horned"]
+_GUARD_EMBLEMS  = ["none", "none", "none", "cross", "star", "circle", "chevron"]
+_GUARD_BEARDS   = ["none", "none", "short", "full", "mustache"]
+_GUARD_CAPES    = ["none", "none", "none", "none", "trim", "dark", "trim"]
+_GUARD_FINISHES = ["steel", "steel", "bronze", "blackened", "burnished"]
+_GUARD_TABARDS  = ["solid", "solid", "vertical_split", "quartered", "horizontal_band"]
+_GUARD_SKINS    = [(245, 215, 175), (230, 195, 155), (200, 160, 120),
+                   (160, 120,  85), (115,  80,  55)]
+_GUARD_SHIELD_COLORS = [(140,  35,  35), (40,  60, 130), (35, 110,  60),
+                       (180, 145,  35), (45,  45,  55), (140, 100,  35)]
+_GUARD_BOOTS    = [(60, 45, 30), (80, 55, 30), (40, 35, 30), (95, 75, 50)]
+
+
 class GuardNPC(AmbientNPC):
-    def __init__(self, x, y, world, patrol_half=40, biodome="temperate"):
+    def __init__(self, x, y, world, patrol_half=40, biodome="temperate", kit=None):
         super().__init__(x, y, world, "npc_guard", patrol_half, biodome)
         self._walk_speed = 20.0
         self._pause_max  = 2.0
+        self.kit = kit or random.choice(_GUARD_KIT_POOL)
+        if self.kit == "captain":
+            self.helmet, self.cape = "plumed", "trim"
+        elif self.kit in ("crossbowman", "archer", "watchman"):
+            self.helmet = random.choice(["kettle", "coif", "pot"])
+            self.cape   = "none"
+        else:
+            self.helmet = random.choice(_GUARD_HELMETS)
+            self.cape   = random.choice(_GUARD_CAPES)
+        self.beard          = random.choice(_GUARD_BEARDS)
+        self.emblem         = random.choice(_GUARD_EMBLEMS)
+        self.tint           = random.randint(-18, 22)
+        self.weapon_variant = random.randint(0, 2)
+        self.helmet_finish  = random.choice(_GUARD_FINISHES)
+        self.tabard         = random.choice(_GUARD_TABARDS)
+        self.skin_tone      = random.choice(_GUARD_SKINS)
+        self.shield_color   = random.choice(_GUARD_SHIELD_COLORS)
+        self.boots          = random.choice(_GUARD_BOOTS)
+        self.sash           = random.random() < 0.15
+
+
+class ElderNPC(AmbientNPC):
+    def __init__(self, x, y, world, patrol_half=32, biodome="temperate"):
+        super().__init__(x, y, world, "npc_elder", patrol_half, biodome)
+        self._walk_speed = 14.0
+        self._pause_max  = 5.0
+
+
+class BeggarNPC(AmbientNPC):
+    def __init__(self, x, y, world, patrol_half=20, biodome="temperate"):
+        super().__init__(x, y, world, "npc_beggar", patrol_half, biodome)
+        self._walk_speed = 10.0
+        self._pause_max  = 7.0
+
+
+class NobleNPC(AmbientNPC):
+    def __init__(self, x, y, world, patrol_half=44, biodome="temperate"):
+        super().__init__(x, y, world, "npc_noble", patrol_half, biodome)
+        self._walk_speed = 22.0
+        self._pause_max  = 2.5
+
+
+class PilgrimNPC(AmbientNPC):
+    def __init__(self, x, y, world, patrol_half=64, biodome="temperate"):
+        super().__init__(x, y, world, "npc_pilgrim", patrol_half, biodome)
+        self._walk_speed = 24.0
+        self._pause_max  = 3.0
+
+
+class DrunkardNPC(AmbientNPC):
+    def __init__(self, x, y, world, patrol_half=24, biodome="temperate"):
+        super().__init__(x, y, world, "npc_drunkard", patrol_half, biodome)
+        self._walk_speed = 16.0
+        self._pause_max  = 4.5
 
 
 # ---------------------------------------------------------------------------
@@ -1290,12 +1363,91 @@ def rep_rank(rep):
     return "Stranger", (145, 140, 140)
 
 
-def _rep_discount(rep):
-    if rep >= 1000: return 0.60
-    if rep >= 500:  return 0.70
-    if rep >= 200:  return 0.80
-    if rep >= 50:   return 0.90
+def _rep_discount(rep, npc=None):
+    """Reputation discount multiplier for purchases.
+
+    Optional `npc` lets the caller pick up the region's Mercantile-leader buff:
+    once the local town's reputation crosses 200, a Mercantile region stacks
+    an extra 10% off on top of the rep curve.
+    """
+    if   rep >= 1000: base = 0.60
+    elif rep >=  500: base = 0.70
+    elif rep >=  200: base = 0.80
+    elif rep >=   50: base = 0.90
+    else:             base = 1.0
+    if npc is not None:
+        from towns import TOWNS, REGIONS
+        tid = npc._nearest_town_id()
+        if tid is not None and tid in TOWNS:
+            town   = TOWNS[tid]
+            region = REGIONS.get(town.region_id)
+            if region and region.agenda == "mercantile" and town.reputation >= 200:
+                base *= 0.90
+    return base
+
+
+def _region_for_npc(npc):
+    """Return the Region the npc is currently in, or None."""
+    from towns import TOWNS, REGIONS
+    tid = npc._nearest_town_id()
+    if tid is None or tid not in TOWNS:
+        return None
+    return REGIONS.get(TOWNS[tid].region_id)
+
+
+def _item_price_tags(item_id) -> set:
+    """Best-effort tag set used to score an item against a region's specialty.
+
+    Combines town_needs categories (food / wood / stone / metal / weapons /
+    wine / coffee / spirits / pottery / tea / herbs) with the contract tag
+    overrides — covers most items the player can buy or sell.
+    """
+    from town_needs import ITEM_TO_CATEGORY
+    tags = set()
+    cat = ITEM_TO_CATEGORY.get(item_id)
+    if cat:
+        tags.add(cat)
+    tags.update(_CONTRACT_TAGS.get(item_id, ()))
+    return tags
+
+
+def _specialty_price_mult(npc, item_id) -> float:
+    """Region specialty multiplier: −15% on local exports, +15% on imports.
+
+    Returns 1.0 if the item is neither tagged as an export nor an import for
+    the local region (most decorative or unique items).
+    """
+    region = _region_for_npc(npc)
+    if region is None:
+        return 1.0
+    from towns import region_specialty
+    spec = region_specialty(region)
+    item_tags = _item_price_tags(item_id)
+    if item_tags & set(spec.get("exports", ())):
+        return 0.85
+    if item_tags & set(spec.get("imports", ())):
+        return 1.15
     return 1.0
+
+
+def specialty_price_label(npc, item_id) -> str:
+    """A short tag a shop UI can render next to a price ('export' / 'import')."""
+    mult = _specialty_price_mult(npc, item_id)
+    if mult < 1.0:
+        return "export"
+    if mult > 1.0:
+        return "import"
+    return ""
+
+
+def _shop_size_bonus(npc, agenda_match: str) -> int:
+    """+1 to a shop's sample size when the npc's region matches `agenda_match`.
+
+    Used by Blacksmith / Merchant / Scholar to widen their inventory in
+    regions whose leader prefers their goods.
+    """
+    region = _region_for_npc(npc)
+    return 1 if (region and region.agenda == agenda_match) else 0
 
 
 def _rep_buy_bonus(rep):
@@ -1314,15 +1466,23 @@ class MerchantNPC(NPC):
         pool = list(MERCHANT_SHOP_TABLE)
         for t in range(2, tier + 1):
             pool.extend(MERCHANT_TIER_TABLE.get(t, []))
-        n = rng.randint(3, 4) + (1 if tier >= 2 else 0)
+        # Mercantile leaders lean on their trade connections — even a tier-1
+        # town gets the rare tier-3 items pooled in.
+        region = _region_for_npc(self)
+        if region and region.agenda == "mercantile":
+            pool.extend(MERCHANT_TIER_TABLE.get(3, []))
+        n = rng.randint(3, 4) + (1 if tier >= 2 else 0) + _shop_size_bonus(self, "mercantile")
         self.shop = rng.sample(pool, min(n, len(pool)))
 
     def discounted_cost(self, idx):
         _, cost, *_ = self.shop[idx]
-        return max(1, round(cost * _rep_discount(self._town_rep())))
+        item_id = self.shop[idx][0]
+        return max(1, round(cost
+                            * _rep_discount(self._town_rep(), self)
+                            * _specialty_price_mult(self, item_id)))
 
     def rep_discount_pct(self):
-        return round((1.0 - _rep_discount(self._town_rep())) * 100)
+        return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
 
     def can_buy(self, idx, player):
         return player.money >= self.discounted_cost(idx)
@@ -1362,11 +1522,13 @@ class RestaurantNPC(NPC):
         self.menu = CUISINE_MENUS[self.cuisine]
 
     def discounted_cost(self, idx):
-        _, cost = self.menu[idx]
-        return max(1, round(cost * _rep_discount(self._town_rep())))
+        item_id, cost = self.menu[idx]
+        return max(1, round(cost
+                            * _rep_discount(self._town_rep(), self)
+                            * _specialty_price_mult(self, item_id)))
 
     def rep_discount_pct(self):
-        return round((1.0 - _rep_discount(self._town_rep())) * 100)
+        return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
 
     def can_buy(self, idx, player):
         return player.money >= self.discounted_cost(idx)
@@ -1391,17 +1553,23 @@ class ShrineKeeperNPC(NPC):
         self.blessing_cost = 10 + difficulty * 10
 
     def discounted_cost(self):
-        return max(1, round(self.blessing_cost * _rep_discount(self._town_rep())))
+        return max(1, round(self.blessing_cost * _rep_discount(self._town_rep(), self)))
 
     def rep_discount_pct(self):
-        return round((1.0 - _rep_discount(self._town_rep())) * 100)
+        return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
 
     def _blessing_duration(self):
         rep = self._town_rep()
-        if rep >= 1000: return 360.0
-        if rep >= 500:  return 300.0
-        if rep >= 200:  return 240.0
-        return 180.0
+        if   rep >= 1000: base = 360.0
+        elif rep >=  500: base = 300.0
+        elif rep >=  200: base = 240.0
+        else:             base = 180.0
+        # Pious leaders extend their shrine's blessings once their region's
+        # standing is earned — adds ~25% on top.
+        region = _region_for_npc(self)
+        if region and region.agenda == "pious" and rep >= 200:
+            base += 60.0
+        return base
 
     def can_bless(self, player):
         return player.money >= self.discounted_cost()
@@ -1440,14 +1608,19 @@ class BlacksmithNPC(NPC):
     def __init__(self, x, y, world, rng, biodome="temperate"):
         super().__init__(x, y, world, "npc_blacksmith")
         self.clothing = _npc_clothing(biodome)
-        self.shop = rng.sample(BLACKSMITH_SHOP_TABLE, rng.randint(3, 4))
+        n = rng.randint(3, 4) + _shop_size_bonus(self, "martial")
+        self.shop = rng.sample(BLACKSMITH_SHOP_TABLE,
+                               min(n, len(BLACKSMITH_SHOP_TABLE)))
 
     def discounted_cost(self, idx):
         _, cost, *_ = self.shop[idx]
-        return max(1, round(cost * _rep_discount(self._town_rep())))
+        item_id = self.shop[idx][0]
+        return max(1, round(cost
+                            * _rep_discount(self._town_rep(), self)
+                            * _specialty_price_mult(self, item_id)))
 
     def rep_discount_pct(self):
-        return round((1.0 - _rep_discount(self._town_rep())) * 100)
+        return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
 
     def can_buy(self, idx, player):
         return player.money >= self.discounted_cost(idx)
@@ -1487,12 +1660,14 @@ class InnkeeperNPC(NPC):
 
     def discounted_cost(self, idx=None):
         if idx is None:
-            return max(1, round(self.rest_cost * _rep_discount(self._town_rep())))
-        _, cost = self.menu[idx]
-        return max(1, round(cost * _rep_discount(self._town_rep())))
+            return max(1, round(self.rest_cost * _rep_discount(self._town_rep(), self)))
+        item_id, cost = self.menu[idx]
+        return max(1, round(cost
+                            * _rep_discount(self._town_rep(), self)
+                            * _specialty_price_mult(self, item_id)))
 
     def rep_discount_pct(self):
-        return round((1.0 - _rep_discount(self._town_rep())) * 100)
+        return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
 
     def can_buy(self, idx, player):
         return player.money >= self.discounted_cost(idx)
@@ -1522,14 +1697,19 @@ class ScholarNPC(NPC):
     def __init__(self, x, y, world, rng, biodome="temperate"):
         super().__init__(x, y, world, "npc_scholar")
         self.clothing = _npc_clothing(biodome)
-        self.shop = rng.sample(SCHOLAR_SHOP_TABLE, rng.randint(2, 3))
+        n = rng.randint(2, 3) + _shop_size_bonus(self, "scholarly")
+        self.shop = rng.sample(SCHOLAR_SHOP_TABLE,
+                               min(n, len(SCHOLAR_SHOP_TABLE)))
 
     def discounted_cost(self, idx):
         _, cost, *_ = self.shop[idx]
-        return max(1, round(cost * _rep_discount(self._town_rep())))
+        item_id = self.shop[idx][0]
+        return max(1, round(cost
+                            * _rep_discount(self._town_rep(), self)
+                            * _specialty_price_mult(self, item_id)))
 
     def rep_discount_pct(self):
-        return round((1.0 - _rep_discount(self._town_rep())) * 100)
+        return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
 
     def can_buy(self, idx, player):
         return player.money >= self.discounted_cost(idx)
@@ -1575,6 +1755,65 @@ LEADER_CONTRACT_TABLE = [
     ("crystal_shard",  3,  600, "Crystal Cache",    500,  8),
 ]
 
+# Tag each contract item so we can weight the random pick by agenda + imports.
+# Tags are intentionally broad — they match LEADER_AGENDAS["tags"] and
+# BIOME_GROUP_SPECIALTIES export/import vocabulary in towns.py.
+_CONTRACT_TAGS: dict[str, tuple] = {
+    "lumber":        ("wood",),
+    "wool":          ("textiles",),
+    "iron_chunk":    ("metal",),
+    "herbs":         ("herbs",),
+    "pottery":       ("pottery",),
+    "coffee":        ("coffee",),
+    "tea":           ("tea",),
+    "red_wine":      ("wine",),
+    "spirits":       ("spirits",),
+    "tempered_iron": ("metal", "weapons"),
+    "crystal_shard": ("gems",),
+}
+
+
+def _pick_contract_for_region(rng, region) -> list:
+    """Pick a contract for `region`, weighted by leader agenda + region imports.
+    Adds a smuggling premium when the chosen item happens to be a rival
+    region's signature export."""
+    pool = LEADER_CONTRACT_TABLE
+    preferred: set = set()
+    if region is not None:
+        from towns import LEADER_AGENDAS, BIOME_GROUP_SPECIALTIES
+        preferred.update(LEADER_AGENDAS.get(region.agenda, {}).get("tags", ()))
+        preferred.update(BIOME_GROUP_SPECIALTIES.get(region.biome_group, {}).get("imports", ()))
+
+    if preferred:
+        weighted = []
+        for entry in pool:
+            tags = set(_CONTRACT_TAGS.get(entry[0], ()))
+            weighted.extend([entry] * (4 if tags & preferred else 1))
+        chosen = rng.choice(weighted)
+    else:
+        chosen = rng.choice(pool)
+
+    contract = list(chosen)
+
+    # Rival-export smuggling premium: if the contract item is an export of any
+    # region this leader rivals, the reward gets +50% and the name is marked.
+    if region is not None and region.relations:
+        from towns import REGIONS, BIOME_GROUP_SPECIALTIES
+        item_tags = set(_CONTRACT_TAGS.get(contract[0], ()))
+        for rid, rel in region.relations.items():
+            if rel != "rival":
+                continue
+            rival = REGIONS.get(rid)
+            if rival is None:
+                continue
+            rival_exports = set(BIOME_GROUP_SPECIALTIES.get(rival.biome_group, {}).get("exports", ()))
+            if item_tags & rival_exports:
+                contract[2] = int(contract[2] * 1.5)
+                contract[3] = f"⚔ {contract[3]}"   # ⚔ marks smuggling premium
+                break
+
+    return contract
+
 
 class LeaderNPC(NPC):
     """Region leader who resides in a capital town's castle."""
@@ -1592,7 +1831,8 @@ class LeaderNPC(NPC):
         self.contracts = [self._new_contract(), self._new_contract()]
 
     def _new_contract(self):
-        return list(self._rng.choice(LEADER_CONTRACT_TABLE))
+        from towns import REGIONS
+        return _pick_contract_for_region(self._rng, REGIONS.get(self.region_id))
 
     def can_fulfill(self, idx, player):
         item_id, give_count, _, _, min_rep, _ = self.contracts[idx]
@@ -1617,6 +1857,18 @@ class LeaderNPC(NPC):
                 town = TOWNS.get(tid)
                 if town:
                     town.reputation += rep_bonus
+            # Allied regions share in the rep gain at quarter strength
+            ally_bonus = max(1, rep_bonus // 4)
+            for ally_rid, rel in region.relations.items():
+                if rel != "allied":
+                    continue
+                ally_region = REGIONS.get(ally_rid)
+                if ally_region is None:
+                    continue
+                for tid in ally_region.member_town_ids:
+                    town = TOWNS.get(tid)
+                    if town:
+                        town.reputation += ally_bonus
         self.contracts[idx] = self._new_contract()
         return True
 
@@ -1715,6 +1967,71 @@ BUILDING_PALETTES = [
     (ALPINE_PLASTER,     SLATE_SHINGLE),      # alpine whitewash + slate
 ]
 
+# ---------------------------------------------------------------------------
+# City wall styles
+# Each entry: (base_block, top_block, height, has_crenellations).
+# Wood/adobe styles set has_crenellations=False and reuse the base block as
+# the flat top so the wall reads as a palisade rather than a battlement.
+# ---------------------------------------------------------------------------
+
+_DEFAULT_WALL_STYLES = [
+    (HOUSE_WALL_DARK,  HOUSE_WALL_DARK,  5, False),  # dark timber palisade
+    (PINE_PLANK_WALL,  PINE_PLANK_WALL,  5, False),  # pine plank palisade
+    (ROUGH_STONE_WALL, CRENELLATION,     6, True),   # rough stone rampart
+    (GRANITE_ASHLAR,   CRENELLATION,     7, True),   # ashlar fortification
+    (LIMESTONE_BLOCK,  CRENELLATION,     7, True),   # limestone wall
+    (HOUSE_WALL_BRICK, CRENELLATION,     6, True),   # red brick wall
+    (CURTAIN_WALL,     CRENELLATION,     8, True),   # heavy curtain wall
+    (COBBLESTONE,      CRENELLATION,     6, True),   # cobble wall
+]
+
+_DESERT_WALL_STYLES = [
+    (ADOBE_BRICK,        ADOBE_BRICK,       5, False),
+    (SANDSTONE_BLOCK,    CRENELLATION,      6, True),
+    (AFRICAN_MUD_BRICK,  AFRICAN_MUD_BRICK, 5, False),
+]
+
+_HIMALAYAN_WALL_STYLES = [
+    (WHITEWASHED_WALL, WHITEWASHED_WALL, 5, False),
+    (GRANITE_ASHLAR,   CRENELLATION,     6, True),
+]
+
+_EAST_ASIAN_WALL_STYLES = [
+    (PINE_PLANK_WALL, PINE_PLANK_WALL, 5, False),
+    (CRIMSON_BRICK,   CRENELLATION,    6, True),
+]
+
+_MEDITERRANEAN_WALL_STYLES = [
+    (LIMESTONE_BLOCK,    CRENELLATION,        6, True),
+    (WHITE_PLASTER_WALL, WHITE_PLASTER_WALL,  5, False),
+]
+
+_SOUTH_ASIAN_WALL_STYLES = [
+    (LIMESTONE_BLOCK, CRENELLATION, 6, True),
+    (ADOBE_BRICK,     ADOBE_BRICK,  5, False),
+]
+
+# Biome → wall pool (falls back to defaults).
+_WALL_STYLE_POOLS: dict[str, list] = {}
+for _b in _DESERT_BIOMES:        _WALL_STYLE_POOLS[_b] = _DESERT_WALL_STYLES
+for _b in _ARABIA_BIOMES:        _WALL_STYLE_POOLS[_b] = _DESERT_WALL_STYLES
+for _b in _HIMALAYAN_BIOMES:     _WALL_STYLE_POOLS[_b] = _HIMALAYAN_WALL_STYLES
+for _b in _EAST_ASIAN_BIOMES:    _WALL_STYLE_POOLS[_b] = _EAST_ASIAN_WALL_STYLES
+for _b in _MEDITERRANEAN_BIOMES: _WALL_STYLE_POOLS[_b] = _MEDITERRANEAN_WALL_STYLES
+for _b in _SOUTH_ASIAN_BIOMES:   _WALL_STYLE_POOLS[_b] = _SOUTH_ASIAN_WALL_STYLES
+
+# Per-size chance of having a wall at all. Capitals/garrisons always walled,
+# small towns rarely so — leaves room for plenty of "open" cities.
+_WALL_CHANCE_BY_SIZE = {
+    "small":         0.20,
+    "medium":        0.50,
+    "large":         0.75,
+    "city":          1.00,
+    "military":      1.00,
+    "oasis":         0.40,
+    "bedouin_camp":  0.00,
+}
+
 # Rug colour pool — each house picks one for its floor.
 _INTERIOR_RUGS = (
     TEXTILE_RUG_NATURAL, TEXTILE_RUG_GOLDEN, TEXTILE_RUG_CRIMSON,
@@ -1737,7 +2054,9 @@ _FACADE_FLOWER_BOXES = (FLOWER_BOX, GERANIUM_BOX)
 # ---------------------------------------------------------------------------
 
 # Appraisal base prices per weapon type (gold)
-_WEAPON_ARMORER_BASE = {"dagger": 20, "sword": 35, "spear": 30, "axe": 40}
+_WEAPON_ARMORER_BASE = {"dagger": 20, "sword": 35, "spear": 30, "axe": 40,
+                        "mace": 45, "halberd": 55, "glaive": 48,
+                        "rapier": 32, "trident": 42, "scythe": 60}
 _WEAPON_MATERIAL_MULT = {"iron": 1.0, "gold": 1.6, "steel": 2.0}
 
 
@@ -1828,7 +2147,8 @@ _TIER_ORDER = ["Poor", "Standard", "Fine", "Masterwork"]
 def _build_garrison_quest(rng, difficulty):
     count     = rng.randint(1, 1 + min(difficulty, 2))
     min_tier  = _TIER_ORDER[min(difficulty, 2)]
-    wtype     = rng.choice(["dagger", "sword", "spear", "axe", None])
+    wtype     = rng.choice(["dagger", "sword", "spear", "axe", "mace", "halberd", "glaive",
+                            "rapier", "trident", "scythe", None])
     reward    = (35 + difficulty * 20) * count
     return {"count": count, "min_tier": min_tier, "weapon_type": wtype, "reward": reward}
 
@@ -1881,6 +2201,12 @@ _FRONTIER_BIOMES = {"steppe", "wasteland", "rocky_mountain", "canyon", "arid_ste
 # variants is a list sampled uniformly; repeat entries to weight them.
 # Use (offset, None, None, None) for an outdoor NPC slot with no building.
 # Variants: "house", "two_story", "tower", "longhouse", "ruin", "restaurant", "shrine"
+#
+# npc_types entries map positionally to buildings. An entry may be:
+#   - a string ("scholar")           — always that NPC
+#   - a list (["scholar", "villager"]) — sampled per-city; repeat to weight
+#   - "villager" / "child" / "guard"  — ambient resident (no shop/quest)
+#   - "none" or None                  — leave the slot empty
 CITY_CONFIGS = {
     "small": {
         "half_w": 16,
@@ -1904,8 +2230,14 @@ CITY_CONFIGS = {
                                (-16, (5, 6), (4, 5), ["two_story"])],
         # (center_offset, half_w) — farm fields outside the main footprint
         "farms": [(-24, 6), (24, 6)],
-        # (offset, npc_type_string) — ambient residents placed at street level
-        "ambient_npcs": [(-6, "villager"), (8, "child")],
+        # (offset, npc_type) — ambient residents at street level. npc_type may
+        # be a list (sampled) or include "none" so head-count varies.
+        "ambient_npcs": [(-6, ["villager", "villager", "none"]),
+                         (8,  ["child", "child", "none"]),
+                         (-12, ["villager", "elder", "none"]),
+                         (12, ["child", "villager", "none"]),
+                         (3,  ["elder", "none", "none"]),
+                         (-3, ["pilgrim", "none", "none", "none"])],
     },
     "medium": {
         "half_w": 26,
@@ -1922,8 +2254,10 @@ CITY_CONFIGS = {
                                     "longhouse", "ruin", "pavilion", "apothecary"]),
             ( 19, (6, 7), (5, 7), ["shrine"]),
         ],
-        "npc_types": ["quest_rock", "blacksmith", "innkeeper",
-                      "merchant", "quest_gem", "scholar", "shrine_npc"],
+        "npc_types": ["quest_rock", "blacksmith", "innkeeper", "merchant",
+                      ["quest_gem", "quest_gem", "villager"],
+                      ["scholar", "villager", "villager"],
+                      "shrine_npc"],
         "gardens": [(-21, 2), (-12, 2), (16, 2)],
         # (center_offset, half_w) — paved plaza with a centre sculpture.
         "squares": [(0, 4)],
@@ -1934,8 +2268,17 @@ CITY_CONFIGS = {
         "growth_slots_tier3": [( 26, (6, 8), (5, 6), ["tower", "three_story"]),
                                (-26, (5, 7), (4, 6), ["longhouse", "three_story"])],
         "farms": [(-36, 7), (36, 7)],
-        "ambient_npcs": [(-12, "villager"), (-6, "child"), (9, "villager"),
-                         (15, "child"), (-18, "guard"), (20, "guard")],
+        "ambient_npcs": [(-12, ["villager", "villager", "elder", "none"]),
+                         (-6,  ["child", "child", "none"]),
+                         (9,   ["villager", "villager", "drunkard"]),
+                         (15,  ["child", "child", "villager", "none"]),
+                         (-18, ["guard", "none"]),
+                         (20,  ["guard", "guard", "none"]),
+                         (-22, ["villager", "pilgrim", "none"]),
+                         (22,  ["villager", "child", "none", "none"]),
+                         (3,   ["elder", "pilgrim", "none", "none"]),
+                         (-15, ["beggar", "none", "none", "none"]),
+                         (6,   ["drunkard", "none", "none"])],
     },
     "large": {
         "half_w": 36,
@@ -1955,9 +2298,15 @@ CITY_CONFIGS = {
                                     "two_story", "market_stall", "apothecary"]),
             ( 26, (7, 9), (5, 7), ["shrine"]),
         ],
-        "npc_types": ["quest_rock", "blacksmith", "quest_wildflower", "merchant",
-                      "quest_gem", "innkeeper", "trade", "scholar",
-                      "shrine_npc", "jewelry_merchant"],
+        "npc_types": ["quest_rock", "blacksmith",
+                      ["quest_wildflower", "quest_wildflower", "villager"],
+                      "merchant",
+                      ["quest_gem", "quest_gem", "villager"],
+                      "innkeeper",
+                      ["trade", "merchant", "villager"],
+                      ["scholar", "scholar", "villager"],
+                      "shrine_npc",
+                      ["jewelry_merchant", "villager", "villager"]],
         "gardens": [(-31, 2), (-23, 2), (22, 2)],
         "squares": [(-10, 4), (13, 4)],
         "growth_slots_tier1": [( 32, (4, 6), (3, 4), ["house", "two_story"]),
@@ -1967,8 +2316,20 @@ CITY_CONFIGS = {
         "growth_slots_tier3": [( 36, (6, 8), (5, 6), ["tower", "three_story"]),
                                (-36, (5, 7), (4, 6), ["tower", "three_story"])],
         "farms": [(-48, 8), (48, 8)],
-        "ambient_npcs": [(-30, "villager"), (-14, "child"), (0, "villager"),
-                         (8, "child"), (22, "villager"), (28, "guard")],
+        "ambient_npcs": [(-30, ["villager", "villager", "elder", "none"]),
+                         (-14, ["child", "child", "none"]),
+                         (0,   ["villager", "noble", "villager", "none"]),
+                         (8,   ["child", "child", "villager", "none"]),
+                         (22,  ["villager", "drunkard", "villager"]),
+                         (28,  ["guard", "guard", "none"]),
+                         (-22, ["villager", "pilgrim", "none"]),
+                         (-36, ["guard", "none", "none"]),
+                         (15,  ["child", "elder", "none"]),
+                         (35,  ["villager", "child", "none", "none"]),
+                         (-3,  ["beggar", "none", "none", "none"]),
+                         (3,   ["pilgrim", "elder", "none", "none"]),
+                         (-25, ["noble", "none", "none"]),
+                         (12,  ["drunkard", "none", "none"])],
     },
     # Tier-3 metropolis (capital after max growth)
     "city": {
@@ -1981,9 +2342,23 @@ CITY_CONFIGS = {
         "growth_slots_tier2": [],
         "growth_slots_tier3": [],
         "farms": [(-60, 9), (60, 9)],
-        "ambient_npcs": [(-30, "villager"), (-14, "child"), (0, "villager"),
-                         (8, "child"), (22, "villager"), (28, "guard"),
-                         (-42, "guard"), (42, "guard")],
+        "ambient_npcs": [(-30, ["villager", "villager", "elder", "none"]),
+                         (-14, ["child", "child", "none"]),
+                         (0,   ["villager", "noble", "villager"]),
+                         (8,   ["child", "child", "villager", "none"]),
+                         (22,  ["villager", "noble", "drunkard", "none"]),
+                         (28,  ["guard", "none"]),
+                         (-42, ["guard", "guard", "none"]),
+                         (42,  ["guard", "none"]),
+                         (-22, ["villager", "child", "pilgrim", "none"]),
+                         (16,  ["child", "elder", "none"]),
+                         (-8,  ["villager", "beggar", "none"]),
+                         (35,  ["villager", "child", "none", "none"]),
+                         (-18, ["pilgrim", "elder", "none", "none"]),
+                         (3,   ["beggar", "none", "none", "none"]),
+                         (-35, ["noble", "none", "none"]),
+                         (10,  ["drunkard", "none", "none"]),
+                         (-3,  ["elder", "pilgrim", "none", "none"])],
     },
     # Military garrison — spawns biome-driven in frontier biomes (steppe/wasteland/etc.)
     "military": {
@@ -2005,8 +2380,14 @@ CITY_CONFIGS = {
         "growth_slots_tier2": [(-26, (4, 6), (3, 5), ["smithy", "tower"])],
         "growth_slots_tier3": [( 27, (5, 7), (4, 6), ["tower"])],
         "farms":   [(-40, 6), (40, 6)],
-        "ambient_npcs": [(-25, "guard"), (-7, "guard"), (0, "guard"),
-                         (7, "guard"), (20, "guard")],
+        "ambient_npcs": [(-25, "guard"),
+                         (-7,  ["guard", "guard", "drunkard", "none"]),
+                         (0,   "guard"),
+                         (7,   ["guard", "none"]),
+                         (20,  "guard"),
+                         (-15, ["guard", "drunkard", "none"]),
+                         (15,  ["guard", "elder", "none"]),
+                         (12,  ["drunkard", "none", "none"])],
     },
 }
 
@@ -2031,8 +2412,16 @@ CITY_CONFIGS["oasis"] = {
     "growth_slots_tier3": [( 24, (6, 7), (5, 6), ["caravanserai"]),
                             (-23, (4, 6), (3, 4), ["tent", "market_stall"])],
     "farms":    [(-32, 5), (32, 5)],
-    "ambient_npcs": [(-16, "villager"), (-9, "child"), (7, "villager"),
-                     (14, "child"), (-20, "guard"), (19, "guard")],
+    "ambient_npcs": [(-16, ["villager", "villager", "elder", "none"]),
+                     (-9,  ["child", "child", "none"]),
+                     (7,   ["villager", "pilgrim", "villager"]),
+                     (14,  ["child", "child", "none"]),
+                     (-20, ["guard", "none"]),
+                     (19,  ["guard", "guard", "none"]),
+                     (0,   ["villager", "child", "pilgrim", "none"]),
+                     (-12, ["villager", "elder", "none"]),
+                     (3,   ["pilgrim", "none", "none"]),
+                     (-3,  ["beggar", "none", "none", "none"])],
 }
 
 CITY_CONFIGS["bedouin_camp"] = {
@@ -2052,8 +2441,13 @@ CITY_CONFIGS["bedouin_camp"] = {
     "growth_slots_tier3": [( 15, (5, 7), (4, 5), ["tent", "tent"]),
                             (-15, (5, 6), (4, 5), ["tent"])],
     "farms":    [(-20, 4), (20, 4)],
-    "ambient_npcs": [(-8, "villager"), (2, "child"), (10, "villager"),
-                     (-14, "villager"), (14, "child")],
+    "ambient_npcs": [(-8,  ["villager", "villager", "elder", "none"]),
+                     (2,   ["child", "none"]),
+                     (10,  ["villager", "pilgrim", "villager"]),
+                     (-14, ["villager", "elder", "none"]),
+                     (14,  ["child", "child", "none"]),
+                     (6,   ["child", "none", "none"]),
+                     (-2,  ["elder", "pilgrim", "none", "none"])],
 }
 
 _SIZE_BY_DIFFICULTY = {
@@ -2661,6 +3055,56 @@ def _place_gateposts(world, rng, lo_x, hi_x, sy):
         cap_y = sy - 5
         if 0 <= cap_y < world.height and world.get_block(bx, cap_y) == AIR:
             world.set_bg_block(bx, cap_y, cap)
+
+
+def _pick_wall_style(rng, biodome, city_size):
+    """Return a (base, cap, height, has_crenel) style, or None for an open city."""
+    chance = _WALL_CHANCE_BY_SIZE.get(city_size, 0.3)
+    if rng.random() > chance:
+        return None
+    pool = _WALL_STYLE_POOLS.get(biodome, _DEFAULT_WALL_STYLES)
+    return rng.choice(pool)
+
+
+def _place_city_walls(world, rng, lo_x, hi_x, sy, biodome, city_size):
+    """Build foreground gate towers with optional crenellations and a bg
+    wall section flanking each gate so the city reads as enclosed.
+
+    Open cities (style is None) fall back to the simpler bg gateposts.
+    The 2-tall gate gap (sy-1, sy-2) at each gate column is left clear so
+    the player can walk through; the wall starts at sy-3 and rises to sy-h.
+    """
+    style = _pick_wall_style(rng, biodome, city_size)
+    if style is None:
+        _place_gateposts(world, rng, lo_x, hi_x, sy)
+        return
+
+    base, cap, height, has_crenel = style
+
+    # Foreground gate columns at the city edges.
+    for gate_x in (lo_x, hi_x):
+        for dy in range(3, height + 1):
+            wy = sy - dy
+            if 0 <= wy < world.height and world.get_block(gate_x, wy) == AIR:
+                world.set_block(gate_x, wy, base)
+        if has_crenel:
+            crenel_y = sy - height - 1
+            if 0 <= crenel_y < world.height and world.get_block(gate_x, crenel_y) == AIR:
+                world.set_block(gate_x, crenel_y, cap)
+
+    # Background wall continuation: 2 columns flanking each gate outward,
+    # giving the impression the wall extends beyond the gate towers.
+    for outward, gate_x in ((-1, lo_x), (+1, hi_x)):
+        for step in range(1, 3):
+            bx = gate_x + outward * step
+            for dy in range(3, height + 1):
+                wy = sy - dy
+                if 0 <= wy < world.height and world.get_block(bx, wy) == AIR:
+                    world.set_bg_block(bx, wy, base)
+            if has_crenel:
+                top_y = sy - height - 1
+                if 0 <= top_y < world.height and world.get_block(bx, top_y) == AIR:
+                    world.set_bg_block(bx, top_y, cap)
 
 
 def _place_pavilion(world, left_x, sy, width, wall_height,
@@ -3732,10 +4176,32 @@ def _build_single_city(world, rng, city_bx, difficulty):
                 _decorate_interior(world, rng, left_x, sy, width, npc_bx)
                 _decorate_facade(world, rng, left_x, sy, width, height, wall_block)
 
+        # An npc_type entry may be a list — sample so same-sized cities differ.
+        if isinstance(npc_type, (list, tuple)):
+            npc_type = rng.choice(npc_type)
+
         npc_px = npc_bx * BLOCK_SIZE + (BLOCK_SIZE - NPC.NPC_W) // 2
         npc_py = (sy - 2) * BLOCK_SIZE
 
-        if npc_type == "quest_rock":
+        if npc_type in (None, "none"):
+            pass
+        elif npc_type == "villager":
+            world.entities.append(VillagerNPC(npc_px, npc_py, world, biodome=biodome))
+        elif npc_type == "child":
+            world.entities.append(ChildNPC(npc_px, npc_py, world, biodome=biodome))
+        elif npc_type == "guard":
+            world.entities.append(GuardNPC(npc_px, npc_py, world, biodome=biodome))
+        elif npc_type == "elder":
+            world.entities.append(ElderNPC(npc_px, npc_py, world, biodome=biodome))
+        elif npc_type == "beggar":
+            world.entities.append(BeggarNPC(npc_px, npc_py, world, biodome=biodome))
+        elif npc_type == "noble":
+            world.entities.append(NobleNPC(npc_px, npc_py, world, biodome=biodome))
+        elif npc_type == "pilgrim":
+            world.entities.append(PilgrimNPC(npc_px, npc_py, world, biodome=biodome))
+        elif npc_type == "drunkard":
+            world.entities.append(DrunkardNPC(npc_px, npc_py, world, biodome=biodome))
+        elif npc_type == "quest_rock":
             world.entities.append(RockQuestNPC(npc_px, npc_py, world, rng, difficulty, biodome))
         elif npc_type == "trade":
             world.entities.append(TradeNPC(npc_px, npc_py, world, rng, biodome))
@@ -3779,7 +4245,9 @@ def _build_single_city(world, rng, city_bx, difficulty):
         _place_garden_plot(world, rng, city_bx + offset, sy, biodome, half)
 
     # Farm plots flanking the city, with farmer NPCs working the fields.
-    _ambient_npc_cls = {"villager": VillagerNPC, "child": ChildNPC, "guard": GuardNPC}
+    _ambient_npc_cls = {"villager": VillagerNPC, "child": ChildNPC, "guard": GuardNPC,
+                        "elder": ElderNPC, "beggar": BeggarNPC, "noble": NobleNPC,
+                        "pilgrim": PilgrimNPC, "drunkard": DrunkardNPC}
     for offset, farm_half in cfg.get("farms", ()):
         farm_cx = city_bx + offset
         _place_farm_plot(world, rng, farm_cx, biodome, farm_half)
@@ -3792,7 +4260,11 @@ def _build_single_city(world, rng, city_bx, difficulty):
                                             biodome=biodome))
 
     # Ambient residents — villagers, children, guards — roaming the city streets.
+    # An entry's npc_type may be a list (sampled per-city) and may resolve to
+    # "none" so the total head-count varies between same-sized cities.
     for offset, npc_type in cfg.get("ambient_npcs", ()):
+        if isinstance(npc_type, (list, tuple)):
+            npc_type = rng.choice(npc_type)
         cls = _ambient_npc_cls.get(npc_type)
         if cls is None:
             continue
@@ -3804,7 +4276,8 @@ def _build_single_city(world, rng, city_bx, difficulty):
     _pave_main_street(world, rng, city_bx - half_w, city_bx + half_w, sy)
     _place_streetlamps(world, rng, city_bx - half_w + 2,
                        city_bx + half_w - 2, sy)
-    _place_gateposts(world, rng, city_bx - half_w, city_bx + half_w, sy)
+    _place_city_walls(world, rng, city_bx - half_w, city_bx + half_w, sy,
+                      biodome, city_size)
     _ensure_city_traversal(world, city_bx, half_w, sy)
 
     return city_size

@@ -290,9 +290,22 @@ class HandlersMixin:
             self._cook_station_scroll[bid] = max(
                 0, min(self._cook_station_max_scroll.get(bid, 0), cur - dy))
         elif self.collection_open:
+            mouse = pygame.mouse.get_pos()
+            SIDEBAR_W = 130
+            over_sidebar = mouse[0] < SIDEBAR_W
             if self._collection_tab == 0:
-                self._unified_scroll = max(0, min(self._max_unified_scroll, self._unified_scroll - dy))
+                if over_sidebar:
+                    self._collection_sidebar_scroll = max(0, min(
+                        self._max_collection_sidebar_scroll,
+                        self._collection_sidebar_scroll - dy * 30))
+                else:
+                    self._unified_scroll = max(0, min(self._max_unified_scroll, self._unified_scroll - dy))
             elif self._collection_tab == 1:
+                if over_sidebar:
+                    self._encyclopedia_sidebar_scroll = max(0, min(
+                        self._max_encyclopedia_sidebar_scroll,
+                        self._encyclopedia_sidebar_scroll - dy * 30))
+                    return
                 if self._encyclopedia_cat == 0:
                     self._codex_scroll = max(0, min(self._max_codex_scroll, self._codex_scroll - dy))
                 elif self._encyclopedia_cat == 1:

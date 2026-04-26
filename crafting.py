@@ -897,10 +897,16 @@ ARTISAN_RECIPES = [
     {"name": "Star Lamp",     "ingredients": {"crystal_shard": 1, "gold_nugget": 2},      "output_id": "star_lamp",     "output_count": 2},
     {"name": "Glow Vine",     "ingredients": {"lumber": 1, "crystal_shard": 1},           "output_id": "glow_vine",     "output_count": 4},
     # Weapon handles (crafting bench)
-    {"name": "Sword Hilt",    "ingredients": {"lumber": 2},                                "output_id": "sword_hilt",    "output_count": 1},
-    {"name": "Dagger Handle", "ingredients": {"lumber": 1},                                "output_id": "dagger_handle", "output_count": 1},
-    {"name": "Spear Shaft",   "ingredients": {"lumber": 3},                                "output_id": "spear_shaft",   "output_count": 1},
-    {"name": "Axe Haft",      "ingredients": {"lumber": 2},                                "output_id": "axe_haft",      "output_count": 1},
+    {"name": "Sword Hilt",     "ingredients": {"lumber": 2},                               "output_id": "sword_hilt",     "output_count": 1},
+    {"name": "Dagger Handle",  "ingredients": {"lumber": 1},                               "output_id": "dagger_handle",  "output_count": 1},
+    {"name": "Spear Shaft",    "ingredients": {"lumber": 3},                               "output_id": "spear_shaft",    "output_count": 1},
+    {"name": "Axe Haft",       "ingredients": {"lumber": 2},                               "output_id": "axe_haft",       "output_count": 1},
+    {"name": "Mace Haft",      "ingredients": {"lumber": 2},                               "output_id": "mace_haft",      "output_count": 1},
+    {"name": "Halberd Shaft",  "ingredients": {"lumber": 4},                               "output_id": "halberd_shaft",  "output_count": 1},
+    {"name": "Glaive Pole",    "ingredients": {"lumber": 3},                               "output_id": "glaive_pole",    "output_count": 1},
+    {"name": "Rapier Grip",    "ingredients": {"lumber": 1},                               "output_id": "rapier_grip",    "output_count": 1},
+    {"name": "Trident Shaft",  "ingredients": {"lumber": 3},                               "output_id": "trident_shaft",  "output_count": 1},
+    {"name": "Scythe Snath",   "ingredients": {"lumber": 4},                               "output_id": "scythe_snath",   "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------

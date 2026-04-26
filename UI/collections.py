@@ -99,8 +99,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -140,10 +140,19 @@ class CollectionsMixin:
             ]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._collection_filter_rects.clear()
+            total_sb_h = len(FILTER_DEFS) * (SB_BTN_H + SB_GAP)
+            visible_sb_h = SCREEN_H - GY0 - 4
+            self._max_collection_sidebar_scroll = max(0, total_sb_h - visible_sb_h)
+            self._collection_sidebar_scroll = min(self._collection_sidebar_scroll,
+                                                   self._max_collection_sidebar_scroll)
+            sb_clip = pygame.Rect(0, GY0, SIDEBAR_W, visible_sb_h)
+            self.screen.set_clip(sb_clip)
             for fi, (fkey, flabel, bg_d, brd_d, txt_d) in enumerate(FILTER_DEFS):
-                by = GY0 + fi * (SB_BTN_H + SB_GAP)
+                by = GY0 + fi * (SB_BTN_H + SB_GAP) - self._collection_sidebar_scroll
+                if by + SB_BTN_H <= GY0 or by >= GY0 + visible_sb_h:
+                    continue
                 frect = pygame.Rect(SB_X, by, SB_W, SB_BTN_H)
-                self._collection_filter_rects[fkey] = frect
+                self._collection_filter_rects[fkey] = frect.clip(sb_clip)
                 is_active_f = (self._collection_filter == fkey)
                 if is_active_f:
                     fb = (min(255, bg_d[0]+22), min(255, bg_d[1]+22), min(255, bg_d[2]+22))
@@ -157,6 +166,10 @@ class CollectionsMixin:
                 fs = self.small.render(self._fit_label(flabel, SB_W - 6), True, fb_txt)
                 self.screen.blit(fs, (SB_X + SB_W // 2 - fs.get_width() // 2,
                                        by + SB_BTN_H // 2 - fs.get_height() // 2))
+            self.screen.set_clip(None)
+            self._draw_sidebar_scroll_hint(GY0, visible_sb_h, SIDEBAR_W,
+                                            self._collection_sidebar_scroll,
+                                            self._max_collection_sidebar_scroll)
             self._draw_collection_unified(player, GY0, gx_off=SIDEBAR_W)
         elif self._collection_tab == 1:
             # Left sidebar: encyclopedia category list
@@ -190,10 +203,19 @@ class CollectionsMixin:
                           "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
+            total_sb_h = len(enc_labels) * (SB_BTN_H + SB_GAP)
+            visible_sb_h = SCREEN_H - GY0 - 4
+            self._max_encyclopedia_sidebar_scroll = max(0, total_sb_h - visible_sb_h)
+            self._encyclopedia_sidebar_scroll = min(self._encyclopedia_sidebar_scroll,
+                                                     self._max_encyclopedia_sidebar_scroll)
+            sb_clip = pygame.Rect(0, GY0, SIDEBAR_W, visible_sb_h)
+            self.screen.set_clip(sb_clip)
             for cat_i, cat_label in enumerate(enc_labels):
-                by = GY0 + cat_i * (SB_BTN_H + SB_GAP)
+                by = GY0 + cat_i * (SB_BTN_H + SB_GAP) - self._encyclopedia_sidebar_scroll
+                if by + SB_BTN_H <= GY0 or by >= GY0 + visible_sb_h:
+                    continue
                 brect = pygame.Rect(SB_X, by, SB_W, SB_BTN_H)
-                self._encyclopedia_cat_rects[cat_i] = brect
+                self._encyclopedia_cat_rects[cat_i] = brect.clip(sb_clip)
                 bg_d, brd_d, txt_d = ENC_THEME[cat_i]
                 is_active = (self._encyclopedia_cat == cat_i)
                 if is_active:
@@ -208,6 +230,10 @@ class CollectionsMixin:
                 ls = self.small.render(cat_label, True, eb_txt)
                 self.screen.blit(ls, (SB_X + SB_W // 2 - ls.get_width() // 2,
                                        by + SB_BTN_H // 2 - ls.get_height() // 2))
+            self.screen.set_clip(None)
+            self._draw_sidebar_scroll_hint(GY0, visible_sb_h, SIDEBAR_W,
+                                            self._encyclopedia_sidebar_scroll,
+                                            self._max_encyclopedia_sidebar_scroll)
 
             cat_draw = [
                 self._draw_codex,
@@ -239,6 +265,17 @@ class CollectionsMixin:
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)
         else:
             self._draw_achievements()
+
+    def _draw_sidebar_scroll_hint(self, gy0, visible_h, sidebar_w, scroll, max_scroll):
+        if max_scroll <= 0:
+            return
+        track_x = sidebar_w - 4
+        track_w = 3
+        total_h = visible_h + max_scroll
+        thumb_h = max(20, int(visible_h * visible_h / total_h))
+        thumb_y = gy0 + int((visible_h - thumb_h) * scroll / max_scroll)
+        pygame.draw.rect(self.screen, (40, 40, 50), (track_x, gy0, track_w, visible_h))
+        pygame.draw.rect(self.screen, (140, 140, 160), (track_x, thumb_y, track_w, thumb_h))
 
     def _fit_label(self, text, max_width):
         if self.small.size(text)[0] <= max_width:
@@ -3409,7 +3446,7 @@ class CollectionsMixin:
             if k not in best_by_key or w.quality > best_by_key[k].quality:
                 best_by_key[k] = w
 
-        CELL_W, CELL_H, GAP = 130, 52, 8
+        CELL_W, CELL_H, GAP = 130, 44, 6
         total_w = len(MATERIAL_ORDER) * CELL_W + (len(MATERIAL_ORDER) - 1) * GAP
         gx0 = SCREEN_W // 2 - total_w // 2 + gx_off
 

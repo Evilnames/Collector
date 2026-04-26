@@ -328,6 +328,190 @@ _LEADER_TITLES: dict[str, tuple[str, str]] = {
     "south_asian":   ("Raja",      "Rani"),
 }
 
+# ---------------------------------------------------------------------------
+# Leader agendas
+# ---------------------------------------------------------------------------
+# Each region's leader rolls one of these agendas at world-gen. The agenda
+# drives which contracts the leader prefers, what gifts curry favor, and
+# (at high regional rep) a region-wide buff.
+#
+# Tags use the same vocabulary as town_needs categories where possible
+# (food / wood / stone / metal / weapons / wine / coffee / spirits / pottery /
+#  tea / herbs) plus a few region-specialty tags (gems / textiles / spices).
+
+LEADER_AGENDAS: dict[str, dict] = {
+    "martial": {
+        "label":       "Martial",
+        "description": "Hungers for arms, iron, and the spoils of the hunt.",
+        "tags":        ("metal", "weapons"),
+        "buff":        "martial_arsenal",
+    },
+    "mercantile": {
+        "label":       "Mercantile",
+        "description": "Sees worth in spices, gems, and well-traveled goods.",
+        "tags":        ("gems", "spices", "pottery", "textiles"),
+        "buff":        "mercantile_discount",
+    },
+    "scholarly": {
+        "label":       "Scholarly",
+        "description": "Collects books, fossils, and rare brews of leaf and stone.",
+        "tags":        ("gems", "tea", "herbs"),
+        "buff":        "scholarly_codex",
+    },
+    "pious": {
+        "label":       "Pious",
+        "description": "Honors the temple with herbs, candles, and sacred craft.",
+        "tags":        ("herbs", "pottery", "wine"),
+        "buff":        "pious_blessing",
+    },
+    "builder": {
+        "label":       "Builder",
+        "description": "Raises walls and roofs; insatiable for stone and timber.",
+        "tags":        ("wood", "stone", "pottery"),
+        "buff":        "builder_bonds",
+    },
+    "hedonist": {
+        "label":       "Hedonist",
+        "description": "Throws lavish feasts; demands wine, coffee, and rare spirits.",
+        "tags":        ("wine", "coffee", "spirits", "food"),
+        "buff":        "hedonist_indulgence",
+    },
+}
+
+# Region specialties — what each biome group naturally produces (cheaper here)
+# and what its leader pays a premium for (imports drive contract demand).
+BIOME_GROUP_SPECIALTIES: dict[str, dict] = {
+    "forest":         {"exports": ("wood", "herbs"),     "imports": ("metal", "spices", "wine")},
+    "jungle":         {"exports": ("herbs", "textiles"), "imports": ("metal", "stone", "wine")},
+    "wetland":        {"exports": ("herbs", "food"),     "imports": ("metal", "stone", "spirits")},
+    "desert":         {"exports": ("gems", "spices"),    "imports": ("wood", "food", "wine")},
+    "alpine":         {"exports": ("metal", "stone"),    "imports": ("food", "wine", "textiles")},
+    "steppe":         {"exports": ("textiles", "food"),  "imports": ("wood", "metal", "wine")},
+    "coastal":        {"exports": ("food", "pottery"),   "imports": ("wood", "metal", "spices")},
+    "highland":       {"exports": ("stone", "herbs"),    "imports": ("food", "spices", "textiles")},
+    "mediterranean":  {"exports": ("wine", "pottery"),   "imports": ("metal", "wood", "spices")},
+    "east_asian":     {"exports": ("tea", "pottery"),    "imports": ("metal", "spices", "wine")},
+    "arabia":         {"exports": ("spices", "coffee"),  "imports": ("wood", "metal", "wine")},
+    "levant":         {"exports": ("spices", "wine"),    "imports": ("metal", "wood", "pottery")},
+    "persia":         {"exports": ("textiles", "spices"),"imports": ("wood", "stone", "wine")},
+    "yunnan":         {"exports": ("tea", "herbs"),      "imports": ("metal", "stone", "spirits")},
+    "silk_road":      {"exports": ("textiles", "spices"),"imports": ("food", "wood", "metal")},
+    "south_asian":    {"exports": ("spices", "tea"),     "imports": ("metal", "wood", "wine")},
+}
+
+# Pairwise agenda compatibility — yields a default relation. Lookups are
+# symmetric (we try (a,b) then (b,a)). Any pair not listed defaults to neutral.
+AGENDA_RELATIONS_RULES: dict[tuple[str, str], str] = {
+    ("martial",    "martial"):    "rival",
+    ("martial",    "mercantile"): "rival",
+    ("martial",    "pious"):      "rival",
+    ("martial",    "builder"):    "allied",
+    ("mercantile", "mercantile"): "allied",
+    ("mercantile", "builder"):    "allied",
+    ("mercantile", "hedonist"):   "allied",
+    ("mercantile", "scholarly"):  "allied",
+    ("scholarly",  "scholarly"):  "allied",
+    ("scholarly",  "pious"):      "allied",
+    ("pious",      "pious"):      "allied",
+    ("pious",      "hedonist"):   "rival",
+    ("builder",    "builder"):    "allied",
+    ("hedonist",   "hedonist"):   "allied",
+    ("hedonist",   "martial"):    "rival",
+}
+
+
+def _agenda_relation(a: str, b: str) -> str:
+    return (AGENDA_RELATIONS_RULES.get((a, b))
+            or AGENDA_RELATIONS_RULES.get((b, a))
+            or "neutral")
+
+
+def pick_agenda(rng: random.Random) -> str:
+    return rng.choice(list(LEADER_AGENDAS.keys()))
+
+
+def agenda_label(agenda: str) -> str:
+    return LEADER_AGENDAS.get(agenda, {}).get("label", "")
+
+
+def agenda_description(agenda: str) -> str:
+    return LEADER_AGENDAS.get(agenda, {}).get("description", "")
+
+
+def agenda_tags(agenda: str) -> tuple:
+    return LEADER_AGENDAS.get(agenda, {}).get("tags", ())
+
+
+def region_buff(region) -> Optional[str]:
+    if region is None:
+        return None
+    return LEADER_AGENDAS.get(region.agenda, {}).get("buff")
+
+
+def region_specialty(region) -> dict:
+    if region is None:
+        return {"exports": (), "imports": ()}
+    return BIOME_GROUP_SPECIALTIES.get(region.biome_group,
+                                       BIOME_GROUP_SPECIALTIES["highland"])
+
+
+def relation_between(rid_a: int, rid_b: int) -> str:
+    region = REGIONS.get(rid_a)
+    if region is None:
+        return "neutral"
+    return region.relations.get(rid_b, "neutral")
+
+
+def allied_region_ids(region_id: int) -> list:
+    region = REGIONS.get(region_id)
+    if region is None:
+        return []
+    return [rid for rid, rel in region.relations.items() if rel == "allied"]
+
+
+def rival_region_ids(region_id: int) -> list:
+    region = REGIONS.get(region_id)
+    if region is None:
+        return []
+    return [rid for rid, rel in region.relations.items() if rel == "rival"]
+
+
+def compute_relations(seed: int = 0) -> None:
+    """Fill REGIONS[*].relations using agenda compat + a small deterministic flip.
+
+    Idempotent: clears existing relations first.
+    """
+    rids = sorted(REGIONS.keys())
+    for rid in rids:
+        REGIONS[rid].relations.clear()
+
+    for i, ra_id in enumerate(rids):
+        ra = REGIONS[ra_id]
+        if not ra.agenda:
+            continue
+        for rb_id in rids[i + 1:]:
+            rb = REGIONS[rb_id]
+            if not rb.agenda:
+                continue
+
+            base = _agenda_relation(ra.agenda, rb.agenda)
+            rng  = random.Random(seed ^ (ra_id * 7919) ^ (rb_id * 31337))
+            roll = rng.random()
+            rel  = base
+            # A small flip chance keeps the map varied even when many regions share an agenda
+            if base == "neutral":
+                if   roll < 0.20: rel = "allied"
+                elif roll < 0.30: rel = "rival"
+            elif base == "allied" and roll < 0.10:
+                rel = "neutral"
+            elif base == "rival"  and roll < 0.10:
+                rel = "neutral"
+
+            if rel != "neutral":
+                ra.relations[rb_id] = rel
+                rb.relations[ra_id] = rel
+
+
 _TOWN_NAMES_BY_GROUP: dict[str, tuple[list[str], list[str]]] = {
     # (prefixes, suffixes)
     "forest":   (["Ash","Birch","Oak","Elm","Larch","Elder","Fern","Moss","Pine","Willow",
@@ -680,6 +864,8 @@ class Region:
     biome_group:     str = _DEFAULT_BIOME_GROUP
     tagline:         str = ""
     leader_title:    str = "Lord"
+    agenda:          str = ""                                # leader personality (LEADER_AGENDAS key)
+    relations:       dict = field(default_factory=dict)      # other_region_id → "allied" | "rival"
     # reputation is computed on read: sum of member town reps
 
 
@@ -802,7 +988,11 @@ def init_towns(world) -> None:
             biome_group     = bg,
             tagline         = tagline,
             leader_title    = title,
+            agenda          = pick_agenda(rng_r),
         )
+
+    # Compute inter-region relations once all agendas are set
+    compute_relations(world.seed)
 
     # Place castles + LeaderNPCs for each capital
     for town in TOWNS.values():
@@ -861,9 +1051,11 @@ def register_new_town(world, city_bx: int, city_size: str,
             biome_group     = bg,
             tagline         = tagline,
             leader_title    = title,
+            agenda          = pick_agenda(rng_r),
         )
         if is_capital:
             TOWNS[town_id].leader_name = lname
+        compute_relations(world.seed)
     else:
         if is_capital:
             # Claim the capital slot if no capital has arrived yet
@@ -1145,7 +1337,12 @@ def advance_day(world) -> None:
         if not town.needs:
             continue
         if town.all_needs_met():
-            town.growth_progress += 1.0 / DAYS_PER_TIER
+            # Builder leaders accelerate growth in their region once trust is earned.
+            region = REGIONS.get(town.region_id)
+            growth_mult = 1.0
+            if region and region.agenda == "builder" and town.reputation >= 200:
+                growth_mult = 1.5
+            town.growth_progress += growth_mult / DAYS_PER_TIER
             if town.growth_progress >= 1.0:
                 _tier_up(town, world)
 
@@ -1302,6 +1499,8 @@ def serialize_all() -> tuple[list[dict], list[dict]]:
             "biome_group":          r.biome_group,
             "tagline":              r.tagline,
             "leader_title":         r.leader_title,
+            "agenda":               r.agenda,
+            "relations_json":       json.dumps({str(k): v for k, v in r.relations.items()}),
         })
     return town_rows, region_rows
 
@@ -1346,6 +1545,12 @@ def deserialize_all(town_rows: list[dict], region_rows: list[dict]) -> None:
                 )
             except Exception:
                 coa = None
+        relations_raw = row.get("relations_json") or "{}"
+        try:
+            rel_d = json.loads(relations_raw) if relations_raw else {}
+            relations = {int(k): v for k, v in rel_d.items()}
+        except Exception:
+            relations = {}
         r = Region(
             region_id       = row["region_id"],
             name            = row["name"],
@@ -1356,8 +1561,21 @@ def deserialize_all(town_rows: list[dict], region_rows: list[dict]) -> None:
             biome_group     = row.get("biome_group") or _DEFAULT_BIOME_GROUP,
             tagline         = row.get("tagline") or "",
             leader_title    = row.get("leader_title") or "Lord",
+            agenda          = row.get("agenda") or "",
+            relations       = relations,
         )
         REGIONS[r.region_id] = r
+
+    # Backfill agendas for old saves where this column is empty.
+    # Recompute relations only when we actually filled agendas — otherwise
+    # we'd overwrite the saved relation graph with a different one.
+    needs_backfill = False
+    for r in REGIONS.values():
+        if not r.agenda:
+            needs_backfill = True
+            r.agenda = pick_agenda(random.Random(r.region_id * 31337 + 88888))
+    if needs_backfill:
+        compute_relations(seed=0)
 
 
 def _load_from_db(save_mgr) -> Optional[bool]:

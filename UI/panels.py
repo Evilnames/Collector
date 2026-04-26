@@ -926,17 +926,26 @@ class PanelsMixin:
         role_s = self.small.render(f"{title} of {npc.region_name}", True, (180, 160, 110))
         self.screen.blit(role_s, (px + 16, py + 38))
 
+        # Agenda chip — shows the leader's personality and what they value
+        if region and region.agenda:
+            from towns import agenda_label, agenda_description
+            ag_label = agenda_label(region.agenda)
+            ag_desc  = agenda_description(region.agenda)
+            ag_s = self.small.render(f"Agenda: {ag_label} — {ag_desc}",
+                                     True, (210, 175,  80))
+            self.screen.blit(ag_s, (px + 16, py + 56))
+
         # Regional rep + rank
         total_rep = npc.regional_rep()
         rank_name, rank_col = rep_rank(npc._town_rep())
         rep_s = self.small.render(
             f"Regional reputation: {total_rep}   |   Your standing: {rank_name}",
             True, rank_col)
-        self.screen.blit(rep_s, (px + 16, py + 58))
+        self.screen.blit(rep_s, (px + 16, py + 76))
 
-        pygame.draw.line(self.screen, border_col, (px + 10, py + 76), (px + PW - 10, py + 76))
+        pygame.draw.line(self.screen, border_col, (px + 10, py + 94), (px + PW - 10, py + 94))
 
-        cy = py + 84
+        cy = py + 102
         if region:
             for tid in region.member_town_ids:
                 town = TOWNS.get(tid)
@@ -2255,6 +2264,7 @@ class PanelsMixin:
         self._trade_rects.clear()
         y = py + 56
 
+        from cities import specialty_price_label
         for i, (item_id, _, display, barter_item, barter_qty) in enumerate(npc.shop):
             cost      = npc.discounted_cost(i)
             can_buy   = npc.can_buy(i, player)
@@ -2279,6 +2289,12 @@ class PanelsMixin:
             buy_lbl  = self.font.render("BUY", True, (255, 220, 80) if can_buy else (70, 70, 82))
             gold_lbl = self.font.render(f"{cost} gold", True, buy_col)
             self.screen.blit(gold_lbl, (px + 66, y + 30))
+            # Specialty tag — green for region exports, amber for imports
+            spec_tag = specialty_price_label(npc, item_id)
+            if spec_tag:
+                tag_col = (130, 200, 130) if spec_tag == "export" else (220, 170, 90)
+                tag_s = self.small.render(f"({spec_tag})", True, tag_col)
+                self.screen.blit(tag_s, (px + 66 + gold_lbl.get_width() + 6, y + 34))
             buy_rect = pygame.Rect(row_rect.right - 70, y + 26, 58, 20)
             buy_bg   = (80, 60, 10) if can_buy else (35, 35, 45)
             pygame.draw.rect(self.screen, buy_bg, buy_rect)
@@ -2320,6 +2336,7 @@ class PanelsMixin:
         self._trade_rects.clear()
         y = py + 56
 
+        from cities import specialty_price_label
         for i, (item_id, _) in enumerate(npc.menu):
             can = npc.can_buy(i, player)
             cost = npc.discounted_cost(i)
@@ -2343,10 +2360,15 @@ class PanelsMixin:
             self.screen.blit(
                 self.font.render(item_name, True, name_col),
                 (px + 68, y + 10))
-            self.screen.blit(
-                self.font.render(f"{cost} gold  •  +{hunger} hunger", True,
-                                 (200, 160, 80) if can else (100, 90, 60)),
-                (px + 68, y + 32))
+            cost_s = self.font.render(
+                f"{cost} gold  •  +{hunger} hunger", True,
+                (200, 160, 80) if can else (100, 90, 60))
+            self.screen.blit(cost_s, (px + 68, y + 32))
+            spec_tag = specialty_price_label(npc, item_id)
+            if spec_tag:
+                tag_col = (130, 200, 130) if spec_tag == "export" else (220, 170, 90)
+                tag_s = self.small.render(f"({spec_tag})", True, tag_col)
+                self.screen.blit(tag_s, (px + 68 + cost_s.get_width() + 6, y + 36))
 
             lbl = self.font.render("BUY", True, (255, 175, 80) if can else (70, 70, 82))
             self.screen.blit(lbl, (rect.right - lbl.get_width() - 10,
@@ -2370,6 +2392,7 @@ class PanelsMixin:
         self._trade_rects.clear()
         y = py + 56
 
+        from cities import specialty_price_label
         for i, (item_id, _, display, barter_item, barter_qty) in enumerate(npc.shop):
             cost       = npc.discounted_cost(i)
             can_buy    = npc.can_buy(i, player)
@@ -2392,6 +2415,11 @@ class PanelsMixin:
             buy_lbl = self.font.render("BUY", True, (220, 195, 80) if can_buy else (70, 70, 82))
             gold_lbl = self.font.render(f"{cost} gold", True, buy_col)
             self.screen.blit(gold_lbl, (px + 66, y + 30))
+            spec_tag = specialty_price_label(npc, item_id)
+            if spec_tag:
+                tag_col = (130, 200, 130) if spec_tag == "export" else (220, 170, 90)
+                tag_s = self.small.render(f"({spec_tag})", True, tag_col)
+                self.screen.blit(tag_s, (px + 66 + gold_lbl.get_width() + 6, y + 34))
             buy_rect = pygame.Rect(row_rect.right - 70, y + 26, 58, 20)
             buy_bg   = (50, 50, 30) if can_buy else (35, 35, 45)
             pygame.draw.rect(self.screen, buy_bg, buy_rect)
@@ -2449,6 +2477,7 @@ class PanelsMixin:
         pygame.draw.line(self.screen, (80, 65, 40), (px + 20, sep_y + 16), (px + PW - 20, sep_y + 16))
 
         y = sep_y + 24
+        from cities import specialty_price_label
         for i, (item_id, _) in enumerate(npc.menu):
             can  = npc.can_buy(i, player)
             cost = npc.discounted_cost(i)
@@ -2470,10 +2499,15 @@ class PanelsMixin:
 
             name_col = (245, 210, 150) if can else (130, 110, 80)
             self.screen.blit(self.font.render(item_name, True, name_col), (px + 68, y + 8))
-            self.screen.blit(
-                self.font.render(f"{cost} gold  •  +{hunger} hunger", True,
-                                 (200, 155, 75) if can else (100, 90, 60)),
-                (px + 68, y + 28))
+            cost_s = self.font.render(
+                f"{cost} gold  •  +{hunger} hunger", True,
+                (200, 155, 75) if can else (100, 90, 60))
+            self.screen.blit(cost_s, (px + 68, y + 28))
+            spec_tag = specialty_price_label(npc, item_id)
+            if spec_tag:
+                tag_col = (130, 200, 130) if spec_tag == "export" else (220, 170, 90)
+                tag_s = self.small.render(f"({spec_tag})", True, tag_col)
+                self.screen.blit(tag_s, (px + 68 + cost_s.get_width() + 6, y + 32))
 
             buy_lbl = self.font.render("BUY", True, (255, 185, 90) if can else (70, 70, 82))
             self.screen.blit(buy_lbl, (rect.right - buy_lbl.get_width() - 10,
@@ -2497,6 +2531,7 @@ class PanelsMixin:
         self._trade_rects.clear()
         y = py + 56
 
+        from cities import specialty_price_label
         for i, (item_id, _, display, barter_item, barter_qty) in enumerate(npc.shop):
             cost       = npc.discounted_cost(i)
             can_buy    = npc.can_buy(i, player)
@@ -2519,6 +2554,11 @@ class PanelsMixin:
             buy_lbl = self.font.render("BUY", True, (220, 195, 80) if can_buy else (70, 70, 82))
             gold_lbl = self.font.render(f"{cost} gold", True, buy_col)
             self.screen.blit(gold_lbl, (px + 66, y + 30))
+            spec_tag = specialty_price_label(npc, item_id)
+            if spec_tag:
+                tag_col = (130, 200, 130) if spec_tag == "export" else (220, 170, 90)
+                tag_s = self.small.render(f"({spec_tag})", True, tag_col)
+                self.screen.blit(tag_s, (px + 66 + gold_lbl.get_width() + 6, y + 34))
             buy_rect = pygame.Rect(row_rect.right - 70, y + 26, 58, 20)
             buy_bg   = (30, 35, 55) if can_buy else (35, 35, 45)
             pygame.draw.rect(self.screen, buy_bg, buy_rect)

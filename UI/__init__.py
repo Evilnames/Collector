@@ -26,6 +26,7 @@ from .tapestry import TapestryMixin
 from .pottery import PotteryMixin
 from .salt import SaltMixin
 from .town_menu import TownMenuMixin
+from .outpost_menu import OutpostMenuMixin
 from .reputation_screen import ReputationScreenMixin
 from .dogs_ui import DogsMixin
 from .weapons import SmithingMixin
@@ -35,7 +36,7 @@ class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
     CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, MinigamesMixin, CollectionsMixin,
     HelpMixin, HorseMixin, DogsMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin,
-    TownMenuMixin, ReputationScreenMixin, SmithingMixin,
+    TownMenuMixin, OutpostMenuMixin, ReputationScreenMixin, SmithingMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -119,6 +120,11 @@ class UI(
         self._max_unified_scroll      = 0
         self._unified_rects           = {}    # (cat, key) → rect
         self._unified_selected        = None  # (cat, key) or None
+        # Left-sidebar scroll (filter list / encyclopedia category list)
+        self._collection_sidebar_scroll       = 0
+        self._max_collection_sidebar_scroll   = 0
+        self._encyclopedia_sidebar_scroll     = 0
+        self._max_encyclopedia_sidebar_scroll = 0
         # Gem cutter mini-game state
         self._gc_phase          = "select"  # select | show_seq | player_turn | reveal | choose_cut
         self._gc_gem_idx        = None
@@ -182,6 +188,9 @@ class UI(
         self.town_menu_open  = False
         self.active_town     = None
         self._town_supply_btns = {}
+        # Outpost menu (diplomatic-only — kingdom & coat of arms)
+        self.outpost_menu_open = False
+        self.active_outpost    = None
         # Reputation / kingdoms screen
         self.reputation_screen_open = False
         self._rep_scroll     = 0
@@ -855,6 +864,8 @@ class UI(
             self._draw_npc_panel(player)
         if self.town_menu_open and self.active_town is not None:
             self._draw_town_menu(player)
+        if self.outpost_menu_open and self.active_outpost is not None:
+            self._draw_outpost_menu(player)
         if self.reputation_screen_open:
             self._draw_reputation_screen(player)
         if self.automation_open and self.active_automation is not None:

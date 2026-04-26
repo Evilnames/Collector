@@ -109,13 +109,34 @@ class ReputationScreenMixin:
             )
             leader_str = (f"{region.leader_title} {cap.leader_name}"
                           if cap and cap.leader_name else region.leader_title)
-            sub_s = self.small.render(
-                f"{leader_str}  ·  {region.biome_group.title()}", True, _LABEL_C)
+            ag_label   = towns_mod.agenda_label(region.agenda) if region.agenda else ""
+            sub_parts  = [leader_str]
+            if ag_label:
+                sub_parts.append(ag_label)
+            sub_parts.append(region.biome_group.title())
+            sub_s = self.small.render("  ·  ".join(sub_parts), True, _LABEL_C)
             screen.blit(sub_s, (text_x, ey + 22))
 
             if region.tagline:
                 tg_s = self.small.render(region.tagline, True, _DIM_C)
                 screen.blit(tg_s, (text_x, ey + 40))
+
+            allies = [towns_mod.REGIONS[rid].name
+                      for rid in towns_mod.allied_region_ids(region.region_id)
+                      if rid in towns_mod.REGIONS]
+            rivals = [towns_mod.REGIONS[rid].name
+                      for rid in towns_mod.rival_region_ids(region.region_id)
+                      if rid in towns_mod.REGIONS]
+            rel_parts = []
+            if allies:
+                rel_parts.append(("✦ Allied: " + ", ".join(allies), (130, 200, 130)))
+            if rivals:
+                rel_parts.append(("⚔ Rival: " + ", ".join(rivals), (210, 110,  80)))
+            rel_x = text_x
+            for txt, col in rel_parts:
+                rs = self.small.render(txt, True, col)
+                screen.blit(rs, (rel_x, ey + 58))
+                rel_x += rs.get_width() + 14
 
             reg_rep = sum(t.reputation for t in vt)
             tier_label, tier_col = _rep_tier(reg_rep)

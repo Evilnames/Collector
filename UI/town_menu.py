@@ -221,6 +221,14 @@ class TownMenuMixin:
                                       tagline_y + li * 13))
             tagline_y += len(tag_lines) * 13 + 4
 
+        # Agenda chip — leader's personality
+        if region.agenda:
+            from towns import agenda_label
+            ag_s = self.small.render(f"♚ {agenda_label(region.agenda)} Lord",
+                                     True, (210, 175, 80))
+            self.screen.blit(ag_s, (cx + (_COA_CW - ag_s.get_width()) // 2, tagline_y))
+            tagline_y += 16
+
         # Shield centred in card
         shield_x = cx + (_COA_CW - _SHIELD_W) // 2
         shield_y = tagline_y
@@ -265,6 +273,25 @@ class TownMenuMixin:
             self.screen.blit(lbl_s, (cx + 8,                                detail_y))
             self.screen.blit(val_s, (cx + _COA_CW - val_s.get_width() - 8, detail_y))
             detail_y += 14
+
+        # Region specialties — exports (cheaper here) / imports (premium for the leader)
+        from towns import region_specialty
+        spec = region_specialty(region)
+        if spec.get("exports") or spec.get("imports"):
+            detail_y += 4
+            pygame.draw.line(self.screen, (60, 55, 40),
+                             (cx + 8, detail_y), (cx + _COA_CW - 8, detail_y))
+            detail_y += 5
+            if spec.get("exports"):
+                exp_text = "Exports: " + ", ".join(t.title() for t in spec["exports"])
+                exp_s = self.small.render(exp_text, True, (140, 200, 130))
+                self.screen.blit(exp_s, (cx + 8, detail_y))
+                detail_y += 14
+            if spec.get("imports"):
+                imp_text = "Imports: " + ", ".join(t.title() for t in spec["imports"])
+                imp_s = self.small.render(imp_text, True, (220, 170,  90))
+                self.screen.blit(imp_s, (cx + 8, detail_y))
+                detail_y += 14
 
     def handle_town_menu_click(self, pos, player):
         for (cat, amount), rect in self._town_supply_btns.items():

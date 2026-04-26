@@ -2154,6 +2154,16 @@ class Player:
                     return (cx + dx, cy + dy)
         return None
 
+    def get_nearby_outpost_flag(self):
+        """Return (bx, by) of an OUTPOST_FLAG_BLOCK within 3 blocks of the player, or None."""
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        for dy in range(-3, 4):
+            for dx in range(-3, 4):
+                if self.world.get_bg_block(cx + dx, cy + dy) == OUTPOST_FLAG_BLOCK:
+                    return (cx + dx, cy + dy)
+        return None
+
     def count_items_in_category(self, category: str) -> int:
         """Return total count of inventory items belonging to category."""
         from town_needs import ITEM_TO_CATEGORY

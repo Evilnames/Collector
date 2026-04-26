@@ -616,7 +616,10 @@ class SaveManager:
             leader_color_json    TEXT,
             coat_of_arms_json    TEXT,
             biome_group          TEXT DEFAULT 'highland',
-            tagline              TEXT DEFAULT ''
+            tagline              TEXT DEFAULT '',
+            leader_title         TEXT DEFAULT 'Lord',
+            agenda               TEXT DEFAULT '',
+            relations_json       TEXT DEFAULT '{}'
         );
         CREATE TABLE IF NOT EXISTS outposts (
             outpost_id        INTEGER PRIMARY KEY,
@@ -692,6 +695,14 @@ class SaveManager:
             pass
         try:
             con.execute("ALTER TABLE regions ADD COLUMN leader_title TEXT DEFAULT 'Lord'")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE regions ADD COLUMN agenda TEXT DEFAULT ''")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE regions ADD COLUMN relations_json TEXT DEFAULT '{}'")
         except Exception:
             pass
         for col, default in [
@@ -1355,13 +1366,19 @@ class SaveManager:
         con.execute("DELETE FROM regions")
         for r in region_rows:
             con.execute(
-                "INSERT INTO regions VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO regions "
+                "(region_id, name, capital_town_id, member_town_ids_json, "
+                " leader_color_json, coat_of_arms_json, biome_group, tagline, "
+                " leader_title, agenda, relations_json) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 (r["region_id"], r["name"], r["capital_town_id"],
                  r["member_town_ids_json"], r["leader_color_json"],
                  r.get("coat_of_arms_json", "null"),
                  r.get("biome_group", "highland"),
                  r.get("tagline", ""),
-                 r.get("leader_title", "Lord")),
+                 r.get("leader_title", "Lord"),
+                 r.get("agenda", ""),
+                 r.get("relations_json", "{}")),
             )
 
     def _save_outposts(self, con):

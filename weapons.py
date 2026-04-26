@@ -15,18 +15,30 @@ class Weapon:
 
 # weapon_type → combat stats + which parts require smithing
 WEAPON_TYPES = {
-    "dagger": {"name": "Dagger", "parts": ["dagger_blade"],              "base_damage": 2, "attack_range": 1, "cooldown": 0.40},
-    "sword":  {"name": "Sword",  "parts": ["sword_blade"],               "base_damage": 3, "attack_range": 1, "cooldown": 0.60},
-    "spear":  {"name": "Spear",  "parts": ["spear_head"],                "base_damage": 3, "attack_range": 2, "cooldown": 0.70},
-    "axe":    {"name": "Axe",    "parts": ["axe_head"],                  "base_damage": 4, "attack_range": 1, "cooldown": 0.90},
+    "dagger":  {"name": "Dagger",  "parts": ["dagger_blade"],  "base_damage": 2, "attack_range": 1, "cooldown": 0.40},
+    "sword":   {"name": "Sword",   "parts": ["sword_blade"],   "base_damage": 3, "attack_range": 1, "cooldown": 0.60},
+    "spear":   {"name": "Spear",   "parts": ["spear_head"],    "base_damage": 3, "attack_range": 2, "cooldown": 0.70},
+    "axe":     {"name": "Axe",     "parts": ["axe_head"],      "base_damage": 4, "attack_range": 1, "cooldown": 0.90},
+    "mace":    {"name": "Mace",    "parts": ["mace_head"],     "base_damage": 5, "attack_range": 1, "cooldown": 1.10},
+    "halberd": {"name": "Halberd", "parts": ["halberd_head"],  "base_damage": 5, "attack_range": 2, "cooldown": 1.20},
+    "glaive":  {"name": "Glaive",  "parts": ["glaive_blade"],  "base_damage": 4, "attack_range": 2, "cooldown": 0.85},
+    "rapier":  {"name": "Rapier",  "parts": ["rapier_blade"],  "base_damage": 3, "attack_range": 1, "cooldown": 0.35},
+    "trident": {"name": "Trident", "parts": ["trident_head"],  "base_damage": 4, "attack_range": 2, "cooldown": 0.80},
+    "scythe":  {"name": "Scythe",  "parts": ["scythe_blade"],  "base_damage": 6, "attack_range": 2, "cooldown": 1.30},
 }
 
 # part_key → item_id produced after smithing (prefixed by material at runtime)
 PART_ITEM_PREFIX = {
-    "dagger_blade": "dagger_blade",
-    "sword_blade":  "sword_blade",
-    "spear_head":   "spear_head",
-    "axe_head":     "axe_head",
+    "dagger_blade":  "dagger_blade",
+    "sword_blade":   "sword_blade",
+    "spear_head":    "spear_head",
+    "axe_head":      "axe_head",
+    "mace_head":     "mace_head",
+    "halberd_head":  "halberd_head",
+    "glaive_blade":  "glaive_blade",
+    "rapier_blade":  "rapier_blade",
+    "trident_head":  "trident_head",
+    "scythe_blade":  "scythe_blade",
 }
 
 # material → display info + which existing item acts as input ingot
@@ -38,13 +50,20 @@ MATERIAL_PROFILES = {
 
 # handle/hilt items needed for final assembly at crafting bench
 ASSEMBLY_HANDLES = {
-    "dagger": "dagger_handle",
-    "sword":  "sword_hilt",
-    "spear":  "spear_shaft",
-    "axe":    "axe_haft",
+    "dagger":  "dagger_handle",
+    "sword":   "sword_hilt",
+    "spear":   "spear_shaft",
+    "axe":     "axe_haft",
+    "mace":    "mace_haft",
+    "halberd": "halberd_shaft",
+    "glaive":  "glaive_pole",
+    "rapier":  "rapier_grip",
+    "trident": "trident_shaft",
+    "scythe":  "scythe_snath",
 }
 
-WEAPON_TYPE_ORDER = ["dagger", "sword", "spear", "axe"]
+WEAPON_TYPE_ORDER = ["dagger", "sword", "spear", "axe", "mace", "halberd", "glaive",
+                     "rapier", "trident", "scythe"]
 MATERIAL_ORDER    = ["iron", "gold", "steel"]
 
 QUALITY_TIERS = [
@@ -84,6 +103,11 @@ def _row(cols):
     """Build a 16-element row with True in the given column range (inclusive)."""
     lo, hi = cols
     return [lo <= c <= hi for c in range(16)]
+
+
+def _row_multi(*ranges):
+    """Row with True across multiple inclusive column ranges (for non-contiguous shapes)."""
+    return [any(lo <= c <= hi for lo, hi in ranges) for c in range(16)]
 
 
 PART_TEMPLATES = {
@@ -134,6 +158,78 @@ PART_TEMPLATES = {
         _row((6,  9)),
         _row((6,  9)),
         _row((6,  9)),
+    ],
+    "mace_head": [
+        _row((4, 11)),  # heavy crown
+        _row((3, 12)),
+        _row((3, 12)),  # widest bludgeon
+        _row((3, 12)),
+        _row((4, 11)),
+        _row((5, 10)),  # tapered neck
+        _row((6,  9)),
+        _row((6,  9)),
+        _row((6,  9)),  # socket
+        _row((6,  9)),
+    ],
+    "halberd_head": [
+        _row((7,  8)),  # top spike
+        _row((7,  8)),
+        _row((6,  9)),
+        _row((4,  9)),  # axe blade extends to one side
+        _row((2,  9)),  # max sweep (asymmetric)
+        _row((2,  9)),
+        _row((4,  9)),
+        _row((6,  9)),
+        _row((7,  8)),  # socket
+        _row((7,  8)),
+    ],
+    "glaive_blade": [
+        _row((9, 12)),  # curved tip leans right
+        _row((7, 12)),
+        _row((5, 11)),  # belly of the cleaver
+        _row((4, 10)),
+        _row((4,  9)),
+        _row((5,  9)),
+        _row((6,  8)),
+        _row((6,  8)),  # tang
+        _row((6,  8)),
+        _row((6,  8)),
+    ],
+    "rapier_blade": [
+        _row((7,  8)),  # needle point
+        _row((7,  8)),
+        _row((7,  8)),
+        _row((7,  8)),
+        _row((7,  8)),  # long thin profile
+        _row((7,  8)),
+        _row((7,  8)),
+        _row((6,  9)),
+        _row((6,  9)),  # tang
+        _row((6,  9)),
+    ],
+    "trident_head": [
+        _row_multi((3, 4), (7, 8), (11, 12)),  # three prong tips
+        _row_multi((3, 4), (7, 8), (11, 12)),
+        _row_multi((3, 4), (7, 8), (11, 12)),
+        _row((3, 12)),                          # crossbar joining prongs
+        _row((4, 11)),
+        _row((6,  9)),                          # neck
+        _row((6,  9)),
+        _row((6,  9)),                          # socket
+        _row((6,  9)),
+        _row((6,  9)),
+    ],
+    "scythe_blade": [
+        _row((11, 13)),  # tip points up-right
+        _row(( 8, 13)),
+        _row(( 5, 12)),  # sweeping curve
+        _row(( 3, 11)),  # max sweep
+        _row(( 3,  9)),
+        _row(( 4,  7)),
+        _row(( 5,  7)),
+        _row(( 5,  7)),  # tang
+        _row(( 5,  7)),
+        _row(( 5,  7)),
     ],
 }
 

@@ -10,7 +10,7 @@ from blocks import STONE, BEDROCK, AIR, OUTPOST_FLAG_BLOCK
 # ---------------------------------------------------------------------------
 
 OUTPOST_SLOT_SPACING = 80   # one candidate slot every 80 blocks
-OUTPOST_SPAWN_CHANCE = 0.05 # 5% → avg ~1 outpost per 1600 blocks
+OUTPOST_SPAWN_CHANCE = 0.20 # 20% → avg ~1 outpost per 400 blocks
 
 # ---------------------------------------------------------------------------
 # Type definitions
@@ -332,6 +332,78 @@ OUTPOST_TYPES = {
         "base_stock": 4, "clothing_key": "naval_guard",
         "building_style": "smithy", "half_w": 16,
     },
+
+    # --- Region-flavored outposts ---
+
+    "timber_camp": {
+        "display_name":    "Timber Camp",
+        "eligible_biomes": ["redwood", "boreal", "birch_forest", "temperate"],
+        "sells": [("lumber", 4), ("sapling", 6), ("wood_arrow", 3), ("wood_bow", 14)],
+        "buys":  [("lumber", 5, 25), ("sapling", 4, 15), ("elk_antler", 12, 6),
+                  ("deer_hide", 14, 8)],
+        "needs": [("iron_chunk", 8), ("coal", 6)],
+        "base_stock": 8, "clothing_key": "lumberjack",
+        "building_style": "smithy", "half_w": 15,
+    },
+
+    "reed_weaver": {
+        "display_name":    "Reed Weaver",
+        "eligible_biomes": ["wetland", "swamp", "tropical"],
+        "sells": [("woven_rug", 22), ("textile_rug_natural", 26),
+                  ("linen_fold", 18), ("reed_bundle", 6)],
+        "buys":  [("reed_bundle", 7, 20), ("cattail", 5, 15), ("bulrush", 5, 15),
+                  ("sedge", 4, 20), ("horsetail", 4, 15)],
+        "needs": [("lumber", 10), ("iron_chunk", 4)],
+        "base_stock": 6, "clothing_key": "weaver",
+        "building_style": "house", "half_w": 13,
+    },
+
+    "silk_pavilion": {
+        "display_name":    "Silk Pavilion",
+        "eligible_biomes": ["east_asian", "south_asian", "jungle", "tropical"],
+        "sells": [("textile_rug_amber", 32), ("textile_tapestry_amber", 38),
+                  ("andean_textile", 28), ("golden_wool", 22)],
+        "buys":  [("wool", 5, 20), ("golden_wool", 18, 8), ("cotton_fiber", 7, 20)],
+        "needs": [("lumber", 10), ("coal", 6)],
+        "base_stock": 5, "clothing_key": "silk_master",
+        "building_style": "house", "half_w": 14,
+    },
+
+    "incense_lodge": {
+        "display_name":    "Incense Lodge",
+        "eligible_biomes": ["south_asian", "tropical", "jungle", "east_asian"],
+        "sells": [("votive_tablet", 22), ("philosophers_scroll", 28),
+                  ("dye_extract_amber", 16), ("dye_extract_violet", 18)],
+        "buys":  [("lotus_petal", 8, 15), ("water_iris", 6, 15), ("marsh_marigold", 6, 15),
+                  ("dye_extract_amber", 18, 6), ("dye_extract_violet", 20, 6)],
+        "needs": [("lumber", 8), ("coal", 5)],
+        "base_stock": 5, "clothing_key": "south_asian",
+        "building_style": "shrine", "half_w": 14,
+    },
+
+    "glacier_camp": {
+        "display_name":    "Glacier Camp",
+        "eligible_biomes": ["tundra", "alpine_mountain", "boreal"],
+        "sells": [("cheese", 16), ("fish", 14), ("cooked_venison", 18),
+                  ("cooked_bear", 22), ("coarse_salt", 9)],
+        "buys":  [("bear_pelt", 44, 4), ("fox_pelt", 28, 6), ("deer_hide", 16, 8),
+                  ("fish", 14, 10)],
+        "needs": [("lumber", 18), ("coal", 12)],
+        "base_stock": 6, "clothing_key": "alpine",
+        "building_style": "house", "half_w": 14,
+    },
+
+    "bog_apothecary": {
+        "display_name":    "Bog Apothecary",
+        "eligible_biomes": ["swamp", "fungal", "wetland"],
+        "sells": [("green_tea", 18), ("oolong_tea", 20), ("black_tea", 22),
+                  ("puerh_tea", 26), ("rare_mushroom", 30)],
+        "buys":  [("tea_leaf", 6, 20), ("rare_mushroom", 36, 6), ("mushroom", 7, 15),
+                  ("marsh_marigold", 6, 12)],
+        "needs": [("lumber", 8), ("coal", 6)],
+        "base_stock": 5, "clothing_key": "fungi_keeper",
+        "building_style": "shrine", "half_w": 13,
+    },
 }
 
 # Flag pennant color per outpost type (RGB)
@@ -365,6 +437,12 @@ OUTPOST_FLAG_COLORS = {
     "desert_legion":     (195, 155,  35),
     "steppe_warcamp":    (195,  45,  45),
     "coastal_citadel":   ( 35,  55, 155),
+    "timber_camp":       (110,  78,  40),
+    "reed_weaver":       (160, 175, 100),
+    "silk_pavilion":     (215, 175, 110),
+    "incense_lodge":     (175, 105, 165),
+    "glacier_camp":      (200, 220, 240),
+    "bog_apothecary":    ( 95, 145,  85),
 }
 
 _MILITARY_OUTPOST_TYPES = {
@@ -374,31 +452,59 @@ _MILITARY_OUTPOST_TYPES = {
 
 # Maps each biodome to its eligible outpost types
 BIOME_OUTPOST_TYPES = {
-    "temperate":       ("wine_estate",        "herb_monastery",    "border_garrison"),
-    "boreal":          ("trapper_post",        "boreal_distillery"),
-    "birch_forest":    ("herb_monastery",      "hillside_vineyard", "border_garrison"),
-    "jungle":          ("coffee_plantation",   "jungle_herbalist"),
-    "wetland":         ("fungal_grove",        "fishing_outpost"),
-    "redwood":         ("herb_monastery",      "trapper_post"),
-    "tropical":        ("coffee_plantation",   "spice_market",     "coastal_citadel"),
+    "temperate":       ("wine_estate",        "herb_monastery",    "border_garrison",
+                        "timber_camp"),
+    "boreal":          ("trapper_post",        "boreal_distillery", "timber_camp",
+                        "glacier_camp"),
+    "birch_forest":    ("herb_monastery",      "hillside_vineyard", "border_garrison",
+                        "timber_camp"),
+    "jungle":          ("coffee_plantation",   "jungle_herbalist",  "silk_pavilion",
+                        "incense_lodge"),
+    "wetland":         ("fungal_grove",        "fishing_outpost",   "reed_weaver",
+                        "bog_apothecary"),
+    "redwood":         ("herb_monastery",      "trapper_post",      "timber_camp"),
+    "tropical":        ("coffee_plantation",   "spice_market",      "coastal_citadel",
+                        "incense_lodge",       "reed_weaver"),
     "savanna":         ("nomad_camp",          "spirit_distillery", "desert_legion"),
-    "wasteland":       ("nomad_camp",          "canyon_forge",     "steppe_warcamp"),
-    "fungal":          ("fungal_grove",        "swamp_alchemist"),
-    "alpine_mountain": ("alpine_monastery",    "cheese_cave",      "highland_fortress"),
-    "rocky_mountain":  ("cheese_cave",         "canyon_forge",     "highland_fortress"),
-    "rolling_hills":   ("hillside_vineyard",   "pottery_workshop", "border_garrison"),
-    "steep_hills":     ("hillside_vineyard",   "sculpture_atelier","highland_fortress"),
+    "wasteland":       ("nomad_camp",          "canyon_forge",      "steppe_warcamp"),
+    "fungal":          ("fungal_grove",        "swamp_alchemist",   "bog_apothecary"),
+    "alpine_mountain": ("alpine_monastery",    "cheese_cave",       "highland_fortress",
+                        "glacier_camp"),
+    "rocky_mountain":  ("cheese_cave",         "canyon_forge",      "highland_fortress"),
+    "rolling_hills":   ("hillside_vineyard",   "pottery_workshop",  "border_garrison"),
+    "steep_hills":     ("hillside_vineyard",   "sculpture_atelier", "highland_fortress"),
     "steppe":          ("nomad_camp",          "spirit_distillery", "steppe_warcamp"),
     "arid_steppe":     ("nomad_camp",          "desert_glassworks", "desert_legion"),
-    "desert":          ("desert_glassworks",   "canyon_forge",     "desert_legion"),
-    "tundra":          ("boreal_distillery",   "alpine_monastery"),
-    "swamp":           ("swamp_alchemist",     "salt_works"),
+    "desert":          ("desert_glassworks",   "canyon_forge",      "desert_legion"),
+    "tundra":          ("boreal_distillery",   "alpine_monastery",  "glacier_camp"),
+    "swamp":           ("swamp_alchemist",     "salt_works",        "reed_weaver",
+                        "bog_apothecary"),
     "beach":           ("fishing_outpost",     "coastal_saltworks", "coastal_citadel"),
     "canyon":          ("canyon_forge",        "desert_glassworks", "highland_fortress"),
-    "mediterranean":   ("olive_press",         "wine_estate",      "coastal_citadel"),
-    "east_asian":      ("tea_house",           "pottery_workshop"),
-    "south_asian":     ("spice_market",        "textile_guild"),
+    "mediterranean":   ("olive_press",         "wine_estate",       "coastal_citadel"),
+    "east_asian":      ("tea_house",           "pottery_workshop",  "silk_pavilion",
+                        "incense_lodge"),
+    "south_asian":     ("spice_market",        "textile_guild",     "silk_pavilion",
+                        "incense_lodge"),
 }
+
+# ---------------------------------------------------------------------------
+# Kingdom (region) assignment — derived deterministically from center_bx
+# using the same city-slot scheme as towns: every 3 city slots form a region.
+# ---------------------------------------------------------------------------
+
+def region_id_for_bx(bx: int) -> int:
+    """Region id for any world x — matches cities._city_slot_metadata.
+    Slots sit at n * CITY_SPACING + CITY_SPACING//2, three slots per region.
+    The nearest slot to bx has index floor(bx / CITY_SPACING)."""
+    from constants import CITY_SPACING
+    return (bx // CITY_SPACING) // 3
+
+
+def region_for_outpost(op: "Outpost"):
+    """Return the Region this outpost belongs to (or None if uncharted)."""
+    from towns import REGIONS
+    return REGIONS.get(region_id_for_bx(op.center_bx))
 
 # ---------------------------------------------------------------------------
 # Dataclass
@@ -427,32 +533,61 @@ OUTPOSTS: dict[int, Outpost] = {}
 # ---------------------------------------------------------------------------
 
 _NAME_ADJ = {
-    "alpine_mountain":  ["High", "Stone", "Peak", "Frost"],
-    "tundra":           ["Frost", "Ice", "Northern", "Silent"],
-    "rocky_mountain":   ["Stone", "Cliff", "Iron", "Grey"],
-    "east_asian":       ["Jade", "Silk", "Lotus", "Cloud"],
-    "south_asian":      ["Spice", "Amber", "Coral", "Dawn"],
-    "mediterranean":    ["Sun", "Golden", "Stone", "Amber"],
-    "desert":           ["Dune", "Sand", "Hollow", "Dry"],
-    "arid_steppe":      ["Dust", "Copper", "Arid", "Bare"],
-    "savanna":          ["Dusty", "Red", "Open", "Pale"],
-    "canyon":           ["Red", "Deep", "Canyon", "Carved"],
-    "jungle":           ["Green", "Deep", "Wild", "Vine"],
-    "tropical":         ["Azure", "Palm", "Warm", "Bright"],
-    "wetland":          ["Marsh", "Reed", "Misty", "Damp"],
-    "swamp":            ["Bog", "Dark", "Hollow", "Mossy"],
-    "fungal":           ["Spore", "Mycel", "Deep", "Quiet"],
-    "boreal":           ["Pine", "Dark", "Cold", "Ancient"],
-    "birch_forest":     ["Silver", "Light", "White", "Birch"],
-    "redwood":          ["Tall", "Old", "Red", "Deep"],
-    "steppe":           ["Wind", "Flat", "Open", "Far"],
-    "wasteland":        ["Ashen", "Bare", "Old", "Bleak"],
-    "beach":            ["Shore", "Tide", "Salt", "Sea"],
-    "temperate":        ["Old", "Green", "Valley", "River"],
-    "rolling_hills":    ["Hill", "Vale", "Gentle", "Broad"],
-    "steep_hills":      ["Ridge", "High", "Crest", "Summit"],
+    "alpine_mountain":  ["High", "Stone", "Peak", "Frost", "Eagle's", "Glacier", "Snowline"],
+    "tundra":           ["Frost", "Ice", "Northern", "Silent", "Pale", "Hoar", "Aurora"],
+    "rocky_mountain":   ["Stone", "Cliff", "Iron", "Grey", "Granite", "Rookery", "Talus"],
+    "east_asian":       ["Jade", "Silk", "Lotus", "Cloud", "Bamboo", "Crane", "Mistveil"],
+    "south_asian":      ["Spice", "Amber", "Coral", "Dawn", "Saffron", "Monsoon", "Sandalwood"],
+    "mediterranean":    ["Sun", "Golden", "Stone", "Amber", "Olive", "Cypress", "Harbor"],
+    "desert":           ["Dune", "Sand", "Hollow", "Dry", "Sun-Bleached", "Mirage", "Caravan"],
+    "arid_steppe":      ["Dust", "Copper", "Arid", "Bare", "Salt-Crust", "Tumbleweed"],
+    "savanna":          ["Dusty", "Red", "Open", "Pale", "Acacia", "Lion's"],
+    "canyon":           ["Red", "Deep", "Canyon", "Carved", "Echo", "Sunken", "Ochre"],
+    "jungle":           ["Green", "Deep", "Wild", "Vine", "Canopy", "Tigerfern", "Jaguar"],
+    "tropical":         ["Azure", "Palm", "Warm", "Bright", "Lagoon", "Coral", "Trade-Wind"],
+    "wetland":          ["Marsh", "Reed", "Misty", "Damp", "Heron's", "Cattail", "Fenwater"],
+    "swamp":            ["Bog", "Dark", "Hollow", "Mossy", "Cypress", "Blackwater", "Mire"],
+    "fungal":           ["Spore", "Mycel", "Deep", "Quiet", "Cap-Hollow", "Glowcap", "Veiled"],
+    "boreal":           ["Pine", "Dark", "Cold", "Ancient", "Spruce", "Wolf-Track", "Black-Pine"],
+    "birch_forest":     ["Silver", "Light", "White", "Birch", "Whitebark", "Aspen", "Goldleaf"],
+    "redwood":          ["Tall", "Old", "Red", "Deep", "Giant", "Fern-Hollow", "Mossback"],
+    "steppe":           ["Wind", "Flat", "Open", "Far", "Horse-Ridden", "Sky-Vault"],
+    "wasteland":        ["Ashen", "Bare", "Old", "Bleak", "Cinder", "Rust", "Crag"],
+    "beach":            ["Shore", "Tide", "Salt", "Sea", "Driftwood", "Foam", "Gull's"],
+    "temperate":        ["Old", "Green", "Valley", "River", "Oakshire", "Three-Mill", "Greenfield"],
+    "rolling_hills":    ["Hill", "Vale", "Gentle", "Broad", "Hawthorne", "Meadow", "Sheep-Run"],
+    "steep_hills":      ["Ridge", "High", "Crest", "Summit", "Goat-Path", "Gable"],
 }
 _NAME_ADJ_DEFAULT = ["Old", "Ancient", "Hidden", "Lost", "Wild"]
+
+# Place-noun fragments that occasionally replace the adjective for richer
+# regional flavor — e.g. "Saltmarsh Reed Loom", "Whitebark Trapper's Lodge".
+_NAME_PLACE = {
+    "alpine_mountain":  ["Hawk's Eye", "Skystep", "Cloudpass", "Glacierhold"],
+    "tundra":           ["Bone Hollow", "Wolfwind", "Polar Reach", "Driftbreak"],
+    "rocky_mountain":   ["Greystone", "Iron Notch", "Stonebreak", "Talushold"],
+    "east_asian":       ["Bamboo Hollow", "Crane Garden", "Jade Pavilion", "Misty Ford"],
+    "south_asian":      ["Sandalwood Grove", "Saffron Bazaar", "Pearl Estuary", "Monsoon Reach"],
+    "mediterranean":    ["Olive Bay", "Cypress Hill", "Sunharbor", "Goldcove"],
+    "desert":           ["Caravan Crossing", "Mirage Wells", "Sandbasin", "Dunehold"],
+    "arid_steppe":      ["Salt-Crust Flats", "Tumbleweed Pass", "Dustreach"],
+    "savanna":          ["Acacia Reach", "Lion Plain", "Red Earth"],
+    "canyon":           ["Echo Wash", "Ochre Mesa", "Sunken Bend", "Redrock"],
+    "jungle":           ["Vine Hollow", "Jaguar Reach", "Tigerfern Glade", "Canopy Step"],
+    "tropical":         ["Coral Lagoon", "Palm Reach", "Trade-Wind Cove"],
+    "wetland":          ["Heron Marsh", "Cattail Bend", "Saltmarsh", "Fenwater"],
+    "swamp":            ["Blackwater", "Cypress Bog", "Mire Hollow", "Bayou Crossing"],
+    "fungal":           ["Cap Hollow", "Glowcap Glen", "Spore Garden", "Veiled Grove"],
+    "boreal":           ["Black Pine", "Wolf Track", "Spruce Hollow", "Frostpine"],
+    "birch_forest":     ["Whitebark", "Aspen Vale", "Goldleaf", "Silvertree"],
+    "redwood":          ["Giant's Stand", "Fern Hollow", "Mossback Glade", "Old-Growth"],
+    "steppe":           ["Horse Plain", "Sky Vault", "Far Reach"],
+    "wasteland":        ["Cinder Reach", "Rust Hollow", "Crag's End"],
+    "beach":            ["Driftwood Cove", "Gull's Reach", "Foam Bay", "Saltspit"],
+    "temperate":        ["Oakshire", "Three Mills", "Greenfield", "River Bend"],
+    "rolling_hills":    ["Hawthorne Vale", "Sheep Run", "Meadow Cross", "Broadhill"],
+    "steep_hills":      ["Goat Path", "Gable Ridge", "Crestfall"],
+}
 
 _TYPE_SUFFIXES = {
     "wine_estate":       ["Vineyard", "Wine Estate", "Winery"],
@@ -484,12 +619,22 @@ _TYPE_SUFFIXES = {
     "desert_legion":     ["Legion Camp", "War Post", "Legion Outpost", "Sun Garrison"],
     "steppe_warcamp":    ["Warcamp", "Battle Camp", "War Band", "Horde Camp"],
     "coastal_citadel":   ["Sea Citadel", "Coastal Fort", "Harbor Guard", "Shore Keep"],
+    "timber_camp":       ["Timber Camp", "Sawmill", "Lumber Yard", "Logger's Camp"],
+    "reed_weaver":       ["Reed Loom", "Weaver's Hut", "Marsh Loom", "Reed Works"],
+    "silk_pavilion":     ["Silk Pavilion", "Silk Garden", "Loom Pavilion", "Spool House"],
+    "incense_lodge":     ["Incense Lodge", "Sandalwood Shrine", "Censer Hall", "Smoke Hermitage"],
+    "glacier_camp":      ["Glacier Camp", "Ice Station", "Frost Outpost", "Cold Camp"],
+    "bog_apothecary":    ["Bog Apothecary", "Marsh Steepery", "Peat Tea House", "Mire Apothecary"],
 }
 
 def _make_outpost_name(rng, otype: str, biodome: str) -> str:
-    adj_pool = _NAME_ADJ.get(biodome, _NAME_ADJ_DEFAULT)
-    suffixes = _TYPE_SUFFIXES.get(otype, ["Outpost"])
-    return f"{rng.choice(adj_pool)} {rng.choice(suffixes)}"
+    suffixes  = _TYPE_SUFFIXES.get(otype, ["Outpost"])
+    place_pool = _NAME_PLACE.get(biodome)
+    if place_pool and rng.random() < 0.4:
+        prefix = rng.choice(place_pool)
+    else:
+        prefix = rng.choice(_NAME_ADJ.get(biodome, _NAME_ADJ_DEFAULT))
+    return f"{prefix} {rng.choice(suffixes)}"
 
 # ---------------------------------------------------------------------------
 # RNG helpers
@@ -555,27 +700,40 @@ def _place_primary(world, style: str, left_x, sy, width, height, wall, roof, bio
 def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
     from cities import _place_house, _place_garden_plot
 
+    from cities import _PLANT_BLOCKS
+
     cfg    = OUTPOST_TYPES[otype]
     half_w = cfg["half_w"]
     biodome = world.biodome_at(out_bx)
     sy      = world.surface_y_at(out_bx)
 
-    # Pre-load all chunks the outpost footprint touches
-    chunk_lo = (out_bx - half_w - 5) // CHUNK_W
-    chunk_hi = (out_bx + half_w + 5) // CHUNK_W
+    # Pre-load chunks with a wider buffer so flattening doesn't read stale terrain
+    chunk_lo = (out_bx - half_w - 10) // CHUNK_W
+    chunk_hi = (out_bx + half_w + 10) // CHUNK_W
     for ci in range(chunk_lo, chunk_hi + 1):
         world.load_chunk(ci)
 
-    # Flatten terrain
+    # Strip plants in/just-around the footprint before flattening (mirrors cities)
+    for bx in range(out_bx - half_w - 2, out_bx + half_w + 3):
+        for by in range(max(0, sy - 35), sy):
+            if world.get_block(bx, by) in _PLANT_BLOCKS:
+                world.set_block(bx, by, AIR)
+
+    # Flatten terrain across the footprint to sy (mirrors _build_single_city)
     for bx in range(out_bx - half_w, out_bx + half_w + 1):
         col_sy = world.surface_y_at(bx)
+        # Hill: clear solid blocks above the outpost floor
         for by in range(col_sy, sy):
-            if world.get_block(bx, by) == AIR:
-                world.set_block(bx, by, STONE)
-        for by in range(sy, col_sy + 1):
             blk = world.get_block(bx, by)
             if blk not in (AIR, BEDROCK):
                 world.set_block(bx, by, AIR)
+        # Valley: fill air below the outpost floor with stone
+        for by in range(sy, col_sy + 1):
+            if world.get_block(bx, by) == AIR:
+                world.set_block(bx, by, STONE)
+
+    # Stone floor across the full footprint
+    for bx in range(out_bx - half_w, out_bx + half_w + 1):
         if world.get_block(bx, sy) != BEDROCK:
             world.set_block(bx, sy, STONE)
 
@@ -593,10 +751,10 @@ def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
     npc_px = (left_x + 1) * BLOCK_SIZE
     npc_py = (sy - 2) * BLOCK_SIZE
 
-    # Flag on the roof ridge of the primary building
-    flag_bx = left_x + bld_w // 2
-    flag_by = sy - bld_h - 1
-    if 0 <= flag_by < world.height:
+    # Flag planted to the left of the primary building, at ground level.
+    flag_bx = left_x - 2
+    flag_by = world.surface_y_at(flag_bx) - 1
+    if 0 <= flag_by < world.height and world.get_block(flag_bx, flag_by) == AIR:
         world.set_bg_block(flag_bx, flag_by, OUTPOST_FLAG_BLOCK)
 
     # Secondary house right-of-centre
@@ -677,11 +835,22 @@ def generate_outpost_for_chunk(world, seed: int, cx: int) -> None:
     out_bx = slot_x + jitter
     hw     = OUTPOST_TYPES[otype]["half_w"]
 
-    if any(lo - 5 <= out_bx - hw and out_bx + hw <= hi + 5
+    # Reject if the outpost footprint would overlap any registered city/outpost zone
+    op_lo, op_hi = out_bx - hw, out_bx + hw
+    if any(op_hi >= lo - 5 and op_lo <= hi + 5
            for lo, hi in getattr(world, "city_zones", [])):
         return
 
     _build_outpost(world, rng, out_bx, otype, slot_x)
+
+
+def get_outpost_for_block(bx: int, by: int) -> Outpost | None:
+    """Return the Outpost whose footprint contains (bx, by), or None."""
+    for op in OUTPOSTS.values():
+        hw = OUTPOST_TYPES[op.outpost_type]["half_w"]
+        if op.center_bx - hw - 3 <= bx <= op.center_bx + hw + 3:
+            return op
+    return None
 
 # ---------------------------------------------------------------------------
 # Day tick (called from world.py alongside advance_day)

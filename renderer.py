@@ -16001,7 +16001,21 @@ class Renderer:
                     sy = by * BLOCK_SIZE - cam_yi
                     bg_bid = world.get_bg_block(bx, by)
                     if bg_bid != AIR:
-                        bg_surf = self._bg_block_surfs.get(bg_bid)
+                        bg_surf = None
+                        if bg_bid == OUTPOST_FLAG_BLOCK:
+                            try:
+                                from outposts import OUTPOSTS, OUTPOST_FLAG_COLORS
+                                best = min(OUTPOSTS.values(),
+                                           key=lambda op: abs(op.center_bx - bx),
+                                           default=None)
+                                if best is not None:
+                                    col = OUTPOST_FLAG_COLORS.get(best.outpost_type)
+                                    if col:
+                                        bg_surf = self._get_outpost_flag_surf(best.outpost_type, col)
+                            except Exception:
+                                pass
+                        if bg_surf is None:
+                            bg_surf = self._bg_block_surfs.get(bg_bid)
                         if bg_surf:
                             self.screen.blit(bg_surf, (sx, sy))
                     elif by > surface_ys.get(bx, 100):
@@ -16459,6 +16473,16 @@ class Renderer:
                 self._draw_npc_child(sx, sy, e)
             elif e.animal_id == "npc_guard":
                 self._draw_npc_guard(sx, sy, e)
+            elif e.animal_id == "npc_elder":
+                self._draw_npc_elder(sx, sy, e)
+            elif e.animal_id == "npc_beggar":
+                self._draw_npc_beggar(sx, sy, e)
+            elif e.animal_id == "npc_noble":
+                self._draw_npc_noble(sx, sy, e)
+            elif e.animal_id == "npc_pilgrim":
+                self._draw_npc_pilgrim(sx, sy, e)
+            elif e.animal_id == "npc_drunkard":
+                self._draw_npc_drunkard(sx, sy, e)
             elif e.animal_id == "npc_blacksmith":
                 self._draw_npc_blacksmith(sx, sy, e)
             elif e.animal_id == "npc_innkeeper":
@@ -18020,25 +18044,458 @@ class Renderer:
         bob = int(npc._bob_offset)
         facing = getattr(npc, 'facing', 1)
         c = getattr(npc, 'clothing', {})
-        armor = c.get('armor', (55, 55, 75))
+        kit     = getattr(npc, 'kit',     'spearman')
+        helmet  = getattr(npc, 'helmet',  'pot')
+        finish  = getattr(npc, 'helmet_finish', 'steel')
+        emblem  = getattr(npc, 'emblem',  'none')
+        beard   = getattr(npc, 'beard',   'none')
+        cape    = getattr(npc, 'cape',    'none')
+        tint    = getattr(npc, 'tint',    0)
+        tabard  = getattr(npc, 'tabard',  'solid')
+        boots   = getattr(npc, 'boots',   (60, 45, 30))
+        sash    = getattr(npc, 'sash',    False)
+
+        armor = tuple(max(0, min(255, v + tint)) for v in c.get('armor', (55, 55, 75)))
         plate = c.get('plate', (155, 160, 165))
         trim  = c.get('trim',  (140, 35, 35))
-        # Body — tabard + chest plate
-        pygame.draw.rect(self.screen, armor, (sx, sy + bob, 20, 18))
-        pygame.draw.rect(self.screen, plate, (sx + 8, sy + bob, 5, 18))
-        # Helmet (same as armor color, slightly lighter)
-        helm = tuple(min(255, v + 10) for v in armor)
-        pygame.draw.rect(self.screen, helm,        (sx + 2, sy - 12 + bob, 16, 14))
-        pygame.draw.rect(self.screen, (20, 20, 30), (sx + 3, sy - 8 + bob, 14, 3))
-        # Crest (trim color)
-        pygame.draw.rect(self.screen, trim, (sx + 7, sy - 18 + bob, 6, 8))
-        # Spear on weapon side
-        spear_x = sx + 19 if facing == 1 else sx - 1
-        pygame.draw.rect(self.screen, (130, 110, 70), (spear_x, sy - 20 + bob, 2, 38))
+        if kit == 'captain':
+            armor = tuple(min(255, v + 35) for v in armor)
+            plate = (215, 195, 110)
+            trim  = (190, 40, 40)
+        body_y = sy + bob
+
+        # Cape sits behind the body so it doesn't cover the chest.
+        self._draw_guard_cape(sx, body_y, cape, trim, armor, facing)
+        # Quiver/scabbard goes on the back, also behind body.
+        self._draw_guard_back_gear(sx, body_y, kit, trim, plate, facing)
+        pygame.draw.rect(self.screen, armor, (sx, body_y, 20, 18))
+        self._draw_guard_tabard(sx, body_y, tabard, trim, plate, armor)
+        pygame.draw.rect(self.screen, plate, (sx + 8, body_y, 5, 18))
+        # Boots strip
+        pygame.draw.rect(self.screen, boots, (sx, body_y + 16, 20, 2))
+        if sash:
+            sash_col = tuple(min(255, v + 40) for v in trim)
+            pygame.draw.polygon(self.screen, sash_col,
+                                [(sx + 1, body_y + 1), (sx + 5, body_y + 1),
+                                 (sx + 19, body_y + 14), (sx + 16, body_y + 16)])
+        self._draw_guard_emblem(sx, body_y, emblem, trim, plate)
+        self._draw_guard_helmet(sx, body_y, helmet, finish, armor, plate, trim, c, npc, facing)
+        self._draw_guard_beard(sx, body_y, helmet, beard)
+        self._draw_guard_loadout(sx, body_y, npc, kit, plate, trim, facing)
+
+    def _guard_helmet_color(self, finish, armor):
+        if finish == 'bronze':
+            return (180, 130, 70)
+        if finish == 'blackened':
+            return (35, 35, 45)
+        if finish == 'burnished':
+            return (200, 200, 210)
+        return tuple(min(255, v + 10) for v in armor)  # steel
+
+    def _draw_guard_tabard(self, sx, sy, tabard, trim, plate, armor):
+        # Tabard is the cloth over the armor — patterns are heraldic.
+        if tabard == 'solid':
+            return  # Already showing armor color across the body.
+        if tabard == 'vertical_split':
+            half = tuple(max(0, min(255, v + 40)) for v in trim)
+            pygame.draw.rect(self.screen, half, (sx, sy, 10, 16))
+            pygame.draw.rect(self.screen, trim, (sx + 10, sy, 10, 16))
+        elif tabard == 'quartered':
+            a = trim
+            b = tuple(min(255, v + 60) for v in trim)
+            pygame.draw.rect(self.screen, a, (sx,      sy,      10, 8))
+            pygame.draw.rect(self.screen, b, (sx + 10, sy,      10, 8))
+            pygame.draw.rect(self.screen, b, (sx,      sy + 8,  10, 8))
+            pygame.draw.rect(self.screen, a, (sx + 10, sy + 8,  10, 8))
+        elif tabard == 'horizontal_band':
+            pygame.draw.rect(self.screen, trim, (sx, sy + 6, 20, 5))
+
+    def _draw_guard_back_gear(self, sx, sy, kit, trim, plate, facing):
+        # Items strapped to the back — only show when facing reveals the back side
+        # toward viewer; for variety we always show a hint near the shoulder.
+        back_x = sx - 2 if facing == 1 else sx + 17
+        if kit == 'archer':
+            # Quiver + arrow fletchings poking out the top.
+            pygame.draw.rect(self.screen, (90, 60, 30), (back_x, sy - 4, 5, 18))
+            pygame.draw.rect(self.screen, (210, 210, 200), (back_x + 1, sy - 8, 1, 4))
+            pygame.draw.rect(self.screen, trim,           (back_x + 3, sy - 8, 1, 4))
+        elif kit == 'crossbowman':
+            # Bolt pouch on the hip.
+            pouch_x = sx + 16 if facing == 1 else sx - 2
+            pygame.draw.rect(self.screen, (95, 70, 40), (pouch_x, sy + 8, 6, 7))
+            pygame.draw.rect(self.screen, (60, 45, 25), (pouch_x, sy + 8, 6, 1))
+        elif kit in ('swordsman', 'captain'):
+            # Scabbard belted at the side opposite the sword hand.
+            scab_x = sx - 3 if facing == 1 else sx + 18
+            pygame.draw.rect(self.screen, (75, 55, 30), (scab_x, sy + 4, 2, 14))
+            pygame.draw.rect(self.screen, plate,        (scab_x, sy + 16, 2, 2))
+        elif kit == 'watchman':
+            # Lantern dangles on the back/hip.
+            lan_x = sx - 4 if facing == 1 else sx + 19
+            pygame.draw.rect(self.screen, (90, 70, 35),    (lan_x, sy + 2, 5, 7))
+            pygame.draw.rect(self.screen, (255, 220, 130), (lan_x + 1, sy + 3, 3, 5))
+            pygame.draw.rect(self.screen, (60, 45, 25),    (lan_x + 1, sy,    3, 2))
+
+    def _draw_guard_cape(self, sx, sy, cape, trim, armor, facing):
+        if cape == 'none':
+            return
+        col = trim if cape == 'trim' else tuple(max(0, v - 25) for v in armor)
+        cape_x = sx - 3 if facing == 1 else sx + 17
+        pygame.draw.polygon(self.screen, col,
+                            [(cape_x, sy),
+                             (cape_x + 6, sy),
+                             (cape_x + 4, sy + 16),
+                             (cape_x + 1, sy + 16)])
+
+    def _draw_guard_emblem(self, sx, sy, emblem, trim, plate):
+        cx, cy = sx + 10, sy + 8
+        if emblem == 'cross':
+            pygame.draw.rect(self.screen, trim,  (cx,     sy + 4, 1, 9))
+            pygame.draw.rect(self.screen, trim,  (cx - 2, sy + 7, 5, 1))
+        elif emblem == 'star':
+            pygame.draw.rect(self.screen, trim,  (cx,     cy,     1, 1))
+            pygame.draw.rect(self.screen, trim,  (cx - 1, cy - 1, 3, 1))
+            pygame.draw.rect(self.screen, trim,  (cx - 1, cy + 1, 3, 1))
+            pygame.draw.rect(self.screen, trim,  (cx,     cy - 2, 1, 1))
+            pygame.draw.rect(self.screen, trim,  (cx,     cy + 2, 1, 1))
+        elif emblem == 'circle':
+            pygame.draw.circle(self.screen, trim, (cx, cy), 2, 1)
+        elif emblem == 'chevron':
+            pygame.draw.polygon(self.screen, trim,
+                                [(cx - 2, sy + 9), (cx, sy + 6), (cx + 2, sy + 9),
+                                 (cx + 2, sy + 11), (cx, sy + 8), (cx - 2, sy + 11)])
+
+    def _draw_guard_helmet(self, sx, sy, helmet, finish, armor, plate, trim, c, npc, facing):
+        helm = self._guard_helmet_color(finish, armor)
+        skin = getattr(npc, 'skin_tone', None) or c.get('skin', (230, 195, 155))
+        if helmet == 'pot':
+            pygame.draw.rect(self.screen, helm,         (sx + 2, sy - 12, 16, 14))
+            pygame.draw.rect(self.screen, (20, 20, 30), (sx + 3, sy - 8,  14, 3))
+        elif helmet == 'kettle':
+            # Wide brim hat-style helm; face partly visible.
+            pygame.draw.rect(self.screen, helm,         (sx + 3, sy - 10, 14, 9))
+            pygame.draw.rect(self.screen, helm,         (sx,     sy - 6,  20, 2))
+            pygame.draw.rect(self.screen, (20, 20, 30), (sx + 4, sy - 4,  12, 2))
+            pygame.draw.rect(self.screen, skin,         (sx + 4, sy - 2,  12, 1))
+        elif helmet == 'sallet':
+            # Pointed back, sloped crown.
+            pygame.draw.rect(self.screen, helm,         (sx + 2, sy - 12, 16, 11))
+            tail_x = sx + 17 if facing == -1 else sx - 1
+            pygame.draw.polygon(self.screen, helm,
+                                [(tail_x, sy - 10),
+                                 (tail_x + (3 if facing == -1 else -1), sy - 6),
+                                 (tail_x, sy - 4)])
+            pygame.draw.rect(self.screen, (20, 20, 30), (sx + 3, sy - 7, 14, 2))
+        elif helmet == 'plumed':
+            pygame.draw.rect(self.screen, helm,         (sx + 2, sy - 12, 16, 14))
+            pygame.draw.rect(self.screen, (20, 20, 30), (sx + 3, sy - 8,  14, 3))
+            pygame.draw.rect(self.screen, plate,        (sx + 2, sy - 5,  16, 1))
+            pygame.draw.rect(self.screen, trim,         (sx + 7, sy - 22, 6, 10))
+            pygame.draw.rect(self.screen, trim,         (sx + 5, sy - 24, 10, 3))
+        elif helmet == 'coif':
+            # Mail hood — softer shape, visible face oval.
+            mail = tuple(max(0, v - 10) for v in armor)
+            pygame.draw.rect(self.screen, mail,         (sx + 1, sy - 13, 18, 13))
+            pygame.draw.rect(self.screen, skin,         (sx + 4, sy - 9,  12, 8))
+            pygame.draw.rect(self.screen, (40, 30, 20), (sx + 5, sy - 6,  3, 2))
+            pygame.draw.rect(self.screen, (40, 30, 20), (sx + 12, sy - 6, 3, 2))
+        elif helmet == 'horned':
+            pygame.draw.rect(self.screen, helm,         (sx + 2, sy - 12, 16, 14))
+            pygame.draw.rect(self.screen, (20, 20, 30), (sx + 3, sy - 8,  14, 3))
+            horn = (240, 230, 200)
+            pygame.draw.polygon(self.screen, horn,
+                                [(sx + 1, sy - 12),
+                                 (sx - 3, sy - 16),
+                                 (sx + 2, sy - 14)])
+            pygame.draw.polygon(self.screen, horn,
+                                [(sx + 19, sy - 12),
+                                 (sx + 23, sy - 16),
+                                 (sx + 18, sy - 14)])
+
+    def _draw_guard_beard(self, sx, sy, helmet, beard):
+        if beard == 'none' or helmet in ('pot', 'plumed', 'horned'):
+            return  # Closed-face helms cover the chin.
+        col = (95, 75, 55)
+        if beard == 'short':
+            pygame.draw.rect(self.screen, col, (sx + 6, sy - 2, 8, 3))
+        elif beard == 'full':
+            pygame.draw.rect(self.screen, col, (sx + 5, sy - 3, 10, 5))
+            pygame.draw.rect(self.screen, col, (sx + 6, sy + 1, 8, 1))
+        elif beard == 'mustache':
+            pygame.draw.rect(self.screen, col, (sx + 6, sy - 4, 8, 1))
+
+    def _draw_guard_loadout(self, sx, sy, npc, kit, plate, trim, facing):
+        variant = getattr(npc, 'weapon_variant', 0)
+        shield_col = getattr(npc, 'shield_color', trim)
+        if kit == 'spearman':
+            self._draw_weapon_polearm(sx, sy, plate, facing, length=38, head='spear')
+        elif kit == 'pikeman':
+            self._draw_weapon_polearm(sx, sy, plate, facing, length=46, head='spear')
+        elif kit == 'lancer':
+            self._draw_weapon_polearm(sx, sy, plate, facing, length=52, head='lance')
+            self._draw_shield(sx, sy, shield_col, plate, facing, shape='heater')
+        elif kit == 'halberdier':
+            self._draw_weapon_polearm(sx, sy, plate, facing, length=42, head='halberd')
+        elif kit == 'swordsman':
+            self._draw_weapon_sword(sx, sy, plate, facing, blade=16)
+            self._draw_shield(sx, sy, shield_col, plate, facing, shape=('round', 'kite', 'heater')[variant])
+        elif kit == 'axeman':
+            self._draw_weapon_axe(sx, sy, plate, facing)
+            self._draw_shield(sx, sy, shield_col, plate, facing, shape=('round', 'kite')[variant % 2])
+        elif kit == 'macer':
+            self._draw_weapon_mace(sx, sy, plate, facing, head=('flanged', 'morningstar', 'flail')[variant])
+            self._draw_shield(sx, sy, shield_col, plate, facing, shape=('heater', 'round')[variant % 2])
+        elif kit == 'crossbowman':
+            self._draw_weapon_crossbow(sx, sy, plate, facing)
+        elif kit == 'archer':
+            self._draw_weapon_longbow(sx, sy, plate, facing)
+        elif kit == 'watchman':
+            self._draw_weapon_club(sx, sy, plate, facing)
+            self._draw_watchman_lantern(sx, sy, facing)
+        elif kit == 'captain':
+            self._draw_weapon_sword(sx, sy, plate, facing, blade=24)
+
+    def _draw_weapon_polearm(self, sx, sy, plate, facing, length, head):
+        shaft_x = sx + 19 if facing == 1 else sx - 1
+        pygame.draw.rect(self.screen, (110, 85, 50), (shaft_x, sy - (length - 18), 2, length))
+        if head == 'spear':
+            pygame.draw.polygon(self.screen, plate,
+                                [(shaft_x + 1, sy - (length - 10)),
+                                 (shaft_x + 5, sy - (length - 18)),
+                                 (shaft_x - 3, sy - (length - 18))])
+        elif head == 'lance':
+            # Long narrow point + decorative pennant.
+            pygame.draw.polygon(self.screen, plate,
+                                [(shaft_x + 1, sy - (length - 4)),
+                                 (shaft_x + 3, sy - (length - 14)),
+                                 (shaft_x - 1, sy - (length - 14))])
+            pen_x = shaft_x - 8 if facing == 1 else shaft_x + 2
+            pygame.draw.polygon(self.screen, (180, 40, 50),
+                                [(pen_x, sy - (length - 12)),
+                                 (pen_x + 8, sy - (length - 12)),
+                                 (pen_x + 4, sy - (length - 18))])
+        else:  # halberd: axe head + top spike
+            head_x = shaft_x + 2 if facing == 1 else shaft_x - 6
+            pygame.draw.polygon(self.screen, plate,
+                                [(head_x, sy - (length - 22)),
+                                 (head_x + 6, sy - (length - 18)),
+                                 (head_x + 6, sy - (length - 28)),
+                                 (head_x, sy - (length - 26))])
+            pygame.draw.rect(self.screen, plate, (shaft_x, sy - length, 2, 6))
+
+    def _draw_weapon_club(self, sx, sy, plate, facing):
+        haft_x = sx + 19 if facing == 1 else sx - 1
+        pygame.draw.rect(self.screen, (95, 65, 35), (haft_x, sy - 4, 2, 22))
+        pygame.draw.rect(self.screen, (130, 95, 55), (haft_x - 1, sy - 8, 4, 6))
+        pygame.draw.rect(self.screen, plate,         (haft_x - 1, sy - 8, 4, 1))
+
+    def _draw_watchman_lantern(self, sx, sy, facing):
+        # Held high in opposite hand from the club.
+        lan_x = sx - 5 if facing == 1 else sx + 19
+        pygame.draw.rect(self.screen, (90, 70, 35),    (lan_x, sy - 4, 6, 8))
+        pygame.draw.rect(self.screen, (255, 230, 140), (lan_x + 1, sy - 3, 4, 6))
+        pygame.draw.rect(self.screen, (60, 45, 25),    (lan_x + 1, sy - 6, 4, 2))
+        pygame.draw.rect(self.screen, (130, 100, 55),  (lan_x + 2, sy - 9, 2, 3))
+
+    def _draw_weapon_sword(self, sx, sy, plate, facing, blade):
+        sword_x = sx + 19 if facing == 1 else sx - 3
+        pygame.draw.rect(self.screen, plate,         (sword_x, sy - blade // 2, 2, blade))
+        pygame.draw.rect(self.screen, (110, 80, 40), (sword_x - 1, sy + blade // 2, 4, 2))
+        pygame.draw.rect(self.screen, (130, 90, 50), (sword_x, sy + blade // 2 + 2, 2, 3))
+
+    def _draw_weapon_axe(self, sx, sy, plate, facing):
+        haft_x = sx + 19 if facing == 1 else sx - 1
+        pygame.draw.rect(self.screen, (110, 85, 50), (haft_x, sy - 8, 2, 24))
+        head_x = haft_x + 2 if facing == 1 else haft_x - 6
         pygame.draw.polygon(self.screen, plate,
-                            [(spear_x + 1, sy - 28 + bob),
-                             (spear_x + 5, sy - 20 + bob),
-                             (spear_x - 3, sy - 20 + bob)])
+                            [(head_x, sy - 6),
+                             (head_x + 6, sy - 9),
+                             (head_x + 6, sy - 1),
+                             (head_x, sy + 1)])
+
+    def _draw_weapon_mace(self, sx, sy, plate, facing, head):
+        haft_x = sx + 19 if facing == 1 else sx - 1
+        pygame.draw.rect(self.screen, (110, 85, 50), (haft_x, sy - 4, 2, 22))
+        if head == 'flanged':
+            pygame.draw.rect(self.screen, plate, (haft_x - 2, sy - 9, 6, 6))
+            pygame.draw.rect(self.screen, plate, (haft_x - 1, sy - 11, 4, 2))
+        elif head == 'morningstar':
+            pygame.draw.circle(self.screen, plate, (haft_x + 1, sy - 6), 3)
+            for dx, dy in ((-3, -3), (3, -3), (-3, 3), (3, 3), (0, -5)):
+                pygame.draw.rect(self.screen, plate,
+                                 (haft_x + 1 + dx, sy - 6 + dy, 1, 1))
+        else:  # flail — chain links + ball
+            pygame.draw.rect(self.screen, (90, 90, 95), (haft_x, sy - 7, 1, 1))
+            pygame.draw.rect(self.screen, (90, 90, 95), (haft_x + 1, sy - 9, 1, 1))
+            pygame.draw.circle(self.screen, plate, (haft_x + 2, sy - 11), 3)
+
+    def _draw_weapon_crossbow(self, sx, sy, plate, facing):
+        bow_x = sx + 2 if facing == 1 else sx
+        pygame.draw.rect(self.screen, (110, 80, 45), (bow_x, sy + 4, 16, 2))
+        pygame.draw.rect(self.screen, (90, 65, 35),  (bow_x + 7, sy + 1, 2, 8))
+        pygame.draw.rect(self.screen, plate,         (bow_x, sy + 3, 1, 4))
+        pygame.draw.rect(self.screen, plate,         (bow_x + 15, sy + 3, 1, 4))
+        pygame.draw.rect(self.screen, plate,         (bow_x + 8, sy + 5, 6, 1))
+
+    def _draw_weapon_longbow(self, sx, sy, plate, facing):
+        bow_x = sx + 18 if facing == 1 else sx - 2
+        # Curved bow body
+        pygame.draw.rect(self.screen, (140, 105, 60), (bow_x, sy - 14, 2, 32))
+        pygame.draw.rect(self.screen, (140, 105, 60), (bow_x - (1 if facing == 1 else -1), sy - 16, 1, 2))
+        pygame.draw.rect(self.screen, (140, 105, 60), (bow_x - (1 if facing == 1 else -1), sy + 16, 1, 2))
+        # Bowstring
+        pygame.draw.rect(self.screen, (235, 230, 220), (bow_x + (1 if facing == 1 else 0), sy - 14, 1, 32))
+        # Arrow nocked
+        arrow_x = sx + 4 if facing == 1 else sx + 4
+        pygame.draw.rect(self.screen, (110, 80, 40), (arrow_x, sy + 1, 14, 1))
+
+    def _draw_shield(self, sx, sy, trim, plate, facing, shape):
+        sx_off = sx - 4 if facing == 1 else sx + 18
+        cx, cy = sx_off + 3, sy + 6
+        if shape == 'round':
+            pygame.draw.circle(self.screen, trim,  (cx, cy), 5)
+            pygame.draw.circle(self.screen, plate, (cx, cy), 2)
+        elif shape == 'kite':
+            pygame.draw.polygon(self.screen, trim,
+                                [(cx - 4, cy - 4), (cx + 4, cy - 4),
+                                 (cx + 3, cy + 3), (cx, cy + 6),
+                                 (cx - 3, cy + 3)])
+            pygame.draw.rect(self.screen, plate, (cx - 1, cy - 2, 2, 4))
+        else:  # heater
+            pygame.draw.polygon(self.screen, trim,
+                                [(cx - 4, cy - 4), (cx + 4, cy - 4),
+                                 (cx + 3, cy + 2), (cx, cy + 5),
+                                 (cx - 3, cy + 2)])
+            pygame.draw.rect(self.screen, plate, (cx - 1, cy - 3, 2, 5))
+
+    def _draw_npc_elder(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        facing = getattr(npc, 'facing', 1)
+        c = getattr(npc, 'clothing', {})
+        body  = c.get('body', (95, 95, 110))
+        trim  = c.get('trim', (60, 60, 75))
+        skin  = c.get('skin', (225, 200, 175))
+        hair  = (235, 235, 230)
+        # Body — long robe
+        pygame.draw.rect(self.screen, body, (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, trim, (sx, sy + 16 + bob, 20, 2))
+        # Head + wrinkles
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (170, 145, 120), (sx + 5, sy - 3 + bob, 10, 1))
+        # Wispy white hair around top + sides
+        pygame.draw.rect(self.screen, hair, (sx + 2,  sy - 12 + bob, 16, 3))
+        pygame.draw.rect(self.screen, hair, (sx + 1,  sy - 9 + bob, 2, 6))
+        pygame.draw.rect(self.screen, hair, (sx + 17, sy - 9 + bob, 2, 6))
+        # White beard
+        pygame.draw.rect(self.screen, hair, (sx + 5, sy - 1 + bob, 10, 4))
+        # Walking cane on weapon side
+        cane_x = sx + 19 if facing == 1 else sx - 1
+        pygame.draw.rect(self.screen, (110, 80, 50), (cane_x, sy - 4 + bob, 2, 22))
+        pygame.draw.rect(self.screen, (140, 100, 60), (cane_x - 1, sy - 5 + bob, 4, 2))
+
+    def _draw_npc_beggar(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        c = getattr(npc, 'clothing', {})
+        skin  = c.get('skin', (200, 175, 145))
+        rags  = (95, 80, 65)
+        patch = (135, 110, 80)
+        dirt  = (70, 55, 40)
+        # Tattered hooded robe
+        pygame.draw.rect(self.screen, rags,  (sx, sy + bob, 20, 18))
+        # Patches
+        pygame.draw.rect(self.screen, patch, (sx + 3,  sy + 4  + bob, 4, 5))
+        pygame.draw.rect(self.screen, patch, (sx + 12, sy + 9  + bob, 5, 4))
+        pygame.draw.rect(self.screen, dirt,  (sx,      sy + 16 + bob, 20, 2))
+        # Hood draped over head — leaves a slim face strip
+        pygame.draw.rect(self.screen, rags, (sx + 1, sy - 13 + bob, 18, 11))
+        pygame.draw.rect(self.screen, skin, (sx + 4, sy - 6  + bob, 12, 5))
+        pygame.draw.rect(self.screen, (30, 25, 20), (sx + 6,  sy - 5 + bob, 2, 2))
+        pygame.draw.rect(self.screen, (30, 25, 20), (sx + 12, sy - 5 + bob, 2, 2))
+        # Empty bowl held in front
+        pygame.draw.rect(self.screen, (90, 70, 55), (sx + 6, sy + 12 + bob, 8, 3))
+        pygame.draw.rect(self.screen, (60, 45, 30), (sx + 6, sy + 12 + bob, 8, 1))
+
+    def _draw_npc_noble(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        facing = getattr(npc, 'facing', 1)
+        c = getattr(npc, 'clothing', {})
+        body  = c.get('body', (90, 35, 110))
+        trim  = c.get('trim', (220, 180, 70))
+        skin  = c.get('skin', (250, 220, 185))
+        plume = (210, 60, 70)
+        # Doublet with gold trim
+        pygame.draw.rect(self.screen, body, (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, trim, (sx + 8, sy + bob, 4, 18))
+        pygame.draw.rect(self.screen, trim, (sx,    sy + bob, 20, 2))
+        # Lace collar
+        pygame.draw.rect(self.screen, (245, 240, 225), (sx + 5, sy + bob, 10, 3))
+        # Head
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+        # Plumed broad hat
+        hat_dark = tuple(max(0, v - 30) for v in body)
+        pygame.draw.rect(self.screen, hat_dark, (sx - 2, sy - 13 + bob, 24, 3))
+        pygame.draw.rect(self.screen, body,     (sx + 3, sy - 19 + bob, 14, 7))
+        pygame.draw.rect(self.screen, trim,     (sx + 3, sy - 13 + bob, 14, 2))
+        # Plume curls in facing direction
+        plume_x = sx + 13 if facing == 1 else sx + 3
+        pygame.draw.rect(self.screen, plume, (plume_x,     sy - 22 + bob, 4, 2))
+        pygame.draw.rect(self.screen, plume, (plume_x + 1, sy - 24 + bob, 3, 2))
+
+    def _draw_npc_pilgrim(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        facing = getattr(npc, 'facing', 1)
+        c = getattr(npc, 'clothing', {})
+        skin  = c.get('skin', (235, 195, 150))
+        robe  = (170, 130, 70)
+        sash  = (130, 90, 45)
+        # Long earthy robe
+        pygame.draw.rect(self.screen, robe, (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, sash, (sx, sy + 9 + bob, 20, 2))
+        # Hood up — only face strip exposed
+        pygame.draw.rect(self.screen, robe, (sx + 1, sy - 13 + bob, 18, 11))
+        pygame.draw.rect(self.screen, skin, (sx + 4, sy - 7  + bob, 12, 6))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 6,  sy - 5 + bob, 2, 2))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 12, sy - 5 + bob, 2, 2))
+        # Tall walking staff on weapon side
+        staff_x = sx + 19 if facing == 1 else sx - 1
+        pygame.draw.rect(self.screen, (90, 65, 40), (staff_x, sy - 24 + bob, 2, 42))
+        pygame.draw.rect(self.screen, (200, 175, 120), (staff_x - 1, sy - 24 + bob, 4, 2))
+        # Small satchel at hip on opposite side
+        bag_x = sx - 4 if facing == 1 else sx + 18
+        pygame.draw.rect(self.screen, sash, (bag_x, sy + 6 + bob, 6, 6))
+        pygame.draw.rect(self.screen, (60, 45, 25), (bag_x, sy + 6 + bob, 6, 1))
+
+    def _draw_npc_drunkard(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        facing = getattr(npc, 'facing', 1)
+        # Sway adds horizontal wobble on top of vertical bob
+        sway = int(math.sin(npc._bob_timer * 1.4) * 2)
+        sx += sway
+        c = getattr(npc, 'clothing', {})
+        body = c.get('body', (140, 95, 60))
+        trim = c.get('trim', (90, 55, 30))
+        skin = c.get('skin', (255, 195, 165))
+        flush = (220, 110, 95)
+        # Rumpled tunic, untucked at the bottom
+        pygame.draw.rect(self.screen, body, (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, trim, (sx + 1, sy + 14 + bob, 18, 2))
+        pygame.draw.rect(self.screen, trim, (sx + 4, sy + 16 + bob, 12, 2))
+        # Head with red flushed cheeks
+        pygame.draw.rect(self.screen, skin,  (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, flush, (sx + 2, sy - 4 + bob, 4, 3))
+        pygame.draw.rect(self.screen, flush, (sx + 14, sy - 4 + bob, 4, 3))
+        # Half-closed eyes (slits)
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 6 + bob, 3, 1))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 6 + bob, 3, 1))
+        # Tankard sloshing in lead hand
+        mug_x = sx + 18 if facing == 1 else sx - 4
+        pygame.draw.rect(self.screen, (130, 110, 75), (mug_x, sy + 4 + bob, 6, 7))
+        pygame.draw.rect(self.screen, (220, 200, 140), (mug_x + 1, sy + 4 + bob, 4, 2))
+        pygame.draw.rect(self.screen, (130, 110, 75), (mug_x + 6, sy + 5 + bob, 1, 4))
 
     def _draw_npc_blacksmith(self, sx, sy, npc):
         bob = int(npc._bob_offset)
