@@ -6,6 +6,7 @@ from rocks import (render_rock, RARITY_COLORS, ROCK_TYPE_ORDER, ROCK_TYPE_DESCRI
 from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE
 from automations import AUTOMATION_ITEM
 from ._data import RARITY_LABEL, SPECIAL_DESCS
+from Render.dogs import draw_dog
 
 
 def _wrap_text(text, font, max_w):
@@ -30,7 +31,9 @@ class PanelsMixin:
         from cities import (RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC,
                             MerchantNPC, RestaurantNPC, ShrineKeeperNPC, JewelryMerchantNPC,
                             LeaderNPC, BlacksmithNPC, InnkeeperNPC, ScholarNPC,
-                            RoyalCuratorNPC, RoyalFloristNPC, RoyalJewelerNPC)
+                            RoyalCuratorNPC, RoyalFloristNPC, RoyalJewelerNPC,
+                            RoyalPaleontologistNPC, RoyalAnglerNPC,
+                            WeaponArmorerNPC, QuartermasterNPC, GarrisonCommanderNPC)
         from outpost_npcs import OutpostKeeperNPC
         npc = self.active_npc
         if isinstance(npc, LeaderNPC):
@@ -48,8 +51,9 @@ class PanelsMixin:
         px = (SCREEN_W - PW) // 2
         py = (SCREEN_H - PH) // 2
 
-        # Border colour per NPC type — royal subclasses checked first
-        if isinstance(npc, (RoyalCuratorNPC, RoyalFloristNPC, RoyalJewelerNPC)):
+        # Border colour per NPC type — royal classes checked first
+        if isinstance(npc, (RoyalCuratorNPC, RoyalFloristNPC, RoyalJewelerNPC,
+                             RoyalPaleontologistNPC, RoyalAnglerNPC)):
             border_col = (220, 175, 40)
         elif isinstance(npc, WildflowerQuestNPC):
             border_col = (60, 140, 70)
@@ -63,6 +67,12 @@ class PanelsMixin:
             border_col = (160, 130, 60)
         elif isinstance(npc, JewelryMerchantNPC):
             border_col = (200, 165, 55)
+        elif isinstance(npc, WeaponArmorerNPC):
+            border_col = (155, 140, 120)
+        elif isinstance(npc, QuartermasterNPC):
+            border_col = (100, 120, 140)
+        elif isinstance(npc, GarrisonCommanderNPC):
+            border_col = (160,  90,  70)
         elif isinstance(npc, BlacksmithNPC):
             border_col = (100, 110, 130)
         elif isinstance(npc, InnkeeperNPC):
@@ -86,6 +96,10 @@ class PanelsMixin:
             self._draw_wf_quest_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, RoyalJewelerNPC):
             self._draw_gem_quest_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, RoyalPaleontologistNPC):
+            self._draw_fossil_quest_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, RoyalAnglerNPC):
+            self._draw_fish_quest_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, RockQuestNPC):
             self._draw_quest_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, TradeNPC):
@@ -108,6 +122,12 @@ class PanelsMixin:
             self._draw_innkeeper_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, ScholarNPC):
             self._draw_scholar_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, WeaponArmorerNPC):
+            self._draw_weapon_armorer_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, QuartermasterNPC):
+            self._draw_trade_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, GarrisonCommanderNPC):
+            self._draw_garrison_commander_content(player, npc, px, py, PW, PH)
         elif is_outpost:
             self._draw_outpost_keeper_content(player, npc, px, py, PW, PH)
 
@@ -458,6 +478,151 @@ class PanelsMixin:
                 btn_text = "LOCKED"
             elif len(npc.find_matching_gems(player, quest)) >= quest.get("count", 1):
                 b_bg, b_bdr, b_tc = (40, 18, 80), (140, 60, 220), (220, 180, 255)
+                btn_text = "HAND OVER"
+            else:
+                b_bg, b_bdr, b_tc = (30, 30, 36), (55, 55, 68), (70, 70, 82)
+                btn_text = "HAND OVER"
+            pygame.draw.rect(self.screen, b_bg, btn_rect)
+            pygame.draw.rect(self.screen, b_bdr, btn_rect, 2)
+            bl = self.small.render(btn_text, True, b_tc)
+            self.screen.blit(bl, (bx2 + BW // 2 - bl.get_width() // 2,
+                                   by2 + BH // 2 - bl.get_height() // 2))
+            y += row_h + 8
+
+    def _draw_fossil_quest_content(self, player, npc, px, py, PW, PH):
+        from cities import fossil_quest_display, fossil_quest_hint, ROYAL_QUEST_REP
+        from rocks import RARITY_COLORS
+
+        title = self.font.render("ROYAL PALEONTOLOGIST  ★ By Order of the King ★", True, (220, 175, 40))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+        self._draw_rep_rank(npc, px, py)
+
+        self._trade_rects.clear()
+        y = py + 40
+        for quest_idx, quest in enumerate(npc.quests):
+            row_h    = 150
+            row_rect = pygame.Rect(px + 14, y, PW - 28, row_h)
+            min_rep    = quest.get("min_rep", 0)
+            rep_locked = npc._town_rep() < min_rep
+            can = npc.can_complete(player, quest_idx)
+            if rep_locked:
+                bg, bdr = (28, 24, 10), (160, 130, 30)
+            else:
+                bg  = (25, 38, 18) if can else (22, 22, 30)
+                bdr = (180, 145, 30) if can else (100, 85, 40)
+            pygame.draw.rect(self.screen, bg, row_rect)
+            pygame.draw.rect(self.screen, bdr, row_rect, 2)
+
+            iy = y + 10
+            if rep_locked:
+                badge = self.small.render("ROYAL COMMISSION", True, (220, 175, 40))
+                self.screen.blit(badge, (px + 22, iy))
+                lock_s = self.small.render(
+                    f"Requires {min_rep} rep  (you have: {npc._town_rep()})", True, (200, 100, 60))
+                self.screen.blit(lock_s, (px + 22 + badge.get_width() + 12, iy))
+            else:
+                kind_labels = {"fossil_single": "SPECIFIC FOSSIL", "fossil_special": "RARE QUALITY"}
+                badge_col   = {"fossil_single": (180, 155, 60), "fossil_special": (200, 130, 40)}
+                badge = self.small.render(kind_labels.get(quest["kind"], "QUEST"), True,
+                                          badge_col.get(quest["kind"], (220, 175, 40)))
+                self.screen.blit(badge, (px + 22, iy))
+            iy += 18
+
+            rarity_col = (140, 120, 60) if rep_locked else RARITY_COLORS.get(quest.get("rarity", "legendary"), (220, 200, 100))
+            self.screen.blit(self.font.render(fossil_quest_display(quest), True, rarity_col), (px + 22, iy)); iy += 24
+            self.screen.blit(self.small.render(fossil_quest_hint(quest), True, (160, 150, 120)), (px + 22, iy)); iy += 20
+
+            if not rep_locked:
+                matching = npc.find_matching_fossils(player, quest)
+                needed   = quest.get("count", 1)
+                if len(matching) >= needed:
+                    status, sc = f"Ready!  ({len(matching)} matching in collection)", (80, 220, 80)
+                else:
+                    status, sc = f"Need {needed}  —  you have {len(matching)}", (180, 90, 90)
+                self.screen.blit(self.small.render(status, True, sc), (px + 22, iy)); iy += 18
+
+            self.screen.blit(self.font.render(f"Reward: {quest['reward']} gold", True, (240, 210, 50)), (px + 22, iy))
+
+            BW, BH = 170, 36
+            bx2, by2 = px + PW - BW - 20, y + row_h // 2 - BH // 2
+            btn_rect = pygame.Rect(bx2, by2, BW, BH)
+            self._trade_rects[quest_idx] = btn_rect
+            if rep_locked:
+                b_bg, b_bdr, b_tc = (40, 30, 8), (140, 110, 30), (180, 140, 40)
+                btn_text = "LOCKED"
+            elif len(npc.find_matching_fossils(player, quest)) >= quest.get("count", 1):
+                b_bg, b_bdr, b_tc = (45, 35, 8), (200, 160, 35), (255, 230, 120)
+                btn_text = "HAND OVER"
+            else:
+                b_bg, b_bdr, b_tc = (30, 30, 36), (55, 55, 68), (70, 70, 82)
+                btn_text = "HAND OVER"
+            pygame.draw.rect(self.screen, b_bg, btn_rect)
+            pygame.draw.rect(self.screen, b_bdr, btn_rect, 2)
+            bl = self.small.render(btn_text, True, b_tc)
+            self.screen.blit(bl, (bx2 + BW // 2 - bl.get_width() // 2,
+                                   by2 + BH // 2 - bl.get_height() // 2))
+            y += row_h + 8
+
+    def _draw_fish_quest_content(self, player, npc, px, py, PW, PH):
+        from cities import fish_quest_display, fish_quest_hint, ROYAL_QUEST_REP
+        from rocks import RARITY_COLORS
+
+        title = self.font.render("ROYAL ANGLER  ★ By Order of the King ★", True, (220, 175, 40))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+        self._draw_rep_rank(npc, px, py)
+
+        self._trade_rects.clear()
+        y = py + 40
+        for quest_idx, quest in enumerate(npc.quests):
+            row_h    = 150
+            row_rect = pygame.Rect(px + 14, y, PW - 28, row_h)
+            min_rep    = quest.get("min_rep", 0)
+            rep_locked = npc._town_rep() < min_rep
+            can = npc.can_complete(player, quest_idx)
+            if rep_locked:
+                bg, bdr = (28, 24, 10), (160, 130, 30)
+            else:
+                bg  = (15, 30, 45) if can else (22, 22, 30)
+                bdr = (50, 140, 200) if can else (40, 70, 100)
+            pygame.draw.rect(self.screen, bg, row_rect)
+            pygame.draw.rect(self.screen, bdr, row_rect, 2)
+
+            iy = y + 10
+            if rep_locked:
+                badge = self.small.render("ROYAL COMMISSION", True, (220, 175, 40))
+                self.screen.blit(badge, (px + 22, iy))
+                lock_s = self.small.render(
+                    f"Requires {min_rep} rep  (you have: {npc._town_rep()})", True, (200, 100, 60))
+                self.screen.blit(lock_s, (px + 22 + badge.get_width() + 12, iy))
+            else:
+                badge = self.small.render("LEGENDARY CATCH", True, (80, 180, 230))
+                self.screen.blit(badge, (px + 22, iy))
+            iy += 18
+
+            rarity_col = (140, 120, 60) if rep_locked else RARITY_COLORS.get("legendary", (255, 180, 0))
+            self.screen.blit(self.font.render(fish_quest_display(quest), True, rarity_col), (px + 22, iy)); iy += 24
+            self.screen.blit(self.small.render(fish_quest_hint(quest), True, (120, 170, 200)), (px + 22, iy)); iy += 20
+
+            if not rep_locked:
+                matching = npc.find_matching_fish(player, quest)
+                needed   = quest.get("count", 1)
+                if len(matching) >= needed:
+                    status, sc = f"Ready!  ({len(matching)} matching in collection)", (80, 220, 80)
+                else:
+                    status, sc = f"Need {needed}  —  you have {len(matching)}", (180, 90, 90)
+                self.screen.blit(self.small.render(status, True, sc), (px + 22, iy)); iy += 18
+
+            self.screen.blit(self.font.render(f"Reward: {quest['reward']} gold", True, (240, 210, 50)), (px + 22, iy))
+
+            BW, BH = 170, 36
+            bx2, by2 = px + PW - BW - 20, y + row_h // 2 - BH // 2
+            btn_rect = pygame.Rect(bx2, by2, BW, BH)
+            self._trade_rects[quest_idx] = btn_rect
+            if rep_locked:
+                b_bg, b_bdr, b_tc = (40, 30, 8), (140, 110, 30), (180, 140, 40)
+                btn_text = "LOCKED"
+            elif len(npc.find_matching_fish(player, quest)) >= quest.get("count", 1):
+                b_bg, b_bdr, b_tc = (10, 35, 55), (50, 150, 210), (160, 230, 255)
                 btn_text = "HAND OVER"
             else:
                 b_bg, b_bdr, b_tc = (30, 30, 36), (55, 55, 68), (70, 70, 82)
@@ -1561,6 +1726,8 @@ class PanelsMixin:
             pygame.draw.rect(self.screen, (220, 50, 50),
                              (hx + int(2 * s), hy - max(1, int(2 * s)),
                               max(1, int(4 * s)), max(1, int(3 * s))))
+        elif aid == "dog":
+            draw_dog(self.screen, cx - int(17 * s), cy - int(11 * s), animal, scale=s, facing=1)
         elif aid == "horse":
             coat  = traits.get("coat_color", (160, 115, 65))
             sh    = traits.get("color_shift", (0, 0, 0))
@@ -1645,7 +1812,7 @@ class PanelsMixin:
             type_ctr[aid] = type_ctr.get(aid, 0) + 1
             animal_numbers[e.uid] = type_ctr[aid]
 
-        TYPE_LABELS = {"sheep": "Sheep", "cow": "Cow", "chicken": "Chicken", "horse": "Horse", "goat": "Goat"}
+        TYPE_LABELS = {"sheep": "Sheep", "cow": "Cow", "chicken": "Chicken", "horse": "Horse", "goat": "Goat", "dog": "Dog"}
 
         # ── LEFT LIST COLUMN ──────────────────────────────────────────
         LW = 295
@@ -1656,7 +1823,7 @@ class PanelsMixin:
         self.screen.blit(title_s, (lx0 + LW // 2 - title_s.get_width() // 2, py + 10))
 
         # Species filter tabs
-        tab_defs = [(0, "All"), (1, "Sheep"), (2, "Cow"), (3, "Chicken"), (4, "Horse"), (5, "Goat")]
+        tab_defs = [(0, "All"), (1, "Sheep"), (2, "Cow"), (3, "Chicken"), (4, "Horse"), (5, "Goat"), (6, "Dogs")]
         tw = (LW - 6) // len(tab_defs)
         self._breed_tab_rects.clear()
         for ti, (tidx, label) in enumerate(tab_defs):
@@ -1674,7 +1841,7 @@ class PanelsMixin:
         pygame.draw.line(self.screen, (38, 75, 52), (lx1, py), (lx1, py + PH))
 
         # Build filtered list
-        tab_filter = {1: "sheep", 2: "cow", 3: "chicken", 4: "horse", 5: "goat"}.get(self._breed_tab)
+        tab_filter = {1: "sheep", 2: "cow", 3: "chicken", 4: "horse", 5: "goat", 6: "dog"}.get(self._breed_tab)
         filtered = [e for e in all_tamed
                     if tab_filter is None or e.animal_id == tab_filter]
 
@@ -1856,7 +2023,27 @@ class PanelsMixin:
                 self.screen.blit(arr, (stats_x + label_w + 2 * COL_W // 3 + 20, sy))
             sy += 16
 
-        if animal.animal_id == "horse":
+        if animal.animal_id == "dog":
+            breed = traits.get("breed", "Unknown")
+            sz    = traits.get("size_class", "medium")
+            br_s  = self.small.render(f"Breed: {breed}  ({sz})", True, (195, 230, 210))
+            self.screen.blit(br_s, (stats_x, sy))
+            sy += 18
+            coat = traits.get("coat_color", (160, 100, 50))
+            coat_lbl = self.small.render("Coat", True, (150, 195, 165))
+            self.screen.blit(coat_lbl, (stats_x, sy))
+            pygame.draw.rect(self.screen, coat, (stats_x + 50, sy, 24, 14))
+            pygame.draw.rect(self.screen, (75, 108, 88), (stats_x + 50, sy, 24, 14), 1)
+            pat = traits.get("coat_pattern", "solid")
+            pat_s = self.small.render(pat, True, (160, 200, 175))
+            self.screen.blit(pat_s, (stats_x + 80, sy))
+            sy += 18
+            _draw_allele_quant("Speed",    "speed_gene",    0.7, 1.4, (65, 155, 235), label_w=75)
+            _draw_allele_quant("Nose",     "nose_gene",     0.6, 1.4, (120, 200, 120), label_w=75)
+            _draw_allele_quant("Agility",  "agility_gene",  0.7, 1.4, (200, 155, 65), label_w=75)
+            _draw_allele_quant("Strength", "strength_gene", 0.7, 1.3, (210, 90, 90), label_w=75)
+            _draw_allele_quant("Alert",    "alertness_gene",0.7, 1.4, (155, 130, 220), label_w=75)
+        elif animal.animal_id == "horse":
             _draw_allele_quant("Speed",     "speed_gene",    0.7, 1.4, (65, 155, 235))
             _draw_allele_quant("Stamina",   "stamina_gene",  0.8, 1.2, (80, 210, 120))
             _draw_allele_quant("Endurance", "endurance_gene",0.7, 1.3, (100, 185, 240))

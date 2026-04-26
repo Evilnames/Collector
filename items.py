@@ -322,6 +322,7 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     LANTERN_ORB, PENDANT_LAMP, FIRE_BOWL, CROSS_LANTERN,
                     STAR_LAMP, GLOW_VINE,
                     TRADE_BLOCK,
+                    FORGE_BLOCK, WEAPON_RACK_BLOCK,
                     APPLE_SAPLING, PEAR_SAPLING, FIG_SAPLING,
                     CITRUS_SAPLING, POMEGRANATE_SAPLING,
                     JUICER_BLOCK)
@@ -2242,4 +2243,31 @@ ITEMS = {
     "cross_lantern":           {"name": "Cross Lantern",      "color": ( 55,  55,  60), "place_block": CROSS_LANTERN},
     "star_lamp":               {"name": "Star Lamp",          "color": (200, 240, 255), "place_block": STAR_LAMP},
     "glow_vine":               {"name": "Glow Vine",          "color": ( 40, 100,  60), "place_block": GLOW_VINE},
+
+    # --- Weapon Crafting ---
+    "steel_ingot":      {"name": "Steel Ingot",    "color": (110, 120, 135), "place_block": None},
+
+    # Smithed metal parts (produced by the forge mini-game; held in pending_parts, not normal inventory)
+    "iron_sword_blade":  {"name": "Iron Sword Blade",  "color": (160, 165, 175), "place_block": None, "weapon_part": True},
+    "gold_sword_blade":  {"name": "Gold Sword Blade",  "color": (220, 185,  50), "place_block": None, "weapon_part": True},
+    "steel_sword_blade": {"name": "Steel Sword Blade", "color": (110, 120, 135), "place_block": None, "weapon_part": True},
+    "iron_dagger_blade":  {"name": "Iron Dagger Blade",  "color": (160, 165, 175), "place_block": None, "weapon_part": True},
+    "gold_dagger_blade":  {"name": "Gold Dagger Blade",  "color": (220, 185,  50), "place_block": None, "weapon_part": True},
+    "steel_dagger_blade": {"name": "Steel Dagger Blade", "color": (110, 120, 135), "place_block": None, "weapon_part": True},
+    "iron_spear_head":   {"name": "Iron Spear Head",   "color": (160, 165, 175), "place_block": None, "weapon_part": True},
+    "gold_spear_head":   {"name": "Gold Spear Head",   "color": (220, 185,  50), "place_block": None, "weapon_part": True},
+    "steel_spear_head":  {"name": "Steel Spear Head",  "color": (110, 120, 135), "place_block": None, "weapon_part": True},
+    "iron_axe_head":     {"name": "Iron Axe Head",     "color": (160, 165, 175), "place_block": None, "weapon_part": True},
+    "gold_axe_head":     {"name": "Gold Axe Head",     "color": (220, 185,  50), "place_block": None, "weapon_part": True},
+    "steel_axe_head":    {"name": "Steel Axe Head",    "color": (110, 120, 135), "place_block": None, "weapon_part": True},
+
+    # Handle/hilt items (normal crafting bench recipes)
+    "sword_hilt":        {"name": "Sword Hilt",    "color": (139,  90,  43), "place_block": None},
+    "dagger_handle":     {"name": "Dagger Handle", "color": (139,  90,  43), "place_block": None},
+    "spear_shaft":       {"name": "Spear Shaft",   "color": (139,  90,  43), "place_block": None},
+    "axe_haft":          {"name": "Axe Haft",      "color": (139,  90,  43), "place_block": None},
+
+    # Station placers
+    "forge_item":        {"name": "Forge",        "color": ( 80,  65,  55), "place_block": FORGE_BLOCK},
+    "weapon_rack_item":  {"name": "Weapon Rack",  "color": (100,  80,  60), "place_block": WEAPON_RACK_BLOCK},
 }

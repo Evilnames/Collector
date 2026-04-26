@@ -502,6 +502,14 @@ FORGE_RECIPES = [
 ]
 
 # ---------------------------------------------------------------------------
+# Smithing Forge recipes — available at FORGE_BLOCK
+# ---------------------------------------------------------------------------
+
+SMITHING_FORGE_RECIPES = [
+    {"name": "Steel Ingot", "ingredients": {"iron_bar": 2, "coal": 1}, "output_id": "steel_ingot", "output_count": 1},
+]
+
+# ---------------------------------------------------------------------------
 # Artisan Bench recipes — refine raw materials into decorative building blocks
 # ---------------------------------------------------------------------------
 
@@ -888,6 +896,11 @@ ARTISAN_RECIPES = [
     {"name": "Cross Lantern", "ingredients": {"iron_chunk": 2, "coal": 1},                "output_id": "cross_lantern", "output_count": 2},
     {"name": "Star Lamp",     "ingredients": {"crystal_shard": 1, "gold_nugget": 2},      "output_id": "star_lamp",     "output_count": 2},
     {"name": "Glow Vine",     "ingredients": {"lumber": 1, "crystal_shard": 1},           "output_id": "glow_vine",     "output_count": 4},
+    # Weapon handles (crafting bench)
+    {"name": "Sword Hilt",    "ingredients": {"lumber": 2},                                "output_id": "sword_hilt",    "output_count": 1},
+    {"name": "Dagger Handle", "ingredients": {"lumber": 1},                                "output_id": "dagger_handle", "output_count": 1},
+    {"name": "Spear Shaft",   "ingredients": {"lumber": 3},                                "output_id": "spear_shaft",   "output_count": 1},
+    {"name": "Axe Haft",      "ingredients": {"lumber": 2},                                "output_id": "axe_haft",      "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -1180,6 +1193,26 @@ RECIPES = [
             ["stone_chip",  "coal",       "stone_chip"],
         ],
         "output_id":    "desert_forge_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Forge",
+        "pattern": [
+            ["stone_chip", "coal",     "stone_chip"],
+            ["iron_bar",   "iron_bar", "iron_bar"  ],
+            ["stone_chip", "stone_chip","stone_chip"],
+        ],
+        "output_id":    "forge_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Weapon Rack",
+        "pattern": [
+            [None,      "lumber", None     ],
+            ["lumber",  "lumber", "lumber" ],
+            ["lumber",  None,     "lumber" ],
+        ],
+        "output_id":    "weapon_rack_item",
         "output_count": 1,
     },
     # --- Tempered tools ---
@@ -2086,6 +2119,7 @@ SMELTER_RECIPES = [
     {"name": "Iron Bar",    "ingredients": {"iron_chunk": 1, "coal": 1}, "output_id": "iron_bar",    "output_count": 1},
     {"name": "Gold Ingot",  "ingredients": {"gold_nugget": 1, "coal": 1},"output_id": "gold_ingot",  "output_count": 1},
     {"name": "Steel Bar",   "ingredients": {"iron_bar": 1, "coal": 2},   "output_id": "steel_bar",   "output_count": 1},
+    {"name": "Steel Ingot", "ingredients": {"iron_bar": 2, "coal": 1},   "output_id": "steel_ingot", "output_count": 1},
     {"name": "Cut Crystal", "ingredients": {"crystal_shard": 1, "coal": 1},"output_id": "cut_crystal","output_count": 1},
 ]
 
@@ -2534,13 +2568,16 @@ RECIPE_GROUPS = {
     "Dogs": [
         "dog_collar", "dog_treat", "dog_whistle", "kennel_item", "dog_bowl_item",
     ],
+    "Blacksmithing": [
+        "forge_item", "weapon_rack_item",
+    ],
 }
 
 RECIPE_GROUPS_ORDER = [
     "Tools", "Farming", "Building", "Automation", "Rock & Gems", "Smelting",
     "Cooking Stations", "Coffee", "Wine", "Spirits", "Tea",
     "Herbalism", "Textiles", "Glassblowing", "Fishing", "Wildlife", "Horses", "Dogs", "Hunting", "Jewelry",
-    "Garden", "Sculpture", "Pottery", "Tapestry",
+    "Garden", "Sculpture", "Pottery", "Tapestry", "Blacksmithing",
 ]
 
 
@@ -2610,6 +2647,9 @@ RESEARCH_LOCKED_RECIPES = {
     "dog_bowl_item":           "dog_basics",
     "dog_whistle":             "scent_tracking",
     "kennel_item":             "kennel_mastery",
+    "forge_item":              "basic_smithing",
+    "weapon_rack_item":        "basic_smithing",
+    "steel_ingot":             "steel_forging",
 }
 
 

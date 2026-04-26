@@ -3,14 +3,14 @@ import random
 from dataclasses import dataclass
 
 from constants import CHUNK_W, BLOCK_SIZE
-from blocks import STONE, BEDROCK, AIR
+from blocks import STONE, BEDROCK, AIR, OUTPOST_FLAG_BLOCK
 
 # ---------------------------------------------------------------------------
 # Spawn constants
 # ---------------------------------------------------------------------------
 
 OUTPOST_SLOT_SPACING = 80   # one candidate slot every 80 blocks
-OUTPOST_SPAWN_CHANCE = 0.04 # 4% → avg ~1 outpost per 2000 blocks
+OUTPOST_SPAWN_CHANCE = 0.05 # 5% → avg ~1 outpost per 1600 blocks
 
 # ---------------------------------------------------------------------------
 # Type definitions
@@ -282,7 +282,8 @@ OUTPOST_TYPES = {
         "display_name":    "Border Garrison",
         "eligible_biomes": ["temperate", "rolling_hills", "steep_hills", "birch_forest"],
         "sells": [("recurve_bow", 25), ("iron_arrow", 8), ("flint_arrow", 5), ("iron_bar", 22)],
-        "buys":  [("iron_chunk", 6, 15), ("lumber", 3, 20), ("coal", 4, 12)],
+        "buys":  [("iron_chunk", 6, 15), ("lumber", 3, 20), ("coal", 4, 12),
+                  ("iron_arrow", 5, 20), ("wood_arrow", 2, 30)],
         "needs": [("iron_chunk", 10), ("coal", 15)],
         "base_stock": 4, "clothing_key": "soldier",
         "building_style": "smithy", "half_w": 16,
@@ -292,7 +293,8 @@ OUTPOST_TYPES = {
         "display_name":    "Highland Fortress",
         "eligible_biomes": ["rocky_mountain", "alpine_mountain", "steep_hills", "canyon"],
         "sells": [("longbow", 55), ("broadhead_arrow", 12), ("tempered_iron", 60), ("iron_arrow", 8)],
-        "buys":  [("iron_chunk", 6, 15), ("coal", 4, 15), ("stone_chip", 3, 20)],
+        "buys":  [("iron_chunk", 6, 15), ("coal", 4, 15), ("stone_chip", 3, 20),
+                  ("broadhead_arrow", 10, 15), ("iron_arrow", 5, 15)],
         "needs": [("iron_chunk", 12), ("coal", 20)],
         "base_stock": 3, "clothing_key": "fortress_guard",
         "building_style": "smithy", "half_w": 18,
@@ -302,7 +304,8 @@ OUTPOST_TYPES = {
         "display_name":    "Desert Legion",
         "eligible_biomes": ["desert", "arid_steppe", "canyon", "savanna"],
         "sells": [("crossbow", 80), ("composite_bow", 45), ("iron_arrow", 8), ("iron_bar", 22)],
-        "buys":  [("iron_chunk", 6, 15), ("gold_nugget", 10, 5), ("coal", 4, 12)],
+        "buys":  [("iron_chunk", 6, 15), ("gold_nugget", 10, 5), ("coal", 4, 12),
+                  ("iron_arrow", 5, 15), ("flint_arrow", 4, 20)],
         "needs": [("iron_chunk", 12), ("coal", 18)],
         "base_stock": 3, "clothing_key": "legion",
         "building_style": "smithy", "half_w": 17,
@@ -312,7 +315,8 @@ OUTPOST_TYPES = {
         "display_name":    "Steppe Warcamp",
         "eligible_biomes": ["steppe", "wasteland", "savanna", "arid_steppe"],
         "sells": [("composite_bow", 40), ("flint_arrow", 6), ("wood_arrow", 4), ("iron_chunk", 7)],
-        "buys":  [("rabbit_pelt", 16, 10), ("wolf_pelt", 28, 6), ("iron_chunk", 6, 10)],
+        "buys":  [("rabbit_pelt", 16, 10), ("wolf_pelt", 28, 6), ("iron_chunk", 6, 10),
+                  ("wood_arrow", 3, 25), ("flint_arrow", 4, 20)],
         "needs": [("lumber", 15), ("coal", 8)],
         "base_stock": 5, "clothing_key": "warlord",
         "building_style": "house", "half_w": 15,
@@ -322,7 +326,8 @@ OUTPOST_TYPES = {
         "display_name":    "Coastal Citadel",
         "eligible_biomes": ["beach", "mediterranean", "tropical"],
         "sells": [("recurve_bow", 25), ("iron_arrow", 8), ("iron_bar", 20), ("wood_bow", 14)],
-        "buys":  [("lumber", 3, 20), ("iron_chunk", 6, 15), ("coal", 4, 10)],
+        "buys":  [("lumber", 3, 20), ("iron_chunk", 6, 15), ("coal", 4, 10),
+                  ("recurve_bow", 18, 3), ("iron_arrow", 5, 20)],
         "needs": [("lumber", 20), ("iron_chunk", 10)],
         "base_stock": 4, "clothing_key": "naval_guard",
         "building_style": "smithy", "half_w": 16,

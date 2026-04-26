@@ -147,7 +147,7 @@ BREED_PROFILES = {
         "coat_type_weights": [60, 40, 0, 0],
     },
     "Greyhound": {
-        "biomes": {"savanna", "steppe", "arid_steppe"},
+        "biomes": {"savanna", "steppe", "arid_steppe", "beach", "tropical"},
         "size_class": "large",
         "genes": {
             "speed_gene":       (1.2, 1.3),
@@ -239,7 +239,7 @@ BREED_PROFILES = {
         "coat_type_weights": [100, 0, 0, 0],
     },
     "Dalmatian": {
-        "biomes": {"temperate", "rocky_mountain"},
+        "biomes": {"temperate", "rocky_mountain", "beach"},
         "size_class": "large",
         "genes": {
             "speed_gene":       (1.0, 1.2),
@@ -377,7 +377,7 @@ BREED_PROFILES = {
         "coat_type_weights": [100, 0, 0, 0],
     },
     "Australian Shepherd": {
-        "biomes": {"rolling_hills", "steppe", "temperate"},
+        "biomes": {"rolling_hills", "steppe", "temperate", "wetland", "swamp"},
         "size_class": "medium",
         "genes": {
             "speed_gene":       (1.0, 1.2),
@@ -400,7 +400,7 @@ BREED_PROFILES = {
         "coat_type_weights": [20, 80, 0, 0],
     },
     "Dachshund": {
-        "biomes": {"boreal", "birch_forest"},
+        "biomes": {"boreal", "birch_forest", "fungal", "swamp"},
         "size_class": "small",
         "genes": {
             "speed_gene":       (0.7, 0.9),
@@ -446,7 +446,7 @@ BREED_PROFILES = {
         "coat_type_weights": [0, 80, 20, 0],
     },
     "Akita": {
-        "biomes": {"boreal", "alpine_mountain", "rocky_mountain"},
+        "biomes": {"boreal", "alpine_mountain", "rocky_mountain", "redwood"},
         "size_class": "large",
         "genes": {
             "speed_gene":        (0.9, 1.2),
@@ -469,7 +469,7 @@ BREED_PROFILES = {
         "coat_type_weights": [80, 20, 0, 0],
     },
     "Rottweiler": {
-        "biomes": {"temperate", "canyon", "wasteland"},
+        "biomes": {"temperate", "canyon", "wasteland", "swamp"},
         "size_class": "large",
         "genes": {
             "speed_gene":        (0.8, 1.1),
@@ -515,7 +515,7 @@ BREED_PROFILES = {
         "coat_type_weights": [40, 60, 0, 0],
     },
     "Shiba Inu": {
-        "biomes": {"boreal", "birch_forest", "temperate"},
+        "biomes": {"boreal", "birch_forest", "temperate", "fungal"},
         "size_class": "small",
         "genes": {
             "speed_gene":        (0.9, 1.2),
@@ -538,7 +538,7 @@ BREED_PROFILES = {
         "coat_type_weights": [80, 20, 0, 0],
     },
     "Great Pyrenees": {
-        "biomes": {"alpine_mountain", "rocky_mountain", "tundra"},
+        "biomes": {"alpine_mountain", "rocky_mountain", "tundra", "redwood"},
         "size_class": "giant",
         "genes": {
             "speed_gene":        (0.8, 1.0),
@@ -653,7 +653,7 @@ BREED_PROFILES = {
         "coat_type_weights": [80, 20, 0, 0],
     },
     "Rhodesian Ridgeback": {
-        "biomes": {"savanna", "tropical", "wasteland"},
+        "biomes": {"savanna", "tropical", "wasteland", "arid_steppe"},
         "size_class": "large",
         "genes": {
             "speed_gene":        (1.1, 1.3),
@@ -699,7 +699,7 @@ BREED_PROFILES = {
         "coat_type_weights": [100, 0, 0, 0],
     },
     "Bernese Mountain Dog": {
-        "biomes": {"alpine_mountain", "rocky_mountain", "boreal"},
+        "biomes": {"alpine_mountain", "rocky_mountain", "boreal", "redwood"},
         "size_class": "large",
         "genes": {
             "speed_gene":        (0.8, 1.1),
@@ -745,7 +745,7 @@ BREED_PROFILES = {
         "coat_type_weights": [100, 0, 0, 0],
     },
     "Basenji": {
-        "biomes": {"jungle", "tropical", "savanna"},
+        "biomes": {"jungle", "tropical", "savanna", "arid_steppe", "beach"},
         "size_class": "small",
         "genes": {
             "speed_gene":        (1.0, 1.2),

@@ -502,12 +502,12 @@ class World:
         for cart_data in data.get("minecarts", []):
             self.minecarts.append(Minecart.from_dict(cart_data))
 
-        from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion
+        from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion, Tiger
         from horses import Horse
         from dogs import Dog
         _CLASS_MAP = {"Sheep": Sheep, "Cow": Cow, "Chicken": Chicken, "Goat": Goat,
                       "SnowLeopard": SnowLeopard, "MountainLion": MountainLion,
-                      "Horse": Horse, "Dog": Dog}
+                      "Tiger": Tiger, "Horse": Horse, "Dog": Dog}
         for e_data in data["entities"]:
             cls = _CLASS_MAP.get(e_data["entity_type"])
             if cls is None:
@@ -828,15 +828,15 @@ class World:
             sy = self.surface_height(x)
             if sy <= 0 or sy >= WORLD_H - 1:
                 continue
-            # Floating plants: sit in the air tile above water surface
-            if chunk[sy][lx] == WATER and chunk[sy - 1][lx] == AIR:
+            # Floating plants: go in the bg layer at the air tile above the water
+            if chunk[sy][lx] == WATER and sy > 0 and chunk[sy - 1][lx] == AIR:
                 if water_rng.random() < 0.20:
                     biodome = self.biodome_at(x)
                     if biodome in _WATER_EDGE_BIOMES:
                         pool = _FLOAT_POOL.get(biodome, _FLOAT_DEFAULT)
-                        chunk[sy - 1][lx] = water_rng.choice(pool)
+                        self.set_bg_block(x, sy - 1, water_rng.choice(pool))
                 continue
-            if chunk[sy][lx] != GRASS or chunk[sy - 1][lx] != AIR:
+            if chunk[sy][lx] != GRASS:
                 continue
             # Check for water within 3 tiles horizontally at same surface level
             water_adj = any(
@@ -849,7 +849,7 @@ class World:
             if biodome not in _WATER_EDGE_BIOMES:
                 continue
             pool = _EDGE_POOL.get(biodome, _EDGE_DEFAULT)
-            chunk[sy - 1][lx] = water_rng.choice(pool)
+            self.set_bg_block(x, sy - 1, water_rng.choice(pool))
 
         # Desert surface flora — spawns on SAND in desert/arid biomes
         desert_rng = random.Random(hash((self.seed, cx, 'desert')) & 0x7FFFFFFF)
@@ -2513,7 +2513,7 @@ class World:
                 self.dropped_items.append(DroppedItem(wx, wy, "sapling", 1))
 
     def _spawn_animals(self):
-        from animals import Sheep, Cow, Chicken, SnowLeopard, MountainLion
+        from animals import Sheep, Cow, Chicken, SnowLeopard, MountainLion, Tiger
         rng = random.Random(self.seed + 12345)
         for cx in sorted(self._chunks.keys()):
             chunk = self._chunks[cx]
@@ -2551,6 +2551,10 @@ class World:
                         ax = x * BLOCK_SIZE + (BLOCK_SIZE - MountainLion.ANIMAL_W) // 2
                         ay = sy * BLOCK_SIZE - MountainLion.ANIMAL_H
                         self.entities.append(MountainLion(ax, ay, self))
+                    elif surf == GRASS and biodome == "jungle" and cat_rng.random() < 0.04:
+                        ax = x * BLOCK_SIZE + (BLOCK_SIZE - Tiger.ANIMAL_W) // 2
+                        ay = sy * BLOCK_SIZE - Tiger.ANIMAL_H
+                        self.entities.append(Tiger(ax, ay, self))
                 x += cat_rng.randint(25, 55)
 
         # Horses — biome-specific herds of 2-4
@@ -2569,8 +2573,8 @@ class World:
                         and chunk[sy][lx] == GRASS
                         and chunk[sy - 1][lx] == AIR
                         and biodome in HORSE_BIOMES
-                        and horse_rng.random() < 0.08):
-                    herd_size = horse_rng.randint(2, 4)
+                        and horse_rng.random() < 0.12):
+                    herd_size = horse_rng.randint(2, 5)
                     alpha = None
                     for _ in range(herd_size):
                         hx_off = horse_rng.randint(-3, 3)
@@ -2609,9 +2613,9 @@ class World:
                     and chunk[sy][lx] == GRASS
                     and chunk[sy - 1][lx] == AIR
                     and eligible_breeds
-                    and dog_rng.random() < 0.06):
+                    and dog_rng.random() < 0.22):
                 breed = dog_rng.choice(eligible_breeds)
-                pack_size = dog_rng.randint(2, 3)
+                pack_size = dog_rng.randint(2, 4)
                 alpha = None
                 for _ in range(pack_size):
                     dx_off = dog_rng.randint(-3, 3)
@@ -2625,7 +2629,7 @@ class World:
                     else:
                         _blend_to_pack_template(dog, alpha)
                     self.entities.append(dog)
-                x += 50
+                x += 28
                 continue
             x += dog_rng.randint(8, 16)
 
@@ -2691,7 +2695,10 @@ class World:
                 if len(self.birds) >= max_birds:
                     return
                 biodome = self.biodome_at(x)
-                candidates = [cls for cls in ALL_SPECIES if not cls.BIOMES or biodome in cls.BIOMES]
+                is_night = self.time_of_day >= DAY_DURATION
+                candidates = [cls for cls in ALL_SPECIES
+                              if (not cls.BIOMES or biodome in cls.BIOMES)
+                              and (not getattr(cls, 'NOCTURNAL', False) or is_night)]
                 if not candidates:
                     candidates = COMMON_SPECIES
                 if not candidates:
@@ -2735,7 +2742,7 @@ class World:
                 x += rng.randint(spacing, spacing * 2)
 
     def _spawn_animals_for_chunk(self, cx: int):
-        from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion
+        from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion, Tiger
         chunk = self._chunks.get(cx)
         if chunk is None:
             return
@@ -2775,6 +2782,10 @@ class World:
                     ax = x * BLOCK_SIZE + (BLOCK_SIZE - MountainLion.ANIMAL_W) // 2
                     ay = sy * BLOCK_SIZE - MountainLion.ANIMAL_H
                     self.entities.append(MountainLion(ax, ay, self))
+                elif surf == GRASS and biodome == "jungle" and cat_rng.random() < 0.04:
+                    ax = x * BLOCK_SIZE + (BLOCK_SIZE - Tiger.ANIMAL_W) // 2
+                    ay = sy * BLOCK_SIZE - Tiger.ANIMAL_H
+                    self.entities.append(Tiger(ax, ay, self))
             x += cat_rng.randint(25, 55)
 
         from horses import Horse, HORSE_BIOMES
@@ -2788,8 +2799,8 @@ class World:
                     and chunk[sy][lx] == GRASS
                     and chunk[sy - 1][lx] == AIR
                     and biodome in HORSE_BIOMES
-                    and horse_rng.random() < 0.08):
-                herd_size = horse_rng.randint(2, 4)
+                    and horse_rng.random() < 0.12):
+                herd_size = horse_rng.randint(2, 5)
                 for _ in range(herd_size):
                     hx_off = horse_rng.randint(-3, 3)
                     hx_bx = max(base_x, min(base_x + CHUNK_W - 1, x + hx_off))
@@ -2853,7 +2864,10 @@ class World:
         x = base_x + 2
         while x < base_x + CHUNK_W - 2:
             biodome = self.biodome_at(x)
-            candidates = [cls for cls in ALL_SPECIES if not cls.BIOMES or biodome in cls.BIOMES]
+            is_night = self.time_of_day >= DAY_DURATION
+            candidates = [cls for cls in ALL_SPECIES
+                          if (not cls.BIOMES or biodome in cls.BIOMES)
+                          and (not getattr(cls, 'NOCTURNAL', False) or is_night)]
             if not candidates:
                 candidates = COMMON_SPECIES
             if not candidates:

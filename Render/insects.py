@@ -8,7 +8,7 @@ from constants import SCREEN_W, SCREEN_H
 
 def draw_insects(screen, cam_x, cam_y, insects, night_alpha=0):
     for ins in insects:
-        if ins.spooked:
+        if ins.spooked or ins.hidden:
             continue
         if ins.NIGHT_ONLY and night_alpha < 30:
             continue

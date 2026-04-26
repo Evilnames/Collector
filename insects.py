@@ -4,6 +4,9 @@ from constants import BLOCK_SIZE
 
 SPOOK_SPEED_THRESHOLD = 0.8   # px/frame — player vx above this counts as moving
 SPOOK_RADIUS_BLOCKS   = 3     # blocks (tighter than birds)
+FLEE_DURATION         = 2.5   # seconds spent flying before hiding
+RETURN_DELAY_MIN      = 15.0  # seconds hidden before returning
+RETURN_DELAY_MAX      = 30.0
 
 
 class Insect:
@@ -28,6 +31,9 @@ class Insect:
         self.vy = 0.0
         self.world    = world
         self.spooked  = False
+        self.hidden   = False
+        self._flee_timer   = 0.0   # counts up while fleeing
+        self._return_timer = 0.0   # counts down while hidden
 
         self._hover_phase = random.uniform(0, math.pi * 2)
         self._drift_timer = random.uniform(1.0, 3.0)
@@ -36,14 +42,32 @@ class Insect:
 
     def spook(self):
         self.spooked = True
-        self.vx = random.choice([-1, 1]) * self.SPEED * 3
-        self.vy = -self.SPEED * 2
+        self.hidden  = False
+        self._flee_timer = 0.0
+        self.vx = random.choice([-1, 1]) * self.SPEED * 1.5
+        self.vy = -self.SPEED * 3   # fly high
 
     def update(self, dt):
         self._hover_phase += dt * 4.0
+
+        if self.hidden:
+            self._return_timer -= dt
+            if self._return_timer <= 0:
+                self.hidden  = False
+                self.spooked = False
+                self.vx = 0.0
+                self.vy = 0.0
+                self.x = self._spawn_x + random.uniform(-24, 24)
+                self.y = self._spawn_y + random.uniform(-12, 12)
+            return
+
         if self.spooked:
             self.x += self.vx * dt
             self.y += self.vy * dt
+            self._flee_timer += dt
+            if self._flee_timer >= FLEE_DURATION:
+                self.hidden = True
+                self._return_timer = random.uniform(RETURN_DELAY_MIN, RETURN_DELAY_MAX)
             return
 
         player = getattr(self.world, '_player_ref', None)
@@ -2379,6 +2403,186 @@ class TropicalMantis(Insect):
 
 
 # ---------------------------------------------------------------------------
+# Night insects (NIGHT_ONLY = True)
+# ---------------------------------------------------------------------------
+
+# -- Nocturnal moths --
+
+class GhostMoth(Insect):
+    SPECIES      = "ghost_moth"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "boreal", "birch_forest"]
+    W, H         = 16, 10
+    BODY_COLOR   = (235, 230, 220)
+    WING_COLOR   = (245, 242, 238)
+    ACCENT_COLOR = (208, 200, 185)
+    HOVER_RANGE  = 70
+    SPEED        = 22.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class CometMoth(Insect):
+    SPECIES      = "comet_moth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 17, 11
+    BODY_COLOR   = (155, 125, 40)
+    WING_COLOR   = (235, 195, 55)
+    ACCENT_COLOR = (195, 65, 35)
+    HOVER_RANGE  = 65
+    SPEED        = 20.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class VampireMoth(Insect):
+    SPECIES      = "vampire_moth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 9
+    BODY_COLOR   = (65, 42, 28)
+    WING_COLOR   = (88, 58, 38)
+    ACCENT_COLOR = (145, 48, 35)
+    HOVER_RANGE  = 55
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class BogongMoth(Insect):
+    SPECIES      = "bogong_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["alpine_mountain", "steppe"]
+    W, H         = 13, 8
+    BODY_COLOR   = (68, 58, 48)
+    WING_COLOR   = (88, 75, 62)
+    ACCENT_COLOR = (118, 105, 88)
+    HOVER_RANGE  = 60
+    SPEED        = 26.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class UnderwingMoth(Insect):
+    SPECIES      = "underwing_moth"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "boreal", "rolling_hills"]
+    W, H         = 14, 8
+    BODY_COLOR   = (88, 80, 68)
+    WING_COLOR   = (108, 98, 85)
+    ACCENT_COLOR = (195, 45, 35)
+    HOVER_RANGE  = 60
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+# -- Bioluminescent --
+
+class RailroadWorm(Insect):
+    SPECIES      = "railroad_worm"
+    RARITY       = "rare"
+    BIOMES       = ["wetland", "jungle", "swamp"]
+    W, H         = 10, 5
+    BODY_COLOR   = (28, 32, 18)
+    WING_COLOR   = (38, 42, 25)
+    ACCENT_COLOR = (45, 220, 45)
+    HOVER_RANGE  = 30
+    SPEED        = 18.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class AsianFirefly(Insect):
+    SPECIES      = "asian_firefly"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "east_asian", "tropical"]
+    W, H         = 7, 5
+    BODY_COLOR   = (25, 28, 15)
+    WING_COLOR   = (42, 48, 28)
+    ACCENT_COLOR = (205, 255, 70)
+    HOVER_RANGE  = 45
+    SPEED        = 20.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+# -- Nocturnal beetles --
+
+class NocturnalGroundBeetle(Insect):
+    SPECIES      = "nocturnal_ground_beetle"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills", "wasteland"]
+    W, H         = 12, 7
+    BODY_COLOR   = (18, 15, 20)
+    WING_COLOR   = (28, 25, 32)
+    ACCENT_COLOR = (55, 48, 62)
+    HOVER_RANGE  = 35
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+    NIGHT_ONLY   = True
+
+
+# -- Nocturnal crickets and cockroaches --
+
+class CaveCricket(Insect):
+    SPECIES      = "cave_cricket"
+    RARITY       = "uncommon"
+    BIOMES       = ["canyon", "rocky_mountain"]
+    W, H         = 13, 7
+    BODY_COLOR   = (195, 168, 128)
+    WING_COLOR   = (178, 152, 112)
+    ACCENT_COLOR = (215, 195, 158)
+    HOVER_RANGE  = 45
+    SPEED        = 26.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class JungleCricket(Insect):
+    SPECIES      = "jungle_cricket"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 6
+    BODY_COLOR   = (55, 118, 42)
+    WING_COLOR   = (72, 148, 58)
+    ACCENT_COLOR = (95, 178, 75)
+    HOVER_RANGE  = 48
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class MadagascarHissingCockroach(Insect):
+    SPECIES      = "madagascar_hissing_cockroach"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 15, 8
+    BODY_COLOR   = (88, 52, 22)
+    WING_COLOR   = (108, 68, 32)
+    ACCENT_COLOR = (128, 88, 48)
+    HOVER_RANGE  = 38
+    SPEED        = 30.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class TropicalCockroach(Insect):
+    SPECIES      = "tropical_cockroach"
+    RARITY       = "uncommon"
+    BIOMES       = ["tropical", "fungal"]
+    W, H         = 11, 6
+    BODY_COLOR   = (115, 55, 25)
+    WING_COLOR   = (138, 72, 35)
+    ACCENT_COLOR = (162, 95, 52)
+    HOVER_RANGE  = 40
+    SPEED        = 32.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 
@@ -2448,6 +2652,11 @@ ALL_INSECT_SPECIES = [
     IndianWalkingStick, GiantAfricanMantis, PrairieLocust, TundraBumblebee,
     CarpenterBee, JungleAssassinBug, GiantWeta, AfricanMoleCricket,
     ArcticBumblebee, TropicalMantis,
+    # Night insects
+    GhostMoth, CometMoth, VampireMoth, BogongMoth, UnderwingMoth,
+    RailroadWorm, AsianFirefly,
+    NocturnalGroundBeetle,
+    CaveCricket, JungleCricket, MadagascarHissingCockroach, TropicalCockroach,
 ]
 
 INSECT_SPECIES_BY_ID = {cls.SPECIES: cls for cls in ALL_INSECT_SPECIES}

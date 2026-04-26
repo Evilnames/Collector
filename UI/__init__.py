@@ -28,13 +28,14 @@ from .salt import SaltMixin
 from .town_menu import TownMenuMixin
 from .reputation_screen import ReputationScreenMixin
 from .dogs_ui import DogsMixin
+from .weapons import SmithingMixin
 
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
     CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, MinigamesMixin, CollectionsMixin,
     HelpMixin, HorseMixin, DogsMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin,
-    TownMenuMixin, ReputationScreenMixin,
+    TownMenuMixin, ReputationScreenMixin, SmithingMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -798,6 +799,31 @@ class UI(
         self._salt_codex_selected     = None
         self._salt_codex_rects        = {}
 
+        # ----- Smithing / Forge mini-game state -----
+        self._smith_phase        = "idle"   # idle|select|heating|hammering|quench|part_complete|assemble
+        self._smith_type         = None     # weapon type key
+        self._smith_material     = None     # material key
+        self._smith_temperature  = 0.0     # 0–100
+        self._smith_grid         = []       # 16×10 2D list of cell states
+        self._smith_target       = []       # 16×10 bool (target shape)
+        self._smith_cell_rects   = {}       # (r, c) → Rect
+        self._smith_drag_mode    = None
+        self._smith_hover_cell   = None
+        self._smith_mistakes     = 0
+        self._smith_part_quality = []       # [float] completed part qualities
+        self._smith_pending_uid  = None     # UID of in-progress weapon
+        self._smith_type_rects   = {}
+        self._smith_mat_rects    = {}
+        # Weapon rack panel
+        self._rack_scroll        = 0
+        self._rack_weapon_rects  = {}
+        self._rack_equip_btn_rects = {}
+        # Weapon Armorer NPC panel
+        self._armorer_sell_rects = {}
+        self._armorer_scroll     = 0
+        # Garrison Commander NPC panel
+        self._garrison_quest_rects = {}
+
 
     def draw(self, player, research=None, dt=0.0):
         self._research = research   # store so click handlers can access it
@@ -876,4 +902,5 @@ class UI(
             self._draw_wardrobe(player)
         if self._jw_detail_jewelry is not None:
             self._draw_jewelry_detail(player)
+        self.draw_smith_hud(player)
 

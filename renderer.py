@@ -16381,6 +16381,8 @@ class Renderer:
                 self._draw_snow_leopard(sx, sy, e)
             elif e.animal_id == "mountain_lion":
                 self._draw_mountain_lion(sx, sy, e)
+            elif e.animal_id == "tiger":
+                self._draw_tiger(sx, sy, e)
             elif e.animal_id == "horse":
                 self._draw_horse(sx, sy, e)
             elif e.animal_id == "dog":
@@ -16391,6 +16393,10 @@ class Renderer:
                 self._draw_npc_royal_florist(sx, sy, e)
             elif e.animal_id == "npc_royal_jeweler":
                 self._draw_npc_royal_jeweler(sx, sy, e)
+            elif e.animal_id == "npc_royal_paleontologist":
+                self._draw_npc_royal_paleontologist(sx, sy, e)
+            elif e.animal_id == "npc_royal_angler":
+                self._draw_npc_royal_angler(sx, sy, e)
             elif e.animal_id == "npc_quest":
                 self._draw_npc_quest(sx, sy, e)
             elif e.animal_id == "npc_trade":
@@ -17330,6 +17336,44 @@ class Renderer:
         pygame.draw.polygon(self.screen, (160, 220, 255),
                             [(cx, cy - 4), (cx + 3, cy - 1), (cx, cy + 2), (cx - 3, cy - 1)])
 
+    def _draw_npc_royal_paleontologist(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        c = getattr(npc, 'clothing', {})
+        skin = c.get('skin', (255, 215, 160))
+        # Earthy tan robes with gold trim — field scholar meets royal court
+        pygame.draw.rect(self.screen, (165, 130, 75), (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, (220, 175, 40), (sx, sy + 13 + bob, 20, 3))
+        pygame.draw.rect(self.screen, (220, 175, 40), (sx + 8, sy + bob, 4, 13))
+        # Head
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+        # Crown with bone/fossil accent
+        cx, cy = sx + 10, sy - 22 + bob
+        pygame.draw.polygon(self.screen, (220, 175, 40),
+                            [(cx - 5, cy + 4), (cx - 5, cy), (cx - 2, cy - 3),
+                             (cx, cy + 1), (cx + 2, cy - 3), (cx + 5, cy), (cx + 5, cy + 4)])
+        pygame.draw.rect(self.screen, (235, 225, 200), (cx - 1, cy - 1, 2, 3))
+
+    def _draw_npc_royal_angler(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        c = getattr(npc, 'clothing', {})
+        skin = c.get('skin', (255, 215, 160))
+        # Deep teal robes with gold trim — maritime royal
+        pygame.draw.rect(self.screen, (25, 90, 110), (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, (220, 175, 40), (sx, sy + 13 + bob, 20, 3))
+        pygame.draw.rect(self.screen, (60, 180, 200), (sx + 7, sy + bob, 6, 13))
+        # Head
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+        # Crown with fish-scale accent
+        cx, cy = sx + 10, sy - 22 + bob
+        pygame.draw.polygon(self.screen, (220, 175, 40),
+                            [(cx - 5, cy + 4), (cx - 5, cy), (cx - 2, cy - 3),
+                             (cx, cy + 1), (cx + 2, cy - 3), (cx + 5, cy), (cx + 5, cy + 4)])
+        pygame.draw.ellipse(self.screen, (80, 200, 220), (cx - 2, cy - 2, 4, 3))
+
     def _draw_npc_merchant(self, sx, sy, npc):
         bob = int(npc._bob_offset)
         c = getattr(npc, 'clothing', {})
@@ -17766,6 +17810,75 @@ class Renderer:
             pygame.draw.rect(self.screen, dorje,           (sx - 4, sy - 16 + bob, 6,  3))
             for di in (sx - 3, sx - 1, sx + 1):
                 pygame.draw.rect(self.screen, dorje, (di, sy - 19 + bob, 2, 4))
+
+        elif ptype in ("chinese", "tang_imperial", "song_palace", "han_palace"):
+            # Chinese emperor: imperial yellow dragon robes, crimson collar, mianfu crown with hanging beads
+            imperial = (230, 185, 30)   # imperial yellow
+            crimson  = (180, 35, 35)
+            jade     = (60, 160, 100)
+            # wide outer robe
+            pygame.draw.rect(self.screen, imperial, (sx,      sy + bob,       20, 20))
+            # broad hanging sleeves
+            pygame.draw.rect(self.screen, imperial, (sx - 5,  sy + 2 + bob,    7, 12))
+            pygame.draw.rect(self.screen, imperial, (sx + 18, sy + 2 + bob,    7, 12))
+            # crimson collar band down centre
+            pygame.draw.rect(self.screen, crimson,  (sx + 8,  sy + bob,        4, 20))
+            # gold horizontal bands (cloud rank marks)
+            pygame.draw.rect(self.screen, _gold(),  (sx,      sy + 5 + bob,   20,  2))
+            pygame.draw.rect(self.screen, _gold(),  (sx,      sy + 13 + bob,  20,  2))
+            # dragon motif: simplified X on chest
+            pygame.draw.rect(self.screen, crimson,  (sx + 4,  sy + 7 + bob,   12,  2))
+            pygame.draw.rect(self.screen, crimson,  (sx + 9,  sy + 4 + bob,    2,  8))
+            _head(skin=(240, 200, 150), beard=False)
+            # 冕旒 crown: flat rectangular board on top, jade bead strings
+            crown_y = sy - 26 + bob
+            board_col = (20, 18, 15)
+            pygame.draw.rect(self.screen, board_col, (sx,      crown_y,       20,  3))   # flat board
+            pygame.draw.rect(self.screen, board_col, (sx + 2,  crown_y + 3,   16,  7))   # headband
+            pygame.draw.rect(self.screen, _gold(),   (sx + 2,  crown_y + 3,   16,  2))   # gold band
+            # jade bead strings hanging from board front and back
+            for bx in (sx + 1, sx + 4, sx + 7, sx + 10, sx + 13, sx + 16, sx + 19):
+                for by in range(crown_y + 1, crown_y + 3, 1):
+                    pygame.draw.rect(self.screen, jade, (bx, by, 1, 1))
+            # jade marker dots on band
+            for mx in (sx + 5, sx + 10, sx + 15):
+                pygame.draw.rect(self.screen, jade, (mx, crown_y + 4, 2, 2))
+            # ruyi sceptre
+            pygame.draw.rect(self.screen, (140, 110, 45), (sx + 21, sy - 14 + bob, 2, 30))
+            pygame.draw.rect(self.screen, jade,            (sx + 19, sy - 18 + bob, 6,  5))
+            pygame.draw.rect(self.screen, jade,            (sx + 19, sy - 16 + bob, 3,  3))
+
+        elif ptype == "japanese":
+            # Japanese lord: dark formal kimono (koshimaki), gold family crest mon, lacquered kabuto helmet
+            kimono = _dim(lc, 0.65)
+            ivory  = (235, 225, 200)
+            # outer kimono body
+            pygame.draw.rect(self.screen, kimono, (sx + 1, sy + bob,       18, 20))
+            # wide lapel V from shoulders
+            pygame.draw.rect(self.screen, ivory,  (sx + 3, sy + bob,        5, 12))
+            pygame.draw.rect(self.screen, ivory,  (sx + 12, sy + bob,       5, 12))
+            pygame.draw.rect(self.screen, ivory,  (sx + 6,  sy + bob,       8,  5))
+            # hakama lower half
+            pygame.draw.rect(self.screen, (35, 30, 45), (sx + 1, sy + 12 + bob, 18, 8))
+            # gold mon (family crest circle) on chest
+            pygame.draw.circle(self.screen, _gold(), (sx + 10, sy + 7 + bob), 4)
+            pygame.draw.circle(self.screen, kimono,  (sx + 10, sy + 7 + bob), 2)
+            _head(skin=(240, 200, 155))
+            # lacquered kabuto helmet
+            crown_y  = sy - 25 + bob
+            helm_col = (30, 25, 30)
+            pygame.draw.rect(self.screen, helm_col, (sx + 2, crown_y + 4,  16, 9))    # bowl
+            pygame.draw.rect(self.screen, helm_col, (sx + 1, crown_y + 11, 18, 3))    # shikoro brim
+            pygame.draw.rect(self.screen, _gold(),   (sx + 2, crown_y + 4,  16, 2))   # mabizashi brim
+            pygame.draw.rect(self.screen, helm_col, (sx + 7, crown_y,       6, 6))    # top peak
+            # kuwagata (crescent ornament) on front
+            pygame.draw.rect(self.screen, _gold(), (sx + 6,  crown_y - 2, 2, 5))
+            pygame.draw.rect(self.screen, _gold(), (sx + 12, crown_y - 2, 2, 5))
+            pygame.draw.rect(self.screen, _gold(), (sx + 8,  crown_y - 3, 4, 2))
+            # katana hilt at side
+            pygame.draw.rect(self.screen, (80, 60, 40),  (sx + 21, sy - 10 + bob, 2, 28))
+            pygame.draw.rect(self.screen, (200, 185, 95), (sx + 21, sy - 14 + bob, 2,  6))
+            pygame.draw.rect(self.screen, _gold(),         (sx + 19, sy - 11 + bob, 6,  2))
 
         else:
             # castle: ermine collar, European robe, pointed crown, sceptre
@@ -18466,6 +18579,67 @@ class Renderer:
         ear_w, ear_h = max(2, int(3 * s)), max(2, int(4 * s))
         pygame.draw.rect(self.screen, leg_c, (hx + max(0, int(1 * s)), hy - ear_h, ear_w, ear_h))
         pygame.draw.rect(self.screen, leg_c, (hx + head_w - ear_w - max(0, int(1 * s)), hy - ear_h, ear_w, ear_h))
+
+        # Eye
+        eye_x = (hx + head_w - max(2, int(4 * s))) if cat.facing == 1 else (hx + max(1, int(2 * s)))
+        pygame.draw.rect(self.screen, eye_c, (eye_x, hy + max(2, int(4 * s)), 2, 2))
+
+    def _draw_tiger(self, sx, sy, cat):
+        W, H = cat.W, cat.H
+        s = cat.traits.get("size", 1.0)
+        shift = cat.traits.get("color_shift", (0, 0, 0))
+        body_h = int(15 * s)
+        leg_h = H - body_h
+        leg_y = sy + body_h
+
+        fur      = _tinted((210, 120, 40),  shift)
+        stripe   = _tinted((35,  25,  10),  shift)
+        belly    = _tinted((230, 195, 155), shift)
+        leg_c    = _tinted((190, 105, 35),  shift)
+        eye_c    = (210, 175, 30)
+
+        # Tail
+        tail_len = int(14 * s)
+        tail_tip_len = int(5 * s)
+        tail_w = max(2, int(3 * s))
+        tail_y = sy + int(5 * s)
+        if cat.facing == 1:
+            pygame.draw.rect(self.screen, fur,    (sx - tail_len, tail_y, tail_len, tail_w))
+            pygame.draw.rect(self.screen, stripe, (sx - tail_tip_len, tail_y, tail_tip_len, tail_w))
+        else:
+            tx = sx + W
+            pygame.draw.rect(self.screen, fur,    (tx, tail_y, tail_len, tail_w))
+            pygame.draw.rect(self.screen, stripe, (tx + tail_len - tail_tip_len, tail_y, tail_tip_len, tail_w))
+
+        # Legs
+        for lx_off in [int(4 * s), int(12 * s), int(27 * s), int(35 * s)]:
+            pygame.draw.rect(self.screen, leg_c, (sx + lx_off, leg_y, max(2, int(4 * s)), leg_h))
+
+        # Body
+        pygame.draw.rect(self.screen, fur, (sx, sy, W, body_h))
+        # Belly stripe
+        belly_w = int(20 * s)
+        pygame.draw.rect(self.screen, belly, (sx + (W - belly_w) // 2, sy + int(7 * s), belly_w, int(5 * s)))
+        # Stripes (4 vertical bands across body)
+        for bx_off in [int(6 * s), int(14 * s), int(23 * s), int(31 * s)]:
+            pygame.draw.rect(self.screen, stripe, (sx + bx_off, sy, max(2, int(3 * s)), body_h))
+
+        # Head
+        head_w, head_h = int(13 * s), int(15 * s)
+        hx = (sx + W - max(1, int(3 * s))) if cat.facing == 1 else (sx - head_w + max(1, int(3 * s)))
+        hy = sy - max(1, int(3 * s))
+        pygame.draw.rect(self.screen, fur, (hx, hy, head_w, head_h))
+        # Face stripe
+        pygame.draw.rect(self.screen, stripe, (hx + head_w // 2 - 1, hy, max(2, int(2 * s)), int(5 * s)))
+        # Muzzle
+        muzzle_w, muzzle_h = max(3, int(6 * s)), max(2, int(5 * s))
+        muzzle_x = (hx + head_w - muzzle_w) if cat.facing == 1 else hx
+        pygame.draw.rect(self.screen, belly, (muzzle_x, hy + int(8 * s), muzzle_w, muzzle_h))
+
+        # Ears
+        ear_w, ear_h = max(2, int(4 * s)), max(2, int(4 * s))
+        pygame.draw.rect(self.screen, stripe, (hx + max(0, int(1 * s)), hy - ear_h, ear_w, ear_h))
+        pygame.draw.rect(self.screen, stripe, (hx + head_w - ear_w - max(0, int(1 * s)), hy - ear_h, ear_w, ear_h))
 
         # Eye
         eye_x = (hx + head_w - max(2, int(4 * s))) if cat.facing == 1 else (hx + max(1, int(2 * s)))

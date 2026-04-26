@@ -698,6 +698,17 @@ def main():
                 if ui.refinery_open and ui.refinery_block_id == _EVAP_PAN:
                     ui.handle_evap_pan_keydown(event.key, player)
 
+                # Forge: SPACE=bellows, ENTER=finish part, ESC=back/close
+                from blocks import FORGE_BLOCK as _FORGE_BLOCK
+                if ui.refinery_open and ui.refinery_block_id == _FORGE_BLOCK:
+                    ui.handle_forge_keydown(event.key, player)
+
+                # Weapon Rack: ESC to close
+                from blocks import WEAPON_RACK_BLOCK as _WEAPON_RACK_BLOCK
+                if ui.refinery_open and ui.refinery_block_id == _WEAPON_RACK_BLOCK:
+                    if event.key == pygame.K_ESCAPE:
+                        ui.refinery_open = False
+
                 # Wardrobe toggle (T = Textiles/Tailoring)
                 if event.key == pygame.K_t:
                     if ui.wardrobe_open:
@@ -1206,6 +1217,25 @@ def main():
                     # Bow firing — left-click with bow equipped fires an arrow
                     if event.button == 1 and not player.dead:
                         player.fire_arrow()
+                    # Melee attack — left-click with weapon equipped (no UI open)
+                    if event.button == 1 and not player.dead and player.equipped_weapon_uid and not _any_ui_open():
+                        from animals import HuntableAnimal
+                        px_c = int(player.x + player.W / 2)
+                        py_c = int(player.y + player.H / 2)
+                        melee_rect = pygame.Rect(px_c - 48, py_c - 32, 96, 64)
+                        for entity in world.entities:
+                            if isinstance(entity, HuntableAnimal) and not entity.dead:
+                                if melee_rect.colliderect(entity.rect):
+                                    drops = player.try_melee_attack(entity)
+                                    if drops is not None:
+                                        animal_id = entity.animal_id
+                                        player.animals_hunted[animal_id] = player.animals_hunted.get(animal_id, 0) + 1
+                                        player.pending_notifications.append(
+                                            ("Hunting", f"{animal_id.title()} struck", None))
+                                        if drops:
+                                            for item_id, count in drops:
+                                                player._add_item(item_id, count)
+                                    break
                     # Sculptor right-click: restore stone in carve phase
                     if event.button == 3 and ui.refinery_open:
                         from blocks import SCULPTORS_BENCH as _SCULPTORS_BENCH_R
@@ -1267,6 +1297,13 @@ def main():
             ui.handle_evap_pan_keys(keys, dt, player)
         if ui.refinery_open and ui.refinery_block_id == _PWB_PF and ui._wheel_phase == "shaping":
             ui._handle_pottery_wheel_drag(mouse_scr_pos, mouse_btns)
+
+        # Forge: per-frame held key (SPACE for bellows) + hammer drag + temperature drain
+        from blocks import FORGE_BLOCK as _FORGE_PF
+        if ui.refinery_open and ui.refinery_block_id == _FORGE_PF:
+            ui.handle_forge_keys(keys, dt, player)
+            ui.smith_update_drag(mouse_scr_pos, mouse_btns)
+        ui.smith_update(dt, player)
 
         if ui.pause_open:
             renderer.draw_world(world, player)
@@ -1400,9 +1437,6 @@ def main():
             bird.update(dt)
         for ins in world.insects:
             ins.update(dt)
-        # Prune off-screen spooked insects
-        world.insects = [i for i in world.insects
-                         if not i.spooked or abs(i.x - player.x) < 2000]
         # Bird observation mini-game tick
         if ui._bird_obs_active and ui._bird_obs_bird is not None:
             bird = ui._bird_obs_bird

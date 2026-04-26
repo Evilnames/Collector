@@ -40,7 +40,7 @@ def _noop(player, world):
 
 
 class ResearchTree:
-    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship", "Tea Cultivation", "Herbalism", "Textile Arts", "Dairy Arts", "Hunting", "Jewelry Arts", "Garden Arts", "Masonry Arts", "Ceramics", "Cynology"]
+    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship", "Tea Cultivation", "Herbalism", "Textile Arts", "Dairy Arts", "Hunting", "Jewelry Arts", "Garden Arts", "Masonry Arts", "Ceramics", "Cynology", "Smithing Arts"]
 
     def __init__(self):
         self.nodes = {}    # id -> ResearchNode
@@ -92,6 +92,10 @@ class ResearchTree:
         player.dog_ability_chance   = 0.15 if u("advanced_genetics") else 0.0
         player.kennel_capacity      = 6    if u("kennel_mastery")    else 4
         player.pure_breed_bonus     = u("pure_breeding")
+
+        # Smithing Arts bonuses
+        player.smith_quality_bonus  = 0.10 if u("master_smithing") else 0.0
+
         if world is not None:
             # irrigation: moisture decays half as fast
             world.moisture_decay_chance = (
@@ -622,6 +626,31 @@ class ResearchTree:
             "Unlock gem dust glazing at the kiln — glazed pieces gain a quality tier and extend buff durations by 50%",
             {"clay": 8, "ruby": 1}, ["kiln_mastery"],
             _noop, money_cost=50), 17, 2)
+
+        # --- Smithing Arts (column 19) ---
+        self._add(ResearchNode(
+            "basic_smithing", "Smithing Basics",
+            "Unlock the Forge and Weapon Rack — forge iron weapon parts and assemble iron weapons",
+            {"iron_bar": 4, "coal": 3}, [],
+            _noop, money_cost=30), 19, 0)
+
+        self._add(ResearchNode(
+            "steel_forging", "Steel Forging",
+            "Unlock steel ingot production at the Forge — iron + coal yields harder, stronger steel",
+            {"iron_bar": 6, "coal": 4}, ["basic_smithing"],
+            _noop, money_cost=50), 19, 1)
+
+        self._add(ResearchNode(
+            "gold_smithing", "Gold Smithing",
+            "Unlock gold weapon parts — gold weapons hit faster with a damage bonus",
+            {"gold_ingot": 3, "coal": 2}, ["basic_smithing"],
+            _noop, money_cost=70), 19, 2)
+
+        self._add(ResearchNode(
+            "master_smithing", "Master Smith",
+            "All forged weapon parts receive a +0.10 quality bonus automatically",
+            {"steel_ingot": 2, "iron_bar": 4}, ["steel_forging"],
+            _noop, money_cost=100), 19, 3)
 
     def prereqs_met(self, node_id):
         return all(self.nodes[p].unlocked for p in self.nodes[node_id].prerequisites)

@@ -732,6 +732,13 @@ class CraftingMixin:
         if self.refinery_block_id == COMPOST_BIN_BLOCK:
             self._draw_compost_bin(player)
             return
+        from blocks import FORGE_BLOCK, WEAPON_RACK_BLOCK
+        if self.refinery_block_id == FORGE_BLOCK:
+            self._draw_forge(player, dt)
+            return
+        if self.refinery_block_id == WEAPON_RACK_BLOCK:
+            self._draw_weapon_rack(player)
+            return
         from blocks import SCULPTORS_BENCH, TAPESTRY_FRAME_BLOCK
         if self.refinery_block_id == SCULPTORS_BENCH:
             self._draw_sculptor_bench(player, dt)

@@ -223,10 +223,28 @@ PREFERRED_BONUS_MULT = 1.5   # gold multiplier for delivering the preferred vari
 REP_PER_NEED_FILLED    = 10   # basic supply categories
 REP_PER_LUXURY_FILLED  = 25   # luxury craft categories (fully satisfying one)
 
+# ── Military supply (only assigned to military-type towns) ───────────────────
+
+MILITARY_CATEGORIES = {
+    "weapons": [
+        "wood_bow", "recurve_bow", "composite_bow", "longbow", "crossbow",
+        "wood_arrow", "bone_arrow", "flint_arrow", "iron_arrow",
+        "barbed_arrow", "broadhead_arrow", "poison_arrow", "gold_arrow",
+    ],
+}
+
+CATEGORY_DISPLAY["weapons"]  = "* Weapons"
+CATEGORY_COLOR["weapons"]    = (180, 130,  90)
+GOLD_PER_UNIT["weapons"]     = 18
+
+BASE_NEED_AMOUNT_MILITARY = {
+    "weapons": 20,
+}
+
 # ── Reverse maps: item_id → category ────────────────────────────────────────
 
 ITEM_TO_CATEGORY: dict[str, str] = {
     item: cat
-    for cat, items in {**TOWN_CATEGORIES, **LUXURY_CATEGORIES}.items()
+    for cat, items in {**TOWN_CATEGORIES, **LUXURY_CATEGORIES, **MILITARY_CATEGORIES}.items()
     for item in items
 }

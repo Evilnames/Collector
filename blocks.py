@@ -540,6 +540,8 @@ POTTING_TABLE       = 1019 # wooden potting table with tools hanging above
 COMPOST_HEAP        = 1020 # open compost heap with layered organic matter
 GARDEN_TOAD_HOUSE   = 1021 # ceramic arch toad shelter with painted door
 TRADE_BLOCK         = 1022 # Trade Post: assign horse+cart, link to city, auto-deliver goods
+FORGE_BLOCK         = 1023 # Smithing station — heat metal and hammer weapon parts
+WEAPON_RACK_BLOCK   = 1024 # Weapon rack — equip and browse crafted weapons
 
 
 SAFFRON_DOOR_CLOSED      = 860  # warm golden-yellow with dark carved panels
@@ -1312,7 +1314,8 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     SCULPTORS_BENCH,
                     TAPESTRY_FRAME_BLOCK,
                     JUICER_BLOCK,
-                    KENNEL_BLOCK, DOG_BOWL_BLOCK}
+                    KENNEL_BLOCK, DOG_BOWL_BLOCK,
+                    FORGE_BLOCK, WEAPON_RACK_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT}
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
@@ -1580,6 +1583,7 @@ CROSS_LANTERN                = 1110  # cross-pane iron lantern
 STAR_LAMP                    = 1111  # crystal star lamp
 GLOW_VINE                    = 1112  # bioluminescent glow vine
 TOWN_FLAG_BLOCK              = 1113  # town identity flag (non-mineable)
+OUTPOST_FLAG_BLOCK           = 1114  # outpost identity flag (non-mineable)
 BLOCKS = {
     AIR:              {"name": "Air",               "hardness": 0,            "color": None,            "drop": None},
     GRASS:            {"name": "Grass",             "hardness": 1,            "color": (58, 154, 58),   "drop": "dirt_clump"},
@@ -2711,6 +2715,8 @@ BLOCKS = {
     COMPOST_HEAP:        {"name": "Compost Heap",        "hardness": 0.5, "color": ( 75,  50,  25), "drop": "compost_heap"},
     GARDEN_TOAD_HOUSE:   {"name": "Toad House",          "hardness": 0.5, "color": (185, 130,  75), "drop": "garden_toad_house"},
     TRADE_BLOCK:         {"name": "Trade Post",          "hardness": 2.0, "color": (120,  85,  55), "drop": "trade_block"},
+    FORGE_BLOCK:         {"name": "Forge",               "hardness": 3.0, "color": ( 80,  65,  55), "drop": "forge_item"},
+    WEAPON_RACK_BLOCK:   {"name": "Weapon Rack",         "hardness": 1.5, "color": (100,  80,  60), "drop": "weapon_rack_item"},
     ALPINE_BALCONY_RAIL:       {"name": "Alpine Balcony Rail", "hardness": 1, "color": (160, 110,  65), "drop": "alpine_balcony_rail"},
     DARK_TIMBER_BEAM:          {"name": "Dark Timber Beam", "hardness": 1, "color": ( 55,  40,  30), "drop": "dark_timber_beam"},
     ROUGH_STONE_WALL:          {"name": "Rough Stone Wall", "hardness": 1, "color": (130, 125, 120), "drop": "rough_stone_wall"},
@@ -2803,6 +2809,7 @@ BLOCKS = {
     STAR_LAMP:                 {"name": "Star Lamp",          "hardness": 1.0, "color": (200, 240, 255), "drop": "star_lamp"},
     GLOW_VINE:                 {"name": "Glow Vine",          "hardness": 0.5, "color": ( 40, 100,  60), "drop": "glow_vine"},
     TOWN_FLAG_BLOCK:           {"name": "Town Flag",          "hardness": float('inf'), "color": (200, 80, 40), "drop": None},
+    OUTPOST_FLAG_BLOCK:        {"name": "Outpost Flag",       "hardness": float('inf'), "color": (180, 140, 60), "drop": None},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}

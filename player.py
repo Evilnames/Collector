@@ -63,6 +63,7 @@ from fish import FishGenerator, Fish
 from coffee import CoffeeGenerator, CoffeeBean
 from wine import WineGenerator, Grape
 from sculpture import SculptureGenerator, Sculpture
+from weapons import WeaponGenerator, Weapon, weapon_damage, WEAPON_TYPES
 from tapestry import TapestryGenerator, Tapestry
 from pottery import PotteryPiece, PotteryGenerator
 from spirits import SpiritGenerator, Spirit
@@ -298,6 +299,13 @@ class Player:
         self.dogs_bred              = 0
         self.dog_records            = {"best_speed": 0.0, "best_nose": 0.0}
         self.discovered_dog_breeds  = set()
+        # Weapon crafting
+        self.crafted_weapons        = []       # list of Weapon objects
+        self.equipped_weapon_uid    = None     # str UID or None
+        self.pending_parts          = {}       # {weapon_uid: {part_key: quality_float}} — temp during smithing
+        self._melee_cooldown        = 0.0
+        self._weapon_gen            = WeaponGenerator(world.seed)
+        self.smith_quality_bonus    = 0.0      # set by research "master_smithing"
         # Cynology research bonuses (set by research.apply_bonuses)
         self.dog_whisperer_bonus    = 0
         self.dog_breeding_mastery   = False
@@ -364,6 +372,8 @@ class Player:
         self.discovered_dog_breeds  = set(d.get("discovered_dog_breeds", []))
         self.animals_hunted = d.get("animals_hunted", {})
         self.hunt_trophies  = d.get("hunt_trophies", {})
+        self.crafted_weapons     = [Weapon(**x) for x in d.get("crafted_weapons", [])]
+        self.equipped_weapon_uid = d.get("equipped_weapon_uid", None)
         self.pending_sculptures = [Sculpture.from_dict(x) for x in d.get("pending_sculptures", [])]
         self.sculptures_created = [Sculpture.from_dict(x) for x in d.get("sculptures_created", [])]
         self.pending_tapestries = [Tapestry.from_dict(x) for x in d.get("pending_tapestries", [])]
@@ -492,6 +502,24 @@ class Player:
                                        barb=barb, color=color))
         self._bow_cooldown = cooldown
         return True
+
+    # ------------------------------------------------------------------
+    # Melee attack
+
+    def try_melee_attack(self, target_entity) -> bool:
+        """Swing equipped weapon at target_entity. Returns True if attack landed."""
+        if self._melee_cooldown > 0:
+            return False
+        if not self.equipped_weapon_uid:
+            return False
+        weapon = next((w for w in self.crafted_weapons if w.uid == self.equipped_weapon_uid), None)
+        if weapon is None:
+            return False
+        wtype = WEAPON_TYPES[weapon.weapon_type]
+        dmg = weapon_damage(weapon)
+        drops = target_entity.on_arrow_hit(dmg)   # reuse on_arrow_hit for damage dispatch
+        self._melee_cooldown = wtype["cooldown"]
+        return drops is not None
 
     # ------------------------------------------------------------------
     # Input
@@ -1924,6 +1952,8 @@ class Player:
         self.tick_aging_vessels(dt)
         if self._bow_cooldown > 0:
             self._bow_cooldown -= dt
+        if self._melee_cooldown > 0:
+            self._melee_cooldown = max(0.0, self._melee_cooldown - dt)
         if not self.god_mode and not self.no_hunger:
             drain_mult = 1.0
             if "endurance" in self.active_buffs:

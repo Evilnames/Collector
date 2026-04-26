@@ -11,7 +11,11 @@
       "Skill(update-config)",
       "Skill(update-config:*)",
       "Edit(/.claude/skills/add-pottery/**)",
-      "Edit(/.claude/skills/add-dog/**)"
+      "Edit(/.claude/skills/add-dog/**)",
+      "Edit(/.claude/skills/add-region/**)",
+      "Edit(/.claude/skills/add-palace/**)",
+      "Edit(/.claude/skills/add-city/**)",
+      "Edit(/.claude/skills/add-npc/**)"
     ],
     "additionalDirectories": [
       "d:\\Dev\\CollectorBlocks\\.claude\\skills"

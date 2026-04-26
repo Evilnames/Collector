@@ -430,7 +430,9 @@ class HandlersMixin:
     def handle_npc_click(self, pos, player):
         from cities import (RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC,
                             MerchantNPC, RestaurantNPC, ShrineKeeperNPC, JewelryMerchantNPC,
-                            LeaderNPC, BlacksmithNPC, InnkeeperNPC, ScholarNPC)
+                            LeaderNPC, BlacksmithNPC, InnkeeperNPC, ScholarNPC,
+                            RoyalPaleontologistNPC, RoyalAnglerNPC,
+                            WeaponArmorerNPC, QuartermasterNPC, GarrisonCommanderNPC)
         from outpost_npcs import OutpostKeeperNPC
         npc = self.active_npc
         if isinstance(npc, RockQuestNPC):
@@ -449,6 +451,16 @@ class HandlersMixin:
                     npc.complete_quest(player, quest_idx)
                     break
         elif isinstance(npc, GemQuestNPC):
+            for quest_idx, rect in self._trade_rects.items():
+                if rect.collidepoint(pos):
+                    npc.complete_quest(player, quest_idx)
+                    break
+        elif isinstance(npc, RoyalPaleontologistNPC):
+            for quest_idx, rect in self._trade_rects.items():
+                if rect.collidepoint(pos):
+                    npc.complete_quest(player, quest_idx)
+                    break
+        elif isinstance(npc, RoyalAnglerNPC):
             for quest_idx, rect in self._trade_rects.items():
                 if rect.collidepoint(pos):
                     npc.complete_quest(player, quest_idx)
@@ -503,6 +515,15 @@ class HandlersMixin:
                 if rect.collidepoint(pos):
                     npc.execute_contract(idx, player)
                     break
+        elif isinstance(npc, WeaponArmorerNPC):
+            self._handle_weapon_armorer_click(pos, player, npc)
+        elif isinstance(npc, QuartermasterNPC):
+            for i, rect in self._trade_rects.items():
+                if rect.collidepoint(pos):
+                    npc.execute_trade(i, player)
+                    break
+        elif isinstance(npc, GarrisonCommanderNPC):
+            self._handle_garrison_commander_click(pos, player, npc)
         elif isinstance(npc, OutpostKeeperNPC):
             for key, value in self._trade_rects.items():
                 idx, action = key
@@ -651,6 +672,13 @@ class HandlersMixin:
             return
         if self.refinery_block_id == POTTERY_KILN_BLOCK:
             self._handle_pottery_kiln_click(pos, player)
+            return
+        from blocks import FORGE_BLOCK, WEAPON_RACK_BLOCK
+        if self.refinery_block_id == FORGE_BLOCK:
+            self._handle_forge_click(pos, player)
+            return
+        if self.refinery_block_id == WEAPON_RACK_BLOCK:
+            self._handle_weapon_rack_click(pos, player)
             return
         if self.refinery_block_id == BAKERY_BLOCK:
             for i, rect in self._bakery_recipe_rects.items():

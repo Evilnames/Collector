@@ -878,6 +878,14 @@ class MountainLion(BigCat):
         super().__init__(x, y, world, "mountain_lion")
 
 
+class Tiger(BigCat):
+    ANIMAL_W = 44
+    ANIMAL_H = 24
+
+    def __init__(self, x, y, world):
+        super().__init__(x, y, world, "tiger")
+
+
 # ---------------------------------------------------------------------------
 # Huntable wildlife — flee from player, killed by arrows
 # ---------------------------------------------------------------------------

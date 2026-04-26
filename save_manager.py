@@ -89,6 +89,7 @@ class SaveManager:
             self._save_tapestries(con, player)
             self._save_pottery_pieces(con, player)
             self._save_salt_crystals(con, player)
+            self._save_crafted_weapons(con, player)
             self._save_bird_observations(con, player)
             self._save_insect_observations(con, player)
             self._save_research(con, research)
@@ -581,6 +582,15 @@ class SaveManager:
             evap_method      TEXT DEFAULT '',
             refine_grade     TEXT DEFAULT ''
         );
+        CREATE TABLE IF NOT EXISTS crafted_weapons (
+            uid           TEXT PRIMARY KEY,
+            weapon_type   TEXT,
+            material      TEXT,
+            quality       REAL,
+            parts_quality TEXT,
+            custom_name   TEXT DEFAULT '',
+            seed          INTEGER
+        );
         CREATE TABLE IF NOT EXISTS towns (
             town_id          INTEGER PRIMARY KEY,
             region_id        INTEGER,
@@ -700,6 +710,7 @@ class SaveManager:
             ("discovered_pairings", "'[]'"),
             ("aging_vessels", "'[]'"),
             ("visited_town_ids", "'[]'"),
+            ("equipped_weapon_uid", "NULL"),
         ]:
             try:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT {default}")
@@ -986,8 +997,8 @@ class SaveManager:
                 horses_tamed, horses_bred, horse_records, discovered_coat_biomes,
                 dogs_tamed, dogs_bred, dog_records, discovered_dog_breeds,
                 discovered_recipes, animals_hunted, hunt_trophies, roast_profiles,
-                discovered_pairings, aging_vessels, visited_town_ids)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                discovered_pairings, aging_vessels, visited_town_ids, equipped_weapon_uid)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 player.x, player.y, player.vx, player.vy, player.facing,
                 player.health, player.hunger, player.pick_power, player.money,
@@ -1020,6 +1031,7 @@ class SaveManager:
                 json.dumps(list(getattr(player, "discovered_pairings", set()))),
                 json.dumps(getattr(player, "aging_vessels", [])),
                 json.dumps(list(getattr(player, "visited_town_ids", set()))),
+                getattr(player, "equipped_weapon_uid", None),
             )
         )
 
@@ -1278,6 +1290,18 @@ class SaveManager:
                 )
             )
 
+    def _save_crafted_weapons(self, con, player):
+        con.execute("DELETE FROM crafted_weapons")
+        for w in player.crafted_weapons:
+            con.execute(
+                "INSERT OR REPLACE INTO crafted_weapons VALUES (?,?,?,?,?,?,?)",
+                (
+                    w.uid, w.weapon_type, w.material, w.quality,
+                    json.dumps(w.parts_quality),
+                    w.custom_name, w.seed,
+                ),
+            )
+
     def _save_bird_observations(self, con, player):
         con.execute("DELETE FROM bird_observations")
         for species_id, data in player.birds_observed.items():
@@ -1459,7 +1483,7 @@ class SaveManager:
         return [{"track_by": r[0], "stop_bx": r[2], "cart_bx": r[2]} for r in rows]
 
     def _save_entities(self, con, world):
-        from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion
+        from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion, Tiger
         from horses import Horse
         from dogs import Dog
         from cities import NPC
@@ -1709,7 +1733,8 @@ class SaveManager:
                    COALESCE(roast_profiles, '[]'),
                    COALESCE(discovered_pairings, '[]'),
                    COALESCE(aging_vessels, '[]'),
-                   COALESCE(visited_town_ids, '[]')
+                   COALESCE(visited_town_ids, '[]'),
+                   COALESCE(equipped_weapon_uid, NULL)
             FROM player LIMIT 1
         """).fetchone()
 
@@ -1722,7 +1747,8 @@ class SaveManager:
          horses_tamed, horses_bred, horse_records_raw, discovered_coat_biomes_raw,
          dogs_tamed, dogs_bred, dog_records_raw, discovered_dog_breeds_raw,
          discovered_recipes_raw, worn_raw, animals_hunted_raw, hunt_trophies_raw, roast_profiles_raw,
-         discovered_pairings_raw, aging_vessels_raw, visited_town_ids_raw) = row
+         discovered_pairings_raw, aging_vessels_raw, visited_town_ids_raw,
+         equipped_weapon_uid) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -2059,6 +2085,16 @@ class SaveManager:
             ).fetchall()
         except Exception:
             salt_rows = []
+        weapons_rows = con.execute("SELECT uid, weapon_type, material, quality, parts_quality, custom_name, seed FROM crafted_weapons").fetchall()
+        weapons_data = [
+            {
+                "uid": r[0], "weapon_type": r[1], "material": r[2],
+                "quality": float(r[3]), "parts_quality": json.loads(r[4] or "[]"),
+                "custom_name": r[5] or "", "seed": int(r[6]),
+            }
+            for r in weapons_rows
+        ]
+
         salt_data = []
         for r in salt_rows:
             salt_data.append({
@@ -2149,6 +2185,8 @@ class SaveManager:
             "discovered_pairings": json.loads(discovered_pairings_raw or "[]"),
             "aging_vessels": json.loads(aging_vessels_raw or "[]"),
             "visited_town_ids": json.loads(visited_town_ids_raw or "[]"),
+            "crafted_weapons": weapons_data,
+            "equipped_weapon_uid": equipped_weapon_uid,
             "sculptures_created": _sculpture_created,
             "pending_sculptures": _sculpture_pending,
             "tapestries_created": _tapestry_created,

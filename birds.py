@@ -41,6 +41,7 @@ class Bird:
     HEAD_COLOR        = (120, 100, 80)
     ACCENT_COLOR      = (200, 120, 40)
     PERSONALITY       = "normal"    # timid, wary, normal, bold, curious
+    NOCTURNAL         = False
 
     def __init__(self, x, y, world):
         self.x = float(x)
@@ -3774,6 +3775,603 @@ class GambelsQuail(GroundBird):
 
 
 # ======================================================================
+# Bats (nocturnal)
+# ======================================================================
+
+class LittleBrownBat(Bird):
+    SPECIES          = "little_brown_bat"
+    RARITY           = "common"
+    BIOMES           = ["temperate", "boreal", "birch_forest"]
+    NOCTURNAL        = True
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (3, 8)
+    ALTITUDE_BLOCKS  = (2, 7)
+    SPEED            = 80.0
+    W, H             = 12, 6
+    BODY_COLOR       = (95, 72, 45)
+    WING_COLOR       = (62, 45, 28)
+    BEAK_COLOR       = (38, 28, 18)
+    HEAD_COLOR       = (95, 72, 45)
+    ACCENT_COLOR     = (5, 5, 10)
+
+
+class BigBrownBat(Bird):
+    SPECIES          = "big_brown_bat"
+    RARITY           = "uncommon"
+    BIOMES           = ["temperate", "rolling_hills", "mediterranean"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (2, 7)
+    SPEED            = 75.0
+    W, H             = 16, 7
+    BODY_COLOR       = (128, 95, 58)
+    WING_COLOR       = (85, 62, 35)
+    BEAK_COLOR       = (38, 28, 18)
+    HEAD_COLOR       = (128, 95, 58)
+    ACCENT_COLOR     = (5, 5, 10)
+
+
+class FruitBat(Bird):
+    SPECIES          = "fruit_bat"
+    RARITY           = "common"
+    BIOMES           = ["jungle", "tropical"]
+    NOCTURNAL        = True
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (4, 10)
+    ALTITUDE_BLOCKS  = (3, 8)
+    SPEED            = 65.0
+    W, H             = 18, 8
+    BODY_COLOR       = (138, 85, 35)
+    WING_COLOR       = (75, 48, 22)
+    BEAK_COLOR       = (48, 32, 18)
+    HEAD_COLOR       = (158, 98, 42)
+    ACCENT_COLOR     = (5, 5, 10)
+
+
+class VampireBat(Bird):
+    SPECIES          = "vampire_bat"
+    RARITY           = "rare"
+    BIOMES           = ["jungle", "swamp"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (1, 5)
+    SPEED            = 70.0
+    W, H             = 13, 6
+    BODY_COLOR       = (55, 35, 28)
+    WING_COLOR       = (38, 22, 18)
+    BEAK_COLOR       = (188, 35, 35)
+    HEAD_COLOR       = (55, 35, 28)
+    ACCENT_COLOR     = (245, 242, 238)
+
+
+class HorseshoeBat(Bird):
+    SPECIES          = "horseshoe_bat"
+    RARITY           = "uncommon"
+    BIOMES           = ["rocky_mountain", "canyon"]
+    NOCTURNAL        = True
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (2, 6)
+    ALTITUDE_BLOCKS  = (1, 6)
+    SPEED            = 60.0
+    W, H             = 12, 6
+    BODY_COLOR       = (105, 88, 78)
+    WING_COLOR       = (72, 58, 48)
+    BEAK_COLOR       = (38, 28, 18)
+    HEAD_COLOR       = (105, 88, 78)
+    ACCENT_COLOR     = (5, 5, 10)
+
+
+class PipistrelBat(Bird):
+    SPECIES          = "pipistrel_bat"
+    RARITY           = "common"
+    BIOMES           = ["temperate", "mediterranean", "south_asian"]
+    NOCTURNAL        = True
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (3, 7)
+    ALTITUDE_BLOCKS  = (2, 7)
+    SPEED            = 85.0
+    W, H             = 11, 5
+    BODY_COLOR       = (72, 52, 32)
+    WING_COLOR       = (45, 32, 18)
+    BEAK_COLOR       = (38, 28, 18)
+    HEAD_COLOR       = (72, 52, 32)
+    ACCENT_COLOR     = (5, 5, 10)
+
+
+class NoctuleBat(Bird):
+    SPECIES          = "noctule_bat"
+    RARITY           = "uncommon"
+    BIOMES           = ["boreal", "temperate", "redwood"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (3, 9)
+    SPEED            = 90.0
+    W, H             = 18, 7
+    BODY_COLOR       = (185, 138, 62)
+    WING_COLOR       = (128, 92, 38)
+    BEAK_COLOR       = (48, 32, 18)
+    HEAD_COLOR       = (185, 138, 62)
+    ACCENT_COLOR     = (5, 5, 10)
+
+
+class LeafNosedBat(Bird):
+    SPECIES          = "leaf_nosed_bat"
+    RARITY           = "uncommon"
+    BIOMES           = ["desert", "arid_steppe", "canyon"]
+    NOCTURNAL        = True
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (2, 5)
+    ALTITUDE_BLOCKS  = (1, 5)
+    SPEED            = 65.0
+    W, H             = 13, 6
+    BODY_COLOR       = (148, 128, 105)
+    WING_COLOR       = (108, 90, 72)
+    BEAK_COLOR       = (78, 62, 45)
+    HEAD_COLOR       = (148, 128, 105)
+    ACCENT_COLOR     = (5, 5, 10)
+
+
+class GhostBat(Bird):
+    SPECIES          = "ghost_bat"
+    RARITY           = "rare"
+    BIOMES           = ["wasteland", "fungal"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (2, 7)
+    SPEED            = 70.0
+    W, H             = 16, 7
+    BODY_COLOR       = (228, 218, 208)
+    WING_COLOR       = (195, 182, 168)
+    BEAK_COLOR       = (155, 138, 122)
+    HEAD_COLOR       = (228, 218, 208)
+    ACCENT_COLOR     = (5, 5, 10)
+
+
+class HammerHeadedBat(Bird):
+    SPECIES          = "hammer_headed_bat"
+    RARITY           = "rare"
+    BIOMES           = ["savanna", "tropical"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (3, 8)
+    SPEED            = 60.0
+    W, H             = 20, 9
+    BODY_COLOR       = (88, 65, 42)
+    WING_COLOR       = (58, 42, 25)
+    BEAK_COLOR       = (48, 32, 18)
+    HEAD_COLOR       = (88, 65, 42)
+    ACCENT_COLOR     = (5, 5, 10)
+
+
+# ======================================================================
+# Nocturnal birds
+# ======================================================================
+
+class TawnyFrogmouth(Bird):
+    SPECIES          = "tawny_frogmouth"
+    RARITY           = "uncommon"
+    BIOMES           = ["jungle", "east_asian", "south_asian"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (2, 6)
+    SPEED            = 52.0
+    W, H             = 18, 12
+    BODY_COLOR       = (145, 125, 98)
+    WING_COLOR       = (118, 98, 72)
+    BEAK_COLOR       = (78, 68, 48)
+    HEAD_COLOR       = (135, 115, 88)
+    ACCENT_COLOR     = (168, 148, 112)
+
+
+class CommonPotoo(Bird):
+    SPECIES          = "common_potoo"
+    RARITY           = "rare"
+    BIOMES           = ["jungle", "tropical"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (1, 4)
+    SPEED            = 58.0
+    W, H             = 14, 10
+    BODY_COLOR       = (148, 128, 95)
+    WING_COLOR       = (118, 98, 68)
+    BEAK_COLOR       = (58, 48, 38)
+    HEAD_COLOR       = (138, 118, 85)
+    ACCENT_COLOR     = (175, 155, 108)
+
+
+class WhippoorWill(Bird):
+    SPECIES          = "whip_poor_will"
+    RARITY           = "common"
+    BIOMES           = ["temperate", "boreal", "rolling_hills"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (1, 5)
+    SPEED            = 72.0
+    W, H             = 16, 8
+    BODY_COLOR       = (138, 115, 78)
+    WING_COLOR       = (108, 88, 58)
+    BEAK_COLOR       = (38, 32, 25)
+    HEAD_COLOR       = (128, 105, 68)
+    ACCENT_COLOR     = (225, 198, 138)
+
+
+class CommonPoorwill(Bird):
+    SPECIES          = "common_poorwill"
+    RARITY           = "common"
+    BIOMES           = ["desert", "arid_steppe", "steppe"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (1, 4)
+    SPEED            = 68.0
+    W, H             = 14, 7
+    BODY_COLOR       = (128, 108, 72)
+    WING_COLOR       = (98, 82, 52)
+    BEAK_COLOR       = (38, 32, 25)
+    HEAD_COLOR       = (118, 98, 62)
+    ACCENT_COLOR     = (215, 188, 128)
+
+
+class ElfOwl(Bird):
+    SPECIES          = "elf_owl"
+    RARITY           = "common"
+    BIOMES           = ["desert", "canyon", "arid_steppe"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (2, 6)
+    SPEED            = 58.0
+    W, H             = 10, 10
+    BODY_COLOR       = (218, 185, 128)
+    WING_COLOR       = (168, 138, 88)
+    BEAK_COLOR       = (195, 162, 52)
+    HEAD_COLOR       = (198, 168, 112)
+    ACCENT_COLOR     = (235, 215, 168)
+
+
+class BurrowingOwl(GroundBird):
+    SPECIES          = "burrowing_owl"
+    RARITY           = "uncommon"
+    BIOMES           = ["steppe", "savanna", "arid_steppe"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    SPEED            = 55.0
+    W, H             = 10, 14
+    BODY_COLOR       = (218, 188, 128)
+    WING_COLOR       = (168, 142, 88)
+    BEAK_COLOR       = (215, 185, 55)
+    HEAD_COLOR       = (188, 158, 98)
+    ACCENT_COLOR     = (245, 238, 218)
+    PERSONALITY      = "bold"
+
+
+class BarredOwl(Bird):
+    SPECIES          = "barred_owl"
+    RARITY           = "uncommon"
+    BIOMES           = ["temperate", "boreal", "birch_forest"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (3, 9)
+    SPEED            = 52.0
+    W, H             = 18, 20
+    BODY_COLOR       = (178, 155, 115)
+    WING_COLOR       = (138, 112, 78)
+    BEAK_COLOR       = (218, 195, 115)
+    HEAD_COLOR       = (168, 148, 108)
+    ACCENT_COLOR     = (245, 240, 218)
+
+
+class SpectacledOwl(Bird):
+    SPECIES          = "spectacled_owl"
+    RARITY           = "rare"
+    BIOMES           = ["jungle", "tropical"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (3, 9)
+    SPEED            = 50.0
+    W, H             = 18, 20
+    BODY_COLOR       = (245, 240, 218)
+    WING_COLOR       = (42, 38, 45)
+    BEAK_COLOR       = (218, 195, 115)
+    HEAD_COLOR       = (42, 38, 45)
+    ACCENT_COLOR     = (245, 240, 218)
+
+
+class LongEaredOwl(Bird):
+    SPECIES          = "long_eared_owl"
+    RARITY           = "uncommon"
+    BIOMES           = ["boreal", "temperate", "steppe"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (3, 9)
+    SPEED            = 54.0
+    W, H             = 16, 20
+    BODY_COLOR       = (198, 152, 88)
+    WING_COLOR       = (152, 112, 58)
+    BEAK_COLOR       = (195, 162, 52)
+    HEAD_COLOR       = (188, 142, 78)
+    ACCENT_COLOR     = (215, 172, 105)
+
+
+class ShortEaredOwl(Bird):
+    SPECIES          = "short_eared_owl"
+    RARITY           = "uncommon"
+    BIOMES           = ["tundra", "steppe", "wetland"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (1, 6)
+    SPEED            = 60.0
+    W, H             = 18, 16
+    BODY_COLOR       = (215, 182, 128)
+    WING_COLOR       = (162, 132, 82)
+    BEAK_COLOR       = (195, 162, 52)
+    HEAD_COLOR       = (205, 172, 118)
+    ACCENT_COLOR     = (228, 195, 138)
+
+
+class FerruginousPygmyOwl(Bird):
+    SPECIES          = "ferruginous_pygmy_owl"
+    RARITY           = "common"
+    BIOMES           = ["savanna", "tropical"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (2, 6)
+    SPEED            = 62.0
+    W, H             = 10, 12
+    BODY_COLOR       = (188, 115, 62)
+    WING_COLOR       = (148, 88, 42)
+    BEAK_COLOR       = (195, 162, 52)
+    HEAD_COLOR       = (178, 105, 55)
+    ACCENT_COLOR     = (228, 185, 128)
+
+
+class Kiwi(GroundBird):
+    SPECIES          = "kiwi"
+    RARITY           = "rare"
+    BIOMES           = ["jungle"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    SPEED            = 45.0
+    W, H             = 14, 12
+    BODY_COLOR       = (118, 88, 55)
+    WING_COLOR       = (98, 72, 42)
+    BEAK_COLOR       = (178, 155, 112)
+    HEAD_COLOR       = (108, 80, 48)
+    ACCENT_COLOR     = (5, 5, 5)
+    PERSONALITY      = "timid"
+
+
+class NightParrot(GroundBird):
+    SPECIES          = "night_parrot"
+    RARITY           = "rare"
+    BIOMES           = ["desert", "arid_steppe"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    SPEED            = 52.0
+    W, H             = 12, 10
+    BODY_COLOR       = (88, 132, 58)
+    WING_COLOR       = (62, 108, 38)
+    BEAK_COLOR       = (128, 108, 38)
+    HEAD_COLOR       = (72, 115, 45)
+    ACCENT_COLOR     = (218, 205, 65)
+    PERSONALITY      = "timid"
+
+
+class CommonScopsOwl(Bird):
+    SPECIES          = "common_scops_owl"
+    RARITY           = "common"
+    BIOMES           = ["mediterranean", "savanna", "east_asian"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (2, 7)
+    SPEED            = 56.0
+    W, H             = 14, 16
+    BODY_COLOR       = (152, 140, 118)
+    WING_COLOR       = (118, 108, 88)
+    BEAK_COLOR       = (195, 172, 52)
+    HEAD_COLOR       = (142, 130, 108)
+    ACCENT_COLOR     = (168, 155, 128)
+
+
+class EasternScreechOwl(Bird):
+    SPECIES          = "eastern_screech_owl"
+    RARITY           = "common"
+    BIOMES           = ["temperate", "rolling_hills", "birch_forest"]
+    NOCTURNAL        = True
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (2, 7)
+    SPEED            = 58.0
+    W, H             = 12, 14
+    BODY_COLOR       = (158, 148, 128)
+    WING_COLOR       = (122, 112, 95)
+    BEAK_COLOR       = (195, 172, 52)
+    HEAD_COLOR       = (148, 138, 118)
+    ACCENT_COLOR     = (222, 198, 152)
+
+
+# ======================================================================
+# Penguins (tundra / alpine ground birds)
+# ======================================================================
+
+class EmperorPenguin(GroundBird):
+    SPECIES          = "emperor_penguin"
+    RARITY           = "rare"
+    BIOMES           = ["tundra", "alpine_mountain"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (2, 5)
+    SPEED            = 35.0
+    W, H             = 16, 22
+    BODY_COLOR       = (245, 242, 238)
+    WING_COLOR       = (22, 22, 28)
+    BEAK_COLOR       = (205, 155, 55)
+    HEAD_COLOR       = (22, 22, 28)
+    ACCENT_COLOR     = (235, 195, 85)
+    PERSONALITY      = "curious"
+
+
+class KingPenguin(GroundBird):
+    SPECIES          = "king_penguin"
+    RARITY           = "uncommon"
+    BIOMES           = ["tundra", "alpine_mountain"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (2, 5)
+    SPEED            = 40.0
+    W, H             = 14, 19
+    BODY_COLOR       = (245, 242, 238)
+    WING_COLOR       = (25, 22, 30)
+    BEAK_COLOR       = (215, 145, 48)
+    HEAD_COLOR       = (25, 22, 30)
+    ACCENT_COLOR     = (225, 175, 65)
+    PERSONALITY      = "curious"
+
+
+class GentooPenguin(GroundBird):
+    SPECIES          = "gentoo_penguin"
+    RARITY           = "common"
+    BIOMES           = ["tundra", "alpine_mountain"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (3, 7)
+    SPEED            = 45.0
+    W, H             = 13, 17
+    BODY_COLOR       = (245, 242, 238)
+    WING_COLOR       = (28, 25, 32)
+    BEAK_COLOR       = (215, 105, 35)
+    HEAD_COLOR       = (28, 25, 32)
+    ACCENT_COLOR     = (245, 242, 238)
+    PERSONALITY      = "curious"
+
+
+class ChinStrapPenguin(GroundBird):
+    SPECIES          = "chin_strap_penguin"
+    RARITY           = "common"
+    BIOMES           = ["tundra", "alpine_mountain"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (3, 8)
+    SPEED            = 47.0
+    W, H             = 12, 15
+    BODY_COLOR       = (245, 242, 238)
+    WING_COLOR       = (28, 25, 32)
+    BEAK_COLOR       = (35, 30, 25)
+    HEAD_COLOR       = (28, 25, 32)
+    ACCENT_COLOR     = (245, 242, 238)
+    PERSONALITY      = "bold"
+
+
+class AdeliePenguin(GroundBird):
+    SPECIES          = "adelie_penguin"
+    RARITY           = "common"
+    BIOMES           = ["tundra", "alpine_mountain"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (4, 9)
+    SPEED            = 50.0
+    W, H             = 11, 14
+    BODY_COLOR       = (245, 242, 238)
+    WING_COLOR       = (22, 20, 28)
+    BEAK_COLOR       = (175, 80, 28)
+    HEAD_COLOR       = (22, 20, 28)
+    ACCENT_COLOR     = (245, 242, 238)
+    PERSONALITY      = "bold"
+
+
+class MacaroniPenguin(GroundBird):
+    SPECIES          = "macaroni_penguin"
+    RARITY           = "uncommon"
+    BIOMES           = ["tundra", "alpine_mountain"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (2, 6)
+    SPEED            = 42.0
+    W, H             = 12, 16
+    BODY_COLOR       = (245, 242, 238)
+    WING_COLOR       = (28, 25, 32)
+    BEAK_COLOR       = (155, 88, 28)
+    HEAD_COLOR       = (22, 20, 28)
+    ACCENT_COLOR     = (235, 185, 28)
+    PERSONALITY      = "curious"
+
+
+class RockHopperPenguin(GroundBird):
+    SPECIES          = "rock_hopper_penguin"
+    RARITY           = "uncommon"
+    BIOMES           = ["tundra", "alpine_mountain"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (2, 6)
+    SPEED            = 50.0
+    W, H             = 11, 13
+    BODY_COLOR       = (245, 242, 238)
+    WING_COLOR       = (28, 25, 32)
+    BEAK_COLOR       = (195, 88, 28)
+    HEAD_COLOR       = (22, 20, 28)
+    ACCENT_COLOR     = (235, 198, 22)
+    PERSONALITY      = "bold"
+
+
+class SnaresPenguin(GroundBird):
+    SPECIES          = "snares_penguin"
+    RARITY           = "uncommon"
+    BIOMES           = ["tundra", "alpine_mountain"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (2, 5)
+    SPEED            = 45.0
+    W, H             = 11, 14
+    BODY_COLOR       = (245, 242, 238)
+    WING_COLOR       = (25, 22, 30)
+    BEAK_COLOR       = (35, 28, 22)
+    HEAD_COLOR       = (25, 22, 30)
+    ACCENT_COLOR     = (235, 195, 28)
+    PERSONALITY      = "normal"
+
+
+class FjordlandPenguin(GroundBird):
+    SPECIES          = "fjordland_penguin"
+    RARITY           = "uncommon"
+    BIOMES           = ["tundra", "alpine_mountain"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (2, 4)
+    SPEED            = 47.0
+    W, H             = 10, 13
+    BODY_COLOR       = (245, 242, 238)
+    WING_COLOR       = (28, 25, 35)
+    BEAK_COLOR       = (42, 32, 22)
+    HEAD_COLOR       = (28, 25, 35)
+    ACCENT_COLOR     = (225, 182, 22)
+    PERSONALITY      = "normal"
+
+
+class LittleBluePenguin(GroundBird):
+    SPECIES          = "little_blue_penguin"
+    RARITY           = "common"
+    BIOMES           = ["tundra", "beach"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (3, 7)
+    SPEED            = 55.0
+    W, H             = 9, 11
+    BODY_COLOR       = (245, 242, 238)
+    WING_COLOR       = (55, 78, 138)
+    BEAK_COLOR       = (38, 32, 28)
+    HEAD_COLOR       = (55, 78, 138)
+    ACCENT_COLOR     = (245, 242, 238)
+    PERSONALITY      = "curious"
+
+
+# ======================================================================
 # Registry
 # ======================================================================
 
@@ -3823,6 +4421,17 @@ ALL_SPECIES = [
     ThreeBandedPlover, AfricanFishOwl, VerreauxsEagleOwl, SpeckledMousebird,
     # Ground birds
     GambelsQuail,
+    # Nocturnal birds
+    TawnyFrogmouth, CommonPotoo, WhippoorWill, CommonPoorwill,
+    ElfOwl, BurrowingOwl, BarredOwl, SpectacledOwl,
+    LongEaredOwl, ShortEaredOwl, FerruginousPygmyOwl,
+    Kiwi, NightParrot, CommonScopsOwl, EasternScreechOwl,
+    # Bats (nocturnal)
+    LittleBrownBat, BigBrownBat, FruitBat, VampireBat, HorseshoeBat,
+    PipistrelBat, NoctuleBat, LeafNosedBat, GhostBat, HammerHeadedBat,
+    # Penguins
+    EmperorPenguin, KingPenguin, GentooPenguin, ChinStrapPenguin, AdeliePenguin,
+    MacaroniPenguin, RockHopperPenguin, SnaresPenguin, FjordlandPenguin, LittleBluePenguin,
 ]
 
 SPECIES_BY_ID = {cls.SPECIES: cls for cls in ALL_SPECIES}

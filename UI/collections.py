@@ -64,12 +64,13 @@ class CollectionsMixin:
         n_pottery_owned    = len(getattr(player, "pottery_pieces", []))
         n_salt_owned       = len(getattr(player, "salt_crystals", []))
         n_dogs_tamed       = getattr(player, "dogs_tamed", 0)
+        n_weapons_crafted  = len(getattr(player, "crafted_weapons", []))
         total_collected = (len(player.rocks) + len(player.wildflowers) +
                            len(player.fossils) + len(player.gems) + n_mush_owned +
                            n_coffee_owned + n_wine_owned + n_spirits_owned + n_tea_owned +
                            n_potions_owned + n_textiles_owned + n_cheese_owned + n_jewelry_owned +
                            n_sculptures_owned + n_tapestries_owned + n_pottery_owned + n_salt_owned +
-                           n_dogs_tamed)
+                           n_dogs_tamed + n_weapons_crafted)
 
         # ---- 3 main tabs ----
         self._tab_rects.clear()
@@ -135,6 +136,7 @@ class CollectionsMixin:
                 ("pottery",    f"POTTERY ({n_pottery_owned})",       (40, 25, 10),  (160, 110,  80), (210, 160, 110)),
                 ("salt",       f"SALT ({n_salt_owned})",             (32, 30, 28),  (190, 185, 165), (235, 232, 215)),
                 ("dogs",       f"DOGS ({n_dogs_tamed})",              (28, 20, 10),  (170, 130,  60), (215, 180, 110)),
+                ("weapons",    f"WEAPONS ({n_weapons_crafted})",      (30, 22, 12),  (155, 140, 120), (210, 195, 165)),
             ]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._collection_filter_rects.clear()
@@ -182,9 +184,10 @@ class CollectionsMixin:
                 ((30, 18, 38),  (165, 110, 215), (225, 180, 255)),   # Pairings
                 ((28, 20, 10),  (170, 130,  60), (215, 180, 110)),   # Dogs
                 ((45, 35, 20),  (180, 120,  60), (220, 170, 100)),   # Hunting
+                ((30, 22, 12),  (155, 140, 120), (210, 195, 165)),   # Weapons
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
-                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING"]
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
             for cat_i, cat_label in enumerate(enc_labels):
@@ -230,6 +233,7 @@ class CollectionsMixin:
                 self._draw_pairings_codex,
                 self._draw_dog_codex,
                 self._draw_hunting_codex,
+                self._draw_weapons_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)
@@ -288,6 +292,8 @@ class CollectionsMixin:
             items.extend(("pottery", i) for i in range(len(getattr(player, "pottery_pieces", []))))
         if flt in ("all", "salt"):
             items.extend(("salt", i) for i in range(len(getattr(player, "salt_crystals", []))))
+        if flt in ("all", "weapons"):
+            items.extend(("weapon", i) for i in range(len(getattr(player, "crafted_weapons", []))))
 
         if not items:
             msg = self.font.render("Nothing collected yet!", True, (80, 80, 90))
@@ -619,6 +625,23 @@ class CollectionsMixin:
                 img.blit(sc_s, (img.get_width() - sc_s.get_width() - 2, 2))
                 label = SALT_BIOME_NAMES.get(it.origin_biome, it.origin_biome)
                 label_col = (210, 205, 185)
+            elif cat == "weapon":
+                from weapons import MATERIAL_PROFILES, WEAPON_TYPES, quality_tier
+                it     = getattr(player, "crafted_weapons", [])[key]
+                mat_col = MATERIAL_PROFILES.get(it.material, {}).get("color", (180, 170, 155))
+                pygame.draw.rect(self.screen, (30, 24, 16) if selected else (20, 16, 10), rect)
+                pygame.draw.rect(self.screen, mat_col, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                # Simple sword icon: vertical blade + cross guard
+                cx_i, cy_i = 29, 29
+                pygame.draw.line(img, mat_col, (cx_i, 4), (cx_i, 44), 3)
+                pygame.draw.line(img, mat_col, (cx_i - 10, 32), (cx_i + 10, 32), 3)
+                pygame.draw.circle(img, mat_col, (cx_i, 50), 3)
+                label = WEAPON_TYPES[it.weapon_type]["name"]
+                label_col = mat_col
+                tier_s = self.small.render(quality_tier(it.quality), True, mat_col)
+                img.blit(tier_s, (2, 2))
             else:  # mushroom
                 count = player.mushrooms_found.get(key, 0)
                 pygame.draw.rect(self.screen, (40, 36, 20) if selected else (25, 22, 12), rect)
@@ -1060,6 +1083,29 @@ class CollectionsMixin:
             stat_bar("Mineral",   it.mineral,   (175, 165, 130))
             stat_bar("Moisture",  it.moisture,  ( 90, 160, 200))
             stat_bar("Grain Size",it.grain_size,(200, 185, 145))
+        elif sel_cat == "weapon":
+            from weapons import MATERIAL_PROFILES, WEAPON_TYPES, quality_tier, weapon_damage, weapon_display_name
+            it      = getattr(player, "crafted_weapons", [])[sel_key]
+            mat_col = MATERIAL_PROFILES.get(it.material, {}).get("color", (180, 170, 155))
+            pygame.draw.rect(self.screen, (18, 14, 10), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, mat_col, (dx, dy2, dw, dh), 2)
+            cx_p, cy_p = dx + dw // 2, dy2 + 46
+            pygame.draw.line(self.screen, mat_col, (cx_p, dy2 + 8), (cx_p, dy2 + 84), 4)
+            pygame.draw.line(self.screen, mat_col, (cx_p - 20, dy2 + 64), (cx_p + 20, dy2 + 64), 4)
+            pygame.draw.circle(self.screen, mat_col, (cx_p, dy2 + 90), 5)
+            dlabel(weapon_display_name(it), mat_col)
+            dlabel(f"Type: {WEAPON_TYPES[it.weapon_type]['name']}", (200, 195, 185))
+            dlabel(f"Material: {MATERIAL_PROFILES[it.material]['name']}", mat_col)
+            dlabel(f"Quality: {quality_tier(it.quality)} ({int(it.quality * 100)}%)", mat_col)
+            dlabel(f"Damage: {weapon_damage(it):.1f}", (220, 130, 80))
+            dlabel(f"Range: {WEAPON_TYPES[it.weapon_type]['attack_range']} blocks", (160, 190, 220))
+            dlabel(f"Attack speed: {1.0 / WEAPON_TYPES[it.weapon_type]['cooldown']:.1f}/s", (160, 190, 220))
+            if it.parts_quality:
+                dlabel("Part qualities:", (180, 175, 165))
+                parts = WEAPON_TYPES[it.weapon_type]["parts"]
+                for i, pq in enumerate(it.parts_quality):
+                    pk = parts[i] if i < len(parts) else f"part {i+1}"
+                    dlabel(f"  {pk.replace('_',' ').title()}: {int(pq*100)}%", mat_col)
         else:  # mushroom
             bid = sel_key
             pygame.draw.rect(self.screen, (16, 14, 8), (dx, dy2, dw, dh))
@@ -3342,3 +3388,70 @@ class CollectionsMixin:
         content_h = rows * (ROW_H + GAP) + 24
         visible_h = SCREEN_H - row_y
         self._max_hunting_codex_scroll = max(0, content_h - visible_h)
+
+    # ------------------------------------------------------------------
+    # Weapons codex
+    # ------------------------------------------------------------------
+
+    def _draw_weapons_codex(self, player, gy0=58, gx_off=0):
+        from weapons import WEAPON_TYPES, MATERIAL_PROFILES, WEAPON_TYPE_ORDER, MATERIAL_ORDER, quality_tier
+        ACCENT = (210, 195, 165)
+        DIM    = (130, 120, 100)
+
+        title = self.font.render("WEAPONS CODEX", True, ACCENT)
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, gy0 + 4))
+
+        crafted = getattr(player, "crafted_weapons", [])
+        # Build lookup: (weapon_type, material) → best quality weapon
+        best_by_key = {}
+        for w in crafted:
+            k = (w.weapon_type, w.material)
+            if k not in best_by_key or w.quality > best_by_key[k].quality:
+                best_by_key[k] = w
+
+        CELL_W, CELL_H, GAP = 130, 52, 8
+        total_w = len(MATERIAL_ORDER) * CELL_W + (len(MATERIAL_ORDER) - 1) * GAP
+        gx0 = SCREEN_W // 2 - total_w // 2 + gx_off
+
+        # Header row: material names
+        for ci, mat in enumerate(MATERIAL_ORDER):
+            col = MATERIAL_PROFILES[mat]["color"]
+            x   = gx0 + ci * (CELL_W + GAP)
+            lbl = self.font.render(MATERIAL_PROFILES[mat]["name"], True, col)
+            self.screen.blit(lbl, (x + CELL_W // 2 - lbl.get_width() // 2, gy0 + 28))
+
+        for ri, wtype in enumerate(WEAPON_TYPE_ORDER):
+            row_y = gy0 + 52 + ri * (CELL_H + GAP)
+            wt_lbl = self.small.render(WEAPON_TYPES[wtype]["name"], True, ACCENT)
+            self.screen.blit(wt_lbl, (gx0 - wt_lbl.get_width() - 8, row_y + CELL_H // 2 - 6))
+
+            for ci, mat in enumerate(MATERIAL_ORDER):
+                col = MATERIAL_PROFILES[mat]["color"]
+                x   = gx0 + ci * (CELL_W + GAP)
+                r   = pygame.Rect(x, row_y, CELL_W, CELL_H)
+                k   = (wtype, mat)
+                best = best_by_key.get(k)
+                discovered = best is not None
+
+                bg = (28, 22, 14) if discovered else (18, 14, 10)
+                bd = col if discovered else DIM
+                pygame.draw.rect(self.screen, bg, r, border_radius=4)
+                pygame.draw.rect(self.screen, bd, r, 1, border_radius=4)
+
+                if discovered:
+                    tier  = quality_tier(best.quality)
+                    tier_lbl = self.small.render(tier, True, col)
+                    self.screen.blit(tier_lbl, (x + CELL_W // 2 - tier_lbl.get_width() // 2,
+                                                row_y + 6))
+                    pct_lbl = self.small.render(f"{int(best.quality * 100)}%", True, col)
+                    self.screen.blit(pct_lbl, (x + CELL_W // 2 - pct_lbl.get_width() // 2,
+                                               row_y + 28))
+                else:
+                    unk = self.small.render("?", True, DIM)
+                    self.screen.blit(unk, (x + CELL_W // 2 - unk.get_width() // 2,
+                                          row_y + CELL_H // 2 - 8))
+
+        total   = len(WEAPON_TYPE_ORDER) * len(MATERIAL_ORDER)
+        disc    = len(best_by_key)
+        summary = self.small.render(f"Crafted: {disc} / {total} combinations", True, DIM)
+        self.screen.blit(summary, (SCREEN_W // 2 - summary.get_width() // 2, SCREEN_H - 24))

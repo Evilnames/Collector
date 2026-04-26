@@ -23,6 +23,6 @@ ROCK_WARM_ZONE    = 7   # extra blocks beyond detect range where a hint is shown
 MAX_HEALTH = 100
 HOTBAR_SIZE = 8
 
-CITY_SPACING       = 180
+CITY_SPACING       = 277
 CITY_COUNT         = 6
 NPC_INTERACT_RANGE = 1.5

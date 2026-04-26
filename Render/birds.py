@@ -451,6 +451,45 @@ def _draw_bird(screen, bird, sx, sy):
         _draw_speckled_mousebird(screen, bird, sx, sy, wing_flap, perching)
     elif sp == "gambels_quail":
         _draw_gambels_quail(screen, bird, sx, sy, wing_flap, perching)
+    # Bats
+    elif sp in ("little_brown_bat", "big_brown_bat", "horseshoe_bat",
+                "pipistrel_bat", "noctule_bat", "ghost_bat"):
+        _draw_bat(screen, bird, sx, sy, wing_flap, perching)
+    elif sp == "fruit_bat":
+        _draw_fruit_bat(screen, bird, sx, sy, wing_flap, perching)
+    elif sp == "vampire_bat":
+        _draw_vampire_bat(screen, bird, sx, sy, wing_flap, perching)
+    elif sp == "leaf_nosed_bat":
+        _draw_leaf_nosed_bat(screen, bird, sx, sy, wing_flap, perching)
+    elif sp == "hammer_headed_bat":
+        _draw_hammer_headed_bat(screen, bird, sx, sy, wing_flap, perching)
+    # Penguins
+    elif sp in ("gentoo_penguin", "chin_strap_penguin", "adelie_penguin",
+                "snares_penguin", "fjordland_penguin", "little_blue_penguin"):
+        _draw_penguin(screen, bird, sx, sy, wing_flap, perching)
+    elif sp in ("emperor_penguin", "king_penguin"):
+        _draw_penguin_cheek(screen, bird, sx, sy, wing_flap, perching)
+    elif sp in ("macaroni_penguin", "rock_hopper_penguin"):
+        _draw_crested_penguin(screen, bird, sx, sy, wing_flap, perching)
+    # Nocturnal birds
+    elif sp == "tawny_frogmouth":
+        _draw_frogmouth(screen, bird, sx, sy, wing_flap, perching)
+    elif sp == "common_potoo":
+        _draw_potoo(screen, bird, sx, sy, wing_flap, perching)
+    elif sp in ("whip_poor_will", "common_poorwill"):
+        _draw_nighthawk(screen, bird, sx, sy, wing_flap, perching)
+    elif sp in ("elf_owl", "ferruginous_pygmy_owl", "common_scops_owl", "eastern_screech_owl"):
+        _draw_small_owl(screen, bird, sx, sy, wing_flap, perching)
+    elif sp in ("barred_owl", "spectacled_owl"):
+        _draw_large_owl(screen, bird, sx, sy, wing_flap, perching)
+    elif sp in ("long_eared_owl", "short_eared_owl"):
+        _draw_eared_owl(screen, bird, sx, sy, wing_flap, perching)
+    elif sp == "burrowing_owl":
+        _draw_burrowing_owl(screen, bird, sx, sy, wing_flap, perching)
+    elif sp == "kiwi":
+        _draw_kiwi(screen, bird, sx, sy, wing_flap, perching)
+    elif sp == "night_parrot":
+        _draw_night_parrot(screen, bird, sx, sy, wing_flap, perching)
 
 def _draw_robin(screen, bird, sx, sy, wf, perching):
     W, H = bird.W, bird.H
@@ -4212,6 +4251,430 @@ def _draw_gambels_quail(screen, bird, sx, sy, wf, perching):
     lx2 = sx + W // 2 + 2
     pygame.draw.line(screen, (75, 55, 30), (lx1, sy + H - 2), (lx1, sy + H + 3), 1)
     pygame.draw.line(screen, (75, 55, 30), (lx2, sy + H - 2), (lx2, sy + H + 3), 1)
+
+# ------------------------------------------------------------------
+# Nocturnal birds
+
+def _draw_small_owl(screen, bird, sx, sy, wf, perching):
+    """Elf Owl, Ferruginous Pygmy Owl, Common Scops Owl, Eastern Screech Owl."""
+    W, H = bird.W, bird.H
+    hcx = sx + W // 2
+    r = max(W // 2 - 2, 3)
+    # Wings / lower body
+    if not perching:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy + int(wf), W, H - 2))
+    else:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx + 1, sy + r * 2 + 1, W - 2, H - r * 2 - 2))
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (sx + 2, sy + r * 2 + 2, W - 4, H - r * 2 - 3))
+    # Large round head (dominant feature of owls)
+    pygame.draw.circle(screen, bird.HEAD_COLOR, (hcx, sy + r + 1), r)
+    # Facial disk
+    pygame.draw.ellipse(screen, bird.ACCENT_COLOR,
+                        (hcx - r + 1, sy + 1, max((r - 1) * 2, 2), r * 2 - 1))
+    # Two forward-facing yellow eyes
+    pygame.draw.rect(screen, (215, 175, 28), (hcx - 2, sy + r, 2, 2))
+    pygame.draw.rect(screen, (215, 175, 28), (hcx + 1, sy + r, 2, 2))
+    pygame.draw.rect(screen, (12, 12, 12), (hcx - 1, sy + r, 1, 1))
+    pygame.draw.rect(screen, (12, 12, 12), (hcx + 2, sy + r, 1, 1))
+    # Small hooked beak
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (hcx - 1, sy + r + 2, 3, 2))
+
+def _draw_large_owl(screen, bird, sx, sy, wf, perching):
+    """Barred Owl, Spectacled Owl — large round-headed, no ear tufts, barred chest."""
+    W, H = bird.W, bird.H
+    hcx = sx + W // 2
+    r = W // 2 - 2
+    chest_top = sy + r * 2 + 2
+    chest_h = max(H - r * 2 - 4, 2)
+    if not perching:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy + int(wf), W, H - 3))
+    else:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx + 1, chest_top, W - 2, chest_h + 1))
+    # Barred / streaked chest
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (sx + 2, chest_top, W - 4, chest_h))
+    for i in range(0, chest_h - 1, 3):
+        pygame.draw.line(screen, bird.ACCENT_COLOR,
+                         (sx + 3, chest_top + i + 1), (sx + W - 4, chest_top + i + 1), 1)
+    # Large round head
+    pygame.draw.circle(screen, bird.HEAD_COLOR, (hcx, sy + r + 1), r)
+    # Facial disk
+    fd_r = max(r - 2, 1)
+    pygame.draw.ellipse(screen, bird.ACCENT_COLOR,
+                        (hcx - fd_r, sy + 2, fd_r * 2, r * 2 - 2))
+    # Eyes
+    pygame.draw.rect(screen, (215, 175, 28), (hcx - 2, sy + r, 2, 2))
+    pygame.draw.rect(screen, (215, 175, 28), (hcx + 1, sy + r, 2, 2))
+    pygame.draw.rect(screen, (12, 12, 12), (hcx - 1, sy + r, 1, 1))
+    pygame.draw.rect(screen, (12, 12, 12), (hcx + 2, sy + r, 1, 1))
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (hcx - 1, sy + r + 2, 3, 2))
+
+def _draw_eared_owl(screen, bird, sx, sy, wf, perching):
+    """Long-eared Owl, Short-eared Owl — prominent ear tufts."""
+    W, H = bird.W, bird.H
+    hcx = sx + W // 2
+    r = W // 2 - 2
+    chest_top = sy + r * 2 + 2
+    chest_h = max(H - r * 2 - 4, 2)
+    if not perching:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy + int(wf), W, H - 3))
+    else:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx + 1, chest_top, W - 2, chest_h + 1))
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (sx + 2, chest_top, W - 4, chest_h))
+    # Ear tufts drawn before head so head overlaps their base
+    pygame.draw.line(screen, bird.HEAD_COLOR, (hcx - 3, sy + 2), (hcx - 4, sy - 4), 2)
+    pygame.draw.line(screen, bird.HEAD_COLOR, (hcx + 3, sy + 2), (hcx + 4, sy - 4), 2)
+    pygame.draw.circle(screen, bird.HEAD_COLOR, (hcx, sy + r + 1), r)
+    fd_r = max(r - 2, 1)
+    pygame.draw.ellipse(screen, bird.ACCENT_COLOR,
+                        (hcx - fd_r, sy + 2, fd_r * 2, r * 2 - 2))
+    pygame.draw.rect(screen, (215, 175, 28), (hcx - 2, sy + r, 2, 2))
+    pygame.draw.rect(screen, (215, 175, 28), (hcx + 1, sy + r, 2, 2))
+    pygame.draw.rect(screen, (12, 12, 12), (hcx - 1, sy + r, 1, 1))
+    pygame.draw.rect(screen, (12, 12, 12), (hcx + 2, sy + r, 1, 1))
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (hcx - 1, sy + r + 2, 3, 2))
+
+def _draw_frogmouth(screen, bird, sx, sy, wf, perching):
+    """Tawny Frogmouth — wide flat head, enormous gaping beak, mottled bark-like camouflage."""
+    W, H = bird.W, bird.H
+    f = bird.facing
+    hcx = sx + W // 2
+    if not perching:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy + int(wf), W, H))
+    else:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy + 3, W, H - 3))
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (sx + 2, sy + 5, W - 4, H - 6))
+    # Wide flat head
+    pygame.draw.ellipse(screen, bird.HEAD_COLOR, (hcx - 5, sy, 10, 7))
+    # Enormous wide beak (gape points toward facing direction)
+    bx = hcx + (3 if f == 1 else -7)
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (bx, sy + 2, 5, 3))
+    pygame.draw.line(screen, (12, 12, 12), (bx, sy + 3), (bx + 5, sy + 3), 1)
+    # Rictal bristles (stiff whisker-like feathers at beak base)
+    for i in range(3):
+        wx = bx + (-i if f == 1 else i)
+        pygame.draw.line(screen, bird.ACCENT_COLOR, (wx, sy + 2), (wx - f * 2, sy), 1)
+    # Eyes (amber, close together on wide face)
+    ex1 = hcx - 3
+    ex2 = hcx + 2
+    pygame.draw.rect(screen, (215, 165, 38), (ex1, sy + 1, 2, 2))
+    pygame.draw.rect(screen, (215, 165, 38), (ex2, sy + 1, 2, 2))
+    pygame.draw.rect(screen, (12, 12, 12), (ex1 + 1, sy + 1, 1, 1))
+    pygame.draw.rect(screen, (12, 12, 12), (ex2 + 1, sy + 1, 1, 1))
+
+def _draw_potoo(screen, bird, sx, sy, wf, perching):
+    """Common Potoo — slim camouflaged body, enormous eye, tiny bill, stump posture."""
+    W, H = bird.W, bird.H
+    f = bird.facing
+    hcx = sx + W // 2
+    if not perching:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy + int(wf), W, H))
+    else:
+        # Stump-like upright posture
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx + 2, sy + 2, W - 4, H - 2))
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (sx + 3, sy + 4, W - 6, H - 5))
+    # Slightly elongated head
+    pygame.draw.ellipse(screen, bird.HEAD_COLOR, (hcx - 3, sy, 6, 6))
+    # Enormous single visible eye (potoos are famous for these)
+    ex = hcx + (1 if f == 1 else -2)
+    pygame.draw.ellipse(screen, (215, 165, 38), (ex - 1, sy + 1, 3, 3))
+    pygame.draw.rect(screen, (12, 12, 12), (ex, sy + 2, 1, 1))
+    # Tiny beak (hidden in camouflage)
+    bx = hcx + (2 if f == 1 else -3)
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (bx, sy + 3, 2, 1))
+
+def _draw_nighthawk(screen, bird, sx, sy, wf, perching):
+    """Whip-poor-will, Common Poorwill — flat low body, wide gaping mouth, white throat."""
+    W, H = bird.W, bird.H
+    f = bird.facing
+    # Flat wide wings
+    if not perching:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy + int(wf), W, H - 1))
+    else:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx + 1, sy + 2, W - 2, H - 3))
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (sx + 3, sy + 2, W - 6, H - 3))
+    # Small rounded head offset to facing side
+    hx = sx + W - 5 if f == 1 else sx + 1
+    pygame.draw.circle(screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 3)
+    # Wide gaping mouth (characteristic nightjar feature)
+    mx = hx + 4 if f == 1 else hx - 4
+    pygame.draw.rect(screen, (12, 12, 12), (mx, sy + 2, 4, 2))
+    # White / pale throat patch
+    pygame.draw.ellipse(screen, bird.ACCENT_COLOR, (hx, sy + 3, 4, 2))
+    # Amber eye
+    pygame.draw.rect(screen, (215, 165, 38), (hx + (2 if f == 1 else 1), sy + 1, 2, 2))
+    pygame.draw.rect(screen, (12, 12, 12), (hx + (3 if f == 1 else 2), sy + 1, 1, 1))
+
+def _draw_burrowing_owl(screen, bird, sx, sy, wf, perching):
+    """Burrowing Owl — upright ground owl with long legs, white eyebrow stripe."""
+    W, H = bird.W, bird.H
+    hcx = sx + W // 2
+    r = max(W // 2 - 1, 3)
+    body_top = sy + r * 2
+    body_h = max(H - r * 2 - 4, 2)
+    # Upright body
+    pygame.draw.ellipse(screen, bird.WING_COLOR, (sx + 1, body_top, W - 2, body_h + 1))
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (sx + 2, body_top + 1, W - 4, body_h - 1))
+    # White eyebrow stripes (distinctive of burrowing owl)
+    pygame.draw.line(screen, bird.ACCENT_COLOR,
+                     (hcx - 3, sy + r), (hcx + 2, sy + r), 1)
+    # Round head
+    pygame.draw.circle(screen, bird.HEAD_COLOR, (hcx, sy + r), r)
+    # Eyes
+    pygame.draw.rect(screen, (215, 175, 28), (hcx - 2, sy + r, 2, 2))
+    pygame.draw.rect(screen, (215, 175, 28), (hcx + 1, sy + r, 2, 2))
+    pygame.draw.rect(screen, (12, 12, 12), (hcx - 1, sy + r, 1, 1))
+    pygame.draw.rect(screen, (12, 12, 12), (hcx + 2, sy + r, 1, 1))
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (hcx - 1, sy + r + 2, 2, 2))
+    # Long legs (burrowing owls stand tall on the ground)
+    leg_c = (188, 155, 98)
+    pygame.draw.line(screen, leg_c, (hcx - 2, sy + H - 3), (hcx - 2, sy + H + 4), 2)
+    pygame.draw.line(screen, leg_c, (hcx + 2, sy + H - 3), (hcx + 2, sy + H + 4), 2)
+
+def _draw_kiwi(screen, bird, sx, sy, wf, perching):
+    """Kiwi — round fluffy body, tiny vestigial wings hidden, extremely long curved bill."""
+    W, H = bird.W, bird.H
+    f = bird.facing
+    hcx = sx + W // 2
+    # Fluffy round body (kiwi feathers resemble coarse hair)
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (sx, sy + 2, W, H - 2))
+    pygame.draw.ellipse(screen, bird.WING_COLOR, (sx + 2, sy + 4, W - 4, H - 5))
+    # Small head
+    hx = sx + W - 5 if f == 1 else sx + 2
+    pygame.draw.circle(screen, bird.HEAD_COLOR, (hx + 2, sy + 3), 3)
+    # Enormously long, gently downward-curved bill (the kiwi's signature feature)
+    tip_x = (sx + W + 3) if f == 1 else (sx - 3)
+    tip_y = sy + 6
+    pygame.draw.line(screen, bird.BEAK_COLOR,
+                     (hx + (3 if f == 1 else 2), sy + 4), (tip_x, tip_y), 2)
+    # Eye (very small — kiwis have poor eyesight)
+    pygame.draw.rect(screen, (12, 12, 12), (hx + (2 if f == 1 else 1), sy + 2, 1, 1))
+    # Sturdy legs
+    pygame.draw.line(screen, (105, 80, 50), (hcx - 2, sy + H - 2), (hcx - 2, sy + H + 3), 2)
+    pygame.draw.line(screen, (105, 80, 50), (hcx + 2, sy + H - 2), (hcx + 2, sy + H + 3), 2)
+
+def _draw_night_parrot(screen, bird, sx, sy, wf, perching):
+    """Night Parrot — plump mottled green, hooked parrot beak, yellow eye ring."""
+    W, H = bird.W, bird.H
+    f = bird.facing
+    hcx = sx + W // 2
+    # Plump body
+    pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy + 2, W, H - 2))
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (sx + 2, sy + 4, W - 4, H - 5))
+    # Short rounded tail
+    tx = sx if f == 1 else sx + W - 3
+    pygame.draw.rect(screen, bird.WING_COLOR, (tx, sy + H - 4, 3, 4))
+    # Head
+    hx = sx + W - 5 if f == 1 else sx + 1
+    pygame.draw.circle(screen, bird.HEAD_COLOR, (hx + 2, sy + 2), 3)
+    # Hooked parrot beak
+    bx = hx + 4 if f == 1 else hx - 3
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (bx, sy + 2, 3, 2))
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (bx + (1 if f == 1 else 0), sy + 4, 2, 1))
+    # Yellow eye ring (ACCENT_COLOR) + dark pupil
+    ex = hx + (3 if f == 1 else 1)
+    pygame.draw.rect(screen, bird.ACCENT_COLOR, (ex - 1, sy + 1, 3, 3), 1)
+    pygame.draw.rect(screen, (12, 12, 12), (ex, sy + 1, 2, 2))
+
+# ------------------------------------------------------------------
+# Bats
+
+def _draw_bat(screen, bird, sx, sy, wf, perching):
+    W, H = bird.W, bird.H
+    cx = sx + W // 2
+    # Wide membrane wings
+    if not perching:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy + int(wf), W, H))
+    else:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (cx - 4, sy + 1, 8, H - 1))
+    # Small body
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (cx - 3, sy + 1, 6, H - 1))
+    # Head
+    pygame.draw.circle(screen, bird.BODY_COLOR, (cx, sy + 2), 3)
+    # Pointed ears
+    pygame.draw.polygon(screen, bird.BODY_COLOR,
+                        [(cx - 1, sy + 1), (cx - 3, sy - 3), (cx, sy)])
+    pygame.draw.polygon(screen, bird.BODY_COLOR,
+                        [(cx + 1, sy + 1), (cx + 3, sy - 3), (cx, sy)])
+    # Eye
+    pygame.draw.rect(screen, (8, 8, 15), (cx - 1, sy + 1, 1, 1))
+
+def _draw_fruit_bat(screen, bird, sx, sy, wf, perching):
+    W, H = bird.W, bird.H
+    cx = sx + W // 2
+    f = bird.facing
+    if not perching:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy + int(wf), W, H))
+    else:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (cx - 5, sy + 1, 10, H - 1))
+    # Heavier body
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (cx - 4, sy + 1, 8, H))
+    # Large fox-like head
+    pygame.draw.circle(screen, bird.HEAD_COLOR, (cx, sy + 2), 4)
+    # Rounded ears
+    pygame.draw.polygon(screen, bird.HEAD_COLOR,
+                        [(cx - 1, sy + 1), (cx - 3, sy - 2), (cx, sy + 1)])
+    pygame.draw.polygon(screen, bird.HEAD_COLOR,
+                        [(cx + 1, sy + 1), (cx + 3, sy - 2), (cx, sy + 1)])
+    # Snout
+    nx = cx + (2 if f == 1 else -4)
+    pygame.draw.ellipse(screen, bird.BEAK_COLOR, (nx, sy + 2, 3, 2))
+    # Eye
+    ex = cx + (2 if f == 1 else -2)
+    pygame.draw.rect(screen, (8, 8, 15), (ex, sy + 1, 2, 2))
+
+def _draw_vampire_bat(screen, bird, sx, sy, wf, perching):
+    W, H = bird.W, bird.H
+    cx = sx + W // 2
+    f = bird.facing
+    if not perching:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy + int(wf), W, H))
+    else:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (cx - 4, sy + 1, 8, H - 1))
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (cx - 3, sy + 1, 6, H - 1))
+    pygame.draw.circle(screen, bird.BODY_COLOR, (cx, sy + 2), 3)
+    # Extra-pointed ears
+    pygame.draw.polygon(screen, bird.BODY_COLOR,
+                        [(cx - 1, sy + 1), (cx - 4, sy - 4), (cx, sy)])
+    pygame.draw.polygon(screen, bird.BODY_COLOR,
+                        [(cx + 1, sy + 1), (cx + 4, sy - 4), (cx, sy)])
+    # Red eyes
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (cx - 1, sy + 1, 2, 2))
+    # Tiny white fangs
+    fang_x = cx + (0 if f == 1 else -2)
+    pygame.draw.rect(screen, bird.ACCENT_COLOR, (fang_x, sy + 3, 1, 2))
+    pygame.draw.rect(screen, bird.ACCENT_COLOR, (fang_x + 2, sy + 3, 1, 2))
+
+def _draw_leaf_nosed_bat(screen, bird, sx, sy, wf, perching):
+    W, H = bird.W, bird.H
+    cx = sx + W // 2
+    f = bird.facing
+    if not perching:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy + int(wf), W, H))
+    else:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (cx - 4, sy + 1, 8, H - 1))
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (cx - 3, sy + 1, 6, H - 1))
+    pygame.draw.circle(screen, bird.BODY_COLOR, (cx, sy + 2), 3)
+    pygame.draw.polygon(screen, bird.BODY_COLOR,
+                        [(cx - 1, sy + 1), (cx - 3, sy - 3), (cx, sy)])
+    pygame.draw.polygon(screen, bird.BODY_COLOR,
+                        [(cx + 1, sy + 1), (cx + 3, sy - 3), (cx, sy)])
+    # Triangular nose leaf
+    nx = cx + (1 if f == 1 else -3)
+    pygame.draw.polygon(screen, bird.HEAD_COLOR,
+                        [(nx, sy + 3), (nx + 2, sy + 3), (nx + 1, sy + 1)])
+    pygame.draw.rect(screen, (8, 8, 15), (cx - 1, sy + 1, 1, 1))
+
+def _draw_hammer_headed_bat(screen, bird, sx, sy, wf, perching):
+    W, H = bird.W, bird.H
+    cx = sx + W // 2
+    f = bird.facing
+    if not perching:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy + int(wf), W, H))
+    else:
+        pygame.draw.ellipse(screen, bird.WING_COLOR, (cx - 5, sy + 1, 10, H - 1))
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (cx - 4, sy + 1, 8, H))
+    # Wide elongated head offset to facing side
+    hx = cx + (2 if f == 1 else -6)
+    pygame.draw.ellipse(screen, bird.HEAD_COLOR, (hx, sy, 6, 5))
+    # Ears
+    pygame.draw.polygon(screen, bird.HEAD_COLOR,
+                        [(cx - 1, sy + 1), (cx - 3, sy - 3), (cx, sy)])
+    pygame.draw.polygon(screen, bird.HEAD_COLOR,
+                        [(cx + 1, sy + 1), (cx + 3, sy - 3), (cx, sy)])
+    # Elongated muzzle
+    nx = hx + (5 if f == 1 else -3)
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (nx, sy + 1, 4, 2))
+    # Eye
+    ex = hx + (3 if f == 1 else 2)
+    pygame.draw.rect(screen, (8, 8, 15), (ex, sy + 1, 1, 1))
+
+# ------------------------------------------------------------------
+# Penguins
+
+def _draw_penguin(screen, bird, sx, sy, wf, perching):
+    W, H = bird.W, bird.H
+    f = bird.facing
+    hcx = sx + W // 2
+    r = max(W // 2 - 1, 2)
+    # Dark back fills the upright body
+    pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy, W, H - 2))
+    # White belly
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (sx + 2, sy + H // 3, W - 4, H * 2 // 3))
+    # Head
+    pygame.draw.circle(screen, bird.HEAD_COLOR, (hcx, sy + r), r)
+    # Beak
+    bx = hcx + (r if f == 1 else -r - 2)
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (bx, sy + r, 3, 2))
+    # Eye — white sclera with dark pupil
+    ex = hcx + (r - 2 if f == 1 else -r + 1)
+    pygame.draw.rect(screen, (240, 240, 240), (ex, sy + r - 1, 2, 2))
+    pygame.draw.rect(screen, (15, 15, 15), (ex + (1 if f == 1 else 0), sy + r - 1, 1, 1))
+    # Flipper
+    fx = sx if f == 1 else sx + W - 2
+    pygame.draw.rect(screen, bird.WING_COLOR, (fx, sy + H // 3, 2, H // 3))
+    # Feet
+    lx = hcx
+    pygame.draw.line(screen, (200, 110, 20), (lx - 2, sy + H - 2), (lx - 2, sy + H + 3), 2)
+    pygame.draw.line(screen, (200, 110, 20), (lx + 2, sy + H - 2), (lx + 2, sy + H + 3), 2)
+
+def _draw_penguin_cheek(screen, bird, sx, sy, wf, perching):
+    """Emperor and King penguins — large with coloured cheek/neck patches."""
+    W, H = bird.W, bird.H
+    f = bird.facing
+    hcx = sx + W // 2
+    r = max(W // 2 - 1, 2)
+    pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy, W, H - 2))
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (sx + 2, sy + H // 3, W - 4, H * 2 // 3))
+    pygame.draw.circle(screen, bird.HEAD_COLOR, (hcx, sy + r), r)
+    # Coloured cheek/auricular patch (ACCENT_COLOR)
+    patch_x = hcx + (r - 2 if f == 1 else -r)
+    pygame.draw.ellipse(screen, bird.ACCENT_COLOR, (patch_x - 1, sy + r, 3, 5))
+    # Longer curved beak
+    bx = hcx + (r if f == 1 else -r - 3)
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (bx, sy + r, 4, 2))
+    pygame.draw.rect(screen, bird.BEAK_COLOR,
+                     (bx + (2 if f == 1 else 0), sy + r + 2, 2, 1))
+    # Eye
+    ex = hcx + (r - 2 if f == 1 else -r + 1)
+    pygame.draw.rect(screen, (240, 240, 240), (ex, sy + r - 1, 2, 2))
+    pygame.draw.rect(screen, (15, 15, 15), (ex + (1 if f == 1 else 0), sy + r - 1, 1, 1))
+    # Flipper
+    fx = sx if f == 1 else sx + W - 2
+    pygame.draw.rect(screen, bird.WING_COLOR, (fx, sy + H // 3, 2, H // 3))
+    # Feet
+    lx = hcx
+    pygame.draw.line(screen, (200, 110, 20), (lx - 2, sy + H - 2), (lx - 2, sy + H + 3), 2)
+    pygame.draw.line(screen, (200, 110, 20), (lx + 2, sy + H - 2), (lx + 2, sy + H + 3), 2)
+
+def _draw_crested_penguin(screen, bird, sx, sy, wf, perching):
+    """Macaroni and Rockhopper penguins — yellow/orange spiky crest."""
+    W, H = bird.W, bird.H
+    f = bird.facing
+    hcx = sx + W // 2
+    r = max(W // 2 - 1, 2)
+    pygame.draw.ellipse(screen, bird.WING_COLOR, (sx, sy, W, H - 2))
+    pygame.draw.ellipse(screen, bird.BODY_COLOR, (sx + 2, sy + H // 3, W - 4, H * 2 // 3))
+    pygame.draw.circle(screen, bird.HEAD_COLOR, (hcx, sy + r), r)
+    # Spiky crest above head (ACCENT_COLOR)
+    for i in range(-2, 3):
+        tip_y = sy + r - 2 - (3 - abs(i))
+        pygame.draw.line(screen, bird.ACCENT_COLOR,
+                         (hcx + i, sy + r - 1), (hcx + i, tip_y), 1)
+    # Beak
+    bx = hcx + (r if f == 1 else -r - 2)
+    pygame.draw.rect(screen, bird.BEAK_COLOR, (bx, sy + r, 3, 2))
+    # Yellow/orange eye ring
+    ex = hcx + (r - 2 if f == 1 else -r + 1)
+    pygame.draw.rect(screen, bird.ACCENT_COLOR, (ex - 1, sy + r - 2, 4, 4), 1)
+    pygame.draw.rect(screen, (240, 240, 240), (ex, sy + r - 1, 2, 2))
+    pygame.draw.rect(screen, (15, 15, 15), (ex + (1 if f == 1 else 0), sy + r - 1, 1, 1))
+    # Flipper
+    fx = sx if f == 1 else sx + W - 2
+    pygame.draw.rect(screen, bird.WING_COLOR, (fx, sy + H // 3, 2, H // 3))
+    # Feet
+    lx = hcx
+    pygame.draw.line(screen, (200, 110, 20), (lx - 2, sy + H - 2), (lx - 2, sy + H + 3), 2)
+    pygame.draw.line(screen, (200, 110, 20), (lx + 2, sy + H - 2), (lx + 2, sy + H + 3), 2)
 
 # ------------------------------------------------------------------
 # Insects

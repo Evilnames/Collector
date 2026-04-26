@@ -342,6 +342,14 @@ ROYAL_QUEST_REP    = 500
 _ROYAL_SPECIALS    = ["voidtouched", "crystalline", "resonant"]
 _ROYAL_FLOWER_POOL = ["ghost_orchid", "void_petal", "phantom_bloom", "crystal_bloom", "biolume_bell"]
 _ROYAL_GEM_POOL    = ["diamond", "alexandrite", "emerald", "ruby", "sapphire"]
+_ROYAL_FOSSIL_SPECIALS = ["opalized", "complete"]
+_FOSSIL_SPECIAL_REWARD = {"opalized": 80, "complete": 60, "carbonized": 40, "mineralized": 30}
+_FOSSIL_RARITY_REWARD  = {
+    "common": 8, "uncommon": 20, "rare": 48, "epic": 115, "legendary": 280,
+}
+_FISH_RARITY_REWARD = {
+    "common": 6, "uncommon": 15, "rare": 35, "epic": 80, "legendary": 200,
+}
 
 
 def _build_prestige_rock_quest(rng, difficulty):
@@ -416,6 +424,68 @@ def _build_royal_gem_quest(rng):
     gem_type = rng.choice(_ROYAL_GEM_POOL)
     reward = int(_GEM_RARITY_REWARD["legendary"] * 5)
     return {"kind": "gem_royal", "gem_type": gem_type, "reward": reward, "min_rep": ROYAL_QUEST_REP}
+
+
+def _build_royal_fossil_quest(rng):
+    if rng.random() < 0.35:
+        special = rng.choice(_ROYAL_FOSSIL_SPECIALS)
+        reward = int(_FOSSIL_SPECIAL_REWARD[special] * 10)
+        return {"kind": "fossil_special", "special": special, "reward": reward, "min_rep": ROYAL_QUEST_REP}
+    from fossils import FOSSIL_TYPES
+    candidates = [k for k, v in FOSSIL_TYPES.items() if "legendary" in v.get("rarity_pool", [])]
+    fossil_type = rng.choice(candidates) if candidates else rng.choice(list(FOSSIL_TYPES.keys()))
+    reward = int(_FOSSIL_RARITY_REWARD["legendary"] * 5)
+    return {"kind": "fossil_single", "fossil_type": fossil_type, "rarity": "legendary",
+            "reward": reward, "min_rep": ROYAL_QUEST_REP}
+
+
+def _build_royal_fish_quest(rng):
+    from fish import FISH_TYPES
+    candidates = [k for k, v in FISH_TYPES.items() if "legendary" in v.get("rarity_pool", [])]
+    species = rng.choice(candidates) if candidates else rng.choice(list(FISH_TYPES.keys()))
+    reward = int(_FISH_RARITY_REWARD["legendary"] * 5)
+    return {"kind": "fish_single", "species": species, "rarity": "legendary",
+            "reward": reward, "min_rep": ROYAL_QUEST_REP}
+
+
+def fossil_quest_display(quest):
+    if quest["kind"] == "fossil_single":
+        from UI import RARITY_LABEL
+        label = RARITY_LABEL.get(quest["rarity"], quest["rarity"])
+        return f"{label} {quest['fossil_type'].replace('_', ' ').title()}"
+    elif quest["kind"] == "fossil_special":
+        return f"Any {quest['special'].title()} Fossil"
+    return "Unknown quest"
+
+
+def fossil_quest_hint(quest):
+    if quest["kind"] == "fossil_single":
+        from fossils import FOSSIL_TYPES
+        depth = FOSSIL_TYPES.get(quest["fossil_type"], {}).get("min_depth", "?")
+        age   = FOSSIL_TYPES.get(quest["fossil_type"], {}).get("age", "")
+        return f"Found from depth {depth} m  ({age.title()} era)"
+    elif quest["kind"] == "fossil_special":
+        return "Special properties occur rarely on any fossil"
+    return ""
+
+
+def fish_quest_display(quest):
+    if quest["kind"] == "fish_single":
+        return f"Legendary {quest['species'].replace('_', ' ').title()}"
+    return "Unknown quest"
+
+
+def fish_quest_hint(quest):
+    if quest["kind"] == "fish_single":
+        from fish import FISH_TYPES
+        info    = FISH_TYPES.get(quest["species"], {})
+        habitat = info.get("habitat", "river")
+        biomes  = info.get("biome_affinity", [])
+        if biomes:
+            bio_str = ", ".join(b.replace("_", " ") for b in biomes[:3])
+            return f"Found in {habitat}s — {bio_str}"
+        return f"Found in {habitat}s worldwide"
+    return ""
 
 
 def quest_display(quest):
@@ -727,84 +797,6 @@ class RoyalCuratorNPC(RockQuestNPC):
         return True
 
 
-class RoyalFloristNPC(WildflowerQuestNPC):
-    """Royal garden keeper — seeks legendary flowers for the king's collection."""
-    def __init__(self, x, y, world, rng, biodome="temperate"):
-        NPC.__init__(self, x, y, world, "npc_royal_florist")
-        self.clothing  = _npc_clothing(biodome)
-        self._rng      = rng
-        self.difficulty = 2
-        self._streak   = 0
-        self.quests    = [_build_royal_wf_quest(rng), _build_royal_wf_quest(rng)]
-
-    def complete_quest(self, player, quest_idx=0):
-        quest   = self.quests[quest_idx]
-        needed  = quest.get("count", 1)
-        matching = self.find_matching_flowers(player, quest)
-        if len(matching) < needed or self._town_rep() < quest.get("min_rep", 0):
-            return False
-        for i in sorted(matching[:needed], reverse=True):
-            player.wildflowers.pop(i)
-        player.money += int(quest["reward"] * getattr(player, "blessing_mult", 1.0))
-        self.quests[quest_idx] = _build_royal_wf_quest(self._rng)
-        return True
-
-
-class RoyalJewelerNPC(GemQuestNPC):
-    """Crown jeweler — seeks legendary cut gems for the royal treasury."""
-    def __init__(self, x, y, world, rng, biodome="temperate"):
-        NPC.__init__(self, x, y, world, "npc_royal_jeweler")
-        self.clothing  = _npc_clothing(biodome)
-        self._rng      = rng
-        self.difficulty = 2
-        self._streak   = 0
-        self.quests    = [_build_royal_gem_quest(rng), _build_royal_gem_quest(rng)]
-
-    def complete_quest(self, player, quest_idx=0):
-        quest   = self.quests[quest_idx]
-        needed  = quest.get("count", 1)
-        matching = self.find_matching_gems(player, quest)
-        if len(matching) < needed or self._town_rep() < quest.get("min_rep", 0):
-            return False
-        for i in sorted(matching[:needed], reverse=True):
-            player.gems.pop(i)
-        player.money += int(quest["reward"] * getattr(player, "blessing_mult", 1.0))
-        self.quests[quest_idx] = _build_royal_gem_quest(self._rng)
-        return True
-
-
-class TradeNPC(NPC):
-    def __init__(self, x, y, world, rng, biodome="temperate"):
-        super().__init__(x, y, world, "npc_trade")
-        self.clothing = _npc_clothing(biodome)
-        n = rng.randint(3, 4)
-        self.trades = rng.sample(TRADE_TABLE, n)
-
-    def boosted_gold(self, trade_idx):
-        _, _, receive_gold = self.trades[trade_idx]
-        return max(1, round(receive_gold * _rep_buy_bonus(self._town_rep())))
-
-    def rep_bonus_pct(self):
-        return round((_rep_buy_bonus(self._town_rep()) - 1.0) * 100)
-
-    def can_trade(self, trade_idx, player):
-        item_id, give_count, _ = self.trades[trade_idx]
-        return player.inventory.get(item_id, 0) >= give_count
-
-    def execute_trade(self, trade_idx, player):
-        if not self.can_trade(trade_idx, player):
-            return False
-        item_id, give_count, _ = self.trades[trade_idx]
-        player.inventory[item_id] -= give_count
-        if player.inventory[item_id] <= 0:
-            del player.inventory[item_id]
-            for i in range(len(player.hotbar)):
-                if player.hotbar[i] == item_id:
-                    player.hotbar[i] = None
-        player.money += self.boosted_gold(trade_idx)
-        return True
-
-
 class WildflowerQuestNPC(NPC):
     def __init__(self, x, y, world, rng, difficulty=0, biodome="temperate"):
         super().__init__(x, y, world, "npc_herbalist")
@@ -847,6 +839,29 @@ class WildflowerQuestNPC(NPC):
         player.money += int(quest["reward"] * streak_mult * getattr(player, "blessing_mult", 1.0))
         builder = _build_prestige_wf_quest if quest_idx == 1 else _build_wf_quest
         self.quests[quest_idx] = builder(self._rng, self.difficulty)
+        return True
+
+
+class RoyalFloristNPC(WildflowerQuestNPC):
+    """Royal garden keeper — seeks legendary flowers for the king's collection."""
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        NPC.__init__(self, x, y, world, "npc_royal_florist")
+        self.clothing  = _npc_clothing(biodome)
+        self._rng      = rng
+        self.difficulty = 2
+        self._streak   = 0
+        self.quests    = [_build_royal_wf_quest(rng), _build_royal_wf_quest(rng)]
+
+    def complete_quest(self, player, quest_idx=0):
+        quest   = self.quests[quest_idx]
+        needed  = quest.get("count", 1)
+        matching = self.find_matching_flowers(player, quest)
+        if len(matching) < needed or self._town_rep() < quest.get("min_rep", 0):
+            return False
+        for i in sorted(matching[:needed], reverse=True):
+            player.wildflowers.pop(i)
+        player.money += int(quest["reward"] * getattr(player, "blessing_mult", 1.0))
+        self.quests[quest_idx] = _build_royal_wf_quest(self._rng)
         return True
 
 
@@ -897,6 +912,132 @@ class GemQuestNPC(NPC):
         player.money += int(quest["reward"] * streak_mult * getattr(player, "blessing_mult", 1.0))
         builder = _build_prestige_gem_quest if quest_idx == 1 else _build_gem_quest
         self.quests[quest_idx] = builder(self._rng, self.difficulty)
+        return True
+
+
+class RoyalJewelerNPC(GemQuestNPC):
+    """Crown jeweler — seeks legendary cut gems for the royal treasury."""
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        NPC.__init__(self, x, y, world, "npc_royal_jeweler")
+        self.clothing  = _npc_clothing(biodome)
+        self._rng      = rng
+        self.difficulty = 2
+        self._streak   = 0
+        self.quests    = [_build_royal_gem_quest(rng), _build_royal_gem_quest(rng)]
+
+    def complete_quest(self, player, quest_idx=0):
+        quest   = self.quests[quest_idx]
+        needed  = quest.get("count", 1)
+        matching = self.find_matching_gems(player, quest)
+        if len(matching) < needed or self._town_rep() < quest.get("min_rep", 0):
+            return False
+        for i in sorted(matching[:needed], reverse=True):
+            player.gems.pop(i)
+        player.money += int(quest["reward"] * getattr(player, "blessing_mult", 1.0))
+        self.quests[quest_idx] = _build_royal_gem_quest(self._rng)
+        return True
+
+
+class RoyalPaleontologistNPC(NPC):
+    """Royal paleontologist — seeks legendary fossils for the king's museum."""
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_royal_paleontologist")
+        self.clothing = _npc_clothing(biodome)
+        self._rng     = rng
+        self.quests   = [_build_royal_fossil_quest(rng), _build_royal_fossil_quest(rng)]
+
+    def find_matching_fossils(self, player, quest):
+        fossils = getattr(player, "fossils", [])
+        if quest["kind"] == "fossil_single":
+            return [i for i, f in enumerate(fossils)
+                    if f.fossil_type == quest["fossil_type"] and f.rarity == quest["rarity"]]
+        elif quest["kind"] == "fossil_special":
+            return [i for i, f in enumerate(fossils)
+                    if quest["special"] in getattr(f, "specials", [])]
+        return []
+
+    def can_complete(self, player, quest_idx):
+        quest = self.quests[quest_idx]
+        if self._town_rep() < quest.get("min_rep", 0):
+            return False
+        return len(self.find_matching_fossils(player, quest)) >= quest.get("count", 1)
+
+    def complete_quest(self, player, quest_idx=0):
+        quest    = self.quests[quest_idx]
+        needed   = quest.get("count", 1)
+        matching = self.find_matching_fossils(player, quest)
+        if len(matching) < needed or self._town_rep() < quest.get("min_rep", 0):
+            return False
+        for i in sorted(matching[:needed], reverse=True):
+            player.fossils.pop(i)
+        player.money += int(quest["reward"] * getattr(player, "blessing_mult", 1.0))
+        self.quests[quest_idx] = _build_royal_fossil_quest(self._rng)
+        return True
+
+
+class RoyalAnglerNPC(NPC):
+    """Royal angler — seeks legendary fish for the king's banquet."""
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_royal_angler")
+        self.clothing = _npc_clothing(biodome)
+        self._rng     = rng
+        self.quests   = [_build_royal_fish_quest(rng), _build_royal_fish_quest(rng)]
+
+    def find_matching_fish(self, player, quest):
+        fish_list = getattr(player, "fish_caught", [])
+        if quest["kind"] == "fish_single":
+            return [i for i, f in enumerate(fish_list)
+                    if f.species == quest["species"] and f.rarity == quest["rarity"]]
+        return []
+
+    def can_complete(self, player, quest_idx):
+        quest = self.quests[quest_idx]
+        if self._town_rep() < quest.get("min_rep", 0):
+            return False
+        return len(self.find_matching_fish(player, quest)) >= quest.get("count", 1)
+
+    def complete_quest(self, player, quest_idx=0):
+        quest    = self.quests[quest_idx]
+        needed   = quest.get("count", 1)
+        matching = self.find_matching_fish(player, quest)
+        if len(matching) < needed or self._town_rep() < quest.get("min_rep", 0):
+            return False
+        for i in sorted(matching[:needed], reverse=True):
+            player.fish_caught.pop(i)
+        player.money += int(quest["reward"] * getattr(player, "blessing_mult", 1.0))
+        self.quests[quest_idx] = _build_royal_fish_quest(self._rng)
+        return True
+
+
+class TradeNPC(NPC):
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_trade")
+        self.clothing = _npc_clothing(biodome)
+        n = rng.randint(3, 4)
+        self.trades = rng.sample(TRADE_TABLE, n)
+
+    def boosted_gold(self, trade_idx):
+        _, _, receive_gold = self.trades[trade_idx]
+        return max(1, round(receive_gold * _rep_buy_bonus(self._town_rep())))
+
+    def rep_bonus_pct(self):
+        return round((_rep_buy_bonus(self._town_rep()) - 1.0) * 100)
+
+    def can_trade(self, trade_idx, player):
+        item_id, give_count, _ = self.trades[trade_idx]
+        return player.inventory.get(item_id, 0) >= give_count
+
+    def execute_trade(self, trade_idx, player):
+        if not self.can_trade(trade_idx, player):
+            return False
+        item_id, give_count, _ = self.trades[trade_idx]
+        player.inventory[item_id] -= give_count
+        if player.inventory[item_id] <= 0:
+            del player.inventory[item_id]
+            for i in range(len(player.hotbar)):
+                if player.hotbar[i] == item_id:
+                    player.hotbar[i] = None
+        player.money += self.boosted_gold(trade_idx)
         return True
 
 
@@ -1587,6 +1728,151 @@ _INTERIOR_TAPESTRIES = (
 # Window-box flora pool — drops onto facades just under windows.
 _FACADE_FLOWER_BOXES = (FLOWER_BOX, GERANIUM_BOX)
 
+# ---------------------------------------------------------------------------
+# Military NPCs
+# ---------------------------------------------------------------------------
+
+# Appraisal base prices per weapon type (gold)
+_WEAPON_ARMORER_BASE = {"dagger": 20, "sword": 35, "spear": 30, "axe": 40}
+_WEAPON_MATERIAL_MULT = {"iron": 1.0, "gold": 1.6, "steel": 2.0}
+
+
+class WeaponArmorerNPC(NPC):
+    """Buys crafted Weapon objects from the player, paying based on quality + material."""
+
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_weapon_armorer")
+        self.clothing     = _npc_clothing(biodome)
+        self.display_name = "Weapon Armorer"
+
+    def appraise(self, weapon, player) -> int:
+        from weapons import quality_tier as _qt
+        base      = _WEAPON_ARMORER_BASE.get(weapon.weapon_type, 25)
+        mat_mult  = _WEAPON_MATERIAL_MULT.get(weapon.material, 1.0)
+        q_mult    = 0.5 + weapon.quality * 1.5
+        rep_bonus = _rep_buy_bonus(self._town_rep())
+        return max(1, round(base * mat_mult * q_mult * rep_bonus))
+
+    def sell_weapon(self, weapon_uid, player) -> int:
+        weapon = next((w for w in player.crafted_weapons if w.uid == weapon_uid), None)
+        if weapon is None:
+            return 0
+        value = self.appraise(weapon, player)
+        player.crafted_weapons.remove(weapon)
+        if player.equipped_weapon_uid == weapon_uid:
+            player.equipped_weapon_uid = None
+        player.money += value
+        return value
+
+
+# Items the Quartermaster buys from the player
+QUARTERMASTER_BUY_TABLE = [
+    ("wood_arrow",      5,  2),
+    ("bone_arrow",      5,  3),
+    ("flint_arrow",     4,  4),
+    ("iron_arrow",      4,  6),
+    ("barbed_arrow",    3,  9),
+    ("broadhead_arrow", 3, 12),
+    ("poison_arrow",    3, 11),
+    ("gold_arrow",      2, 18),
+    ("wood_bow",        1, 12),
+    ("recurve_bow",     1, 22),
+    ("composite_bow",   1, 36),
+    ("longbow",         1, 44),
+    ("crossbow",        1, 52),
+]
+
+
+class QuartermasterNPC(NPC):
+    """Buys bow and arrow inventory items in bulk from the player."""
+
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_quartermaster")
+        self.clothing     = _npc_clothing(biodome)
+        self.display_name = "Quartermaster"
+        n            = rng.randint(4, 6)
+        self.trades  = rng.sample(QUARTERMASTER_BUY_TABLE, k=n)
+
+    def boosted_gold(self, idx):
+        _, _, gold = self.trades[idx]
+        return max(1, round(gold * _rep_buy_bonus(self._town_rep())))
+
+    def rep_bonus_pct(self):
+        return round((_rep_buy_bonus(self._town_rep()) - 1.0) * 100)
+
+    def can_trade(self, idx, player):
+        item_id, give_count, _ = self.trades[idx]
+        return player.inventory.get(item_id, 0) >= give_count
+
+    def execute_trade(self, idx, player) -> bool:
+        if not self.can_trade(idx, player):
+            return False
+        item_id, give_count, _ = self.trades[idx]
+        player.inventory[item_id] = player.inventory.get(item_id, 0) - give_count
+        if player.inventory[item_id] <= 0:
+            del player.inventory[item_id]
+            for i in range(len(player.hotbar)):
+                if player.hotbar[i] == item_id:
+                    player.hotbar[i] = None
+        player.money += self.boosted_gold(idx)
+        return True
+
+
+_TIER_ORDER = ["Poor", "Standard", "Fine", "Masterwork"]
+
+
+def _build_garrison_quest(rng, difficulty):
+    count     = rng.randint(1, 1 + min(difficulty, 2))
+    min_tier  = _TIER_ORDER[min(difficulty, 2)]
+    wtype     = rng.choice(["dagger", "sword", "spear", "axe", None])
+    reward    = (35 + difficulty * 20) * count
+    return {"count": count, "min_tier": min_tier, "weapon_type": wtype, "reward": reward}
+
+
+class GarrisonCommanderNPC(NPC):
+    """Quest giver: deliver N crafted weapons of minimum quality tier."""
+
+    def __init__(self, x, y, world, rng, difficulty=1, biodome="temperate"):
+        super().__init__(x, y, world, "npc_garrison_commander")
+        self.clothing     = _npc_clothing(biodome)
+        self.display_name = "Garrison Commander"
+        self._rng         = rng
+        self.difficulty   = difficulty
+        self.quests       = [
+            _build_garrison_quest(rng, difficulty),
+            _build_garrison_quest(rng, difficulty + 1),
+        ]
+
+    def matching_weapons(self, player, quest):
+        from weapons import quality_tier as _qt
+        min_idx = _TIER_ORDER.index(quest["min_tier"])
+        return [
+            i for i, w in enumerate(player.crafted_weapons)
+            if _TIER_ORDER.index(_qt(w.quality)) >= min_idx
+            and (quest["weapon_type"] is None or w.weapon_type == quest["weapon_type"])
+        ]
+
+    def can_complete(self, player, qi):
+        q = self.quests[qi]
+        return len(self.matching_weapons(player, q)) >= q["count"]
+
+    def complete_quest(self, player, qi) -> bool:
+        quest    = self.quests[qi]
+        matching = self.matching_weapons(player, quest)
+        if len(matching) < quest["count"]:
+            return False
+        for idx in sorted(matching[:quest["count"]], reverse=True):
+            player.crafted_weapons.pop(idx)
+        if player.equipped_weapon_uid not in {w.uid for w in player.crafted_weapons}:
+            player.equipped_weapon_uid = None
+        player.money += round(quest["reward"] * getattr(player, "blessing_mult", 1.0))
+        self.quests[qi] = _build_garrison_quest(self._rng, self.difficulty + qi)
+        return True
+
+
+# Frontier biomes that may produce military towns
+_FRONTIER_BIOMES = {"steppe", "wasteland", "rocky_mountain", "canyon", "arid_steppe"}
+
 # Building slot format: (offset_from_cx, (min_w, max_w), (min_h, max_h), variants)
 # variants is a list sampled uniformly; repeat entries to weight them.
 # Use (offset, None, None, None) for an outdoor NPC slot with no building.
@@ -1694,6 +1980,29 @@ CITY_CONFIGS = {
         "ambient_npcs": [(-30, "villager"), (-14, "child"), (0, "villager"),
                          (8, "child"), (22, "villager"), (28, "guard"),
                          (-42, "guard"), (42, "guard")],
+    },
+    # Military garrison — spawns biome-driven in frontier biomes (steppe/wasteland/etc.)
+    "military": {
+        "half_w": 30,
+        "buildings": [
+            (-29, (6, 8), (5, 6), ["smithy"]),
+            (-20, (5, 6), (4, 5), ["smithy", "two_story"]),
+            (-11, (4, 5), (3, 4), ["market_stall", "house"]),
+            ( -3, None,   None,   None),
+            (  4, (4, 5), (3, 4), ["inn", "restaurant"]),
+            ( 10, None,   None,   None),
+            ( 17, (5, 7), (4, 6), ["shrine", "tower"]),
+        ],
+        "npc_types": ["weapon_armorer", "blacksmith", "quest_rock",
+                      "garrison_commander", "innkeeper", "quartermaster", "shrine_npc"],
+        "gardens": [],
+        "squares": [(-5, 4), (8, 4)],
+        "growth_slots_tier1": [( 24, (4, 5), (3, 4), ["tower", "smithy"])],
+        "growth_slots_tier2": [(-26, (4, 6), (3, 5), ["smithy", "tower"])],
+        "growth_slots_tier3": [( 27, (5, 7), (4, 6), ["tower"])],
+        "farms":   [(-40, 6), (40, 6)],
+        "ambient_npcs": [(-25, "guard"), (-7, "guard"), (0, "guard"),
+                         (7, "guard"), (20, "guard")],
     },
 }
 
@@ -1825,10 +2134,10 @@ _CLOTHING_PALETTES = {
         "armor": (80, 50, 30), "plate": (195, 165, 100),
     },
     "east_asian": {
-        # Indigo and grey-blue robes, warm-fair skin
-        "body": (70, 95, 140), "leg": (60, 75, 115), "skin": (245, 205, 165),
-        "trim": (25, 25, 35), "hat": (90, 80, 45),
-        "armor": (40, 40, 55), "plate": (110, 130, 155),
+        # Crimson and ink-black hanfu with gold trim, warm-fair skin
+        "body": (170, 40, 40), "leg": (30, 25, 30), "skin": (245, 205, 165),
+        "trim": (210, 170, 50), "hat": (25, 20, 25),
+        "armor": (40, 35, 50), "plate": (180, 145, 55),
     },
     "south_asian": {
         # Saffron and coral with warm brown skin
@@ -1868,7 +2177,9 @@ _CLOTHING_STYLE_BY_BIODOME = {
     "temperate": "temperate", "birch_forest": "temperate", "redwood": "temperate",
     "boreal": "boreal",
     "alpine_mountain": "alpine", "tundra": "alpine", "rocky_mountain": "alpine",
-    "desert": "desert", "arid_steppe": "desert", "savanna": "desert", "canyon": "desert",
+    "desert": "desert", "savanna": "desert", "arid_steppe": "desert",
+    "canyon": "east_asian",
+    "rolling_hills": "mediterranean", "steep_hills": "desert",
     "mediterranean": "mediterranean",
     "east_asian": "east_asian",
     "south_asian": "south_asian",
@@ -1973,13 +2284,11 @@ def _place_garden_plot(world, rng, center_bx, sy, biodome, half_w=3):
                 world.set_bg_block(wx, fence_y, WICKER_FENCE)
 
 
-def _place_farm_plot(world, rng, center_bx, sy, biodome, half_w=7):
+def _place_farm_plot(world, rng, center_bx, biodome, half_w=7):
     """Place a strip of tilled soil with crops outside the city footprint.
 
-    Layout rows (top-down):
-      sy - 2 : crop blocks (young or ~50% mature for visual variety)
-      sy - 1 : tilled soil
-      sy     : city stone floor (already placed by _build_single_city)
+    Each column uses its own terrain surface so the farm follows the landscape
+    rather than floating when the ground outside the city is uneven.
 
     A well is placed as a background block at the centre column.
     Wicker fence posts frame the outer edges.
@@ -1989,8 +2298,9 @@ def _place_farm_plot(world, rng, center_bx, sy, biodome, half_w=7):
     crops = FARM_CROPS_BY_BIOME.get(biome_group, _FARM_CROPS_DEFAULT)
 
     for bx in range(center_bx - half_w, center_bx + half_w + 1):
-        soil_y = sy - 1
-        crop_y = sy - 2
+        col_sy = world.surface_y_at(bx)
+        soil_y = col_sy - 1
+        crop_y = col_sy - 2
         if not (0 <= soil_y < world.height):
             continue
         if world.get_block(bx, soil_y) != AIR:
@@ -2003,16 +2313,15 @@ def _place_farm_plot(world, rng, center_bx, sy, biodome, half_w=7):
             world.set_block(bx, crop_y, chosen)
 
     # Central well as a background landmark
-    well_y = sy - 1
+    well_y = world.surface_y_at(center_bx) - 1
     if 0 <= well_y < world.height:
         world.set_bg_block(center_bx, well_y, WELL_BLOCK)
 
     # Fence corner posts
-    fence_y = sy - 3
-    if 0 <= fence_y < world.height:
-        for bx in (center_bx - half_w, center_bx + half_w):
-            if world.get_block(bx, fence_y) == AIR:
-                world.set_bg_block(bx, fence_y, WICKER_FENCE)
+    for bx in (center_bx - half_w, center_bx + half_w):
+        fence_y = world.surface_y_at(bx) - 3
+        if 0 <= fence_y < world.height and world.get_block(bx, fence_y) == AIR:
+            world.set_bg_block(bx, fence_y, WICKER_FENCE)
 
 
 # ---------------------------------------------------------------------------
@@ -2293,10 +2602,10 @@ def _place_gateposts(world, rng, lo_x, hi_x, sy):
         for dy in range(1, 5):
             wy = sy - dy
             if 0 <= wy < world.height and world.get_block(bx, wy) == AIR:
-                world.set_block(bx, wy, base_block)
+                world.set_bg_block(bx, wy, base_block)
         cap_y = sy - 5
         if 0 <= cap_y < world.height and world.get_block(bx, cap_y) == AIR:
-            world.set_block(bx, cap_y, cap)
+            world.set_bg_block(bx, cap_y, cap)
 
 
 def _place_pavilion(world, left_x, sy, width, wall_height,
@@ -3169,6 +3478,9 @@ def _build_single_city(world, rng, city_bx, difficulty):
     sy = world.surface_y_at(city_bx)
     biodome = world.biodome_at(city_bx)
     city_size = rng.choice(_SIZE_BY_DIFFICULTY[difficulty])
+    # Frontier biomes have a 30% chance to spawn as a military garrison instead
+    if biodome in _FRONTIER_BIOMES and city_size in ("medium", "large") and rng.random() < 0.30:
+        city_size = "military"
     cfg = CITY_CONFIGS[city_size]
     half_w = cfg["half_w"]
 
@@ -3310,6 +3622,12 @@ def _build_single_city(world, rng, city_bx, difficulty):
             world.entities.append(InnkeeperNPC(npc_px, npc_py, world, rng, difficulty, biodome))
         elif npc_type == "scholar":
             world.entities.append(ScholarNPC(npc_px, npc_py, world, rng, biodome))
+        elif npc_type == "weapon_armorer":
+            world.entities.append(WeaponArmorerNPC(npc_px, npc_py, world, rng, biodome))
+        elif npc_type == "quartermaster":
+            world.entities.append(QuartermasterNPC(npc_px, npc_py, world, rng, biodome))
+        elif npc_type == "garrison_commander":
+            world.entities.append(GarrisonCommanderNPC(npc_px, npc_py, world, rng, difficulty, biodome))
 
     # Town squares — paved plazas with a sculpture centerpiece, around outdoor NPC slots.
     for offset, half in cfg.get("squares", ()):
@@ -3329,10 +3647,11 @@ def _build_single_city(world, rng, city_bx, difficulty):
     _ambient_npc_cls = {"villager": VillagerNPC, "child": ChildNPC, "guard": GuardNPC}
     for offset, farm_half in cfg.get("farms", ()):
         farm_cx = city_bx + offset
-        _place_farm_plot(world, rng, farm_cx, sy, biodome, farm_half)
+        _place_farm_plot(world, rng, farm_cx, biodome, farm_half)
         for _ in range(rng.randint(1, 2)):
             fx = (farm_cx + rng.randint(-farm_half + 1, farm_half - 1)) * BLOCK_SIZE
-            fy = (sy - 2) * BLOCK_SIZE
+            farmer_bx = fx // BLOCK_SIZE
+            fy = (world.surface_y_at(farmer_bx) - 2) * BLOCK_SIZE
             world.entities.append(FarmerNPC(fx, fy, world,
                                             patrol_half=(farm_half - 1) * BLOCK_SIZE,
                                             biodome=biodome))
@@ -3444,7 +3763,7 @@ _CW_BARRACKS  = 11  # barracks wing
 _CH_ROUND_TOW = 17  # round tower height
 _CH_SQ_TOW    = 14  # square tower height
 _CH_WALL      = 11  # standard hall/wall height
-_CH_KEEP      = 22  # keep height
+_CH_KEEP      = 11  # keep height
 _CH_PAL_KEEP  = 26  # palace keep height
 _CH_CHAPEL    = 14  # chapel height
 
@@ -3944,22 +4263,33 @@ PALACE_NPC_OFFSET = {
     "tibetan":          44,   # 8 yard + 12 wing + 14 court + 10 half-tower
     "japanese":         42,   # 10 zen + 10 yagura + 14 shoin + 8 half-tenshu
     "chinese":          49,   # 10 pailou + 16 outer + 12 wing + 11 half-throne
+    "tang_imperial":    48,   # 10 terrace + 12 drum + 14 col + 12 half-hanyuan
+    "song_palace":      45,   # 12 garden + 10 moon + 14 pavilion + 9 half-hall
+    "han_palace":       44,   # 10 platform + 12 watch + 12 ante + 10 half-throne
+    "east_african":     41,   # 8 garden + 10 gate + 12 court + 11 half-throne
+    "mesoamerican":     42,   # 8 plaza + 10 gate + 14 court + 10 half-pyramid
+    "french_baroque":   47,   # 10 garden + 14 wing + 12 salon + 11 half-throne
+    "incan":            40,   # 8 terrace + 10 gate + 12 hall + 10 half-throne
+    "persian":          43,   # 8 garden + 10 portal + 14 apadana + 11 half-throne
 }
 
 PALACE_TYPES = [
     "castle", "mediterranean", "east_asian", "south_asian",
     "italian", "moorish", "middle_eastern",
     "norse", "gothic", "african", "byzantine", "tibetan",
-    "japanese", "chinese",
+    "japanese", "chinese", "tang_imperial", "song_palace", "han_palace",
+    "east_african", "mesoamerican", "french_baroque", "incan", "persian",
 ]
 
 
 def _populate_castle(world, left_x: int, sy: int, rng: random.Random):
     """Spawn royal court staff inside a medieval castle."""
-    _palace_npc_at(world, left_x + 10, sy, TradeNPC, rng)
-    _palace_npc_at(world, left_x + 24, sy, RoyalCuratorNPC, rng)
-    _palace_npc_at(world, left_x + 36, sy, RoyalFloristNPC, rng)
-    _palace_npc_at(world, left_x + 48, sy, RoyalJewelerNPC, rng)
+    _palace_npc_at(world, left_x + 12, sy, TradeNPC, rng)
+    _palace_npc_at(world, left_x + 22, sy, RoyalCuratorNPC, rng)
+    _palace_npc_at(world, left_x + 30, sy, RoyalFloristNPC, rng)
+    _palace_npc_at(world, left_x + 38, sy, RoyalJewelerNPC, rng)
+    _palace_npc_at(world, left_x + 44, sy, RoyalPaleontologistNPC, rng)
+    _palace_npc_at(world, left_x + 50, sy, RoyalAnglerNPC, rng)
 
 
 def _place_mediterranean_palace(world, left_x: int, sy: int):
@@ -3971,9 +4301,9 @@ def _place_mediterranean_palace(world, left_x: int, sy: int):
 
     # Variant 1 uses slightly larger proportions for an imposing imperial feel
     W_GARD = 8
-    W_STOA = 12 + variant * 2;  H_STOA = 10 + variant
-    W_WING = 14;                 H_WING = 13 + variant * 2
-    W_HALL = 22;                 H_HALL = 18 + variant * 2
+    W_STOA = 12 + variant * 2;  H_STOA = 7
+    W_WING = 14;                 H_WING = 7 + variant
+    W_HALL = 22;                 H_HALL = 9 + variant
     total_w = W_GARD + W_STOA + W_WING + W_HALL + W_WING + W_STOA + W_GARD
     _palace_clear_terrain(world, left_x, sy, total_w, H_HALL + 14)
 
@@ -4170,8 +4500,8 @@ def _place_east_asian_palace(world, left_x: int, sy: int):
 
     W_GARD = 10   # outer garden + torii approach
     W_RCRT = 14;  H_RCRT = 12   # reception court
-    W_PAV  = 12;  H_PAV  = 12   # inner pavilion
-    W_KEEP = 20;  H_KEEP = 18   # central pagoda keep
+    W_PAV  = 12;  H_PAV  = 7    # inner pavilion
+    W_KEEP = 20;  H_KEEP = 9    # central pagoda keep
     total_w = W_GARD + W_RCRT + W_PAV + W_KEEP + W_PAV + W_RCRT + W_GARD
     _palace_clear_terrain(world, left_x, sy, total_w, H_KEEP + 16)
 
@@ -4337,9 +4667,9 @@ def _place_south_asian_palace(world, left_x: int, sy: int):
     variant = rng.randint(0, 1)   # 0 = sultanate  1 = maharaja court
 
     W_GARD = 8
-    W_GATE = 10;  H_GATE = 14
-    W_CORT = 14;  H_CORT = 12
-    W_DIWAN= 24;  H_DIWAN= 20
+    W_GATE = 10;  H_GATE = 7
+    W_CORT = 14;  H_CORT = 7
+    W_DIWAN= 24;  H_DIWAN= 10
     total_w = W_GARD + W_GATE + W_CORT + W_DIWAN + W_CORT + W_GATE + W_GARD
     _palace_clear_terrain(world, left_x, sy, total_w, H_DIWAN + 16)
 
@@ -4503,9 +4833,9 @@ def _place_italian_palazzo(world, left_x: int, sy: int):
     variant = rng.randint(0, 1)   # 0 = republic  1 = duchy
 
     W_GARD = 8
-    W_LOG  = 12;  H_LOG  = 11
-    W_CORT = 16;  H_CORT = 14
-    W_SALA = 20;  H_SALA = 18
+    W_LOG  = 12;  H_LOG  = 7
+    W_CORT = 16;  H_CORT = 7
+    W_SALA = 20;  H_SALA = 9
     total_w = W_GARD + W_LOG + W_CORT + W_SALA + W_CORT + W_LOG + W_GARD
     _palace_clear_terrain(world, left_x, sy, total_w, H_SALA + 14)
 
@@ -4680,10 +5010,10 @@ def _place_moorish_palace(world, left_x: int, sy: int):
     variant = rng.randint(0, 1)   # 0 = Nasrid sultanate  1 = Almohad caliphate
 
     W_GARD  = 8
-    W_TOWER = 8;   H_TOWER = 15
-    W_GAL   = 12;  H_GAL   = 11
-    W_PATIO = 14;  H_PATIO = 13
-    W_THRONE= 18;  H_THRONE= 16
+    W_TOWER = 8;   H_TOWER = 8
+    W_GAL   = 12;  H_GAL   = 7
+    W_PATIO = 14;  H_PATIO = 7
+    W_THRONE= 18;  H_THRONE= 8
     total_w = W_GARD + W_TOWER + W_GAL + W_PATIO + W_THRONE + W_PATIO + W_GAL + W_TOWER + W_GARD
     _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
 
@@ -4868,9 +5198,9 @@ def _place_middle_eastern_palace(world, left_x: int, sy: int):
     variant = rng.randint(0, 1)   # 0 = Abbasid  1 = Ottoman
 
     W_GARD = 8
-    W_GATE = 10;  H_GATE = 14
-    W_HALL = 14;  H_HALL = 12
-    W_IWAN = 22;  H_IWAN = 18
+    W_GATE = 10;  H_GATE = 7
+    W_HALL = 14;  H_HALL = 7
+    W_IWAN = 22;  H_IWAN = 9
     total_w = W_GARD + W_GATE + W_HALL + W_IWAN + W_HALL + W_GATE + W_GARD
     _palace_clear_terrain(world, left_x, sy, total_w, H_IWAN + 14)
 
@@ -5023,8 +5353,8 @@ def _place_norse_hall(world, left_x: int, sy: int):
     variant = rng.randint(0, 1)   # 0 = chieftain hall  1 = jarls court
 
     W_YARD  = 8
-    W_LODGE = 12;  H_LODGE = 11
-    W_HALL  = 22;  H_HALL  = 16
+    W_LODGE = 12;  H_LODGE = 7
+    W_HALL  = 22;  H_HALL  = 8
     total_w = W_YARD + W_LODGE + W_HALL + W_LODGE + W_YARD
     _palace_clear_terrain(world, left_x, sy, total_w, H_HALL + 12)
 
@@ -5138,9 +5468,9 @@ def _place_gothic_palace(world, left_x: int, sy: int):
     variant = rng.randint(0, 1)   # 0 = episcopal  1 = royal chapel
 
     W_GARD  = 8
-    W_TOWER = 8;   H_TOWER = 16
-    W_NAVE  = 12;  H_NAVE  = 14
-    W_CHOIR = 20;  H_CHOIR = 18
+    W_TOWER = 8;   H_TOWER = 8
+    W_NAVE  = 12;  H_NAVE  = 7
+    W_CHOIR = 20;  H_CHOIR = 9
     total_w = W_GARD + W_TOWER + W_NAVE + W_CHOIR + W_NAVE + W_TOWER + W_GARD
     _palace_clear_terrain(world, left_x, sy, total_w, H_CHOIR + 14)
 
@@ -5295,9 +5625,9 @@ def _place_african_palace(world, left_x: int, sy: int):
     variant = rng.randint(0, 1)   # 0 = Great Zimbabwe  1 = West African court
 
     W_GARD   = 8
-    W_ENCL   = 10;  H_ENCL   = 12
-    W_COURT  = 14;  H_COURT  = 11
-    W_THRONE = 18;  H_THRONE = 15
+    W_ENCL   = 10;  H_ENCL   = 7
+    W_COURT  = 14;  H_COURT  = 7
+    W_THRONE = 18;  H_THRONE = 8
     total_w = W_GARD + W_ENCL + W_COURT + W_THRONE + W_COURT + W_ENCL + W_GARD
     _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 12)
 
@@ -5450,9 +5780,9 @@ def _place_byzantine_palace(world, left_x: int, sy: int):
     variant = rng.randint(0, 1)   # 0 = Macedonian dynasty  1 = Komnenian era
 
     W_GARD   = 8
-    W_PORT   = 10;  H_PORT   = 12
-    W_NAOS   = 14;  H_NAOS   = 14
-    W_THRONE = 22;  H_THRONE = 18
+    W_PORT   = 10;  H_PORT   = 7
+    W_NAOS   = 14;  H_NAOS   = 7
+    W_THRONE = 22;  H_THRONE = 9
     total_w = W_GARD + W_PORT + W_NAOS + W_THRONE + W_NAOS + W_PORT + W_GARD
     _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
 
@@ -5607,9 +5937,9 @@ def _place_tibetan_palace(world, left_x: int, sy: int):
     variant = rng.randint(0, 1)   # 0 = Gelug monastery  1 = Bon royal court
 
     W_YARD  = 8
-    W_WING  = 12;  H_WING  = 13
-    W_COURT = 14;  H_COURT = 12
-    W_TOWER = 20;  H_TOWER = 22
+    W_WING  = 12;  H_WING  = 7
+    W_COURT = 14;  H_COURT = 7
+    W_TOWER = 20;  H_TOWER = 11
     total_w = W_YARD + W_WING + W_COURT + W_TOWER + W_COURT + W_WING + W_YARD
     _palace_clear_terrain(world, left_x, sy, total_w, H_TOWER + 14)
 
@@ -5799,9 +6129,9 @@ def _place_japanese_palace(world, left_x: int, sy: int):
     variant = rng.randint(0, 1)   # 0 = shogunate fortress  1 = daimyo castle
 
     W_ZEN   = 10                      # zen garden approach
-    W_YAG   = 10;  H_YAG  = 14       # flanking yagura corner tower
-    W_SHOIN = 14;  H_SHOIN = 10       # shoin reception hall
-    W_KEEP  = 16;  H_KEEP  = 20       # central tenshu keep
+    W_YAG   = 10;  H_YAG  = 7        # flanking yagura corner tower
+    W_SHOIN = 14;  H_SHOIN = 7        # shoin reception hall
+    W_KEEP  = 16;  H_KEEP  = 10       # central tenshu keep
     total_w = W_ZEN + W_YAG + W_SHOIN + W_KEEP + W_SHOIN + W_YAG + W_ZEN
     _palace_clear_terrain(world, left_x, sy, total_w, H_KEEP + 14)
 
@@ -5960,9 +6290,9 @@ def _place_chinese_palace(world, left_x: int, sy: int):
     variant = rng.randint(0, 1)   # 0 = Ming dynasty  1 = Qing dynasty
 
     W_GATE   = 10                        # ceremonial pailou gate approach
-    W_OUTER  = 16;  H_OUTER  = 12       # outer ceremonial court
-    W_WING   = 12;  H_WING   = 10       # side gallery wing
-    W_THRONE = 22;  H_THRONE = 14       # central Taihe throne hall
+    W_OUTER  = 16;  H_OUTER  = 7        # outer ceremonial court
+    W_WING   = 12;  H_WING   = 7        # side gallery wing
+    W_THRONE = 22;  H_THRONE = 8        # central Taihe throne hall
     total_w  = W_GATE + W_OUTER + W_WING + W_THRONE + W_WING + W_OUTER + W_GATE
     _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
 
@@ -6106,6 +6436,1166 @@ def _place_chinese_palace(world, left_x: int, sy: int):
 
     # ── pailou gate (right) ──────────────────────────────────────────────────
     _pailou(x, W_GATE)
+
+
+def _place_tang_palace(world, left_x: int, sy: int):
+    """Tang dynasty Daming Palace — granite terrace approaches, broad drum towers,
+    open colonnade courts, four-eave Hanyuan great hall.
+    Staff: court poet, shrine keeper, palace chef, gem merchant.
+    """
+    rng = random.Random(left_x ^ (world.seed * 0x6B1C3A9) ^ 0xD8E4F2)
+    variant = rng.randint(0, 1)   # 0 = early Tang  1 = late Tang
+
+    W_TERR = 10                       # granite terrace approach
+    W_DRUM = 12;  H_DRUM = 7         # drum tower
+    W_COL  = 14;  H_COL  = 7         # open colonnade court
+    W_HANY = 24;  H_HANY = 7         # Hanyuan Hall
+    total_w = W_TERR + W_DRUM + W_COL + W_HANY + W_COL + W_DRUM + W_TERR
+    _palace_clear_terrain(world, left_x, sy, total_w, H_DRUM + 12)
+
+    def _terrace(lx, w):
+        for bx in range(lx, lx + w):
+            _castle_set(world, bx, sy, GRANITE_ASHLAR)
+        for bx in range(lx + 1, lx + w - 1):
+            _castle_set(world, bx, sy - 1, GRANITE_ASHLAR)
+        _castle_bg(world, lx + 1,      sy - 2, TOPIARY_DRAGON)
+        _castle_bg(world, lx + w - 1,  sy - 2, TOPIARY_DRAGON)
+        _castle_bg(world, lx + w // 2, sy - 2, PAPER_LANTERN)
+
+    def _drum_tower(lx, w, h):
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy, GRANITE_ASHLAR)
+        _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, CRIMSON_BRICK)
+        for by in range(sy - h, sy):
+            _castle_set(world, lx,       by, CRIMSON_BRICK)
+            _castle_set(world, lx + w,   by, CRIMSON_BRICK)
+        for bx in range(lx + 2, lx + w - 1, 3):
+            _castle_bg(world, bx, sy - 3, LACQUER_PANEL)
+            _castle_bg(world, bx, sy - 4, LACQUER_PANEL)
+        _castle_bg(world, lx + w // 2, sy - h + 3, STAR_LAMP)
+        for tier in range(4):
+            base_y = sy - h - 1 - tier * 2
+            for bx in range(lx - 1 + tier, lx + w + 2 - tier):
+                _castle_set(world, bx, base_y, GLAZED_ROOF_TILE)
+            for bx in range(lx + tier, lx + w + 1 - tier):
+                _castle_set(world, bx, base_y - 1, CRIMSON_BRICK)
+
+    def _colonnade(lx, w, h):
+        _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, CRIMSON_BRICK)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy, IMPERIAL_PAVING)
+        for by in range(sy - h, sy):
+            _castle_set(world, lx,       by, CRIMSON_BRICK)
+            _castle_set(world, lx + w,   by, CRIMSON_BRICK)
+        _castle_door(world, lx, sy)
+        _castle_door(world, lx + w - 2, sy)
+        for col in range(lx + 3, lx + w - 2, 4):
+            for by in range(sy - h + 2, sy):
+                _castle_bg(world, col, by, CRIMSON_BRICK)
+            _castle_bg(world, col, sy - h + 1, DRAGON_TILE)
+        for tier in range(2):
+            base_y = sy - h - 1 - tier * 2
+            for bx in range(lx - 1 + tier, lx + w + 2 - tier):
+                _castle_set(world, bx, base_y, GLAZED_ROOF_TILE)
+            for bx in range(lx + tier, lx + w + 1 - tier):
+                _castle_set(world, bx, base_y - 1, CRIMSON_BRICK)
+
+    x = left_x
+
+    # ── guards ───────────────────────────────────────────────────────────────
+    _palace_npc_at(world, left_x + 1,           sy, GuardNPC, biodome="east_asian")
+    _palace_npc_at(world, left_x + total_w - 2, sy, GuardNPC, biodome="east_asian")
+
+    # ── left granite terrace ──────────────────────────────────────────────────
+    _terrace(x, W_TERR)
+    x += W_TERR
+
+    # ── left drum tower ───────────────────────────────────────────────────────
+    _drum_tower(x, W_DRUM, H_DRUM)
+    if variant == 0:
+        _castle_bg(world, x + W_DRUM // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_DRUM // 2, sy, ShrineKeeperNPC, rng,
+                       biodome="east_asian")
+    else:
+        _castle_bg(world, x + W_DRUM // 2, sy - 1, PAPER_LANTERN)
+        _palace_npc_at(world, x + W_DRUM // 2, sy, GuardNPC, biodome="east_asian")
+    x += W_DRUM
+
+    # ── left colonnade court ──────────────────────────────────────────────────
+    _colonnade(x, W_COL, H_COL)
+    _castle_bg(world, x + W_COL // 2, sy - H_COL + 3, CHANDELIER)
+    if variant == 0:
+        _castle_bg(world, x + W_COL // 2, sy - 1, KOI_POOL)
+        _palace_npc_at(world, x + W_COL // 2, sy, WildflowerQuestNPC, rng, 1,
+                       "east_asian")
+    else:
+        _castle_bg(world, x + W_COL // 2, sy - 1, CERAMIC_PLANTER)
+        _palace_npc_at(world, x + W_COL // 2, sy, MerchantNPC, rng)
+    x += W_COL
+
+    # ── Hanyuan Hall (central throne) ─────────────────────────────────────────
+    cx = x + W_HANY // 2
+    for bx in range(x, x + W_HANY + 1):
+        _castle_set(world, bx, sy, GRANITE_ASHLAR)
+    _castle_fill_bg(world, x, x + W_HANY, sy - H_HANY, sy - 1, CRIMSON_BRICK)
+    for by in range(sy - H_HANY, sy):
+        _castle_set(world, x,           by, CRIMSON_BRICK)
+        _castle_set(world, x + W_HANY,  by, CRIMSON_BRICK)
+    _castle_door(world, x, sy)
+    _castle_door(world, x + W_HANY - 2, sy)
+    for col_x in (x + 5, cx - 4, cx + 4, x + W_HANY - 5):
+        for by in range(sy - H_HANY + 3, sy):
+            _castle_bg(world, col_x, by, CRIMSON_BRICK)
+        _castle_bg(world, col_x, sy - H_HANY + 2, DRAGON_TILE)
+    for bx in range(x + 1, x + W_HANY, 3):
+        _castle_bg(world, bx, sy - 3, LACQUER_PANEL)
+        _castle_bg(world, bx, sy - 4, LACQUER_PANEL)
+    _castle_bg(world, cx,     sy - 1, CARVED_BENCH)
+    _castle_bg(world, cx - 5, sy - 1, PAPER_LANTERN)
+    _castle_bg(world, cx + 5, sy - 1, PAPER_LANTERN)
+    _castle_bg(world, cx - 8, sy - 1, TOPIARY_DRAGON)
+    _castle_bg(world, cx + 8, sy - 1, TOPIARY_DRAGON)
+    for gx in range(cx - 3, cx + 4):
+        _castle_bg(world, gx, sy - H_HANY + 4, GOLDEN_CEILING)
+    for tier in range(4):
+        base_y = sy - H_HANY - 1 - tier * 2
+        for bx in range(x - 1 + tier, x + W_HANY + 2 - tier):
+            _castle_set(world, bx, base_y, GLAZED_ROOF_TILE)
+        for bx in range(x + tier, x + W_HANY + 1 - tier):
+            _castle_set(world, bx, base_y - 1, CRIMSON_BRICK)
+    x += W_HANY
+
+    # ── right colonnade court ─────────────────────────────────────────────────
+    _colonnade(x, W_COL, H_COL)
+    _castle_bg(world, x + W_COL // 2, sy - H_COL + 3, CHANDELIER)
+    if variant == 0:
+        _castle_bg(world, x + W_COL // 2, sy - 1, PAPER_LANTERN)
+        _palace_npc_at(world, x + W_COL // 2, sy, RestaurantNPC, rng, "east_asian")
+    else:
+        _castle_bg(world, x + W_COL // 2, sy - 1, JADE_PANEL)
+        _palace_npc_at(world, x + W_COL // 2, sy, GemQuestNPC, rng, 1, "east_asian")
+    x += W_COL
+
+    # ── right drum tower ──────────────────────────────────────────────────────
+    _drum_tower(x, W_DRUM, H_DRUM)
+    if variant == 0:
+        _castle_bg(world, x + W_DRUM // 2, sy - 1, PAPER_LANTERN)
+        _palace_npc_at(world, x + W_DRUM // 2, sy, TradeNPC, rng)
+    else:
+        _castle_bg(world, x + W_DRUM // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_DRUM // 2, sy, MerchantNPC, rng)
+    x += W_DRUM
+
+    # ── right granite terrace ─────────────────────────────────────────────────
+    _terrace(x, W_TERR)
+
+
+def _place_song_palace(world, left_x: int, sy: int):
+    """Song dynasty Lin'an Palace — scholar water gardens, moon gate courts,
+    bamboo screen pavilions, refined two-eave Chuigong reception hall.
+    Staff: court painter, garden scholar, gem appraiser, palace chef.
+    """
+    rng = random.Random(left_x ^ (world.seed * 0x4E9A2C7) ^ 0xB5D3F8)
+    variant = rng.randint(0, 1)   # 0 = Northern Song  1 = Southern Song
+
+    W_GARDEN = 12                      # scholar water garden approach
+    W_MOON   = 10;  H_MOON  = 7       # moon gate court
+    W_PAV    = 14;  H_PAV   = 7       # scholar pavilion
+    W_HALL   = 18;  H_HALL  = 7       # main Chuigong reception hall
+    total_w  = W_GARDEN + W_MOON + W_PAV + W_HALL + W_PAV + W_MOON + W_GARDEN
+    _palace_clear_terrain(world, left_x, sy, total_w, H_HALL + 12)
+
+    def _water_garden(lx, w):
+        for bx in range(lx, lx + w):
+            _castle_set(world, bx, sy, WAVE_CERAMIC)
+        _castle_bg(world, lx + 1,      sy - 1, KOI_POOL)
+        _castle_bg(world, lx + 3,      sy - 1, BAMBOO_CLUMP)
+        _castle_bg(world, lx + w - 3,  sy - 1, BAMBOO_CLUMP)
+        _castle_bg(world, lx + w - 1,  sy - 1, CERAMIC_PLANTER)
+
+    def _moon_court(lx, w, h):
+        _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, PINE_PLANK_WALL)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy, WAVE_CERAMIC)
+        for by in range(sy - h, sy):
+            _castle_set(world, lx,       by, PINE_PLANK_WALL)
+            _castle_set(world, lx + w,   by, PINE_PLANK_WALL)
+        _castle_door(world, lx, sy)
+        _castle_door(world, lx + w - 2, sy)
+        _castle_bg(world, lx + w // 2, sy - 4, MOON_GATE)
+        _castle_bg(world, lx + w // 2, sy - 5, MOON_GATE)
+        for bx in range(lx + 1, lx + w, 2):
+            _castle_bg(world, bx, sy - 2, BAMBOO_SCREEN)
+        for tier in range(2):
+            base_y = sy - h - 1 - tier * 2
+            for bx in range(lx - 1 + tier, lx + w + 2 - tier):
+                _castle_set(world, bx, base_y, GLAZED_ROOF_TILE)
+            for bx in range(lx + tier, lx + w + 1 - tier):
+                _castle_set(world, bx, base_y - 1, PINE_PLANK_WALL)
+
+    def _scholar_pavilion(lx, w, h):
+        _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, PINE_PLANK_WALL)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy, WAVE_CERAMIC)
+        for by in range(sy - h, sy):
+            _castle_set(world, lx,       by, PINE_PLANK_WALL)
+            _castle_set(world, lx + w,   by, PINE_PLANK_WALL)
+        _castle_door(world, lx, sy)
+        _castle_door(world, lx + w - 2, sy)
+        for bx in range(lx + 1, lx + w, 2):
+            _castle_bg(world, bx, sy - 3, BAMBOO_SCREEN)
+            _castle_bg(world, bx, sy - 4, BAMBOO_SCREEN)
+        for tier in range(2):
+            base_y = sy - h - 1 - tier * 2
+            for bx in range(lx - 1 + tier, lx + w + 2 - tier):
+                _castle_set(world, bx, base_y, GLAZED_ROOF_TILE)
+            for bx in range(lx + tier, lx + w + 1 - tier):
+                _castle_set(world, bx, base_y - 1, PINE_PLANK_WALL)
+
+    x = left_x
+
+    # ── guards ───────────────────────────────────────────────────────────────
+    _palace_npc_at(world, left_x + 1,           sy, GuardNPC, biodome="east_asian")
+    _palace_npc_at(world, left_x + total_w - 2, sy, GuardNPC, biodome="east_asian")
+
+    # ── left water garden ─────────────────────────────────────────────────────
+    _water_garden(x, W_GARDEN)
+    x += W_GARDEN
+
+    # ── left moon gate court ──────────────────────────────────────────────────
+    _moon_court(x, W_MOON, H_MOON)
+    _castle_bg(world, x + W_MOON // 2, sy - H_MOON + 3, STAR_LAMP)
+    if variant == 0:
+        _castle_bg(world, x + W_MOON // 2, sy - 1, CERAMIC_SEAT)
+        _palace_npc_at(world, x + W_MOON // 2, sy, WildflowerQuestNPC, rng, 1,
+                       "east_asian")
+    else:
+        _castle_bg(world, x + W_MOON // 2, sy - 1, KOI_POOL)
+        _palace_npc_at(world, x + W_MOON // 2, sy, ShrineKeeperNPC, rng,
+                       biodome="east_asian")
+    x += W_MOON
+
+    # ── left scholar pavilion ─────────────────────────────────────────────────
+    _scholar_pavilion(x, W_PAV, H_PAV)
+    _castle_bg(world, x + 2,            sy - 1, BAMBOO_CLUMP)
+    _castle_bg(world, x + W_PAV - 2,    sy - 1, BAMBOO_CLUMP)
+    _castle_bg(world, x + W_PAV // 2,   sy - H_PAV + 3, CHANDELIER)
+    if variant == 0:
+        _castle_bg(world, x + W_PAV // 2, sy - 1, JADE_PANEL)
+        _palace_npc_at(world, x + W_PAV // 2, sy, MerchantNPC, rng)
+    else:
+        _castle_bg(world, x + W_PAV // 2, sy - 1, CERAMIC_PLANTER)
+        _palace_npc_at(world, x + W_PAV // 2, sy, GemQuestNPC, rng, 1, "east_asian")
+    x += W_PAV
+
+    # ── Chuigong Hall (central throne) ────────────────────────────────────────
+    cx = x + W_HALL // 2
+    _castle_fill_bg(world, x, x + W_HALL, sy - H_HALL, sy - 1, PINE_PLANK_WALL)
+    for bx in range(x, x + W_HALL + 1):
+        _castle_set(world, bx, sy, WAVE_CERAMIC)
+    for by in range(sy - H_HALL, sy):
+        _castle_set(world, x,          by, PINE_PLANK_WALL)
+        _castle_set(world, x + W_HALL, by, PINE_PLANK_WALL)
+    _castle_door(world, x, sy)
+    _castle_door(world, x + W_HALL - 2, sy)
+    for bx in range(x + 1, x + W_HALL, 2):
+        _castle_bg(world, bx, sy - 3, BAMBOO_SCREEN)
+        _castle_bg(world, bx, sy - 4, BAMBOO_SCREEN)
+    for bx in range(x + 2, x + W_HALL, 5):
+        _castle_bg(world, bx, sy - H_HALL + 2, DRAGON_TILE)
+    for col_x in (x + 3, x + W_HALL - 3):
+        for by in range(sy - H_HALL + 3, sy):
+            _castle_bg(world, col_x, by, PINE_PLANK_WALL)
+        _castle_bg(world, col_x, sy - H_HALL + 2, PAPER_LANTERN)
+    _castle_bg(world, cx,     sy - 1, CARVED_BENCH)
+    _castle_bg(world, cx - 3, sy - 1, PAPER_LANTERN)
+    _castle_bg(world, cx + 3, sy - 1, PAPER_LANTERN)
+    _castle_bg(world, cx - 5, sy - 1, CERAMIC_PLANTER)
+    _castle_bg(world, cx + 5, sy - 1, CERAMIC_PLANTER)
+    for gx in range(cx - 2, cx + 3):
+        _castle_bg(world, gx, sy - H_HALL + 4, GOLDEN_CEILING)
+    for tier in range(2):
+        base_y = sy - H_HALL - 1 - tier * 2
+        for bx in range(x - 1 + tier, x + W_HALL + 2 - tier):
+            _castle_set(world, bx, base_y, GLAZED_ROOF_TILE)
+        for bx in range(x + tier, x + W_HALL + 1 - tier):
+            _castle_set(world, bx, base_y - 1, PINE_PLANK_WALL)
+    x += W_HALL
+
+    # ── right scholar pavilion ────────────────────────────────────────────────
+    _scholar_pavilion(x, W_PAV, H_PAV)
+    _castle_bg(world, x + 2,            sy - 1, CERAMIC_SEAT)
+    _castle_bg(world, x + W_PAV - 2,    sy - 1, CERAMIC_SEAT)
+    _castle_bg(world, x + W_PAV // 2,   sy - H_PAV + 3, CHANDELIER)
+    if variant == 0:
+        _castle_bg(world, x + W_PAV // 2, sy - 1, MOON_GATE)
+        _palace_npc_at(world, x + W_PAV // 2, sy, RestaurantNPC, rng, "east_asian")
+    else:
+        _castle_bg(world, x + W_PAV // 2, sy - 1, KOI_POOL)
+        _palace_npc_at(world, x + W_PAV // 2, sy, JewelryMerchantNPC, rng)
+    x += W_PAV
+
+    # ── right moon gate court ─────────────────────────────────────────────────
+    _moon_court(x, W_MOON, H_MOON)
+    _castle_bg(world, x + W_MOON // 2, sy - H_MOON + 3, STAR_LAMP)
+    if variant == 0:
+        _castle_bg(world, x + W_MOON // 2, sy - 1, KOI_POOL)
+        _palace_npc_at(world, x + W_MOON // 2, sy, TradeNPC, rng)
+    else:
+        _castle_bg(world, x + W_MOON // 2, sy - 1, CERAMIC_PLANTER)
+        _palace_npc_at(world, x + W_MOON // 2, sy, MerchantNPC, rng)
+    x += W_MOON
+
+    # ── right water garden ────────────────────────────────────────────────────
+    _water_garden(x, W_GARDEN)
+
+
+def _place_han_palace(world, left_x: int, sy: int):
+    """Han dynasty Weiyang Palace — earthen terrace platforms, stone watchtowers,
+    jade-accented ante-halls, austere throne platform.
+    Staff: court official, imperial archivist, stone carver, trade minister.
+    """
+    rng = random.Random(left_x ^ (world.seed * 0x3F7B5D2) ^ 0xC9A1E6)
+    variant = rng.randint(0, 1)   # 0 = Western Han  1 = Eastern Han
+
+    W_PLAT   = 10                       # earthen terrace platform approach
+    W_WATCH  = 12;  H_WATCH  = 8       # stone watchtower
+    W_ANTE   = 12;  H_ANTE   = 7       # ante-hall
+    W_THRONE = 20;  H_THRONE = 7       # central Jiaofang throne platform
+    total_w  = W_PLAT + W_WATCH + W_ANTE + W_THRONE + W_ANTE + W_WATCH + W_PLAT
+    _palace_clear_terrain(world, left_x, sy, total_w, H_WATCH + 12)
+
+    def _platform(lx, w):
+        for bx in range(lx, lx + w):
+            _castle_set(world, bx, sy, GRANITE_ASHLAR)
+        for bx in range(lx + 1, lx + w - 1):
+            _castle_set(world, bx, sy - 1, LIMESTONE_BLOCK)
+        _castle_bg(world, lx + 2,      sy - 2, STAR_LAMP)
+        _castle_bg(world, lx + w - 2,  sy - 2, STAR_LAMP)
+
+    def _watchtower(lx, w, h):
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy, GRANITE_ASHLAR)
+        _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, LIMESTONE_BLOCK)
+        for by in range(sy - h, sy):
+            _castle_set(world, lx,       by, LIMESTONE_BLOCK)
+            _castle_set(world, lx + w,   by, LIMESTONE_BLOCK)
+        for by in range(sy - h + 3, sy - 2, 4):
+            _castle_bg(world, lx + w // 2, by, JADE_PANEL)
+        _castle_bg(world, lx + w // 2, sy - h + 3, GARDEN_LANTERN)
+        for tier in range(2):
+            base_y = sy - h - 1 - tier * 2
+            for bx in range(lx - 1 + tier, lx + w + 2 - tier):
+                _castle_set(world, bx, base_y, GLAZED_ROOF_TILE)
+            for bx in range(lx + tier, lx + w + 1 - tier):
+                _castle_set(world, bx, base_y - 1, LIMESTONE_BLOCK)
+
+    def _ante_hall(lx, w, h):
+        _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, LIMESTONE_BLOCK)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy, GRANITE_ASHLAR)
+        for by in range(sy - h, sy):
+            _castle_set(world, lx,       by, LIMESTONE_BLOCK)
+            _castle_set(world, lx + w,   by, LIMESTONE_BLOCK)
+        _castle_door(world, lx, sy)
+        _castle_door(world, lx + w - 2, sy)
+        for bx in range(lx + 1, lx + w, 2):
+            _castle_bg(world, bx, sy - 3, JADE_PANEL)
+        for tier in range(2):
+            base_y = sy - h - 1 - tier * 2
+            for bx in range(lx - 1 + tier, lx + w + 2 - tier):
+                _castle_set(world, bx, base_y, GLAZED_ROOF_TILE)
+            for bx in range(lx + tier, lx + w + 1 - tier):
+                _castle_set(world, bx, base_y - 1, LIMESTONE_BLOCK)
+
+    x = left_x
+
+    # ── guards ───────────────────────────────────────────────────────────────
+    _palace_npc_at(world, left_x + 1,           sy, GuardNPC, biodome="east_asian")
+    _palace_npc_at(world, left_x + total_w - 2, sy, GuardNPC, biodome="east_asian")
+
+    # ── left terrace platform ─────────────────────────────────────────────────
+    _platform(x, W_PLAT)
+    x += W_PLAT
+
+    # ── left watchtower ───────────────────────────────────────────────────────
+    _watchtower(x, W_WATCH, H_WATCH)
+    if variant == 0:
+        _castle_bg(world, x + W_WATCH // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_WATCH // 2, sy, GuardNPC, biodome="east_asian")
+    else:
+        _castle_bg(world, x + W_WATCH // 2, sy - 1, STAR_LAMP)
+        _palace_npc_at(world, x + W_WATCH // 2, sy, ShrineKeeperNPC, rng,
+                       biodome="east_asian")
+    x += W_WATCH
+
+    # ── left ante-hall ────────────────────────────────────────────────────────
+    _ante_hall(x, W_ANTE, H_ANTE)
+    _castle_bg(world, x + W_ANTE // 2, sy - H_ANTE + 3, STAR_LAMP)
+    if variant == 0:
+        _castle_bg(world, x + W_ANTE // 2, sy - 1, GARDEN_LANTERN)
+        _palace_npc_at(world, x + W_ANTE // 2, sy, MerchantNPC, rng)
+    else:
+        _castle_bg(world, x + W_ANTE // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_ANTE // 2, sy, TradeNPC, rng)
+    x += W_ANTE
+
+    # ── central Jiaofang throne platform ──────────────────────────────────────
+    cx = x + W_THRONE // 2
+    for bx in range(x, x + W_THRONE + 1):
+        _castle_set(world, bx, sy, GRANITE_ASHLAR)
+    _castle_fill_bg(world, x, x + W_THRONE, sy - H_THRONE, sy - 1, LIMESTONE_BLOCK)
+    for by in range(sy - H_THRONE, sy):
+        _castle_set(world, x,             by, LIMESTONE_BLOCK)
+        _castle_set(world, x + W_THRONE,  by, LIMESTONE_BLOCK)
+    _castle_door(world, x, sy)
+    _castle_door(world, x + W_THRONE - 2, sy)
+    for col_x in (x + 4, x + W_THRONE - 4):
+        for by in range(sy - H_THRONE + 3, sy):
+            _castle_bg(world, col_x, by, LIMESTONE_BLOCK)
+        _castle_bg(world, col_x, sy - H_THRONE + 2, GARDEN_LANTERN)
+    for bx in range(x + 1, x + W_THRONE, 4):
+        _castle_bg(world, bx, sy - H_THRONE + 2, JADE_PANEL)
+    _castle_bg(world, cx,     sy - 1, CARVED_BENCH)
+    _castle_bg(world, cx - 4, sy - 1, STAR_LAMP)
+    _castle_bg(world, cx + 4, sy - 1, STAR_LAMP)
+    _castle_bg(world, cx - 7, sy - 1, STONE_BASIN)
+    _castle_bg(world, cx + 7, sy - 1, STONE_BASIN)
+    _castle_bg(world, cx,     sy - H_THRONE + 4, CHANDELIER)
+    for tier in range(3):
+        base_y = sy - H_THRONE - 1 - tier * 2
+        for bx in range(x - 1 + tier, x + W_THRONE + 2 - tier):
+            _castle_set(world, bx, base_y, GLAZED_ROOF_TILE)
+        for bx in range(x + tier, x + W_THRONE + 1 - tier):
+            _castle_set(world, bx, base_y - 1, LIMESTONE_BLOCK)
+    x += W_THRONE
+
+    # ── right ante-hall ───────────────────────────────────────────────────────
+    _ante_hall(x, W_ANTE, H_ANTE)
+    _castle_bg(world, x + W_ANTE // 2, sy - H_ANTE + 3, STAR_LAMP)
+    if variant == 0:
+        _castle_bg(world, x + W_ANTE // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_ANTE // 2, sy, GemQuestNPC, rng, 1, "east_asian")
+    else:
+        _castle_bg(world, x + W_ANTE // 2, sy - 1, GARDEN_LANTERN)
+        _palace_npc_at(world, x + W_ANTE // 2, sy, WildflowerQuestNPC, rng, 1,
+                       "east_asian")
+    x += W_ANTE
+
+    # ── right watchtower ──────────────────────────────────────────────────────
+    _watchtower(x, W_WATCH, H_WATCH)
+    if variant == 0:
+        _castle_bg(world, x + W_WATCH // 2, sy - 1, STAR_LAMP)
+        _palace_npc_at(world, x + W_WATCH // 2, sy, TradeNPC, rng)
+    else:
+        _castle_bg(world, x + W_WATCH // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_WATCH // 2, sy, MerchantNPC, rng)
+    x += W_WATCH
+
+    # ── right terrace platform ────────────────────────────────────────────────
+    _platform(x, W_PLAT)
+
+
+def _place_east_african_palace(world, left_x: int, sy: int):
+    """Aksumite / East African palace — obelisk forecourt, carved granite gate towers,
+    stepped throne hall.  Staff: trade envoy, gem quest, shrine keeper, jeweler.
+    """
+    rng = random.Random(left_x ^ (world.seed * 0x7C3D2E1) ^ 0xF5A4B8)
+    variant = rng.randint(0, 1)   # 0 = Aksumite  1 = Swahili Coast
+
+    W_GARD   = 8
+    W_GATE   = 10;  H_GATE   = 7
+    W_COURT  = 12;  H_COURT  = 7
+    W_THRONE = 22;  H_THRONE = 8
+    total_w = W_GARD + W_GATE + W_COURT + W_THRONE + W_COURT + W_GATE + W_GARD
+    _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 12)
+
+    def _stone_room(lx, w, h):
+        _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, GRANITE_ASHLAR)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy, SANDSTONE_BLOCK)
+        for by in range(sy - h, sy):
+            _castle_set(world, lx,      by, GRANITE_ASHLAR)
+            _castle_set(world, lx + w,  by, GRANITE_ASHLAR)
+        _castle_door(world, lx, sy)
+        _castle_door(world, lx + w - 2, sy)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy - h, GRANITE_ASHLAR)
+            if (bx - lx) % 2 == 0:
+                _castle_set(world, bx, sy - h - 1, SANDSTONE_BLOCK)
+
+    x = left_x
+
+    # ── guards ───────────────────────────────────────────────────────────────
+    _palace_npc_at(world, left_x + 1,           sy, GuardNPC, biodome="savanna")
+    _palace_npc_at(world, left_x + total_w - 2, sy, GuardNPC, biodome="savanna")
+
+    # ── entry forecourt (left) ───────────────────────────────────────────────
+    for bx in range(x, x + W_GARD):
+        _castle_set(world, bx, sy, SANDSTONE_BLOCK)
+    _castle_bg(world, x + 1,           sy - 1, MARIGOLD_BED)
+    _castle_bg(world, x + 3,           sy - 1, VICTORY_STELE)
+    _castle_bg(world, x + 5,           sy - 1, SUNFLOWER_BED)
+    _castle_bg(world, x + W_GARD // 2, sy - 1, rng.choice(_FOUNTAIN_BLOCKS))
+    x += W_GARD
+
+    # ── left gate tower ──────────────────────────────────────────────────────
+    _stone_room(x, W_GATE, H_GATE)
+    for step in range(1, 5):
+        span = max(0, 2 - step // 2)
+        peak_y = sy - H_GATE - step
+        if 0 <= peak_y < world.height:
+            for bx in range(x + W_GATE // 2 - span, x + W_GATE // 2 + span + 1):
+                _castle_set(world, bx, peak_y, SANDSTONE_BLOCK)
+    _castle_bg(world, x + W_GATE // 2, sy - H_GATE + 3, CHANDELIER)
+    if variant == 0:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, HERMES_STELE)
+        _palace_npc_at(world, x + W_GATE // 2, sy, TradeNPC, rng)
+    else:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_GATE // 2, sy, MerchantNPC, rng)
+    x += W_GATE
+
+    # ── left inner court ─────────────────────────────────────────────────────
+    _stone_room(x, W_COURT, H_COURT)
+    _castle_bg(world, x + W_COURT // 2, sy - H_COURT + 3, CHANDELIER)
+    _castle_bg(world, x + 2,            sy - 1, MARIGOLD_BED)
+    _castle_bg(world, x + W_COURT - 2,  sy - 1, MARIGOLD_BED)
+    _castle_bg(world, x + W_COURT // 2, sy - 1, rng.choice(_FOUNTAIN_BLOCKS))
+    if variant == 0:
+        _palace_npc_at(world, x + W_COURT // 2, sy, GemQuestNPC, rng, 1, "savanna")
+    else:
+        _palace_npc_at(world, x + W_COURT // 2, sy, WildflowerQuestNPC, rng, 1, "savanna")
+    x += W_COURT
+
+    # ── granite throne hall ──────────────────────────────────────────────────
+    cx = x + W_THRONE // 2
+    _castle_fill_bg(world, x, x + W_THRONE, sy - H_THRONE, sy - 1, GRANITE_ASHLAR)
+    for bx in range(x, x + W_THRONE + 1):
+        _castle_set(world, bx, sy, SANDSTONE_BLOCK)
+    for by in range(sy - H_THRONE, sy):
+        _castle_set(world, x,             by, GRANITE_ASHLAR)
+        _castle_set(world, x + W_THRONE,  by, GRANITE_ASHLAR)
+    _castle_door(world, x, sy)
+    _castle_door(world, x + W_THRONE - 2, sy)
+    for col_x in (x + 4, x + W_THRONE - 4):
+        for by in range(sy - H_THRONE + 3, sy):
+            _castle_bg(world, col_x, by, GRANITE_ASHLAR)
+        _castle_bg(world, col_x, sy - H_THRONE + 2, STAR_LAMP)
+    for step in range(1, 5):
+        step_y = sy - H_THRONE - step
+        if not (0 <= step_y < world.height):
+            break
+        for bx in range(x + step * 2, x + W_THRONE + 1 - step * 2):
+            _castle_set(world, bx, step_y, SANDSTONE_BLOCK)
+    for bx in range(x, x + W_THRONE + 1):
+        _castle_set(world, bx, sy - H_THRONE, GRANITE_ASHLAR)
+    _castle_bg(world, cx,     sy - 1, CARVED_BENCH)
+    _castle_bg(world, cx - 4, sy - 1, VICTORY_STELE)
+    _castle_bg(world, cx + 4, sy - 1, VICTORY_STELE)
+    _castle_bg(world, cx - 6, sy - 1, BRAZIER)
+    _castle_bg(world, cx + 6, sy - 1, BRAZIER)
+    _castle_bg(world, cx,     sy - H_THRONE + 4, CHANDELIER)
+    x += W_THRONE
+
+    # ── right inner court ────────────────────────────────────────────────────
+    _stone_room(x, W_COURT, H_COURT)
+    _castle_bg(world, x + W_COURT // 2, sy - H_COURT + 3, CHANDELIER)
+    _castle_bg(world, x + 2,            sy - 1, SUNFLOWER_BED)
+    _castle_bg(world, x + W_COURT - 2,  sy - 1, SUNFLOWER_BED)
+    _castle_bg(world, x + W_COURT // 2, sy - 1, rng.choice(_FOUNTAIN_BLOCKS))
+    if variant == 0:
+        _palace_npc_at(world, x + W_COURT // 2, sy, ShrineKeeperNPC, rng,
+                       biodome="savanna")
+    else:
+        _palace_npc_at(world, x + W_COURT // 2, sy, GemQuestNPC, rng, 1, "savanna")
+    x += W_COURT
+
+    # ── right gate tower ─────────────────────────────────────────────────────
+    _stone_room(x, W_GATE, H_GATE)
+    for step in range(1, 5):
+        span = max(0, 2 - step // 2)
+        peak_y = sy - H_GATE - step
+        if 0 <= peak_y < world.height:
+            for bx in range(x + W_GATE // 2 - span, x + W_GATE // 2 + span + 1):
+                _castle_set(world, bx, peak_y, SANDSTONE_BLOCK)
+    _castle_bg(world, x + W_GATE // 2, sy - H_GATE + 3, CHANDELIER)
+    if variant == 0:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_GATE // 2, sy, JewelryMerchantNPC, rng)
+    else:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, HERMES_STELE)
+        _palace_npc_at(world, x + W_GATE // 2, sy, TradeNPC, rng)
+    x += W_GATE
+
+    # ── exit forecourt (right) ───────────────────────────────────────────────
+    for bx in range(x, x + W_GARD):
+        _castle_set(world, bx, sy, SANDSTONE_BLOCK)
+    _castle_bg(world, x + 1,           sy - 1, SUNFLOWER_BED)
+    _castle_bg(world, x + 3,           sy - 1, VICTORY_STELE)
+    _castle_bg(world, x + 5,           sy - 1, MARIGOLD_BED)
+    _castle_bg(world, x + W_GARD // 2, sy - 1, rng.choice(_FOUNTAIN_BLOCKS))
+
+
+def _place_mesoamerican_palace(world, left_x: int, sy: int):
+    """Mesoamerican palace — Aztec / Maya stepped temple pyramid, offering courts,
+    colonnaded halls.  Staff: trade envoy, gem quest, wildflower quest, shrine keeper.
+    """
+    rng = random.Random(left_x ^ (world.seed * 0x6B2F4E7) ^ 0xD4C3B2)
+    variant = rng.randint(0, 1)   # 0 = Aztec  1 = Maya
+
+    W_PLAZA  = 8
+    W_GATE   = 10;  H_GATE   = 7
+    W_COURT  = 14;  H_COURT  = 7
+    W_PYRAM  = 20;  H_PYRAM  = 8
+    total_w = W_PLAZA + W_GATE + W_COURT + W_PYRAM + W_COURT + W_GATE + W_PLAZA
+    _palace_clear_terrain(world, left_x, sy, total_w, H_PYRAM + 14)
+
+    def _temple_room(lx, w, h):
+        _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, SANDSTONE_BLOCK)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy, LIMESTONE_BLOCK)
+        for by in range(sy - h, sy):
+            _castle_set(world, lx,      by, SANDSTONE_BLOCK)
+            _castle_set(world, lx + w,  by, SANDSTONE_BLOCK)
+        _castle_door(world, lx, sy)
+        _castle_door(world, lx + w - 2, sy)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy - h,     SANDSTONE_BLOCK)
+            _castle_set(world, bx, sy - h - 1, TERRACOTTA_ROOF_TILE)
+
+    x = left_x
+
+    # ── guards ───────────────────────────────────────────────────────────────
+    _palace_npc_at(world, left_x + 1,           sy, GuardNPC, biodome="jungle")
+    _palace_npc_at(world, left_x + total_w - 2, sy, GuardNPC, biodome="jungle")
+
+    # ── entry plaza (left) ───────────────────────────────────────────────────
+    for bx in range(x, x + W_PLAZA):
+        _castle_set(world, bx, sy, LIMESTONE_BLOCK)
+    _castle_bg(world, x + 1,            sy - 1, MARIGOLD_BED)
+    _castle_bg(world, x + 3,            sy - 1, SUNFLOWER_BED)
+    _castle_bg(world, x + W_PLAZA // 2, sy - 1, BRAZIER)
+    x += W_PLAZA
+
+    # ── left gate temple ─────────────────────────────────────────────────────
+    _temple_room(x, W_GATE, H_GATE)
+    _castle_bg(world, x + W_GATE // 2, sy - H_GATE + 3, CHANDELIER)
+    _castle_bg(world, x + 2,           sy - 1, BRAZIER)
+    _castle_bg(world, x + W_GATE - 2,  sy - 1, BRAZIER)
+    if variant == 0:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_GATE // 2, sy, TradeNPC, rng)
+    else:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, CARVED_BENCH)
+        _palace_npc_at(world, x + W_GATE // 2, sy, MerchantNPC, rng)
+    x += W_GATE
+
+    # ── left offering court ───────────────────────────────────────────────────
+    _temple_room(x, W_COURT, H_COURT)
+    _castle_bg(world, x + W_COURT // 2, sy - H_COURT + 3, STAR_LAMP)
+    _castle_bg(world, x + 2,            sy - 1, MARIGOLD_BED)
+    _castle_bg(world, x + W_COURT - 2,  sy - 1, MARIGOLD_BED)
+    _castle_bg(world, x + W_COURT // 2, sy - 1, rng.choice(_FOUNTAIN_BLOCKS))
+    if variant == 0:
+        _palace_npc_at(world, x + W_COURT // 2, sy, GemQuestNPC, rng, 1, "jungle")
+    else:
+        _palace_npc_at(world, x + W_COURT // 2, sy, WildflowerQuestNPC, rng, 1,
+                       "jungle")
+    x += W_COURT
+
+    # ── central stepped pyramid throne complex ────────────────────────────────
+    cx = x + W_PYRAM // 2
+    _castle_fill_bg(world, x, x + W_PYRAM, sy - H_PYRAM, sy - 1, SANDSTONE_BLOCK)
+    for bx in range(x, x + W_PYRAM + 1):
+        _castle_set(world, bx, sy, LIMESTONE_BLOCK)
+    for by in range(sy - H_PYRAM, sy):
+        _castle_set(world, x,            by, SANDSTONE_BLOCK)
+        _castle_set(world, x + W_PYRAM,  by, SANDSTONE_BLOCK)
+    _castle_door(world, x, sy)
+    _castle_door(world, x + W_PYRAM - 2, sy)
+    for col_x in (x + 4, x + W_PYRAM - 4):
+        for by in range(sy - H_PYRAM + 3, sy):
+            _castle_bg(world, col_x, by, SANDSTONE_BLOCK)
+        _castle_bg(world, col_x, sy - H_PYRAM + 2, BRAZIER)
+    for tier in range(1, 6):
+        tier_y = sy - H_PYRAM - 1 - (tier - 1) * 2
+        if not (0 <= tier_y < world.height):
+            break
+        for bx in range(x + tier * 2, x + W_PYRAM + 1 - tier * 2):
+            _castle_set(world, bx, tier_y, SANDSTONE_BLOCK)
+        tier_top = tier_y - 1
+        if 0 <= tier_top < world.height:
+            for bx in range(x + tier * 2, x + W_PYRAM + 1 - tier * 2):
+                _castle_set(world, bx, tier_top, TERRACOTTA_ROOF_TILE)
+    for bx in range(x, x + W_PYRAM + 1):
+        _castle_set(world, bx, sy - H_PYRAM, SANDSTONE_BLOCK)
+    _castle_bg(world, cx,     sy - 1, CARVED_BENCH)
+    _castle_bg(world, cx - 4, sy - 1, BRAZIER)
+    _castle_bg(world, cx + 4, sy - 1, BRAZIER)
+    _castle_bg(world, cx - 6, sy - 1, MARIGOLD_BED)
+    _castle_bg(world, cx + 6, sy - 1, MARIGOLD_BED)
+    _castle_bg(world, cx,     sy - H_PYRAM + 4, CHANDELIER)
+    x += W_PYRAM
+
+    # ── right offering court ──────────────────────────────────────────────────
+    _temple_room(x, W_COURT, H_COURT)
+    _castle_bg(world, x + W_COURT // 2, sy - H_COURT + 3, STAR_LAMP)
+    _castle_bg(world, x + 2,            sy - 1, SUNFLOWER_BED)
+    _castle_bg(world, x + W_COURT - 2,  sy - 1, SUNFLOWER_BED)
+    _castle_bg(world, x + W_COURT // 2, sy - 1, rng.choice(_FOUNTAIN_BLOCKS))
+    if variant == 0:
+        _palace_npc_at(world, x + W_COURT // 2, sy, ShrineKeeperNPC, rng,
+                       biodome="jungle")
+    else:
+        _palace_npc_at(world, x + W_COURT // 2, sy, GemQuestNPC, rng, 1, "jungle")
+    x += W_COURT
+
+    # ── right gate temple ─────────────────────────────────────────────────────
+    _temple_room(x, W_GATE, H_GATE)
+    _castle_bg(world, x + W_GATE // 2, sy - H_GATE + 3, CHANDELIER)
+    _castle_bg(world, x + 2,           sy - 1, BRAZIER)
+    _castle_bg(world, x + W_GATE - 2,  sy - 1, BRAZIER)
+    if variant == 0:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, CARVED_BENCH)
+        _palace_npc_at(world, x + W_GATE // 2, sy, JewelryMerchantNPC, rng)
+    else:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_GATE // 2, sy, TradeNPC, rng)
+    x += W_GATE
+
+    # ── exit plaza (right) ───────────────────────────────────────────────────
+    for bx in range(x, x + W_PLAZA):
+        _castle_set(world, bx, sy, LIMESTONE_BLOCK)
+    _castle_bg(world, x + 1,            sy - 1, SUNFLOWER_BED)
+    _castle_bg(world, x + 3,            sy - 1, MARIGOLD_BED)
+    _castle_bg(world, x + W_PLAZA // 2, sy - 1, BRAZIER)
+
+
+def _place_french_baroque_palace(world, left_x: int, sy: int):
+    """French baroque palace — Versailles-inspired formal gardens, mirrored wings,
+    grand salon, gilded throne chamber.  Staff: florist, jeweler, chef, curator.
+    """
+    rng = random.Random(left_x ^ (world.seed * 0x2A5D7F3) ^ 0xE8C6B4)
+    variant = rng.randint(0, 1)   # 0 = Versailles  1 = Fontainebleau
+
+    W_GARD   = 10
+    W_WING   = 14;  H_WING   = 7
+    W_SALON  = 12;  H_SALON  = 7
+    W_THRONE = 22;  H_THRONE = 9
+    total_w = W_GARD + W_WING + W_SALON + W_THRONE + W_SALON + W_WING + W_GARD
+    _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
+
+    def _baroque_room(lx, w, h):
+        _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, LIMESTONE_BLOCK)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy, PALACE_FLOOR_TILE)
+        for by in range(sy - h, sy):
+            _castle_set(world, lx,      by, LIMESTONE_BLOCK)
+            _castle_set(world, lx + w,  by, LIMESTONE_BLOCK)
+        _castle_door(world, lx, sy)
+        _castle_door(world, lx + w - 2, sy)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy - h,     POLISHED_MARBLE)
+            _castle_set(world, bx, sy - h - 1, POLISHED_MARBLE)
+        for bx in range(lx + 2, lx + w - 1, 3):
+            for by in range(sy - h + 2, sy - 2):
+                _castle_bg(world, bx, by, PALACE_PORTAL)
+
+    x = left_x
+
+    # ── guards ───────────────────────────────────────────────────────────────
+    _palace_npc_at(world, left_x + 1,           sy, GuardNPC, biodome="mediterranean")
+    _palace_npc_at(world, left_x + total_w - 2, sy, GuardNPC, biodome="mediterranean")
+
+    # ── formal garden (left) ─────────────────────────────────────────────────
+    for bx in range(x, x + W_GARD):
+        _castle_set(world, bx, sy, PALACE_FLOOR_TILE)
+    _castle_bg(world, x + 1,           sy - 1, TOPIARY_PEACOCK)
+    _castle_bg(world, x + 2,           sy - 1, KNOT_GARDEN)
+    _castle_bg(world, x + 4,           sy - 1, TOPIARY_SWAN)
+    _castle_bg(world, x + 5,           sy - 1, ROSE_BED)
+    _castle_bg(world, x + 7,           sy - 1, BOXWOOD_BALL)
+    _castle_bg(world, x + W_GARD // 2, sy - 1,
+               rng.choice((CHERUB_FOUNTAIN, MOSAIC_FOUNTAIN, SHELL_FOUNTAIN)))
+    x += W_GARD
+
+    # ── left gallery wing ────────────────────────────────────────────────────
+    _baroque_room(x, W_WING, H_WING)
+    _castle_bg(world, x + W_WING // 2, sy - H_WING + 3, CHANDELIER)
+    _castle_bg(world, x + 2,           sy - 1, MARBLE_STATUE)
+    _castle_bg(world, x + W_WING - 2,  sy - 1, MARBLE_PLINTH)
+    if variant == 0:
+        _castle_bg(world, x + W_WING // 2, sy - 1, LAVENDER_BED)
+        _palace_npc_at(world, x + W_WING // 2, sy, RoyalFloristNPC, rng)
+    else:
+        _castle_bg(world, x + W_WING // 2, sy - 1, GARDEN_TABLE)
+        _palace_npc_at(world, x + W_WING // 2, sy, RoyalCuratorNPC, rng)
+    x += W_WING
+
+    # ── left salon ───────────────────────────────────────────────────────────
+    _baroque_room(x, W_SALON, H_SALON)
+    _castle_bg(world, x + W_SALON // 2, sy - H_SALON + 3, CHANDELIER)
+    _castle_bg(world, x + 2,            sy - 1, WISTERIA_PILLAR)
+    _castle_bg(world, x + W_SALON - 2,  sy - 1, WISTERIA_PILLAR)
+    _castle_bg(world, x + W_SALON // 2, sy - 1, MARBLE_BIRDBATH)
+    if variant == 0:
+        _palace_npc_at(world, x + W_SALON // 2, sy, RoyalJewelerNPC, rng)
+    else:
+        _palace_npc_at(world, x + W_SALON // 2, sy, JewelryMerchantNPC, rng)
+    x += W_SALON
+
+    # ── grand throne chamber ─────────────────────────────────────────────────
+    cx = x + W_THRONE // 2
+    _castle_fill_bg(world, x, x + W_THRONE, sy - H_THRONE, sy - 1, LIMESTONE_BLOCK)
+    for bx in range(x, x + W_THRONE + 1):
+        _castle_set(world, bx, sy, PALACE_FLOOR_TILE)
+    for by in range(sy - H_THRONE, sy):
+        _castle_set(world, x,             by, LIMESTONE_BLOCK)
+        _castle_set(world, x + W_THRONE,  by, LIMESTONE_BLOCK)
+    _castle_door(world, x, sy)
+    _castle_door(world, x + W_THRONE - 2, sy)
+    for bx in range(x + 2, x + W_THRONE - 1, 3):
+        for by in range(sy - H_THRONE + 2, sy - 2):
+            _castle_bg(world, bx, by, PALACE_PORTAL)
+    for col_x in (x + 4, x + W_THRONE - 4):
+        for by in range(sy - H_THRONE + 3, sy):
+            _castle_bg(world, col_x, by, LIMESTONE_BLOCK)
+        _castle_bg(world, col_x, sy - H_THRONE + 2, MARBLE_PLINTH)
+    for gx in range(cx - 3, cx + 4):
+        _castle_bg(world, gx, sy - H_THRONE + 4, GOLDEN_CEILING)
+    for bx in range(x, x + W_THRONE + 1):
+        _castle_set(world, bx, sy - H_THRONE,     POLISHED_MARBLE)
+        _castle_set(world, bx, sy - H_THRONE - 1, POLISHED_MARBLE)
+    _castle_bg(world, cx,     sy - 1, CARVED_BENCH)
+    _castle_bg(world, cx - 4, sy - 1, CANDELABRA)
+    _castle_bg(world, cx + 4, sy - 1, CANDELABRA)
+    _castle_bg(world, cx - 6, sy - 1, MARBLE_STATUE)
+    _castle_bg(world, cx + 6, sy - 1, MARBLE_STATUE)
+    _castle_bg(world, cx,     sy - H_THRONE + 4, CHANDELIER)
+    _castle_bg(world, cx - 5, sy - H_THRONE + 6, CHANDELIER)
+    _castle_bg(world, cx + 5, sy - H_THRONE + 6, CHANDELIER)
+    x += W_THRONE
+
+    # ── right salon ──────────────────────────────────────────────────────────
+    _baroque_room(x, W_SALON, H_SALON)
+    _castle_bg(world, x + W_SALON // 2, sy - H_SALON + 3, CHANDELIER)
+    _castle_bg(world, x + 2,            sy - 1, WISTERIA_PILLAR)
+    _castle_bg(world, x + W_SALON - 2,  sy - 1, WISTERIA_PILLAR)
+    _castle_bg(world, x + W_SALON // 2, sy - 1, MARBLE_BIRDBATH)
+    if variant == 0:
+        _palace_npc_at(world, x + W_SALON // 2, sy, RestaurantNPC, rng,
+                       "mediterranean")
+    else:
+        _palace_npc_at(world, x + W_SALON // 2, sy, TradeNPC, rng)
+    x += W_SALON
+
+    # ── right gallery wing ───────────────────────────────────────────────────
+    _baroque_room(x, W_WING, H_WING)
+    _castle_bg(world, x + W_WING // 2, sy - H_WING + 3, CHANDELIER)
+    _castle_bg(world, x + 2,           sy - 1, MARBLE_PLINTH)
+    _castle_bg(world, x + W_WING - 2,  sy - 1, MARBLE_STATUE)
+    if variant == 0:
+        _castle_bg(world, x + W_WING // 2, sy - 1, ROSE_BED)
+        _palace_npc_at(world, x + W_WING // 2, sy, MerchantNPC, rng)
+    else:
+        _castle_bg(world, x + W_WING // 2, sy - 1, LAVENDER_BED)
+        _palace_npc_at(world, x + W_WING // 2, sy, RoyalFloristNPC, rng)
+    x += W_WING
+
+    # ── formal garden (right) ────────────────────────────────────────────────
+    for bx in range(x, x + W_GARD):
+        _castle_set(world, bx, sy, PALACE_FLOOR_TILE)
+    _castle_bg(world, x + 1,           sy - 1, BOXWOOD_BALL)
+    _castle_bg(world, x + 2,           sy - 1, ROSE_BED)
+    _castle_bg(world, x + 4,           sy - 1, TOPIARY_SWAN)
+    _castle_bg(world, x + 5,           sy - 1, KNOT_GARDEN)
+    _castle_bg(world, x + 7,           sy - 1, TOPIARY_PEACOCK)
+    _castle_bg(world, x + W_GARD // 2, sy - 1,
+               rng.choice((CHERUB_FOUNTAIN, MOSAIC_FOUNTAIN, SHELL_FOUNTAIN)))
+
+
+def _place_incan_palace(world, left_x: int, sy: int):
+    """Incan palace — Andean precision-cut ashlar stonework, terraced approach,
+    solar throne hall.  Staff: gem quest, shrine keeper, trade envoy, jeweler.
+    """
+    rng = random.Random(left_x ^ (world.seed * 0x4E9F1A7) ^ 0xB3C7D5)
+    variant = rng.randint(0, 1)   # 0 = Cusco imperial  1 = highland fortress
+
+    W_TERR   = 8
+    W_GATE   = 10;  H_GATE   = 7
+    W_HALL   = 12;  H_HALL   = 7
+    W_THRONE = 20;  H_THRONE = 8
+    total_w = W_TERR + W_GATE + W_HALL + W_THRONE + W_HALL + W_GATE + W_TERR
+    _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 12)
+
+    def _inca_room(lx, w, h):
+        _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, ROUGH_STONE_WALL)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy, GRANITE_ASHLAR)
+        for by in range(sy - h, sy):
+            _castle_set(world, lx,      by, GRANITE_ASHLAR)
+            _castle_set(world, lx + w,  by, GRANITE_ASHLAR)
+        _castle_door(world, lx, sy)
+        _castle_door(world, lx + w - 2, sy)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy - h, GRANITE_ASHLAR)
+
+    x = left_x
+
+    # ── guards ───────────────────────────────────────────────────────────────
+    _palace_npc_at(world, left_x + 1,           sy, GuardNPC, biodome="mountain")
+    _palace_npc_at(world, left_x + total_w - 2, sy, GuardNPC, biodome="mountain")
+
+    # ── left terrace approach ────────────────────────────────────────────────
+    for bx in range(x, x + W_TERR):
+        _castle_set(world, bx, sy, GRANITE_ASHLAR)
+    for bx in range(x + 1, x + W_TERR - 1):
+        _castle_set(world, bx, sy - 1, ROUGH_STONE_WALL)
+    for bx in range(x + 3, x + W_TERR - 3):
+        _castle_set(world, bx, sy - 2, ROUGH_STONE_WALL)
+    _castle_bg(world, x + 2,           sy - 3, SUNFLOWER_BED)
+    _castle_bg(world, x + W_TERR - 2,  sy - 3, MARIGOLD_BED)
+    _castle_bg(world, x + W_TERR // 2, sy - 1, BRAZIER)
+    x += W_TERR
+
+    # ── left gateway ─────────────────────────────────────────────────────────
+    _inca_room(x, W_GATE, H_GATE)
+    _castle_bg(world, x + W_GATE // 2, sy - H_GATE + 3, STAR_LAMP)
+    _castle_bg(world, x + 2,           sy - 1, STONE_BASIN)
+    _castle_bg(world, x + W_GATE - 2,  sy - 1, STONE_BASIN)
+    if variant == 0:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, BRAZIER)
+        _palace_npc_at(world, x + W_GATE // 2, sy, GemQuestNPC, rng, 1, "mountain")
+    else:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, GARDEN_OBELISK)
+        _palace_npc_at(world, x + W_GATE // 2, sy, ShrineKeeperNPC, rng,
+                       biodome="mountain")
+    x += W_GATE
+
+    # ── left hall ────────────────────────────────────────────────────────────
+    _inca_room(x, W_HALL, H_HALL)
+    _castle_bg(world, x + W_HALL // 2, sy - H_HALL + 3, STAR_LAMP)
+    _castle_bg(world, x + 2,           sy - 1, MARIGOLD_BED)
+    _castle_bg(world, x + W_HALL - 2,  sy - 1, SUNFLOWER_BED)
+    _castle_bg(world, x + W_HALL // 2, sy - 1, rng.choice(_FOUNTAIN_BLOCKS))
+    if variant == 0:
+        _palace_npc_at(world, x + W_HALL // 2, sy, TradeNPC, rng)
+    else:
+        _palace_npc_at(world, x + W_HALL // 2, sy, MerchantNPC, rng)
+    x += W_HALL
+
+    # ── solar throne hall ─────────────────────────────────────────────────────
+    cx = x + W_THRONE // 2
+    _castle_fill_bg(world, x, x + W_THRONE, sy - H_THRONE, sy - 1, ROUGH_STONE_WALL)
+    for bx in range(x, x + W_THRONE + 1):
+        _castle_set(world, bx, sy, GRANITE_ASHLAR)
+    for by in range(sy - H_THRONE, sy):
+        _castle_set(world, x,             by, GRANITE_ASHLAR)
+        _castle_set(world, x + W_THRONE,  by, GRANITE_ASHLAR)
+    _castle_door(world, x, sy)
+    _castle_door(world, x + W_THRONE - 2, sy)
+    for col_x in (x + 4, x + W_THRONE - 4):
+        for by in range(sy - H_THRONE + 3, sy):
+            _castle_bg(world, col_x, by, GRANITE_ASHLAR)
+        _castle_bg(world, col_x, sy - H_THRONE + 2, STAR_LAMP)
+    for bx in range(x, x + W_THRONE + 1):
+        _castle_set(world, bx, sy - H_THRONE, GRANITE_ASHLAR)
+    for step in range(1, 4):
+        step_y = sy - H_THRONE - step
+        if not (0 <= step_y < world.height):
+            break
+        for bx in range(x + step * 2, x + W_THRONE + 1 - step * 2):
+            _castle_set(world, bx, step_y, ROUGH_STONE_WALL)
+    for niche_x in range(x + 2, x + W_THRONE - 1, 4):
+        _castle_bg(world, niche_x, sy - H_THRONE + 4, BRAZIER)
+    _castle_bg(world, cx,     sy - 1, CARVED_BENCH)
+    _castle_bg(world, cx - 4, sy - 1, BRAZIER)
+    _castle_bg(world, cx + 4, sy - 1, BRAZIER)
+    _castle_bg(world, cx - 6, sy - 1, STONE_BASIN)
+    _castle_bg(world, cx + 6, sy - 1, STONE_BASIN)
+    _castle_bg(world, cx,     sy - H_THRONE + 4, CHANDELIER)
+    x += W_THRONE
+
+    # ── right hall ────────────────────────────────────────────────────────────
+    _inca_room(x, W_HALL, H_HALL)
+    _castle_bg(world, x + W_HALL // 2, sy - H_HALL + 3, STAR_LAMP)
+    _castle_bg(world, x + 2,           sy - 1, SUNFLOWER_BED)
+    _castle_bg(world, x + W_HALL - 2,  sy - 1, MARIGOLD_BED)
+    _castle_bg(world, x + W_HALL // 2, sy - 1, rng.choice(_FOUNTAIN_BLOCKS))
+    if variant == 0:
+        _palace_npc_at(world, x + W_HALL // 2, sy, JewelryMerchantNPC, rng)
+    else:
+        _palace_npc_at(world, x + W_HALL // 2, sy, TradeNPC, rng)
+    x += W_HALL
+
+    # ── right gateway ─────────────────────────────────────────────────────────
+    _inca_room(x, W_GATE, H_GATE)
+    _castle_bg(world, x + W_GATE // 2, sy - H_GATE + 3, STAR_LAMP)
+    _castle_bg(world, x + 2,           sy - 1, STONE_BASIN)
+    _castle_bg(world, x + W_GATE - 2,  sy - 1, STONE_BASIN)
+    if variant == 0:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, GARDEN_OBELISK)
+        _palace_npc_at(world, x + W_GATE // 2, sy, ShrineKeeperNPC, rng,
+                       biodome="mountain")
+    else:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, BRAZIER)
+        _palace_npc_at(world, x + W_GATE // 2, sy, GemQuestNPC, rng, 1, "mountain")
+    x += W_GATE
+
+    # ── right terrace approach ────────────────────────────────────────────────
+    for bx in range(x, x + W_TERR):
+        _castle_set(world, bx, sy, GRANITE_ASHLAR)
+    for bx in range(x + 1, x + W_TERR - 1):
+        _castle_set(world, bx, sy - 1, ROUGH_STONE_WALL)
+    for bx in range(x + 3, x + W_TERR - 3):
+        _castle_set(world, bx, sy - 2, ROUGH_STONE_WALL)
+    _castle_bg(world, x + 2,           sy - 3, MARIGOLD_BED)
+    _castle_bg(world, x + W_TERR - 2,  sy - 3, SUNFLOWER_BED)
+    _castle_bg(world, x + W_TERR // 2, sy - 1, BRAZIER)
+
+
+def _place_persian_palace(world, left_x: int, sy: int):
+    """Achaemenid Persian palace — Persepolis-style lamassu gates, hypostyle apadana halls,
+    columned audience chamber.  Staff: scholar, gem quest, trade envoy, jeweler.
+    """
+    rng = random.Random(left_x ^ (world.seed * 0x5B3E8A4) ^ 0xF7D2C6)
+    variant = rng.randint(0, 1)   # 0 = Darius/Persepolis  1 = Susa/Achaemenid
+
+    W_GARD   = 8
+    W_PORT   = 10;  H_PORT   = 7
+    W_APAD   = 14;  H_APAD   = 7
+    W_THRONE = 22;  H_THRONE = 8
+    total_w = W_GARD + W_PORT + W_APAD + W_THRONE + W_APAD + W_PORT + W_GARD
+    _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
+
+    def _persian_room(lx, w, h):
+        _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, SANDSTONE_BLOCK)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy, POLISHED_MARBLE)
+        for by in range(sy - h, sy):
+            _castle_set(world, lx,      by, SANDSTONE_BLOCK)
+            _castle_set(world, lx + w,  by, SANDSTONE_BLOCK)
+        _castle_door(world, lx, sy)
+        _castle_door(world, lx + w - 2, sy)
+        for bx in range(lx + 2, lx + w, 3):
+            _castle_bg(world, bx, sy - h + 2, MUGHAL_ARCH)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy - h,     POLISHED_MARBLE)
+            _castle_set(world, bx, sy - h - 1, SANDSTONE_BLOCK)
+
+    x = left_x
+
+    # ── guards ───────────────────────────────────────────────────────────────
+    _palace_npc_at(world, left_x + 1,           sy, GuardNPC, biodome="desert")
+    _palace_npc_at(world, left_x + total_w - 2, sy, GuardNPC, biodome="desert")
+
+    # ── approach garden (left) ───────────────────────────────────────────────
+    for bx in range(x, x + W_GARD):
+        _castle_set(world, bx, sy, POLISHED_MARBLE)
+    _castle_bg(world, x + 1,           sy - 1, GARDEN_OBELISK)
+    _castle_bg(world, x + 3,           sy - 1, ROSE_BED)
+    _castle_bg(world, x + 5,           sy - 1, GARDEN_OBELISK)
+    _castle_bg(world, x + W_GARD // 2, sy - 1, rng.choice(_FOUNTAIN_BLOCKS))
+    x += W_GARD
+
+    # ── left lamassu gate portal ─────────────────────────────────────────────
+    _persian_room(x, W_PORT, H_PORT)
+    for col_x in (x + 2, x + W_PORT - 2):
+        for by in range(sy - H_PORT + 2, sy):
+            _castle_bg(world, col_x, by, SANDSTONE_BLOCK)
+        _castle_bg(world, col_x, sy - H_PORT + 1, MUGHAL_ARCH)
+    _castle_bg(world, x + W_PORT // 2, sy - H_PORT + 3, CHANDELIER)
+    if variant == 0:
+        _castle_bg(world, x + W_PORT // 2, sy - 1, CARVED_BENCH)
+        _palace_npc_at(world, x + W_PORT // 2, sy, ScholarNPC, rng)
+    else:
+        _castle_bg(world, x + W_PORT // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_PORT // 2, sy, TradeNPC, rng)
+    x += W_PORT
+
+    # ── left apadana hypostyle hall ──────────────────────────────────────────
+    _persian_room(x, W_APAD, H_APAD)
+    for col_x in range(x + 3, x + W_APAD - 2, 3):
+        for by in range(sy - H_APAD + 3, sy):
+            _castle_bg(world, col_x, by, SANDSTONE_BLOCK)
+        _castle_bg(world, col_x, sy - H_APAD + 2, STAR_LAMP)
+    _castle_bg(world, x + W_APAD // 2, sy - H_APAD + 3, CHANDELIER)
+    if variant == 0:
+        _castle_bg(world, x + W_APAD // 2, sy - 1, TEXTILE_RUG_GOLDEN)
+        _palace_npc_at(world, x + W_APAD // 2, sy, GemQuestNPC, rng, 1, "desert")
+    else:
+        _castle_bg(world, x + W_APAD // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_APAD // 2, sy, WildflowerQuestNPC, rng, 1,
+                       "desert")
+    x += W_APAD
+
+    # ── royal audience chamber ────────────────────────────────────────────────
+    cx = x + W_THRONE // 2
+    _castle_fill_bg(world, x, x + W_THRONE, sy - H_THRONE, sy - 1, SANDSTONE_BLOCK)
+    for bx in range(x, x + W_THRONE + 1):
+        _castle_set(world, bx, sy, POLISHED_MARBLE)
+    for by in range(sy - H_THRONE, sy):
+        _castle_set(world, x,             by, SANDSTONE_BLOCK)
+        _castle_set(world, x + W_THRONE,  by, SANDSTONE_BLOCK)
+    _castle_door(world, x, sy)
+    _castle_door(world, x + W_THRONE - 2, sy)
+    for col_x in range(x + 4, x + W_THRONE - 3, 4):
+        for by in range(sy - H_THRONE + 3, sy):
+            _castle_bg(world, col_x, by, SANDSTONE_BLOCK)
+        _castle_bg(world, col_x, sy - H_THRONE + 2, MUGHAL_ARCH)
+    for bx in range(x + 1, x + W_THRONE, 2):
+        _castle_bg(world, bx, sy - H_THRONE + 2, MUGHAL_JALI)
+    for bx in range(x, x + W_THRONE + 1):
+        _castle_set(world, bx, sy - H_THRONE,     POLISHED_MARBLE)
+        _castle_set(world, bx, sy - H_THRONE - 1, SANDSTONE_BLOCK)
+    _castle_bg(world, cx,     sy - 1, CARVED_BENCH)
+    _castle_bg(world, cx - 4, sy - 1, STAR_LAMP)
+    _castle_bg(world, cx + 4, sy - 1, STAR_LAMP)
+    _castle_bg(world, cx - 7, sy - 1, CANDELABRA)
+    _castle_bg(world, cx + 7, sy - 1, CANDELABRA)
+    _castle_bg(world, cx,     sy - H_THRONE + 4, CHANDELIER)
+    _castle_bg(world, cx - 4, sy - H_THRONE + 6, CHANDELIER)
+    _castle_bg(world, cx + 4, sy - H_THRONE + 6, CHANDELIER)
+    x += W_THRONE
+
+    # ── right apadana hypostyle hall ─────────────────────────────────────────
+    _persian_room(x, W_APAD, H_APAD)
+    for col_x in range(x + 3, x + W_APAD - 2, 3):
+        for by in range(sy - H_APAD + 3, sy):
+            _castle_bg(world, col_x, by, SANDSTONE_BLOCK)
+        _castle_bg(world, col_x, sy - H_APAD + 2, STAR_LAMP)
+    _castle_bg(world, x + W_APAD // 2, sy - H_APAD + 3, CHANDELIER)
+    if variant == 0:
+        _castle_bg(world, x + W_APAD // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_APAD // 2, sy, JewelryMerchantNPC, rng)
+    else:
+        _castle_bg(world, x + W_APAD // 2, sy - 1, TEXTILE_RUG_GOLDEN)
+        _palace_npc_at(world, x + W_APAD // 2, sy, GemQuestNPC, rng, 1, "desert")
+    x += W_APAD
+
+    # ── right lamassu gate portal ─────────────────────────────────────────────
+    _persian_room(x, W_PORT, H_PORT)
+    for col_x in (x + 2, x + W_PORT - 2):
+        for by in range(sy - H_PORT + 2, sy):
+            _castle_bg(world, col_x, by, SANDSTONE_BLOCK)
+        _castle_bg(world, col_x, sy - H_PORT + 1, MUGHAL_ARCH)
+    _castle_bg(world, x + W_PORT // 2, sy - H_PORT + 3, CHANDELIER)
+    if variant == 0:
+        _castle_bg(world, x + W_PORT // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_PORT // 2, sy, MerchantNPC, rng)
+    else:
+        _castle_bg(world, x + W_PORT // 2, sy - 1, CARVED_BENCH)
+        _palace_npc_at(world, x + W_PORT // 2, sy, ScholarNPC, rng)
+    x += W_PORT
+
+    # ── exit garden (right) ──────────────────────────────────────────────────
+    for bx in range(x, x + W_GARD):
+        _castle_set(world, bx, sy, POLISHED_MARBLE)
+    _castle_bg(world, x + 1,           sy - 1, GARDEN_OBELISK)
+    _castle_bg(world, x + 3,           sy - 1, ROSE_BED)
+    _castle_bg(world, x + 5,           sy - 1, GARDEN_OBELISK)
+    _castle_bg(world, x + W_GARD // 2, sy - 1, rng.choice(_FOUNTAIN_BLOCKS))
 
 
 def _city_slot_metadata(slot_x: int) -> dict:
