@@ -10,6 +10,7 @@ from animals import (Animal, MUTATION_TYPES,
 HORSE_MOVE_SPEED  = 1.4   # wander speed (px/frame)
 HORSE_FLEE_SPEED  = 3.2   # flee speed when attacked
 HORSE_FLEE_RADIUS = 5     # blocks — triggers flee on player approach (only when wild)
+HORSE_TRADE_SPEED = 5.0   # base trade-run speed (px/frame); scaled by speed_rating
 
 TEMPERAMENT_THRESHOLDS = {
     "calm":     5,
@@ -94,6 +95,11 @@ class Horse(Animal):
         self.rider      = None       # Player ref when mounted
         self._broken    = False      # True once horse-breaking minigame passed
         self._flee_timer = 0.0       # flee after being attacked
+        self._on_trade_run    = False  # True while horse is on an automated trade delivery
+        self._trade_target_x  = None  # pixel x destination for current leg of the trip
+        self._trade_stuck       = False  # True when horse hasn't made progress toward target
+        self._trade_stuck_timer = 0.0    # accumulates dt between progress checks
+        self._trade_last_x      = 0.0   # x at start of current check window
 
         self._init_horse_genotype()
 
@@ -357,6 +363,37 @@ class Horse(Animal):
         if self.rider is not None:
             return
 
+        # Trade run: move toward _trade_target_x, overriding all normal behaviour
+        if self._on_trade_run and self._trade_target_x is not None:
+            dx = self._trade_target_x - (self.x + self.W / 2)
+            if abs(dx) > BLOCK_SIZE:
+                speed = HORSE_TRADE_SPEED * self.traits.get("speed_rating", 1.0)
+                self.vx = speed if dx > 0 else -speed
+                self.facing = 1 if dx > 0 else -1
+            else:
+                self.vx = 0.0
+            if self._in_water():
+                self.vy = min(self.vy + GRAVITY * 0.2, 2.5)
+                self.vx *= 0.8
+            else:
+                self.vy = min(self.vy + GRAVITY, MAX_FALL)
+            self._move_x(self.vx)
+            self._move_y(self.vy)
+
+            # Stuck detection: check progress every 3 seconds when horse should be moving
+            if abs(dx) > BLOCK_SIZE * 3:
+                self._trade_stuck_timer += dt
+                if self._trade_stuck_timer >= 3.0:
+                    progress = abs(self.x - self._trade_last_x)
+                    self._trade_stuck = progress < 4.0
+                    self._trade_last_x = self.x
+                    self._trade_stuck_timer = 0.0
+            else:
+                self._trade_stuck = False
+                self._trade_stuck_timer = 0.0
+
+            return
+
         # Flee when attacked or player too close while wild
         if self._flee_timer > 0:
             self._flee_timer -= dt
@@ -427,3 +464,24 @@ class Horse(Animal):
             self.vy = min(self.vy + GRAVITY, MAX_FALL)
         self._move_x(self.vx)
         self._move_y(self.vy)
+
+
+_HERD_VISUAL_GENES = {"coat_pattern_gene", "leg_marking_gene", "mane_color_gene", "face_marking_gene"}
+
+def _blend_to_herd_template(horse, alpha):
+    """Shift a herd member's float genes ~60% toward the alpha's, copy visual genes, and match coat color."""
+    horse.traits["coat_color"] = alpha.traits["coat_color"]
+    for gene_key, a_vals in alpha.genotype.items():
+        if gene_key not in horse.genotype:
+            continue
+        d_vals = horse.genotype[gene_key]
+        if gene_key in _HERD_VISUAL_GENES:
+            horse.genotype[gene_key] = list(a_vals)
+        elif isinstance(d_vals[0], float):
+            horse.genotype[gene_key] = [
+                round(0.6 * a + 0.4 * d, 3)
+                for a, d in zip(a_vals, d_vals)
+            ]
+    horse._apply_genotype_to_traits()
+    # coat_color is not derived from genotype — re-apply it after trait update
+    horse.traits["coat_color"] = alpha.traits["coat_color"]

@@ -210,6 +210,7 @@ class Player:
         self.aging_vessels        = []
         # Hunting
         self.animals_hunted  = {}   # animal_id -> count killed
+        self.hunt_trophies   = {}   # animal_id -> {stat_key: best_value}
         self._bow_cooldown   = 0.0
         self.master_hunter   = False  # set True by research bonus
         # Fishing mini-game state
@@ -291,6 +292,18 @@ class Player:
         self.horses_bred            = 0
         self.horse_records          = {"best_speed": 0.0, "best_stamina": 0.0}
         self.discovered_coat_biomes = set()
+        # Dog companion tracking
+        self._pending_dog_view      = None   # Dog ref; set on right-click empty-hand, read by main.py
+        self.dogs_tamed             = 0
+        self.dogs_bred              = 0
+        self.dog_records            = {"best_speed": 0.0, "best_nose": 0.0}
+        self.discovered_dog_breeds  = set()
+        # Cynology research bonuses (set by research.apply_bonuses)
+        self.dog_whisperer_bonus    = 0
+        self.dog_breeding_mastery   = False
+        self.dog_ability_chance     = 0.0
+        self.kennel_capacity        = 4
+        self.pure_breed_bonus       = False
 
     def apply_save(self, d):
         self.x, self.y = d["x"], d["y"]
@@ -345,7 +358,12 @@ class Player:
         self.horses_bred            = d.get("horses_bred", 0)
         self.horse_records          = d.get("horse_records", {"best_speed": 0.0, "best_stamina": 0.0})
         self.discovered_coat_biomes = set(d.get("discovered_coat_biomes", []))
+        self.dogs_tamed             = d.get("dogs_tamed", 0)
+        self.dogs_bred              = d.get("dogs_bred", 0)
+        self.dog_records            = d.get("dog_records", {"best_speed": 0.0, "best_nose": 0.0})
+        self.discovered_dog_breeds  = set(d.get("discovered_dog_breeds", []))
         self.animals_hunted = d.get("animals_hunted", {})
+        self.hunt_trophies  = d.get("hunt_trophies", {})
         self.pending_sculptures = [Sculpture.from_dict(x) for x in d.get("pending_sculptures", [])]
         self.sculptures_created = [Sculpture.from_dict(x) for x in d.get("sculptures_created", [])]
         self.pending_tapestries = [Tapestry.from_dict(x) for x in d.get("pending_tapestries", [])]
@@ -626,6 +644,7 @@ class Player:
                     feed_target = self._find_animal_at(mx, my)
                     if feed_target is not None and not getattr(feed_target, 'dead', False):
                         from horses import Horse as _Horse
+                        from dogs import Dog as _Dog
                         held = self.hotbar[self.selected_slot]
                         if isinstance(feed_target, _Horse) and feed_target.tamed and held == "saddle":
                             if feed_target._broken:
@@ -633,6 +652,13 @@ class Player:
                                 feed_target.rider = self
                             else:
                                 self._pending_horse_break = feed_target
+                        elif isinstance(feed_target, _Dog) and feed_target.tamed:
+                            if held is None:
+                                self._pending_dog_view = feed_target
+                            elif held == "dog_whistle":
+                                feed_target.stay_mode = not feed_target.stay_mode
+                            else:
+                                feed_target.try_feed(self)
                         else:
                             feed_target.try_feed(self)
                     else:
@@ -770,6 +796,9 @@ class Player:
                     chance = block_data.get("drop_chance", 1.0)
                     if random.random() < chance:
                         self._add_item(drop)
+                bonus = block_data.get("bonus_drop")
+                if bonus and random.random() < block_data.get("bonus_drop_chance", 0.0):
+                    self._add_item(bonus)
                 self.world.set_bg_block(bx, by, AIR)
                 self._reset_mine()
             return
@@ -910,6 +939,9 @@ class Player:
                             if block_id in (COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE):
                                 count = self.world._ore_richness.get((bx, by), 1)
                             self._add_item(drop, count)
+                        bonus = block_data.get("bonus_drop")
+                        if bonus and random.random() < block_data.get("bonus_drop_chance", 0.0):
+                            self._add_item(bonus)
                 if block_id == CHEST_BLOCK:
                     for item_id, count in self.world.chest_data.pop((bx, by), {}).items():
                         if count > 0:

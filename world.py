@@ -118,6 +118,7 @@ class World:
         self.elevator_cars = []
         self.minecarts = []
         self.birds = []
+        self.nests = []
         self.insects = []
         self.dropped_items = []
         self.chest_data = {}     # (bx, by) -> {item_id: count}
@@ -139,6 +140,8 @@ class World:
         self._rain_gap      = 0.0  # set after soil_rng is initialized below
         # Compost bins (Phase 2): (bx,by) -> {"input": {}, "progress": float, "output": int}
         self.compost_bin_data = {}
+        # Trade blocks: (bx,by) -> {horse_uid, has_cart, linked_town_id, inventory, threshold, state, ticks_left}
+        self.trade_block_data = {}
         # Sculpture data: root pos -> Sculpture obj; body pos -> {"root": (bx, root_y)}
         self.sculpture_data = {}
         # Tapestry data: root pos -> Tapestry obj; body pos -> {"root": (bx, root_y)}
@@ -193,8 +196,13 @@ class World:
         if not preloaded:
             from cities import generate_cities
             generate_cities(self, self.seed)
+            from outposts import generate_outpost_for_chunk
+            for cx in list(self._chunks.keys()):
+                generate_outpost_for_chunk(self, self.seed, cx)
         from towns import init_towns
         init_towns(self)
+        from outposts import init_outposts
+        init_outposts(self)
         self._spawn_birds()
         self._spawn_insects()
 
@@ -329,7 +337,7 @@ class World:
                 bid = row[lx]
                 if bid in YOUNG_CROP_BLOCKS:
                     self.pending_crops.add((x_base + lx, y))
-                elif bid == SAPLING:
+                elif bid == SAPLING or bid in ALL_FRUIT_SAPLINGS:
                     self.pending_saplings.add((x_base + lx, y))
 
     def load_chunk(self, cx: int):
@@ -412,6 +420,8 @@ class World:
                 self._spawn_animals_for_chunk(cx)
                 self._spawn_birds_for_chunk(cx)
                 generate_city_for_chunk(self, self.seed, cx)
+                from outposts import generate_outpost_for_chunk
+                generate_outpost_for_chunk(self, self.seed, cx)
 
     def _chunk_get(self, x: int, y: int) -> int:
         """Raw chunk read — no side effects. Returns BEDROCK for unloaded/OOB."""
@@ -455,6 +465,11 @@ class World:
         self.pottery_display_data = data.get("pottery_display_data", {})
         self._pending_unplaced_vase_uids  = data.get("unplaced_vase_uids", [])
         self.day_count = data.get("day_count", 0)
+        raw_trade = data.get("trade_block_data", {})
+        self.trade_block_data = {
+            tuple(int(v) for v in k.split(",")): td
+            for k, td in raw_trade.items()
+        }
         # Load chunks around the player's saved position
         player_cx = int(player_x // BLOCK_SIZE) // CHUNK_W
         for cx in range(player_cx - CHUNK_LOAD_RADIUS, player_cx + CHUNK_LOAD_RADIUS + 1):
@@ -489,9 +504,10 @@ class World:
 
         from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion
         from horses import Horse
+        from dogs import Dog
         _CLASS_MAP = {"Sheep": Sheep, "Cow": Cow, "Chicken": Chicken, "Goat": Goat,
                       "SnowLeopard": SnowLeopard, "MountainLion": MountainLion,
-                      "Horse": Horse}
+                      "Horse": Horse, "Dog": Dog}
         for e_data in data["entities"]:
             cls = _CLASS_MAP.get(e_data["entity_type"])
             if cls is None:
@@ -513,6 +529,8 @@ class World:
             elif isinstance(entity, Horse):
                 entity.stamina   = extra.get("stamina", 100.0)
                 entity._broken   = extra.get("broken", False)
+            elif isinstance(entity, Dog):
+                entity.stay_mode = extra.get("stay_mode", False)
             # Genetics / new state fields (fallback defaults keep old saves working)
             if "uid" in extra:
                 entity.uid = extra["uid"]
@@ -551,6 +569,28 @@ class World:
                 elif isinstance(entity, Chicken):
                     entity.traits["lay_rate"] = raw.get("lay_rate", raw.get("productivity", 1.0))
                     entity.traits["plumage"]  = raw.get("plumage", "white")
+                elif isinstance(entity, Dog):
+                    entity.traits["breed"]         = raw.get("breed", "Mixed")
+                    entity.traits["generation"]    = raw.get("generation", 1)
+                    entity.traits["coat_color"]    = tuple(raw.get("coat_color", [160, 100, 50]))
+                    entity.traits["coat_pattern"]  = raw.get("coat_pattern", "solid")
+                    entity.traits["coat_length"]   = raw.get("coat_length", "short")
+                    entity.traits["coat_type"]     = raw.get("coat_type", "smooth")
+                    entity.traits["ear_type"]      = raw.get("ear_type", "floppy")
+                    entity.traits["tail_type"]     = raw.get("tail_type", "long")
+                    entity.traits["eye_color"]     = raw.get("eye_color", "brown")
+                    entity.traits["size_class"]    = raw.get("size_class", "medium")
+                    entity.traits["collar_applied"]= raw.get("collar_applied", False)
+                    entity.traits["dog_name"]      = raw.get("dog_name")
+                    for tk in ("speed","endurance","agility","strength","nose","alertness",
+                               "loyalty","playfulness","stubbornness","prey_drive"):
+                        entity.traits[tk] = raw.get(tk, 1.0)
+                    for ability in ("tracking","herding","guard","retrieve"):
+                        entity.traits[f"has_{ability}"] = raw.get(f"has_{ability}", False)
+                    entity.traits["base_color"]      = raw.get("base_color", "yellow")
+                    entity.traits["dilute_expressed"]= raw.get("dilute_expressed", False)
+                    entity.traits["dilute_carrier"]  = raw.get("dilute_carrier", False)
+                    entity.traits["white_spotting"]  = raw.get("white_spotting", "solid")
             entity.no_breed        = extra.get("no_breed", False)
             entity.health          = extra.get("health", 3)
             entity.dead            = extra.get("dead", False)
@@ -566,14 +606,17 @@ class World:
                 entity._synthesize_genotype_from_traits()
             self.entities.append(entity)
 
-        # world.town_centers / city_zones are restored in init_towns from the
-        # DB-loaded TOWNS data; no block placement needed on load.
-
         from dropped_item import DroppedItem
         for d in data.get("dropped_items", []):
             self.dropped_items.append(
                 DroppedItem(d["x"], d["y"], d["item_id"], d["count"], d["lifetime"])
             )
+
+        # One-time retroactive dog seeding for saves that pre-date the dog system
+        has_any_dogs = any(isinstance(e, Dog) for e in self.entities)
+        if not has_any_dogs:
+            for cx in sorted(self._chunks.keys()):
+                self._spawn_dogs_for_chunk(cx)
 
     # ------------------------------------------------------------------
     # Chunk terrain generation
@@ -743,6 +786,70 @@ class World:
             if pool and 0 < sy < WORLD_H and chunk[sy - 1][lx] == AIR and chunk[sy][lx] == GRASS:
                 chunk[sy - 1][lx] = bush_rng.choice(pool)
             lx += bush_rng.randint(7, 15)
+
+        # Water-edge plants — spawn on grass tiles adjacent to surface water,
+        # and floating plants on open water surface tiles.
+        _WATER_EDGE_BIOMES = frozenset({
+            "temperate", "boreal", "birch_forest", "wetland", "swamp",
+            "jungle", "tropical", "rolling_hills", "tundra",
+        })
+        _FLOAT_POOL = {
+            # biome → weighted list of floating blocks
+            "wetland":  [POND_WEED_BLOCK, POND_WEED_BLOCK, WATER_HYACINTH_BLOCK, DUCKWEED_BLOCK, FROGBIT_BLOCK],
+            "swamp":    [POND_WEED_BLOCK, DUCKWEED_BLOCK, DUCKWEED_BLOCK, FROGBIT_BLOCK, WATER_HYACINTH_BLOCK],
+            "jungle":   [LOTUS_BLOCK, LOTUS_BLOCK, WATER_HYACINTH_BLOCK, FROGBIT_BLOCK, POND_WEED_BLOCK],
+            "tropical": [LOTUS_BLOCK, LOTUS_BLOCK, WATER_HYACINTH_BLOCK, WATER_HYACINTH_BLOCK, FROGBIT_BLOCK],
+        }
+        _FLOAT_DEFAULT = [POND_WEED_BLOCK, POND_WEED_BLOCK, DUCKWEED_BLOCK, FROGBIT_BLOCK]
+        _EDGE_POOL = {
+            # biome → weighted list of edge blocks
+            "wetland":  [CATTAIL_BLOCK, CATTAIL_BLOCK, REED_BLOCK, BULRUSH_BLOCK,
+                         SEDGE_BLOCK, PICKERELWEED_BLOCK, ARROWHEAD_BLOCK],
+            "swamp":    [BULRUSH_BLOCK, BULRUSH_BLOCK, CATTAIL_BLOCK, SEDGE_BLOCK,
+                         REED_BLOCK, PICKERELWEED_BLOCK],
+            "jungle":   [ARROWHEAD_BLOCK, ARROWHEAD_BLOCK, REED_BLOCK, BULRUSH_BLOCK,
+                         PICKERELWEED_BLOCK, WATER_CRESS_BLOCK],
+            "tropical": [ARROWHEAD_BLOCK, REED_BLOCK, PICKERELWEED_BLOCK, WATER_CRESS_BLOCK],
+            "temperate":[REED_BLOCK, REED_BLOCK, WATER_CRESS_BLOCK, MARSH_MARIGOLD_BLOCK,
+                         WATER_IRIS_BLOCK, HORSETAIL_BLOCK, ARROWHEAD_BLOCK],
+            "boreal":   [REED_BLOCK, REED_BLOCK, HORSETAIL_BLOCK, SEDGE_BLOCK,
+                         WATER_CRESS_BLOCK, MARSH_MARIGOLD_BLOCK],
+            "birch_forest": [REED_BLOCK, WATER_CRESS_BLOCK, WATER_IRIS_BLOCK,
+                             MARSH_MARIGOLD_BLOCK, HORSETAIL_BLOCK],
+            "rolling_hills": [REED_BLOCK, WATER_CRESS_BLOCK, WATER_IRIS_BLOCK,
+                              MARSH_MARIGOLD_BLOCK, ARROWHEAD_BLOCK],
+            "tundra":   [SEDGE_BLOCK, SEDGE_BLOCK, REED_BLOCK, HORSETAIL_BLOCK],
+        }
+        _EDGE_DEFAULT = [REED_BLOCK]
+        water_rng = random.Random(hash((self.seed, cx, 'water_plants')) & 0x7FFFFFFF)
+        chunk_x0 = cx * CHUNK_W
+        for lx in range(CHUNK_W):
+            x = chunk_x0 + lx
+            sy = self.surface_height(x)
+            if sy <= 0 or sy >= WORLD_H - 1:
+                continue
+            # Floating plants: sit in the air tile above water surface
+            if chunk[sy][lx] == WATER and chunk[sy - 1][lx] == AIR:
+                if water_rng.random() < 0.20:
+                    biodome = self.biodome_at(x)
+                    if biodome in _WATER_EDGE_BIOMES:
+                        pool = _FLOAT_POOL.get(biodome, _FLOAT_DEFAULT)
+                        chunk[sy - 1][lx] = water_rng.choice(pool)
+                continue
+            if chunk[sy][lx] != GRASS or chunk[sy - 1][lx] != AIR:
+                continue
+            # Check for water within 3 tiles horizontally at same surface level
+            water_adj = any(
+                0 <= lx + dx < CHUNK_W and chunk[sy][lx + dx] == WATER
+                for dx in range(-3, 4) if dx != 0
+            )
+            if not water_adj or water_rng.random() > 0.65:
+                continue
+            biodome = self.biodome_at(x)
+            if biodome not in _WATER_EDGE_BIOMES:
+                continue
+            pool = _EDGE_POOL.get(biodome, _EDGE_DEFAULT)
+            chunk[sy - 1][lx] = water_rng.choice(pool)
 
         # Desert surface flora — spawns on SAND in desert/arid biomes
         desert_rng = random.Random(hash((self.seed, cx, 'desert')) & 0x7FFFFFFF)
@@ -1466,9 +1573,9 @@ class World:
         old_bid = chunk[y][x % CHUNK_W]
         chunk[y][x % CHUNK_W] = block_id
         self._dirty_chunks.add(cx)
-        if block_id == SAPLING:
+        if block_id == SAPLING or block_id in ALL_FRUIT_SAPLINGS:
             self.pending_saplings.add((x, y))
-        elif old_bid == SAPLING:
+        elif old_bid == SAPLING or old_bid in ALL_FRUIT_SAPLINGS:
             self.pending_saplings.discard((x, y))
         if block_id in YOUNG_CROP_BLOCKS:
             self.pending_crops.add((x, y))
@@ -1521,7 +1628,7 @@ class World:
     def is_solid(self, x, y):
         bid = self.get_block(x, y)
         return (bid != AIR and bid != LADDER
-                and bid != WATER and bid != OIL and bid != SAPLING
+                and bid != WATER and bid != OIL and bid != SAPLING and bid not in ALL_FRUIT_SAPLINGS
                 and bid != WILDFLOWER_PATCH
                 and bid not in BUSH_BLOCKS and bid not in CROP_BLOCKS
                 and bid not in OPEN_DOORS
@@ -1537,6 +1644,8 @@ class World:
             self.day_count += 1
             from towns import advance_day
             advance_day(self)
+            from outposts import tick_outpost_day
+            tick_outpost_day(self.day_count)
 
     def update_water(self, dt, player):
         self._water_timer += dt
@@ -1627,7 +1736,7 @@ class World:
                 queue.append((x, y + 1))
 
     def _has_sky_view(self, x, y):
-        _transparent = BUSH_BLOCKS | CROP_BLOCKS | {SAPLING}
+        _transparent = BUSH_BLOCKS | CROP_BLOCKS | {SAPLING} | ALL_FRUIT_SAPLINGS
         for check_y in range(y - 1, -1, -1):
             bid = self.get_block(x, check_y)
             if bid != AIR and bid not in _transparent:
@@ -1887,37 +1996,198 @@ class World:
             (top_y + 1, range(bx + off - 2, bx + off + 3)),
         ], BAOBAB_LEAVES, rng, density=0.55)
 
+    def _grow_mangrove(self, bx, by, rng=None):
+        rng = rng or self._sapling_rng
+        h = rng.randint(4, 7)
+        top_y = self._place_trunk(bx, by, h, MANGROVE_LOG)
+        self._place_canopy([
+            (top_y - 1, range(bx - 1, bx + 2)),
+            (top_y,     range(bx - 3, bx + 4)),
+            (top_y + 1, range(bx - 3, bx + 4)),
+            (top_y + 2, range(bx - 2, bx + 3)),
+        ], MANGROVE_LEAVES, rng, density=0.80)
+        # Prop roots arching out from mid-trunk
+        mid_y = by - h // 3
+        for dx, angle in [(-2, 1), (-1, 2), (1, 2), (2, 1)]:
+            if rng.random() < 0.75:
+                rx = bx + dx
+                ry = mid_y + angle
+                if 0 <= ry < WORLD_H and self.get_block(rx, ry) == AIR:
+                    self.set_block(rx, ry, MANGROVE_LOG)
+                if 0 <= ry + 1 < WORLD_H and self.get_block(rx, ry + 1) == AIR:
+                    self.set_block(rx, ry + 1, MANGROVE_LOG)
+
+    def _grow_spruce(self, bx, by, rng=None):
+        rng = rng or self._sapling_rng
+        h = rng.randint(6, 10)
+        top_y = self._place_trunk(bx, by, h, SPRUCE_LOG)
+        # Very tight conical canopy, narrower than pine
+        layers = [(top_y, range(bx, bx + 1))]
+        for i in range(1, h):
+            w = min(2, (i + 1) // 3)
+            layers.append((top_y + i, range(bx - w, bx + w + 1)))
+        self._place_canopy(layers, SPRUCE_LEAVES, rng, density=0.95)
+
+    def _grow_ginkgo(self, bx, by, rng=None):
+        rng = rng or self._sapling_rng
+        h = rng.randint(5, 8)
+        top_y = self._place_trunk(bx, by, h, GINKGO_LOG)
+        # Wide fan-shaped crown — broad and flat at top
+        self._place_canopy([
+            (top_y - 1, range(bx - 1, bx + 2)),
+            (top_y,     range(bx - 3, bx + 4)),
+            (top_y + 1, range(bx - 4, bx + 5)),
+            (top_y + 2, range(bx - 4, bx + 5)),
+            (top_y + 3, range(bx - 3, bx + 4)),
+        ], GINKGO_LEAVES, rng, density=0.78)
+        self._add_branch_stubs(bx, by, h, GINKGO_LOG, rng, count=rng.randint(2, 3))
+
+    def _grow_banyan(self, bx, by, rng=None):
+        rng = rng or self._sapling_rng
+        h = rng.randint(5, 9)
+        top_y = self._place_trunk(bx, by, h, BANYAN_LOG)
+        self._place_canopy([
+            (top_y - 1, range(bx - 2, bx + 3)),
+            (top_y,     range(bx - 4, bx + 5)),
+            (top_y + 1, range(bx - 5, bx + 6)),
+            (top_y + 2, range(bx - 4, bx + 5)),
+            (top_y + 3, range(bx - 2, bx + 3)),
+        ], BANYAN_LEAVES, rng, density=0.72)
+        # Aerial roots hanging from canopy underside
+        for lx in range(bx - 4, bx + 5):
+            if rng.random() < 0.45:
+                for dy in range(1, rng.randint(2, 5)):
+                    ry = top_y + 3 + dy
+                    if 0 <= ry < WORLD_H and self.get_block(lx, ry) == AIR:
+                        self.set_block(lx, ry, BANYAN_LOG)
+        self._add_root_flare(bx, by, BANYAN_LOG, rng)
+
+    def _grow_pear(self, bx, by, rng=None):
+        rng = rng or self._sapling_rng
+        h = rng.randint(3, 6)
+        top_y = self._place_trunk(bx, by, h, PEAR_LOG)
+        self._place_canopy([
+            (top_y - 1, range(bx - 1, bx + 2)),
+            (top_y,     range(bx - 2, bx + 3)),
+            (top_y + 1, range(bx - 2, bx + 3)),
+            (top_y + 2, range(bx - 1, bx + 2)),
+        ], PEAR_LEAVES, rng, density=0.85)
+        if rng.random() < 0.5:
+            self._add_branch_stubs(bx, by, h, PEAR_LOG, rng, count=1)
+
+    def _grow_fig(self, bx, by, rng=None):
+        rng = rng or self._sapling_rng
+        h = rng.randint(3, 6)
+        top_y = self._place_trunk(bx, by, h, FIG_LOG)
+        # Irregular spreading crown
+        off = rng.randint(-1, 1)
+        self._place_canopy([
+            (top_y - 1, range(bx + off - 1, bx + off + 2)),
+            (top_y,     range(bx + off - 3, bx + off + 4)),
+            (top_y + 1, range(bx + off - 3, bx + off + 4)),
+            (top_y + 2, range(bx + off - 2, bx + off + 3)),
+        ], FIG_LEAVES, rng, density=0.75)
+        self._add_branch_stubs(bx, by, h, FIG_LOG, rng, count=rng.randint(1, 2))
+
+    def _grow_citrus(self, bx, by, rng=None):
+        rng = rng or self._sapling_rng
+        h = rng.randint(3, 5)
+        top_y = self._place_trunk(bx, by, h, CITRUS_LOG)
+        # Compact evergreen dome
+        self._place_canopy([
+            (top_y - 1, range(bx - 1, bx + 2)),
+            (top_y,     range(bx - 2, bx + 3)),
+            (top_y + 1, range(bx - 2, bx + 3)),
+            (top_y + 2, range(bx - 1, bx + 2)),
+        ], CITRUS_LEAVES, rng, density=0.90)
+
+    def _grow_apple(self, bx, by, rng=None):
+        rng = rng or self._sapling_rng
+        h = rng.randint(3, 6)
+        top_y = self._place_trunk(bx, by, h, APPLE_LOG)
+        self._place_canopy([
+            (top_y - 1, range(bx - 1, bx + 2)),
+            (top_y,     range(bx - 2, bx + 3)),
+            (top_y + 1, range(bx - 2, bx + 3)),
+            (top_y + 2, range(bx - 1, bx + 2)),
+        ], APPLE_LEAVES, rng, density=0.88)
+        if rng.random() < 0.5:
+            self._add_branch_stubs(bx, by, h, APPLE_LOG, rng, count=1)
+
+    def _grow_pomegranate(self, bx, by, rng=None):
+        rng = rng or self._sapling_rng
+        h = rng.randint(3, 5)
+        top_y = self._place_trunk(bx, by, h, POMEGRANATE_LOG)
+        # Rounded shrubby crown, slight random offset
+        off = rng.randint(-1, 1)
+        self._place_canopy([
+            (top_y - 1, range(bx + off - 1, bx + off + 2)),
+            (top_y,     range(bx + off - 2, bx + off + 3)),
+            (top_y + 1, range(bx + off - 2, bx + off + 3)),
+            (top_y + 2, range(bx + off - 1, bx + off + 2)),
+        ], POMEGRANATE_LEAVES, rng, density=0.82)
+
     def _dispatch_grow(self, bx, by, biodome, rng=None):
         rng = rng or self._sapling_rng
         options = {
-            "temperate":       [(self._grow_oak, 6),    (self._grow_maple, 3),   (self._grow_cherry, 1)],
-            "rolling_hills":   [(self._grow_oak, 5),    (self._grow_maple, 3),   (self._grow_cherry, 2)],
-            "birch_forest":    [(self._grow_birch, 7),  (self._grow_maple, 2),   (self._grow_oak, 1)],
-            "steep_hills":     [(self._grow_birch, 7),  (self._grow_maple, 3)],
-            "boreal":          [(self._grow_pine, 8),   (self._grow_birch, 2)],
-            "alpine_mountain": [(self._grow_pine, 9),   (self._grow_cypress, 1)],
-            "rocky_mountain":  [(self._grow_pine, 8),   (self._grow_cypress, 2)],
-            "jungle":          [(self._grow_jungle, 1)],
-            "wetland":         [(self._grow_willow, 6), (self._grow_cypress, 4)],
-            "swamp":           [(self._grow_willow, 5), (self._grow_cypress, 5)],
-            "redwood":         [(self._grow_redwood, 1)],
-            "tropical":        [(self._grow_palm, 1)],
-            "savanna":         [(self._grow_acacia, 7), (self._grow_baobab, 3)],
-            "steppe":          [(self._grow_acacia, 7), (self._grow_baobab, 3)],
+            # temperate: orchard fruit trees common alongside oak/maple
+            "temperate":       [(self._grow_oak, 4),    (self._grow_maple, 3),   (self._grow_cherry, 1),
+                                (self._grow_pear, 2),   (self._grow_apple, 2),   (self._grow_ginkgo, 1)],
+            # rolling_hills: best orchard biome — apple, pear, pomegranate all common
+            "rolling_hills":   [(self._grow_oak, 3),    (self._grow_maple, 2),   (self._grow_cherry, 1),
+                                (self._grow_pear, 2),   (self._grow_apple, 2),   (self._grow_pomegranate, 2),
+                                (self._grow_fig, 1),    (self._grow_ginkgo, 1)],
+            # birch_forest: apple and pear appear as scattered orchard remnants
+            "birch_forest":    [(self._grow_birch, 6),  (self._grow_maple, 2),   (self._grow_oak, 1),
+                                (self._grow_apple, 1),  (self._grow_pear, 1),    (self._grow_ginkgo, 1)],
+            # steep_hills: apple and pear on hillside terraces
+            "steep_hills":     [(self._grow_birch, 5),  (self._grow_maple, 3),   (self._grow_apple, 1),
+                                (self._grow_pear, 1),   (self._grow_ginkgo, 1)],
+            "boreal":          [(self._grow_pine, 5),   (self._grow_spruce, 3),  (self._grow_birch, 2)],
+            "alpine_mountain": [(self._grow_pine, 6),   (self._grow_spruce, 4),  (self._grow_cypress, 1)],
+            "rocky_mountain":  [(self._grow_pine, 5),   (self._grow_spruce, 3),  (self._grow_cypress, 2)],
+            # jungle: citrus and fig grow in humid understory alongside jungle/banyan
+            "jungle":          [(self._grow_jungle, 5), (self._grow_banyan, 3),  (self._grow_citrus, 1),
+                                (self._grow_fig, 1)],
+            "wetland":         [(self._grow_willow, 4), (self._grow_cypress, 3), (self._grow_mangrove, 3)],
+            "swamp":           [(self._grow_willow, 3), (self._grow_cypress, 3), (self._grow_mangrove, 4)],
+            "redwood":         [(self._grow_redwood, 8),(self._grow_birch, 1),   (self._grow_pine, 1)],
+            # tropical: citrus very common; banyan and palm fill the rest
+            "tropical":        [(self._grow_palm, 3),   (self._grow_banyan, 3),  (self._grow_citrus, 4)],
+            # savanna: fig and pomegranate both drought-tolerant
+            "savanna":         [(self._grow_acacia, 5), (self._grow_baobab, 3),  (self._grow_fig, 2),
+                                (self._grow_pomegranate, 2)],
+            # steppe: pomegranate and fig are the main fruit trees of semi-arid scrub
+            "steppe":          [(self._grow_acacia, 3), (self._grow_baobab, 2),  (self._grow_fig, 3),
+                                (self._grow_pomegranate, 3)],
+            # canyon: pomegranate and fig survive the dry heat; citrus in shaded slots
+            "canyon":          [(self._grow_dead, 4),   (self._grow_pomegranate, 2), (self._grow_fig, 1),
+                                (self._grow_citrus, 1)],
             "wasteland":       [(self._grow_dead, 1)],
             "arid_steppe":     [(self._grow_dead, 1)],
             "desert":          [(self._grow_dead, 1)],
             "tundra":          [(self._grow_pine, 1)],
-            "beach":           [(self._grow_palm, 1)],
-            "canyon":          [(self._grow_dead, 1)],
+            # beach: citrus common, mangrove in wet pockets
+            "beach":           [(self._grow_palm, 4),   (self._grow_mangrove, 3),(self._grow_citrus, 3)],
             "fungal":          [(self._grow_mushroom, 1)],
         }.get(biodome, [(self._grow_oak, 1)])
         fns, wts = zip(*options)
         rng.choices(fns, weights=wts)[0](bx, by, rng)
 
     def _grow_tree(self, bx, by):
-        biodome = self.get_biodome(bx)
-        self._dispatch_grow(bx, by, biodome)
+        bid = self.get_block(bx, by)
+        fruit_map = {
+            APPLE_SAPLING:       self._grow_apple,
+            PEAR_SAPLING:        self._grow_pear,
+            FIG_SAPLING:         self._grow_fig,
+            CITRUS_SAPLING:      self._grow_citrus,
+            POMEGRANATE_SAPLING: self._grow_pomegranate,
+        }
+        if bid in fruit_map:
+            fruit_map[bid](bx, by)
+        else:
+            biodome = self.get_biodome(bx)
+            self._dispatch_grow(bx, by, biodome)
 
     def update_saplings(self, dt):
         self._sapling_timer += dt
@@ -1929,7 +2199,8 @@ class World:
         to_check = list(self.pending_saplings)
         still_pending = set()
         for (x, y) in to_check:
-            if self.get_block(x, y) != SAPLING:
+            bid = self.get_block(x, y)
+            if bid != SAPLING and bid not in ALL_FRUIT_SAPLINGS:
                 continue
             # Saplings inside a city should never grow into trees
             if any(lo <= x <= hi for lo, hi in city_zones):
@@ -2105,6 +2376,107 @@ class World:
                     if remaining <= 0:
                         break
 
+    def update_trade_blocks(self, dt, player):
+        """Tick all trade blocks: dispatch horse, track position-based travel, deliver on arrival."""
+        from towns import TOWNS, supply_need
+        from town_needs import ITEM_TO_CATEGORY
+        from horses import Horse
+        from constants import BLOCK_SIZE as _BS
+
+        ARRIVE_THRESH = _BS * 2   # within 2 blocks = arrived
+
+        def _find_horse(uid):
+            return next(
+                (e for e in self.entities if isinstance(e, Horse) and e.uid == uid and not e.dead),
+                None,
+            )
+
+        def _deliver(state, town, player):
+            for item_id, count in list(state["inventory"].items()):
+                player._add_item(item_id, count)
+            delivered_cats = set()
+            for item_id in list(state["inventory"]):
+                cat = ITEM_TO_CATEGORY.get(item_id)
+                if cat and cat in town.needs and cat not in delivered_cats:
+                    supply_need(town, player, cat, player.count_items_in_category(cat))
+                    delivered_cats.add(cat)
+            state["inventory"] = {}
+
+        for pos, state in list(self.trade_block_data.items()):
+
+            if state["state"] == "idle":
+                if not (state["has_cart"] and state["horse_uid"] and state["linked_town_id"] is not None):
+                    continue
+                if sum(state["inventory"].values()) < state["threshold"]:
+                    continue
+                town = TOWNS.get(state["linked_town_id"])
+                if town is None:
+                    continue
+                horse = _find_horse(state["horse_uid"])
+                if horse is None or not horse.tamed:
+                    continue
+                horse._on_trade_run = True
+                horse._trade_target_x = town.center_bx * _BS
+                state["state"] = "traveling"
+
+            elif state["state"] == "traveling":
+                town = TOWNS.get(state["linked_town_id"])
+                if town is None:
+                    state["state"] = "idle"
+                    continue
+
+                horse = _find_horse(state["horse_uid"])
+
+                # Restore flag after save/load
+                if horse and not horse._on_trade_run:
+                    horse._on_trade_run = True
+                    horse._trade_target_x = town.center_bx * _BS
+
+                # Check arrival by position (horse present) or fall back to timer
+                if horse is not None:
+                    target_px = town.center_bx * _BS
+                    if abs((horse.x + horse.W / 2) - target_px) > ARRIVE_THRESH:
+                        continue  # still moving
+                else:
+                    state["ticks_left"] = state.get("ticks_left", 0) - dt
+                    if state["ticks_left"] > 0:
+                        continue
+
+                # Arrived at city — deliver goods
+                _deliver(state, town, player)
+                player.pending_notifications.append(
+                    ("Trade Post", f"Horse delivered goods to {town.name}", None)
+                )
+                state["state"] = "returning"
+                if horse:
+                    horse._trade_target_x = pos[0] * _BS
+
+            elif state["state"] == "returning":
+                horse = _find_horse(state["horse_uid"])
+
+                # Restore flag after save/load
+                if horse and not horse._on_trade_run:
+                    horse._on_trade_run = True
+                    horse._trade_target_x = pos[0] * _BS
+
+                if horse is not None:
+                    target_px = pos[0] * _BS
+                    if abs((horse.x + horse.W / 2) - target_px) > ARRIVE_THRESH:
+                        continue  # still returning
+                else:
+                    state["ticks_left"] = state.get("ticks_left", 0) - dt
+                    if state["ticks_left"] > 0:
+                        continue
+
+                # Back home
+                if horse:
+                    horse._on_trade_run = False
+                    horse._trade_target_x = None
+                    horse._trade_stuck = False
+                    horse._trade_stuck_timer = 0.0
+                state["state"] = "idle"
+                state["ticks_left"] = 0.0
+
     def update_leaves(self, dt, player):
         self._leaves_timer += dt
         if self._leaves_timer < self._leaves_interval:
@@ -2182,7 +2554,7 @@ class World:
                 x += cat_rng.randint(25, 55)
 
         # Horses — biome-specific herds of 2-4
-        from horses import Horse, HORSE_BIOMES
+        from horses import Horse, HORSE_BIOMES, _blend_to_herd_template
         horse_rng = random.Random(self.seed + 55551)
         for cx in sorted(self._chunks.keys()):
             chunk = self._chunks[cx]
@@ -2199,16 +2571,63 @@ class World:
                         and biodome in HORSE_BIOMES
                         and horse_rng.random() < 0.08):
                     herd_size = horse_rng.randint(2, 4)
+                    alpha = None
                     for _ in range(herd_size):
                         hx_off = horse_rng.randint(-3, 3)
                         hx_bx = max(base_x, min(base_x + CHUNK_W - 1, x + hx_off))
                         hsy = self.surface_height(hx_bx)
                         hx = hx_bx * BLOCK_SIZE + (BLOCK_SIZE - Horse.ANIMAL_W) // 2
                         hy = hsy * BLOCK_SIZE - Horse.ANIMAL_H
-                        self.entities.append(Horse(hx, hy, self))
+                        horse = Horse(hx, hy, self)
+                        if alpha is None:
+                            alpha = horse
+                        else:
+                            _blend_to_herd_template(horse, alpha)
+                        self.entities.append(horse)
                     x += 55
                     continue
                 x += horse_rng.randint(8, 16)
+
+        # Dogs — biome-specific packs of 2-3 by breed
+        for cx in sorted(self._chunks.keys()):
+            self._spawn_dogs_for_chunk(cx)
+
+    def _spawn_dogs_for_chunk(self, cx: int):
+        from dogs import Dog, DOG_BIOME_MAP, _blend_to_pack_template
+        chunk = self._chunks.get(cx)
+        if chunk is None:
+            return
+        base_x = cx * CHUNK_W
+        dog_rng = random.Random(self.seed + 77773 + cx * 3313)
+        x = base_x + 5
+        while x < base_x + CHUNK_W - 5:
+            lx = x - base_x
+            sy = self.surface_height(x)
+            biodome = self.biodome_at(x)
+            eligible_breeds = DOG_BIOME_MAP.get(biodome, [])
+            if (0 < sy < WORLD_H
+                    and chunk[sy][lx] == GRASS
+                    and chunk[sy - 1][lx] == AIR
+                    and eligible_breeds
+                    and dog_rng.random() < 0.06):
+                breed = dog_rng.choice(eligible_breeds)
+                pack_size = dog_rng.randint(2, 3)
+                alpha = None
+                for _ in range(pack_size):
+                    dx_off = dog_rng.randint(-3, 3)
+                    dx_bx = max(base_x, min(base_x + CHUNK_W - 1, x + dx_off))
+                    dsy = self.surface_height(dx_bx)
+                    dox = dx_bx * BLOCK_SIZE + (BLOCK_SIZE - Dog.ANIMAL_W) // 2
+                    doy = dsy * BLOCK_SIZE - Dog.ANIMAL_H
+                    dog = Dog(dox, doy, self, breed=breed)
+                    if alpha is None:
+                        alpha = dog
+                    else:
+                        _blend_to_pack_template(dog, alpha)
+                    self.entities.append(dog)
+                x += 50
+                continue
+            x += dog_rng.randint(8, 16)
 
     def _spawn_huntable_animals(self):
         from animals import (Deer, Boar, Rabbit, Turkey, Wolf, Bear, Duck, Elk, Bison, Fox,
@@ -2258,8 +2677,9 @@ class World:
                 x += rng.randint(12, 28)
 
     def _spawn_birds(self):
-        from birds import ALL_SPECIES, COMMON_SPECIES
+        from birds import ALL_SPECIES, COMMON_SPECIES, Nest
         self.birds.clear()
+        self.nests.clear()
         rng = random.Random()
         max_birds = 150
         spacing = 15  # blocks between spawn attempts
@@ -2289,6 +2709,8 @@ class World:
                     leader = species_cls(spawn_x, spawn_y, self)
                     leader._pick_flight_target(rng)
                     self.birds.append(leader)
+                    if getattr(species_cls, 'IS_GROUND', False):
+                        self.nests.append(Nest(x + rng.randint(-5, 5), sy, species_cls))
                     for _ in range(n - 1):
                         if len(self.birds) >= max_birds:
                             break
@@ -2307,6 +2729,8 @@ class World:
                     bird = species_cls(spawn_x, spawn_y, self)
                     bird._pick_flight_target(rng)
                     self.birds.append(bird)
+                    if getattr(species_cls, 'IS_GROUND', False):
+                        self.nests.append(Nest(x + rng.randint(-5, 5), sy, species_cls))
 
                 x += rng.randint(spacing, spacing * 2)
 
@@ -2377,6 +2801,8 @@ class World:
                 continue
             x += horse_rng.randint(8, 16)
 
+        self._spawn_dogs_for_chunk(cx)
+
         from animals import (Deer, Boar, Rabbit, Turkey, Wolf, Bear, Duck, Elk, Bison, Fox,
                              DEER_BIOMES, BOAR_BIOMES, RABBIT_BIOMES, TURKEY_BIOMES,
                              WOLF_BIOMES, BEAR_BIOMES, DUCK_BIOMES, ELK_BIOMES, BISON_BIOMES, FOX_BIOMES,
@@ -2420,7 +2846,7 @@ class World:
             x += hunt_rng.randint(12, 28)
 
     def _spawn_birds_for_chunk(self, cx: int):
-        from birds import ALL_SPECIES, COMMON_SPECIES
+        from birds import ALL_SPECIES, COMMON_SPECIES, Nest
         base_x = cx * CHUNK_W
         rng = random.Random()
         spacing = 15
@@ -2443,6 +2869,8 @@ class World:
                 leader = species_cls(spawn_x, spawn_y, self)
                 leader._pick_flight_target(rng)
                 self.birds.append(leader)
+                if getattr(species_cls, 'IS_GROUND', False):
+                    self.nests.append(Nest(x + rng.randint(-5, 5), sy, species_cls))
                 for _ in range(n - 1):
                     follower = species_cls(
                         spawn_x + rng.uniform(-20, 20),
@@ -2456,6 +2884,8 @@ class World:
                 bird = species_cls(spawn_x, spawn_y, self)
                 bird._pick_flight_target(rng)
                 self.birds.append(bird)
+                if getattr(species_cls, 'IS_GROUND', False):
+                    self.nests.append(Nest(x + rng.randint(-5, 5), sy, species_cls))
             x += rng.randint(spacing, spacing * 2)
 
     def _spawn_insects_for_chunk(self, cx):

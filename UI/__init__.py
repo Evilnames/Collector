@@ -27,12 +27,13 @@ from .pottery import PotteryMixin
 from .salt import SaltMixin
 from .town_menu import TownMenuMixin
 from .reputation_screen import ReputationScreenMixin
+from .dogs_ui import DogsMixin
 
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
     CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, MinigamesMixin, CollectionsMixin,
-    HelpMixin, HorseMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin,
+    HelpMixin, HorseMixin, DogsMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin,
     TownMenuMixin, ReputationScreenMixin,
 ):
     def __init__(self, screen):
@@ -55,6 +56,18 @@ class UI(
         self.active_compost_bin_pos  = None   # (bx, by) when compost bin is open
         self._compost_deposit_btn    = None
         self._compost_collect_btn    = None
+        self.trade_block_open        = False
+        self.active_trade_pos        = None   # (bx, by) of open trade block
+        self._trade_goods_rects      = {}     # item_id -> Rect for stored goods grid
+        self._trade_player_rects     = {}     # item_id -> Rect for player inventory section
+        self._trade_horse_btn        = None
+        self._trade_cart_btn         = None
+        self._trade_city_btn         = None
+        self._trade_thresh_minus     = None
+        self._trade_thresh_plus      = None
+        self._trade_dispatch_btn     = None
+        self._trade_horse_idx        = 0      # selected index in tamed horse list
+        self._trade_city_idx         = 0      # selected index in TOWNS list
         self._selected_rock_idx      = None
         self._refinery_selected_idx  = None
         self._card_rects    = {}
@@ -156,6 +169,8 @@ class UI(
         self._glass_kiln_recipe_rects       = {}
         self._garden_workshop_selected_recipe = 0
         self._garden_workshop_recipe_rects    = {}
+        self._juicer_selected_recipe          = 0
+        self._juicer_recipe_rects             = {}
         self._cook_station_scroll        = {}
         self._cook_station_max_scroll    = {}
         self.npc_open   = False
@@ -510,6 +525,21 @@ class UI(
         # Horse codex scroll
         self._horse_codex_scroll      = 0
         self._max_horse_codex_scroll  = 0
+        # Dog UI state
+        self.dog_view_open        = False
+        self._dv_dog              = None
+        self._dv_close_btn        = None
+        self._dv_stay_btn         = None
+        self.dog_breeding_open    = False
+        self._dbr_dog_a           = None
+        self._dbr_dog_b           = None
+        self._dbr_breed_btn       = None
+        self._dbr_close_btn       = None
+        self.active_kennel_pos    = None
+        self._dog_codex_scroll     = 0
+        self._max_dog_codex_scroll = 0
+        self._hunting_codex_scroll     = 0
+        self._max_hunting_codex_scroll = 0
         # ----- Tea UI state -----
         self._wither_phase        = "select_leaf"
         self._wither_leaf_idx     = None
@@ -807,6 +837,8 @@ class UI(
             self._draw_farm_bot_panel(player)
         if self.backhoe_open and self.active_backhoe is not None:
             self._draw_backhoe_panel(player)
+        if self.trade_block_open and self.active_trade_pos is not None:
+            self._draw_trade_block_panel(player)
         if self.chest_open and self.active_chest_inv is not None:
             self._draw_chest(player)
         if self.garden_open and self.active_garden_flowers is not None:
@@ -836,6 +868,10 @@ class UI(
         if self.horse_breeding_open:
             self._draw_horse_breeding_panel(player)
         self._draw_horse_stamina_hud(player)
+        if self.dog_view_open:
+            self._draw_dog_view_panel(player)
+        if self.dog_breeding_open:
+            self._draw_dog_breeding_panel(player)
         if self.wardrobe_open:
             self._draw_wardrobe(player)
         if self._jw_detail_jewelry is not None:

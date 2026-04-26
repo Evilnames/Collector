@@ -889,10 +889,16 @@ HUNTABLE_FLEE_SPEED  = 2.2
 class HuntableAnimal(Animal):
     """Prey animal: flees the player and can only be killed by arrows."""
 
+    TROPHY_STATS = {}  # subclasses override: {stat_key: (min, max, "unit")}
+
     def __init__(self, x, y, world, animal_id):
         super().__init__(x, y, world, animal_id)
         self._stunned_timer = 0.0
         self._barbed_timer  = 0.0
+        self.stats = {
+            k: round(random.uniform(lo, hi), 1)
+            for k, (lo, hi, _) in self.TROPHY_STATS.items()
+        }
 
     def try_harvest(self, player, dt):
         self.reset_harvest()
@@ -957,6 +963,7 @@ class Deer(HuntableAnimal):
     ANIMAL_W = 28
     ANIMAL_H = 22
     MEAT_DROP = [("raw_venison", 2), ("deer_hide", 1), ("bone", 1)]
+    TROPHY_STATS = {"antler_spread": (24, 62, "in")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "deer")
@@ -967,6 +974,7 @@ class Boar(HuntableAnimal):
     ANIMAL_W = 26
     ANIMAL_H = 18
     MEAT_DROP = [("raw_boar_meat", 2), ("bone", 1)]
+    TROPHY_STATS = {"tusk_length": (3.0, 10.0, "in")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "boar")
@@ -977,6 +985,7 @@ class Rabbit(HuntableAnimal):
     ANIMAL_W = 14
     ANIMAL_H = 12
     MEAT_DROP = [("raw_rabbit", 1), ("rabbit_pelt", 1)]
+    TROPHY_STATS = {"weight": (2.0, 6.0, "lbs")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "rabbit")
@@ -987,6 +996,7 @@ class Turkey(HuntableAnimal):
     ANIMAL_W = 20
     ANIMAL_H = 18
     MEAT_DROP = [("raw_turkey", 2), ("feather", 2)]
+    TROPHY_STATS = {"beard_length": (4.0, 14.0, "in")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "turkey")
@@ -1003,6 +1013,7 @@ class Wolf(HuntableAnimal):
     ANIMAL_W = 26
     ANIMAL_H = 18
     MEAT_DROP = [("wolf_pelt", 1), ("bone", 1)]
+    TROPHY_STATS = {"weight": (60, 180, "lbs")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "wolf")
@@ -1013,6 +1024,7 @@ class Bear(HuntableAnimal):
     ANIMAL_W = 34
     ANIMAL_H = 26
     MEAT_DROP = [("raw_bear_meat", 3), ("bear_pelt", 1), ("bone", 2)]
+    TROPHY_STATS = {"weight": (200, 800, "lbs")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "bear")
@@ -1023,6 +1035,7 @@ class Duck(HuntableAnimal):
     ANIMAL_W = 16
     ANIMAL_H = 12
     MEAT_DROP = [("raw_duck", 1), ("feather", 2)]
+    TROPHY_STATS = {"weight": (1.0, 4.0, "lbs")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "duck")
@@ -1033,6 +1046,7 @@ class Elk(HuntableAnimal):
     ANIMAL_W = 32
     ANIMAL_H = 26
     MEAT_DROP = [("raw_venison", 3), ("elk_antler", 1), ("bone", 1)]
+    TROPHY_STATS = {"antler_spread": (30, 74, "in")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "elk")
@@ -1043,6 +1057,7 @@ class Bison(HuntableAnimal):
     ANIMAL_W = 36
     ANIMAL_H = 24
     MEAT_DROP = [("raw_bison_meat", 3), ("bison_hide", 1), ("bone", 1)]
+    TROPHY_STATS = {"weight": (800, 2200, "lbs")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "bison")
@@ -1053,6 +1068,7 @@ class Fox(HuntableAnimal):
     ANIMAL_W = 20
     ANIMAL_H = 14
     MEAT_DROP = [("fox_pelt", 1), ("bone", 1)]
+    TROPHY_STATS = {"weight": (8, 24, "lbs")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "fox")
@@ -1071,6 +1087,7 @@ class Moose(HuntableAnimal):
     ANIMAL_W = 36
     ANIMAL_H = 30
     MEAT_DROP = [("raw_venison", 4), ("moose_antler", 1), ("bone", 2)]
+    TROPHY_STATS = {"antler_span": (36, 84, "in")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "moose")
@@ -1081,6 +1098,7 @@ class Bighorn(HuntableAnimal):
     ANIMAL_W = 24
     ANIMAL_H = 20
     MEAT_DROP = [("raw_mutton", 2), ("bighorn_horn", 1), ("bone", 1)]
+    TROPHY_STATS = {"horn_score": (100, 220, "pts")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "bighorn")
@@ -1091,6 +1109,7 @@ class Pheasant(HuntableAnimal):
     ANIMAL_W = 18
     ANIMAL_H = 14
     MEAT_DROP = [("raw_pheasant", 1), ("feather", 3)]
+    TROPHY_STATS = {"tail_length": (12, 36, "in")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "pheasant")
@@ -1101,6 +1120,7 @@ class Warthog(HuntableAnimal):
     ANIMAL_W = 24
     ANIMAL_H = 16
     MEAT_DROP = [("raw_boar_meat", 2), ("warthog_tusk", 1), ("bone", 1)]
+    TROPHY_STATS = {"tusk_length": (4.0, 14.0, "in")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "warthog")
@@ -1111,6 +1131,7 @@ class MuskOx(HuntableAnimal):
     ANIMAL_W = 32
     ANIMAL_H = 22
     MEAT_DROP = [("raw_bison_meat", 3), ("musk_ox_hide", 1), ("bone", 1)]
+    TROPHY_STATS = {"horn_spread": (20, 36, "in")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "musk_ox")
@@ -1121,6 +1142,7 @@ class Crocodile(HuntableAnimal):
     ANIMAL_W = 40
     ANIMAL_H = 14
     MEAT_DROP = [("raw_crocodile", 2), ("croc_hide", 1), ("bone", 1)]
+    TROPHY_STATS = {"length": (5.0, 14.0, "ft")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "crocodile")
@@ -1131,6 +1153,7 @@ class Goose(HuntableAnimal):
     ANIMAL_W = 18
     ANIMAL_H = 16
     MEAT_DROP = [("raw_goose", 1), ("feather", 2)]
+    TROPHY_STATS = {"weight": (5.0, 12.0, "lbs")}
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "goose")
@@ -1141,6 +1164,7 @@ class Hare(HuntableAnimal):
     ANIMAL_W = 16
     ANIMAL_H = 14
     MEAT_DROP = [("raw_rabbit", 1), ("rabbit_pelt", 1)]
+    TROPHY_STATS = {"weight": (3.0, 8.0, "lbs")}
     # Hares flee faster than rabbits
     def update(self, dt):
         if self.dead:

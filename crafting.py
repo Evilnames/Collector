@@ -73,6 +73,39 @@ BAKERY_RECIPES = [
     # --- Salt seasoned ---
     {"name": "Focaccia",       "ingredients": {"wheat": 2, "olive_oil": 1, "fleur_de_sel": 1},   "output_id": "focaccia",       "output_count": 1},
     {"name": "Salted Pretzel", "ingredients": {"wheat": 2, "coarse_salt": 1},                     "output_id": "salted_pretzel", "output_count": 3},
+    # --- Fruit baked goods ---
+    {"name": "Apple Tart",          "ingredients": {"apple": 2, "wheat": 1},                          "output_id": "apple_tart",          "output_count": 1},
+    {"name": "Pear Tart",           "ingredients": {"pear": 2, "wheat": 1},                           "output_id": "pear_tart",           "output_count": 1},
+    {"name": "Lemon Tart",          "ingredients": {"lemon": 2, "wheat": 1, "egg": 1},                "output_id": "lemon_tart",          "output_count": 1},
+    {"name": "Apple Crumble",       "ingredients": {"apple": 2, "wheat": 2},                          "output_id": "apple_crumble",       "output_count": 1},
+    {"name": "Fig Roll",            "ingredients": {"fig": 2, "wheat": 1},                            "output_id": "fig_roll",            "output_count": 2},
+    {"name": "Lemon Drizzle Cake",  "ingredients": {"lemon": 1, "wheat": 2, "egg": 1},               "output_id": "lemon_drizzle",       "output_count": 1},
+    {"name": "Pear & Ginger Cake",  "ingredients": {"pear": 1, "ginger": 1, "wheat": 2},             "output_id": "pear_ginger_cake",    "output_count": 1},
+    {"name": "Pomegranate Cake",    "ingredients": {"pomegranate": 1, "wheat": 2, "egg": 1},          "output_id": "pomegranate_cake",    "output_count": 1},
+    {"name": "Fig Jam",             "ingredients": {"fig": 3},                                        "output_id": "fig_jam",             "output_count": 2},
+    {"name": "Apple Cinnamon Roll", "ingredients": {"apple": 1, "wheat": 2},                          "output_id": "apple_cinnamon_roll", "output_count": 2},
+    {"name": "Strawberry Tart",     "ingredients": {"strawberry": 2, "wheat": 1, "egg": 1},          "output_id": "strawberry_tart",     "output_count": 1},
+    {"name": "Fruit Cake",          "ingredients": {"apple": 1, "pear": 1, "wheat": 2, "egg": 1},    "output_id": "fruit_cake",          "output_count": 1},
+    # --- Fruit baked goods batch 2 ---
+    {"name": "Fig Tart",              "ingredients": {"fig": 2, "wheat": 1, "egg": 1},                "output_id": "fig_tart",              "output_count": 1},
+    {"name": "Pomegranate Jam",       "ingredients": {"pomegranate": 3},                              "output_id": "pomegranate_jam",       "output_count": 2},
+    {"name": "Lemon Shortbread",      "ingredients": {"lemon": 1, "wheat": 2},                        "output_id": "lemon_shortbread",      "output_count": 3},
+    {"name": "Pear Upside-Down Cake", "ingredients": {"pear": 2, "wheat": 2, "egg": 1},              "output_id": "pear_upside_down_cake", "output_count": 1},
+    {"name": "Strawberry Shortcake",  "ingredients": {"strawberry": 2, "wheat": 1, "milk": 1},       "output_id": "strawberry_shortcake",  "output_count": 1},
+    {"name": "Lemon Meringue Pie",    "ingredients": {"lemon": 2, "wheat": 1, "egg": 2},              "output_id": "lemon_meringue_pie",    "output_count": 1},
+    {"name": "Apple Strudel",         "ingredients": {"apple": 2, "wheat": 2},                        "output_id": "apple_strudel",         "output_count": 1},
+    {"name": "Apple & Pear Pie",      "ingredients": {"apple": 1, "pear": 1, "wheat": 2},             "output_id": "apple_pear_pie",        "output_count": 1},
+    {"name": "Pear Almond Cake",      "ingredients": {"pear": 1, "wheat": 2, "milk": 1},              "output_id": "pear_almond_cake",      "output_count": 1},
+    {"name": "Fig Cake",              "ingredients": {"fig": 2, "wheat": 1, "milk": 1},               "output_id": "fig_cake",              "output_count": 1},
+    # --- Fruit baked goods batch 3 ---
+    {"name": "Lemon Curd",            "ingredients": {"lemon": 3, "egg": 1},                          "output_id": "lemon_curd",            "output_count": 2},
+    {"name": "Apple Butter",          "ingredients": {"apple": 3},                                    "output_id": "apple_butter",          "output_count": 2},
+    {"name": "Pear Frangipane",       "ingredients": {"pear": 1, "wheat": 2, "egg": 2},               "output_id": "pear_frangipane",       "output_count": 1},
+    {"name": "Fig Brioche",           "ingredients": {"fig": 2, "wheat": 2, "egg": 1},                "output_id": "fig_brioche",           "output_count": 2},
+    {"name": "Lemon Poppy Muffin",    "ingredients": {"lemon": 1, "wheat": 1, "milk": 1},             "output_id": "lemon_poppy_muffin",    "output_count": 2},
+    {"name": "Pomegranate Danish",    "ingredients": {"pomegranate": 1, "wheat": 2},                  "output_id": "pomegranate_danish",    "output_count": 2},
+    {"name": "Watermelon Cake",       "ingredients": {"watermelon": 1, "wheat": 2, "egg": 1},         "output_id": "watermelon_cake",       "output_count": 1},
+    {"name": "Apple Loaf",            "ingredients": {"apple": 1, "wheat": 2, "egg": 1},              "output_id": "apple_loaf",            "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -132,6 +165,17 @@ WOK_RECIPES = [
     # --- Wild game ---
     {"name": "Wild Game Stir Fry","ingredients": {"cooked_venison": 1, "bok_choy": 1, "garlic": 1},"output_id": "wild_game_stir_fry","output_count": 1},
     {"name": "Duck Fried Rice",  "ingredients": {"cooked_duck": 1, "rice": 1, "scallion": 1},       "output_id": "duck_fried_rice",   "output_count": 1},
+    # --- Fruit wok dishes batch 3 ---
+    {"name": "Pear & Ginger Stir-Fry",   "ingredients": {"pear": 1, "ginger": 1, "bok_choy": 1},   "output_id": "pear_ginger_stir_fry",   "output_count": 1},
+    {"name": "Lemon Tofu Stir-Fry",      "ingredients": {"lemon": 1, "tofu": 1, "scallion": 1},    "output_id": "lemon_tofu_stir_fry",    "output_count": 1},
+    {"name": "Sweet Pomegranate Rice",   "ingredients": {"pomegranate": 1, "rice": 2},              "output_id": "sweet_pomegranate_rice", "output_count": 1},
+    {"name": "Apple & Mushroom Stir-Fry","ingredients": {"apple": 1, "mushroom": 2, "garlic": 1},  "output_id": "apple_mushroom_stir_fry","output_count": 1},
+    # --- Fruit wok dishes ---
+    {"name": "Lemon Garlic Stir-Fry", "ingredients": {"lemon": 1, "garlic": 2, "bok_choy": 1},     "output_id": "lemon_garlic_stir_fry", "output_count": 1},
+    {"name": "Citrus Fried Rice",     "ingredients": {"lemon": 1, "rice": 2, "egg": 1},             "output_id": "citrus_fried_rice",     "output_count": 1},
+    {"name": "Tangy Apple Stir-Fry",  "ingredients": {"apple": 1, "ginger": 1, "garlic": 1},        "output_id": "tangy_apple_stir_fry",  "output_count": 1},
+    {"name": "Fig Glazed Tofu",       "ingredients": {"fig": 1, "tofu": 1, "ginger": 1},            "output_id": "fig_glazed_tofu",       "output_count": 1},
+    {"name": "Pomegranate Stir-Fry",  "ingredients": {"pomegranate": 1, "bok_choy": 1, "garlic": 1},"output_id": "pomegranate_stir_fry",  "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -161,6 +205,10 @@ STEAMER_RECIPES = [
     {"name": "Steamed Carrots",      "ingredients": {"carrot": 2, "ginger": 1},                         "output_id": "steamed_carrots",       "output_count": 1},
     {"name": "Veggie Bao",           "ingredients": {"wheat": 1, "bok_choy": 1, "mushroom": 1},         "output_id": "veggie_bao",            "output_count": 2},
     {"name": "Steamed Custard",      "ingredients": {"egg": 2, "pumpkin": 1},                           "output_id": "steamed_custard",       "output_count": 1},
+    # --- Fruit steamer dishes ---
+    {"name": "Lemon Steamed Fish",   "ingredients": {"lemon": 1, "fish": 1, "ginger": 1},             "output_id": "lemon_steamed_fish",    "output_count": 1},
+    {"name": "Fig Sticky Rice",      "ingredients": {"fig": 2, "rice": 2},                            "output_id": "fig_sticky_rice",       "output_count": 2},
+    {"name": "Pear Custard",         "ingredients": {"pear": 1, "milk": 2, "egg": 1},                 "output_id": "pear_custard",          "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -279,6 +327,21 @@ BBQ_GRILL_RECIPES = [
     {"name": "Salt-Cured Mutton",  "ingredients": {"raw_mutton": 1, "coarse_salt": 2},                      "output_id": "salt_cured_mutton",  "output_count": 1},
     {"name": "Salted Fish",        "ingredients": {"fish": 1, "coarse_salt": 1},                             "output_id": "salted_fish",        "output_count": 1},
     {"name": "Salt-Cured Venison", "ingredients": {"raw_venison": 1, "coarse_salt": 2},                      "output_id": "salt_cured_venison", "output_count": 1},
+    # --- Grilled fruit ---
+    {"name": "Grilled Figs",            "ingredients": {"fig": 2},                                          "output_id": "grilled_figs",            "output_count": 2},
+    {"name": "Caramelized Pears",       "ingredients": {"pear": 2},                                         "output_id": "caramelized_pears",       "output_count": 1},
+    {"name": "Glazed Apple",            "ingredients": {"apple": 2},                                        "output_id": "glazed_apple",            "output_count": 2},
+    {"name": "Grilled Pear & Cheese",   "ingredients": {"pear": 1, "cheese": 1},                            "output_id": "grilled_pear_cheese",     "output_count": 1},
+    {"name": "Citrus Glazed Chicken",   "ingredients": {"lemon": 1, "raw_chicken": 1, "garlic": 1},         "output_id": "citrus_glazed_chicken",   "output_count": 1},
+    {"name": "Fig & Mutton Skewer",     "ingredients": {"fig": 2, "raw_mutton": 1},                         "output_id": "fig_meat_skewer",         "output_count": 2},
+    {"name": "Pomegranate Chicken",     "ingredients": {"pomegranate": 1, "raw_chicken": 1},                "output_id": "pomegranate_chicken",     "output_count": 1},
+    {"name": "Grilled Watermelon",          "ingredients": {"watermelon": 2},                                     "output_id": "grilled_watermelon",          "output_count": 2},
+    # --- Grilled batch 3 ---
+    {"name": "Apple & Pork Skewer",         "ingredients": {"apple": 1, "raw_boar_meat": 1},                         "output_id": "apple_pork_skewer",           "output_count": 2},
+    {"name": "Lemon Herb Fish",             "ingredients": {"lemon": 1, "fish": 1, "rosemary": 1},                   "output_id": "lemon_herb_fish",             "output_count": 1},
+    {"name": "Fig Glazed Pheasant",         "ingredients": {"fig": 1, "raw_pheasant": 1},                            "output_id": "fig_glazed_pheasant",         "output_count": 1},
+    {"name": "Pomegranate Venison Steak",   "ingredients": {"pomegranate": 1, "raw_venison": 1, "onion": 1},         "output_id": "pomegranate_venison_steak",   "output_count": 1},
+    {"name": "Grilled Lemon Corn",          "ingredients": {"lemon": 1, "corn": 2},                                  "output_id": "grilled_lemon_corn",          "output_count": 2},
 ]
 
 # ---------------------------------------------------------------------------
@@ -366,7 +429,24 @@ CLAY_POT_RECIPES = [
     {"name": "Salt-Cured Beef",    "ingredients": {"cooked_beef": 1, "coarse_salt": 2},                     "output_id": "salt_cured_beef",     "output_count": 1},
     {"name": "Salted Lentil Soup", "ingredients": {"lentil": 3, "onion": 1, "tomato": 1, "fine_salt": 1},  "output_id": "salted_lentil_soup",  "output_count": 1},
     {"name": "Salted Potato Soup", "ingredients": {"potato": 2, "onion": 1, "fine_salt": 1},                "output_id": "salted_potato_soup",  "output_count": 1},
-    {"name": "Brined Cabbage",     "ingredients": {"cabbage": 2, "coarse_salt": 1},                         "output_id": "brined_cabbage",      "output_count": 2},
+    {"name": "Brined Cabbage",       "ingredients": {"cabbage": 2, "coarse_salt": 1},                      "output_id": "brined_cabbage",       "output_count": 2},
+    # --- Fruit compotes & stews ---
+    {"name": "Lemon Posset",            "ingredients": {"lemon": 2, "milk": 2},                             "output_id": "lemon_posset",            "output_count": 1},
+    {"name": "Watermelon Sorbet",       "ingredients": {"watermelon": 2, "lemon": 1},                       "output_id": "watermelon_sorbet",       "output_count": 2},
+    {"name": "Apple Cider Stew",        "ingredients": {"apple": 2, "potato": 1, "onion": 1},               "output_id": "apple_cider_stew",        "output_count": 1},
+    {"name": "Lemon Herb Broth",        "ingredients": {"lemon": 1, "onion": 1, "garlic": 1},               "output_id": "lemon_herb_broth",        "output_count": 2},
+    {"name": "Fig & Lamb Tagine",       "ingredients": {"fig": 1, "raw_mutton": 1, "onion": 1},             "output_id": "fig_lamb_tagine",         "output_count": 1},
+    {"name": "Pomegranate Chicken Stew","ingredients": {"pomegranate": 1, "raw_chicken": 1, "onion": 1},    "output_id": "pomegranate_chicken_stew","output_count": 1},
+    {"name": "Pear & Ginger Soup",      "ingredients": {"pear": 2, "ginger": 1},                            "output_id": "pear_ginger_soup",        "output_count": 1},
+    # --- Fruit clay pot batch 3 ---
+    {"name": "Apple & Onion Soup",      "ingredients": {"apple": 1, "onion": 2},                            "output_id": "apple_onion_soup",        "output_count": 1},
+    {"name": "Fig & Chickpea Stew",     "ingredients": {"fig": 1, "chickpea": 2, "onion": 1},               "output_id": "fig_chickpea_stew",       "output_count": 1},
+    {"name": "Lemon Lentil Soup",       "ingredients": {"lemon": 1, "lentil": 3},                           "output_id": "lemon_lentil_soup",       "output_count": 1},
+    {"name": "Pear & Pumpkin Soup",     "ingredients": {"pear": 1, "pumpkin": 2},                           "output_id": "pear_pumpkin_soup",       "output_count": 1},
+    {"name": "Watermelon Gazpacho",     "ingredients": {"watermelon": 2, "tomato": 1},                      "output_id": "watermelon_gazpacho",     "output_count": 1},
+    {"name": "Spiced Pear Compote",  "ingredients": {"pear": 2, "ginger": 1},                               "output_id": "spiced_pear_compote",  "output_count": 1},
+    {"name": "Fig & Date Pudding",   "ingredients": {"fig": 2, "date_palm_fruit": 1},                       "output_id": "fig_date_pudding",     "output_count": 1},
+    {"name": "Pomegranate Stew",     "ingredients": {"pomegranate": 1, "onion": 1, "tomato": 1},            "output_id": "pomegranate_stew",     "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -1412,6 +1492,57 @@ RECIPES = [
         "output_id":    "horse_trough_item",
         "output_count": 1,
     },
+    # --- Dog items ---
+    {
+        "name": "Dog Collar",
+        "pattern": [
+            [None,       None,         None     ],
+            ["leather",  "iron_chunk", "leather"],
+            [None,       None,         None     ],
+        ],
+        "output_id":    "dog_collar",
+        "output_count": 1,
+    },
+    {
+        "name": "Dog Treat",
+        "pattern": [
+            [None,     None,    None ],
+            ["carrot", "wheat", "bone"],
+            [None,     None,    None ],
+        ],
+        "output_id":    "dog_treat",
+        "output_count": 3,
+    },
+    {
+        "name": "Dog Whistle",
+        "pattern": [
+            [None,         None,          None        ],
+            ["lumber",     "iron_chunk",  None        ],
+            [None,         None,          None        ],
+        ],
+        "output_id":    "dog_whistle",
+        "output_count": 1,
+    },
+    {
+        "name": "Kennel",
+        "pattern": [
+            ["lumber",      "lumber",      "lumber"    ],
+            ["lumber",      "stone_chip",  "lumber"    ],
+            ["stone_chip",  "stone_chip",  "stone_chip"],
+        ],
+        "output_id":    "kennel_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Dog Bowl",
+        "pattern": [
+            [None,          None,          None        ],
+            ["stone_chip",  None,          "stone_chip"],
+            [None,          "stone_chip",  None        ],
+        ],
+        "output_id":    "dog_bowl_item",
+        "output_count": 1,
+    },
     # --- Coffee equipment ---
     {
         "name": "Coffee Roaster",
@@ -1805,6 +1936,26 @@ RECIPES = [
         "output_id":    "minecart",
         "output_count": 1,
     },
+    {
+        "name": "Cart",
+        "pattern": [
+            [None,         "lumber",     None        ],
+            ["lumber",     "iron_chunk", "lumber"    ],
+            ["iron_chunk", "lumber",     "iron_chunk"],
+        ],
+        "output_id":    "cart",
+        "output_count": 1,
+    },
+    {
+        "name": "Trade Post",
+        "pattern": [
+            ["stone_chip", "lumber",     "stone_chip"],
+            ["lumber",     "iron_chunk", "lumber"    ],
+            ["stone_chip", "stone_chip", "stone_chip"],
+        ],
+        "output_id":    "trade_block",
+        "output_count": 1,
+    },
     # --- Jewelry ---
     {
         "name": "Jewelry Workbench",
@@ -1825,6 +1976,16 @@ RECIPES = [
             ["stone_chip", "stone_chip", "stone_chip"],
         ],
         "output_id":    "garden_workshop_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Juicer",
+        "pattern": [
+            ["lumber",     "iron_chunk", "lumber"    ],
+            ["iron_chunk", None,         "iron_chunk"],
+            ["lumber",     "stone_chip", "lumber"    ],
+        ],
+        "output_id":    "juicer_item",
         "output_count": 1,
     },
     # --- Sculpture system ---
@@ -2254,6 +2415,28 @@ GARDEN_WORKSHOP_RECIPES = [
 ]
 
 # ---------------------------------------------------------------------------
+# Juicer recipes
+# ---------------------------------------------------------------------------
+
+JUICER_RECIPES = [
+    # Single-fruit juices
+    {"name": "Apple Juice",         "ingredients": {"apple": 3},                                          "output_id": "apple_juice",         "output_count": 2},
+    {"name": "Pear Juice",          "ingredients": {"pear": 3},                                           "output_id": "pear_juice",          "output_count": 2},
+    {"name": "Pomegranate Juice",   "ingredients": {"pomegranate": 3},                                    "output_id": "pomegranate_juice",   "output_count": 2},
+    {"name": "Watermelon Juice",    "ingredients": {"watermelon": 2},                                     "output_id": "watermelon_juice",    "output_count": 2},
+    {"name": "Fig Nectar",          "ingredients": {"fig": 3},                                            "output_id": "fig_nectar",          "output_count": 2},
+    # Two-fruit blends
+    {"name": "Lemonade",            "ingredients": {"lemon": 2, "apple": 1},                              "output_id": "lemonade",            "output_count": 2},
+    {"name": "Strawberry Lemonade", "ingredients": {"strawberry": 2, "lemon": 1},                        "output_id": "strawberry_lemonade", "output_count": 2},
+    {"name": "Berry Blast",         "ingredients": {"strawberry": 2, "pomegranate": 1},                   "output_id": "berry_blast",         "output_count": 2},
+    {"name": "Citrus Sunrise",      "ingredients": {"lemon": 2, "pomegranate": 1},                        "output_id": "citrus_sunrise",      "output_count": 2},
+    {"name": "Tropical Punch",      "ingredients": {"lemon": 1, "prickly_pear_fruit": 2},                 "output_id": "tropical_punch",      "output_count": 2},
+    # Three-fruit blends
+    {"name": "Orchard Blend",       "ingredients": {"apple": 1, "pear": 1, "pomegranate": 1},             "output_id": "orchard_blend",       "output_count": 2},
+    {"name": "Desert Cooler",       "ingredients": {"prickly_pear_fruit": 1, "fig": 1, "lemon": 1},       "output_id": "desert_cooler",       "output_count": 2},
+]
+
+# ---------------------------------------------------------------------------
 # Recipe book grouping — controls display order and category headers
 # Maps group label -> list of output_ids in display order
 # ---------------------------------------------------------------------------
@@ -2275,6 +2458,7 @@ RECIPE_GROUPS = {
         "wood_door", "iron_door", "bed", "chest_item", "empty_barrel", "backhoe_item",
         "elevator_stop", "elevator_cable", "elevator_car",
         "mine_track", "mine_track_stop", "minecart",
+        "trade_block",
     ],
     "Automation": [
         "coal_miner_item", "iron_miner_item", "crystal_miner_item",
@@ -2289,7 +2473,7 @@ RECIPE_GROUPS = {
     "Cooking Stations": [
         "bakery_item", "wok_item", "steamer_item", "noodle_pot_item",
         "bbq_grill_item", "clay_pot_item", "desert_forge_item",
-        "artisan_bench_item", "fossil_table_item",
+        "artisan_bench_item", "fossil_table_item", "juicer_item",
     ],
     "Coffee": [
         "roaster_item", "blend_station_item", "brew_station_item", "anaerobic_tank_item",
@@ -2324,7 +2508,7 @@ RECIPE_GROUPS = {
     ],
     "Horses": [
         "saddle", "horse_brush", "horseshoe", "sugar_lump",
-        "stable_item", "horse_trough_item",
+        "stable_item", "horse_trough_item", "cart",
     ],
     "Hunting": [
         "fletching_table_item",
@@ -2347,12 +2531,15 @@ RECIPE_GROUPS = {
     "Pottery": [
         "pottery_wheel_item", "pottery_kiln_item",
     ],
+    "Dogs": [
+        "dog_collar", "dog_treat", "dog_whistle", "kennel_item", "dog_bowl_item",
+    ],
 }
 
 RECIPE_GROUPS_ORDER = [
     "Tools", "Farming", "Building", "Automation", "Rock & Gems", "Smelting",
     "Cooking Stations", "Coffee", "Wine", "Spirits", "Tea",
-    "Herbalism", "Textiles", "Glassblowing", "Fishing", "Wildlife", "Horses", "Hunting", "Jewelry",
+    "Herbalism", "Textiles", "Glassblowing", "Fishing", "Wildlife", "Horses", "Dogs", "Hunting", "Jewelry",
     "Garden", "Sculpture", "Pottery", "Tapestry",
 ]
 
@@ -2418,6 +2605,11 @@ RESEARCH_LOCKED_RECIPES = {
     "pottery_kiln_item":       "kiln_mastery",
     "evap_pan_item":           "salt_basics",
     "salt_grinder_item":       "salt_basics",
+    "dog_collar":              "dog_basics",
+    "dog_treat":               "dog_basics",
+    "dog_bowl_item":           "dog_basics",
+    "dog_whistle":             "scent_tracking",
+    "kennel_item":             "kennel_mastery",
 }
 
 

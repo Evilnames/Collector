@@ -322,7 +322,12 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER, GRASS, DIRT, SA
                     TORCH, WALL_SCONCE, BRAZIER, CHANDELIER, CANDELABRA,
                     LANTERN_ORB, PENDANT_LAMP, FIRE_BOWL, CROSS_LANTERN,
                     STAR_LAMP, GLOW_VINE, LIGHT_EMITTERS,
-                    TOWN_FLAG_BLOCK)
+                    TOWN_FLAG_BLOCK,
+                    REED_BLOCK, CATTAIL_BLOCK, BULRUSH_BLOCK,
+                    WATER_CRESS_BLOCK, POND_WEED_BLOCK,
+                    WATER_HYACINTH_BLOCK, DUCKWEED_BLOCK, LOTUS_BLOCK, FROGBIT_BLOCK,
+                    ARROWHEAD_BLOCK, HORSETAIL_BLOCK, MARSH_MARIGOLD_BLOCK,
+                    WATER_IRIS_BLOCK, SEDGE_BLOCK, PICKERELWEED_BLOCK)
 import math
 import soil as _soil
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE
@@ -6480,6 +6485,260 @@ class Renderer:
                 for fx, fy, col in [(7, 10, (240, 220, 240)), (19, 8, (250, 180, 90))]:
                     pygame.draw.circle(s, col, (fx, fy), 2)
                     pygame.draw.circle(s, _lighter(col, 15), (fx, fy), 1)
+                surfs[bid] = s
+                continue
+            if bid == REED_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                BS = BLOCK_SIZE
+                soil = (70, 100, 55)
+                pygame.draw.rect(s, soil, (0, BS - 5, BS, 5))
+                stalk = (85, 155, 60)
+                stalk_dk = _darken(stalk, 18)
+                for sx2, sw, sh in [(4, 2, 20), (10, 2, 17), (17, 2, 22), (23, 2, 15), (28, 1, 18)]:
+                    pygame.draw.rect(s, stalk_dk, (sx2, BS - 5 - sh, sw, sh))
+                    pygame.draw.rect(s, stalk, (sx2 + 1, BS - 5 - sh, 1, sh))
+                    # small leaf sprout midway up
+                    mid = BS - 5 - sh // 2
+                    pygame.draw.line(s, stalk, (sx2 + sw, mid), (sx2 + sw + 4, mid - 3), 1)
+                surfs[bid] = s
+                continue
+            if bid == CATTAIL_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                BS = BLOCK_SIZE
+                soil = (70, 100, 55)
+                pygame.draw.rect(s, soil, (0, BS - 5, BS, 5))
+                stalk = (85, 155, 60)
+                stalk_dk = _darken(stalk, 18)
+                head = (110, 68, 28)
+                head_dk = _darken(head, 15)
+                for sx2, sw, sh, has_head in [(3, 2, 22, True), (11, 2, 18, False), (18, 2, 24, True), (25, 2, 16, False)]:
+                    pygame.draw.rect(s, stalk_dk, (sx2, BS - 5 - sh, sw, sh))
+                    pygame.draw.rect(s, stalk, (sx2 + 1, BS - 5 - sh, 1, sh))
+                    if has_head:
+                        hy = BS - 5 - sh
+                        pygame.draw.rect(s, head_dk, (sx2 - 1, hy, sw + 2, 7))
+                        pygame.draw.rect(s, head, (sx2, hy + 1, sw, 5))
+                surfs[bid] = s
+                continue
+            if bid == BULRUSH_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                BS = BLOCK_SIZE
+                soil = (60, 90, 50)
+                pygame.draw.rect(s, soil, (0, BS - 5, BS, 5))
+                c = (52, 118, 50)
+                dk = _darken(c, 20)
+                for sx2, sh in [(3, 19), (8, 15), (14, 21), (19, 17), (24, 14), (28, 18)]:
+                    pygame.draw.line(s, dk, (sx2, BS - 5), (sx2, BS - 5 - sh), 2)
+                    pygame.draw.circle(s, dk, (sx2, BS - 5 - sh), 3)
+                    pygame.draw.circle(s, c, (sx2, BS - 5 - sh), 2)
+                surfs[bid] = s
+                continue
+            if bid == WATER_CRESS_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                BS = BLOCK_SIZE
+                soil = (60, 95, 55)
+                pygame.draw.rect(s, soil, (0, BS - 5, BS, 5))
+                c = (58, 168, 70)
+                dk = _darken(c, 20)
+                for lx2, ly2, lr in [(5, BS - 9, 4), (12, BS - 8, 4), (19, BS - 10, 4),
+                                     (8, BS - 13, 3), (16, BS - 14, 3), (24, BS - 9, 4)]:
+                    pygame.draw.circle(s, dk, (lx2, ly2), lr)
+                    pygame.draw.circle(s, c, (lx2, ly2), lr - 1)
+                    pygame.draw.circle(s, _lighter(c, 15), (lx2, ly2 - 1), 1)
+                surfs[bid] = s
+                continue
+            if bid == POND_WEED_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                BS = BLOCK_SIZE
+                water = (50, 120, 170)
+                water_lt = _lighter(water, 12)
+                s.fill(water)
+                pygame.draw.ellipse(s, water_lt, (3, 5, BS - 6, BS - 10))
+                c = (38, 105, 48)
+                lt = _lighter(c, 15)
+                for wx2, wy2 in [(4, BS - 8), (9, BS - 5), (16, BS - 9), (21, BS - 6), (26, BS - 10)]:
+                    pygame.draw.line(s, c, (wx2, BS - 3), (wx2 + 3, wy2), 1)
+                    pygame.draw.line(s, lt, (wx2 + 1, BS - 3), (wx2 + 4, wy2), 1)
+                for wx2, wy2 in [(6, BS - 12), (14, BS - 14), (22, BS - 11)]:
+                    pygame.draw.ellipse(s, c, (wx2 - 3, wy2 - 2, 6, 4))
+                    pygame.draw.ellipse(s, lt, (wx2 - 2, wy2 - 1, 4, 2))
+                surfs[bid] = s
+                continue
+            if bid == WATER_HYACINTH_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                BS = BLOCK_SIZE
+                water = (50, 118, 168)
+                s.fill(water)
+                pygame.draw.ellipse(s, _lighter(water, 12), (3, 5, BS - 6, BS - 10))
+                pad = (42, 125, 55)
+                for px2, py2, pr in [(7, BS - 7, 5), (20, BS - 6, 4), (13, BS - 10, 4)]:
+                    pygame.draw.circle(s, _darken(pad, 15), (px2, py2), pr)
+                    pygame.draw.circle(s, pad, (px2, py2), pr - 1)
+                violet = (155, 85, 210)
+                violet_lt = _lighter(violet, 20)
+                for fx, fy in [(7, BS - 15), (14, BS - 18), (21, BS - 14)]:
+                    for ang in range(0, 360, 60):
+                        ex = fx + int(4 * math.cos(math.radians(ang)))
+                        ey = fy + int(4 * math.sin(math.radians(ang)))
+                        pygame.draw.line(s, violet, (fx, fy), (ex, ey), 1)
+                    pygame.draw.circle(s, violet_lt, (fx, fy), 2)
+                surfs[bid] = s
+                continue
+            if bid == DUCKWEED_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                BS = BLOCK_SIZE
+                water = (48, 115, 165)
+                s.fill(water)
+                pygame.draw.ellipse(s, _lighter(water, 10), (4, 6, BS - 8, BS - 12))
+                c = (52, 138, 50)
+                dk = _darken(c, 15)
+                for dx2, dy2, dr in [(4, 8, 2), (8, 14, 2), (13, 6, 3), (16, 17, 2),
+                                     (20, 10, 2), (24, 6, 3), (26, 19, 2), (10, 21, 2)]:
+                    pygame.draw.circle(s, dk, (dx2, dy2), dr)
+                    pygame.draw.circle(s, c, (dx2, dy2), dr - 1)
+                surfs[bid] = s
+                continue
+            if bid == LOTUS_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                BS = BLOCK_SIZE
+                water = (48, 115, 168)
+                s.fill(water)
+                pygame.draw.ellipse(s, _lighter(water, 12), (2, 4, BS - 4, BS - 8))
+                pad = (40, 128, 52)
+                pygame.draw.circle(s, _darken(pad, 15), (BS // 2, BS - 6), 8)
+                pygame.draw.circle(s, pad, (BS // 2, BS - 6), 7)
+                pygame.draw.line(s, water, (BS // 2, BS - 6), (BS // 2, BS - 14), 1)
+                pink = (225, 148, 178)
+                pink_lt = _lighter(pink, 18)
+                cx2 = BS // 2
+                cy2 = BS - 14
+                for ang in range(0, 360, 40):
+                    ex = cx2 + int(7 * math.cos(math.radians(ang)))
+                    ey = cy2 + int(5 * math.sin(math.radians(ang)))
+                    pygame.draw.line(s, pink, (cx2, cy2), (ex, ey), 2)
+                pygame.draw.circle(s, (240, 225, 80), (cx2, cy2), 3)
+                pygame.draw.circle(s, pink_lt, (cx2, cy2), 2)
+                surfs[bid] = s
+                continue
+            if bid == FROGBIT_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                BS = BLOCK_SIZE
+                water = (50, 120, 168)
+                s.fill(water)
+                pygame.draw.ellipse(s, _lighter(water, 10), (3, 5, BS - 6, BS - 10))
+                c = (48, 132, 55)
+                dk = _darken(c, 18)
+                for fx2, fy2, fr in [(6, BS - 8, 5), (16, BS - 6, 4), (24, BS - 10, 4),
+                                     (11, BS - 14, 4), (21, BS - 15, 3)]:
+                    pygame.draw.circle(s, dk, (fx2, fy2), fr)
+                    pygame.draw.circle(s, c, (fx2, fy2), fr - 1)
+                    pygame.draw.line(s, dk, (fx2, fy2), (fx2, fy2 - fr + 1), 1)
+                surfs[bid] = s
+                continue
+            if bid == ARROWHEAD_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                BS = BLOCK_SIZE
+                soil = (65, 100, 52)
+                pygame.draw.rect(s, soil, (0, BS - 5, BS, 5))
+                c = (62, 148, 65)
+                dk = _darken(c, 20)
+                stem = (75, 138, 58)
+                for sx2, sh in [(8, 18), (19, 22)]:
+                    pygame.draw.line(s, stem, (sx2, BS - 5), (sx2, BS - 5 - sh), 1)
+                    tip_y = BS - 5 - sh
+                    pts = [(sx2, tip_y - 6), (sx2 - 5, tip_y + 2), (sx2, tip_y),
+                           (sx2 + 5, tip_y + 2)]
+                    pygame.draw.polygon(s, dk, pts)
+                    pygame.draw.polygon(s, c, pts, 0)
+                    lobe_y = tip_y + 4
+                    pygame.draw.line(s, dk, (sx2 - 5, lobe_y), (sx2 - 8, lobe_y + 4), 1)
+                    pygame.draw.line(s, dk, (sx2 + 5, lobe_y), (sx2 + 8, lobe_y + 4), 1)
+                surfs[bid] = s
+                continue
+            if bid == HORSETAIL_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                BS = BLOCK_SIZE
+                soil = (65, 100, 52)
+                pygame.draw.rect(s, soil, (0, BS - 5, BS, 5))
+                c = (72, 138, 55)
+                dk = _darken(c, 22)
+                for sx2, sh in [(5, 22), (12, 18), (19, 24), (26, 19)]:
+                    for seg_y in range(BS - 5 - sh, BS - 5, 5):
+                        pygame.draw.rect(s, dk, (sx2 - 1, seg_y, 3, 4))
+                        pygame.draw.rect(s, c, (sx2, seg_y + 1, 1, 2))
+                        spoke_y = seg_y + 2
+                        for sdx in [-4, 4]:
+                            pygame.draw.line(s, c, (sx2, spoke_y), (sx2 + sdx, spoke_y - 1), 1)
+                surfs[bid] = s
+                continue
+            if bid == MARSH_MARIGOLD_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                BS = BLOCK_SIZE
+                soil = (62, 95, 50)
+                pygame.draw.rect(s, soil, (0, BS - 5, BS, 5))
+                stem = (68, 128, 52)
+                yellow = (232, 198, 32)
+                yellow_lt = _lighter(yellow, 18)
+                for fx2, fy2 in [(6, BS - 11), (16, BS - 14), (25, BS - 10)]:
+                    pygame.draw.line(s, stem, (fx2, BS - 5), (fx2, fy2 + 4), 1)
+                    for ang in range(0, 360, 60):
+                        ex = fx2 + int(5 * math.cos(math.radians(ang)))
+                        ey = fy2 + int(4 * math.sin(math.radians(ang)))
+                        pygame.draw.line(s, yellow, (fx2, fy2), (ex, ey), 2)
+                    pygame.draw.circle(s, yellow_lt, (fx2, fy2), 2)
+                surfs[bid] = s
+                continue
+            if bid == WATER_IRIS_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                BS = BLOCK_SIZE
+                soil = (62, 95, 50)
+                pygame.draw.rect(s, soil, (0, BS - 5, BS, 5))
+                stem = (68, 128, 52)
+                yellow = (228, 205, 40)
+                yellow_lt = _lighter(yellow, 15)
+                purple = (150, 100, 210)
+                for fx2, fy2 in [(7, BS - 16), (19, BS - 18)]:
+                    pygame.draw.line(s, stem, (fx2, BS - 5), (fx2, fy2 + 6), 1)
+                    pygame.draw.ellipse(s, yellow, (fx2 - 4, fy2 + 2, 8, 5))
+                    pygame.draw.ellipse(s, yellow_lt, (fx2 - 2, fy2 + 3, 4, 3))
+                    for ang in [-40, 0, 40]:
+                        rad = math.radians(ang - 90)
+                        ex = fx2 + int(6 * math.cos(rad))
+                        ey = fy2 + int(6 * math.sin(rad))
+                        pygame.draw.line(s, purple, (fx2, fy2), (ex, ey), 2)
+                surfs[bid] = s
+                continue
+            if bid == SEDGE_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                BS = BLOCK_SIZE
+                soil = (68, 100, 52)
+                pygame.draw.rect(s, soil, (0, BS - 5, BS, 5))
+                c = (88, 152, 58)
+                dk = _darken(c, 18)
+                for sx2, sh, curve in [(3, 20, 3), (8, 16, -4), (13, 22, 2), (18, 17, -3),
+                                       (23, 19, 4), (27, 14, -2)]:
+                    mid_y = BS - 5 - sh // 2
+                    pygame.draw.line(s, dk, (sx2, BS - 5), (sx2 + curve // 2, mid_y), 1)
+                    pygame.draw.line(s, c, (sx2 + curve // 2, mid_y), (sx2 + curve, BS - 5 - sh), 1)
+                surfs[bid] = s
+                continue
+            if bid == PICKERELWEED_BLOCK:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                BS = BLOCK_SIZE
+                soil = (65, 98, 52)
+                pygame.draw.rect(s, soil, (0, BS - 5, BS, 5))
+                stem = (68, 128, 52)
+                leaf = (58, 140, 62)
+                purple = (92, 82, 205)
+                purple_lt = _lighter(purple, 20)
+                for sx2, sh in [(8, 22), (20, 20)]:
+                    pygame.draw.line(s, stem, (sx2, BS - 5), (sx2, BS - 5 - sh), 1)
+                    leaf_y = BS - 5 - sh // 2
+                    pygame.draw.ellipse(s, leaf, (sx2 + 1, leaf_y - 3, 6, 8))
+                    spike_y = BS - 5 - sh
+                    for sy2 in range(spike_y, spike_y + 8, 2):
+                        r = 2 if (sy2 - spike_y) < 4 else 1
+                        pygame.draw.circle(s, purple_lt if r == 1 else purple, (sx2, sy2), r)
                 surfs[bid] = s
                 continue
             if bid == BEE_SKEP:
@@ -16124,6 +16383,14 @@ class Renderer:
                 self._draw_mountain_lion(sx, sy, e)
             elif e.animal_id == "horse":
                 self._draw_horse(sx, sy, e)
+            elif e.animal_id == "dog":
+                self._draw_dog(sx, sy, e)
+            elif e.animal_id == "npc_royal_curator":
+                self._draw_npc_royal_curator(sx, sy, e)
+            elif e.animal_id == "npc_royal_florist":
+                self._draw_npc_royal_florist(sx, sy, e)
+            elif e.animal_id == "npc_royal_jeweler":
+                self._draw_npc_royal_jeweler(sx, sy, e)
             elif e.animal_id == "npc_quest":
                 self._draw_npc_quest(sx, sy, e)
             elif e.animal_id == "npc_trade":
@@ -16148,6 +16415,12 @@ class Renderer:
                 self._draw_npc_child(sx, sy, e)
             elif e.animal_id == "npc_guard":
                 self._draw_npc_guard(sx, sy, e)
+            elif e.animal_id == "npc_blacksmith":
+                self._draw_npc_blacksmith(sx, sy, e)
+            elif e.animal_id == "npc_innkeeper":
+                self._draw_npc_innkeeper(sx, sy, e)
+            elif e.animal_id == "npc_scholar":
+                self._draw_npc_scholar(sx, sy, e)
             elif e.animal_id == "deer":
                 self._draw_deer(sx, sy, e)
             elif e.animal_id == "boar":
@@ -16184,6 +16457,10 @@ class Renderer:
                 self._draw_goose(sx, sy, e)
             elif e.animal_id == "hare":
                 self._draw_hare(sx, sy, e)
+            elif e.animal_id == "npc_outpost_keeper":
+                self._draw_npc_outpost_keeper(sx, sy, e)
+            elif e.animal_id == "npc_soldier":
+                self._draw_npc_soldier(sx, sy, e)
 
     # ------------------------------------------------------------------
     # Huntable animal drawing
@@ -16995,6 +17272,64 @@ class Renderer:
         pygame.draw.polygon(self.screen, (230, 180, 255),
                             [(gx, gy - 5), (gx + 4, gy), (gx, gy + 5), (gx - 4, gy)], 1)
 
+    def _draw_npc_royal_curator(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        c = getattr(npc, 'clothing', {})
+        skin = c.get('skin', (255, 215, 160))
+        # Crimson-gold robe with gold sash
+        pygame.draw.rect(self.screen, (160, 40, 30), (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, (220, 175, 40), (sx, sy + 12 + bob, 20, 4))
+        pygame.draw.rect(self.screen, (220, 175, 40), (sx + 5, sy + bob, 10, 12))
+        # Head
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+        # Gold crown marker
+        cx, cy = sx + 10, sy - 22 + bob
+        pygame.draw.polygon(self.screen, (220, 175, 40),
+                            [(cx - 5, cy + 4), (cx - 5, cy), (cx - 2, cy - 3),
+                             (cx, cy + 1), (cx + 2, cy - 3), (cx + 5, cy), (cx + 5, cy + 4)])
+        pygame.draw.rect(self.screen, (255, 215, 80), (cx - 1, cy + 2, 2, 2))
+
+    def _draw_npc_royal_florist(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        c = getattr(npc, 'clothing', {})
+        skin = c.get('skin', (255, 215, 160))
+        # Deep green robe with gold trim
+        pygame.draw.rect(self.screen, (30, 100, 50), (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, (220, 175, 40), (sx, sy + 13 + bob, 20, 3))
+        pygame.draw.rect(self.screen, (220, 175, 40), (sx + 7, sy + bob, 6, 13))
+        # Head
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+        # Crown with flower accent
+        cx, cy = sx + 10, sy - 22 + bob
+        pygame.draw.polygon(self.screen, (220, 175, 40),
+                            [(cx - 5, cy + 4), (cx - 5, cy), (cx - 2, cy - 3),
+                             (cx, cy + 1), (cx + 2, cy - 3), (cx + 5, cy), (cx + 5, cy + 4)])
+        pygame.draw.circle(self.screen, (230, 80, 120), (cx, cy - 2), 2)
+
+    def _draw_npc_royal_jeweler(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        c = getattr(npc, 'clothing', {})
+        skin = c.get('skin', (255, 215, 160))
+        # Deep navy robe with heavy gold banding
+        pygame.draw.rect(self.screen, (30, 40, 120), (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, (220, 175, 40), (sx, sy + 12 + bob, 20, 4))
+        pygame.draw.rect(self.screen, (220, 175, 40), (sx, sy + bob, 20, 3))
+        # Head
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+        # Crown with gem accent
+        cx, cy = sx + 10, sy - 22 + bob
+        pygame.draw.polygon(self.screen, (220, 175, 40),
+                            [(cx - 5, cy + 4), (cx - 5, cy), (cx - 2, cy - 3),
+                             (cx, cy + 1), (cx + 2, cy - 3), (cx + 5, cy), (cx + 5, cy + 4)])
+        pygame.draw.polygon(self.screen, (160, 220, 255),
+                            [(cx, cy - 4), (cx + 3, cy - 1), (cx, cy + 2), (cx - 3, cy - 1)])
+
     def _draw_npc_merchant(self, sx, sy, npc):
         bob = int(npc._bob_offset)
         c = getattr(npc, 'clothing', {})
@@ -17014,6 +17349,139 @@ class Renderer:
         gx, gy = sx + 10, sy - 21 + bob
         pygame.draw.circle(self.screen, (220, 175, 40), (gx, gy), 5)
         pygame.draw.circle(self.screen, (180, 140, 20), (gx, gy), 5, 1)
+
+    def _draw_npc_outpost_keeper(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        c = getattr(npc, 'clothing', {})
+        body = c.get('body', (80, 120, 80))
+        skin = c.get('skin', (220, 180, 130))
+        trim = c.get('trim', (55, 85, 55))
+        # Tunic + trim stripe
+        pygame.draw.rect(self.screen, body, (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, trim, (sx + 7, sy + bob, 3, 18))
+        # Head
+        pygame.draw.rect(self.screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
+        # Eyes
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+        # Small green leaf marker above head (marks outpost keeper)
+        pygame.draw.circle(self.screen, (70, 155, 80), (sx + 10, sy - 20 + bob), 4)
+
+    def _draw_npc_soldier(self, sx, sy, npc):
+        bob        = int(npc._bob_offset)
+        facing     = getattr(npc, 'facing', 1)
+        c          = getattr(npc, 'clothing', {})
+        armor_type = getattr(npc, 'armor_type', 'mail')
+        armor = c.get('armor', (80, 85, 95))
+        plate = c.get('plate', (130, 135, 145))
+        trim  = c.get('trim',  (160, 50, 45))
+        skin  = c.get('skin',  (215, 175, 125))
+        body  = c.get('body',  (75, 80, 70))
+
+        def _dim(col, f=0.7):  return tuple(int(v * f) for v in col)
+        def _lite(col, a=20):  return tuple(min(255, v + a) for v in col)
+
+        if armor_type == 'mail':
+            # Chainmail shirt — armor base, horizontal ring rows
+            pygame.draw.rect(self.screen, armor, (sx, sy + bob, 20, 18))
+            for ry in range(1, 18, 3):
+                pygame.draw.rect(self.screen, _lite(armor, 22), (sx + 1, sy + ry + bob, 18, 1))
+            # Tabard stripe in kingdom trim color
+            pygame.draw.rect(self.screen, trim, (sx + 8, sy + bob, 4, 18))
+            # Round nasal helmet
+            helm = _lite(armor, 18)
+            pygame.draw.ellipse(self.screen, helm, (sx + 3, sy - 13 + bob, 14, 12))
+            pygame.draw.rect(self.screen, _dim(helm), (sx + 9, sy - 10 + bob, 2, 8))  # nasal
+            # Face
+            pygame.draw.rect(self.screen, skin, (sx + 4, sy - 8 + bob, 12, 6))
+            pygame.draw.rect(self.screen, (30, 25, 20), (sx + 5,  sy - 6 + bob, 3, 2))
+            pygame.draw.rect(self.screen, (30, 25, 20), (sx + 12, sy - 6 + bob, 3, 2))
+            # Spear
+            wx = sx + 20 if facing == 1 else sx - 2
+            pygame.draw.rect(self.screen, (120, 100, 60), (wx, sy - 20 + bob, 2, 38))
+            pygame.draw.polygon(self.screen, plate,
+                [(wx + 1, sy - 28 + bob), (wx + 5, sy - 20 + bob), (wx - 3, sy - 20 + bob)])
+
+        elif armor_type == 'plate':
+            # Full plate — plate breastplate, great helm with visor slit
+            pygame.draw.rect(self.screen, armor, (sx, sy + bob, 20, 18))
+            pygame.draw.rect(self.screen, plate, (sx + 3, sy + bob, 14, 14))
+            pygame.draw.rect(self.screen, _dim(plate), (sx + 3, sy + 7 + bob, 14, 2))  # waist crease
+            # Great helm (box with visor)
+            helm = _lite(plate, 18)
+            pygame.draw.rect(self.screen, helm, (sx + 2, sy - 14 + bob, 16, 14))
+            pygame.draw.rect(self.screen, (18, 14, 10), (sx + 3, sy - 9 + bob, 14, 3))  # visor
+            # Crest in trim color
+            pygame.draw.rect(self.screen, trim, (sx + 7, sy - 21 + bob, 6, 9))
+            # Poleaxe
+            wx = sx + 20 if facing == 1 else sx - 2
+            pygame.draw.rect(self.screen, (110, 90, 55), (wx, sy - 22 + bob, 2, 40))
+            pygame.draw.rect(self.screen, plate, (wx - 2, sy - 28 + bob, 6, 8))  # axe head
+            pygame.draw.rect(self.screen, _dim(plate), (wx + 4, sy - 26 + bob, 2, 5))  # back spike
+
+        elif armor_type == 'lorica':
+            # Bronze segmented — warm tones, horizontal bands, open helm with tall plume
+            pygame.draw.rect(self.screen, armor, (sx, sy + bob, 20, 18))
+            for ry in range(0, 18, 4):
+                pygame.draw.rect(self.screen, _lite(armor, 25), (sx, sy + ry + bob, 20, 2))
+            # Open-face helm
+            helm = _lite(armor, 12)
+            pygame.draw.rect(self.screen, helm, (sx + 2, sy - 13 + bob, 16, 13))
+            pygame.draw.rect(self.screen, skin, (sx + 4, sy - 9 + bob, 12, 7))   # exposed face
+            pygame.draw.rect(self.screen, (35, 25, 15), (sx + 5,  sy - 7 + bob, 3, 2))
+            pygame.draw.rect(self.screen, (35, 25, 15), (sx + 12, sy - 7 + bob, 3, 2))
+            # Tall plume
+            pygame.draw.rect(self.screen, trim, (sx + 8, sy - 22 + bob, 4, 11))
+            pygame.draw.rect(self.screen, _lite(trim, 30), (sx + 9, sy - 22 + bob, 2, 11))
+            # Pilum / javelin
+            wx = sx + 20 if facing == 1 else sx - 2
+            pygame.draw.rect(self.screen, (120, 100, 60), (wx, sy - 18 + bob, 2, 36))
+            pygame.draw.rect(self.screen, plate, (wx - 1, sy - 24 + bob, 4, 8))  # iron shank
+
+        elif armor_type == 'leather':
+            # Leather scale — warm brown, scale pattern, fur shoulders, recurve bow
+            pygame.draw.rect(self.screen, armor, (sx, sy + bob, 20, 18))
+            for ry in range(1, 17, 3):
+                offset = 0 if (ry // 3) % 2 == 0 else 2
+                for rx in range(offset + 1, 19, 4):
+                    pygame.draw.rect(self.screen, plate, (sx + rx, sy + ry + bob, 3, 2))
+            # Fur shoulder patches
+            pygame.draw.rect(self.screen, body, (sx,      sy + bob, 5, 7))
+            pygame.draw.rect(self.screen, body, (sx + 15, sy + bob, 5, 7))
+            # Leather cap + exposed face
+            cap = _dim(armor, 0.75)
+            pygame.draw.rect(self.screen, cap,  (sx + 3, sy - 14 + bob, 14, 8))
+            pygame.draw.rect(self.screen, skin, (sx + 3, sy - 8  + bob, 14, 8))
+            pygame.draw.rect(self.screen, (35, 25, 15), (sx + 5,  sy - 6 + bob, 3, 2))
+            pygame.draw.rect(self.screen, (35, 25, 15), (sx + 12, sy - 6 + bob, 3, 2))
+            # Recurve bow (arc on off-weapon side)
+            bx2 = sx - 5 if facing == 1 else sx + 23
+            pygame.draw.arc(self.screen, (110, 80, 40),
+                            (bx2, sy - 8 + bob, 6, 20), 0.0, 3.14159, 2)
+
+        elif armor_type == 'naval':
+            # Half-plate over navy tabard, crossbow
+            pygame.draw.rect(self.screen, body,  (sx, sy + bob, 20, 18))       # tabard
+            pygame.draw.rect(self.screen, armor, (sx + 3, sy + bob, 14, 12))   # breastplate
+            pygame.draw.rect(self.screen, trim,  (sx + 8, sy + bob, 4, 18))    # kingdom stripe
+            # Visorless sallet helm
+            helm = _lite(armor, 16)
+            pygame.draw.rect(self.screen, helm, (sx + 2, sy - 13 + bob, 16, 13))
+            pygame.draw.rect(self.screen, skin, (sx + 4, sy - 9 + bob, 12, 7))
+            pygame.draw.rect(self.screen, _dim(helm), (sx + 2, sy - 4 + bob, 16, 3))  # brim
+            pygame.draw.rect(self.screen, (35, 25, 15), (sx + 5,  sy - 7 + bob, 3, 2))
+            pygame.draw.rect(self.screen, (35, 25, 15), (sx + 12, sy - 7 + bob, 3, 2))
+            # Crossbow
+            cx = sx + 20 if facing == 1 else sx - 8
+            pygame.draw.rect(self.screen, (110, 90, 55), (cx,     sy + 4 + bob, 8, 3))  # stock
+            pygame.draw.rect(self.screen, (110, 90, 55), (cx + 3, sy + 1 + bob, 2, 9))  # tiller
+            pygame.draw.rect(self.screen, plate,         (cx,     sy + 4 + bob, 8, 1))  # prod
+
+        # Kingdom pennant above every soldier's head
+        fx, fy = sx + 10, sy - 27 + bob
+        pygame.draw.rect(self.screen, (140, 120, 80), (fx, fy, 1, 10))  # pole
+        pygame.draw.polygon(self.screen, trim,
+            [(fx + 1, fy), (fx + 8, fy + 3), (fx + 1, fy + 6)])          # pennant
 
     def _draw_npc_chef(self, sx, sy, npc):
         bob = int(npc._bob_offset)
@@ -17057,72 +17525,279 @@ class Renderer:
         pygame.draw.circle(self.screen, (255, 240, 130), (gx, gy), 2)
 
     def _draw_npc_leader(self, sx, sy, npc):
-        bob = int(npc._bob_offset)
-        lc  = getattr(npc, 'leader_color', (140, 30, 40))
+        bob   = int(npc._bob_offset)
+        lc    = getattr(npc, 'leader_color', (140, 30, 40))
+        ptype = getattr(npc, 'palace_type',  'castle')
 
-        def _dim(c, f=0.55):
-            return tuple(int(v * f) for v in c)
-        def _lite(c, amt=60):
-            return tuple(min(255, v + amt) for v in c)
-        def _gold(a=255):
-            return (218, 175, 40)
+        def _dim(c, f=0.55):  return tuple(int(v * f) for v in c)
+        def _lite(c, amt=60): return tuple(min(255, v + amt) for v in c)
+        def _gold():          return (218, 175, 40)
 
-        robe  = _dim(lc, 0.7)
-        trim  = lc
-        mantle = _lite(lc, 40)
+        def _head(skin=(255, 210, 155), beard=True):
+            pygame.draw.rect(self.screen, skin, (sx + 2, sy - 12 + bob, 16, 13))
+            if beard:
+                shadow = tuple(int(v * 0.78) for v in skin)
+                pygame.draw.rect(self.screen, shadow, (sx + 3, sy - 4 + bob, 14, 5))
+            pygame.draw.rect(self.screen, (35, 25, 15), (sx + 4,  sy - 10 + bob, 3, 3))
+            pygame.draw.rect(self.screen, (35, 25, 15), (sx + 11, sy - 10 + bob, 3, 3))
+            pygame.draw.rect(self.screen, (255, 255, 255), (sx + 5,  sy - 10 + bob, 1, 1))
+            pygame.draw.rect(self.screen, (255, 255, 255), (sx + 12, sy - 10 + bob, 1, 1))
 
-        # ── Robe / body (tall, majestic)
-        pygame.draw.rect(self.screen, robe,   (sx + 1,  sy + bob,      18, 20))
-        # Mantle drape over shoulders
-        pygame.draw.rect(self.screen, mantle, (sx,      sy + bob,       5, 14))
-        pygame.draw.rect(self.screen, mantle, (sx + 15, sy + bob,       5, 14))
-        # Gold belt
-        pygame.draw.rect(self.screen, _gold(), (sx + 1, sy + 11 + bob,  18, 3))
-        # Robe hem pattern (alternating trim lines)
-        for i in range(0, 18, 4):
-            pygame.draw.rect(self.screen, trim, (sx + 1 + i, sy + 17 + bob, 2, 3))
+        def _star():
+            if not hasattr(self, '_crown_font'):
+                self._crown_font = pygame.font.SysFont("consolas", 13, bold=True)
+            self.screen.blit(self._crown_font.render("★", True, _gold()), (sx + 6, sy - 32 + bob))
 
-        # ── Ermine collar (white with black spots)
-        pygame.draw.rect(self.screen, (240, 238, 232), (sx + 3, sy - 2 + bob, 14, 6))
-        for spot_x in (sx + 5, sx + 9, sx + 13):
-            pygame.draw.rect(self.screen, (30, 25, 20), (spot_x, sy - 1 + bob, 2, 2))
+        if ptype == "mediterranean":
+            toga = (245, 240, 225)
+            pygame.draw.rect(self.screen, toga,   (sx + 1, sy + bob,      18, 20))
+            pygame.draw.rect(self.screen, _gold(), (sx + 1, sy + bob,       2, 20))
+            pygame.draw.rect(self.screen, lc,     (sx + 8, sy + 4 + bob,   4, 4))
+            _head(skin=(240, 205, 160))
+            crown_y = sy - 17 + bob
+            for gx in range(sx + 2, sx + 18, 3):
+                pygame.draw.rect(self.screen, (80, 140, 55),  (gx, crown_y,     2, 5))
+                pygame.draw.rect(self.screen, (60, 110, 40),  (gx, crown_y,     2, 2))
+            pygame.draw.rect(self.screen, (120, 100, 60), (sx - 2, sy - 14 + bob, 2, 32))
+            pygame.draw.rect(self.screen, (80, 140, 55),  (sx - 4, sy - 17 + bob, 6, 4))
 
-        # ── Head
-        pygame.draw.rect(self.screen, (255, 210, 155), (sx + 2, sy - 12 + bob, 16, 13))
-        # Beard / jaw shadow
-        pygame.draw.rect(self.screen, (200, 160, 110), (sx + 3, sy - 4 + bob,  14, 5))
-        # Eyes (stern, regal)
-        pygame.draw.rect(self.screen, (35, 25, 15), (sx + 4,  sy - 10 + bob, 3, 3))
-        pygame.draw.rect(self.screen, (35, 25, 15), (sx + 11, sy - 10 + bob, 3, 3))
-        # Eye-glint
-        pygame.draw.rect(self.screen, (255, 255, 255), (sx + 5,  sy - 10 + bob, 1, 1))
-        pygame.draw.rect(self.screen, (255, 255, 255), (sx + 12, sy - 10 + bob, 1, 1))
+        elif ptype == "east_asian":
+            silk = _dim(lc, 0.75)
+            pale = _lite(lc, 80)
+            pygame.draw.rect(self.screen, silk, (sx,      sy + bob,      20, 20))
+            pygame.draw.rect(self.screen, pale, (sx - 3,  sy + 2 + bob,   7, 10))
+            pygame.draw.rect(self.screen, pale, (sx + 16, sy + 2 + bob,   7, 10))
+            for ey in range(0, 18, 3):
+                pygame.draw.rect(self.screen, _gold(), (sx + 9, sy + ey + bob, 2, 2))
+            _head(skin=(240, 200, 155))
+            crown_y = sy - 23 + bob
+            pygame.draw.rect(self.screen, (20, 20, 20),  (sx + 2, crown_y + 6, 16, 5))
+            pygame.draw.rect(self.screen, (20, 20, 20),  (sx,     crown_y,     20, 3))
+            pygame.draw.rect(self.screen, _gold(),        (sx + 2, crown_y + 6, 16, 2))
+            pygame.draw.rect(self.screen, (130, 100, 60), (sx + 21, sy - 14 + bob, 2, 32))
+            pygame.draw.rect(self.screen, (70, 180, 120), (sx + 19, sy - 18 + bob, 6, 6))
 
-        # ── Crown (gold with 3 points and gem at centre)
-        crown_y = sy - 20 + bob
-        pygame.draw.rect(self.screen, _gold(), (sx + 3,  crown_y + 3, 14, 5))   # crown band
-        pygame.draw.rect(self.screen, _gold(), (sx + 3,  crown_y,     3, 7))    # left point
-        pygame.draw.rect(self.screen, _gold(), (sx + 8,  crown_y - 2, 4, 9))   # centre point (tallest)
-        pygame.draw.rect(self.screen, _gold(), (sx + 14, crown_y,     3, 7))   # right point
-        # Crown gems
-        pygame.draw.rect(self.screen, trim,    (sx + 9,  crown_y,     2, 3))   # centre gem
-        pygame.draw.rect(self.screen, (80, 200, 220), (sx + 4, crown_y + 1, 2, 2))  # left gem
-        pygame.draw.rect(self.screen, (80, 200, 220), (sx + 14, crown_y + 1, 2, 2)) # right gem
-        # Crown rim detail
-        pygame.draw.rect(self.screen, _lite(_gold(), 30), (sx + 3, crown_y + 3, 14, 2))
+        elif ptype == "south_asian":
+            sherwani = _dim(lc, 0.8)
+            bright   = _lite(lc, 60)
+            pygame.draw.rect(self.screen, sherwani, (sx + 1, sy + bob,       18, 20))
+            pygame.draw.rect(self.screen, _gold(),   (sx + 1, sy + 3 + bob,   18, 2))
+            pygame.draw.rect(self.screen, _gold(),   (sx + 1, sy + 7 + bob,   18, 2))
+            pygame.draw.rect(self.screen, bright,    (sx + 1, sy + 11 + bob,  18, 3))
+            _head(skin=(180, 130, 80))
+            crown_y = sy - 22 + bob
+            for i in range(4):
+                bc = bright if i % 2 == 0 else sherwani
+                pygame.draw.rect(self.screen, bc, (sx + 2, crown_y + i * 3, 16, 3))
+            pygame.draw.rect(self.screen, (220, 60, 60), (sx + 8, crown_y + 2, 4, 4))
+            pygame.draw.rect(self.screen, _gold(),        (sx + 7, crown_y + 1, 6, 1))
+            pygame.draw.rect(self.screen, (140, 115, 50), (sx + 21, sy - 14 + bob, 2, 30))
+            pygame.draw.rect(self.screen, _gold(),         (sx + 19, sy - 16 + bob, 6, 5))
+            for mx in (sx + 19, sx + 21, sx + 23):
+                pygame.draw.rect(self.screen, _gold(), (mx, sy - 20 + bob, 2, 5))
 
-        # ── Sceptre (held in right hand, extends upward)
-        sceptre_x = sx + 18
-        pygame.draw.rect(self.screen, (160, 130, 50),  (sceptre_x, sy - 14 + bob, 3, 32))  # shaft
-        pygame.draw.rect(self.screen, _gold(),          (sceptre_x - 1, sy - 18 + bob, 5, 5)) # orb mount
-        pygame.draw.circle(self.screen, _gold(),        (sceptre_x + 1, sy - 20 + bob), 4)    # orb
-        pygame.draw.circle(self.screen, trim,           (sceptre_x + 1, sy - 20 + bob), 2)    # gem
+        elif ptype == "italian":
+            doublet = _dim(lc, 0.8)
+            slash   = _lite(lc, 80)
+            pygame.draw.rect(self.screen, doublet, (sx + 1, sy + bob,      18, 20))
+            for i in range(3):
+                pygame.draw.rect(self.screen, slash, (sx + 1, sy + 2 + i * 5 + bob, 18, 2))
+            pygame.draw.rect(self.screen, _gold(), (sx + 2, sy + 1 + bob, 16, 2))
+            _head(skin=(235, 195, 145))
+            crown_y = sy - 20 + bob
+            pygame.draw.rect(self.screen, lc, (sx + 1, crown_y + 3, 18, 5))
+            pygame.draw.rect(self.screen, lc, (sx + 3, crown_y,     14, 6))
+            for pi in range(5):
+                pc = (200, 200, 200) if pi % 2 == 0 else _lite(lc, 40)
+                pygame.draw.rect(self.screen, pc, (sx + 15 + pi, crown_y - pi * 2, 2, 5))
+            for ri in range(14):
+                pygame.draw.rect(self.screen, (160, 160, 175),
+                                 (sx + 20 + ri // 3, sy + 4 + ri + bob, 2, 2))
+            pygame.draw.rect(self.screen, _gold(), (sx + 20, sy + 3 + bob, 6, 2))
 
-        # ── Crown indicator floating above (★)
-        if not hasattr(self, '_crown_font'):
-            self._crown_font = pygame.font.SysFont("consolas", 13, bold=True)
-        crown_surf = self._crown_font.render("★", True, _gold())
-        self.screen.blit(crown_surf, (sx + 6, sy - 32 + bob))
+        elif ptype == "moorish":
+            djellaba = _dim(lc, 0.75)
+            ovr      = _lite(lc, 50)
+            pygame.draw.rect(self.screen, djellaba, (sx,      sy + bob,       20, 20))
+            pygame.draw.rect(self.screen, _gold(),   (sx,      sy + bob,        2, 20))
+            pygame.draw.rect(self.screen, _gold(),   (sx + 18, sy + bob,        2, 20))
+            pygame.draw.rect(self.screen, ovr,       (sx + 2,  sy + 14 + bob,  16,  6))
+            _head(skin=(175, 130, 85))
+            crown_y = sy - 21 + bob
+            pygame.draw.rect(self.screen, (245, 240, 230), (sx + 2, crown_y + 4, 16, 5))
+            pygame.draw.rect(self.screen, (245, 240, 230), (sx + 4, crown_y,     12, 7))
+            pygame.draw.rect(self.screen, _gold(),          (sx + 7, crown_y + 1,  6, 5))
+            pygame.draw.rect(self.screen, (245, 240, 230),  (sx + 8, crown_y + 2,  5, 3))
+            pygame.draw.rect(self.screen, (110, 85, 55), (sx - 2, sy - 14 + bob, 2, 32))
+            pygame.draw.rect(self.screen, _gold(),        (sx - 4, sy - 16 + bob, 6, 4))
+            for si in range(3):
+                pygame.draw.rect(self.screen, lc, (sx - 3 + si * 2, sy - 18 + bob, 2, 3))
+
+        elif ptype == "middle_eastern":
+            robe = _dim(lc, 0.7)
+            sash = _lite(lc, 70)
+            pygame.draw.rect(self.screen, robe,  (sx + 1, sy + bob,       18, 20))
+            pygame.draw.rect(self.screen, sash,  (sx + 1, sy + 9 + bob,   18,  4))
+            pygame.draw.rect(self.screen, _gold(),(sx + 1, sy + 17 + bob,  18,  3))
+            _head(skin=(190, 145, 95))
+            crown_y = sy - 22 + bob
+            pygame.draw.rect(self.screen, (245, 240, 230), (sx + 1, crown_y + 3, 18, 7))
+            pygame.draw.rect(self.screen, (245, 240, 230), (sx + 3, crown_y,     14, 5))
+            pygame.draw.rect(self.screen, (20, 20, 20),    (sx + 2, crown_y + 4, 16, 2))
+            pygame.draw.rect(self.screen, _gold(),          (sx + 2, crown_y + 3, 16, 2))
+            pygame.draw.rect(self.screen, (150, 145, 160), (sx + 21, sy + 6 + bob,  2, 10))
+            pygame.draw.rect(self.screen, _gold(),           (sx + 19, sy + 5 + bob,  6,  3))
+            pygame.draw.rect(self.screen, (220, 60, 60),     (sx + 20, sy + 4 + bob,  4,  3))
+
+        elif ptype == "norse":
+            cloak = _dim(lc, 0.75)
+            fur   = (200, 190, 170)
+            pygame.draw.rect(self.screen, cloak, (sx, sy + bob,       20, 20))
+            pygame.draw.rect(self.screen, fur,   (sx, sy + bob,       20,  4))
+            pygame.draw.rect(self.screen, fur,   (sx, sy + 16 + bob,  20,  4))
+            pygame.draw.rect(self.screen, _gold(),(sx + 8, sy + 2 + bob, 4, 4))
+            _head(skin=(240, 200, 155))
+            crown_y = sy - 21 + bob
+            helm = (80, 80, 90)
+            pygame.draw.rect(self.screen, helm, (sx + 2, crown_y + 3, 16,  6))
+            pygame.draw.rect(self.screen, helm, (sx + 1, crown_y + 7, 18,  3))
+            pygame.draw.rect(self.screen, helm, (sx + 8, crown_y + 6,  4,  6))
+            ivory = (230, 215, 180)
+            pygame.draw.rect(self.screen, ivory, (sx,      crown_y,     3,  8))
+            pygame.draw.rect(self.screen, ivory, (sx + 17, crown_y,     3,  8))
+            pygame.draw.rect(self.screen, ivory, (sx - 1,  crown_y + 2, 3,  4))
+            pygame.draw.rect(self.screen, ivory, (sx + 18, crown_y + 2, 3,  4))
+            pygame.draw.rect(self.screen, (130, 105, 70),  (sx + 21, sy - 10 + bob, 2, 28))
+            pygame.draw.rect(self.screen, (140, 140, 155), (sx + 19, sy - 14 + bob, 8,  6))
+            pygame.draw.rect(self.screen, (140, 140, 155), (sx + 21, sy - 17 + bob, 4,  5))
+
+        elif ptype == "gothic":
+            dark   = _dim(lc, 0.5)
+            edge   = _lite(lc, 30)
+            silver = (180, 180, 195)
+            pygame.draw.rect(self.screen, dark,   (sx + 1, sy + bob,       18, 20))
+            for i in range(0, 18, 4):
+                pygame.draw.rect(self.screen, edge, (sx + 1 + i, sy + 15 + bob, 3, 5))
+            pygame.draw.rect(self.screen, silver, (sx + 1, sy + bob,       18, 2))
+            pygame.draw.rect(self.screen, silver, (sx + 1, sy + 10 + bob,  18, 2))
+            pygame.draw.rect(self.screen, (240, 238, 232), (sx + 3, sy - 2 + bob, 14, 5))
+            for spot_x in (sx + 5, sx + 9, sx + 13):
+                pygame.draw.rect(self.screen, (30, 25, 20), (spot_x, sy - 1 + bob, 2, 2))
+            _head(skin=(220, 185, 140))
+            crown_y = sy - 26 + bob
+            pygame.draw.rect(self.screen, _gold(), (sx + 3,  crown_y + 8, 14, 4))
+            pygame.draw.rect(self.screen, _gold(), (sx + 4,  crown_y + 4,  4, 6))
+            pygame.draw.rect(self.screen, _gold(), (sx + 8,  crown_y,      4, 10))
+            pygame.draw.rect(self.screen, _gold(), (sx + 13, crown_y + 4,  4,  6))
+            pygame.draw.rect(self.screen, lc,      (sx + 9,  crown_y + 1,  2,  3))
+            crystal = _lite(lc, 100)
+            pygame.draw.rect(self.screen, (60, 55, 70),   (sx + 21, sy - 14 + bob, 2, 32))
+            pygame.draw.rect(self.screen, crystal,         (sx + 19, sy - 20 + bob, 6,  8))
+            pygame.draw.rect(self.screen, (255, 255, 255), (sx + 21, sy - 19 + bob, 2,  2))
+
+        elif ptype == "african":
+            base = _dim(lc, 0.75)
+            pat1 = _lite(lc, 70)
+            pat2 = (220, 180, 40)
+            pygame.draw.rect(self.screen, base,  (sx, sy + bob,  20, 20))
+            for row in range(0, 18, 4):
+                for col in range(0, 18, 4):
+                    c2 = pat1 if (row + col) % 8 == 0 else pat2
+                    pygame.draw.rect(self.screen, c2, (sx + col, sy + row + bob, 2, 2))
+            pygame.draw.rect(self.screen, pat1, (sx - 2, sy + bob,       5, 8))
+            pygame.draw.rect(self.screen, pat1, (sx + 17, sy + bob,      5, 8))
+            _head(skin=(100, 65, 35), beard=False)
+            crown_y = sy - 28 + bob
+            pygame.draw.rect(self.screen, lc,   (sx + 3, crown_y + 4,  14, 12))
+            pygame.draw.rect(self.screen, pat2,  (sx + 3, crown_y + 4,  14,  2))
+            pygame.draw.rect(self.screen, pat2,  (sx + 3, crown_y + 12, 14,  2))
+            for fi in range(5):
+                fc = pat1 if fi % 2 == 0 else pat2
+                pygame.draw.rect(self.screen, fc, (sx + 3 + fi * 3, crown_y, 2, 6))
+            pygame.draw.rect(self.screen, (100, 75, 45), (sx + 22, sy - 12 + bob, 2, 30))
+            pygame.draw.rect(self.screen, pat2,           (sx + 20, sy - 16 + bob, 6,  5))
+            pygame.draw.rect(self.screen, (100, 75, 45),  (sx + 21, sy - 19 + bob, 4,  5))
+
+        elif ptype == "byzantine":
+            brocade = _dim(lc, 0.72)
+            pygame.draw.rect(self.screen, brocade, (sx + 1, sy + bob, 18, 20))
+            for li in range(7):
+                pygame.draw.rect(self.screen, _gold(),
+                                 (sx + 1 + li * 2, sy + li * 2 + bob, 3, 3))
+                pygame.draw.rect(self.screen, (220, 60, 60),
+                                 (sx + 2 + li * 2, sy + li * 2 + 1 + bob, 2, 1))
+            for cx2 in (sx + 5, sx + 12):
+                pygame.draw.rect(self.screen, _gold(), (cx2,     sy + 10 + bob, 4, 1))
+                pygame.draw.rect(self.screen, _gold(), (cx2 + 1, sy + 8 + bob,  2, 5))
+            pygame.draw.rect(self.screen, (240, 238, 232), (sx + 3, sy - 2 + bob, 14, 5))
+            for spot_x in (sx + 5, sx + 9, sx + 13):
+                pygame.draw.rect(self.screen, (30, 25, 20), (spot_x, sy - 1 + bob, 2, 2))
+            _head(skin=(210, 170, 120))
+            crown_y = sy - 18 + bob
+            pygame.draw.rect(self.screen, _gold(), (sx + 2, crown_y, 16, 5))
+            for gx in (sx + 3, sx + 7, sx + 11, sx + 15):
+                pygame.draw.rect(self.screen, lc,           (gx,     crown_y - 1, 3, 4))
+                pygame.draw.rect(self.screen, (220, 60, 60),(gx + 1, crown_y,     1, 2))
+            pygame.draw.circle(self.screen, _gold(), (sx - 2, sy + 4 + bob), 5)
+            pygame.draw.rect(self.screen,  _gold(),  (sx - 3, sy + 1 + bob, 2, 8))
+            pygame.draw.rect(self.screen,  _gold(),  (sx - 5, sy + 4 + bob, 6, 2))
+            sceptre_x = sx + 21
+            pygame.draw.rect(self.screen, (160, 130, 50), (sceptre_x,     sy - 14 + bob, 2, 32))
+            pygame.draw.rect(self.screen, _gold(),         (sceptre_x - 1, sy - 18 + bob, 4,  5))
+            pygame.draw.circle(self.screen, _gold(),       (sceptre_x,     sy - 20 + bob), 4)
+            pygame.draw.circle(self.screen, lc,            (sceptre_x,     sy - 20 + bob), 2)
+
+        elif ptype == "tibetan":
+            inner = (215, 140, 30)
+            outer = _dim(lc, 0.7)
+            pygame.draw.rect(self.screen, inner, (sx + 2, sy + bob,  16, 20))
+            pygame.draw.rect(self.screen, outer, (sx,     sy + bob,   8, 20))
+            pygame.draw.rect(self.screen, outer, (sx,     sy + bob,  20,  5))
+            pygame.draw.rect(self.screen, _gold(),(sx,    sy + 4 + bob, 20, 2))
+            _head(skin=(175, 135, 90), beard=False)
+            crown_y  = sy - 28 + bob
+            hat_col  = (210, 175, 20)
+            pygame.draw.rect(self.screen, hat_col, (sx + 4, crown_y + 6, 12, 10))
+            pygame.draw.rect(self.screen, hat_col, (sx + 6, crown_y,      8,  9))
+            pygame.draw.rect(self.screen, hat_col, (sx + 7, crown_y - 3,  6,  5))
+            pygame.draw.rect(self.screen, _gold(),  (sx + 4, crown_y + 6, 12,  2))
+            dorje = (180, 155, 50)
+            pygame.draw.rect(self.screen, (130, 105, 65), (sx - 2, sy - 12 + bob, 2, 30))
+            pygame.draw.rect(self.screen, dorje,           (sx - 4, sy - 16 + bob, 6,  3))
+            for di in (sx - 3, sx - 1, sx + 1):
+                pygame.draw.rect(self.screen, dorje, (di, sy - 19 + bob, 2, 4))
+
+        else:
+            # castle: ermine collar, European robe, pointed crown, sceptre
+            robe   = _dim(lc, 0.7)
+            trim   = lc
+            mantle = _lite(lc, 40)
+            pygame.draw.rect(self.screen, robe,    (sx + 1,  sy + bob,       18, 20))
+            pygame.draw.rect(self.screen, mantle,  (sx,      sy + bob,        5, 14))
+            pygame.draw.rect(self.screen, mantle,  (sx + 15, sy + bob,        5, 14))
+            pygame.draw.rect(self.screen, _gold(),  (sx + 1,  sy + 11 + bob, 18,  3))
+            for i in range(0, 18, 4):
+                pygame.draw.rect(self.screen, trim, (sx + 1 + i, sy + 17 + bob, 2, 3))
+            pygame.draw.rect(self.screen, (240, 238, 232), (sx + 3, sy - 2 + bob, 14, 6))
+            for spot_x in (sx + 5, sx + 9, sx + 13):
+                pygame.draw.rect(self.screen, (30, 25, 20), (spot_x, sy - 1 + bob, 2, 2))
+            _head()
+            crown_y = sy - 20 + bob
+            pygame.draw.rect(self.screen, _gold(), (sx + 3,  crown_y + 3, 14, 5))
+            pygame.draw.rect(self.screen, _gold(), (sx + 3,  crown_y,      3, 7))
+            pygame.draw.rect(self.screen, _gold(), (sx + 8,  crown_y - 2,  4, 9))
+            pygame.draw.rect(self.screen, _gold(), (sx + 14, crown_y,      3, 7))
+            pygame.draw.rect(self.screen, trim,    (sx + 9,  crown_y,      2, 3))
+            pygame.draw.rect(self.screen, (80, 200, 220), (sx + 4,  crown_y + 1, 2, 2))
+            pygame.draw.rect(self.screen, (80, 200, 220), (sx + 14, crown_y + 1, 2, 2))
+            pygame.draw.rect(self.screen, _lite(_gold(), 30), (sx + 3, crown_y + 3, 14, 2))
+            sceptre_x = sx + 18
+            pygame.draw.rect(self.screen, (160, 130, 50), (sceptre_x,      sy - 14 + bob, 3, 32))
+            pygame.draw.rect(self.screen, _gold(),          (sceptre_x - 1, sy - 18 + bob, 5,  5))
+            pygame.draw.circle(self.screen, _gold(),        (sceptre_x + 1, sy - 20 + bob), 4)
+            pygame.draw.circle(self.screen, trim,           (sceptre_x + 1, sy - 20 + bob), 2)
+
+        _star()
 
     def _draw_npc_farmer(self, sx, sy, npc):
         bob = int(npc._bob_offset)
@@ -17213,6 +17888,64 @@ class Renderer:
                             [(spear_x + 1, sy - 28 + bob),
                              (spear_x + 5, sy - 20 + bob),
                              (spear_x - 3, sy - 20 + bob)])
+
+    def _draw_npc_blacksmith(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        c = getattr(npc, 'clothing', {})
+        body  = c.get('body', (80, 55, 35))
+        skin  = c.get('skin', (200, 165, 115))
+        soot  = tuple(max(0, v - 40) for v in skin)
+        # Body + leather apron strip
+        pygame.draw.rect(self.screen, body,           (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, (80, 55, 30),   (sx + 6, sy + bob, 8, 18))
+        # Head (soot-darkened skin)
+        pygame.draw.rect(self.screen, soot,           (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, (30, 20, 10),   (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (30, 20, 10),   (sx + 11, sy - 7 + bob, 3, 3))
+        # Hammer indicator above head
+        hx, hy = sx + 9, sy - 24 + bob
+        pygame.draw.rect(self.screen, (150, 140, 130), (hx,     hy,     6, 3))
+        pygame.draw.rect(self.screen, (130, 100,  60), (hx + 2, hy + 3, 2, 6))
+
+    def _draw_npc_innkeeper(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        c = getattr(npc, 'clothing', {})
+        body = c.get('body', (130, 80, 40))
+        skin = c.get('skin', (255, 215, 160))
+        # Body + short apron bib
+        pygame.draw.rect(self.screen, body,            (sx, sy + bob, 20, 18))
+        pygame.draw.rect(self.screen, (240, 235, 220), (sx + 5, sy + bob, 10, 10))
+        # Head
+        pygame.draw.rect(self.screen, skin,            (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(self.screen, (40, 30, 20),    (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(self.screen, (40, 30, 20),    (sx + 11, sy - 7 + bob, 3, 3))
+        # Mug indicator above head
+        mx, my = sx + 7, sy - 23 + bob
+        pygame.draw.rect(self.screen, (200, 155, 100), (mx,     my,     8, 6))
+        pygame.draw.rect(self.screen, (200, 155, 100), (mx + 7, my + 1, 3, 4))
+        pygame.draw.rect(self.screen, (160, 210, 240), (mx + 1, my + 1, 6, 3))
+
+    def _draw_npc_scholar(self, sx, sy, npc):
+        bob = int(npc._bob_offset)
+        c = getattr(npc, 'clothing', {})
+        body = c.get('body', (60, 60, 100))
+        skin = c.get('skin', (255, 215, 160))
+        fold = tuple(max(0, v - 30) for v in body)
+        # Long robe + inner fold
+        pygame.draw.rect(self.screen, body,           (sx + 2, sy + bob, 16, 20))
+        pygame.draw.rect(self.screen, fold,           (sx + 8, sy + bob,  4, 20))
+        # Head
+        pygame.draw.rect(self.screen, skin,           (sx + 2, sy - 10 + bob, 16, 12))
+        # Spectacles
+        pygame.draw.circle(self.screen, (60, 50, 40), (sx + 6,  sy - 6 + bob), 3, 1)
+        pygame.draw.circle(self.screen, (60, 50, 40), (sx + 13, sy - 6 + bob), 3, 1)
+        pygame.draw.line(self.screen, (60, 50, 40),
+                         (sx + 9, sy - 6 + bob), (sx + 10, sy - 6 + bob), 1)
+        # Quill indicator above head
+        qx, qy = sx + 10, sy - 26 + bob
+        pygame.draw.line(self.screen, (240, 235, 210), (qx, qy), (qx - 3, qy + 10), 2)
+        pygame.draw.polygon(self.screen, (240, 235, 210),
+                            [(qx, qy), (qx - 5, qy + 3), (qx - 2, qy + 5)])
 
     def _draw_sheep(self, sx, sy, sheep):
         W, H = sheep.W, sheep.H
@@ -17591,11 +18324,37 @@ class Renderer:
         elif getattr(horse, 'tamed', False):
             pygame.draw.circle(self.screen, (80, 180, 255), (sx + W // 2, sy - 10), 4)
 
+        # Trade-run stuck warning: orange "!" above the horse
+        if getattr(horse, '_on_trade_run', False) and getattr(horse, '_trade_stuck', False):
+            if not hasattr(self, '_trade_warn_font'):
+                self._trade_warn_font = pygame.font.SysFont("consolas", 14, bold=True)
+            warn = self._trade_warn_font.render("!", True, (255, 160, 0))
+            cx = sx + W // 2
+            pygame.draw.circle(self.screen, (255, 160, 0), (cx, sy - 22), 7, 2)
+            self.screen.blit(warn, (cx - warn.get_width() // 2, sy - 29))
+
         # Temperament color pip (top-left corner)
         temp = traits.get("temperament", "spirited")
         temp_colors = {"calm": (80, 200, 80), "spirited": (220, 180, 40), "wild": (220, 60, 60)}
         pygame.draw.circle(self.screen, temp_colors.get(temp, (180, 180, 180)),
                            (sx + 4, sy - 6), 3)
+
+    def _draw_dog(self, sx, sy, dog):
+        from Render.dogs import draw_dog, draw_tame_hearts
+        draw_dog(self.screen, sx, sy, dog, scale=1.0, facing=getattr(dog, "facing", 1))
+        # SIT label when in stay mode
+        if getattr(dog, "stay_mode", False) and getattr(dog, "tamed", False):
+            lbl = self._npc_font.render("SIT", True, (180, 240, 140))
+            self.screen.blit(lbl, (sx + dog.W // 2 - lbl.get_width() // 2, sy - 14))
+        # Taming progress hearts above untamed dogs
+        if not dog.tamed and dog.tame_progress > 0:
+            stubbornness = dog.traits.get("stubbornness", 0.5)
+            threshold = max(1, int(5 + stubbornness * 7))
+            draw_tame_hearts(self.screen, sx + dog.W // 2, sy - 14, dog.tame_progress, threshold)
+        # Tracking hint golden dot
+        if getattr(dog, "_tracking_hint", False):
+            pygame.draw.circle(self.screen, (240, 210, 80), (sx + dog.W + 4, sy + 4), 3)
+            dog._tracking_hint = False
 
     def _draw_snow_leopard(self, sx, sy, cat):
         W, H = cat.W, cat.H
@@ -18155,6 +18914,10 @@ class Renderer:
     def draw_birds(self, birds):
         from Render.birds import draw_birds as _draw_birds
         _draw_birds(self.screen, self.cam_x, self.cam_y, birds)
+
+    def draw_nests(self, nests):
+        from Render.birds import draw_nests as _draw_nests
+        _draw_nests(self.screen, self.cam_x, self.cam_y, nests)
 
     def _draw_bird(self, bird, sx, sy):
         from Render.birds import _draw_bird as _db

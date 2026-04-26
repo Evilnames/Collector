@@ -84,7 +84,10 @@ _REGION_NAMES_BY_GROUP: dict[str, list[str]] = {
                       "Calabria","Bithynia","Hellas"],
     "east_asian":    ["Longshan","Jadewater","Dragoncoast","Moonshore","Bamboohill",
                       "Crimsonriver","Cloudhaven","Silkdale","Lotusmere","Ivorygate",
-                      "Cedarholm","Inkwater","Cherryreach"],
+                      "Cedarholm","Inkwater","Cherryreach",
+                      "Longmen","Qinglong","Fenghuang","Zijincheng","Baihe",
+                      "Sakuraholm","Fujimere","Tsukireach","Kirihaven","Momijivale",
+                      "Goldencourt","Dragontower","Jadepalace","Redgate","Craneshore"],
     "south_asian":   ["Devapura","Suryanagar","Nagarjuna","Chandramukhi","Krishnagar",
                       "Indravale","Gangashore","Vedaholm","Aryadale","Rajamere",
                       "Lotusfield","Saffrongate","Kalidevi"],
@@ -197,8 +200,10 @@ _TOWN_NAMES_BY_GROUP: dict[str, tuple[list[str], list[str]]] = {
                       ["top","rise","dale","shire","fell","moor","crag","side","head","ford"]),
     "mediterranean": (["Val","Serra","Monte","Villa","Porto","Costa","Agri","Ponte","Bella","Alto"],
                       ["nova","alta","bella","doro","mira","faro","vento","sole","mare","petra"]),
-    "east_asian":    (["Long","Jade","Dragon","Crane","Lotus","Bamboo","Golden","Moon","River","Cloud"],
-                      ["zhou","jing","shan","hai","ming","dao","feng","yuan","shima","hama"]),
+    "east_asian":    (["Long","Jade","Dragon","Crane","Lotus","Bamboo","Golden","Moon","River","Cloud",
+                       "Huang","Qing","Hong","Zi","Jin","Bai","Sakura","Fuji","Tsuki","Kiri","Haru"],
+                      ["zhou","jing","shan","hai","ming","dao","feng","yuan","shima","hama",
+                       "men","guan","hu","jo","machi","zaki","mura","bao","gang","pu"]),
     "south_asian":   (["Deva","Naga","Surya","Chandra","Indra","Ganga","Arya","Raja","Kali","Veda"],
                       ["pura","ghat","nagar","tala","vati","shri","pur","mala","abad","devi"]),
 }
@@ -265,7 +270,10 @@ _LEADER_GREETINGS: dict[str, list[str]] = {
                       "We debate everything here. But trade? That we decide quickly."],
     "east_asian":    ["You arrive as the cherry blossoms fall. Auspicious, perhaps.",
                       "Patience and precision — we value both. Show us you have them.",
-                      "The river carries many things downstream. What does it carry today?"],
+                      "The river carries many things downstream. What does it carry today?",
+                      "The dragon sleeps in the mountain. Do not wake it without purpose.",
+                      "The brush moves, the record stands. We are watching.",
+                      "Honour flows downward from the throne. Remember that."],
     "south_asian":   ["The gods watch all who pass through these gates. State your purpose.",
                       "Every road leads here eventually. The spice route does not lie.",
                       "Honour the traditions of this place and you will be welcome."],
@@ -572,6 +580,9 @@ def register_new_town(world, city_bx: int, city_size: str,
                 lname = _make_leader_name(rng_r)
                 TOWNS[town_id].leader_name = lname
                 region.capital_town_id = town_id
+                # Update biome_group to the capital's biome — the region may have been
+                # created by a non-capital city that arrived first with a different biome.
+                region.biome_group = _biome_group_for(biome)
 
     REGIONS[region_id].member_town_ids.append(town_id)
 
@@ -598,6 +609,12 @@ def _restore_world_city_metadata(world) -> None:
         world.city_zones.append((bx - half_w, bx + half_w))
 
 
+def _palace_type_for(palace_left: int, world_seed: int) -> str:
+    """Deterministic palace type for a capital at palace_left.  Same inputs → same type."""
+    from cities import PALACE_TYPES
+    return random.Random(palace_left ^ world_seed ^ 0xCAFEBABE).choice(PALACE_TYPES)
+
+
 def _respawn_leader_npcs(world) -> None:
     """Re-create LeaderNPC entities for capital towns after loading from DB.
     Blocks are already in loaded chunks; only the entity needs to be spawned."""
@@ -610,10 +627,10 @@ def _respawn_leader_npcs(world) -> None:
         region = REGIONS.get(town.region_id)
         if region is None:
             continue
-        bg = region.biome_group
         palace_left = town.center_bx + town.half_w + 4
         sy = world.surface_y_at(palace_left)
-        npc_offset = PALACE_NPC_OFFSET.get(bg, 4 + 6 + 7 + 13 + 5)
+        ptype = _palace_type_for(palace_left, world.seed)
+        npc_offset = PALACE_NPC_OFFSET[ptype]
         npc_px = (palace_left + npc_offset) * BLOCK_SIZE
         npc_py = (sy - 3) * BLOCK_SIZE
         world.entities.append(
@@ -621,42 +638,72 @@ def _respawn_leader_npcs(world) -> None:
                       region_id   = region.region_id,
                       region_name = region.name,
                       leader_name = town.leader_name or "Leader",
-                      leader_color= region.leader_color)
+                      leader_color= region.leader_color,
+                      palace_type = ptype)
         )
 
 
 def _place_capital_structures(town: Town, world) -> None:
-    """Place a culturally-themed palace + LeaderNPC for a capital town."""
+    """Place a randomly-selected palace + LeaderNPC for a capital town."""
     from cities import (
-        _place_castle, _populate_castle,
+        _place_castle, _populate_castle, _place_castle_garden,
         _place_mediterranean_palace,
         _place_east_asian_palace,
         _place_south_asian_palace,
+        _place_italian_palazzo,
+        _place_moorish_palace,
+        _place_middle_eastern_palace,
+        _place_norse_hall,
+        _place_gothic_palace,
+        _place_african_palace,
+        _place_byzantine_palace,
+        _place_tibetan_palace,
+        _place_japanese_palace,
+        _place_chinese_palace,
         PALACE_NPC_OFFSET,
         LeaderNPC,
     )
     from constants import BLOCK_SIZE
 
     region = REGIONS.get(town.region_id)
-    bg = region.biome_group if region else _DEFAULT_BIOME_GROUP
-
     palace_left = town.center_bx + town.half_w + 4
     sy = world.surface_y_at(palace_left)
 
-    if bg == "mediterranean":
+    ptype = _palace_type_for(palace_left, world.seed)
+
+    if ptype == "mediterranean":
         _place_mediterranean_palace(world, palace_left, sy)
-        npc_offset = PALACE_NPC_OFFSET["mediterranean"]
-    elif bg == "east_asian":
+    elif ptype == "east_asian":
         _place_east_asian_palace(world, palace_left, sy)
-        npc_offset = PALACE_NPC_OFFSET["east_asian"]
-    elif bg == "south_asian":
+    elif ptype == "south_asian":
         _place_south_asian_palace(world, palace_left, sy)
-        npc_offset = PALACE_NPC_OFFSET["south_asian"]
+    elif ptype == "italian":
+        _place_italian_palazzo(world, palace_left, sy)
+    elif ptype == "moorish":
+        _place_moorish_palace(world, palace_left, sy)
+    elif ptype == "middle_eastern":
+        _place_middle_eastern_palace(world, palace_left, sy)
+    elif ptype == "norse":
+        _place_norse_hall(world, palace_left, sy)
+    elif ptype == "gothic":
+        _place_gothic_palace(world, palace_left, sy)
+    elif ptype == "african":
+        _place_african_palace(world, palace_left, sy)
+    elif ptype == "byzantine":
+        _place_byzantine_palace(world, palace_left, sy)
+    elif ptype == "tibetan":
+        _place_tibetan_palace(world, palace_left, sy)
+    elif ptype == "japanese":
+        _place_japanese_palace(world, palace_left, sy)
+    elif ptype == "chinese":
+        _place_chinese_palace(world, palace_left, sy)
     else:
-        _place_castle(world, palace_left, sy)
+        castle_w = _place_castle(world, palace_left, sy)
         castle_rng = random.Random(palace_left ^ (world.seed * 0x9E3779B9) ^ 0xBEEF1)
         _populate_castle(world, palace_left, sy, castle_rng)
-        npc_offset = 4 + 6 + 7 + 13 + 5   # moat + ltower + gate + hall + half keep
+        _place_castle_garden(world, palace_left + castle_w + 1, sy, castle_rng, town.biome)
+
+    npc_offset = PALACE_NPC_OFFSET[ptype]
 
     if region is None:
         return
@@ -667,7 +714,8 @@ def _place_capital_structures(town: Town, world) -> None:
                   region_id   = region.region_id,
                   region_name = region.name,
                   leader_name = town.leader_name or "Leader",
-                  leader_color= region.leader_color)
+                  leader_color= region.leader_color,
+                  palace_type = ptype)
     )
 
 

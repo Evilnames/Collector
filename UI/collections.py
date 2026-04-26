@@ -63,11 +63,13 @@ class CollectionsMixin:
         n_tapestries_owned = len(getattr(player, "tapestries_created", []))
         n_pottery_owned    = len(getattr(player, "pottery_pieces", []))
         n_salt_owned       = len(getattr(player, "salt_crystals", []))
+        n_dogs_tamed       = getattr(player, "dogs_tamed", 0)
         total_collected = (len(player.rocks) + len(player.wildflowers) +
                            len(player.fossils) + len(player.gems) + n_mush_owned +
                            n_coffee_owned + n_wine_owned + n_spirits_owned + n_tea_owned +
                            n_potions_owned + n_textiles_owned + n_cheese_owned + n_jewelry_owned +
-                           n_sculptures_owned + n_tapestries_owned + n_pottery_owned + n_salt_owned)
+                           n_sculptures_owned + n_tapestries_owned + n_pottery_owned + n_salt_owned +
+                           n_dogs_tamed)
 
         # ---- 3 main tabs ----
         self._tab_rects.clear()
@@ -96,8 +98,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -132,6 +134,7 @@ class CollectionsMixin:
                 ("tapestries", f"TAPESTRIES ({n_tapestries_owned})", (28, 20, 12),  (195, 165, 110), (245, 215, 165)),
                 ("pottery",    f"POTTERY ({n_pottery_owned})",       (40, 25, 10),  (160, 110,  80), (210, 160, 110)),
                 ("salt",       f"SALT ({n_salt_owned})",             (32, 30, 28),  (190, 185, 165), (235, 232, 215)),
+                ("dogs",       f"DOGS ({n_dogs_tamed})",              (28, 20, 10),  (170, 130,  60), (215, 180, 110)),
             ]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._collection_filter_rects.clear()
@@ -177,9 +180,11 @@ class CollectionsMixin:
                 ((40, 25, 10),  (160, 110,  80), (210, 160, 110)),   # Pottery
                 ((32, 30, 28),  (190, 185, 165), (235, 232, 215)),   # Salt
                 ((30, 18, 38),  (165, 110, 215), (225, 180, 255)),   # Pairings
+                ((28, 20, 10),  (170, 130,  60), (215, 180, 110)),   # Dogs
+                ((45, 35, 20),  (180, 120,  60), (220, 170, 100)),   # Hunting
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
-                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS"]
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
             for cat_i, cat_label in enumerate(enc_labels):
@@ -223,6 +228,8 @@ class CollectionsMixin:
                 self._draw_pottery_codex,
                 self._draw_salt_codex,
                 self._draw_pairings_codex,
+                self._draw_dog_codex,
+                self._draw_hunting_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)
@@ -2313,7 +2320,8 @@ class CollectionsMixin:
 
     def _draw_food_codex(self, player, gy0=58, gx_off=0):
         from crafting import (BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES,
-                              NOODLE_POT_RECIPES, BBQ_GRILL_RECIPES, CLAY_POT_RECIPES)
+                              NOODLE_POT_RECIPES, BBQ_GRILL_RECIPES, CLAY_POT_RECIPES,
+                              JUICER_RECIPES)
         from items import ITEMS as _ITEMS
 
         SECTIONS = [
@@ -2323,6 +2331,7 @@ class CollectionsMixin:
             ("Noodle Pot", NOODLE_POT_RECIPES),
             ("BBQ Grill",  BBQ_GRILL_RECIPES),
             ("Clay Pot",   CLAY_POT_RECIPES),
+            ("Juicer",     JUICER_RECIPES),
         ]
 
         discovered = getattr(player, "discovered_foods", set())
@@ -3176,3 +3185,160 @@ class CollectionsMixin:
             row_y += cell_h + gap
             if row_y > gy0 + 600:
                 break  # avoid overflow on small screens
+
+    def _draw_dog_codex(self, player, gy0=58, gx_off=130):
+        from dogs import BREED_PROFILES
+        from Render.dogs import draw_dog
+
+        disc     = getattr(player, "discovered_dog_breeds", set())
+        all_breeds = list(BREED_PROFILES.keys())
+        total    = len(all_breeds)
+
+        _BG    = (22, 16, 8)
+        _TITLE = (215, 180, 110)
+        _DIM   = (70, 55, 30)
+        _DISC  = (180, 140, 65)
+
+        sub = self.small.render(
+            f"Discovered: {len(disc)} / {total}     Tame dogs to unlock their breed entry.",
+            True, (170, 140, 80))
+        self.screen.blit(sub, (gx_off + 8, gy0))
+
+        cell_w, cell_h, gap_x, gap_y = 230, 80, 10, 8
+        cols = max(1, (SCREEN_W - gx_off - 20) // (cell_w + gap_x))
+        row_y = gy0 + 26
+
+        for i, breed in enumerate(all_breeds):
+            col_i  = i % cols
+            row_i  = i // cols
+            cx = gx_off + 8 + col_i * (cell_w + gap_x)
+            cy = row_y + row_i * (cell_h + gap_y)
+
+            discovered = breed in disc
+            rect = pygame.Rect(cx, cy, cell_w, cell_h)
+            pygame.draw.rect(self.screen, _BG, rect, border_radius=5)
+            brd_col = _DISC if discovered else _DIM
+            pygame.draw.rect(self.screen, brd_col, rect, 1, border_radius=5)
+
+            if discovered:
+                # Draw a small dog silhouette using breed coat color
+                profile = BREED_PROFILES[breed]
+                coat = profile.get("coat_colors", [(160, 100, 50)])[0]
+                # Minimal stub dog object for rendering
+                class _StubDog:
+                    traits = {
+                        "coat_color": coat,
+                        "coat_pattern": "solid",
+                        "coat_length": profile.get("coat_length", "short"),
+                        "coat_type": "smooth",
+                        "ear_type": profile.get("ear_type", "floppy"),
+                        "tail_type": profile.get("tail_type", "long"),
+                        "eye_color": "brown",
+                        "size_class": profile.get("size_class", "medium"),
+                    }
+                    stay_mode = False
+                    tamed = True
+                    facing = 1
+                draw_dog(self.screen, cx + 6, cy + 20, _StubDog(), scale=1.4, facing=1)
+
+                name_s = self.small.render(breed, True, _TITLE)
+                self.screen.blit(name_s, (cx + 56, cy + 6))
+                biomes_str = ", ".join(sorted(profile["biomes"])[:3])
+                bio_s = self.small.render(biomes_str[:28], True, (140, 115, 60))
+                self.screen.blit(bio_s, (cx + 56, cy + 22))
+                size_s = self.small.render(f"Size: {profile['size_class']}", True, (130, 105, 55))
+                self.screen.blit(size_s, (cx + 56, cy + 38))
+            else:
+                q_s = self.small.render("???", True, _DIM)
+                self.screen.blit(q_s, (cx + cell_w // 2 - q_s.get_width() // 2,
+                                        cy + cell_h // 2 - q_s.get_height() // 2))
+
+    def _draw_hunting_codex(self, player, gy0=58, gx_off=130):
+        HUNTING_LOG_SPECIES = [
+            ("bear",       "Bear",       "weight",        "lbs"),
+            ("bighorn",    "Bighorn",    "horn_score",    "pts"),
+            ("bison",      "Bison",      "weight",        "lbs"),
+            ("boar",       "Boar",       "tusk_length",   "in"),
+            ("crocodile",  "Crocodile",  "length",        "ft"),
+            ("deer",       "Deer",       "antler_spread", "in"),
+            ("duck",       "Duck",       "weight",        "lbs"),
+            ("elk",        "Elk",        "antler_spread", "in"),
+            ("fox",        "Fox",        "weight",        "lbs"),
+            ("goose",      "Goose",      "weight",        "lbs"),
+            ("hare",       "Hare",       "weight",        "lbs"),
+            ("moose",      "Moose",      "antler_span",   "in"),
+            ("musk_ox",    "Musk Ox",    "horn_spread",   "in"),
+            ("pheasant",   "Pheasant",   "tail_length",   "in"),
+            ("rabbit",     "Rabbit",     "weight",        "lbs"),
+            ("turkey",     "Turkey",     "beard_length",  "in"),
+            ("warthog",    "Warthog",    "tusk_length",   "in"),
+            ("wolf",       "Wolf",       "weight",        "lbs"),
+        ]
+
+        STAT_LABELS = {
+            "antler_spread": "Antler spread",
+            "antler_span":   "Antler span",
+            "tusk_length":   "Tusk length",
+            "horn_score":    "Horn score",
+            "horn_spread":   "Horn spread",
+            "weight":        "Weight",
+            "length":        "Body length",
+            "tail_length":   "Tail length",
+            "beard_length":  "Beard length",
+        }
+
+        _BG      = (28, 20, 10)
+        _BORDER  = (100, 70, 35)
+        _HUNTED  = (220, 170, 100)
+        _DIM     = (80, 60, 35)
+        _STAT    = (180, 140, 70)
+        _COUNT   = (140, 105, 50)
+
+        hunted    = getattr(player, "animals_hunted", {})
+        trophies  = getattr(player, "hunt_trophies", {})
+        total_killed = sum(hunted.values())
+
+        sub = self.small.render(
+            f"Total hunted: {total_killed}   —   Personal bests per species",
+            True, _COUNT)
+        self.screen.blit(sub, (gx_off + 8, gy0))
+
+        ROW_H  = 36
+        GAP    = 4
+        col_w  = (SCREEN_W - gx_off - 24) // 2
+        row_y  = gy0 + 24
+
+        for i, (aid, label, stat_key, unit) in enumerate(HUNTING_LOG_SPECIES):
+            col_i = i % 2
+            row_i = i // 2
+            cx = gx_off + 8 + col_i * (col_w + 8)
+            cy = row_y + row_i * (ROW_H + GAP) - self._hunting_codex_scroll
+
+            if cy + ROW_H < gy0 or cy > SCREEN_H:
+                continue
+
+            count = hunted.get(aid, 0)
+            best  = trophies.get(aid, {}).get(stat_key, 0)
+
+            rect = pygame.Rect(cx, cy, col_w, ROW_H)
+            pygame.draw.rect(self.screen, _BG, rect, border_radius=4)
+            brd = _HUNTED if count > 0 else _BORDER
+            pygame.draw.rect(self.screen, brd, rect, 1, border_radius=4)
+
+            name_col = _HUNTED if count > 0 else _DIM
+            name_s = self.small.render(label, True, name_col)
+            self.screen.blit(name_s, (cx + 8, cy + 4))
+
+            count_s = self.small.render(f"×{count}", True, _COUNT)
+            self.screen.blit(count_s, (cx + 8, cy + 18))
+
+            if count > 0 and best > 0:
+                stat_label = STAT_LABELS.get(stat_key, stat_key.replace("_", " ").title())
+                stat_text  = f"Best {stat_label}: {best} {unit}"
+                stat_s = self.small.render(stat_text, True, _STAT)
+                self.screen.blit(stat_s, (cx + col_w // 2, cy + 4))
+
+        rows = (len(HUNTING_LOG_SPECIES) + 1) // 2
+        content_h = rows * (ROW_H + GAP) + 24
+        visible_h = SCREEN_H - row_y
+        self._max_hunting_codex_scroll = max(0, content_h - visible_h)

@@ -29,7 +29,9 @@ class PanelsMixin:
     def _draw_npc_panel(self, player):
         from cities import (RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC,
                             MerchantNPC, RestaurantNPC, ShrineKeeperNPC, JewelryMerchantNPC,
-                            LeaderNPC)
+                            LeaderNPC, BlacksmithNPC, InnkeeperNPC, ScholarNPC,
+                            RoyalCuratorNPC, RoyalFloristNPC, RoyalJewelerNPC)
+        from outpost_npcs import OutpostKeeperNPC
         npc = self.active_npc
         if isinstance(npc, LeaderNPC):
             self._draw_leader_panel(player, npc)
@@ -40,13 +42,16 @@ class PanelsMixin:
         self.screen.blit(overlay, (0, 0))
 
         is_quest = isinstance(npc, (RockQuestNPC, WildflowerQuestNPC, GemQuestNPC))
+        is_outpost = isinstance(npc, OutpostKeeperNPC)
         PW = 660
-        PH = 490 if is_quest else 460
+        PH = 580 if is_outpost else (490 if is_quest else 460)
         px = (SCREEN_W - PW) // 2
         py = (SCREEN_H - PH) // 2
 
-        # Border colour per NPC type
-        if isinstance(npc, WildflowerQuestNPC):
+        # Border colour per NPC type — royal subclasses checked first
+        if isinstance(npc, (RoyalCuratorNPC, RoyalFloristNPC, RoyalJewelerNPC)):
+            border_col = (220, 175, 40)
+        elif isinstance(npc, WildflowerQuestNPC):
             border_col = (60, 140, 70)
         elif isinstance(npc, GemQuestNPC):
             border_col = (110, 50, 160)
@@ -58,6 +63,14 @@ class PanelsMixin:
             border_col = (160, 130, 60)
         elif isinstance(npc, JewelryMerchantNPC):
             border_col = (200, 165, 55)
+        elif isinstance(npc, BlacksmithNPC):
+            border_col = (100, 110, 130)
+        elif isinstance(npc, InnkeeperNPC):
+            border_col = (170, 110, 50)
+        elif isinstance(npc, ScholarNPC):
+            border_col = (100, 140, 190)
+        elif is_outpost:
+            border_col = (80, 145, 95)
         else:
             border_col = (120, 100, 60)
 
@@ -67,7 +80,13 @@ class PanelsMixin:
         hint = self.small.render("E or ESC to close", True, (100, 100, 110))
         self.screen.blit(hint, (px + PW - hint.get_width() - 8, py + 8))
 
-        if isinstance(npc, RockQuestNPC):
+        if isinstance(npc, RoyalCuratorNPC):
+            self._draw_quest_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, RoyalFloristNPC):
+            self._draw_wf_quest_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, RoyalJewelerNPC):
+            self._draw_gem_quest_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, RockQuestNPC):
             self._draw_quest_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, TradeNPC):
             self._draw_trade_content(player, npc, px, py, PW, PH)
@@ -83,16 +102,37 @@ class PanelsMixin:
             self._draw_shrine_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, JewelryMerchantNPC):
             self._draw_jewelry_merchant_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, BlacksmithNPC):
+            self._draw_blacksmith_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, InnkeeperNPC):
+            self._draw_innkeeper_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, ScholarNPC):
+            self._draw_scholar_content(player, npc, px, py, PW, PH)
+        elif is_outpost:
+            self._draw_outpost_keeper_content(player, npc, px, py, PW, PH)
+
+    def _draw_rep_rank(self, npc, px, py):
+        from cities import rep_rank
+        rep = npc._town_rep()
+        name, color = rep_rank(rep)
+        s = self.small.render(f"{name}  [{rep} rep]", True, color)
+        self.screen.blit(s, (px + 14, py + 10))
 
     def _draw_quest_content(self, player, npc, px, py, PW, PH):
-        from cities import quest_display, quest_hint, RARITY_ORDER
+        from cities import quest_display, quest_hint, RARITY_ORDER, RoyalCuratorNPC, ROYAL_QUEST_REP
         from rocks import RARITY_COLORS
 
-        DIFF_LABELS = {0: "Novice", 1: "Journeyman", 2: "Expert"}
-        diff_col    = {0: (120, 190, 120), 1: (190, 170, 80), 2: (210, 80, 80)}
-        title_txt = f"ROCK COLLECTOR  [{DIFF_LABELS[npc.difficulty]}]"
-        title = self.font.render(title_txt, True, diff_col[npc.difficulty])
+        if isinstance(npc, RoyalCuratorNPC):
+            title_txt = "ROYAL CURATOR  ★ By Order of the King ★"
+            title_col = (220, 175, 40)
+        else:
+            DIFF_LABELS = {0: "Novice", 1: "Journeyman", 2: "Expert"}
+            diff_col    = {0: (120, 190, 120), 1: (190, 170, 80), 2: (210, 80, 80)}
+            title_txt = f"ROCK COLLECTOR  [{DIFF_LABELS[npc.difficulty]}]"
+            title_col = diff_col[npc.difficulty]
+        title = self.font.render(title_txt, True, title_col)
         self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+        self._draw_rep_rank(npc, px, py)
 
         # Streak indicator
         if npc._streak > 0:
@@ -123,7 +163,8 @@ class PanelsMixin:
 
             iy = y + 10
             if rep_locked:
-                badge = self.small.render("PRESTIGE QUEST", True, (200, 165, 40))
+                badge_label = "ROYAL COMMISSION" if min_rep >= ROYAL_QUEST_REP else "PRESTIGE QUEST"
+                badge = self.small.render(badge_label, True, (220, 175, 40) if min_rep >= ROYAL_QUEST_REP else (200, 165, 40))
                 self.screen.blit(badge, (px + 22, iy))
                 lock_s = self.small.render(
                     f"Requires {min_rep} rep  (you have: {npc._town_rep()})",
@@ -195,6 +236,7 @@ class PanelsMixin:
     def _draw_trade_content(self, player, npc, px, py, PW, PH):
         title = self.font.render("TRADER", True, (80, 210, 160))
         self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+        self._draw_rep_rank(npc, px, py)
 
         bonus_pct = npc.rep_bonus_pct()
         if bonus_pct > 0:
@@ -238,14 +280,20 @@ class PanelsMixin:
             y += row_h + 8
 
     def _draw_wf_quest_content(self, player, npc, px, py, PW, PH):
-        from cities import wf_quest_display, wf_quest_hint, RARITY_ORDER
+        from cities import wf_quest_display, wf_quest_hint, RARITY_ORDER, RoyalFloristNPC, ROYAL_QUEST_REP
         from rocks import RARITY_COLORS
 
-        DIFF_LABELS = {0: "Apprentice", 1: "Journeyman", 2: "Master"}
-        diff_col    = {0: (100, 200, 110), 1: (80, 190, 140), 2: (60, 180, 80)}
-        title_txt   = f"HERBALIST  [{DIFF_LABELS[npc.difficulty]}]"
-        title = self.font.render(title_txt, True, diff_col[npc.difficulty])
+        if isinstance(npc, RoyalFloristNPC):
+            title_txt = "ROYAL FLORIST  ★ By Order of the King ★"
+            title_col = (220, 175, 40)
+        else:
+            DIFF_LABELS = {0: "Apprentice", 1: "Journeyman", 2: "Master"}
+            diff_col    = {0: (100, 200, 110), 1: (80, 190, 140), 2: (60, 180, 80)}
+            title_txt   = f"HERBALIST  [{DIFF_LABELS[npc.difficulty]}]"
+            title_col   = diff_col[npc.difficulty]
+        title = self.font.render(title_txt, True, title_col)
         self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+        self._draw_rep_rank(npc, px, py)
 
         if npc._streak > 0:
             bonus_pct = min(npc._streak - 1, 2) * 25
@@ -271,7 +319,8 @@ class PanelsMixin:
 
             iy = y + 10
             if rep_locked:
-                badge = self.small.render("PRESTIGE QUEST", True, (200, 165, 40))
+                badge_label = "ROYAL COMMISSION" if min_rep >= ROYAL_QUEST_REP else "PRESTIGE QUEST"
+                badge = self.small.render(badge_label, True, (220, 175, 40) if min_rep >= ROYAL_QUEST_REP else (200, 165, 40))
                 self.screen.blit(badge, (px + 22, iy))
                 lock_s = self.small.render(
                     f"Requires {min_rep} rep  (you have: {npc._town_rep()})", True, (200, 100, 60))
@@ -325,14 +374,20 @@ class PanelsMixin:
             y += row_h + 8
 
     def _draw_gem_quest_content(self, player, npc, px, py, PW, PH):
-        from cities import gem_quest_display, gem_quest_hint, RARITY_ORDER
+        from cities import gem_quest_display, gem_quest_hint, RARITY_ORDER, RoyalJewelerNPC, ROYAL_QUEST_REP
         from rocks import RARITY_COLORS
 
-        DIFF_LABELS = {0: "Apprentice", 1: "Journeyman", 2: "Master"}
-        diff_col    = {0: (160, 110, 220), 1: (190, 80, 210), 2: (220, 60, 200)}
-        title_txt   = f"JEWELER  [{DIFF_LABELS[npc.difficulty]}]"
-        title = self.font.render(title_txt, True, diff_col[npc.difficulty])
+        if isinstance(npc, RoyalJewelerNPC):
+            title_txt = "ROYAL JEWELER  ★ By Order of the King ★"
+            title_col = (220, 175, 40)
+        else:
+            DIFF_LABELS = {0: "Apprentice", 1: "Journeyman", 2: "Master"}
+            diff_col    = {0: (160, 110, 220), 1: (190, 80, 210), 2: (220, 60, 200)}
+            title_txt   = f"JEWELER  [{DIFF_LABELS[npc.difficulty]}]"
+            title_col   = diff_col[npc.difficulty]
+        title = self.font.render(title_txt, True, title_col)
         self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+        self._draw_rep_rank(npc, px, py)
 
         if npc._streak > 0:
             bonus_pct = min(npc._streak - 1, 2) * 25
@@ -358,14 +413,17 @@ class PanelsMixin:
 
             iy = y + 10
             if rep_locked:
-                badge = self.small.render("PRESTIGE QUEST", True, (200, 165, 40))
+                badge_label = "ROYAL COMMISSION" if min_rep >= ROYAL_QUEST_REP else "PRESTIGE QUEST"
+                badge = self.small.render(badge_label, True, (220, 175, 40) if min_rep >= ROYAL_QUEST_REP else (200, 165, 40))
                 self.screen.blit(badge, (px + 22, iy))
                 lock_s = self.small.render(
                     f"Requires {min_rep} rep  (you have: {npc._town_rep()})", True, (200, 100, 60))
                 self.screen.blit(lock_s, (px + 22 + badge.get_width() + 12, iy))
             else:
-                kind_labels = {"gem_type": "GEM TYPE", "gem_cut": "CUT GEM", "gem_rarity": "RARITY"}
-                badge_col   = {"gem_type": (160, 100, 220), "gem_cut": (200, 120, 80), "gem_rarity": (120, 80, 210)}
+                kind_labels = {"gem_type": "GEM TYPE", "gem_cut": "CUT GEM", "gem_rarity": "RARITY",
+                               "gem_royal": "CROWN JEWEL"}
+                badge_col   = {"gem_type": (160, 100, 220), "gem_cut": (200, 120, 80), "gem_rarity": (120, 80, 210),
+                               "gem_royal": (220, 175, 40)}
                 badge = self.small.render(kind_labels.get(quest["kind"], "QUEST"), True,
                                           badge_col.get(quest["kind"], (150, 150, 150)))
                 self.screen.blit(badge, (px + 22, iy))
@@ -681,59 +739,110 @@ class PanelsMixin:
 
     def _draw_leader_panel(self, player, npc):
         from towns import TOWNS, REGIONS
+        from cities import rep_rank
 
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 215))
         self.screen.blit(overlay, (0, 0))
 
-        PW, PH = 580, 420
+        PW, PH = 640, 560
         px = (SCREEN_W - PW) // 2
         py = (SCREEN_H - PH) // 2
 
         border_col = npc.leader_color
-        bg_col = (22, 20, 16)
-        pygame.draw.rect(self.screen, bg_col, (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (22, 20, 16), (px, py, PW, PH))
         pygame.draw.rect(self.screen, border_col, (px, py, PW, PH), 3)
 
-        # Title
         title_s = self.font.render(npc.leader_name, True, (240, 220, 160))
         self.screen.blit(title_s, (px + 16, py + 14))
 
-        from towns import REGIONS
-        _region = REGIONS.get(npc.region_id)
-        title = _region.leader_title if _region else "Leader"
-        role_s = self.small.render(f"{title} of {npc.region_name}", True, (180, 160, 110))
-        self.screen.blit(role_s, (px + 16, py + 40))
-
-        pygame.draw.line(self.screen, border_col, (px + 10, py + 60), (px + PW - 10, py + 60))
-
         region = REGIONS.get(npc.region_id)
-        cy = py + 72
+        title = region.leader_title if region else "Leader"
+        role_s = self.small.render(f"{title} of {npc.region_name}", True, (180, 160, 110))
+        self.screen.blit(role_s, (px + 16, py + 38))
+
+        # Regional rep + rank
+        total_rep = npc.regional_rep()
+        rank_name, rank_col = rep_rank(npc._town_rep())
+        rep_s = self.small.render(
+            f"Regional reputation: {total_rep}   |   Your standing: {rank_name}",
+            True, rank_col)
+        self.screen.blit(rep_s, (px + 16, py + 58))
+
+        pygame.draw.line(self.screen, border_col, (px + 10, py + 76), (px + PW - 10, py + 76))
+
+        cy = py + 84
         if region:
-            total_rep = sum(TOWNS[tid].reputation for tid in region.member_town_ids if tid in TOWNS)
-            tr_s = self.small.render(f"Regional reputation: {total_rep}", True, (200, 190, 145))
-            self.screen.blit(tr_s, (px + 16, cy)); cy += 24
-
-            members_s = self.small.render("Towns in this region:", True, (160, 150, 110))
-            self.screen.blit(members_s, (px + 16, cy)); cy += 22
-
             for tid in region.member_town_ids:
                 town = TOWNS.get(tid)
                 if not town:
                     continue
                 star = "★ " if town.is_capital else "  "
-                entry = f"{star}{town.name} ({town.tier_name()})  rep: {town.reputation}"
+                town_rank, tcol = rep_rank(town.reputation)
+                entry = f"{star}{town.name} ({town.tier_name()})  rep {town.reputation}  [{town_rank}]"
                 col = (220, 200, 100) if town.is_capital else (180, 170, 130)
-                e_s = self.small.render(entry, True, col)
-                self.screen.blit(e_s, (px + 28, cy)); cy += 20
+                self.screen.blit(self.small.render(entry, True, col), (px + 22, cy)); cy += 20
 
-        cy += 12
-        pygame.draw.line(self.screen, (70, 65, 50), (px + 10, cy), (px + PW - 10, cy))
+        cy += 8
+        pygame.draw.line(self.screen, border_col, (px + 10, cy), (px + PW - 10, cy))
         cy += 10
 
-        for line in npc.get_dialog_lines(player)[:4]:
-            d_s = self.small.render(line, True, (155, 145, 110))
-            self.screen.blit(d_s, (px + 16, cy)); cy += 20
+        # Regional contracts
+        contracts_lbl = self.font.render("REGIONAL CONTRACTS", True, (210, 185, 60))
+        self.screen.blit(contracts_lbl, (px + 16, cy)); cy += 24
+
+        self._trade_rects.clear()
+        for idx, contract in enumerate(npc.contracts):
+            item_id, give_count, reward_gold, display_name, min_rep, rep_bonus = contract
+            rep_locked = npc._town_rep() < min_rep
+            can = npc.can_fulfill(idx, player)
+            have = player.inventory.get(item_id, 0)
+
+            row_h = 60
+            row_rect = pygame.Rect(px + 12, cy, PW - 24, row_h)
+            if rep_locked:
+                bg, bdr = (28, 24, 10), (140, 110, 30)
+            else:
+                bg  = (28, 38, 18) if can else (22, 22, 30)
+                bdr = (100, 170, 50) if can else (60, 70, 50)
+            pygame.draw.rect(self.screen, bg, row_rect)
+            pygame.draw.rect(self.screen, bdr, row_rect, 2)
+
+            item_color = ITEMS.get(item_id, {}).get("color", (160, 160, 160))
+            pygame.draw.rect(self.screen, item_color, (px + 18, cy + 14, 24, 24))
+
+            if rep_locked:
+                name_s = self.font.render(display_name, True, (130, 115, 60))
+                lock_s = self.small.render(
+                    f"Requires {min_rep} rep  (you have: {npc._town_rep()})", True, (190, 100, 50))
+                self.screen.blit(name_s, (px + 52, cy + 8))
+                self.screen.blit(lock_s, (px + 52, cy + 30))
+                btn_text, b_bg, b_bdr, b_tc = "LOCKED", (40, 30, 8), (130, 100, 25), (170, 130, 40)
+            else:
+                name_col = (220, 210, 140) if can else (130, 120, 90)
+                name_s = self.font.render(display_name, True, name_col)
+                detail_col = (160, 200, 80) if can else (90, 110, 60)
+                inv_s = self.small.render(
+                    f"Give: {give_count}x  (have: {have})   Reward: {reward_gold}g  +{rep_bonus} rep/town",
+                    True, detail_col)
+                self.screen.blit(name_s, (px + 52, cy + 8))
+                self.screen.blit(inv_s,  (px + 52, cy + 30))
+                if can:
+                    btn_text, b_bg, b_bdr, b_tc = "FULFILL", (20, 70, 15), (60, 200, 50), (180, 255, 160)
+                else:
+                    btn_text, b_bg, b_bdr, b_tc = "FULFILL", (30, 30, 36), (55, 55, 68), (70, 70, 82)
+
+            BW, BH = 90, 30
+            bx2 = row_rect.right - BW - 10
+            by2 = cy + row_h // 2 - BH // 2
+            btn_rect = pygame.Rect(bx2, by2, BW, BH)
+            self._trade_rects[idx] = btn_rect
+            pygame.draw.rect(self.screen, b_bg, btn_rect)
+            pygame.draw.rect(self.screen, b_bdr, btn_rect, 2)
+            bl = self.small.render(btn_text, True, b_tc)
+            self.screen.blit(bl, (btn_rect.centerx - bl.get_width() // 2,
+                                   btn_rect.centery - bl.get_height() // 2))
+            cy += row_h + 6
 
         hint_s = self.small.render("[E] or [ESC] to close", True, (90, 82, 60))
         self.screen.blit(hint_s, (px + PW - hint_s.get_width() - 14, py + PH - 20))
@@ -1944,6 +2053,7 @@ class PanelsMixin:
     def _draw_merchant_content(self, player, npc, px, py, PW, PH):
         title = self.font.render("MERCHANT", True, (220, 175, 40))
         self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+        self._draw_rep_rank(npc, px, py)
 
         gold_txt = self.font.render(f"Your gold: {player.money}", True, (220, 175, 40))
         self.screen.blit(gold_txt, (px + PW - gold_txt.get_width() - 20, py + 10))
@@ -2009,6 +2119,7 @@ class PanelsMixin:
     def _draw_restaurant_content(self, player, npc, px, py, PW, PH):
         title = self.font.render(npc.cuisine.upper(), True, (240, 120, 30))
         self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+        self._draw_rep_rank(npc, px, py)
 
         gold_txt = self.font.render(f"Your gold: {player.money}", True, (220, 175, 40))
         self.screen.blit(gold_txt, (px + PW - gold_txt.get_width() - 20, py + 10))
@@ -2055,9 +2166,350 @@ class PanelsMixin:
                                    y + row_h // 2 - lbl.get_height() // 2))
             y += row_h + 8
 
+    def _draw_blacksmith_content(self, player, npc, px, py, PW, PH):
+        title = self.font.render("BLACKSMITH", True, (160, 175, 210))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+        self._draw_rep_rank(npc, px, py)
+
+        gold_txt = self.font.render(f"Your gold: {player.money}", True, (220, 175, 40))
+        self.screen.blit(gold_txt, (px + PW - gold_txt.get_width() - 20, py + 10))
+
+        disc_pct = npc.rep_discount_pct()
+        if disc_pct > 0:
+            rep_txt = self.small.render(
+                f"Town reputation bonus: -{disc_pct}% off", True, (120, 200, 120))
+            self.screen.blit(rep_txt, (px + 20, py + 32))
+
+        self._trade_rects.clear()
+        y = py + 56
+
+        for i, (item_id, _, display, barter_item, barter_qty) in enumerate(npc.shop):
+            cost       = npc.discounted_cost(i)
+            can_buy    = npc.can_buy(i, player)
+            can_barter = npc.can_barter(i, player)
+
+            row_h    = 72
+            row_rect = pygame.Rect(px + 20, y, PW - 40, row_h)
+            bg  = (20, 22, 30) if (can_buy or can_barter) else (22, 22, 30)
+            bdr = (120, 135, 165) if (can_buy or can_barter) else (50, 55, 70)
+            pygame.draw.rect(self.screen, bg, row_rect)
+            pygame.draw.rect(self.screen, bdr, row_rect, 2)
+
+            item_color = ITEMS.get(item_id, {}).get("color", (128, 128, 128))
+            pygame.draw.rect(self.screen, item_color, (px + 28, y + 20, 28, 28))
+
+            name_col = (210, 220, 240) if (can_buy or can_barter) else (110, 115, 130)
+            self.screen.blit(self.font.render(display, True, name_col), (px + 66, y + 8))
+
+            buy_col = (180, 155, 60) if can_buy else (80, 75, 40)
+            buy_lbl = self.font.render("BUY", True, (220, 195, 80) if can_buy else (70, 70, 82))
+            gold_lbl = self.font.render(f"{cost} gold", True, buy_col)
+            self.screen.blit(gold_lbl, (px + 66, y + 30))
+            buy_rect = pygame.Rect(row_rect.right - 70, y + 26, 58, 20)
+            buy_bg   = (50, 50, 30) if can_buy else (35, 35, 45)
+            pygame.draw.rect(self.screen, buy_bg, buy_rect)
+            pygame.draw.rect(self.screen, buy_col, buy_rect, 1)
+            self.screen.blit(buy_lbl, (buy_rect.centerx - buy_lbl.get_width() // 2,
+                                       buy_rect.centery - buy_lbl.get_height() // 2))
+            self._trade_rects[(i, "buy")] = buy_rect
+
+            barter_name = ITEMS.get(barter_item, {}).get("name", barter_item)
+            trade_col   = (100, 190, 140) if can_barter else (55, 85, 70)
+            trade_lbl   = self.font.render("TRADE", True, (120, 220, 160) if can_barter else (60, 80, 70))
+            barter_lbl  = self.font.render(f"{barter_qty} {barter_name}", True, trade_col)
+            self.screen.blit(barter_lbl, (px + 66, y + 50))
+            trade_rect = pygame.Rect(row_rect.right - 70, y + 46, 58, 20)
+            trade_bg   = (10, 50, 35) if can_barter else (35, 35, 45)
+            pygame.draw.rect(self.screen, trade_bg, trade_rect)
+            pygame.draw.rect(self.screen, trade_col, trade_rect, 1)
+            self.screen.blit(trade_lbl, (trade_rect.centerx - trade_lbl.get_width() // 2,
+                                         trade_rect.centery - trade_lbl.get_height() // 2))
+            self._trade_rects[(i, "barter")] = trade_rect
+
+            y += row_h + 6
+
+    def _draw_innkeeper_content(self, player, npc, px, py, PW, PH):
+        title = self.font.render("THE INN", True, (240, 175, 80))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+        self._draw_rep_rank(npc, px, py)
+
+        gold_txt = self.font.render(f"Your gold: {player.money}", True, (220, 175, 40))
+        self.screen.blit(gold_txt, (px + PW - gold_txt.get_width() - 20, py + 10))
+
+        disc_pct = npc.rep_discount_pct()
+        if disc_pct > 0:
+            rep_txt = self.small.render(
+                f"Town reputation bonus: -{disc_pct}% off", True, (120, 200, 120))
+            self.screen.blit(rep_txt, (px + 20, py + 32))
+
+        rest_cost = npc.discounted_cost()
+        can_rest  = npc.can_rest(player)
+        rest_rect = pygame.Rect(px + 20, py + 52, PW - 40, 48)
+        rest_bg   = (25, 18, 8) if can_rest else (22, 22, 28)
+        rest_bdr  = (180, 130, 55) if can_rest else (55, 55, 70)
+        pygame.draw.rect(self.screen, rest_bg, rest_rect)
+        pygame.draw.rect(self.screen, rest_bdr, rest_rect, 2)
+        rest_lbl = self.font.render(
+            f"Rest for the night  —  {rest_cost} gold  (+15% luck, 4 min)", True,
+            (240, 195, 100) if can_rest else (100, 90, 65))
+        self.screen.blit(rest_lbl, (px + 30, py + 64))
+        self._trade_rects.clear()
+        self._trade_rects["rest"] = rest_rect
+
+        sep_y = py + 112
+        sep_lbl = self.small.render("FOOD & DRINK", True, (140, 120, 80))
+        self.screen.blit(sep_lbl, (px + 20, sep_y))
+        pygame.draw.line(self.screen, (80, 65, 40), (px + 20, sep_y + 16), (px + PW - 20, sep_y + 16))
+
+        y = sep_y + 24
+        for i, (item_id, _) in enumerate(npc.menu):
+            can  = npc.can_buy(i, player)
+            cost = npc.discounted_cost(i)
+            item_data = ITEMS.get(item_id, {})
+            item_name = item_data.get("name", item_id)
+            hunger    = item_data.get("hunger_restore", 0)
+
+            row_h = 56
+            rect  = pygame.Rect(px + 20, y, PW - 40, row_h)
+            self._trade_rects[i] = rect
+
+            bg  = (35, 20, 8) if can else (26, 26, 34)
+            bdr = (200, 130, 55) if can else (55, 55, 70)
+            pygame.draw.rect(self.screen, bg, rect)
+            pygame.draw.rect(self.screen, bdr, rect, 2)
+
+            item_color = item_data.get("color", (128, 128, 128))
+            pygame.draw.rect(self.screen, item_color, (px + 28, y + 12, 28, 28))
+
+            name_col = (245, 210, 150) if can else (130, 110, 80)
+            self.screen.blit(self.font.render(item_name, True, name_col), (px + 68, y + 8))
+            self.screen.blit(
+                self.font.render(f"{cost} gold  •  +{hunger} hunger", True,
+                                 (200, 155, 75) if can else (100, 90, 60)),
+                (px + 68, y + 28))
+
+            buy_lbl = self.font.render("BUY", True, (255, 185, 90) if can else (70, 70, 82))
+            self.screen.blit(buy_lbl, (rect.right - buy_lbl.get_width() - 10,
+                                       y + row_h // 2 - buy_lbl.get_height() // 2))
+            y += row_h + 6
+
+    def _draw_scholar_content(self, player, npc, px, py, PW, PH):
+        title = self.font.render("SCHOLAR", True, (140, 185, 230))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+        self._draw_rep_rank(npc, px, py)
+
+        gold_txt = self.font.render(f"Your gold: {player.money}", True, (220, 175, 40))
+        self.screen.blit(gold_txt, (px + PW - gold_txt.get_width() - 20, py + 10))
+
+        disc_pct = npc.rep_discount_pct()
+        if disc_pct > 0:
+            rep_txt = self.small.render(
+                f"Town reputation bonus: -{disc_pct}% off", True, (120, 200, 120))
+            self.screen.blit(rep_txt, (px + 20, py + 32))
+
+        self._trade_rects.clear()
+        y = py + 56
+
+        for i, (item_id, _, display, barter_item, barter_qty) in enumerate(npc.shop):
+            cost       = npc.discounted_cost(i)
+            can_buy    = npc.can_buy(i, player)
+            can_barter = npc.can_barter(i, player)
+
+            row_h    = 72
+            row_rect = pygame.Rect(px + 20, y, PW - 40, row_h)
+            bg  = (18, 22, 32) if (can_buy or can_barter) else (22, 22, 30)
+            bdr = (110, 150, 200) if (can_buy or can_barter) else (50, 55, 70)
+            pygame.draw.rect(self.screen, bg, row_rect)
+            pygame.draw.rect(self.screen, bdr, row_rect, 2)
+
+            item_color = ITEMS.get(item_id, {}).get("color", (128, 128, 128))
+            pygame.draw.rect(self.screen, item_color, (px + 28, y + 20, 28, 28))
+
+            name_col = (200, 220, 245) if (can_buy or can_barter) else (100, 110, 130)
+            self.screen.blit(self.font.render(display, True, name_col), (px + 66, y + 8))
+
+            buy_col = (180, 155, 60) if can_buy else (80, 75, 40)
+            buy_lbl = self.font.render("BUY", True, (220, 195, 80) if can_buy else (70, 70, 82))
+            gold_lbl = self.font.render(f"{cost} gold", True, buy_col)
+            self.screen.blit(gold_lbl, (px + 66, y + 30))
+            buy_rect = pygame.Rect(row_rect.right - 70, y + 26, 58, 20)
+            buy_bg   = (30, 35, 55) if can_buy else (35, 35, 45)
+            pygame.draw.rect(self.screen, buy_bg, buy_rect)
+            pygame.draw.rect(self.screen, buy_col, buy_rect, 1)
+            self.screen.blit(buy_lbl, (buy_rect.centerx - buy_lbl.get_width() // 2,
+                                       buy_rect.centery - buy_lbl.get_height() // 2))
+            self._trade_rects[(i, "buy")] = buy_rect
+
+            barter_name = ITEMS.get(barter_item, {}).get("name", barter_item)
+            trade_col   = (100, 190, 140) if can_barter else (55, 85, 70)
+            trade_lbl   = self.font.render("TRADE", True, (120, 220, 160) if can_barter else (60, 80, 70))
+            barter_lbl  = self.font.render(f"{barter_qty} {barter_name}", True, trade_col)
+            self.screen.blit(barter_lbl, (px + 66, y + 50))
+            trade_rect = pygame.Rect(row_rect.right - 70, y + 46, 58, 20)
+            trade_bg   = (10, 50, 35) if can_barter else (35, 35, 45)
+            pygame.draw.rect(self.screen, trade_bg, trade_rect)
+            pygame.draw.rect(self.screen, trade_col, trade_rect, 1)
+            self.screen.blit(trade_lbl, (trade_rect.centerx - trade_lbl.get_width() // 2,
+                                         trade_rect.centery - trade_lbl.get_height() // 2))
+            self._trade_rects[(i, "barter")] = trade_rect
+
+            y += row_h + 6
+
+    def _draw_outpost_keeper_content(self, player, npc, px, py, PW, PH):
+        from outposts import OUTPOSTS
+        op = OUTPOSTS.get(npc.outpost_id)
+
+        # ── Header ────────────────────────────────────────────────────────────
+        title = self.font.render(npc.display_name.upper(), True, (110, 200, 120))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+
+        gold_txt = self.font.render(f"Your gold: {player.money}", True, (220, 175, 40))
+        self.screen.blit(gold_txt, (px + PW - gold_txt.get_width() - 20, py + 10))
+
+        if op:
+            name_s = self.small.render(op.name, True, (160, 180, 155))
+            self.screen.blit(name_s, (px + 14, py + 10))
+
+        status_col = (120, 200, 120) if npc.needs_met() else (210, 160, 60)
+        status_txt = npc.needs_status_lines()[0]
+        self.screen.blit(self.small.render(status_txt, True, status_col), (px + 14, py + 28))
+
+        content_y = py + 50
+        self._trade_rects.clear()
+
+        # ── Two-column layout: BUY (left) | SELL (right) ──────────────────────
+        col_w   = (PW - 42) // 2   # ~309px each
+        left_x  = px + 14
+        right_x = px + 14 + col_w + 14
+
+        # Column headers
+        self.screen.blit(
+            self.small.render("BUY FROM KEEPER", True, (90, 145, 100)),
+            (left_x, content_y))
+        self.screen.blit(
+            self.small.render("SELL TO KEEPER", True, (145, 100, 165)),
+            (right_x, content_y))
+
+        row_start = content_y + 16
+        row_h     = 46
+
+        # BUY column
+        y_left = row_start
+        for i, (item_id, _) in enumerate(npc.sells):
+            cost       = npc.sell_cost(i)
+            stocked    = npc.in_stock(i)
+            can_buy    = npc.can_afford(i, player) and stocked
+            item_data  = ITEMS.get(item_id, {})
+            item_name  = item_data.get("name", item_id)
+            item_color = item_data.get("color", (128, 128, 128))
+
+            rr = pygame.Rect(left_x, y_left, col_w, row_h)
+            bg  = (18, 32, 22) if can_buy else (26, 26, 34)
+            bdr = (80, 165, 100) if can_buy else ((80, 55, 55) if not stocked else (45, 55, 48))
+            pygame.draw.rect(self.screen, bg, rr)
+            pygame.draw.rect(self.screen, bdr, rr, 1)
+
+            pygame.draw.rect(self.screen, item_color, (left_x + 4, y_left + 11, 20, 20))
+            nc = (200, 235, 200) if can_buy else (100, 110, 100)
+            self.screen.blit(self.small.render(item_name, True, nc), (left_x + 28, y_left + 6))
+
+            if stocked:
+                sub = f"{cost}g  •  {npc.stock_line(i)}"
+                sc  = (180, 155, 50) if can_buy else (75, 70, 35)
+                self.screen.blit(self.small.render(sub, True, sc), (left_x + 28, y_left + 24))
+                btn = pygame.Rect(rr.right - 42, y_left + 12, 38, 20)
+                pygame.draw.rect(self.screen, (30, 60, 35) if can_buy else (35, 35, 45), btn)
+                pygame.draw.rect(self.screen, bdr, btn, 1)
+                bl = self.small.render("BUY", True, (130, 230, 145) if can_buy else (55, 65, 58))
+                self.screen.blit(bl, (btn.centerx - bl.get_width() // 2,
+                                      btn.centery - bl.get_height() // 2))
+                self._trade_rects[(i, "buy")] = btn
+            else:
+                self.screen.blit(
+                    self.small.render("Out of stock", True, (130, 70, 70)),
+                    (left_x + 28, y_left + 24))
+
+            y_left += row_h + 3
+
+        # SELL column
+        y_right = row_start
+        for j, (item_id, _, max_qty) in enumerate(npc.buys):
+            pay       = npc.buy_pay(j)
+            have      = player.inventory.get(item_id, 0)
+            can_sell  = have >= 1
+            item_data  = ITEMS.get(item_id, {})
+            item_name  = item_data.get("name", item_id)
+            item_color = item_data.get("color", (128, 128, 128))
+
+            rr = pygame.Rect(right_x, y_right, col_w, row_h)
+            bg  = (22, 18, 30) if can_sell else (26, 26, 34)
+            bdr = (140, 90, 165) if can_sell else (50, 45, 58)
+            pygame.draw.rect(self.screen, bg, rr)
+            pygame.draw.rect(self.screen, bdr, rr, 1)
+
+            pygame.draw.rect(self.screen, item_color, (right_x + 4, y_right + 11, 20, 20))
+            nc = (215, 185, 235) if can_sell else (95, 85, 105)
+            self.screen.blit(self.small.render(item_name, True, nc), (right_x + 28, y_right + 6))
+            sub = f"Have {have}  •  {pay}g ea"
+            sc  = (155, 120, 175) if can_sell else (65, 60, 75)
+            self.screen.blit(self.small.render(sub, True, sc), (right_x + 28, y_right + 24))
+
+            btn = pygame.Rect(rr.right - 52, y_right + 12, 48, 20)
+            pygame.draw.rect(self.screen, (38, 22, 50) if can_sell else (35, 35, 45), btn)
+            pygame.draw.rect(self.screen, bdr, btn, 1)
+            bl = self.small.render("SELL", True, (200, 130, 230) if can_sell else (60, 55, 70))
+            self.screen.blit(bl, (btn.centerx - bl.get_width() // 2,
+                                  btn.centery - bl.get_height() // 2))
+            self._trade_rects[(j, "sell")] = btn
+
+            y_right += row_h + 3
+
+        # ── SUPPLY section (full-width, below both columns) ───────────────────
+        supply_y = max(y_left, y_right) + 6
+        supply_items = npc.supply_items()
+        if supply_items:
+            pygame.draw.line(self.screen, (65, 60, 35),
+                             (px + 14, supply_y), (px + PW - 14, supply_y), 1)
+            supply_y += 8
+            self.screen.blit(
+                self.small.render("SUPPLY OUTPOST", True, (185, 165, 70)),
+                (px + 14, supply_y))
+            supply_y += 16
+
+            for k, (item_id, still_needed, pay_per) in enumerate(supply_items):
+                have      = player.inventory.get(item_id, 0)
+                can_give  = have >= 1
+                item_data  = ITEMS.get(item_id, {})
+                item_name  = item_data.get("name", item_id)
+                item_color = item_data.get("color", (128, 128, 128))
+
+                rr  = pygame.Rect(px + 14, supply_y, PW - 28, 40)
+                bg  = (28, 24, 10) if can_give else (26, 26, 34)
+                bdr = (190, 168, 55) if can_give else (55, 52, 38)
+                pygame.draw.rect(self.screen, bg, rr)
+                pygame.draw.rect(self.screen, bdr, rr, 1)
+
+                pygame.draw.rect(self.screen, item_color, (px + 22, supply_y + 9, 18, 18))
+                nc = (235, 220, 140) if can_give else (105, 100, 65)
+                self.screen.blit(self.small.render(item_name, True, nc), (px + 46, supply_y + 5))
+                sub = f"Need {still_needed}  •  have {have}  •  {pay_per}g each"
+                sc  = (180, 160, 65) if can_give else (75, 72, 40)
+                self.screen.blit(self.small.render(sub, True, sc), (px + 46, supply_y + 22))
+
+                btn = pygame.Rect(rr.right - 72, supply_y + 8, 62, 22)
+                pygame.draw.rect(self.screen, (40, 35, 10) if can_give else (35, 35, 45), btn)
+                pygame.draw.rect(self.screen, bdr, btn, 1)
+                bl = self.small.render("DELIVER", True, (240, 220, 80) if can_give else (68, 65, 40))
+                self.screen.blit(bl, (btn.centerx - bl.get_width() // 2,
+                                      btn.centery - bl.get_height() // 2))
+                self._trade_rects[(k, "supply")] = (btn, item_id)
+
+                supply_y += 43
+
     def _draw_shrine_content(self, player, npc, px, py, PW, PH):
         title = self.font.render(npc.religion_name.upper(), True, (230, 210, 110))
         self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+        self._draw_rep_rank(npc, px, py)
 
         gold_txt = self.font.render(f"Your gold: {player.money}", True, (220, 175, 40))
         self.screen.blit(gold_txt, (px + PW - gold_txt.get_width() - 20, py + 10))
@@ -2111,3 +2563,226 @@ class PanelsMixin:
         lbl = self.font.render(btn_label, True, btn_col)
         self.screen.blit(lbl, (btn_rect.centerx - lbl.get_width() // 2,
                                 btn_rect.centery - lbl.get_height() // 2))
+
+    def _draw_trade_block_panel(self, player):
+        from towns import TOWNS
+        from town_needs import ITEM_TO_CATEGORY
+        from horses import Horse
+
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 210))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 900, 560
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (22, 18, 12), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (140, 95, 45), (px, py, PW, PH), 2)
+
+        title = self.font.render("Trade Post", True, (220, 190, 100))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+
+        hint = self.small.render("E / ESC: close  |  Left-click goods: move to inventory (when idle)", True, (110, 90, 60))
+        self.screen.blit(hint, (px + PW // 2 - hint.get_width() // 2, py + 34))
+
+        pos = self.active_trade_pos
+        state = player.world.trade_block_data.get(pos)
+        if state is None:
+            return
+
+        tamed_horses = [e for e in player.world.entities if isinstance(e, Horse) and e.tamed and not e.dead]
+        town_list = sorted(TOWNS.values(), key=lambda t: t.town_id)
+
+        config_y = py + 58
+        row_h = 34
+
+        # --- Row 1: Horse ---
+        lbl = self.small.render("Horse:", True, (190, 175, 140))
+        self.screen.blit(lbl, (px + 20, config_y + 8))
+        if tamed_horses:
+            idx = min(self._trade_horse_idx, len(tamed_horses) - 1)
+            h = tamed_horses[idx]
+            temp = h.traits.get("temperament", "?")
+            sr = h.traits.get("speed_rating", 1.0)
+            selected = state.get("horse_uid") == h.uid
+            label = f"[◄] {temp.title()} {idx + 1}/{len(tamed_horses)} (spd {sr:.2f}) [►]"
+            col = (120, 220, 120) if selected else (200, 190, 160)
+        else:
+            label = "No tamed horses"
+            col = (120, 80, 60)
+        btn_r = pygame.Rect(px + 100, config_y + 2, 340, 28)
+        self._trade_horse_btn = btn_r
+        pygame.draw.rect(self.screen, (38, 28, 18), btn_r)
+        pygame.draw.rect(self.screen, (90, 70, 40), btn_r, 1)
+        s = self.small.render(label, True, col)
+        self.screen.blit(s, (btn_r.x + 6, btn_r.y + 6))
+
+        # Assign horse button
+        assign_r = pygame.Rect(px + 450, config_y + 2, 110, 28)
+        assigned = state.get("horse_uid") is not None and tamed_horses and any(e.uid == state["horse_uid"] for e in tamed_horses)
+        a_col = (60, 120, 60) if assigned else (50, 90, 50)
+        pygame.draw.rect(self.screen, a_col, assign_r)
+        pygame.draw.rect(self.screen, (80, 140, 80), assign_r, 1)
+        a_lbl = self.small.render("Assigned ✓" if assigned else "Assign Horse", True, (180, 240, 180) if assigned else (140, 200, 140))
+        self.screen.blit(a_lbl, (assign_r.x + 6, assign_r.y + 6))
+        self._trade_horse_btn = (btn_r, assign_r)
+
+        # --- Row 2: Cart ---
+        config_y += row_h
+        lbl = self.small.render("Cart:", True, (190, 175, 140))
+        self.screen.blit(lbl, (px + 20, config_y + 8))
+        cart_r = pygame.Rect(px + 100, config_y + 2, 200, 28)
+        has_c = state.get("has_cart", False)
+        pygame.draw.rect(self.screen, (38, 28, 18), cart_r)
+        pygame.draw.rect(self.screen, (90, 70, 40), cart_r, 1)
+        cart_col = (120, 220, 120) if has_c else (200, 190, 160)
+        cart_lbl = "Assigned ✓" if has_c else "Assign (uses 1 cart)"
+        self.screen.blit(self.small.render(cart_lbl, True, cart_col), (cart_r.x + 6, cart_r.y + 6))
+        self._trade_cart_btn = cart_r
+
+        # --- Row 3: City ---
+        config_y += row_h
+        lbl = self.small.render("City:", True, (190, 175, 140))
+        self.screen.blit(lbl, (px + 20, config_y + 8))
+        if town_list:
+            tidx = min(self._trade_city_idx, len(town_list) - 1)
+            town = town_list[tidx]
+            linked = state.get("linked_town_id") == town.town_id
+            city_label = f"[◄] {town.name}  ({tidx + 1}/{len(town_list)}) [►]"
+            c_col = (120, 220, 120) if linked else (200, 190, 160)
+        else:
+            city_label = "No towns discovered"
+            c_col = (120, 80, 60)
+        city_r = pygame.Rect(px + 100, config_y + 2, 340, 28)
+        pygame.draw.rect(self.screen, (38, 28, 18), city_r)
+        pygame.draw.rect(self.screen, (90, 70, 40), city_r, 1)
+        self.screen.blit(self.small.render(city_label, True, c_col), (city_r.x + 6, city_r.y + 6))
+
+        link_r = pygame.Rect(px + 450, config_y + 2, 110, 28)
+        linked_any = state.get("linked_town_id") is not None
+        l_col = (60, 120, 60) if linked_any else (50, 90, 50)
+        pygame.draw.rect(self.screen, l_col, link_r)
+        pygame.draw.rect(self.screen, (80, 140, 80), link_r, 1)
+        l_lbl = self.small.render("Linked ✓" if linked_any else "Link City", True, (180, 240, 180) if linked_any else (140, 200, 140))
+        self.screen.blit(l_lbl, (link_r.x + 6, link_r.y + 6))
+        self._trade_city_btn = (city_r, link_r)
+
+        # --- Row 4: Threshold ---
+        config_y += row_h
+        lbl = self.small.render("Threshold:", True, (190, 175, 140))
+        self.screen.blit(lbl, (px + 20, config_y + 8))
+        thr = state.get("threshold", 10)
+        minus_r = pygame.Rect(px + 130, config_y + 4, 24, 24)
+        plus_r  = pygame.Rect(px + 220, config_y + 4, 24, 24)
+        pygame.draw.rect(self.screen, (60, 40, 25), minus_r)
+        pygame.draw.rect(self.screen, (100, 75, 45), minus_r, 1)
+        pygame.draw.rect(self.screen, (60, 40, 25), plus_r)
+        pygame.draw.rect(self.screen, (100, 75, 45), plus_r, 1)
+        self.screen.blit(self.small.render("-", True, (200, 180, 140)), (minus_r.x + 7, minus_r.y + 5))
+        self.screen.blit(self.small.render("+", True, (200, 180, 140)), (plus_r.x + 6, plus_r.y + 5))
+        self.screen.blit(self.small.render(str(thr), True, (230, 210, 160)), (px + 160, config_y + 8))
+        self.screen.blit(self.small.render("items min. to dispatch", True, (140, 125, 100)), (px + 250, config_y + 8))
+        self._trade_thresh_minus = minus_r
+        self._trade_thresh_plus  = plus_r
+
+        # --- Status row ---
+        config_y += row_h
+        st = state.get("state", "idle")
+        linked_town = TOWNS.get(state.get("linked_town_id"))
+        town_name = linked_town.name if linked_town else "?"
+        from horses import Horse as _Horse
+        from constants import BLOCK_SIZE as _BS
+        active_horse = next(
+            (e for e in player.world.entities if isinstance(e, _Horse) and e.uid == state.get("horse_uid") and not e.dead),
+            None,
+        )
+        horse_stuck = active_horse is not None and getattr(active_horse, '_trade_stuck', False)
+        if st == "idle":
+            total = sum(state.get("inventory", {}).values())
+            status_text = f"Idle — {total}/{state.get('threshold', 10)} items stored"
+            st_col = (140, 200, 140)
+        elif st == "traveling":
+            if active_horse is not None and linked_town is not None:
+                blocks_left = max(0, abs((active_horse.x + active_horse.W / 2) - linked_town.center_bx * _BS) // _BS)
+                status_text = f"Traveling to {town_name}… (~{blocks_left:.0f} blocks away)"
+            else:
+                status_text = f"Traveling to {town_name}…"
+            st_col = (255, 160, 0) if horse_stuck else (200, 200, 80)
+        else:
+            if active_horse is not None:
+                blocks_left = max(0, abs((active_horse.x + active_horse.W / 2) - pos[0] * _BS) // _BS)
+                status_text = f"Returning home… (~{blocks_left:.0f} blocks away)"
+            else:
+                status_text = "Returning home…"
+            st_col = (255, 160, 0) if horse_stuck else (200, 160, 80)
+        self.screen.blit(self.small.render(status_text, True, st_col), (px + 20, config_y + 8))
+        if horse_stuck:
+            warn_s = self.small.render("⚠ Horse is stuck!", True, (255, 160, 0))
+            self.screen.blit(warn_s, (px + 20, config_y + 22))
+
+        # --- Dispatch button ---
+        dispatch_r = pygame.Rect(px + PW - 150, config_y, 130, 28)
+        ready = (state.get("has_cart") and state.get("horse_uid") and state.get("linked_town_id") is not None
+                 and sum(state.get("inventory", {}).values()) > 0 and st == "idle")
+        d_bg = (80, 50, 20) if ready else (40, 35, 25)
+        d_fg = (250, 220, 80) if ready else (80, 70, 50)
+        pygame.draw.rect(self.screen, d_bg, dispatch_r)
+        pygame.draw.rect(self.screen, (120, 90, 40) if ready else (60, 55, 45), dispatch_r, 1)
+        d_lbl = self.small.render("Dispatch ▶", True, d_fg)
+        self.screen.blit(d_lbl, (dispatch_r.centerx - d_lbl.get_width() // 2, dispatch_r.centery - d_lbl.get_height() // 2))
+        self._trade_dispatch_btn = dispatch_r if ready else None
+
+        # --- Goods grid (stored inventory) ---
+        pygame.draw.line(self.screen, (60, 45, 28), (px + 10, config_y + 36), (px + PW - 10, config_y + 36), 1)
+        goods_y = config_y + 44
+        goods_title = self.small.render(f"Stored Goods ({sum(state.get('inventory', {}).values())}/20 stacks)", True, (190, 175, 140))
+        self.screen.blit(goods_title, (px + 20, goods_y))
+        goods_y += 20
+
+        COLS, CW, CH, GAP = 6, 130, 50, 5
+        self._trade_goods_rects.clear()
+        idle = st == "idle"
+        inv = state.get("inventory", {})
+        for idx, (item_id, count) in enumerate(sorted(inv.items())):
+            col = idx % COLS
+            row = idx // COLS
+            rx = px + 20 + col * (CW + GAP)
+            ry = goods_y + row * (CH + GAP)
+            rect = pygame.Rect(rx, ry, CW, CH)
+            self._trade_goods_rects[item_id] = rect
+            bg_col = (38, 28, 16) if idle else (25, 20, 12)
+            pygame.draw.rect(self.screen, bg_col, rect)
+            pygame.draw.rect(self.screen, (90, 68, 35), rect, 1)
+            item = ITEMS.get(item_id, {})
+            icon = render_item_icon(item_id, item.get("color", (128, 128, 128)), 32)
+            self.screen.blit(icon, (rx + 4, ry + (CH - 32) // 2))
+            self.screen.blit(self.small.render(item.get("name", item_id), True, (215, 195, 165)), (rx + 40, ry + 8))
+            self.screen.blit(self.small.render(f"x{count}", True, (150, 210, 150)), (rx + 40, ry + 26))
+
+        # --- Player inventory (right side: items that can be stored) ---
+        player_x_start = px + 20 + COLS * (CW + GAP) + 15
+        pygame.draw.line(self.screen, (60, 45, 28), (player_x_start - 8, goods_y - 20), (player_x_start - 8, py + PH - 10), 1)
+        p_title = self.small.render("Your Items", True, (190, 175, 140))
+        self.screen.blit(p_title, (player_x_start, goods_y - 20))
+
+        self._trade_player_rects.clear()
+        from town_needs import ITEM_TO_CATEGORY
+        tradeable = [(iid, cnt) for iid, cnt in player.inventory.items()
+                     if cnt > 0 and ITEM_TO_CATEGORY.get(iid) is not None]
+        PCOLS, PCW, PCH, PGAP = 2, 130, 50, 5
+        for idx, (item_id, count) in enumerate(sorted(tradeable)):
+            col = idx % PCOLS
+            row = idx // PCOLS
+            rx = player_x_start + col * (PCW + PGAP)
+            ry = goods_y + row * (PCH + PGAP)
+            if ry + PCH > py + PH - 10:
+                break
+            rect = pygame.Rect(rx, ry, PCW, PCH)
+            self._trade_player_rects[item_id] = rect
+            item = ITEMS.get(item_id, {})
+            pygame.draw.rect(self.screen, (28, 38, 18), rect)
+            pygame.draw.rect(self.screen, (65, 90, 40), rect, 1)
+            icon = render_item_icon(item_id, item.get("color", (128, 128, 128)), 32)
+            self.screen.blit(icon, (rx + 4, ry + (PCH - 32) // 2))
+            self.screen.blit(self.small.render(item.get("name", item_id), True, (215, 195, 165)), (rx + 40, ry + 8))
+            self.screen.blit(self.small.render(f"x{count}", True, (150, 210, 150)), (rx + 40, ry + 26))

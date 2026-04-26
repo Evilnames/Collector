@@ -4,7 +4,7 @@ from item_icons import render_item_icon
 from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOODLE_POT_RECIPES,
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
                       BAIT_STATION_RECIPES, FLETCHING_RECIPES, SMELTER_RECIPES, GLASS_KILN_RECIPES,
-                      GARDEN_WORKSHOP_RECIPES,
+                      GARDEN_WORKSHOP_RECIPES, JUICER_RECIPES,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
 from rocks import get_refinery_equipment
@@ -12,7 +12,7 @@ from gemstones import get_fault_points, apply_cracking_result, invalidate_gem_ca
 from blocks import (BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK,
                     CLAY_POT_BLOCK, GEM_CUTTER_BLOCK, DESERT_FORGE_BLOCK,
                     ROASTER_BLOCK, BLEND_STATION_BLOCK, BREW_STATION_BLOCK, FOSSIL_TABLE_BLOCK,
-                    ARTISAN_BENCH_BLOCK,
+                    ARTISAN_BENCH_BLOCK, JUICER_BLOCK,
                     GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
                     STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
                     COMPOST_BIN_BLOCK, GARDEN_BLOCK,
@@ -191,6 +191,7 @@ class HandlersMixin:
                     self._wine_codex_scroll = 0
                     self._spirits_codex_scroll = 0
                     self._tea_codex_scroll = 0
+                    self._hunting_codex_scroll = 0
                     self._codex_selected_type = None
                     self._flower_codex_selected_type = None
                     self._mushroom_codex_selected_bid = None
@@ -428,7 +429,9 @@ class HandlersMixin:
 
     def handle_npc_click(self, pos, player):
         from cities import (RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC,
-                            MerchantNPC, RestaurantNPC, ShrineKeeperNPC, JewelryMerchantNPC)
+                            MerchantNPC, RestaurantNPC, ShrineKeeperNPC, JewelryMerchantNPC,
+                            LeaderNPC, BlacksmithNPC, InnkeeperNPC, ScholarNPC)
+        from outpost_npcs import OutpostKeeperNPC
         npc = self.active_npc
         if isinstance(npc, RockQuestNPC):
             for quest_idx, rect in self._trade_rects.items():
@@ -469,6 +472,51 @@ class HandlersMixin:
                 npc.give_blessing(player)
         elif isinstance(npc, JewelryMerchantNPC):
             self.handle_jewelry_merchant_click(pos, player, npc)
+        elif isinstance(npc, BlacksmithNPC):
+            for key, rect in self._trade_rects.items():
+                if rect.collidepoint(pos):
+                    idx, action = key
+                    if action == "buy":
+                        npc.execute_purchase(idx, player)
+                    else:
+                        npc.execute_barter(idx, player)
+                    break
+        elif isinstance(npc, InnkeeperNPC):
+            for key, rect in self._trade_rects.items():
+                if rect.collidepoint(pos):
+                    if key == "rest":
+                        npc.give_rest(player)
+                    else:
+                        npc.execute_purchase(key, player)
+                    break
+        elif isinstance(npc, ScholarNPC):
+            for key, rect in self._trade_rects.items():
+                if rect.collidepoint(pos):
+                    idx, action = key
+                    if action == "buy":
+                        npc.execute_purchase(idx, player)
+                    else:
+                        npc.execute_barter(idx, player)
+                    break
+        elif isinstance(npc, LeaderNPC):
+            for idx, rect in self._trade_rects.items():
+                if rect.collidepoint(pos):
+                    npc.execute_contract(idx, player)
+                    break
+        elif isinstance(npc, OutpostKeeperNPC):
+            for key, value in self._trade_rects.items():
+                idx, action = key
+                if action == "supply":
+                    rect, item_id = value
+                    if rect.collidepoint(pos):
+                        npc.execute_supply(item_id, player)
+                        break
+                elif value.collidepoint(pos):
+                    if action == "buy":
+                        npc.execute_purchase(idx, player)
+                    else:
+                        npc.execute_sell(idx, player)
+                    break
 
     def handle_gem_cutter_click(self, pos, player):
         """Handle clicks inside the gem cutter mini-game overlay."""
@@ -708,6 +756,14 @@ class HandlersMixin:
             if self._refine_btn and self._refine_btn.collidepoint(pos):
                 self._do_cook(player, GARDEN_WORKSHOP_RECIPES, self._garden_workshop_selected_recipe)
             return
+        if self.refinery_block_id == JUICER_BLOCK:
+            for i, rect in self._juicer_recipe_rects.items():
+                if rect.collidepoint(pos):
+                    self._juicer_selected_recipe = i
+                    return
+            if self._refine_btn and self._refine_btn.collidepoint(pos):
+                self._do_cook(player, JUICER_RECIPES, self._juicer_selected_recipe)
+            return
         if self.refinery_block_id == COMPOST_BIN_BLOCK:
             self._handle_compost_bin_click(pos, player)
             return
@@ -825,3 +881,141 @@ class HandlersMixin:
             self.horse_breeding_open = False
             self._hbr_horse_a = None
             self._hbr_horse_b = None
+
+    def handle_kennel_breeding_click(self, pos, player, world):
+        if self._dbr_close_btn and self._dbr_close_btn.collidepoint(pos):
+            self.dog_breeding_open = False
+            self._dbr_dog_a = None
+            self._dbr_dog_b = None
+            return
+        if self._dbr_breed_btn and self._dbr_breed_btn.collidepoint(pos):
+            dog_a = self._dbr_dog_a
+            dog_b = self._dbr_dog_b
+            if dog_a and dog_b:
+                dog_a.breed_with(dog_b, world, player)
+            self.dog_breeding_open = False
+            self._dbr_dog_a = None
+            self._dbr_dog_b = None
+            return
+
+    def handle_dog_view_click(self, pos, player):
+        if self._dv_close_btn and self._dv_close_btn.collidepoint(pos):
+            self.dog_view_open = False
+            self._dv_dog = None
+            return
+        if self._dv_stay_btn and self._dv_stay_btn.collidepoint(pos):
+            if self._dv_dog:
+                self._dv_dog.stay_mode = not self._dv_dog.stay_mode
+            return
+
+    def handle_trade_block_click(self, pos, player, world, button):
+        from horses import Horse
+        from towns import TOWNS
+
+        state = world.trade_block_data.get(self.active_trade_pos)
+        if state is None:
+            return
+
+        tamed_horses = [e for e in world.entities if isinstance(e, Horse) and e.tamed and not e.dead]
+        town_list = sorted(TOWNS.values(), key=lambda t: t.town_id)
+        idle = state["state"] == "idle"
+
+        # Horse prev/next arrows and assign button
+        if isinstance(self._trade_horse_btn, tuple):
+            nav_r, assign_r = self._trade_horse_btn
+            if nav_r.collidepoint(pos) and tamed_horses:
+                if pos[0] < nav_r.centerx:
+                    self._trade_horse_idx = (self._trade_horse_idx - 1) % len(tamed_horses)
+                else:
+                    self._trade_horse_idx = (self._trade_horse_idx + 1) % len(tamed_horses)
+                return
+            if assign_r.collidepoint(pos) and tamed_horses:
+                h = tamed_horses[min(self._trade_horse_idx, len(tamed_horses) - 1)]
+                state["horse_uid"] = h.uid
+                return
+
+        # Cart assign
+        if self._trade_cart_btn and self._trade_cart_btn.collidepoint(pos):
+            if not state["has_cart"]:
+                if player.inventory.get("cart", 0) > 0:
+                    player.inventory["cart"] -= 1
+                    if player.inventory["cart"] <= 0:
+                        del player.inventory["cart"]
+                        if "cart" in player.hotbar:
+                            idx = player.hotbar.index("cart")
+                            player.hotbar[idx] = None
+                            player.hotbar_uses[idx] = None
+                    state["has_cart"] = True
+            return
+
+        # City prev/next arrows and link button
+        if isinstance(self._trade_city_btn, tuple):
+            city_nav_r, link_r = self._trade_city_btn
+            if city_nav_r.collidepoint(pos) and town_list:
+                if pos[0] < city_nav_r.centerx:
+                    self._trade_city_idx = (self._trade_city_idx - 1) % len(town_list)
+                else:
+                    self._trade_city_idx = (self._trade_city_idx + 1) % len(town_list)
+                return
+            if link_r.collidepoint(pos) and town_list:
+                t = town_list[min(self._trade_city_idx, len(town_list) - 1)]
+                state["linked_town_id"] = t.town_id
+                return
+
+        # Threshold buttons
+        if self._trade_thresh_minus and self._trade_thresh_minus.collidepoint(pos):
+            state["threshold"] = max(1, state["threshold"] - 1)
+            return
+        if self._trade_thresh_plus and self._trade_thresh_plus.collidepoint(pos):
+            state["threshold"] = min(100, state["threshold"] + 1)
+            return
+
+        # Dispatch button (manual override)
+        if self._trade_dispatch_btn and self._trade_dispatch_btn.collidepoint(pos):
+            from horses import Horse as _H
+            from towns import TOWNS as _T
+            from constants import BLOCK_SIZE as _BS
+            horse = next(
+                (e for e in world.entities if isinstance(e, _H) and e.uid == state["horse_uid"] and e.tamed and not e.dead),
+                None,
+            )
+            town = _T.get(state["linked_town_id"])
+            if horse and town and sum(state["inventory"].values()) > 0:
+                horse._on_trade_run = True
+                horse._trade_target_x = town.center_bx * _BS
+                state["state"] = "traveling"
+            return
+
+        # Goods grid: left-click returns item to player (idle only)
+        if idle:
+            for item_id, rect in self._trade_goods_rects.items():
+                if rect.collidepoint(pos):
+                    count = 1 if button == 3 else state["inventory"].get(item_id, 0)
+                    take = min(count, state["inventory"].get(item_id, 0))
+                    if take > 0:
+                        state["inventory"][item_id] = state["inventory"].get(item_id, 0) - take
+                        if state["inventory"][item_id] <= 0:
+                            del state["inventory"][item_id]
+                        player._add_item(item_id, take)
+                    return
+
+        # Player inventory grid: click to deposit into trade block (idle only)
+        if idle:
+            CAPACITY = 20
+            for item_id, rect in self._trade_player_rects.items():
+                if rect.collidepoint(pos):
+                    if len(state["inventory"]) >= CAPACITY and item_id not in state["inventory"]:
+                        return
+                    available = player.inventory.get(item_id, 0)
+                    deposit = 1 if button == 3 else available
+                    deposit = min(deposit, available)
+                    if deposit > 0:
+                        player.inventory[item_id] = available - deposit
+                        if player.inventory[item_id] <= 0:
+                            del player.inventory[item_id]
+                            if item_id in player.hotbar:
+                                idx = player.hotbar.index(item_id)
+                                player.hotbar[idx] = None
+                                player.hotbar_uses[idx] = None
+                        state["inventory"][item_id] = state["inventory"].get(item_id, 0) + deposit
+                    return

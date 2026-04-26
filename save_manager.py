@@ -39,7 +39,7 @@ class SaveManager:
                             "fish", "coffee_beans", "wine_grapes", "spirits",
                             "tea_leaves", "textiles", "cheese_wheels", "jewelry", "sculptures", "custom_tapestries", "pottery_pieces", "salt_crystals",
                             "research", "automations",
-                            "towns", "regions",
+                            "towns", "regions", "outposts",
                             "farm_bots", "backhoes", "elevator_cars", "minecarts", "entities", "dropped_items", "chests"):
                     # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
@@ -71,6 +71,7 @@ class SaveManager:
             self._save_world_meta(con, world, player)
             self._save_towns(con)
             self._save_regions(con)
+            self._save_outposts(con)
             self._save_player(con, player)
             self._save_rocks(con, player)
             self._save_wildflowers(con, player)
@@ -607,6 +608,19 @@ class SaveManager:
             biome_group          TEXT DEFAULT 'highland',
             tagline              TEXT DEFAULT ''
         );
+        CREATE TABLE IF NOT EXISTS outposts (
+            outpost_id        INTEGER PRIMARY KEY,
+            outpost_type      TEXT,
+            center_bx         INTEGER,
+            slot_x            INTEGER,
+            biome             TEXT,
+            name              TEXT,
+            founded_day       INTEGER DEFAULT 0,
+            needs_json        TEXT,
+            needs_met_days    INTEGER DEFAULT 0,
+            last_resupply_day INTEGER DEFAULT 0,
+            stock_json        TEXT
+        );
         """)
         for col, default in [("spawn_x", "NULL"), ("spawn_y", "NULL")]:
             try:
@@ -651,6 +665,10 @@ class SaveManager:
         except Exception:
             pass
         try:
+            con.execute("ALTER TABLE world_meta ADD COLUMN trade_block_data TEXT")
+        except Exception:
+            pass
+        try:
             con.execute("ALTER TABLE regions ADD COLUMN coat_of_arms_json TEXT")
         except Exception:
             pass
@@ -671,8 +689,13 @@ class SaveManager:
             ("horses_bred", "0"),
             ("horse_records", "'{}'"),
             ("discovered_coat_biomes", "'[]'"),
+            ("dogs_tamed", "0"),
+            ("dogs_bred", "0"),
+            ("dog_records", "'{}'"),
+            ("discovered_dog_breeds", "'[]'"),
             ("discovered_recipes", "'[]'"),
             ("animals_hunted", "'{}'"),
+            ("hunt_trophies", "'{}'"),
             ("roast_profiles", "'[]'"),
             ("discovered_pairings", "'[]'"),
             ("aging_vessels", "'[]'"),
@@ -936,16 +959,17 @@ class SaveManager:
             for (x, y), piece in world.pottery_display_data.items()
         }
         unplaced_uids = [p.uid for p in (player.unplaced_vases if player else [])]
+        trade_blocks = {f"{x},{y}": d for (x, y), d in world.trade_block_data.items()}
         con.execute("DELETE FROM world_meta")
         con.execute(
             "INSERT INTO world_meta "
-            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, tapestry_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids, day_count) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, tapestry_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids, day_count, trade_block_data) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (json.dumps(water), json.dumps(moisture), json.dumps(progress),
              json.dumps(care_sum), json.dumps(fertility), json.dumps(compost_bins),
              json.dumps(garden_flowers), json.dumps(sculpture_pos), json.dumps(tapestry_pos),
              json.dumps(wf_displays), json.dumps(pottery_displays), json.dumps(unplaced_uids),
-             getattr(world, 'day_count', 0)),
+             getattr(world, 'day_count', 0), json.dumps(trade_blocks)),
         )
 
     def _save_player(self, con, player):
@@ -960,9 +984,10 @@ class SaveManager:
                 spawn_x, spawn_y, discovered_fossil_types, known_crops,
                 discovered_foods, foods_cooked,
                 horses_tamed, horses_bred, horse_records, discovered_coat_biomes,
-                discovered_recipes, animals_hunted, roast_profiles,
+                dogs_tamed, dogs_bred, dog_records, discovered_dog_breeds,
+                discovered_recipes, animals_hunted, hunt_trophies, roast_profiles,
                 discovered_pairings, aging_vessels, visited_town_ids)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 player.x, player.y, player.vx, player.vy, player.facing,
                 player.health, player.hunger, player.pick_power, player.money,
@@ -984,8 +1009,13 @@ class SaveManager:
                 getattr(player, "horses_bred", 0),
                 json.dumps(getattr(player, "horse_records", {})),
                 json.dumps(list(getattr(player, "discovered_coat_biomes", set()))),
+                getattr(player, "dogs_tamed", 0),
+                getattr(player, "dogs_bred", 0),
+                json.dumps(getattr(player, "dog_records", {})),
+                json.dumps(list(getattr(player, "discovered_dog_breeds", set()))),
                 json.dumps(list(getattr(player, "discovered_recipes", set()))),
                 json.dumps(getattr(player, "animals_hunted", {})),
+                json.dumps(getattr(player, "hunt_trophies", {})),
                 json.dumps(getattr(player, "roast_profiles", [])),
                 json.dumps(list(getattr(player, "discovered_pairings", set()))),
                 json.dumps(getattr(player, "aging_vessels", [])),
@@ -1310,6 +1340,50 @@ class SaveManager:
                  r.get("leader_title", "Lord")),
             )
 
+    def _save_outposts(self, con):
+        from outposts import OUTPOSTS
+        import json as _json
+        con.execute("DELETE FROM outposts")
+        for op in OUTPOSTS.values():
+            con.execute(
+                "INSERT OR REPLACE INTO outposts VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    op.outpost_id, op.outpost_type, op.center_bx, op.slot_x,
+                    op.biome, op.name, op.founded_day,
+                    _json.dumps(op.needs),
+                    op.needs_met_days, op.last_resupply_day,
+                    _json.dumps(op.stock),
+                ),
+            )
+
+    def _load_outposts(self) -> list[dict]:
+        import json as _json
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                rows = con.execute(
+                    "SELECT outpost_id, outpost_type, center_bx, slot_x, biome, name, "
+                    "founded_day, needs_json, needs_met_days, last_resupply_day, stock_json "
+                    "FROM outposts"
+                ).fetchall()
+        except Exception:
+            return []
+        result = []
+        for r in rows:
+            result.append({
+                "outpost_id":        r[0],
+                "outpost_type":      r[1],
+                "center_bx":         r[2],
+                "slot_x":            r[3],
+                "biome":             r[4],
+                "name":              r[5],
+                "founded_day":       r[6] or 0,
+                "needs":             _json.loads(r[7]) if r[7] else {},
+                "needs_met_days":    r[8] or 0,
+                "last_resupply_day": r[9] or 0,
+                "stock":             _json.loads(r[10]) if r[10] else {},
+            })
+        return result
+
     def _save_research(self, con, research):
         con.execute("DELETE FROM research")
         for node_id, node in research.nodes.items():
@@ -1387,6 +1461,7 @@ class SaveManager:
     def _save_entities(self, con, world):
         from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion
         from horses import Horse
+        from dogs import Dog
         from cities import NPC
         con.execute("DELETE FROM entities")
         for e in world.entities:
@@ -1425,6 +1500,16 @@ class SaveManager:
                 elif isinstance(e, Chicken):
                     traits_dict["lay_rate"] = e.traits.get("lay_rate", 1.0)
                     traits_dict["plumage"]  = e.traits.get("plumage", "white")
+                elif isinstance(e, Dog):
+                    for tk in ("breed", "generation", "coat_pattern", "coat_length", "coat_type",
+                               "ear_type", "tail_type", "eye_color", "size_class",
+                               "speed", "endurance", "agility", "strength", "nose", "alertness",
+                               "loyalty", "playfulness", "stubbornness", "prey_drive",
+                               "has_tracking", "has_herding", "has_guard", "has_retrieve",
+                               "collar_applied", "dog_name",
+                               "base_color", "dilute_expressed", "dilute_carrier", "white_spotting"):
+                        traits_dict[tk] = e.traits.get(tk)
+                    traits_dict["coat_color"] = list(e.traits.get("coat_color", [160, 100, 50]))
             extra = {
                 "uid":           getattr(e, 'uid', None),
                 "parent_a_uid":  getattr(e, 'parent_a_uid', None),
@@ -1450,6 +1535,8 @@ class SaveManager:
             elif isinstance(e, Horse):
                 extra["stamina"] = e.stamina
                 extra["broken"]  = e._broken
+            elif isinstance(e, Dog):
+                extra["stay_mode"] = e.stay_mode
             con.execute(
                 "INSERT INTO entities (entity_type, x, y, facing, animal_id, extra) VALUES (?,?,?,?,?,?)",
                 (type(e).__name__, e.x, e.y, e.facing, e.animal_id, json.dumps(extra))
@@ -1485,7 +1572,8 @@ class SaveManager:
             "soil_fertility, compost_bin_data, garden_data, sculpture_positions, "
             "wildflower_display_data, "
             "COALESCE(pottery_display_data, '{}'), COALESCE(unplaced_vase_uids, '[]'), "
-            "COALESCE(tapestry_positions, '{}'), COALESCE(day_count, 0) "
+            "COALESCE(tapestry_positions, '{}'), COALESCE(day_count, 0), "
+            "COALESCE(trade_block_data, '{}') "
             "FROM world_meta LIMIT 1"
         ).fetchone()
         if row is None:
@@ -1600,6 +1688,7 @@ class SaveManager:
             "pottery_display_data":   _parse_pottery_displays(row[9] if len(row) > 9 else None),
             "unplaced_vase_uids":     json.loads(row[10]) if len(row) > 10 and row[10] else [],
             "day_count":              int(row[12]) if len(row) > 12 and row[12] is not None else 0,
+            "trade_block_data":       json.loads(row[13]) if len(row) > 13 and row[13] else {},
         }
 
     def _load_player(self, con, bird_obs=None, insect_obs=None):
@@ -1611,9 +1700,12 @@ class SaveManager:
                    spawn_x, spawn_y, discovered_fossil_types, known_crops,
                    discovered_foods, foods_cooked,
                    horses_tamed, horses_bred, horse_records, discovered_coat_biomes,
+                   COALESCE(dogs_tamed, 0), COALESCE(dogs_bred, 0),
+                   COALESCE(dog_records, '{}'), COALESCE(discovered_dog_breeds, '[]'),
                    COALESCE(discovered_recipes, '[]'),
                    COALESCE(worn, '{}'),
                    COALESCE(animals_hunted, '{}'),
+                   COALESCE(hunt_trophies, '{}'),
                    COALESCE(roast_profiles, '[]'),
                    COALESCE(discovered_pairings, '[]'),
                    COALESCE(aging_vessels, '[]'),
@@ -1628,7 +1720,8 @@ class SaveManager:
          spawn_x, spawn_y, discovered_fossil_types, known_crops,
          discovered_foods, foods_cooked,
          horses_tamed, horses_bred, horse_records_raw, discovered_coat_biomes_raw,
-         discovered_recipes_raw, worn_raw, animals_hunted_raw, roast_profiles_raw,
+         dogs_tamed, dogs_bred, dog_records_raw, discovered_dog_breeds_raw,
+         discovered_recipes_raw, worn_raw, animals_hunted_raw, hunt_trophies_raw, roast_profiles_raw,
          discovered_pairings_raw, aging_vessels_raw, visited_town_ids_raw) = row
 
         rocks_rows = con.execute("""
@@ -2045,8 +2138,13 @@ class SaveManager:
             "horses_bred": int(horses_bred or 0),
             "horse_records": json.loads(horse_records_raw or "{}"),
             "discovered_coat_biomes": json.loads(discovered_coat_biomes_raw or "[]"),
+            "dogs_tamed": int(dogs_tamed or 0),
+            "dogs_bred": int(dogs_bred or 0),
+            "dog_records": json.loads(dog_records_raw or "{}"),
+            "discovered_dog_breeds": json.loads(discovered_dog_breeds_raw or "[]"),
             "discovered_recipes": json.loads(discovered_recipes_raw or "[]"),
             "animals_hunted":     json.loads(animals_hunted_raw or "{}"),
+            "hunt_trophies":      json.loads(hunt_trophies_raw or "{}"),
             "roast_profiles":     json.loads(roast_profiles_raw or "[]"),
             "discovered_pairings": json.loads(discovered_pairings_raw or "[]"),
             "aging_vessels": json.loads(aging_vessels_raw or "[]"),

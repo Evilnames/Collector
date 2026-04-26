@@ -13,7 +13,7 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK
 from elevators import ElevatorCar
 from minecarts import Minecart
 
@@ -485,6 +485,8 @@ def main():
         ui._sculpt_phase = "idle"
         ui.town_menu_open = False
         ui.active_town = None
+        ui.trade_block_open = False
+        ui.active_trade_pos = None
 
     def _any_ui_open():
         return any([ui.pause_open, ui.help_open, ui.research_open, ui.inventory_open, ui.crafting_open,
@@ -492,7 +494,8 @@ def main():
                     ui.automation_open, ui.farm_bot_open, ui.chest_open,
                     ui.backhoe_open, ui.breeding_open, ui.garden_open, ui.wildflower_display_open,
                     ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open,
-                    ui.town_menu_open, ui.reputation_screen_open])
+                    ui.town_menu_open, ui.reputation_screen_open, ui.trade_block_open,
+                    ui.dog_view_open, ui.dog_breeding_open])
 
     def _find_nearby_npc(world, player):
         from cities import NPC
@@ -960,7 +963,18 @@ def main():
                                 ui.refinery_block_id = equip
                                 ui.research_open = ui.inventory_open = ui.crafting_open = False
                                 ui.equipment_crafting_open = ui.collection_open = False
-                                if equip == COMPOST_BIN_BLOCK:
+                                if equip == TRADE_BLOCK:
+                                    trade_pos = player.get_nearby_equipment_pos(TRADE_BLOCK)
+                                    if trade_pos is not None:
+                                        world.trade_block_data.setdefault(trade_pos, {
+                                            "horse_uid": None, "has_cart": False,
+                                            "linked_town_id": None, "inventory": {},
+                                            "threshold": 10, "state": "idle", "ticks_left": 0.0,
+                                        })
+                                        ui.active_trade_pos = trade_pos
+                                        ui.trade_block_open = True
+                                        ui.refinery_open = False
+                                elif equip == COMPOST_BIN_BLOCK:
                                     ui.active_compost_bin_pos = player.get_nearby_equipment_pos(COMPOST_BIN_BLOCK)
                                 elif equip == STABLE_BLOCK:
                                     # Find two nearby tamed horses to populate the breeding panel
@@ -974,10 +988,29 @@ def main():
                                         stable_pos = player.get_nearby_equipment_pos(STABLE_BLOCK)
                                         ui.open_horse_breeding(stable_pos, tamed_horses[0], tamed_horses[1])
                                         ui.refinery_open = False
+                                elif equip == KENNEL_BLOCK:
+                                    from dogs import Dog as _Dog
+                                    tamed_dogs = [
+                                        e for e in world.entities
+                                        if isinstance(e, _Dog) and e.tamed and not e.dead
+                                        and e._kennel_nearby(world)
+                                    ]
+                                    if len(tamed_dogs) >= 2:
+                                        kennel_pos = player.get_nearby_equipment_pos(KENNEL_BLOCK)
+                                        ui.open_dog_breeding(kennel_pos, tamed_dogs[0], tamed_dogs[1])
+                                        ui.refinery_open = False
                                 else:
                                     ui.active_compost_bin_pos = None
                             else:
                                 ui.refinery_open = False
+
+                if event.key == pygame.K_g and not _any_ui_open():
+                    # Toggle stay/follow for all tamed dogs within 8 blocks
+                    from dogs import Dog as _Dog
+                    for _dog in world.entities:
+                        if isinstance(_dog, _Dog) and _dog.tamed and not _dog.dead:
+                            if _dog.in_range_stay_toggle(player, radius=8):
+                                _dog.stay_mode = not _dog.stay_mode
 
                 if event.key == pygame.K_q and not _any_ui_open():
                     # Deconstruct nearby idle elevator car
@@ -1009,7 +1042,7 @@ def main():
                     elif ui.wildflower_display_open:
                         max_s = max(0, len(player.wildflowers) - 6)
                         ui._display_scroll = max(0, min(max_s, getattr(ui, '_display_scroll', 0) - event.y))
-                    elif ui.research_open or ui.inventory_open or ui.crafting_open or ui.collection_open or ui.refinery_open or ui.chest_open or ui.breeding_open or ui.garden_open or ui.horse_breeding_open:
+                    elif ui.research_open or ui.inventory_open or ui.crafting_open or ui.collection_open or ui.refinery_open or ui.chest_open or ui.breeding_open or ui.garden_open or ui.horse_breeding_open or ui.dog_breeding_open or ui.dog_view_open:
                         ui.handle_scroll(event.y)
                     elif not _any_ui_open():
                         player.selected_slot = (player.selected_slot - event.y) % 8
@@ -1130,8 +1163,14 @@ def main():
                                 ui._ferm_nut_held = True
                 elif ui.horse_breeding_open:
                     ui.handle_horse_breeding_click(event.pos, player, world)
+                elif ui.dog_breeding_open:
+                    ui.handle_kennel_breeding_click(event.pos, player, world)
+                elif ui.dog_view_open:
+                    ui.handle_dog_view_click(event.pos, player)
                 elif ui.wardrobe_open:
                     ui.handle_wardrobe_click(event.pos, player)
+                elif ui.trade_block_open:
+                    ui.handle_trade_block_click(event.pos, player, world, event.button)
                 elif ui.chest_open:
                     ui.handle_chest_click(event.pos, player, event.button)
                 elif ui.garden_open:
@@ -1235,6 +1274,7 @@ def main():
             renderer.draw_dropped_items(world.dropped_items)
             renderer.draw_entities(world.entities)
             renderer.draw_arrows(world.arrows)
+            renderer.draw_nests(world.nests)
             renderer.draw_birds(world.birds)
             renderer.draw_insects(world.insects, world.time_of_day)
             renderer.draw_automations(world.automations)
@@ -1283,6 +1323,11 @@ def main():
         if getattr(player, '_pending_horse_break', None) is not None:
             ui.open_horse_breaking(player._pending_horse_break)
             player._pending_horse_break = None
+
+        # Pending dog view panel trigger
+        if getattr(player, '_pending_dog_view', None) is not None:
+            ui.open_dog_view(player._pending_dog_view)
+            player._pending_dog_view = None
 
         # Horse breaking minigame tick
         if ui._hb_active:
@@ -1338,6 +1383,16 @@ def main():
                                 player.animals_hunted[animal_id] = player.animals_hunted.get(animal_id, 0) + 1
                                 player.pending_notifications.append(
                                     ("Hunting", f"{animal_id.title()} hunted", None))
+                                prev = player.hunt_trophies.get(animal_id, {})
+                                new_record = False
+                                for stat, val in entity.stats.items():
+                                    if val > prev.get(stat, 0):
+                                        player.hunt_trophies.setdefault(animal_id, {})[stat] = val
+                                        if prev.get(stat, 0) > 0:
+                                            new_record = True
+                                if new_record:
+                                    player.pending_notifications.append(
+                                        ("Hunting", f"New record! {animal_id.replace('_', ' ').title()}", None))
                             break
             world.arrows = [a for a in world.arrows if not a.dead]
 
@@ -1419,6 +1474,7 @@ def main():
         world.update_water(dt, player)
         world.update_soil(dt)
         world.update_compost_bins(dt)
+        world.update_trade_blocks(dt, player)
         world.update_saplings(dt)
         world.update_crops(dt)
         world.update_leaves(dt, player)
@@ -1436,6 +1492,7 @@ def main():
         renderer.draw_player(player)
         renderer.draw_entities(world.entities)
         renderer.draw_arrows(world.arrows)
+        renderer.draw_nests(world.nests)
         renderer.draw_birds(world.birds)
         renderer.draw_insects(world.insects)
         renderer.draw_automations(world.automations)
@@ -1475,4 +1532,11 @@ def main():
 
         pygame.display.flip()
 
-    p
+    print("Auto-saving...")
+    save_mgr.save(world, player, research)  # on exit: skip notifications, just save
+    pygame.quit()
+    sys.exit()
+
+
+if __name__ == "__main__":
+    main()

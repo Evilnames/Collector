@@ -40,7 +40,7 @@ def _noop(player, world):
 
 
 class ResearchTree:
-    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship", "Tea Cultivation", "Herbalism", "Textile Arts", "Dairy Arts", "Hunting", "Jewelry Arts", "Garden Arts", "Masonry Arts", "Ceramics"]
+    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship", "Tea Cultivation", "Herbalism", "Textile Arts", "Dairy Arts", "Hunting", "Jewelry Arts", "Garden Arts", "Masonry Arts", "Ceramics", "Cynology"]
 
     def __init__(self):
         self.nodes = {}    # id -> ResearchNode
@@ -85,6 +85,13 @@ class ResearchTree:
         player.horse_breeding_mastery   = u("breeding_mastery")
         player.horse_stamina_drain_mult = 0.7  if u("endurance_riding")  else 1.0
         player.horse_shoe_bonus         = 0.15 if u("speed_training")    else 0.05
+
+        # Cynology bonuses
+        player.dog_whisperer_bonus  = 2    if u("scent_tracking")    else 0
+        player.dog_breeding_mastery = u("breed_mastery")
+        player.dog_ability_chance   = 0.15 if u("advanced_genetics") else 0.0
+        player.kennel_capacity      = 6    if u("kennel_mastery")    else 4
+        player.pure_breed_bonus     = u("pure_breeding")
         if world is not None:
             # irrigation: moisture decays half as fast
             world.moisture_decay_chance = (
@@ -559,6 +566,43 @@ class ResearchTree:
             "Unlock the Effigy template and allow mixing mineral colors in a single sculpture",
             {"polished_marble": 3, "chisel": 1}, ["fine_chiseling"],
             _noop, money_cost=60), 16, 2)
+
+        # --- Cynology (column 18) ---
+        self._add(ResearchNode(
+            "dog_basics", "Dog Husbandry",
+            "Learn to tame dogs — unlocks Dog Collar, Dog Bowl, and Dog Treat crafting",
+            {"bone": 4, "raw_meat": 2}, [],
+            _noop, money_cost=12), 18, 0)
+
+        self._add(ResearchNode(
+            "scent_tracking", "Scent Tracking",
+            "Taming threshold reduced by 2 — unlocks Dog Whistle crafting",
+            {"bone": 6, "carrot": 4}, ["dog_basics"],
+            _noop, money_cost=25), 18, 1)
+
+        self._add(ResearchNode(
+            "breed_mastery", "Breed Mastery",
+            "Full stat prediction shown in kennel breeding panel",
+            {"lumber": 5, "iron_chunk": 2}, ["scent_tracking"],
+            _noop, money_cost=42), 18, 2)
+
+        self._add(ResearchNode(
+            "advanced_genetics", "Advanced Genetics",
+            "+15% chance ability genes pass from single-carrier parent to offspring",
+            {"crystal_shard": 2, "iron_chunk": 3}, ["breed_mastery"],
+            _noop, money_cost=60), 18, 3)
+
+        self._add(ResearchNode(
+            "kennel_mastery", "Kennel Mastery",
+            "Kennel capacity increases to 6 dogs — unlocks Kennel crafting",
+            {"lumber": 8, "stone_chip": 4}, ["advanced_genetics"],
+            _noop, money_cost=80), 18, 4)
+
+        self._add(ResearchNode(
+            "pure_breeding", "Pure Breeding",
+            "Pure-breed offspring receive +0.05 bonus on their breed's signature trait",
+            {"gold_nugget": 2, "iron_chunk": 3}, ["kennel_mastery"],
+            _noop, money_cost=110), 18, 5)
 
         # --- Ceramics (column 17) ---
         self._add(ResearchNode(

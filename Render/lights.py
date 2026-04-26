@@ -167,7 +167,7 @@ def draw_lighting(renderer, player, world, depth, time_of_day=0.0):
     # Firefly glow — punch soft holes in the darkness overlay
     if night_alpha > 30 and world is not None and hasattr(world, 'insects'):
         for ins in world.insects:
-            if ins.WING_TYPE != "firefly" or ins.spooked or ins.NIGHT_ONLY and night_alpha < 30:
+            if ins.WING_TYPE != "firefly" or ins.spooked:
                 continue
             sx = int(ins.x) - cam_xi
             sy = int(ins.y) - cam_yi

@@ -539,6 +539,7 @@ GARDEN_OBELISK_METAL= 1018 # wrought-iron obelisk frame for climbing plants
 POTTING_TABLE       = 1019 # wooden potting table with tools hanging above
 COMPOST_HEAP        = 1020 # open compost heap with layered organic matter
 GARDEN_TOAD_HOUSE   = 1021 # ceramic arch toad shelter with painted door
+TRADE_BLOCK         = 1022 # Trade Post: assign horse+cart, link to city, auto-deliver goods
 
 
 SAFFRON_DOOR_CLOSED      = 860  # warm golden-yellow with dark carved panels
@@ -1142,6 +1143,55 @@ STARBURST_PANEL        = 857  # geometric starburst ornamental panel
 STACKED_STONE_VENEER   = 858  # thin stacked stone veneer panel
 FIBERGLASS_SHELL       = 859  # molded fiberglass decorative panel
 
+# --- Additional tree species (wave 2) ---
+MANGROVE_LOG     = 1114
+MANGROVE_LEAVES  = 1115
+SPRUCE_LOG       = 1116
+SPRUCE_LEAVES    = 1117
+GINKGO_LOG       = 1118
+GINKGO_LEAVES    = 1119
+BANYAN_LOG       = 1120
+BANYAN_LEAVES    = 1121
+PEAR_LOG         = 1122
+PEAR_LEAVES      = 1123
+FIG_LOG          = 1124
+FIG_LEAVES       = 1125
+CITRUS_LOG       = 1126
+CITRUS_LEAVES    = 1127
+APPLE_LOG        = 1128
+APPLE_LEAVES     = 1129
+POMEGRANATE_LOG  = 1130
+POMEGRANATE_LEAVES = 1131
+APPLE_SAPLING        = 1132
+PEAR_SAPLING         = 1133
+FIG_SAPLING          = 1134
+CITRUS_SAPLING       = 1135
+POMEGRANATE_SAPLING  = 1136
+
+ALL_FRUIT_SAPLINGS = {APPLE_SAPLING, PEAR_SAPLING, FIG_SAPLING, CITRUS_SAPLING, POMEGRANATE_SAPLING}
+
+JUICER_BLOCK = 1137
+
+KENNEL_BLOCK    = 1138  # placed kennel; triggers dog breeding UI
+DOG_BOWL_BLOCK  = 1139  # placed dog bowl; speeds up taming nearby
+
+# --- Waterside plants (naturally spawned near lakes/rivers) ---
+REED_BLOCK           = 1140  # tall green reed stalks on water edges
+CATTAIL_BLOCK        = 1141  # reeds with brown seed heads; wetland/swamp
+BULRUSH_BLOCK        = 1142  # dense round-tipped rush clump; swamp/wetland
+WATER_CRESS_BLOCK    = 1143  # low leafy cress on shallow water edges
+POND_WEED_BLOCK      = 1144  # floating weed mat on open water surface
+WATER_HYACINTH_BLOCK = 1145  # floating purple-flowered hyacinth; tropical/wetland
+DUCKWEED_BLOCK       = 1146  # tiny floating green mat; still water
+LOTUS_BLOCK          = 1147  # large pink floating lotus flower; tropical/jungle
+FROGBIT_BLOCK        = 1148  # small round floating leaf rosettes
+ARROWHEAD_BLOCK      = 1149  # emergent arrow-leaf aquatic plant; water edge
+HORSETAIL_BLOCK      = 1150  # tall segmented ancient horsetail stalks; water edge
+MARSH_MARIGOLD_BLOCK = 1151  # bright yellow flowers on muddy water edges
+WATER_IRIS_BLOCK     = 1152  # yellow flag iris on water margins
+SEDGE_BLOCK          = 1153  # dense tufted sedge grass; swamp/wetland
+PICKERELWEED_BLOCK   = 1154  # emergent purple spike flower; wetland/swamp
+
 HOUSE_WALL           = 108  # city house wall block
 HOUSE_ROOF           = 109  # city house roof block
 WILDFLOWER_PATCH     = 110  # surface collectable; interact → generates unique Wildflower object
@@ -1205,10 +1255,14 @@ CAVE_MUSHROOMS = {
 
 ALL_LOGS   = {TREE_LOG, PINE_LOG, BIRCH_LOG, JUNGLE_LOG, WILLOW_LOG,
               REDWOOD_LOG, PALM_LOG, ACACIA_LOG, DEAD_LOG, MUSHROOM_STEM,
-              MAPLE_LOG, CHERRY_LOG, CYPRESS_LOG, BAOBAB_LOG}
+              MAPLE_LOG, CHERRY_LOG, CYPRESS_LOG, BAOBAB_LOG,
+              MANGROVE_LOG, SPRUCE_LOG, GINKGO_LOG, BANYAN_LOG,
+              PEAR_LOG, FIG_LOG, CITRUS_LOG, APPLE_LOG, POMEGRANATE_LOG}
 ALL_LEAVES = {TREE_LEAVES, PINE_LEAVES, BIRCH_LEAVES, JUNGLE_LEAVES, WILLOW_LEAVES,
               REDWOOD_LEAVES, PALM_LEAVES, ACACIA_LEAVES, MUSHROOM_CAP,
-              MAPLE_LEAVES, CHERRY_LEAVES, CYPRESS_LEAVES, BAOBAB_LEAVES}
+              MAPLE_LEAVES, CHERRY_LEAVES, CYPRESS_LEAVES, BAOBAB_LEAVES,
+              MANGROVE_LEAVES, SPRUCE_LEAVES, GINKGO_LEAVES, BANYAN_LEAVES,
+              PEAR_LEAVES, FIG_LEAVES, CITRUS_LEAVES, APPLE_LEAVES, POMEGRANATE_LEAVES}
 # Maps each leaf block to its paired log for decay checks
 LEAF_LOG_MAP = {
     TREE_LEAVES:    TREE_LOG,
@@ -1224,6 +1278,15 @@ LEAF_LOG_MAP = {
     CHERRY_LEAVES:  CHERRY_LOG,
     CYPRESS_LEAVES: CYPRESS_LOG,
     BAOBAB_LEAVES:  BAOBAB_LOG,
+    MANGROVE_LEAVES: MANGROVE_LOG,
+    SPRUCE_LEAVES:   SPRUCE_LOG,
+    GINKGO_LEAVES:   GINKGO_LOG,
+    BANYAN_LEAVES:   BANYAN_LOG,
+    PEAR_LEAVES:        PEAR_LOG,
+    FIG_LEAVES:         FIG_LOG,
+    CITRUS_LEAVES:      CITRUS_LOG,
+    APPLE_LEAVES:       APPLE_LOG,
+    POMEGRANATE_LEAVES: POMEGRANATE_LOG,
 }
 
 EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, BAKERY_BLOCK,
@@ -1247,7 +1310,9 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     GARDEN_BLOCK,
                     EVAPORATION_PAN_BLOCK, SALT_GRINDER_BLOCK,
                     SCULPTORS_BENCH,
-                    TAPESTRY_FRAME_BLOCK}
+                    TAPESTRY_FRAME_BLOCK,
+                    JUICER_BLOCK,
+                    KENNEL_BLOCK, DOG_BOWL_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT}
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
@@ -1593,6 +1658,31 @@ BLOCKS = {
     CYPRESS_LEAVES:{"name": "Cypress Needles",   "hardness": 1, "color": (22,  88,  28),  "drop": "sapling", "drop_chance": 0.10},
     BAOBAB_LOG:    {"name": "Baobab Log",        "hardness": 3, "color": (165, 145, 115), "drop": "lumber"},
     BAOBAB_LEAVES: {"name": "Baobab Leaves",     "hardness": 1, "color": (82,  120, 45),  "drop": "sapling", "drop_chance": 0.10},
+    # Additional tree species (wave 2)
+    MANGROVE_LOG:    {"name": "Mangrove Log",    "hardness": 2, "color": (55,  38,  18),  "drop": "lumber"},
+    MANGROVE_LEAVES: {"name": "Mangrove Leaves", "hardness": 1, "color": (38,  148, 62),  "drop": "sapling", "drop_chance": 0.10},
+    SPRUCE_LOG:      {"name": "Spruce Log",      "hardness": 2, "color": (52,  33,  16),  "drop": "lumber"},
+    SPRUCE_LEAVES:   {"name": "Spruce Needles",  "hardness": 1, "color": (14,  60,  18),  "drop": "sapling", "drop_chance": 0.10},
+    GINKGO_LOG:      {"name": "Ginkgo Log",      "hardness": 2, "color": (128, 98,  58),  "drop": "lumber"},
+    GINKGO_LEAVES:   {"name": "Ginkgo Leaves",   "hardness": 1, "color": (195, 205, 45),  "drop": "sapling", "drop_chance": 0.10},
+    BANYAN_LOG:      {"name": "Banyan Log",      "hardness": 2, "color": (60,  40,  20),  "drop": "lumber"},
+    BANYAN_LEAVES:   {"name": "Banyan Leaves",   "hardness": 1, "color": (32,  145, 42),  "drop": "sapling", "drop_chance": 0.10},
+    PEAR_LOG:        {"name": "Pear Log",        "hardness": 2, "color": (88,  62,  38),  "drop": "lumber"},
+    PEAR_LEAVES:     {"name": "Pear Leaves",     "hardness": 1, "color": (95,  168, 62),  "drop": "pear",    "drop_chance": 0.20, "bonus_drop": "pear_sapling",  "bonus_drop_chance": 0.10},
+    FIG_LOG:         {"name": "Fig Log",         "hardness": 2, "color": (75,  52,  32),  "drop": "lumber"},
+    FIG_LEAVES:      {"name": "Fig Leaves",      "hardness": 1, "color": (42,  152, 52),  "drop": "fig",     "drop_chance": 0.20, "bonus_drop": "fig_sapling",    "bonus_drop_chance": 0.10},
+    CITRUS_LOG:          {"name": "Citrus Log",          "hardness": 2, "color": (95,  70,  35),  "drop": "lumber"},
+    CITRUS_LEAVES:       {"name": "Citrus Leaves",       "hardness": 1, "color": (38,  178, 62),  "drop": "lemon",       "drop_chance": 0.20, "bonus_drop": "citrus_sapling",      "bonus_drop_chance": 0.10},
+    APPLE_LOG:           {"name": "Apple Log",           "hardness": 2, "color": (92,  65,  38),  "drop": "lumber"},
+    APPLE_LEAVES:        {"name": "Apple Leaves",        "hardness": 1, "color": (62,  155, 58),  "drop": "apple",       "drop_chance": 0.20, "bonus_drop": "apple_sapling",       "bonus_drop_chance": 0.10},
+    POMEGRANATE_LOG:     {"name": "Pomegranate Log",     "hardness": 2, "color": (78,  50,  35),  "drop": "lumber"},
+    POMEGRANATE_LEAVES:  {"name": "Pomegranate Leaves",  "hardness": 1, "color": (55,  145, 55),  "drop": "pomegranate", "drop_chance": 0.20, "bonus_drop": "pomegranate_sapling", "bonus_drop_chance": 0.10},
+    APPLE_SAPLING:       {"name": "Apple Sapling",       "hardness": 1, "color": (62,  155, 58),  "drop": "apple_sapling"},
+    PEAR_SAPLING:        {"name": "Pear Sapling",        "hardness": 1, "color": (95,  168, 62),  "drop": "pear_sapling"},
+    FIG_SAPLING:         {"name": "Fig Sapling",         "hardness": 1, "color": (42,  152, 52),  "drop": "fig_sapling"},
+    CITRUS_SAPLING:      {"name": "Citrus Sapling",      "hardness": 1, "color": (38,  178, 62),  "drop": "citrus_sapling"},
+    POMEGRANATE_SAPLING: {"name": "Pomegranate Sapling", "hardness": 1, "color": (55,  145, 55),  "drop": "pomegranate_sapling"},
+    JUICER_BLOCK:        {"name": "Juicer",              "hardness": 1, "color": (220, 160, 60),  "drop": "juicer_item"},
     NPC_QUEST_BLOCK: {"name": "Rock Collector", "hardness": float('inf'), "color": (200, 160, 80),  "drop": None},
     NPC_TRADE_BLOCK: {"name": "Trader",         "hardness": float('inf'), "color": (80,  150, 200), "drop": None},
     # --- Chinese cuisine crops ---
@@ -1828,6 +1918,24 @@ BLOCKS = {
     WILDFLOWER_DISPLAY_BLOCK:  {"name": "Wildflower Display",        "hardness": 1.0, "color": (200, 230, 200), "drop": "wildflower_display"},
     STABLE_BLOCK:              {"name": "Stable",                   "hardness": 2.0, "color": (120,  85,  45), "drop": "stable_item"},
     HORSE_TROUGH_BLOCK:        {"name": "Horse Trough",             "hardness": 1.5, "color": ( 60, 100, 130), "drop": "horse_trough_item"},
+    KENNEL_BLOCK:              {"name": "Kennel",                   "hardness": 2.0, "color": (100,  75,  40), "drop": "kennel_item"},
+    DOG_BOWL_BLOCK:            {"name": "Dog Bowl",                 "hardness": 1.0, "color": (180, 140,  90), "drop": "dog_bowl_item"},
+    # --- Waterside plants ---
+    REED_BLOCK:           {"name": "Reeds",          "hardness": 0.3, "color": ( 75, 148,  60), "drop": "reed_bundle"},
+    CATTAIL_BLOCK:        {"name": "Cattail",        "hardness": 0.3, "color": ( 70, 138,  55), "drop": "cattail"},
+    BULRUSH_BLOCK:        {"name": "Bulrush",        "hardness": 0.3, "color": ( 50, 110,  48), "drop": "bulrush"},
+    WATER_CRESS_BLOCK:    {"name": "Water Cress",    "hardness": 0.3, "color": ( 55, 155,  65), "drop": "water_cress"},
+    POND_WEED_BLOCK:      {"name": "Pond Weed",      "hardness": 0.3, "color": ( 40, 105,  50), "drop": "pond_weed"},
+    WATER_HYACINTH_BLOCK: {"name": "Water Hyacinth", "hardness": 0.3, "color": (140,  80, 185), "drop": "water_hyacinth"},
+    DUCKWEED_BLOCK:       {"name": "Duckweed",       "hardness": 0.2, "color": ( 55, 130,  48), "drop": "duckweed"},
+    LOTUS_BLOCK:          {"name": "Lotus",          "hardness": 0.3, "color": (220, 150, 175), "drop": "lotus_petal"},
+    FROGBIT_BLOCK:        {"name": "Frogbit",        "hardness": 0.2, "color": ( 45, 120,  55), "drop": "frogbit"},
+    ARROWHEAD_BLOCK:      {"name": "Arrowhead",      "hardness": 0.3, "color": ( 60, 145,  65), "drop": "arrowhead_tuber"},
+    HORSETAIL_BLOCK:      {"name": "Horsetail",      "hardness": 0.3, "color": ( 68, 128,  52), "drop": "horsetail"},
+    MARSH_MARIGOLD_BLOCK: {"name": "Marsh Marigold", "hardness": 0.3, "color": (225, 195,  30), "drop": "marsh_marigold"},
+    WATER_IRIS_BLOCK:     {"name": "Water Iris",     "hardness": 0.3, "color": (220, 200,  40), "drop": "water_iris"},
+    SEDGE_BLOCK:          {"name": "Sedge",          "hardness": 0.3, "color": ( 85, 148,  58), "drop": "sedge"},
+    PICKERELWEED_BLOCK:   {"name": "Pickerelweed",   "hardness": 0.3, "color": ( 90,  80, 200), "drop": "pickerelweed"},
     # --- Herbalism supply chain ---
     DRYING_RACK_BLOCK:         {"name": "Drying Rack",            "hardness": 1.5, "color": (175, 145,  85), "drop": "drying_rack_item"},
     # --- Fishing supply chain ---
@@ -2602,6 +2710,7 @@ BLOCKS = {
     POTTING_TABLE:       {"name": "Potting Table",       "hardness": 1.0, "color": (125,  82,  42), "drop": "potting_table"},
     COMPOST_HEAP:        {"name": "Compost Heap",        "hardness": 0.5, "color": ( 75,  50,  25), "drop": "compost_heap"},
     GARDEN_TOAD_HOUSE:   {"name": "Toad House",          "hardness": 0.5, "color": (185, 130,  75), "drop": "garden_toad_house"},
+    TRADE_BLOCK:         {"name": "Trade Post",          "hardness": 2.0, "color": (120,  85,  55), "drop": "trade_block"},
     ALPINE_BALCONY_RAIL:       {"name": "Alpine Balcony Rail", "hardness": 1, "color": (160, 110,  65), "drop": "alpine_balcony_rail"},
     DARK_TIMBER_BEAM:          {"name": "Dark Timber Beam", "hardness": 1, "color": ( 55,  40,  30), "drop": "dark_timber_beam"},
     ROUGH_STONE_WALL:          {"name": "Rough Stone Wall", "hardness": 1, "color": (130, 125, 120), "drop": "rough_stone_wall"},
@@ -2700,15 +2809,26 @@ BLOCKS = {
 # Patterns: circle, wide_oval, tall_oval, wide_flat, soft, dim,
 #           cone_up, cone_down, cross, star, flicker
 LIGHT_EMITTERS = {
-    TORCH:         (100, "circle"),
-    WALL_SCONCE:   ( 90, "wide_oval"),
-    BRAZIER:       (115, "cone_up"),
-    CHANDELIER:    (130, "wide_flat"),
-    CANDELABRA:    ( 85, "tall_oval"),
-    LANTERN_ORB:   (140, "soft"),
-    PENDANT_LAMP:  (105, "cone_down"),
-    FIRE_BOWL:     ( 95, "flicker"),
-    CROSS_LANTERN: ( 80, "cross"),
-    STAR_LAMP:     ( 75, "star"),
-    GLOW_VINE:     ( 55, "dim"),
+    TORCH:           (100, "circle"),
+    WALL_SCONCE:     ( 90, "wide_oval"),
+    BRAZIER:         (115, "cone_up"),
+    CHANDELIER:      (130, "wide_flat"),
+    CANDELABRA:      ( 85, "tall_oval"),
+    LANTERN_ORB:     (140, "soft"),
+    PENDANT_LAMP:    (105, "cone_down"),
+    FIRE_BOWL:       ( 95, "flicker"),
+    CROSS_LANTERN:   ( 80, "cross"),
+    STAR_LAMP:       ( 75, "star"),
+    GLOW_VINE:       ( 55, "dim"),
+    # City / decorative lanterns
+    GARDEN_LANTERN:  ( 90, "circle"),
+    IRON_LANTERN:    ( 85, "soft"),
+    TRIPOD_BRAZIER:  (100, "flicker"),
+    PAPER_LANTERN:   ( 90, "soft"),
+    STONE_LANTERN:   ( 65, "dim"),
+    TORO_LANTERN:    ( 70, "dim"),
+    YUKIMI_LANTERN:  ( 70, "soft"),
+    LANTERN_FESTIVAL:(105, "wide_oval"),
+    ALPINE_LANTERN:  ( 85, "circle"),
+    ALPINE_CHANDELIER:(125, "wide_flat"),
 }
