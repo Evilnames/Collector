@@ -336,7 +336,7 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     RS_LATCH_Q0, POWERED_LANTERN_OFF, ALARM_BELL_OFF,
                     IRRIGATION_CHANNEL_BLOCK,
                     COUNTER_BLOCK, COMPARATOR_BLOCK, OBSERVER_BLOCK,
-                    SEQUENCER_BLOCK, T_FLIPFLOP_BLOCK, DEPOSIT_TRIGGER_BLOCK,
+                    SEQUENCER_BLOCK, T_FLIPFLOP_BLOCK, DEPOSIT_TRIGGER_BLOCK, AUTOMATION_BENCH_BLOCK,
                     APPLE_SAPLING, PEAR_SAPLING, FIG_SAPLING,
                     CITRUS_SAPLING, POMEGRANATE_SAPLING,
                     JUICER_BLOCK)
@@ -2401,5 +2401,6 @@ ITEMS = {
     "observer_item":     {"name": "Observer",    "color": ( 60,  80,  70), "place_block": OBSERVER_BLOCK},
     "sequencer_item":    {"name": "Sequencer",   "color": (100,  80, 140), "place_block": SEQUENCER_BLOCK},
     "t_flipflop_item":   {"name": "T Flip-Flop", "color": (140, 120,  60), "place_block": T_FLIPFLOP_BLOCK},
-    "deposit_trigger_item": {"name": "Deposit Trigger", "color": (200, 140, 50), "place_block": DEPOSIT_TRIGGER_BLOCK},
+    "deposit_trigger_item":  {"name": "Deposit Trigger",   "color": (200, 140,  50), "place_block": DEPOSIT_TRIGGER_BLOCK},
+    "automation_bench_item": {"name": "Automation Bench",  "color": ( 70,  90, 110), "place_block": AUTOMATION_BENCH_BLOCK},
 }

@@ -441,24 +441,6 @@ class HandlersMixin:
                             player.world.spawn_insects_near_garden(*garden_pos)
                         return
 
-def _deliver_farmer_seeds(player, world):
-    """If any Beloved farmer donors exist, give the player 1–3 random crop seeds."""
-    donors = getattr(player, "farm_seed_donors", set())
-    if not donors:
-        return
-    import random
-    _SEED_POOL = [
-        "wheat_seed", "carrot_seed", "tomato_seed", "corn_seed", "pumpkin_seed",
-        "rice_seed", "ginger_seed", "chili_seed", "pepper_seed", "apple_seed",
-        "strawberry_seed", "bok_choy_seed", "garlic_seed", "scallion_seed",
-    ]
-    count = random.randint(1, min(3, len(donors) + 1))
-    chosen = random.sample(_SEED_POOL, min(count, len(_SEED_POOL)))
-    for seed_id in chosen:
-        player._add_item(seed_id)
-    names = ", ".join(seed_id.replace("_", " ").title() for seed_id in chosen)
-    player.pending_notifications.append(("Gift", f"A farmer sent seeds: {names}", "uncommon"))
-
 
     def handle_npc_click(self, pos, player):
         from cities import (RockQuestNPC, TradeNPC, WildflowerQuestNPC, GemQuestNPC,
@@ -1094,3 +1076,22 @@ def _deliver_farmer_seeds(player, world):
                                 player.hotbar_uses[idx] = None
                         state["inventory"][item_id] = state["inventory"].get(item_id, 0) + deposit
                     return
+
+
+def _deliver_farmer_seeds(player, world):
+    """If any Beloved farmer donors exist, give the player 1–3 random crop seeds."""
+    donors = getattr(player, "farm_seed_donors", set())
+    if not donors:
+        return
+    import random
+    _SEED_POOL = [
+        "wheat_seed", "carrot_seed", "tomato_seed", "corn_seed", "pumpkin_seed",
+        "rice_seed", "ginger_seed", "chili_seed", "pepper_seed", "apple_seed",
+        "strawberry_seed", "bok_choy_seed", "garlic_seed", "scallion_seed",
+    ]
+    count = random.randint(1, min(3, len(donors) + 1))
+    chosen = random.sample(_SEED_POOL, min(count, len(_SEED_POOL)))
+    for seed_id in chosen:
+        player._add_item(seed_id)
+    names = ", ".join(seed_id.replace("_", " ").title() for seed_id in chosen)
+    player.pending_notifications.append(("Gift", f"A farmer sent seeds: {names}", "uncommon"))

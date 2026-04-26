@@ -1713,35 +1713,6 @@ class BeerMerchantNPC(MerchantNPC):
         return price
 
 
-class TavernkeeperNPC(InnkeeperNPC):
-    """Runs a tavern — serves food and beer, buys quality beer from the player."""
-    def __init__(self, x, y, world, rng, difficulty=0, biodome="temperate"):
-        super().__init__(x, y, world, rng, difficulty, biodome)
-        self.clothing["body"] = (120, 75, 35)  # Tavern brown
-        self.display_name = "Tavernkeeper"
-        self.menu = TAVERN_MENU
-
-    def beer_buy_price(self, item_id):
-        base = TAVERN_BUY_TABLE.get(item_id, 0)
-        return max(1, round(base * _rep_buy_bonus(self._town_rep())))
-
-    def can_sell_beer(self, item_id, player):
-        return TAVERN_BUY_TABLE.get(item_id, 0) > 0 and player.inventory.get(item_id, 0) > 0
-
-    def sell_beer(self, item_id, player):
-        if not self.can_sell_beer(item_id, player):
-            return 0
-        price = self.beer_buy_price(item_id)
-        player.inventory[item_id] -= 1
-        if player.inventory[item_id] <= 0:
-            del player.inventory[item_id]
-            for i in range(len(player.hotbar)):
-                if player.hotbar[i] == item_id:
-                    player.hotbar[i] = None
-        player.money += price
-        return price
-
-
 class DoctorNPC(NPC):
     def __init__(self, x, y, world, biodome="temperate"):
         super().__init__(x, y, world, "npc_doctor")
@@ -1972,6 +1943,35 @@ class InnkeeperNPC(NPC):
             player.blessing_timer = 240.0
             player.blessing_mult  = 1.15
         return True
+
+
+class TavernkeeperNPC(InnkeeperNPC):
+    """Runs a tavern — serves food and beer, buys quality beer from the player."""
+    def __init__(self, x, y, world, rng, difficulty=0, biodome="temperate"):
+        super().__init__(x, y, world, rng, difficulty, biodome)
+        self.clothing["body"] = (120, 75, 35)  # Tavern brown
+        self.display_name = "Tavernkeeper"
+        self.menu = TAVERN_MENU
+
+    def beer_buy_price(self, item_id):
+        base = TAVERN_BUY_TABLE.get(item_id, 0)
+        return max(1, round(base * _rep_buy_bonus(self._town_rep())))
+
+    def can_sell_beer(self, item_id, player):
+        return TAVERN_BUY_TABLE.get(item_id, 0) > 0 and player.inventory.get(item_id, 0) > 0
+
+    def sell_beer(self, item_id, player):
+        if not self.can_sell_beer(item_id, player):
+            return 0
+        price = self.beer_buy_price(item_id)
+        player.inventory[item_id] -= 1
+        if player.inventory[item_id] <= 0:
+            del player.inventory[item_id]
+            for i in range(len(player.hotbar)):
+                if player.hotbar[i] == item_id:
+                    player.hotbar[i] = None
+        player.money += price
+        return price
 
 
 class ScholarNPC(NPC):

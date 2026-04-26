@@ -4,7 +4,7 @@ from item_icons import render_item_icon
 from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOODLE_POT_RECIPES,
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
                       BAIT_STATION_RECIPES, FLETCHING_RECIPES, SMELTER_RECIPES, GLASS_KILN_RECIPES,
-                      GARDEN_WORKSHOP_RECIPES, JUICER_RECIPES,
+                      GARDEN_WORKSHOP_RECIPES, JUICER_RECIPES, AUTOMATION_RECIPES,
                       RECIPE_GROUPS, RECIPE_GROUPS_ORDER,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
@@ -566,7 +566,8 @@ class CraftingMixin:
                             DAIRY_VAT_BLOCK, CHEESE_PRESS_BLOCK, AGING_CAVE_BLOCK,
                             FLETCHING_TABLE_BLOCK, SMELTER_BLOCK, ANAEROBIC_TANK_BLOCK,
                             GLASS_KILN_BLOCK, GARDEN_WORKSHOP_BLOCK,
-                            JEWELRY_WORKBENCH_BLOCK, JUICER_BLOCK)
+                            JEWELRY_WORKBENCH_BLOCK, JUICER_BLOCK,
+                            AUTOMATION_BENCH_BLOCK)
         if self.refinery_block_id == JEWELRY_WORKBENCH_BLOCK:
             self._draw_jewelry_workbench(player, dt)
             return
@@ -738,6 +739,13 @@ class CraftingMixin:
                                        self._juicer_recipe_rects, "_juicer_selected_recipe",
                                        block_id=JUICER_BLOCK,
                                        action_label="JUICE")
+            return
+        if self.refinery_block_id == AUTOMATION_BENCH_BLOCK:
+            self._draw_cooking_station(player, AUTOMATION_RECIPES, "AUTOMATION BENCH",
+                                       (70, 90, 110), self._automation_selected_recipe,
+                                       self._automation_recipe_rects, "_automation_selected_recipe",
+                                       block_id=AUTOMATION_BENCH_BLOCK,
+                                       action_label="CRAFT")
             return
         if self.refinery_block_id == COMPOST_BIN_BLOCK:
             self._draw_compost_bin(player)

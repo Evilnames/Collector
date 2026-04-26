@@ -177,9 +177,16 @@ class PanelsMixin:
     def _draw_rep_rank(self, npc, px, py):
         from cities import rep_rank
         rep = npc._town_rep()
-        name, color = rep_rank(rep)
-        s = self.small.render(f"{name}  [{rep} rep]", True, color)
-        self.screen.blit(s, (px + 14, py + 10))
+        rank_name, color = rep_rank(rep)
+        identity = getattr(npc, "identity", None)
+        if identity:
+            name_s = self.small.render(identity["display_name"], True, (220, 215, 200))
+            self.screen.blit(name_s, (px + 14, py + 10))
+            rep_s = self.small.render(f"{rank_name}  [{rep} rep]", True, color)
+            self.screen.blit(rep_s, (px + 14, py + 26))
+        else:
+            s = self.small.render(f"{rank_name}  [{rep} rep]", True, color)
+            self.screen.blit(s, (px + 14, py + 10))
 
     def _draw_garrison_commander_content(self, player, npc, px, py, PW, PH):
         title = self.large.render("GARRISON COMMANDER", True, (210, 110, 90))

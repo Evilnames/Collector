@@ -180,6 +180,8 @@ class UI(
         self._garden_workshop_recipe_rects    = {}
         self._juicer_selected_recipe          = 0
         self._juicer_recipe_rects             = {}
+        self._automation_selected_recipe      = 0
+        self._automation_recipe_rects         = {}
         self._cook_station_scroll        = {}
         self._cook_station_max_scroll    = {}
         self.npc_open   = False

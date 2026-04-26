@@ -753,6 +753,10 @@ class SaveManager:
         except Exception:
             pass
         try:
+            con.execute("ALTER TABLE world_meta ADD COLUMN logic_state TEXT")
+        except Exception:
+            pass
+        try:
             con.execute("ALTER TABLE regions ADD COLUMN coat_of_arms_json TEXT")
         except Exception:
             pass

@@ -589,7 +589,8 @@ COMPARATOR_BLOCK     = 1220   # reads adjacent chest fill (0-8), outputs when le
 OBSERVER_BLOCK       = 1221   # emits 1-tick pulse when watched block changes; facing = watch dir
 SEQUENCER_BLOCK      = 1222   # 4-step round-robin; each pulse rotates active output; right-click = manual step
 T_FLIPFLOP_BLOCK     = 1223   # toggles Q on every rising edge; right-click = manual toggle
-DEPOSIT_TRIGGER_BLOCK = 1224  # rising-edge: dumps nearby bot inventories into adjacent chest; next free: 1225
+DEPOSIT_TRIGGER_BLOCK = 1224  # rising-edge: dumps nearby bot inventories into adjacent chest
+AUTOMATION_BENCH_BLOCK = 1225  # crafting station for logic components and fluid infrastructure
 
 
 SAFFRON_DOOR_CLOSED      = 860  # warm golden-yellow with dark carved panels
@@ -1408,7 +1409,8 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     KENNEL_BLOCK, DOG_BOWL_BLOCK,
                     FORGE_BLOCK, WEAPON_RACK_BLOCK,
                     SWITCH_BLOCK_OFF, LATCH_BLOCK_OFF,
-                    BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK}
+                    BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK,
+                    AUTOMATION_BENCH_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT}
 
@@ -2889,7 +2891,8 @@ BLOCKS = {
     OBSERVER_BLOCK:       {"name": "Observer",     "hardness": 2.0, "color": ( 60,  80,  70), "drop": "observer_item"},
     SEQUENCER_BLOCK:      {"name": "Sequencer",    "hardness": 2.0, "color": (100,  80, 140), "drop": "sequencer_item"},
     T_FLIPFLOP_BLOCK:     {"name": "T Flip-Flop",  "hardness": 2.0, "color": (140, 120,  60), "drop": "t_flipflop_item"},
-    DEPOSIT_TRIGGER_BLOCK: {"name": "Deposit Trigger", "hardness": 2.0, "color": (200, 140,  50), "drop": "deposit_trigger_item"},
+    DEPOSIT_TRIGGER_BLOCK:  {"name": "Deposit Trigger",   "hardness": 2.0, "color": (200, 140,  50), "drop": "deposit_trigger_item"},
+    AUTOMATION_BENCH_BLOCK: {"name": "Automation Bench",  "hardness": 2.0, "color": ( 70,  90, 110), "drop": "automation_bench_item"},
     ALPINE_BALCONY_RAIL:       {"name": "Alpine Balcony Rail", "hardness": 1, "color": (160, 110,  65), "drop": "alpine_balcony_rail"},
     DARK_TIMBER_BEAM:          {"name": "Dark Timber Beam", "hardness": 1, "color": ( 55,  40,  30), "drop": "dark_timber_beam"},
     ROUGH_STONE_WALL:          {"name": "Rough Stone Wall", "hardness": 1, "color": (130, 125, 120), "drop": "rough_stone_wall"},
