@@ -1194,6 +1194,24 @@ WATER_IRIS_BLOCK     = 1152  # yellow flag iris on water margins
 SEDGE_BLOCK          = 1153  # dense tufted sedge grass; swamp/wetland
 PICKERELWEED_BLOCK   = 1154  # emergent purple spike flower; wetland/swamp
 
+# --- Palace doors ---
+STUDDED_OAK_DOOR_CLOSED   = 1155
+STUDDED_OAK_DOOR_OPEN     = 1156
+VERMILION_DOOR_CLOSED     = 1157
+VERMILION_DOOR_OPEN       = 1158
+SHOJI_DOOR_CLOSED         = 1159
+SHOJI_DOOR_OPEN           = 1160
+GILDED_DOOR_CLOSED        = 1161
+GILDED_DOOR_OPEN          = 1162
+BRONZE_DOOR_CLOSED        = 1163
+BRONZE_DOOR_OPEN          = 1164
+SWAHILI_DOOR_CLOSED       = 1165
+SWAHILI_DOOR_OPEN         = 1166
+SANDALWOOD_DOOR_CLOSED    = 1167
+SANDALWOOD_DOOR_OPEN      = 1168
+STONE_SLAB_DOOR_CLOSED    = 1169
+STONE_SLAB_DOOR_OPEN      = 1170
+
 HOUSE_WALL           = 108  # city house wall block
 HOUSE_ROOF           = 109  # city house roof block
 WILDFLOWER_PATCH     = 110  # surface collectable; interact → generates unique Wildflower object
@@ -1244,7 +1262,9 @@ SNOW             = 152  # alpine_mountain surface block; falls like grass
 SAND             = 153  # desert/beach surface block; falls like snow
 
 OPEN_DOORS   = {WOOD_DOOR_OPEN, IRON_DOOR_OPEN, WOOD_FENCE_OPEN, IRON_FENCE_OPEN,
-                COBALT_DOOR_OPEN, CRIMSON_CEDAR_DOOR_OPEN, TEAL_DOOR_OPEN, SAFFRON_DOOR_OPEN}
+                COBALT_DOOR_OPEN, CRIMSON_CEDAR_DOOR_OPEN, TEAL_DOOR_OPEN, SAFFRON_DOOR_OPEN,
+                STUDDED_OAK_DOOR_OPEN, VERMILION_DOOR_OPEN, SHOJI_DOOR_OPEN, GILDED_DOOR_OPEN,
+                BRONZE_DOOR_OPEN, SWAHILI_DOOR_OPEN, SANDALWOOD_DOOR_OPEN, STONE_SLAB_DOOR_OPEN}
 STAIR_BLOCKS = {STAIRS_RIGHT, STAIRS_LEFT}
 
 CAVE_MUSHROOMS = {
@@ -2098,6 +2118,23 @@ BLOCKS = {
     MINE_TRACK_STOP_BLOCK: {"name": "Track Stop",      "hardness": 2,   "color": None,            "drop": "mine_track_stop"},
     SAFFRON_DOOR_CLOSED:       {"name": "Saffron Door",          "hardness": 2, "color": (200, 155,  30), "drop": "saffron_door"},
     SAFFRON_DOOR_OPEN:         {"name": "Saffron Door (Open)",   "hardness": 2, "color": (200, 155,  30), "drop": "saffron_door"},
+    # --- Palace doors ---
+    STUDDED_OAK_DOOR_CLOSED:   {"name": "Studded Oak Door",         "hardness": 2, "color": (120,  80,  40), "drop": "studded_oak_door"},
+    STUDDED_OAK_DOOR_OPEN:     {"name": "Studded Oak Door (Open)",  "hardness": 2, "color": (120,  80,  40), "drop": "studded_oak_door"},
+    VERMILION_DOOR_CLOSED:     {"name": "Vermilion Door",           "hardness": 2, "color": (180,  40,  30), "drop": "vermilion_door"},
+    VERMILION_DOOR_OPEN:       {"name": "Vermilion Door (Open)",    "hardness": 2, "color": (180,  40,  30), "drop": "vermilion_door"},
+    SHOJI_DOOR_CLOSED:         {"name": "Shoji Door",               "hardness": 2, "color": (240, 230, 210), "drop": "shoji_door"},
+    SHOJI_DOOR_OPEN:           {"name": "Shoji Door (Open)",        "hardness": 2, "color": (240, 230, 210), "drop": "shoji_door"},
+    GILDED_DOOR_CLOSED:        {"name": "Gilded Door",              "hardness": 2, "color": (250, 220, 100), "drop": "gilded_door"},
+    GILDED_DOOR_OPEN:          {"name": "Gilded Door (Open)",       "hardness": 2, "color": (250, 220, 100), "drop": "gilded_door"},
+    BRONZE_DOOR_CLOSED:        {"name": "Bronze Door",              "hardness": 2, "color": (140, 100,  60), "drop": "bronze_door"},
+    BRONZE_DOOR_OPEN:          {"name": "Bronze Door (Open)",       "hardness": 2, "color": (140, 100,  60), "drop": "bronze_door"},
+    SWAHILI_DOOR_CLOSED:       {"name": "Swahili Door",             "hardness": 2, "color": (100,  60,  30), "drop": "swahili_door"},
+    SWAHILI_DOOR_OPEN:         {"name": "Swahili Door (Open)",      "hardness": 2, "color": (100,  60,  30), "drop": "swahili_door"},
+    SANDALWOOD_DOOR_CLOSED:    {"name": "Sandalwood Door",          "hardness": 2, "color": (150, 100,  60), "drop": "sandalwood_door"},
+    SANDALWOOD_DOOR_OPEN:      {"name": "Sandalwood Door (Open)",   "hardness": 2, "color": (150, 100,  60), "drop": "sandalwood_door"},
+    STONE_SLAB_DOOR_CLOSED:    {"name": "Stone Slab Door",          "hardness": 2, "color": (120, 120, 120), "drop": "stone_slab_door"},
+    STONE_SLAB_DOOR_OPEN:      {"name": "Stone Slab Door (Open)",   "hardness": 2, "color": (120, 120, 120), "drop": "stone_slab_door"},
     # --- European architecture blocks ---
     HALF_TIMBER_WALL:  {"name": "Half-Timber Wall",   "hardness": 2, "color": (240, 235, 220), "drop": "half_timber_wall"},
     ASHLAR_BLOCK:      {"name": "Ashlar Block",        "hardness": 2, "color": (175, 170, 162), "drop": "ashlar_block"},

@@ -23,7 +23,7 @@ from town_needs import (
 DAYS_PER_TIER   = 5      # full-need days needed to tier up
 REGION_SIZE     = 3      # towns per region
 
-TIER_NAMES = ["Hamlet", "Village", "Town", "City"]
+TIER_NAMES = ["Hamlet", "Village", "Town", "City", "Metropolis", "Megalopolis"]
 
 # ---------------------------------------------------------------------------
 # Name pools
@@ -932,10 +932,24 @@ def init_towns(world) -> None:
 
         meta   = _city_slot_metadata(slot_x)
         biome  = world.biodome_at(center_bx)
-        name   = _make_town_name(rng, _biome_group_for(biome))
-        used_names.add(name)
-
         size   = city_sizes[town_id] if town_id < len(city_sizes) else "medium"
+        base_name = _make_town_name(rng, _biome_group_for(biome))
+        
+        # Add size-based descriptors to the name
+        if size == "metropolitan":
+            name = f"{base_name} {rng.choice(['Metropolis', 'Metropolis', 'Grand City'])}"
+        elif size == "large":
+            name = f"{base_name} {rng.choice(['City', 'City', 'Major'])}"
+        elif size == "small":
+            # For small towns, we sometimes add 'Hamlet' or 'Crossing'
+            if rng.random() < 0.4:
+                name = f"{base_name} {rng.choice(['Hamlet', 'Crossing', 'Landing'])}"
+            else:
+                name = base_name
+        else:
+            name = base_name
+            
+        used_names.add(name)
         half_w = CITY_CONFIGS[size]["half_w"]
 
         TOWNS[town_id] = Town(
@@ -1247,7 +1261,7 @@ def _fill_missing_coat_of_arms(world_seed: int) -> None:
 
 
 def _starting_tier(size: str, is_capital: bool) -> int:
-    base = {"small": 0, "medium": 1, "large": 2, "military": 1}.get(size, 0)
+    base = {"small": 0, "medium": 1, "large": 2, "metropolitan": 3, "military": 1}.get(size, 0)
     return min(base + (1 if is_capital else 0), len(TIER_NAMES) - 1)
 
 

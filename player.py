@@ -7,6 +7,14 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     CRIMSON_CEDAR_DOOR_CLOSED, CRIMSON_CEDAR_DOOR_OPEN,
                     TEAL_DOOR_CLOSED, TEAL_DOOR_OPEN,
                     SAFFRON_DOOR_CLOSED, SAFFRON_DOOR_OPEN,
+                    STUDDED_OAK_DOOR_CLOSED, STUDDED_OAK_DOOR_OPEN,
+                    VERMILION_DOOR_CLOSED, VERMILION_DOOR_OPEN,
+                    SHOJI_DOOR_CLOSED, SHOJI_DOOR_OPEN,
+                    GILDED_DOOR_CLOSED, GILDED_DOOR_OPEN,
+                    BRONZE_DOOR_CLOSED, BRONZE_DOOR_OPEN,
+                    SWAHILI_DOOR_CLOSED, SWAHILI_DOOR_OPEN,
+                    SANDALWOOD_DOOR_CLOSED, SANDALWOOD_DOOR_OPEN,
+                    STONE_SLAB_DOOR_CLOSED, STONE_SLAB_DOOR_OPEN,
                     WOOD_FENCE, IRON_FENCE, WOOD_FENCE_OPEN, IRON_FENCE_OPEN,
                     SAPLING, GRASS, DIRT, ALL_LOGS, ALL_LEAVES,
                     YOUNG_CROP_BLOCKS, MATURE_CROP_BLOCKS, BUSH_BLOCKS,
@@ -88,12 +96,38 @@ _BG_DISALLOWED = (
      CRIMSON_CEDAR_DOOR_CLOSED, CRIMSON_CEDAR_DOOR_OPEN,
      TEAL_DOOR_CLOSED, TEAL_DOOR_OPEN,
      SAFFRON_DOOR_CLOSED, SAFFRON_DOOR_OPEN,
+     STUDDED_OAK_DOOR_CLOSED, STUDDED_OAK_DOOR_OPEN,
+     VERMILION_DOOR_CLOSED, VERMILION_DOOR_OPEN,
+     SHOJI_DOOR_CLOSED, SHOJI_DOOR_OPEN,
+     GILDED_DOOR_CLOSED, GILDED_DOOR_OPEN,
+     BRONZE_DOOR_CLOSED, BRONZE_DOOR_OPEN,
+     SWAHILI_DOOR_CLOSED, SWAHILI_DOOR_OPEN,
+     SANDALWOOD_DOOR_CLOSED, SANDALWOOD_DOOR_OPEN,
+     STONE_SLAB_DOOR_CLOSED, STONE_SLAB_DOOR_OPEN,
      BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK}
     | BUSH_BLOCKS
     | YOUNG_CROP_BLOCKS
     | EQUIPMENT_BLOCKS
     | STAIR_BLOCKS
 )
+
+_DOOR_PAIRS = {
+    WOOD_DOOR_CLOSED: WOOD_DOOR_OPEN,
+    IRON_DOOR_CLOSED: IRON_DOOR_OPEN,
+    COBALT_DOOR_CLOSED: COBALT_DOOR_OPEN,
+    CRIMSON_CEDAR_DOOR_CLOSED: CRIMSON_CEDAR_DOOR_OPEN,
+    TEAL_DOOR_CLOSED: TEAL_DOOR_OPEN,
+    SAFFRON_DOOR_CLOSED: SAFFRON_DOOR_OPEN,
+    STUDDED_OAK_DOOR_CLOSED: STUDDED_OAK_DOOR_OPEN,
+    VERMILION_DOOR_CLOSED: VERMILION_DOOR_OPEN,
+    SHOJI_DOOR_CLOSED: SHOJI_DOOR_OPEN,
+    GILDED_DOOR_CLOSED: GILDED_DOOR_OPEN,
+    BRONZE_DOOR_CLOSED: BRONZE_DOOR_OPEN,
+    SWAHILI_DOOR_CLOSED: SWAHILI_DOOR_OPEN,
+    SANDALWOOD_DOOR_CLOSED: SANDALWOOD_DOOR_OPEN,
+    STONE_SLAB_DOOR_CLOSED: STONE_SLAB_DOOR_OPEN,
+}
+_OPEN_TO_CLOSED = {v: k for k, v in _DOOR_PAIRS.items()}
 
 
 class Player:
@@ -1262,6 +1296,14 @@ class Player:
                 (CRIMSON_CEDAR_DOOR_CLOSED, CRIMSON_CEDAR_DOOR_OPEN),
                 (TEAL_DOOR_CLOSED,          TEAL_DOOR_OPEN),
                 (SAFFRON_DOOR_CLOSED,       SAFFRON_DOOR_OPEN),
+                (STUDDED_OAK_DOOR_CLOSED,   STUDDED_OAK_DOOR_OPEN),
+                (VERMILION_DOOR_CLOSED,     VERMILION_DOOR_OPEN),
+                (SHOJI_DOOR_CLOSED,         SHOJI_DOOR_OPEN),
+                (GILDED_DOOR_CLOSED,        GILDED_DOOR_OPEN),
+                (BRONZE_DOOR_CLOSED,        BRONZE_DOOR_OPEN),
+                (SWAHILI_DOOR_CLOSED,       SWAHILI_DOOR_OPEN),
+                (SANDALWOOD_DOOR_CLOSED,    SANDALWOOD_DOOR_OPEN),
+                (STONE_SLAB_DOOR_CLOSED,    STONE_SLAB_DOOR_OPEN),
             ):
                 if current == closed:
                     self.world.set_block(bx, by, opened)
@@ -1983,10 +2025,8 @@ class Player:
             for (dbx, dby) in to_close:
                 self._auto_opened_doors.discard((dbx, dby))
                 bid = self.world.get_block(dbx, dby)
-                if bid == WOOD_DOOR_OPEN:
-                    self.world.set_block(dbx, dby, WOOD_DOOR_CLOSED)
-                elif bid == IRON_DOOR_OPEN:
-                    self.world.set_block(dbx, dby, IRON_DOOR_CLOSED)
+                if bid in _OPEN_TO_CLOSED:
+                    self.world.set_block(dbx, dby, _OPEN_TO_CLOSED[bid])
 
     def _move_x(self, dx):
         if dx == 0:
@@ -2009,21 +2049,13 @@ class Player:
         for bx in range(left, right + 1):
             for by in range(top, bot + 1):
                 bid = self.world.get_block(bx, by)
-                if bid == WOOD_DOOR_CLOSED:
-                    self.world.set_block(bx, by, WOOD_DOOR_OPEN)
+                if bid in _DOOR_PAIRS:
+                    open_bid = _DOOR_PAIRS[bid]
+                    self.world.set_block(bx, by, open_bid)
                     self._auto_opened_doors.add((bx, by))
                     for dy in (-1, 1):
-                        if self.world.get_block(bx, by + dy) == WOOD_DOOR_CLOSED:
-                            self.world.set_block(bx, by + dy, WOOD_DOOR_OPEN)
-                            self._auto_opened_doors.add((bx, by + dy))
-                            break
-                    opened = True
-                elif bid == IRON_DOOR_CLOSED:
-                    self.world.set_block(bx, by, IRON_DOOR_OPEN)
-                    self._auto_opened_doors.add((bx, by))
-                    for dy in (-1, 1):
-                        if self.world.get_block(bx, by + dy) == IRON_DOOR_CLOSED:
-                            self.world.set_block(bx, by + dy, IRON_DOOR_OPEN)
+                        if self.world.get_block(bx, by + dy) == bid:
+                            self.world.set_block(bx, by + dy, open_bid)
                             self._auto_opened_doors.add((bx, by + dy))
                             break
                     opened = True

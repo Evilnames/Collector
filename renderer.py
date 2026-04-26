@@ -116,6 +116,14 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER, GRASS, DIRT, SA
                     CRIMSON_CEDAR_DOOR_CLOSED, CRIMSON_CEDAR_DOOR_OPEN,
                     TEAL_DOOR_CLOSED, TEAL_DOOR_OPEN,
                     SAFFRON_DOOR_CLOSED, SAFFRON_DOOR_OPEN,
+                    STUDDED_OAK_DOOR_CLOSED, STUDDED_OAK_DOOR_OPEN,
+                    VERMILION_DOOR_CLOSED, VERMILION_DOOR_OPEN,
+                    SHOJI_DOOR_CLOSED, SHOJI_DOOR_OPEN,
+                    GILDED_DOOR_CLOSED, GILDED_DOOR_OPEN,
+                    BRONZE_DOOR_CLOSED, BRONZE_DOOR_OPEN,
+                    SWAHILI_DOOR_CLOSED, SWAHILI_DOOR_OPEN,
+                    SANDALWOOD_DOOR_CLOSED, SANDALWOOD_DOOR_OPEN,
+                    STONE_SLAB_DOOR_CLOSED, STONE_SLAB_DOOR_OPEN,
                     HALF_TIMBER_WALL, ASHLAR_BLOCK, GOTHIC_TRACERY, FLUTED_COLUMN,
                     CORNICE_BLOCK, ROSE_WINDOW, HERRINGBONE_BRICK, BAROQUE_TRIM,
                     TUDOR_BEAM, VENETIAN_FLOOR, FLEMISH_BRICK, PILASTER,
@@ -2135,6 +2143,178 @@ class Renderer:
                 s.fill((0, 0, 0, 0))
                 pygame.draw.rect(s, (210, 165, 42), (0, 0, 8, 32))
                 pygame.draw.rect(s, (160, 115, 18), (7, 0, 1, 32))
+                surfs[bid] = s
+                continue
+            # --- Palace Doors ---
+            if bid == STUDDED_OAK_DOOR_CLOSED:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                base = (100, 65, 35)
+                frame = (70, 45, 25)
+                iron = (70, 75, 80)
+                s.fill(frame)
+                pygame.draw.rect(s, base, (3, 3, 26, 26))
+                for bx in (8, 16, 24):
+                    pygame.draw.line(s, frame, (bx, 3), (bx, 29), 1)
+                # iron straps
+                pygame.draw.rect(s, iron, (3, 8, 26, 4))
+                pygame.draw.rect(s, iron, (3, 20, 26, 4))
+                # studs
+                for bx in (8, 16, 24):
+                    pygame.draw.circle(s, (40, 40, 40), (bx, 10), 1)
+                    pygame.draw.circle(s, (40, 40, 40), (bx, 22), 1)
+                surfs[bid] = s
+                continue
+            if bid == STUDDED_OAK_DOOR_OPEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                pygame.draw.rect(s, (100, 65, 35), (0, 0, 8, 32))
+                pygame.draw.rect(s, (70, 45, 25), (7, 0, 1, 32))
+                pygame.draw.rect(s, (70, 75, 80), (0, 8, 8, 4))
+                pygame.draw.rect(s, (70, 75, 80), (0, 20, 8, 4))
+                surfs[bid] = s
+                continue
+            if bid == VERMILION_DOOR_CLOSED:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                base = (180, 40, 30)
+                frame = (120, 20, 15)
+                brass = (220, 180, 50)
+                s.fill(frame)
+                pygame.draw.rect(s, base, (3, 3, 26, 26))
+                for bx in (8, 16, 24):
+                    for by in (8, 16, 24):
+                        pygame.draw.circle(s, brass, (bx, by), 2)
+                # handles
+                pygame.draw.circle(s, brass, (20, 16), 3, 1)
+                surfs[bid] = s
+                continue
+            if bid == VERMILION_DOOR_OPEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                pygame.draw.rect(s, (180, 40, 30), (0, 0, 8, 32))
+                pygame.draw.rect(s, (120, 20, 15), (7, 0, 1, 32))
+                surfs[bid] = s
+                continue
+            if bid == SHOJI_DOOR_CLOSED:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                frame = (180, 140, 90)
+                paper = (240, 230, 210)
+                s.fill(frame)
+                pygame.draw.rect(s, paper, (3, 3, 26, 26))
+                for bx in (11, 20):
+                    pygame.draw.line(s, frame, (bx, 3), (bx, 29), 1)
+                for by in (8, 16, 24):
+                    pygame.draw.line(s, frame, (3, by), (29, by), 1)
+                surfs[bid] = s
+                continue
+            if bid == SHOJI_DOOR_OPEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                pygame.draw.rect(s, (240, 230, 210), (0, 0, 8, 32))
+                pygame.draw.rect(s, (180, 140, 90), (7, 0, 1, 32))
+                pygame.draw.line(s, (180, 140, 90), (4, 0), (4, 32), 1)
+                surfs[bid] = s
+                continue
+            if bid == GILDED_DOOR_CLOSED:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                base = (240, 240, 245)
+                gold = (220, 180, 50)
+                s.fill(base)
+                pygame.draw.rect(s, gold, (4, 4, 24, 10), 1)
+                pygame.draw.rect(s, gold, (4, 18, 24, 10), 1)
+                # rosette
+                pygame.draw.circle(s, gold, (16, 9), 3)
+                pygame.draw.circle(s, gold, (16, 23), 3)
+                # handle
+                pygame.draw.circle(s, gold, (25, 16), 2)
+                surfs[bid] = s
+                continue
+            if bid == GILDED_DOOR_OPEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                pygame.draw.rect(s, (240, 240, 245), (0, 0, 8, 32))
+                pygame.draw.rect(s, (220, 180, 50), (7, 0, 1, 32))
+                surfs[bid] = s
+                continue
+            if bid == BRONZE_DOOR_CLOSED:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                base = (100, 80, 50)
+                dark = (60, 45, 25)
+                s.fill(base)
+                pygame.draw.rect(s, dark, (2, 2, 28, 28), 2)
+                pygame.draw.rect(s, dark, (6, 6, 20, 20), 1)
+                # cross icon
+                pygame.draw.line(s, dark, (16, 10), (16, 22), 2)
+                pygame.draw.line(s, dark, (12, 14), (20, 14), 2)
+                surfs[bid] = s
+                continue
+            if bid == BRONZE_DOOR_OPEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                pygame.draw.rect(s, (100, 80, 50), (0, 0, 8, 32))
+                pygame.draw.rect(s, (60, 45, 25), (7, 0, 1, 32))
+                surfs[bid] = s
+                continue
+            if bid == SWAHILI_DOOR_CLOSED:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                base = (90, 60, 30)
+                dark = (50, 30, 10)
+                brass = (200, 160, 40)
+                s.fill(dark)
+                pygame.draw.rect(s, base, (4, 4, 24, 24))
+                # carved frame
+                pygame.draw.rect(s, dark, (6, 6, 20, 20), 1)
+                # spikes/studs along the center vertical
+                pygame.draw.line(s, dark, (16, 4), (16, 28), 2)
+                for by in (8, 14, 20, 26):
+                    pygame.draw.circle(s, brass, (16, by), 1)
+                surfs[bid] = s
+                continue
+            if bid == SWAHILI_DOOR_OPEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                pygame.draw.rect(s, (90, 60, 30), (0, 0, 8, 32))
+                pygame.draw.rect(s, (50, 30, 10), (7, 0, 1, 32))
+                surfs[bid] = s
+                continue
+            if bid == SANDALWOOD_DOOR_CLOSED:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                base = (140, 90, 50)
+                dark = (90, 50, 20)
+                s.fill(dark)
+                pygame.draw.rect(s, base, (2, 2, 28, 28))
+                # dense floral carved motifs
+                for dx, dy in [(8, 8), (24, 8), (8, 24), (24, 24), (16, 16)]:
+                    pygame.draw.circle(s, dark, (dx, dy), 4, 1)
+                    pygame.draw.circle(s, dark, (dx, dy), 2)
+                pygame.draw.rect(s, dark, (4, 4, 24, 24), 1)
+                surfs[bid] = s
+                continue
+            if bid == SANDALWOOD_DOOR_OPEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                pygame.draw.rect(s, (140, 90, 50), (0, 0, 8, 32))
+                pygame.draw.rect(s, (90, 50, 20), (7, 0, 1, 32))
+                surfs[bid] = s
+                continue
+            if bid == STONE_SLAB_DOOR_CLOSED:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+                base = (120, 120, 120)
+                dark = (80, 80, 80)
+                s.fill(dark)
+                # trapezoidal
+                pygame.draw.polygon(s, base, [(6, 2), (26, 2), (30, 30), (2, 30)])
+                # glyphs
+                pygame.draw.rect(s, dark, (12, 6, 8, 6), 1)
+                pygame.draw.line(s, dark, (14, 9), (18, 9), 1)
+                pygame.draw.rect(s, dark, (12, 16, 8, 8), 1)
+                pygame.draw.circle(s, dark, (16, 20), 2, 1)
+                surfs[bid] = s
+                continue
+            if bid == STONE_SLAB_DOOR_OPEN:
+                s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+                s.fill((0, 0, 0, 0))
+                pygame.draw.rect(s, (120, 120, 120), (0, 0, 8, 32))
+                pygame.draw.rect(s, (80, 80, 80), (7, 0, 1, 32))
                 surfs[bid] = s
                 continue
             if bid in (STAIRS_RIGHT, STAIRS_LEFT):
@@ -16124,7 +16304,11 @@ class Renderer:
                     continue
                 if bid in (WOOD_DOOR_OPEN, IRON_DOOR_OPEN,
                            COBALT_DOOR_OPEN, CRIMSON_CEDAR_DOOR_OPEN,
-                           TEAL_DOOR_OPEN, SAFFRON_DOOR_OPEN):
+                           TEAL_DOOR_OPEN, SAFFRON_DOOR_OPEN,
+                           STUDDED_OAK_DOOR_OPEN, VERMILION_DOOR_OPEN,
+                           SHOJI_DOOR_OPEN, GILDED_DOOR_OPEN,
+                           BRONZE_DOOR_OPEN, SWAHILI_DOOR_OPEN,
+                           SANDALWOOD_DOOR_OPEN, STONE_SLAB_DOOR_OPEN):
                     sx = bx * BLOCK_SIZE - cam_xi
                     sy = by * BLOCK_SIZE - cam_yi
                     bg_bid = world.get_bg_block(bx, by)
@@ -19322,6 +19506,14 @@ class Renderer:
                             CRIMSON_CEDAR_DOOR_CLOSED, CRIMSON_CEDAR_DOOR_OPEN,
                             TEAL_DOOR_CLOSED, TEAL_DOOR_OPEN,
                             SAFFRON_DOOR_CLOSED, SAFFRON_DOOR_OPEN,
+                            STUDDED_OAK_DOOR_CLOSED, STUDDED_OAK_DOOR_OPEN,
+                            VERMILION_DOOR_CLOSED, VERMILION_DOOR_OPEN,
+                            SHOJI_DOOR_CLOSED, SHOJI_DOOR_OPEN,
+                            GILDED_DOOR_CLOSED, GILDED_DOOR_OPEN,
+                            BRONZE_DOOR_CLOSED, BRONZE_DOOR_OPEN,
+                            SWAHILI_DOOR_CLOSED, SWAHILI_DOOR_OPEN,
+                            SANDALWOOD_DOOR_CLOSED, SANDALWOOD_DOOR_OPEN,
+                            STONE_SLAB_DOOR_CLOSED, STONE_SLAB_DOOR_OPEN,
                             HALF_TIMBER_WALL, ASHLAR_BLOCK, GOTHIC_TRACERY, FLUTED_COLUMN,
                             CORNICE_BLOCK, ROSE_WINDOW, HERRINGBONE_BRICK, BAROQUE_TRIM,
                             TUDOR_BEAM, VENETIAN_FLOOR, FLEMISH_BRICK, PILASTER,
@@ -19430,6 +19622,14 @@ class Renderer:
              CRIMSON_CEDAR_DOOR_CLOSED, CRIMSON_CEDAR_DOOR_OPEN,
              TEAL_DOOR_CLOSED, TEAL_DOOR_OPEN,
              SAFFRON_DOOR_CLOSED, SAFFRON_DOOR_OPEN,
+             STUDDED_OAK_DOOR_CLOSED, STUDDED_OAK_DOOR_OPEN,
+             VERMILION_DOOR_CLOSED, VERMILION_DOOR_OPEN,
+             SHOJI_DOOR_CLOSED, SHOJI_DOOR_OPEN,
+             GILDED_DOOR_CLOSED, GILDED_DOOR_OPEN,
+             BRONZE_DOOR_CLOSED, BRONZE_DOOR_OPEN,
+             SWAHILI_DOOR_CLOSED, SWAHILI_DOOR_OPEN,
+             SANDALWOOD_DOOR_CLOSED, SANDALWOOD_DOOR_OPEN,
+             STONE_SLAB_DOOR_CLOSED, STONE_SLAB_DOOR_OPEN,
              HALF_TIMBER_WALL, ASHLAR_BLOCK, GOTHIC_TRACERY, FLUTED_COLUMN,
              CORNICE_BLOCK, ROSE_WINDOW, HERRINGBONE_BRICK, BAROQUE_TRIM,
              TUDOR_BEAM, VENETIAN_FLOOR, FLEMISH_BRICK, PILASTER,

@@ -751,9 +751,10 @@ def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
     npc_px = (left_x + 1) * BLOCK_SIZE
     npc_py = (sy - 2) * BLOCK_SIZE
 
-    # Flag planted to the left of the primary building, at ground level.
+    # Flag planted to the left of the primary building, one block above the
+    # flattened outpost floor (matches city flag placement).
     flag_bx = left_x - 2
-    flag_by = world.surface_y_at(flag_bx) - 1
+    flag_by = sy - 1
     if 0 <= flag_by < world.height and world.get_block(flag_bx, flag_by) == AIR:
         world.set_bg_block(flag_bx, flag_by, OUTPOST_FLAG_BLOCK)
 
@@ -848,7 +849,9 @@ def get_outpost_for_block(bx: int, by: int) -> Outpost | None:
     """Return the Outpost whose footprint contains (bx, by), or None."""
     for op in OUTPOSTS.values():
         hw = OUTPOST_TYPES[op.outpost_type]["half_w"]
-        if op.center_bx - hw - 3 <= bx <= op.center_bx + hw + 3:
+        # Include a wider buffer (+5) to ensure the flag (at left_x - 2) is caught.
+        # op.center_bx is left_x + hw + 2, so center - hw - 5 = left_x - 3.
+        if op.center_bx - hw - 5 <= bx <= op.center_bx + hw + 5:
             return op
     return None
 
