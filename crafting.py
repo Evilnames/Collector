@@ -106,6 +106,66 @@ BAKERY_RECIPES = [
     {"name": "Pomegranate Danish",    "ingredients": {"pomegranate": 1, "wheat": 2},                  "output_id": "pomegranate_danish",    "output_count": 2},
     {"name": "Watermelon Cake",       "ingredients": {"watermelon": 1, "wheat": 2, "egg": 1},         "output_id": "watermelon_cake",       "output_count": 1},
     {"name": "Apple Loaf",            "ingredients": {"apple": 1, "wheat": 2, "egg": 1},              "output_id": "apple_loaf",            "output_count": 1},
+    # --- Desserts: Cakes ---
+    {"name": "Honey Cake",            "ingredients": {"agave_syrup": 2, "wheat": 2, "egg": 1},        "output_id": "honey_cake",            "output_count": 1},
+    {"name": "Black Forest Cake",     "ingredients": {"wheat": 2, "egg": 2, "milk": 2},               "output_id": "black_forest_cake",     "output_count": 1},
+    {"name": "Victoria Sponge",       "ingredients": {"strawberry": 2, "wheat": 2, "egg": 1},         "output_id": "victoria_sponge",       "output_count": 1},
+    {"name": "Tres Leches Cake",      "ingredients": {"milk": 3, "wheat": 2, "egg": 2},               "output_id": "tres_leches",           "output_count": 1},
+    {"name": "Matcha Roll Cake",      "ingredients": {"taro": 1, "wheat": 2, "egg": 2},               "output_id": "matcha_roll",           "output_count": 1},
+    {"name": "Stollen",               "ingredients": {"wheat": 2, "date_palm_fruit": 2, "sesame_seeds": 1}, "output_id": "stollen",          "output_count": 1},
+    {"name": "Orange Cake",           "ingredients": {"lemon": 1, "wheat": 2, "egg": 1},              "output_id": "orange_cake",           "output_count": 1},
+    {"name": "Chestnut Cake",         "ingredients": {"pumpkin": 1, "wheat": 2, "egg": 1},            "output_id": "chestnut_cake",         "output_count": 1},
+    # --- Desserts: Cookies ---
+    {"name": "Ginger Snap",           "ingredients": {"ginger": 1, "wheat": 2},                       "output_id": "ginger_snap",           "output_count": 4},
+    {"name": "Biscotti",              "ingredients": {"wheat": 1, "sesame_seeds": 1, "egg": 1},       "output_id": "biscotti",              "output_count": 4},
+    {"name": "Almond Cookie",         "ingredients": {"wheat": 1, "egg": 1},                          "output_id": "almond_cookie",         "output_count": 4},
+    {"name": "Shortbread",            "ingredients": {"wheat": 2, "milk": 1},                         "output_id": "shortbread",            "output_count": 4},
+    {"name": "Lebkuchen",             "ingredients": {"ginger": 1, "wheat": 1, "sesame_seeds": 1},    "output_id": "lebkuchen",             "output_count": 4},
+    {"name": "Macaron",               "ingredients": {"sesame_seeds": 1, "egg": 2, "milk": 1},        "output_id": "macaron",               "output_count": 4},
+    {"name": "Alfajor",               "ingredients": {"wheat": 2, "milk": 1, "egg": 1},               "output_id": "alfajor",               "output_count": 4},
+    {"name": "Spekulatius",           "ingredients": {"ginger": 1, "wheat": 2, "agave_syrup": 1},     "output_id": "spekulatius",           "output_count": 4},
+    # --- Desserts: Pies & Tarts ---
+    {"name": "Berry Pie",             "ingredients": {"strawberry": 2, "wheat": 2, "egg": 1},         "output_id": "berry_pie",             "output_count": 1},
+    {"name": "Honey Tart",            "ingredients": {"agave_syrup": 2, "wheat": 1, "egg": 1},        "output_id": "honey_tart",            "output_count": 1},
+    {"name": "Almond Tart",           "ingredients": {"sesame_seeds": 1, "wheat": 1, "egg": 1},       "output_id": "almond_tart",           "output_count": 1},
+    {"name": "Key Lime Tart",         "ingredients": {"lemon": 2, "wheat": 1, "milk": 1},             "output_id": "key_lime_tart",         "output_count": 1},
+    {"name": "Date Tart",             "ingredients": {"date_palm_fruit": 2, "wheat": 1, "egg": 1},    "output_id": "date_tart",             "output_count": 1},
+    # --- Desserts: Japanese ---
+    {"name": "Mochi",                 "ingredients": {"rice": 2, "agave_syrup": 1},                   "output_id": "mochi",                 "output_count": 4},
+    {"name": "Dorayaki",              "ingredients": {"wheat": 1, "egg": 1, "date_palm_fruit": 1},    "output_id": "dorayaki",              "output_count": 2},
+    {"name": "Daifuku",               "ingredients": {"rice": 2, "milk": 1, "strawberry": 1},         "output_id": "daifuku",               "output_count": 4},
+    {"name": "Yokan",                 "ingredients": {"date_palm_fruit": 2, "rice": 1},               "output_id": "yokan",                 "output_count": 2},
+    {"name": "Taiyaki",               "ingredients": {"wheat": 1, "egg": 1, "pumpkin": 1},            "output_id": "taiyaki",               "output_count": 2},
+    # --- Desserts: Indian ---
+    {"name": "Gulab Jamun",           "ingredients": {"milk": 2, "wheat": 1, "agave_syrup": 1},       "output_id": "gulab_jamun",           "output_count": 4},
+    {"name": "Kheer",                 "ingredients": {"rice": 2, "milk": 2, "date_palm_fruit": 1},    "output_id": "kheer",                 "output_count": 2},
+    {"name": "Ladoo",                 "ingredients": {"sesame_seeds": 1, "agave_syrup": 1, "milk": 1}, "output_id": "ladoo",                "output_count": 4},
+    {"name": "Barfi",                 "ingredients": {"milk": 2, "agave_syrup": 1, "carrot": 1},      "output_id": "barfi",                 "output_count": 4},
+    {"name": "Rasgulla",              "ingredients": {"milk": 3, "egg": 1},                           "output_id": "rasgulla",              "output_count": 4},
+    # --- Desserts: French ---
+    {"name": "Eclair",                "ingredients": {"wheat": 1, "egg": 2, "milk": 1},               "output_id": "eclair",                "output_count": 2},
+    {"name": "Creme Brulee",          "ingredients": {"egg": 2, "milk": 2, "agave_syrup": 1},         "output_id": "creme_brulee",          "output_count": 2},
+    {"name": "Mille-Feuille",         "ingredients": {"wheat": 2, "egg": 1, "milk": 2},               "output_id": "mille_feuille",         "output_count": 1},
+    {"name": "Clafoutis",             "ingredients": {"strawberry": 2, "egg": 2, "milk": 1},          "output_id": "clafoutis",             "output_count": 1},
+    {"name": "Profiteroles",          "ingredients": {"wheat": 1, "egg": 2, "milk": 1},               "output_id": "profiteroles",          "output_count": 4},
+    # --- Desserts: Italian ---
+    {"name": "Tiramisu",              "ingredients": {"egg": 2, "milk": 2, "wheat": 1},               "output_id": "tiramisu",              "output_count": 1},
+    {"name": "Panna Cotta",           "ingredients": {"milk": 3, "agave_syrup": 1},                   "output_id": "panna_cotta",           "output_count": 2},
+    {"name": "Cannoli",               "ingredients": {"wheat": 2, "milk": 2, "egg": 1},               "output_id": "cannoli",               "output_count": 2},
+    {"name": "Zeppole",               "ingredients": {"wheat": 1, "egg": 2, "agave_syrup": 1},        "output_id": "zeppole",               "output_count": 4},
+    # --- Desserts: British ---
+    {"name": "Sticky Toffee Pudding", "ingredients": {"date_palm_fruit": 2, "wheat": 1, "egg": 2},    "output_id": "sticky_toffee_pudding", "output_count": 1},
+    {"name": "Eton Mess",             "ingredients": {"strawberry": 2, "egg": 2, "milk": 1},          "output_id": "eton_mess",             "output_count": 2},
+    {"name": "Trifle",                "ingredients": {"strawberry": 2, "pear": 1, "milk": 2},         "output_id": "trifle",                "output_count": 1},
+    {"name": "Jam Roly-Poly",         "ingredients": {"strawberry": 2, "wheat": 2, "milk": 1},        "output_id": "jam_roly_poly",         "output_count": 1},
+    # --- Desserts: Mexican & Latin American ---
+    {"name": "Flan",                  "ingredients": {"egg": 3, "milk": 2, "agave_syrup": 1},         "output_id": "flan",                  "output_count": 2},
+    {"name": "Bunuelos",              "ingredients": {"wheat": 2, "egg": 1, "agave_syrup": 1},        "output_id": "bunuelos",              "output_count": 4},
+    {"name": "Arroz con Leche",       "ingredients": {"rice": 2, "milk": 2, "lemon": 1},              "output_id": "arroz_con_leche",       "output_count": 2},
+    # --- Desserts: American ---
+    {"name": "Brownie",               "ingredients": {"wheat": 1, "egg": 2, "milk": 1},               "output_id": "brownie",               "output_count": 4},
+    {"name": "Bread Pudding",         "ingredients": {"wheat": 2, "milk": 2, "egg": 2},               "output_id": "bread_pudding",         "output_count": 1},
+    {"name": "Rice Pudding",          "ingredients": {"rice": 2, "milk": 2, "agave_syrup": 1},        "output_id": "rice_pudding",          "output_count": 2},
 ]
 
 # ---------------------------------------------------------------------------
@@ -176,6 +236,9 @@ WOK_RECIPES = [
     {"name": "Tangy Apple Stir-Fry",  "ingredients": {"apple": 1, "ginger": 1, "garlic": 1},        "output_id": "tangy_apple_stir_fry",  "output_count": 1},
     {"name": "Fig Glazed Tofu",       "ingredients": {"fig": 1, "tofu": 1, "ginger": 1},            "output_id": "fig_glazed_tofu",       "output_count": 1},
     {"name": "Pomegranate Stir-Fry",  "ingredients": {"pomegranate": 1, "bok_choy": 1, "garlic": 1},"output_id": "pomegranate_stir_fry",  "output_count": 1},
+    # --- Pacific ---
+    {"name": "Coconut Rice",    "ingredients": {"rice": 2, "coconut": 1},                           "output_id": "coconut_rice",    "output_count": 2},
+    {"name": "Poke Bowl",       "ingredients": {"fish": 1, "rice": 1, "scallion": 1},               "output_id": "poke_bowl",       "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -209,6 +272,8 @@ STEAMER_RECIPES = [
     {"name": "Lemon Steamed Fish",   "ingredients": {"lemon": 1, "fish": 1, "ginger": 1},             "output_id": "lemon_steamed_fish",    "output_count": 1},
     {"name": "Fig Sticky Rice",      "ingredients": {"fig": 2, "rice": 2},                            "output_id": "fig_sticky_rice",       "output_count": 2},
     {"name": "Pear Custard",         "ingredients": {"pear": 1, "milk": 2, "egg": 1},                 "output_id": "pear_custard",          "output_count": 1},
+    # --- Pacific ---
+    {"name": "Poi",                 "ingredients": {"taro": 2},                                      "output_id": "poi",                   "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -342,6 +407,8 @@ BBQ_GRILL_RECIPES = [
     {"name": "Fig Glazed Pheasant",         "ingredients": {"fig": 1, "raw_pheasant": 1},                            "output_id": "fig_glazed_pheasant",         "output_count": 1},
     {"name": "Pomegranate Venison Steak",   "ingredients": {"pomegranate": 1, "raw_venison": 1, "onion": 1},         "output_id": "pomegranate_venison_steak",   "output_count": 1},
     {"name": "Grilled Lemon Corn",          "ingredients": {"lemon": 1, "corn": 2},                                  "output_id": "grilled_lemon_corn",          "output_count": 2},
+    # --- Pacific ---
+    {"name": "Roasted Breadfruit",         "ingredients": {"breadfruit": 2},                                         "output_id": "roasted_breadfruit",          "output_count": 2},
 ]
 
 # ---------------------------------------------------------------------------
@@ -447,6 +514,9 @@ CLAY_POT_RECIPES = [
     {"name": "Spiced Pear Compote",  "ingredients": {"pear": 2, "ginger": 1},                               "output_id": "spiced_pear_compote",  "output_count": 1},
     {"name": "Fig & Date Pudding",   "ingredients": {"fig": 2, "date_palm_fruit": 1},                       "output_id": "fig_date_pudding",     "output_count": 1},
     {"name": "Pomegranate Stew",     "ingredients": {"pomegranate": 1, "onion": 1, "tomato": 1},            "output_id": "pomegranate_stew",     "output_count": 1},
+    # --- Pacific ---
+    {"name": "Laplap",               "ingredients": {"taro": 2, "fish": 1},                                 "output_id": "laplap",               "output_count": 1},
+    {"name": "Coconut Fish Curry",   "ingredients": {"fish": 1, "coconut": 1, "ginger": 1},                "output_id": "coconut_fish_curry",   "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -1673,6 +1743,16 @@ RECIPES = [
         "output_id":    "artisan_bench_item",
         "output_count": 1,
     },
+    {
+        "name": "City Block",
+        "pattern": [
+            ["gold_nugget", "stone_chip", "gold_nugget"],
+            ["stone_chip",  "iron_chunk", "stone_chip" ],
+            ["gold_nugget", "stone_chip", "gold_nugget"],
+        ],
+        "output_id":    "city_block_item",
+        "output_count": 1,
+    },
     # --- Wine equipment ---
     {
         "name": "Grape Press",
@@ -2175,6 +2255,7 @@ AUTOMATION_RECIPES = [
     {"name": "Alarm Bell",        "ingredients": {"iron_chunk": 4, "wire": 1},                       "output_id": "alarm_bell_item",       "output_count": 1},
     {"name": "Water Bucket",      "ingredients": {"iron_chunk": 2},                                  "output_id": "water_bucket",          "output_count": 1},
     {"name": "Irrigation Channel","ingredients": {"stone_chip": 3, "iron_chunk": 1},                 "output_id": "irrigation_channel_item","output_count": 4},
+    {"name": "Grow Lamp",        "ingredients": {"glass": 3, "iron_chunk": 2, "coal": 2},            "output_id": "grow_lamp_item",         "output_count": 1},
     {"name": "Counter",           "ingredients": {"tempered_iron": 2, "wire": 2, "iron_chunk": 1},  "output_id": "counter_item",          "output_count": 1},
     {"name": "Comparator",        "ingredients": {"tempered_iron": 2, "wire": 1, "quartz": 1},      "output_id": "comparator_item",       "output_count": 1},
     {"name": "Observer",          "ingredients": {"tempered_iron": 1, "wire": 2, "quartz": 1},      "output_id": "observer_item",         "output_count": 1},

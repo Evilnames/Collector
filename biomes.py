@@ -29,6 +29,8 @@ BIODOME_TERRAIN_MODS = {
     "mediterranean":   (  2, 0.65),
     "east_asian":      (  0, 1.10),
     "south_asian":     (  1, 0.80),
+    "ocean":           ( 22, 0.04),   # deep flat terrain → fills with water
+    "pacific_island":  (-8,  0.40),   # raised island above water level
 }
 
 BIOME_STONE_COLORS = {

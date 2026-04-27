@@ -1384,6 +1384,23 @@ LEAF_LOG_MAP = {
     POMEGRANATE_LEAVES: POMEGRANATE_LOG,
 }
 
+GAMBLING_TABLE               = 1229  # inn gambling table; opens dice mini-game
+RACING_RAIL                  = 1230  # perimeter fence/rail of the racing ring
+BET_COUNTER                  = 1231  # racing ring bookkeeper counter; triggers racing UI
+STARTING_GATE                = 1232  # decorative gate at race start line
+WINNERS_POST                 = 1233  # trophy post at finish line
+
+# --- Pacific / Polynesian crops ---
+TARO_BUSH             = 1234
+TARO_CROP_YOUNG       = 1235
+TARO_CROP_MATURE      = 1236
+BREADFRUIT_BUSH       = 1237
+BREADFRUIT_CROP_YOUNG = 1238
+BREADFRUIT_CROP_MATURE = 1239
+COCONUT_BUSH          = 1240
+COCONUT_CROP_YOUNG    = 1241
+COCONUT_CROP_MATURE   = 1242
+
 EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, BAKERY_BLOCK,
                     WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
                     DESERT_FORGE_BLOCK,
@@ -1412,7 +1429,9 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     SWITCH_BLOCK_OFF, LATCH_BLOCK_OFF,
                     BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK,
                     AUTOMATION_BENCH_BLOCK,
-                    CHICKEN_COOP_BLOCK}
+                    CHICKEN_COOP_BLOCK,
+                    GAMBLING_TABLE,
+                    BET_COUNTER}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT}
 
@@ -1452,7 +1471,8 @@ BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN
                      BERGAMOT_BUSH, WORMWOOD_BUSH, RUE_BUSH, LEMON_VERBENA_BUSH,
                      HYSSOP_BUSH, CATNIP_BUSH, WOOD_SORREL_BUSH, MARJORAM_BUSH,
                      SAVORY_BUSH, ANGELICA_BUSH, BORAGE_BUSH, COMFREY_BUSH, MUGWORT_BUSH,
-                     FLAX_BUSH, COTTON_BUSH}
+                     FLAX_BUSH, COTTON_BUSH,
+                     TARO_BUSH, BREADFRUIT_BUSH, COCONUT_BUSH}
 YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG, TOMATO_CROP_YOUNG, CORN_CROP_YOUNG, PUMPKIN_CROP_YOUNG, APPLE_CROP_YOUNG,
                      RICE_CROP_YOUNG, GINGER_CROP_YOUNG, BOK_CHOY_CROP_YOUNG, GARLIC_CROP_YOUNG,
                      SCALLION_CROP_YOUNG, CHILI_CROP_YOUNG,
@@ -1474,7 +1494,8 @@ YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG,
                      PRICKLY_PEAR_YOUNG, CHOLLA_YOUNG, PALO_VERDE_YOUNG,
                      STRAWBERRY_CROP_YOUNG_P, TOMATO_CROP_YOUNG_P, WATERMELON_CROP_YOUNG_P,
                      CORN_CROP_YOUNG_P, RICE_CROP_YOUNG_P,
-                     FLAX_CROP_YOUNG, COTTON_CROP_YOUNG}
+                     FLAX_CROP_YOUNG, COTTON_CROP_YOUNG,
+                     TARO_CROP_YOUNG, BREADFRUIT_CROP_YOUNG, COCONUT_CROP_YOUNG}
 # Desert plants that grow wild on SAND — bypass tilled-soil requirement
 WILD_DESERT_PLANT_BLOCKS = {
     CACTUS_YOUNG, SAGUARO_YOUNG, BARREL_CACTUS_YOUNG, OCOTILLO_YOUNG,
@@ -1501,7 +1522,8 @@ MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATU
                      PRICKLY_PEAR_MATURE, CHOLLA_MATURE, PALO_VERDE_MATURE,
                      STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P, WATERMELON_CROP_MATURE_P,
                      CORN_CROP_MATURE_P, RICE_CROP_MATURE_P,
-                     FLAX_CROP_MATURE, COTTON_CROP_MATURE}
+                     FLAX_CROP_MATURE, COTTON_CROP_MATURE,
+                     TARO_CROP_MATURE, BREADFRUIT_CROP_MATURE, COCONUT_CROP_MATURE}
 CROP_BLOCKS       = YOUNG_CROP_BLOCKS | MATURE_CROP_BLOCKS
 
 # Perennial crops regrow after harvest (each harvest has ~33% chance to die)
@@ -1521,6 +1543,9 @@ PERENNIAL_CROP_MATURE = {
     STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P,
     FLAX_CROP_MATURE,
     COTTON_CROP_MATURE,
+    TARO_CROP_MATURE,
+    BREADFRUIT_CROP_MATURE,
+    COCONUT_CROP_MATURE,
 }
 
 # Reverse mapping: mature → young, used for perennial regrowth
@@ -1608,6 +1633,9 @@ MATURE_TO_YOUNG_CROP = {
     RICE_CROP_MATURE_P:       RICE_CROP_YOUNG_P,
     FLAX_CROP_MATURE:         FLAX_CROP_YOUNG,
     COTTON_CROP_MATURE:       COTTON_CROP_YOUNG,
+    TARO_CROP_MATURE:         TARO_CROP_YOUNG,
+    BREADFRUIT_CROP_MATURE:   BREADFRUIT_CROP_YOUNG,
+    COCONUT_CROP_MATURE:      COCONUT_CROP_YOUNG,
 }
 
 ALPINE_BALCONY_RAIL          = 1022  # alpine balcony rail
@@ -1706,6 +1734,14 @@ OUTPOST_FLAG_BLOCK           = 1178  # outpost identity flag (non-mineable)
 ICE_SHARD                    = 1226  # ice shard
 FROZEN_BOG                   = 1227  # frozen bog
 STONE_BRIDGE                 = 1228  # stone road bridge spanning a city river
+TIMBER_BRIDGE                = 1243  # log-and-plank bridge; boreal / birch-forest cities
+MOSSY_BRIDGE                 = 1244  # weathered mossy-stone bridge; wetland / swamp cities
+SANDSTONE_BRIDGE             = 1245  # warm sandstone bridge; jungle / tropical cities
+BRICK_BRIDGE                 = 1246  # red-brick arch bridge; rolling-hills cities
+COBBLE_BRIDGE                = 1247  # rough cobblestone bridge; steppe cities
+DRIFTWOOD_BRIDGE             = 1248  # pale weathered driftwood bridge; coastal cities
+CITY_BLOCK                   = 1249  # player-placed city anchor/management block
+GROW_LAMP                    = 1250  # bg-layer artificial grow light; enables underground crop growth
 BLOCKS = {
     AIR:              {"name": "Air",               "hardness": 0,            "color": None,            "drop": None},
     GRASS:            {"name": "Grass",             "hardness": 1,            "color": (58, 154, 58),   "drop": "dirt_clump"},
@@ -2316,6 +2352,16 @@ BLOCKS = {
     COTTON_BUSH:              {"name": "Cotton Bush",         "hardness": 0.5, "color": (210, 220, 175), "drop": "cotton_seed",     "drop_chance": 1.0},
     COTTON_CROP_YOUNG:        {"name": "Cotton Plant",        "hardness": 0.5, "color": (130, 190, 130), "drop": "cotton_seed",     "drop_chance": 1.0},
     COTTON_CROP_MATURE:       {"name": "Cotton Plant (Ripe)", "hardness": 0.5, "color": (240, 242, 235), "drop": None},
+    # --- Pacific crops ---
+    TARO_BUSH:                {"name": "Taro Bush",             "hardness": 0.5, "color": (135, 105, 155), "drop": "taro",       "drop_chance": 1.0},
+    TARO_CROP_YOUNG:          {"name": "Taro Plant",            "hardness": 0.5, "color": (100, 150, 120), "drop": "taro",       "drop_chance": 1.0},
+    TARO_CROP_MATURE:         {"name": "Taro Plant (Ripe)",     "hardness": 0.5, "color": (155, 130, 175), "drop": "taro"},
+    BREADFRUIT_BUSH:          {"name": "Breadfruit Bush",       "hardness": 0.5, "color": (100, 150,  70), "drop": "breadfruit", "drop_chance": 1.0},
+    BREADFRUIT_CROP_YOUNG:    {"name": "Breadfruit Sapling",    "hardness": 0.5, "color": ( 80, 140,  60), "drop": "breadfruit", "drop_chance": 1.0},
+    BREADFRUIT_CROP_MATURE:   {"name": "Breadfruit Tree",       "hardness": 0.5, "color": (135, 165,  85), "drop": "breadfruit"},
+    COCONUT_BUSH:             {"name": "Coconut Palm (Young)",  "hardness": 0.5, "color": ( 95, 130,  65), "drop": "coconut",    "drop_chance": 1.0},
+    COCONUT_CROP_YOUNG:       {"name": "Coconut Palm",          "hardness": 0.5, "color": ( 75, 120,  55), "drop": "coconut",    "drop_chance": 1.0},
+    COCONUT_CROP_MATURE:      {"name": "Coconut Palm (Ripe)",   "hardness": 0.5, "color": (120,  90,  55), "drop": "coconut"},
     SPINNING_WHEEL_BLOCK:     {"name": "Spinning Wheel",      "hardness": 1.5, "color": (165, 130,  75), "drop": "spinning_wheel_item"},
     DYE_VAT_BLOCK:            {"name": "Dye Vat",             "hardness": 1.5, "color": ( 85, 110, 155), "drop": "dye_vat_item"},
     LOOM_BLOCK:               {"name": "Loom",                "hardness": 1.5, "color": (140, 100,  55), "drop": "loom_item"},
@@ -2899,6 +2945,11 @@ BLOCKS = {
     DEPOSIT_TRIGGER_BLOCK:  {"name": "Deposit Trigger",   "hardness": 2.0, "color": (200, 140,  50), "drop": "deposit_trigger_item"},
     AUTOMATION_BENCH_BLOCK: {"name": "Automation Bench",  "hardness": 2.0, "color": ( 70,  90, 110), "drop": "automation_bench_item"},
     CHICKEN_COOP_BLOCK:    {"name": "Chicken Coop",      "hardness": 2.0, "color": (165, 125,  60), "drop": "chicken_coop_item"},
+    GAMBLING_TABLE:        {"name": "Gambling Table",    "hardness": float('inf'), "color": (20, 80, 40),   "drop": None},
+    RACING_RAIL:           {"name": "Racing Rail",       "hardness": 1.5, "color": (110, 80, 45),  "drop": "racing_rail"},
+    BET_COUNTER:           {"name": "Bet Counter",       "hardness": float('inf'), "color": (80, 60, 35),   "drop": None},
+    STARTING_GATE:         {"name": "Starting Gate",     "hardness": 1.5, "color": (200, 185, 160), "drop": "starting_gate"},
+    WINNERS_POST:          {"name": "Winners Post",      "hardness": 1.5, "color": (195, 160, 50),  "drop": "winners_post"},
     ALPINE_BALCONY_RAIL:       {"name": "Alpine Balcony Rail", "hardness": 1, "color": (160, 110,  65), "drop": "alpine_balcony_rail"},
     DARK_TIMBER_BEAM:          {"name": "Dark Timber Beam", "hardness": 1, "color": ( 55,  40,  30), "drop": "dark_timber_beam"},
     ROUGH_STONE_WALL:          {"name": "Rough Stone Wall", "hardness": 1, "color": (130, 125, 120), "drop": "rough_stone_wall"},
@@ -3002,7 +3053,15 @@ BLOCKS = {
     TAPROOM_BLOCK:             {"name": "Taproom",            "hardness": 1.5, "color": ( 95,  65,  40), "drop": "taproom_item"},
     ICE_SHARD:                 {"name": "Ice Shard", "hardness": 1, "color": (185, 225, 248), "drop": "ice_shard"},
     FROZEN_BOG:                {"name": "Frozen Bog", "hardness": 1, "color": ( 95, 120, 138), "drop": "frozen_bog"},
-    STONE_BRIDGE:              {"name": "Stone Bridge", "hardness": 2.5, "color": (118, 112, 102), "drop": "stone_chip"},
+    STONE_BRIDGE:              {"name": "Stone Bridge",     "hardness": 2.5, "color": (118, 112, 102), "drop": "stone_chip"},
+    TIMBER_BRIDGE:             {"name": "Timber Bridge",    "hardness": 2.0, "color": (110,  75,  42), "drop": "lumber"},
+    MOSSY_BRIDGE:              {"name": "Mossy Bridge",     "hardness": 2.0, "color": ( 78,  95,  72), "drop": "stone_chip"},
+    SANDSTONE_BRIDGE:          {"name": "Sandstone Bridge", "hardness": 2.5, "color": (192, 158, 100), "drop": "stone_chip"},
+    BRICK_BRIDGE:              {"name": "Brick Bridge",     "hardness": 2.5, "color": (168,  82,  52), "drop": "stone_chip"},
+    COBBLE_BRIDGE:             {"name": "Cobble Bridge",    "hardness": 2.5, "color": (108,  98,  84), "drop": "stone_chip"},
+    DRIFTWOOD_BRIDGE:          {"name": "Driftwood Bridge", "hardness": 1.5, "color": (185, 172, 148), "drop": "lumber"},
+    CITY_BLOCK:                {"name": "City Block",       "hardness": float('inf'), "color": (180, 155, 90), "drop": None},
+    GROW_LAMP:                 {"name": "Grow Lamp",        "hardness": 1.5,          "color": (210, 255, 160), "drop": "grow_lamp_item"},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}
@@ -3033,4 +3092,6 @@ LIGHT_EMITTERS = {
     ALPINE_CHANDELIER:(125, "wide_flat"),
     # Logic output
     POWERED_LANTERN_ON: (80, "circle"),
+    # Farming
+    GROW_LAMP:          (170, "wide_flat"),
 }

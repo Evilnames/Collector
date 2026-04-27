@@ -2,7 +2,7 @@ import json
 import random
 from dataclasses import dataclass
 
-from constants import CHUNK_W, BLOCK_SIZE
+from constants import CHUNK_W, BLOCK_SIZE, SURFACE_Y
 from blocks import STONE, BEDROCK, AIR, OUTPOST_FLAG_BLOCK, COBBLESTONE
 
 # ---------------------------------------------------------------------------
@@ -427,6 +427,36 @@ OUTPOST_TYPES = {
         "base_stock": 5, "clothing_key": "fungi_keeper",
         "building_style": "shrine", "half_w": 13, "layout": "default",
     },
+
+    "pearl_diving_camp": {
+        "display_name":    "Pearl Diving Camp",
+        "eligible_biomes": ["pacific_island", "ocean", "beach"],
+        "sells": [("pearl_necklace", 45), ("raw_pearl", 22), ("shell_ornament", 15)],
+        "buys":  [("pearl", 38, 8), ("shell_fragment", 5, 20), ("coral", 12, 10)],
+        "needs": [("lumber", 8), ("coal", 4)],
+        "base_stock": 5, "clothing_key": "polynesian",
+        "building_style": "house", "half_w": 14, "layout": "market",
+    },
+
+    "canoe_trading_post": {
+        "display_name":    "Canoe Trading Post",
+        "eligible_biomes": ["pacific_island", "ocean", "beach"],
+        "sells": [("coconut_oil", 18), ("tapa_cloth", 22), ("tropical_spice", 30)],
+        "buys":  [("iron_chunk", 20, 6), ("wheat", 5, 15), ("red_wine", 12, 8)],
+        "needs": [("lumber", 10), ("coal", 5)],
+        "base_stock": 5, "clothing_key": "polynesian",
+        "building_style": "market_stall", "half_w": 14, "layout": "market",
+    },
+
+    "polynesian_shrine_outpost": {
+        "display_name":    "Island Shrine",
+        "eligible_biomes": ["pacific_island"],
+        "sells": [("carved_idol", 55), ("bone_fishhook", 20), ("navigation_chart", 40)],
+        "buys":  [("rare_fish", 35, 6), ("mint_leaves", 8, 12), ("obsidian_chunk", 22, 4)],
+        "needs": [("lumber", 6), ("coal", 4)],
+        "base_stock": 4, "clothing_key": "polynesian",
+        "building_style": "shrine", "half_w": 12, "layout": "default",
+    },
 }
 
 # Flag pennant color per outpost type (RGB)
@@ -464,8 +494,11 @@ OUTPOST_FLAG_COLORS = {
     "reed_weaver":       (160, 175, 100),
     "silk_pavilion":     (215, 175, 110),
     "incense_lodge":     (175, 105, 165),
-    "glacier_camp":      (200, 220, 240),
-    "bog_apothecary":    ( 95, 145,  85),
+    "glacier_camp":           (200, 220, 240),
+    "bog_apothecary":         ( 95, 145,  85),
+    "pearl_diving_camp":      ( 70, 180, 210),
+    "canoe_trading_post":     (200, 130,  50),
+    "polynesian_shrine_outpost": (120, 80, 160),
 }
 
 _MILITARY_OUTPOST_TYPES = {
@@ -509,6 +542,9 @@ BIOME_OUTPOST_TYPES = {
                         "incense_lodge"),
     "south_asian":     ("spice_market",        "textile_guild",     "silk_pavilion",
                         "incense_lodge"),
+    "pacific_island":  ("pearl_diving_camp",   "canoe_trading_post",
+                        "polynesian_shrine_outpost"),
+    "ocean":           ("canoe_trading_post",  "pearl_diving_camp"),
 }
 
 # ---------------------------------------------------------------------------
@@ -945,7 +981,7 @@ def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
     cfg    = OUTPOST_TYPES[otype]
     half_w = cfg["half_w"]
     biodome = world.biodome_at(out_bx)
-    sy      = world.surface_y_at(out_bx)
+    sy      = min(world.surface_y_at(out_bx), SURFACE_Y)
 
     # Pre-load chunks with a wider buffer so flattening doesn't read stale terrain
     chunk_lo = (out_bx - half_w - 10) // CHUNK_W
@@ -961,7 +997,7 @@ def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
 
     # Flatten terrain across the footprint to sy (mirrors _build_single_city)
     for bx in range(out_bx - half_w, out_bx + half_w + 1):
-        col_sy = world.surface_y_at(bx)
+        col_sy = min(world.surface_y_at(bx), SURFACE_Y)
         # Hill: clear solid blocks above the outpost floor
         for by in range(col_sy, sy):
             blk = world.get_block(bx, by)
@@ -1059,6 +1095,8 @@ def generate_outpost_for_chunk(world, seed: int, cx: int) -> None:
         return
 
     biodome = world.biodome_at(slot_x)
+    if biodome == "ocean":
+        return
     otype   = _type_for_slot(seed, slot_x, biodome)
     if otype is None:
         return

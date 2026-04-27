@@ -1,7 +1,10 @@
 import math
 import random
 
-from blocks import (STONE, BEDROCK, HOUSE_WALL, HOUSE_ROOF, AIR, LADDER, WATER, STONE_BRIDGE,
+from blocks import (STONE, BEDROCK, DIRT, HOUSE_WALL, HOUSE_ROOF, AIR, LADDER, WATER,
+                    STONE_BRIDGE, TIMBER_BRIDGE, MOSSY_BRIDGE, SANDSTONE_BRIDGE,
+                    BRICK_BRIDGE, COBBLE_BRIDGE, DRIFTWOOD_BRIDGE,
+                    IRON_FENCE,
                     TILLED_SOIL, WELL_BLOCK,
                     WHEAT_CROP_YOUNG, WHEAT_CROP_MATURE,
                     CARROT_CROP_YOUNG, CARROT_CROP_MATURE,
@@ -100,7 +103,9 @@ from blocks import (STONE, BEDROCK, HOUSE_WALL, HOUSE_ROOF, AIR, LADDER, WATER, 
                     GILDED_DOOR_CLOSED, BRONZE_DOOR_CLOSED, SWAHILI_DOOR_CLOSED,
                     SANDALWOOD_DOOR_CLOSED, STONE_SLAB_DOOR_CLOSED,
                     BED, CHEST_BLOCK, BAKERY_BLOCK, STABLE_BLOCK, STORAGE_PITHOS,
-                    TAPESTRY_BLOCK, WOVEN_TEXTILE, OAK_PANEL)
+                    TAPESTRY_BLOCK, WOVEN_TEXTILE, OAK_PANEL, TEAK_PLANK,
+                    GAMBLING_TABLE,
+                    RACING_RAIL, BET_COUNTER, STARTING_GATE, WINNERS_POST)
 from constants import (BLOCK_SIZE, PLAYER_W, PLAYER_H, CITY_SPACING, CITY_COUNT,
                        NPC_INTERACT_RANGE, CHUNK_W, GRAVITY, MAX_FALL, SURFACE_Y)
 from rocks import ROCK_TYPES
@@ -577,7 +582,8 @@ class NPC:
         return 1.0
 
     def _dynasty_price_mult(self, player) -> float:
-        """Return discount multiplier from dynasty favor (5% at Favored, 10% at Champion)."""
+        """Return discount multiplier from dynasty favor (5% at Favored, 10% at Champion).
+        Also applies +15% penalty at Hostile/Feud rivalry tension."""
         if player is None:
             return 1.0
         from towns import TOWNS
@@ -591,6 +597,12 @@ class NPC:
             mult *= 0.95
         if rid in getattr(player, "champion_dynasty_regions", set()):
             mult *= 0.95
+        rival_rid = getattr(self, "dynasty_rival_region_id", None)
+        if rival_rid is not None and rid is not None:
+            import npc_dynasty as _dyn
+            key = _dyn._rivalry_key(rid, rival_rid)
+            if getattr(player, "rivalry_tension", {}).get(key, 0) >= 2:
+                mult *= 1.15
         return mult
 
     @property
@@ -1236,7 +1248,7 @@ class TradeNPC(NPC):
 
     def boosted_gold(self, trade_idx):
         _, _, receive_gold = self.trades[trade_idx]
-        return max(1, round(receive_gold * _rep_buy_bonus(self._town_rep())))
+        return max(1, round(receive_gold * _rep_buy_bonus(self._town_rep()) * _wealth_price_mult(self)))
 
     def rep_bonus_pct(self):
         return round((_rep_buy_bonus(self._town_rep()) - 1.0) * 100)
@@ -1318,6 +1330,81 @@ BEER_SHOP_TABLE = [
     ("brown_ale",            20, "Brown Ale",             "wheat",         6),
     ("sour",                 24, "Sour",                  "mushroom",      4),
     ("barleywine",           28, "Barleywine",            "wheat",         8),
+]
+
+PASTRY_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    # Cakes
+    ("honey_cake",           28, "Honey Cake",           "wheat",         8),
+    ("black_forest_cake",    32, "Black Forest Cake",    "egg",           6),
+    ("victoria_sponge",      30, "Victoria Sponge",      "strawberry",    8),
+    ("tres_leches",          35, "Tres Leches Cake",     "milk",          6),
+    ("orange_cake",          26, "Orange Cake",          "wheat",         7),
+    ("chestnut_cake",        28, "Chestnut Cake",        "pumpkin",       5),
+    ("stollen",              30, "Stollen",              "date_palm_fruit", 6),
+    # Cookies
+    ("ginger_snap",          12, "Ginger Snap",          "ginger",        3),
+    ("biscotti",             14, "Biscotti",             "wheat",         4),
+    ("almond_cookie",        12, "Almond Cookie",        "wheat",         4),
+    ("shortbread",           12, "Shortbread",           "milk",          4),
+    ("lebkuchen",            16, "Lebkuchen",            "ginger",        3),
+    ("macaron",              18, "Macaron",              "egg",           3),
+    ("alfajor",              18, "Alfajor",              "milk",          4),
+    ("spekulatius",          14, "Spekulatius",          "ginger",        3),
+    # Pies & Tarts
+    ("berry_pie",            24, "Berry Pie",            "strawberry",    6),
+    ("honey_tart",           22, "Honey Tart",           "agave_syrup",   4),
+    ("almond_tart",          22, "Almond Tart",          "sesame_seeds",  5),
+    ("key_lime_tart",        22, "Key Lime Tart",        "lemon",         4),
+    ("date_tart",            24, "Date Tart",            "date_palm_fruit", 5),
+    # French
+    ("eclair",               22, "Eclair",               "egg",           4),
+    ("creme_brulee",         24, "Creme Brulee",         "milk",          5),
+    ("mille_feuille",        28, "Mille-Feuille",        "egg",           4),
+    ("clafoutis",            24, "Clafoutis",            "strawberry",    6),
+    ("profiteroles",         20, "Profiteroles",         "egg",           4),
+    # Italian
+    ("tiramisu",             32, "Tiramisu",             "milk",          5),
+    ("panna_cotta",          22, "Panna Cotta",          "milk",          5),
+    ("cannoli",              24, "Cannoli",              "wheat",         5),
+    ("zeppole",              18, "Zeppole",              "egg",           4),
+    # British
+    ("sticky_toffee_pudding", 34, "Sticky Toffee Pudding", "date_palm_fruit", 5),
+    ("eton_mess",            26, "Eton Mess",            "strawberry",    6),
+    ("trifle",               28, "Trifle",               "milk",          5),
+    ("jam_roly_poly",        26, "Jam Roly-Poly",        "strawberry",    5),
+    # American
+    ("brownie",              22, "Brownie",              "egg",           4),
+    ("bread_pudding",        26, "Bread Pudding",        "wheat",         5),
+]
+
+SWEET_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    # Japanese
+    ("mochi",                18, "Mochi",                "rice",          4),
+    ("dorayaki",             22, "Dorayaki",             "date_palm_fruit", 4),
+    ("daifuku",              20, "Daifuku",              "rice",          4),
+    ("yokan",                16, "Yokan",                "date_palm_fruit", 5),
+    ("taiyaki",              20, "Taiyaki",              "wheat",         4),
+    # Indian
+    ("gulab_jamun",          22, "Gulab Jamun",          "milk",          5),
+    ("kheer",                24, "Kheer",                "rice",          4),
+    ("ladoo",                18, "Ladoo",                "sesame_seeds",  5),
+    ("barfi",                20, "Barfi",                "milk",          5),
+    ("rasgulla",             18, "Rasgulla",             "milk",          6),
+    # Mexican & Latin American
+    ("flan",                 22, "Flan",                 "egg",           4),
+    ("bunuelos",             16, "Bunuelos",             "wheat",         5),
+    ("arroz_con_leche",      22, "Arroz con Leche",      "rice",          4),
+    ("tres_leches",          35, "Tres Leches Cake",     "milk",          6),
+    # Rice & milk desserts
+    ("rice_pudding",         20, "Rice Pudding",         "rice",          4),
+    # Also carry some existing Eastern sweets
+    ("moon_cake",            22, "Moon Cake",            "wheat",         5),
+    ("taro_cake",            20, "Taro Cake",            "taro",          4),
+    ("sweet_rice_ball",      14, "Sweet Rice Ball",      "rice",          4),
+    ("matcha_roll",          28, "Matcha Roll Cake",     "taro",          4),
+    ("pear_custard",         22, "Pear Custard",         "pear",          4),
 ]
 
 # Prices BeerMerchantNPC / TavernkeeperNPC pay when buying beers from the player.
@@ -1685,6 +1772,20 @@ def _wealth_stock_bonus(npc) -> int:
     return 0
 
 
+def _wealth_price_mult(npc) -> float:
+    """Region wealth multiplier applied to both buy and sell prices.
+
+    Rich regions have more money in circulation: goods cost more AND merchants
+    pay more.  Poor regions are the inverse.
+    """
+    region = _region_for_npc(npc)
+    if region is None:
+        return 1.0
+    if region.wealth == "rich": return 1.15
+    if region.wealth == "poor": return 0.85
+    return 1.0
+
+
 def _rep_buy_bonus(rep):
     if rep >= 1000: return 1.50
     if rep >= 500:  return 1.40
@@ -1720,7 +1821,8 @@ class MerchantNPC(NPC):
                             * _rep_discount(self._town_rep(), self)
                             * _specialty_price_mult(self, item_id)
                             * self._beloved_price_mult(player)
-                            * self._dynasty_price_mult(player)))
+                            * self._dynasty_price_mult(player)
+                            * _wealth_price_mult(self)))
 
     def rep_discount_pct(self):
         return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
@@ -1784,7 +1886,7 @@ class BeerMerchantNPC(MerchantNPC):
 
     def beer_buy_price(self, item_id):
         base = TAVERN_BUY_TABLE.get(item_id, 0)
-        return max(1, round(base * _rep_buy_bonus(self._town_rep())))
+        return max(1, round(base * _rep_buy_bonus(self._town_rep()) * _wealth_price_mult(self)))
 
     def can_sell_beer(self, item_id, player):
         return TAVERN_BUY_TABLE.get(item_id, 0) > 0 and player.inventory.get(item_id, 0) > 0
@@ -1801,6 +1903,30 @@ class BeerMerchantNPC(MerchantNPC):
                     player.hotbar[i] = None
         player.money += price
         return price
+
+
+class PastryChefNPC(MerchantNPC):
+    """Sells Western-style cakes, cookies, pies, and European pastries."""
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, rng, biodome)
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (230, 200, 155)  # Cream/pastry
+        self.clothing["trim"] = (180, 130, 80)
+        self.display_name = "Pastry Chef"
+        n = rng.randint(5, 8)
+        self.shop = rng.sample(PASTRY_SHOP_TABLE, min(n, len(PASTRY_SHOP_TABLE)))
+
+
+class SweetShopNPC(MerchantNPC):
+    """Sells Eastern and regional sweet specialties."""
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, rng, biodome)
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (185, 105, 75)   # Warm terracotta
+        self.clothing["trim"] = (130, 65, 45)
+        self.display_name = "Sweet Shop"
+        n = rng.randint(5, 8)
+        self.shop = rng.sample(SWEET_SHOP_TABLE, min(n, len(SWEET_SHOP_TABLE)))
 
 
 class DoctorNPC(NPC):
@@ -1856,7 +1982,8 @@ class RestaurantNPC(NPC):
                             * _rep_discount(self._town_rep(), self)
                             * _specialty_price_mult(self, item_id)
                             * self._beloved_price_mult(player)
-                            * self._dynasty_price_mult(player)))
+                            * self._dynasty_price_mult(player)
+                            * _wealth_price_mult(self)))
 
     def rep_discount_pct(self):
         return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
@@ -1884,7 +2011,9 @@ class ShrineKeeperNPC(NPC):
         self.blessing_cost = 10 + difficulty * 10
 
     def discounted_cost(self):
-        return max(1, round(self.blessing_cost * _rep_discount(self._town_rep(), self)))
+        return max(1, round(self.blessing_cost
+                            * _rep_discount(self._town_rep(), self)
+                            * _wealth_price_mult(self)))
 
     def rep_discount_pct(self):
         return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
@@ -1950,7 +2079,8 @@ class BlacksmithNPC(NPC):
                             * _rep_discount(self._town_rep(), self)
                             * _specialty_price_mult(self, item_id)
                             * self._beloved_price_mult(player)
-                            * self._dynasty_price_mult(player)))
+                            * self._dynasty_price_mult(player)
+                            * _wealth_price_mult(self)))
 
     def rep_discount_pct(self):
         return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
@@ -1996,13 +2126,15 @@ class InnkeeperNPC(NPC):
             return max(1, round(self.rest_cost
                                 * _rep_discount(self._town_rep(), self)
                                 * self._beloved_price_mult(player)
-                            * self._dynasty_price_mult(player)))
+                                * self._dynasty_price_mult(player)
+                                * _wealth_price_mult(self)))
         item_id, cost = self.menu[idx]
         return max(1, round(cost
                             * _rep_discount(self._town_rep(), self)
                             * _specialty_price_mult(self, item_id)
                             * self._beloved_price_mult(player)
-                            * self._dynasty_price_mult(player)))
+                            * self._dynasty_price_mult(player)
+                            * _wealth_price_mult(self)))
 
     def rep_discount_pct(self):
         return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
@@ -2045,7 +2177,7 @@ class TavernkeeperNPC(InnkeeperNPC):
 
     def beer_buy_price(self, item_id):
         base = TAVERN_BUY_TABLE.get(item_id, 0)
-        return max(1, round(base * _rep_buy_bonus(self._town_rep())))
+        return max(1, round(base * _rep_buy_bonus(self._town_rep()) * _wealth_price_mult(self)))
 
     def can_sell_beer(self, item_id, player):
         return TAVERN_BUY_TABLE.get(item_id, 0) > 0 and player.inventory.get(item_id, 0) > 0
@@ -2064,6 +2196,98 @@ class TavernkeeperNPC(InnkeeperNPC):
         return price
 
 
+class RacingBookkeeperNPC(NPC):
+    """Runs the horse racing ring — takes entry fees, manages NPC horse rosters, pays out winnings."""
+
+    STANDARD_ENTRY_FEE  = 50
+    CHAMPION_ENTRY_FEE  = 500
+
+    def __init__(self, x, y, world, rng, difficulty=0, biodome="temperate"):
+        super().__init__(x, y, world, "npc_racing_bookkeeper")
+        self.clothing   = _npc_clothing(biodome)
+        self.difficulty = difficulty
+        self.display_name = "Bookkeeper"
+        self._rng       = rng
+        self._npc_horses = self._generate_npc_horses(rng, difficulty)
+
+    def _generate_npc_horses(self, rng, difficulty):
+        """Generate 3-5 rival horses scaled to region difficulty."""
+        _HORSE_NAMES = [
+            "Shadowmane", "Dusty", "Nightfall", "Ember", "Blaze",
+            "Ironhoof", "Swiftwind", "Ashcloud", "Thornback", "Cinder",
+            "Raven", "Granite", "Sable", "Flint", "Wisp",
+            "Dawnbreaker", "Stormhoof", "Copperwind", "Silvermane", "Obsidian",
+        ]
+        # Owner surnames for when NPC names aren't resolved yet
+        _OWNER_SURNAMES = [
+            "Aldrath", "Voss", "Keldran", "Morwen", "Caleth",
+            "Dunmore", "Harwick", "Selden", "Braye", "Corvath",
+        ]
+        _STYLES = ["frontrunner", "pacer", "closer", "wild"]
+        _STYLE_WEIGHTS = [2, 3, 2, 1]   # pacers most common
+
+        count = rng.randint(3, 5)
+        names = rng.sample(_HORSE_NAMES, count)
+        lo = max(0.60, 0.70 + difficulty * 0.08)
+        hi = min(1.40, 0.95 + difficulty * 0.08)
+        horses = []
+        for name in names:
+            rr    = round(rng.uniform(lo, hi), 3)
+            sm    = round(rng.uniform(max(0.7, rr - 0.15), min(1.3, rr + 0.15)), 3)
+            en    = round(rng.uniform(max(0.7, rr - 0.15), min(1.3, rr + 0.15)), 3)
+            rt    = round(rng.uniform(0.7, 1.3), 3)
+            agi   = round(rng.uniform(0.7, 1.3), 3)
+            ht    = round(rng.uniform(0.7, 1.3), 3)
+            coat  = (rng.randint(60, 220), rng.randint(50, 170), rng.randint(30, 100))
+            style = rng.choices(_STYLES, weights=_STYLE_WEIGHTS)[0]
+            # Pre-existing win record gives the horse a history the player can read
+            prior_races = rng.randint(0, 6)
+            prior_wins  = rng.randint(0, prior_races)
+            horses.append({
+                "name":         name,
+                "race_rating":  rr,
+                "stamina_max":  sm,
+                "endurance":    en,
+                "reaction":     rt,
+                "agility":      agi,
+                "heart":        ht,
+                "coat_color":   coat,
+                "style":        style,
+                "wins":         prior_wins,
+                "races":        prior_races,
+                # owner is a placeholder; overwritten with a real NPC name at race-open time
+                "owner":        rng.choice(_OWNER_SURNAMES),
+            })
+        return horses
+
+    def is_champion_ring(self):
+        return self.difficulty >= 4
+
+    def entry_fee(self, player=None):
+        base = self.CHAMPION_ENTRY_FEE if self.is_champion_ring() else self.STANDARD_ENTRY_FEE
+        return max(1, round(base * self._dynasty_price_mult(player) * _wealth_price_mult(self)))
+
+    def can_enter(self, player):
+        horse = getattr(player, "mounted_horse", None) or _find_player_tamed_horse(player)
+        return horse is not None and player.money >= self.entry_fee(player)
+
+    def collect_entry_fee(self, player):
+        player.money -= self.entry_fee(player)
+        player.races_entered = getattr(player, "races_entered", 0) + 1
+
+
+def _find_player_tamed_horse(player):
+    """Return the first tamed horse the player owns (from world entities)."""
+    world = getattr(player, "world", None)
+    if world is None:
+        return None
+    from horses import Horse as _Horse
+    for ent in world.entities:
+        if isinstance(ent, _Horse) and ent.tamed and not ent.dead and ent.rider is None:
+            return ent
+    return None
+
+
 class ScholarNPC(NPC):
     def __init__(self, x, y, world, rng, biodome="temperate"):
         super().__init__(x, y, world, "npc_scholar")
@@ -2079,7 +2303,8 @@ class ScholarNPC(NPC):
                             * _rep_discount(self._town_rep(), self)
                             * _specialty_price_mult(self, item_id)
                             * self._beloved_price_mult(player)
-                            * self._dynasty_price_mult(player)))
+                            * self._dynasty_price_mult(player)
+                            * _wealth_price_mult(self)))
 
     def rep_discount_pct(self):
         return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
@@ -2481,7 +2706,7 @@ class WeaponArmorerNPC(NPC):
         mat_mult  = _WEAPON_MATERIAL_MULT.get(weapon.material, 1.0)
         q_mult    = 0.5 + weapon.quality * 1.5
         rep_bonus = _rep_buy_bonus(self._town_rep())
-        return max(1, round(base * mat_mult * q_mult * rep_bonus))
+        return max(1, round(base * mat_mult * q_mult * rep_bonus * _wealth_price_mult(self)))
 
     def sell_weapon(self, weapon_uid, player) -> int:
         weapon = next((w for w in player.crafted_weapons if w.uid == weapon_uid), None)
@@ -2525,7 +2750,7 @@ class QuartermasterNPC(NPC):
 
     def boosted_gold(self, idx):
         _, _, gold = self.trades[idx]
-        return max(1, round(gold * _rep_buy_bonus(self._town_rep())))
+        return max(1, round(gold * _rep_buy_bonus(self._town_rep()) * _wealth_price_mult(self)))
 
     def rep_bonus_pct(self):
         return round((_rep_buy_bonus(self._town_rep()) - 1.0) * 100)
@@ -2660,11 +2885,12 @@ CITY_CONFIGS = {
             ( 13, (4, 6), (3, 5), ["library", "library", "house", "two_story", "tower",
                                     "longhouse", "ruin", "pavilion", "apothecary", "coffee_shop"]),
             ( 19, (6, 7), (5, 7), ["shrine"]),
+            ( 28, (7, 9), (4, 5), ["racing_ring"]),
         ],
         "npc_types": ["quest_rock", "blacksmith", "innkeeper", "merchant",
-                      ["quest_gem", "quest_gem", "villager"],
-                      ["scholar", "villager", "villager", "coffee_merchant", "beer_merchant"],
-                      "shrine_npc"],
+                      ["quest_gem", "quest_gem", "villager", "sweet_shop"],
+                      ["scholar", "villager", "villager", "coffee_merchant", "beer_merchant", "pastry_chef"],
+                      "shrine_npc", "racing_bookkeeper"],
         "gardens": [(-21, 2), (-12, 2), (16, 2)],
         # (center_offset, half_w) — paved plaza with a centre sculpture.
         "squares": [(0, 4)],
@@ -2704,16 +2930,18 @@ CITY_CONFIGS = {
             ( 18, (4, 6), (3, 5), ["library", "library", "house", "tower", "ruin",
                                     "two_story", "market_stall", "apothecary", "barn", "vignette"]),
             ( 26, (7, 9), (5, 7), ["shrine"]),
+            ( 38, (7, 10), (4, 5), ["racing_ring"]),
         ],
         "npc_types": [["quest_rock", "doctor"], "blacksmith",
-                      ["quest_wildflower", "quest_wildflower", "villager", "wine_merchant"],
+                      ["quest_wildflower", "quest_wildflower", "villager", "wine_merchant", "pastry_chef"],
                       "merchant",
-                      ["quest_gem", "quest_gem", "villager", "coffee_merchant"],
+                      ["quest_gem", "quest_gem", "villager", "coffee_merchant", "sweet_shop"],
                       ["innkeeper", "innkeeper", "tavern"],
-                      ["trade", "merchant", "villager", "beer_merchant"],
+                      ["trade", "merchant", "villager", "beer_merchant", "pastry_chef"],
                       ["scholar", "scholar", "villager"],
                       "shrine_npc",
-                      ["jewelry_merchant", "villager", "villager"]],
+                      "racing_bookkeeper",
+                      ["jewelry_merchant", "villager", "villager", "sweet_shop"]],
         "gardens": [(-31, 2), (-23, 2), (22, 2)],
         "squares": [(-10, 4), (13, 4)],
         "growth_slots_tier1": [( 32, (4, 6), (3, 4), ["house", "two_story"]),
@@ -2755,11 +2983,12 @@ CITY_CONFIGS = {
             ( 30, (4, 6), (3, 5), ["smithy", "apothecary", "jewelry_store", "house", "vignette"]),
             ( 38, None,   None,   None),    # Outdoor noble
             ( 46, (7, 10), (6, 9), ["shrine", "shrine"]),
+            ( 56, (8, 11), (4, 6), ["racing_ring"]),
         ],
         "npc_types": [["scholar", "doctor"], ["innkeeper", "tavern"], "blacksmith", "scholar",
-                      "scholar", "shrine_npc", "restaurant_npc", ["merchant", "beer_merchant"],
+                      "scholar", "shrine_npc", ["restaurant_npc", "pastry_chef"], ["merchant", "beer_merchant", "sweet_shop"],
                       "villager", ["scholar", "library_npc", "villager", "wine_merchant"], "jewelry_merchant",
-                      "noble", "shrine_npc"],
+                      "noble", "shrine_npc", "racing_bookkeeper"],
         "gardens": [(-46, 3), (-22, 2), (10, 2), (34, 3)],
         "squares": [(-30, 5), (0, 6), (26, 5)],
         "growth_slots_tier1": [( 50, (4, 6), (3, 4), ["house", "two_story"]),
@@ -2870,6 +3099,102 @@ CITY_CONFIGS["bedouin_camp"] = {
                      (-2,  ["elder", "pilgrim", "none", "none"])],
 }
 
+CITY_CONFIGS["atoll_village"] = {
+    "half_w": 18,
+    "buildings": [
+        (-14, (4, 6), (2, 4), ["longhouse", "house", "shrine", "market_stall", "well"]),
+        (  0, (5, 7), (3, 5), ["longhouse", "inn", "pavilion"]),
+        ( 12, (4, 6), (2, 4), ["house", "house", "shrine", "market_stall"]),
+    ],
+    "npc_types": ["quest_rock", "innkeeper", "restaurant_npc"],
+    "gardens": [(-7, 2), (6, 2)],
+    "squares": [(0, 4)],
+    "growth_slots_tier1": [( 15, (4, 5), (2, 4), ["house", "longhouse"]),
+                           (-15, (4, 5), (2, 4), ["longhouse", "house"])],
+    "growth_slots_tier2": [( 17, (4, 6), (3, 4), ["house", "shrine"]),
+                           (-17, (4, 5), (3, 4), ["house", "longhouse"])],
+    "growth_slots_tier3": [( 19, (5, 6), (3, 5), ["two_story"]),
+                           (-19, (4, 5), (3, 4), ["house"])],
+    "farms": [(-24, 5), (24, 5)],
+    "ambient_npcs": [(-4,  ["villager", "villager", "child"]),
+                     ( 5,  ["elder", "musician", "none"]),
+                     (-10, ["villager", "child", "none"]),
+                     ( 10, ["villager", "none", "none"]),
+                     ( -1, ["pilgrim", "none", "none"])],
+}
+
+CITY_CONFIGS["island_town"] = {
+    "half_w": 24,
+    "buildings": [
+        (-23, (4, 6), (3, 5), ["house", "two_story", "longhouse", "inn", "pavilion"]),
+        (-15, (4, 6), (3, 4), ["longhouse", "market_stall", "shrine", "smithy", "house"]),
+        ( -6, (4, 5), (3, 4), ["inn", "inn", "restaurant", "apothecary"]),
+        (  0, None,   None,   None),
+        (  6, (4, 6), (3, 4), ["house", "two_story", "longhouse", "pavilion", "market_stall"]),
+        ( 15, (5, 7), (4, 6), ["shrine", "shrine"]),
+    ],
+    "npc_types": ["quest_rock", ["blacksmith", "merchant"], "innkeeper",
+                  "merchant", ["quest_gem", "villager", "coffee_merchant"], "shrine_npc"],
+    "gardens": [(-19, 2), (-10, 2), (10, 2)],
+    "squares": [(0, 4)],
+    "growth_slots_tier1": [( 20, (4, 6), (3, 4), ["house", "longhouse"]),
+                           (-20, (4, 6), (3, 4), ["house", "two_story"])],
+    "growth_slots_tier2": [( 22, (5, 7), (4, 5), ["two_story", "tower"]),
+                           (-22, (5, 6), (4, 5), ["tower", "longhouse"])],
+    "growth_slots_tier3": [( 24, (6, 8), (5, 6), ["tower"]),
+                           (-24, (5, 7), (4, 6), ["two_story"])],
+    "farms": [(-34, 6), (34, 6)],
+    "ambient_npcs": [(-18, ["villager", "elder", "none"]),
+                     (-10, ["child", "child", "none"]),
+                     (  8, ["villager", "musician", "drunkard"]),
+                     ( 18, ["child", "villager", "none"]),
+                     ( -5, ["guard", "none"]),
+                     ( 12, ["merchant", "none"]),
+                     ( -2, ["elder", "pilgrim", "none"]),
+                     (  2, ["child", "none", "none"])],
+}
+
+CITY_CONFIGS["island_chiefdom"] = {
+    "half_w": 30,
+    "buildings": [
+        (-29, (5, 7), (4, 5), ["longhouse", "two_story", "inn", "hospital", "house"]),
+        (-21, (4, 6), (3, 5), ["smithy", "smithy", "market_stall", "longhouse", "house"]),
+        (-13, (4, 5), (3, 4), ["inn", "restaurant", "apothecary", "coffee_shop"]),
+        ( -6, None,   None,   None),
+        (  0, (4, 5), (3, 4), ["house", "two_story", "longhouse", "market_stall"]),
+        (  7, (4, 5), (3, 4), ["inn", "inn", "restaurant"]),
+        ( 13, None,   None,   None),
+        ( 19, (4, 6), (3, 5), ["library", "house", "pavilion", "two_story", "longhouse"]),
+        ( 26, (7, 9), (5, 7), ["shrine"]),
+    ],
+    "npc_types": [["quest_rock", "doctor"], "blacksmith",
+                  ["innkeeper", "coffee_merchant", "beer_merchant"],
+                  "merchant",
+                  ["quest_gem", "villager", "sweet_shop"],
+                  ["innkeeper", "tavern"],
+                  ["trade", "merchant", "villager"],
+                  ["scholar", "villager"],
+                  "shrine_npc"],
+    "gardens": [(-25, 2), (-17, 2), (22, 2)],
+    "squares": [(-8, 4), (15, 4)],
+    "growth_slots_tier1": [( 26, (4, 6), (3, 4), ["house", "longhouse"]),
+                           (-26, (4, 6), (3, 4), ["house", "two_story"])],
+    "growth_slots_tier2": [( 28, (5, 7), (4, 5), ["tower", "two_story"]),
+                           (-28, (5, 7), (4, 5), ["tower", "longhouse"])],
+    "growth_slots_tier3": [( 30, (6, 8), (5, 6), ["tower"]),
+                           (-30, (5, 7), (4, 6), ["tower", "three_story"])],
+    "farms": [(-42, 7), (42, 7)],
+    "ambient_npcs": [(-24, ["villager", "elder", "none"]),
+                     (-16, ["child", "child", "none"]),
+                     (-10, ["villager", "drunkard", "musician"]),
+                     (  8, ["child", "child", "villager"]),
+                     ( 16, ["guard", "guard", "none"]),
+                     ( 22, ["villager", "merchant", "none"]),
+                     ( -4, ["elder", "pilgrim", "none"]),
+                     ( 10, ["noble", "none", "none"]),
+                     ( -1, ["town_crier", "none", "none"])],
+}
+
 _SIZE_BY_DIFFICULTY = {
     0: ["small", "small", "medium"],
     1: ["small", "medium", "large"],
@@ -2878,7 +3203,8 @@ _SIZE_BY_DIFFICULTY = {
 
 # Biome overrides for city layout — bypasses difficulty-based selection.
 _SIZE_BY_BIOME = {
-    "savanna": ["bedouin_camp", "oasis", "oasis"],
+    "savanna":        ["bedouin_camp", "oasis", "oasis"],
+    "pacific_island": ["atoll_village", "atoll_village", "island_town", "island_chiefdom"],
 }
 
 _PLANT_BLOCKS = ALL_LOGS | ALL_LEAVES | BUSH_BLOCKS | {SAPLING}
@@ -3044,6 +3370,12 @@ _CLOTHING_PALETTES = {
         "trim": (50, 80, 110), "hat": (200, 180, 120),
         "armor": (55, 75, 95), "plate": (140, 160, 180),
     },
+    "polynesian": {
+        # Tapa bark-cloth and pandanus weave, warm brown Pacific skin
+        "body": (210, 130, 60), "leg": (240, 210, 150), "skin": (175, 130, 80),
+        "trim": (90, 55, 25), "hat": (225, 180, 80),
+        "armor": (130, 100, 50), "plate": (200, 165, 90),
+    },
 }
 _CLOTHING_DEFAULT = _CLOTHING_PALETTES["temperate"]
 
@@ -3063,6 +3395,7 @@ _CLOTHING_STYLE_BY_BIODOME = {
     "wetland": "boreal", "swamp": "boreal",
     "steppe": "steppe", "wasteland": "steppe",
     "beach": "coastal",
+    "ocean": "polynesian", "pacific_island": "polynesian",
 }
 
 def _npc_clothing(biodome):
@@ -3200,6 +3533,29 @@ def _place_farm_plot(world, rng, center_bx, biodome, half_w=7):
             world.set_bg_block(bx, fence_y, WICKER_FENCE)
 
 
+_PEN_FENCE_BY_BIOME = {
+    "boreal":       BAMBOO_FENCE_JP,
+    "birch_forest": BAMBOO_FENCE_JP,
+}
+
+def _place_animal_pen(world, rng, farm_center_bx, farm_hw, biodome, outer_side):
+    """Small fenced enclosure just outside a farm strip.
+
+    Three fence posts (left, centre, right) each two blocks tall form a simple
+    corral visible from the side.  The open gap in the middle acts as a gate.
+    """
+    fence_block = _PEN_FENCE_BY_BIOME.get(biodome, WICKER_FENCE)
+    pen_hw = 3
+    pen_cx = farm_center_bx + outer_side * (farm_hw + pen_hw + 2)
+
+    for bx in (pen_cx - pen_hw, pen_cx, pen_cx + pen_hw):
+        sy = world.surface_y_at(bx)
+        for dy in (1, 2):
+            fy = sy - dy
+            if 0 <= fy < world.height:
+                world.set_bg_block(bx, fy, fence_block)
+
+
 _RIVER_BIOMES = frozenset({
     "temperate", "boreal", "wetland", "swamp", "rolling_hills",
     "birch_forest", "jungle", "steppe", "coastal", "tropical",
@@ -3209,11 +3565,27 @@ _NO_FARM_BIOMES = frozenset({
     "desert", "mesa", "salt_flat", "savanna", "tundra", "glacier",
 })
 
+# (deck_block, railing_bg) per biome — railing_bg placed as bg on outer 2 edge columns
+_BIOME_BRIDGE = {
+    "temperate":     (STONE_BRIDGE,     IRON_FENCE),
+    "rolling_hills": (BRICK_BRIDGE,     IRON_FENCE),
+    "steppe":        (COBBLE_BRIDGE,    IRON_FENCE),
+    "coastal":       (DRIFTWOOD_BRIDGE, WICKER_FENCE),
+    "boreal":        (TIMBER_BRIDGE,    BAMBOO_FENCE_JP),
+    "birch_forest":  (TIMBER_BRIDGE,    BAMBOO_FENCE_JP),
+    "wetland":       (MOSSY_BRIDGE,     WICKER_FENCE),
+    "swamp":         (MOSSY_BRIDGE,     WICKER_FENCE),
+    "jungle":        (SANDSTONE_BRIDGE, ROMAN_ARCH_REN),
+    "tropical":      (SANDSTONE_BRIDGE, ROMAN_ARCH_REN),
+}
+
 
 def _place_city_river(world, rng, city_bx, city_half_w, biodome):
-    """Carve a small river beside a city and span it with a stone bridge."""
+    """Carve a small river beside a city and span it with a regional bridge."""
     if biodome not in _RIVER_BIOMES:
         return
+
+    deck_block, railing_bg = _BIOME_BRIDGE.get(biodome, (STONE_BRIDGE, IRON_FENCE))
 
     side = rng.choice([-1, 1])
     gap = rng.randint(12, 28)
@@ -3241,7 +3613,10 @@ def _place_city_river(world, rng, city_bx, city_half_w, biodome):
 
         # Bridge deck at surface level, water below
         if 0 <= river_top_y < world.height:
-            world.set_block(x, river_top_y, STONE_BRIDGE)
+            world.set_block(x, river_top_y, deck_block)
+            # railing bg on the two outermost edge columns
+            if railing_bg and dx >= river_hw - 1:
+                world.set_bg_block(x, river_top_y, railing_bg)
         for y in range(river_top_y + 1, river_top_y + depth_x + 1):
             if 0 <= y < world.height:
                 world.set_block(x, y, WATER)
@@ -3833,6 +4208,39 @@ def _place_ruin(world, left_x, sy, width, wall_height):
             world.set_bg_block(wx, floor_y, COBBLESTONE)
 
 
+def _place_racing_ring(world, left_x, sy, width, wall_height, rng):
+    """Open-sided stable-arena: stone walls, fence rails, starting gate, winners post, bet counter."""
+    _place_house(world, left_x, sy, width, wall_height, ROUGH_STONE_WALL, HOUSE_ROOF_STONE, rng)
+    mid = left_x + width // 2
+
+    # Dirt floor inside
+    for wx in range(left_x + 1, left_x + width - 1):
+        if 0 <= sy < world.height and world.get_block(wx, sy) in (STONE, COBBLESTONE):
+            world.set_block(wx, sy, DIRT)
+
+    # Fence rail posts along the interior back wall
+    for wx in range(left_x + 1, left_x + width - 1, 3):
+        wy = sy - 2
+        if 0 <= wy < world.height:
+            world.set_bg_block(wx, wy, RACING_RAIL)
+
+    # Starting gate on the left, winners post on the right
+    gate_x = left_x + 1
+    post_x = left_x + width - 2
+    if 0 <= sy - 1 < world.height:
+        world.set_bg_block(gate_x, sy - 1, STARTING_GATE)
+        world.set_bg_block(post_x, sy - 1, WINNERS_POST)
+
+    # Bet counter near the center — bg so the player can stand next to it
+    if 0 <= sy - 1 < world.height:
+        world.set_bg_block(mid, sy - 1, BET_COUNTER)
+
+    # Wall sconce for atmosphere
+    sconce_y = sy - wall_height + 1
+    if 0 <= sconce_y < world.height:
+        world.set_bg_block(mid, sconce_y, WALL_SCONCE)
+
+
 def _place_inn(world, left_x, sy, width, wall_height, rng):
     """Dark-timber two-story tavern: lantern sign outside, brazier and benches inside."""
     floor2_h = rng.randint(2, 3)
@@ -3846,6 +4254,9 @@ def _place_inn(world, left_x, sy, width, wall_height, rng):
         world.set_bg_block(mid,                     sy - 1, BRAZIER)
         world.set_bg_block(left_x + 1,              sy - 1, CARVED_BENCH)
         world.set_bg_block(left_x + width - 2,      sy - 1, CARVED_BENCH)
+    table_x = left_x + width - 2
+    if 0 <= sy - 1 < world.height:
+        world.set_bg_block(table_x, sy - 1, GAMBLING_TABLE)
     sign_y = sy - wall_height
     if 0 <= sign_y < world.height:
         world.set_bg_block(left_x - 1, sign_y, GARDEN_LANTERN)
@@ -4682,7 +5093,7 @@ def _ensure_city_traversal(world, city_bx, half_w, sy):
 
 
 def _build_single_city(world, rng, city_bx, difficulty):
-    sy = world.surface_y_at(city_bx)
+    sy = min(world.surface_y_at(city_bx), SURFACE_Y)
     biodome = world.biodome_at(city_bx)
     # town_id is the index this city will occupy in world.town_centers (appended after return)
     _current_town_id = len(getattr(world, "town_centers", []))
@@ -4715,45 +5126,28 @@ def _build_single_city(world, rng, city_bx, difficulty):
     b_indices = [i for i, b in enumerate(buildings_list) if b[1] is not None]
     o_indices = [i for i, b in enumerate(buildings_list) if b[1] is None]
 
-    # Build pools from the config data
-    b_pool = []
-    for i, nt in enumerate(npc_types_list):
-        if i < len(buildings_list) and i in b_indices:
-            b_pool.append((buildings_list[i][3], nt))
-        elif i >= len(buildings_list):
-            b_pool.append((["house", "two_story", "tower"], nt))
-    b_pool.append((["house", "two_story", "three_story", "tower"], "villager"))
-    b_pool.append((["house", "two_story", "three_story"], "villager"))
-
-    o_pool = [npc_types_list[i] for i in o_indices]
-    o_pool.append("villager")
-    o_pool.append("none")
-
-    # 1. Collect all layout items
+    # 1. Collect all layout items — each config slot uses its own variant list and NPC type
     layout_items = []
-    for _ in b_indices:
-        v_pool, n_type = rng.choice(b_pool)
-        w_range = (4, 6) # Default
-        h_range = (3, 5) # Default
-        # Try to find matching ranges from the config to stay somewhat balanced
-        if buildings_list:
-            match = rng.choice(buildings_list)
-            if match[1]: w_range, h_range = match[1], match[2]
-        
+    for i in b_indices:
+        variants = buildings_list[i][3]
+        n_type   = npc_types_list[i] if i < len(npc_types_list) else "villager"
+        w_range  = buildings_list[i][1]
+        h_range  = buildings_list[i][2]
         layout_items.append({
-            "type": "building",
-            "variants": v_pool,
+            "type":     "building",
+            "variants": variants,
             "npc_type": n_type,
-            "w_range": w_range,
-            "h_range": h_range,
-            "width": rng.randint(*w_range)
+            "w_range":  w_range,
+            "h_range":  h_range,
+            "width":    rng.randint(*w_range),
         })
 
-    for _ in o_indices:
+    for i in o_indices:
+        n_type = npc_types_list[i] if i < len(npc_types_list) else "villager"
         layout_items.append({
-            "type": "outdoor",
-            "npc_type": rng.choice(o_pool),
-            "width": 1
+            "type":     "outdoor",
+            "npc_type": n_type,
+            "width":    1,
         })
 
     for _, half in cfg.get("squares", ()):
@@ -4798,7 +5192,7 @@ def _build_single_city(world, rng, city_bx, difficulty):
 
     # Flatten terrain across the city footprint to sy
     for bx in range(city_bx - half_w, city_bx + half_w + 1):
-        col_sy = world.surface_y_at(bx)
+        col_sy = min(world.surface_y_at(bx), SURFACE_Y)
         # Hill: remove blocks above city floor
         for by in range(col_sy, sy):
             blk = world.get_block(bx, by)
@@ -4900,6 +5294,8 @@ def _build_single_city(world, rng, city_bx, difficulty):
                 _place_coffee_shop(world, left_x, sy, width, height, rng)
             elif variant == "wine_shop":
                 _place_wine_shop(world, left_x, sy, width, height, rng)
+            elif variant == "racing_ring":
+                _place_racing_ring(world, left_x, sy, width, height, rng)
             else:
                 _place_house(world, left_x, sy, width, height, wall_block, roof_block, rng)
 
@@ -4994,12 +5390,18 @@ def _build_single_city(world, rng, city_bx, difficulty):
                 world.entities.append(WineMerchantNPC(npc_px, npc_py, world, rng, biodome=biodome))
             elif npc_type == "beer_merchant":
                 world.entities.append(BeerMerchantNPC(npc_px, npc_py, world, rng, biodome=biodome))
+            elif npc_type == "pastry_chef":
+                world.entities.append(PastryChefNPC(npc_px, npc_py, world, rng, biodome=biodome))
+            elif npc_type == "sweet_shop":
+                world.entities.append(SweetShopNPC(npc_px, npc_py, world, rng, biodome=biodome))
             elif npc_type == "tavern":
                 world.entities.append(TavernkeeperNPC(npc_px, npc_py, world, rng, difficulty, biodome=biodome))
             elif npc_type == "musician":
                 world.entities.append(MusicianNPC(npc_px, npc_py, world, biodome=biodome))
             elif npc_type == "town_crier":
                 world.entities.append(TownCrierNPC(npc_px, npc_py, world, biodome=biodome))
+            elif npc_type == "racing_bookkeeper":
+                world.entities.append(RacingBookkeeperNPC(npc_px, npc_py, world, rng, difficulty, biodome))
 
         current_x += width + gaps[i]
 
@@ -5012,7 +5414,8 @@ def _build_single_city(world, rng, city_bx, difficulty):
     _ambient_npc_cls = {"villager": VillagerNPC, "child": ChildNPC, "guard": GuardNPC,
                         "elder": ElderNPC, "beggar": BeggarNPC, "noble": NobleNPC,
                         "pilgrim": PilgrimNPC, "drunkard": DrunkardNPC,
-                        "musician": MusicianNPC, "town_crier": TownCrierNPC}
+                        "musician": MusicianNPC, "town_crier": TownCrierNPC,
+                        "farmer": FarmerNPC}
     
     # Ambient NPCs now roam randomly between the city walls
     for _, npc_type in cfg.get("ambient_npcs", ()):
@@ -5024,11 +5427,21 @@ def _build_single_city(world, rng, city_bx, difficulty):
         ny = (sy - 2) * BLOCK_SIZE
         world.entities.append(cls(nx, ny, world, biodome=biodome))
 
-    # Farm plots flanking the city
+    # Farm plots flanking the city, each with an animal pen and a farmer
     if biodome not in _NO_FARM_BIOMES:
         for offset, farm_hw in cfg.get("farms", []):
-            farm_center = city_bx + (half_w + farm_hw + 3) * (1 if offset > 0 else -1)
+            outer_side = 1 if offset > 0 else -1
+            farm_center = city_bx + (half_w + farm_hw + 3) * outer_side
             _place_farm_plot(world, rng, farm_center, biodome, farm_hw)
+            _place_animal_pen(world, rng, farm_center, farm_hw, biodome, outer_side)
+
+            farm_px = farm_center * BLOCK_SIZE + (BLOCK_SIZE - NPC.NPC_W) // 2
+            farm_sy = world.surface_y_at(farm_center)
+            farm_py = (farm_sy - 2) * BLOCK_SIZE
+            world.entities.append(
+                FarmerNPC(farm_px, farm_py, world,
+                          patrol_half=farm_hw * BLOCK_SIZE,
+                          biodome=biodome))
 
     # River and bridge just outside one city wall
     _place_city_river(world, rng, city_bx, half_w, biodome)
@@ -5653,6 +6066,7 @@ PALACE_NPC_OFFSET = {
     "french_baroque":   47,   # 10 garden + 14 wing + 12 salon + 11 half-throne
     "incan":            40,   # 8 terrace + 10 gate + 12 hall + 10 half-throne
     "persian":          43,   # 8 garden + 10 portal + 14 apadana + 11 half-throne
+    "polynesian":       44,   # 8 plaza + 10 gate + 14 hall + 12 half-marae
 }
 
 PALACE_TYPES = [
@@ -5661,6 +6075,7 @@ PALACE_TYPES = [
     "norse", "gothic", "african", "byzantine", "tibetan",
     "japanese", "chinese", "tang_imperial", "song_palace", "han_palace",
     "east_african", "mesoamerican", "french_baroque", "incan", "persian",
+    "polynesian",
 ]
 
 
@@ -9000,6 +9415,151 @@ def _place_persian_palace(world, left_x: int, sy: int):
     _castle_bg(world, x + W_GARD // 2, sy - 1, rng.choice(_FOUNTAIN_BLOCKS))
 
 
+def _place_polynesian_palace(world, left_x: int, sy: int):
+    """Polynesian marae complex — coral-stone platform, longhouse halls,
+    carved totem forecourt, stepped pyramid altar.
+    Staff: trade envoy, gem quest, shrine keeper, jeweler.
+    """
+    _DOOR = STONE_SLAB_DOOR_CLOSED
+    rng = random.Random(left_x ^ (world.seed * 0x7C4E3F1) ^ 0xB8A231)
+    variant = rng.randint(0, 1)   # 0 = Polynesian  1 = Melanesian
+
+    W_PLAZA  = 8
+    W_GATE   = 10;  H_GATE   = 6
+    W_HALL   = 14;  H_HALL   = 7
+    W_MARAE  = 22;  H_MARAE  = 9
+    total_w = W_PLAZA + W_GATE + W_HALL + W_MARAE + W_HALL + W_GATE + W_PLAZA
+    _palace_clear_terrain(world, left_x, sy, total_w, H_MARAE + 14)
+
+    def _coral_room(lx, w, h):
+        _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, SANDSTONE_BLOCK)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy, STONE)
+        for by in range(sy - h, sy):
+            _castle_set(world, lx,      by, STONE)
+            _castle_set(world, lx + w,  by, STONE)
+        _castle_door(world, lx, sy, door_block=_DOOR)
+        _castle_door(world, lx + w - 2, sy, door_block=_DOOR)
+        for bx in range(lx, lx + w + 1):
+            _castle_set(world, bx, sy - h,     STONE)
+            _castle_set(world, bx, sy - h - 1, TEAK_PLANK)
+
+    x = left_x
+
+    # ── guards ───────────────────────────────────────────────────────────────
+    _palace_npc_at(world, left_x + 1,           sy, GuardNPC, biodome="pacific_island")
+    _palace_npc_at(world, left_x + total_w - 2, sy, GuardNPC, biodome="pacific_island")
+
+    # ── entry plaza — carved totem forecourt ─────────────────────────────────
+    for bx in range(x, x + W_PLAZA):
+        _castle_set(world, bx, sy, STONE)
+    _castle_bg(world, x + 1,            sy - 1, BRAZIER)
+    _castle_bg(world, x + 3,            sy - 1, CARVED_BENCH)
+    _castle_bg(world, x + W_PLAZA - 2,  sy - 1, BRAZIER)
+    _castle_bg(world, x + W_PLAZA // 2, sy - 2, VICTORY_STELE)
+    x += W_PLAZA
+
+    # ── left gate house ───────────────────────────────────────────────────────
+    _coral_room(x, W_GATE, H_GATE)
+    _castle_bg(world, x + W_GATE // 2, sy - H_GATE + 3, CHANDELIER)
+    _castle_bg(world, x + 2,           sy - 1, BRAZIER)
+    _castle_bg(world, x + W_GATE - 2,  sy - 1, BRAZIER)
+    if variant == 0:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_GATE // 2, sy, TradeNPC, rng)
+    else:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, CARVED_BENCH)
+        _palace_npc_at(world, x + W_GATE // 2, sy, MerchantNPC, rng)
+    x += W_GATE
+
+    # ── left longhouse hall ───────────────────────────────────────────────────
+    _coral_room(x, W_HALL, H_HALL)
+    _castle_bg(world, x + W_HALL // 2, sy - H_HALL + 3, CHANDELIER)
+    _castle_bg(world, x + 2,           sy - 1, CARVED_BENCH)
+    _castle_bg(world, x + W_HALL - 2,  sy - 1, CARVED_BENCH)
+    for col_x in (x + 4, x + W_HALL - 4):
+        for by in range(sy - H_HALL + 2, sy):
+            _castle_bg(world, col_x, by, TEAK_PLANK)
+    if variant == 0:
+        _castle_bg(world, x + W_HALL // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_HALL // 2, sy, GemQuestNPC, rng, 1, "pacific_island")
+    else:
+        _castle_bg(world, x + W_HALL // 2, sy - 1, TEXTILE_RUG_GOLDEN)
+        _palace_npc_at(world, x + W_HALL // 2, sy, ShrineKeeperNPC, rng,
+                       biodome="pacific_island")
+    x += W_HALL
+
+    # ── central marae stepped altar — Leader throne (spawned by caller) ───────
+    cx = x + W_MARAE // 2
+    _castle_fill_bg(world, x, x + W_MARAE, sy - H_MARAE, sy - 1, STONE)
+    for bx in range(x, x + W_MARAE + 1):
+        _castle_set(world, bx, sy, SANDSTONE_BLOCK)
+    for by in range(sy - H_MARAE, sy):
+        _castle_set(world, x,            by, STONE)
+        _castle_set(world, x + W_MARAE,  by, STONE)
+    _castle_door(world, x, sy, door_block=_DOOR)
+    _castle_door(world, x + W_MARAE - 2, sy, door_block=_DOOR)
+    for col_x in (x + 4, x + W_MARAE - 4):
+        for by in range(sy - H_MARAE + 3, sy):
+            _castle_bg(world, col_x, by, STONE)
+        _castle_bg(world, col_x, sy - H_MARAE + 2, BRAZIER)
+    for tier in range(1, 5):
+        tier_y = sy - H_MARAE - tier * 2
+        if not (0 <= tier_y < world.height):
+            break
+        for bx in range(x + tier * 2, x + W_MARAE + 1 - tier * 2):
+            _castle_set(world, bx, tier_y, STONE)
+        if tier_y - 1 >= 0:
+            for bx in range(x + tier * 2, x + W_MARAE + 1 - tier * 2):
+                _castle_set(world, bx, tier_y - 1, SANDSTONE_BLOCK)
+    for bx in range(x, x + W_MARAE + 1):
+        _castle_set(world, bx, sy - H_MARAE, STONE)
+    _castle_bg(world, cx,     sy - 1, CARVED_BENCH)
+    _castle_bg(world, cx - 5, sy - 1, VICTORY_STELE)
+    _castle_bg(world, cx + 5, sy - 1, VICTORY_STELE)
+    _castle_bg(world, cx - 7, sy - 1, BRAZIER)
+    _castle_bg(world, cx + 7, sy - 1, BRAZIER)
+    _castle_bg(world, cx,     sy - H_MARAE + 4, CHANDELIER)
+    x += W_MARAE
+
+    # ── right longhouse hall ──────────────────────────────────────────────────
+    _coral_room(x, W_HALL, H_HALL)
+    _castle_bg(world, x + W_HALL // 2, sy - H_HALL + 3, CHANDELIER)
+    _castle_bg(world, x + 2,           sy - 1, CARVED_BENCH)
+    _castle_bg(world, x + W_HALL - 2,  sy - 1, CARVED_BENCH)
+    for col_x in (x + 4, x + W_HALL - 4):
+        for by in range(sy - H_HALL + 2, sy):
+            _castle_bg(world, col_x, by, TEAK_PLANK)
+    if variant == 0:
+        _castle_bg(world, x + W_HALL // 2, sy - 1, TEXTILE_RUG_GOLDEN)
+        _palace_npc_at(world, x + W_HALL // 2, sy, ShrineKeeperNPC, rng,
+                       biodome="pacific_island")
+    else:
+        _castle_bg(world, x + W_HALL // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_HALL // 2, sy, GemQuestNPC, rng, 1, "pacific_island")
+    x += W_HALL
+
+    # ── right gate house ──────────────────────────────────────────────────────
+    _coral_room(x, W_GATE, H_GATE)
+    _castle_bg(world, x + W_GATE // 2, sy - H_GATE + 3, CHANDELIER)
+    _castle_bg(world, x + 2,           sy - 1, BRAZIER)
+    _castle_bg(world, x + W_GATE - 2,  sy - 1, BRAZIER)
+    if variant == 0:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, CARVED_BENCH)
+        _palace_npc_at(world, x + W_GATE // 2, sy, JewelryMerchantNPC, rng)
+    else:
+        _castle_bg(world, x + W_GATE // 2, sy - 1, STONE_BASIN)
+        _palace_npc_at(world, x + W_GATE // 2, sy, TradeNPC, rng)
+    x += W_GATE
+
+    # ── exit plaza (right) ────────────────────────────────────────────────────
+    for bx in range(x, x + W_PLAZA):
+        _castle_set(world, bx, sy, STONE)
+    _castle_bg(world, x + 1,            sy - 1, BRAZIER)
+    _castle_bg(world, x + W_PLAZA // 2, sy - 2, VICTORY_STELE)
+    _castle_bg(world, x + W_PLAZA - 2,  sy - 1, BRAZIER)
+
+
 def _city_slot_metadata(slot_x: int) -> dict:
     """Return deterministic region identity for the city slot at slot_x.
 
@@ -9054,6 +9614,8 @@ def generate_city_for_chunk(world, seed, cx):
     jitter = rng.randint(-6, 6)
     city_bx = slot_x + jitter
     if any(lo - 10 <= city_bx <= hi + 10 for lo, hi in world.city_zones):
+        return
+    if world.biodome_at(city_bx) == "ocean":
         return
     city_size = _build_single_city(world, rng, city_bx, 2)
     world.town_centers.append(city_bx)

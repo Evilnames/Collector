@@ -1042,4 +1042,78 @@ def build_crafting_surfs():
     pygame.draw.rect(s, _darken((30, 22, 14), 10), s.get_rect(), 1)
     surfs[bid] = s
 
+    bid = GAMBLING_TABLE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    felt = (20, 80, 40)
+    felt_light = (28, 100, 52)
+    s.fill(felt)
+    # Inner felt surface
+    pygame.draw.rect(s, felt_light, (3, 6, BLOCK_SIZE - 6, BLOCK_SIZE - 10))
+    # White border
+    pygame.draw.rect(s, (255, 255, 255), (0, 0, BLOCK_SIZE, BLOCK_SIZE), 1)
+    # Two small dice
+    die_size = 9
+    for dx, dy in [(5, 10), (18, 10)]:
+        pygame.draw.rect(s, (235, 235, 235), (dx, dy, die_size, die_size), border_radius=2)
+        pygame.draw.rect(s, (50, 50, 50), (dx, dy, die_size, die_size), 1, border_radius=2)
+        # Single pip each
+        pygame.draw.circle(s, (30, 30, 30), (dx + die_size // 2, dy + die_size // 2), 1)
+    surfs[bid] = s
+
+    # Racing Rail — wooden post with horizontal fence slat
+    bid = RACING_RAIL
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    s.fill((42, 32, 18))
+    post_col = (110, 80, 45)
+    slat_col = (130, 95, 55)
+    pygame.draw.rect(s, post_col, (BLOCK_SIZE // 2 - 2, 0, 5, BLOCK_SIZE))  # vertical post
+    pygame.draw.rect(s, slat_col, (2, BLOCK_SIZE // 2 - 2, BLOCK_SIZE - 4, 5))  # horizontal slat
+    pygame.draw.rect(s, _darken(post_col, 20), (0, 0, BLOCK_SIZE, BLOCK_SIZE), 1)
+    surfs[bid] = s
+
+    # Bet Counter — wooden counter with a small ledger on top
+    bid = BET_COUNTER
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    wood = (90, 60, 30)
+    top  = (115, 80, 42)
+    s.fill(wood)
+    pygame.draw.rect(s, top, (1, 1, BLOCK_SIZE - 2, BLOCK_SIZE // 2))   # counter top
+    # Ledger book
+    pygame.draw.rect(s, (230, 220, 190), (6, 4, 12, 9), border_radius=1)
+    pygame.draw.line(s, (100, 90, 70), (12, 4), (12, 13), 1)             # page spine
+    # Ink lines
+    for ly in [6, 8, 10]:
+        pygame.draw.line(s, (80, 70, 60), (7, ly), (11, ly), 1)
+        pygame.draw.line(s, (80, 70, 60), (13, ly), (17, ly), 1)
+    pygame.draw.rect(s, _darken(wood, 25), (0, 0, BLOCK_SIZE, BLOCK_SIZE), 1)
+    surfs[bid] = s
+
+    # Starting Gate — two white posts with a red crossbar
+    bid = STARTING_GATE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    s.fill((42, 32, 18))
+    gate_col = (210, 205, 190)
+    bar_col  = (200, 55, 45)
+    pygame.draw.rect(s, gate_col, (2, 0, 4, BLOCK_SIZE))           # left post
+    pygame.draw.rect(s, gate_col, (BLOCK_SIZE - 6, 0, 4, BLOCK_SIZE))  # right post
+    pygame.draw.rect(s, bar_col, (2, BLOCK_SIZE // 2 - 2, BLOCK_SIZE - 4, 5))  # crossbar
+    pygame.draw.rect(s, _darken(gate_col, 20), (0, 0, BLOCK_SIZE, BLOCK_SIZE), 1)
+    surfs[bid] = s
+
+    # Winners Post — golden post with a small flag on top
+    bid = WINNERS_POST
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    s.fill((42, 32, 18))
+    post_gold = (185, 150, 40)
+    flag_col  = (220, 60, 40)
+    pygame.draw.rect(s, post_gold, (BLOCK_SIZE // 2 - 2, 4, 5, BLOCK_SIZE - 4))  # post
+    # Flag triangle
+    pygame.draw.polygon(s, flag_col, [
+        (BLOCK_SIZE // 2 + 3, 4),
+        (BLOCK_SIZE // 2 + 3, 14),
+        (BLOCK_SIZE // 2 + 12, 9),
+    ])
+    pygame.draw.rect(s, _darken(post_gold, 20), (0, 0, BLOCK_SIZE, BLOCK_SIZE), 1)
+    surfs[bid] = s
+
     return surfs

@@ -2103,6 +2103,83 @@ FISH_TYPES = {
     },
 
     # ------------------------------------------------------------------
+    # Pacific / Polynesian
+    # ------------------------------------------------------------------
+    "mahi_mahi": {
+        "name": "Mahi-Mahi",
+        "rarity_pool": ["rare", "epic"],
+        "habitat": "river",
+        "biome_affinity": ["pacific_island", "beach", "tropical"],
+        "weight_range": (2.0, 20.0),
+        "length_range": (50, 130),
+        "pattern_pool": ["spotted", "banded"],
+        "colors": [
+            ((40, 180, 160), (210, 175, 40)),
+            ((35, 165, 148), (195, 160, 35)),
+            ((50, 195, 175), (225, 190, 50)),
+        ],
+        "description": "A blazing fast pelagic fish of warm Pacific waters. Its vivid blue-green and gold flanks fade quickly after being caught.",
+    },
+    "parrotfish": {
+        "name": "Parrotfish",
+        "rarity_pool": ["uncommon", "uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["pacific_island", "beach"],
+        "weight_range": (0.5, 4.5),
+        "length_range": (25, 65),
+        "pattern_pool": ["scaled", "mottled"],
+        "colors": [
+            ((80, 190, 145), (200, 100, 160)),
+            ((65, 175, 130), (185, 85, 145)),
+            ((100, 200, 160), (215, 120, 175)),
+        ],
+        "description": "A reef fish that crunches coral with a beak-like jaw. Sleeps in a mucous cocoon and produces the white sand of tropical beaches.",
+    },
+    "triggerfish": {
+        "name": "Triggerfish",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["pacific_island", "beach"],
+        "weight_range": (0.3, 3.0),
+        "length_range": (20, 45),
+        "pattern_pool": ["spotted", "plain"],
+        "colors": [
+            ((50, 80, 160), (240, 195, 40)),
+            ((40, 65, 145), (225, 180, 35)),
+            ((85, 120, 185), (255, 215, 60)),
+        ],
+        "description": "Hawaii's state fish — the humuhumunukunukuapua'a. Wedges itself into coral crevices by locking its dorsal spine.",
+    },
+    "flying_fish": {
+        "name": "Flying Fish",
+        "rarity_pool": ["common", "common", "uncommon"],
+        "habitat": "river",
+        "biome_affinity": ["pacific_island", "ocean", "beach"],
+        "weight_range": (0.1, 0.6),
+        "length_range": (18, 35),
+        "pattern_pool": ["plain", "banded"],
+        "colors": [
+            ((55, 90, 155), (215, 230, 245)),
+            ((45, 78, 140), (200, 218, 238)),
+        ],
+        "description": "A remarkable open-ocean fish that glides above the surface on wing-like pectoral fins. Polynesian navigators once tracked their flight to find islands.",
+    },
+    "yellowfin_tuna": {
+        "name": "Yellowfin Tuna",
+        "rarity_pool": ["rare", "epic"],
+        "habitat": "river",
+        "biome_affinity": ["pacific_island", "ocean", "tropical"],
+        "weight_range": (5.0, 60.0),
+        "length_range": (70, 180),
+        "pattern_pool": ["plain", "striped"],
+        "colors": [
+            ((28, 55, 100), (220, 190, 30)),
+            ((22, 45, 88), (210, 178, 25)),
+        ],
+        "description": "The ahi of Hawaiian fishermen. A powerful open-water predator whose brilliant yellow fins and blazing speed made it a prized catch for outrigger canoe crews.",
+    },
+
+    # ------------------------------------------------------------------
     # Wetland / Swamp (new)
     # ------------------------------------------------------------------
     "chain_pickerel": {
@@ -2489,6 +2566,8 @@ FISH_TYPE_ORDER = [
     "piranha", "tambaqui", "pacu", "catfish",
     "redtail_catfish", "electric_eel", "payara", "arapaima",
     "arowana", "goliath_tigerfish", "bichir", "giant_gourami", "rivulus",
+    # Pacific
+    "mahi_mahi", "parrotfish", "triggerfish", "flying_fish", "yellowfin_tuna",
     # Wetland/Swamp
     "warmouth", "flier", "dollar_sunfish", "pirate_perch", "mudskipper", "bowfin",
     "walking_catfish", "pickerel", "redfin_pickerel", "spotted_gar", "snakehead",
@@ -2547,6 +2626,7 @@ FISH_BIOME_GROUPS = [
                             "piranha", "tambaqui", "pacu", "catfish",
                             "redtail_catfish", "electric_eel", "payara", "arapaima",
                             "arowana", "goliath_tigerfish", "bichir", "giant_gourami", "rivulus"]),
+    ("Pacific",         ["mahi_mahi", "parrotfish", "triggerfish", "flying_fish", "yellowfin_tuna"]),
     ("Wetland / Swamp", ["warmouth", "flier", "dollar_sunfish", "pirate_perch", "mudskipper", "bowfin",
                          "walking_catfish", "pickerel", "redfin_pickerel", "spotted_gar", "snakehead",
                          "longnose_gar", "grass_carp", "flathead_catfish", "blue_catfish",

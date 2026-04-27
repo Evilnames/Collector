@@ -39,7 +39,7 @@ class SaveManager:
                             "fish", "coffee_beans", "wine_grapes", "spirits",
                             "tea_leaves", "textiles", "cheese_wheels", "jewelry", "sculptures", "custom_tapestries", "pottery_pieces", "salt_crystals",
                             "research", "automations",
-                            "towns", "regions", "outposts",
+                            "towns", "regions", "outposts", "player_cities",
                             "farm_bots", "backhoes", "elevator_cars", "minecarts", "entities", "dropped_items", "chests"):
                     # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
@@ -72,6 +72,7 @@ class SaveManager:
             self._save_towns(con)
             self._save_regions(con)
             self._save_outposts(con)
+            self._save_player_cities(con)
             self._save_player(con, player)
             self._save_npc_relationships(con, player)
             self._save_rocks(con, player)
@@ -722,6 +723,15 @@ class SaveManager:
             last_resupply_day INTEGER DEFAULT 0,
             stock_json        TEXT
         );
+        CREATE TABLE IF NOT EXISTS player_cities (
+            bx               INTEGER NOT NULL,
+            by               INTEGER NOT NULL,
+            name             TEXT    NOT NULL DEFAULT 'Unnamed City',
+            coat_of_arms_json TEXT,
+            treasury         INTEGER NOT NULL DEFAULT 0,
+            npcs_json        TEXT,
+            PRIMARY KEY (bx, by)
+        );
         """)
         for col, default in [("spawn_x", "NULL"), ("spawn_y", "NULL")]:
             try:
@@ -822,6 +832,11 @@ class SaveManager:
             ("horses_bred", "0"),
             ("horse_records", "'{}'"),
             ("discovered_coat_biomes", "'[]'"),
+            ("races_entered", "0"),
+            ("races_won", "0"),
+            ("gold_won_racing", "0"),
+            ("racing_prestige", "'{}'"),
+            ("horse_pbs", "'{}'"),
             ("dogs_tamed", "0"),
             ("dogs_bred", "0"),
             ("dog_records", "'{}'"),
@@ -848,6 +863,11 @@ class SaveManager:
             ("dynasty_tiers_reached",    "'{}'"),
             ("dynasty_titles",           "'[]'"),
             ("dynasty_quests_completed", "'[]'"),
+            ("rivalry_tension",          "'{}'"),
+            ("rivalry_last_incident",    "'{}'"),
+            ("incident_quests_active",   "'{}'"),
+            ("rivalry_dormant_until",    "'{}'"),
+            ("gladiator_cards",          "'[]'"),
         ]:
             try:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT {default}")
@@ -1154,8 +1174,9 @@ class SaveManager:
                 horses_tamed, horses_bred, horse_records, discovered_coat_biomes,
                 dogs_tamed, dogs_bred, dog_records, discovered_dog_breeds,
                 discovered_recipes, animals_hunted, hunt_trophies, roast_profiles,
-                discovered_pairings, aging_vessels, visited_town_ids, equipped_weapon_uid)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                discovered_pairings, aging_vessels, visited_town_ids, equipped_weapon_uid,
+                races_entered, races_won, gold_won_racing, racing_prestige, horse_pbs)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 player.x, player.y, player.vx, player.vy, player.facing,
                 player.health, player.hunger, player.pick_power, player.money,
@@ -1189,6 +1210,11 @@ class SaveManager:
                 json.dumps(getattr(player, "aging_vessels", [])),
                 json.dumps(list(getattr(player, "visited_town_ids", set()))),
                 getattr(player, "equipped_weapon_uid", None),
+                getattr(player, "races_entered", 0),
+                getattr(player, "races_won", 0),
+                getattr(player, "gold_won_racing", 0),
+                json.dumps(getattr(player, "racing_prestige", {})),
+                json.dumps(getattr(player, "horse_pbs", {})),
             )
         )
 
@@ -1200,7 +1226,10 @@ class SaveManager:
                known_dynasty_regions=?, favored_dynasty_regions=?,
                champion_dynasty_regions=?, rival_dynasty_regions=?,
                dynasty_tiers_reached=?, dynasty_titles=?,
-               dynasty_quests_completed=?""",
+               dynasty_quests_completed=?,
+               rivalry_tension=?, rivalry_last_incident=?,
+               incident_quests_active=?, rivalry_dormant_until=?,
+               gladiator_cards=?""",
             (
                 json.dumps(getattr(player, "npc_requests", {})),
                 json.dumps(getattr(player, "npc_request_cooldowns", {})),
@@ -1216,6 +1245,11 @@ class SaveManager:
                 json.dumps({str(k): v for k, v in getattr(player, "dynasty_tiers_reached", {}).items()}),
                 json.dumps(getattr(player, "dynasty_titles", [])),
                 json.dumps(list(getattr(player, "dynasty_quests_completed", set()))),
+                json.dumps(getattr(player, "rivalry_tension",        {})),
+                json.dumps(getattr(player, "rivalry_last_incident",  {})),
+                json.dumps(getattr(player, "incident_quests_active", {})),
+                json.dumps(getattr(player, "rivalry_dormant_until",  {})),
+                json.dumps(getattr(player, "gladiator_cards", [])),
             )
         )
 
@@ -1671,6 +1705,43 @@ class SaveManager:
             })
         return result
 
+    def _save_player_cities(self, con):
+        from player_cities import PLAYER_CITIES
+        import json as _json
+        con.execute("DELETE FROM player_cities")
+        for city in PLAYER_CITIES.values():
+            con.execute(
+                "INSERT OR REPLACE INTO player_cities VALUES (?,?,?,?,?,?)",
+                (
+                    city.bx, city.by, city.name,
+                    _json.dumps(city.coat_of_arms),
+                    city.treasury,
+                    _json.dumps(city.npcs),
+                ),
+            )
+
+    def _load_player_cities(self) -> list[dict]:
+        import json as _json
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                rows = con.execute(
+                    "SELECT bx, by, name, coat_of_arms_json, treasury, npcs_json "
+                    "FROM player_cities"
+                ).fetchall()
+        except Exception:
+            return []
+        result = []
+        for r in rows:
+            result.append({
+                "bx":           r[0],
+                "by":           r[1],
+                "name":         r[2] or "Unnamed City",
+                "coat_of_arms": _json.loads(r[3]) if r[3] else {},
+                "treasury":     r[4] or 0,
+                "npcs":         _json.loads(r[5]) if r[5] else [],
+            })
+        return result
+
     def _save_research(self, con, research):
         con.execute("DELETE FROM research")
         for node_id, node in research.nodes.items():
@@ -2039,7 +2110,17 @@ class SaveManager:
                    COALESCE(rival_dynasty_regions,    '[]'),
                    COALESCE(dynasty_tiers_reached,    '{}'),
                    COALESCE(dynasty_titles,           '[]'),
-                   COALESCE(dynasty_quests_completed, '[]')
+                   COALESCE(dynasty_quests_completed, '[]'),
+                   COALESCE(rivalry_tension,         '{}'),
+                   COALESCE(rivalry_last_incident,   '{}'),
+                   COALESCE(incident_quests_active,  '{}'),
+                   COALESCE(rivalry_dormant_until,   '{}'),
+                   COALESCE(races_entered, 0),
+                   COALESCE(races_won, 0),
+                   COALESCE(gold_won_racing, 0),
+                   COALESCE(racing_prestige, '{}'),
+                   COALESCE(horse_pbs, '{}'),
+                   COALESCE(gladiator_cards, '[]')
             FROM player LIMIT 1
         """).fetchone()
 
@@ -2060,7 +2141,12 @@ class SaveManager:
          known_dynasty_regions_raw, favored_dynasty_regions_raw,
          champion_dynasty_regions_raw, rival_dynasty_regions_raw,
          dynasty_tiers_reached_raw, dynasty_titles_raw,
-         dynasty_quests_completed_raw) = row
+         dynasty_quests_completed_raw,
+         rivalry_tension_raw, rivalry_last_incident_raw,
+         incident_quests_active_raw, rivalry_dormant_until_raw,
+         races_entered_raw, races_won_raw, gold_won_racing_raw,
+         racing_prestige_raw, horse_pbs_raw,
+         gladiator_cards_raw) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -2552,6 +2638,16 @@ class SaveManager:
             "dynasty_tiers_reached":    json.loads(dynasty_tiers_reached_raw    or "{}"),
             "dynasty_titles":           json.loads(dynasty_titles_raw           or "[]"),
             "dynasty_quests_completed": json.loads(dynasty_quests_completed_raw or "[]"),
+            "rivalry_tension":          json.loads(rivalry_tension_raw          or "{}"),
+            "rivalry_last_incident":    json.loads(rivalry_last_incident_raw    or "{}"),
+            "incident_quests_active":   json.loads(incident_quests_active_raw   or "{}"),
+            "rivalry_dormant_until":    json.loads(rivalry_dormant_until_raw    or "{}"),
+            "races_entered":    int(races_entered_raw or 0),
+            "races_won":        int(races_won_raw or 0),
+            "gold_won_racing":  int(gold_won_racing_raw or 0),
+            "racing_prestige":  json.loads(racing_prestige_raw or "{}"),
+            "horse_pbs":        json.loads(horse_pbs_raw or "{}"),
+            "gladiator_cards":  json.loads(gladiator_cards_raw or "[]"),
             "crafted_weapons": weapons_data,
             "equipped_weapon_uid": equipped_weapon_uid,
             "sculptures_created": _sculpture_created,

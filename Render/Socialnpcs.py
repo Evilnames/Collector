@@ -45,12 +45,21 @@ def draw_npc_beggar(screen, sx, sy, npc):
 
 
 def draw_npc_noble(screen, sx, sy, npc):
-    bob = int(npc._bob_offset)
+    bob    = int(npc._bob_offset)
     facing = getattr(npc, 'facing', 1)
-    c = getattr(npc, 'clothing', {})
+    c      = getattr(npc, 'clothing', {})
+    skin   = c.get('skin', (250, 220, 185))
+
+    palace_type  = getattr(npc, 'palace_type',  None)
+    leader_color = getattr(npc, 'leader_color', None)
+
+    if palace_type and leader_color:
+        _draw_court_noble(screen, sx, sy, bob, facing, skin, palace_type, leader_color)
+        return
+
+    # Generic noble (no dynasty affiliation)
     body  = c.get('body', (90, 35, 110))
     trim  = c.get('trim', (220, 180, 70))
-    skin  = c.get('skin', (250, 220, 185))
     plume = (210, 60, 70)
     pygame.draw.rect(screen, body, (sx, sy + bob, 20, 18))
     pygame.draw.rect(screen, trim, (sx + 8, sy + bob, 4, 18))
@@ -66,6 +75,119 @@ def draw_npc_noble(screen, sx, sy, npc):
     plume_x = sx + 13 if facing == 1 else sx + 3
     pygame.draw.rect(screen, plume, (plume_x,     sy - 22 + bob, 4, 2))
     pygame.draw.rect(screen, plume, (plume_x + 1, sy - 24 + bob, 3, 2))
+
+
+def _draw_court_noble(screen, sx, sy, bob, facing, skin, palace_type, lc):
+    """Draw a dynasty-affiliated noble in their court's cultural style."""
+    def _dim(c, f=0.72):  return tuple(int(v * f) for v in c)
+    def _lite(c, a=55):   return tuple(min(255, v + a) for v in c)
+    def _gold():          return (218, 175, 40)
+    def _eyes():
+        pygame.draw.rect(screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+
+    _EAST_ASIAN  = {"east_asian", "chinese", "tang_imperial", "song_palace", "han_palace", "japanese"}
+    _MED         = {"mediterranean", "byzantine", "incan", "mesoamerican"}
+    _MID_EAST    = {"middle_eastern", "moorish", "persian"}
+    _SOUTH_ASIAN = {"south_asian"}
+    _AFRICAN     = {"african", "tibetan", "east_african"}
+
+    if palace_type in _EAST_ASIAN:
+        # Dark official's robe with leader_color sash band, tall wusha hat
+        robe = _dim(lc, 0.35)
+        pygame.draw.rect(screen, robe,    (sx, sy + bob, 20, 18))
+        pygame.draw.rect(screen, _gold(), (sx, sy + 8 + bob, 20, 2))        # sash
+        pygame.draw.rect(screen, _lite(lc, 40), (sx + 6, sy + bob, 8, 7))  # chest panel
+        pygame.draw.rect(screen, skin,    (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(screen, (30, 20, 15), (sx + 2, sy - 12 + bob, 16, 3))
+        _eyes()
+        # Wusha mao (tall rectangular official hat)
+        pygame.draw.rect(screen, (25, 20, 15), (sx - 1, sy - 14 + bob, 22, 3))  # brim
+        pygame.draw.rect(screen, (25, 20, 15), (sx + 3, sy - 22 + bob, 14, 9))  # crown
+        pygame.draw.rect(screen, _gold(),      (sx + 3, sy - 14 + bob, 14, 1))  # brim trim
+        # Hanging hat wings (bianze)
+        pygame.draw.rect(screen, (25, 20, 15), (sx - 4, sy - 13 + bob, 4, 2))
+        pygame.draw.rect(screen, (25, 20, 15), (sx + 20, sy - 13 + bob, 4, 2))
+
+    elif palace_type in _MED:
+        # White tunic with vertical leader_color clavus stripe, simple laurel
+        ivory = (245, 240, 225)
+        pygame.draw.rect(screen, ivory,   (sx, sy + bob, 20, 18))
+        pygame.draw.rect(screen, _dim(lc),(sx + 8, sy + bob, 4, 18))        # clavus stripe
+        pygame.draw.rect(screen, _gold(), (sx + 14, sy + 1 + bob, 5, 4))   # shoulder brooch
+        pygame.draw.rect(screen, lc,      (sx + 15, sy + 2 + bob, 3, 2))
+        pygame.draw.rect(screen, skin,    (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(screen, (80, 55, 35), (sx + 2, sy - 12 + bob, 16, 3))
+        _eyes()
+        # Laurel wreath
+        pygame.draw.rect(screen, (70, 140, 55), (sx + 2, sy - 14 + bob, 16, 2))
+        for fx in (sx + 3, sx + 7, sx + 12, sx + 15):
+            pygame.draw.rect(screen, (220, 180, 80), (fx, sy - 15 + bob, 2, 2))
+
+    elif palace_type in _MID_EAST:
+        # Kaftan in leader_color with gold border, wrapped turban
+        robe = _dim(lc, 0.8)
+        pygame.draw.rect(screen, robe,     (sx + 1, sy + bob, 18, 18))
+        pygame.draw.rect(screen, _gold(),  (sx + 1, sy + bob, 2, 18))
+        pygame.draw.rect(screen, _gold(),  (sx + 17, sy + bob, 2, 18))
+        pygame.draw.rect(screen, _lite(lc, 40), (sx + 3, sy + 1 + bob, 14, 6))  # chest panel
+        pygame.draw.rect(screen, skin,     (sx + 2, sy - 10 + bob, 16, 12))
+        _eyes()
+        # Simpler turban (no jewel — court official, not royalty)
+        pygame.draw.rect(screen, (245, 240, 230), (sx + 1, sy - 18 + bob, 18, 8))
+        pygame.draw.rect(screen, (245, 240, 230), (sx + 3, sy - 20 + bob, 14, 4))
+        pygame.draw.rect(screen, _dim(lc, 0.8),   (sx + 1, sy - 15 + bob, 18, 2))
+
+    elif palace_type in _SOUTH_ASIAN:
+        # Sherwani jacket in leader_color with gold buttons, turban
+        pygame.draw.rect(screen, _dim(lc), (sx + 1, sy + bob, 18, 18))
+        for bx2 in range(sx + 9, sx + 10, 1):                              # center buttons
+            for by2 in range(sy + 2, sy + 16, 4):
+                pygame.draw.rect(screen, _gold(), (bx2, by2 + bob, 2, 2))
+        pygame.draw.rect(screen, _gold(), (sx + 1, sy + bob, 18, 2))       # collar trim
+        pygame.draw.rect(screen, skin,    (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(screen, (25, 18, 10), (sx + 2, sy - 12 + bob, 16, 3))
+        _eyes()
+        # Pagri turban in leader_color
+        pygame.draw.rect(screen, lc,      (sx + 1, sy - 18 + bob, 18, 8))
+        pygame.draw.rect(screen, _dim(lc),(sx + 1, sy - 15 + bob, 18, 2))  # fold line
+        pygame.draw.rect(screen, _gold(), (sx + 6, sy - 19 + bob, 4, 2))   # brooch pin
+
+    elif palace_type in _AFRICAN:
+        # Formal wrap in leader_color with geometric dot pattern, bead collar
+        base = _dim(lc, 0.8)
+        pat  = _lite(lc, 50)
+        pygame.draw.rect(screen, base, (sx, sy + bob, 20, 18))
+        for row in range(0, 16, 4):
+            for col in range(2, 18, 4):
+                pygame.draw.rect(screen, pat, (sx + col, sy + row + bob, 2, 2))
+        for bx2 in range(sx + 3, sx + 17, 2):                              # bead collar
+            pygame.draw.rect(screen, _gold(), (bx2, sy + 1 + bob, 1, 2))
+        pygame.draw.rect(screen, skin,    (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(screen, (20, 14, 8), (sx + 2, sy - 12 + bob, 16, 3))
+        _eyes()
+        # Beaded headband
+        pygame.draw.rect(screen, _gold(), (sx + 2, sy - 13 + bob, 16, 2))
+        for bx2 in range(sx + 3, sx + 18, 3):
+            pygame.draw.rect(screen, lc, (bx2, sy - 13 + bob, 2, 2))
+
+    else:
+        # European court — doublet in leader_color with gold trim, plumed hat
+        dark = _dim(lc, 0.75)
+        pygame.draw.rect(screen, dark,    (sx, sy + bob, 20, 18))
+        pygame.draw.rect(screen, _gold(), (sx + 8, sy + bob, 4, 18))       # center trim
+        pygame.draw.rect(screen, _gold(), (sx, sy + bob, 20, 2))           # collar band
+        pygame.draw.rect(screen, (245, 240, 225), (sx + 5, sy + bob, 10, 3))  # cravat
+        pygame.draw.rect(screen, skin,    (sx + 2, sy - 10 + bob, 16, 12))
+        _eyes()
+        hat_dark = _dim(lc, 0.55)
+        pygame.draw.rect(screen, hat_dark, (sx - 2, sy - 13 + bob, 24, 3))
+        pygame.draw.rect(screen, dark,     (sx + 3, sy - 19 + bob, 14, 7))
+        pygame.draw.rect(screen, _gold(),  (sx + 3, sy - 13 + bob, 14, 2))
+        plume = _lite(lc, 70)
+        plume_x = sx + 13 if facing == 1 else sx + 3
+        pygame.draw.rect(screen, plume, (plume_x,     sy - 22 + bob, 4, 2))
+        pygame.draw.rect(screen, plume, (plume_x + 1, sy - 24 + bob, 3, 2))
 
 
 def draw_npc_pilgrim(screen, sx, sy, npc):

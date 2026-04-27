@@ -341,7 +341,9 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     CITRUS_SAPLING, POMEGRANATE_SAPLING,
                     JUICER_BLOCK,
                     ICE_SHARD,
-                    FROZEN_BOG)
+                    FROZEN_BOG,
+                    RACING_RAIL, STARTING_GATE, WINNERS_POST,
+                    CITY_BLOCK, GROW_LAMP)
 
 ITEMS = {
     # --- Natural resources ---
@@ -624,6 +626,66 @@ ITEMS = {
     "pomegranate_danish":     {"name": "Pomegranate Danish",         "color": (175,  45,  70), "place_block": None, "edible": True, "hunger_restore": 50},
     "watermelon_cake":        {"name": "Watermelon Cake",            "color": (210,  75,  85), "place_block": None, "edible": True, "hunger_restore": 62},
     "apple_loaf":             {"name": "Apple Loaf",                  "color": (195, 145,  55), "place_block": None, "edible": True, "hunger_restore": 50},
+    # --- Desserts: Cakes ---
+    "honey_cake":             {"name": "Honey Cake",                 "color": (220, 185,  80), "place_block": None, "edible": True, "hunger_restore": 35},
+    "black_forest_cake":      {"name": "Black Forest Cake",          "color": ( 70,  35,  35), "place_block": None, "edible": True, "hunger_restore": 42},
+    "victoria_sponge":        {"name": "Victoria Sponge",            "color": (235, 210, 195), "place_block": None, "edible": True, "hunger_restore": 38},
+    "tres_leches":            {"name": "Tres Leches Cake",           "color": (245, 235, 215), "place_block": None, "edible": True, "hunger_restore": 40},
+    "matcha_roll":            {"name": "Matcha Roll Cake",           "color": (130, 185, 110), "place_block": None, "edible": True, "hunger_restore": 35},
+    "stollen":                {"name": "Stollen",                    "color": (225, 200, 165), "place_block": None, "edible": True, "hunger_restore": 35},
+    "orange_cake":            {"name": "Orange Cake",                "color": (240, 155,  55), "place_block": None, "edible": True, "hunger_restore": 33},
+    "chestnut_cake":          {"name": "Chestnut Cake",              "color": (150, 105,  65), "place_block": None, "edible": True, "hunger_restore": 35},
+    # --- Desserts: Cookies ---
+    "ginger_snap":            {"name": "Ginger Snap",                "color": (195, 135,  65), "place_block": None, "edible": True, "hunger_restore": 18},
+    "biscotti":               {"name": "Biscotti",                   "color": (220, 190, 140), "place_block": None, "edible": True, "hunger_restore": 20},
+    "almond_cookie":          {"name": "Almond Cookie",              "color": (235, 215, 160), "place_block": None, "edible": True, "hunger_restore": 18},
+    "shortbread":             {"name": "Shortbread",                 "color": (240, 215, 145), "place_block": None, "edible": True, "hunger_restore": 18},
+    "lebkuchen":              {"name": "Lebkuchen",                  "color": (120,  75,  40), "place_block": None, "edible": True, "hunger_restore": 22},
+    "macaron":                {"name": "Macaron",                    "color": (235, 185, 200), "place_block": None, "edible": True, "hunger_restore": 22},
+    "alfajor":                {"name": "Alfajor",                    "color": (230, 205, 155), "place_block": None, "edible": True, "hunger_restore": 24},
+    "spekulatius":            {"name": "Spekulatius",                "color": (200, 155,  90), "place_block": None, "edible": True, "hunger_restore": 20},
+    # --- Desserts: Pies & Tarts ---
+    "berry_pie":              {"name": "Berry Pie",                  "color": (150,  55,  90), "place_block": None, "edible": True, "hunger_restore": 32},
+    "honey_tart":             {"name": "Honey Tart",                 "color": (230, 195,  75), "place_block": None, "edible": True, "hunger_restore": 28},
+    "almond_tart":            {"name": "Almond Tart",                "color": (215, 185, 125), "place_block": None, "edible": True, "hunger_restore": 28},
+    "key_lime_tart":          {"name": "Key Lime Tart",              "color": (185, 220, 130), "place_block": None, "edible": True, "hunger_restore": 28},
+    "date_tart":              {"name": "Date Tart",                  "color": (185, 140,  75), "place_block": None, "edible": True, "hunger_restore": 30},
+    # --- Desserts: Japanese ---
+    "mochi":                  {"name": "Mochi",                      "color": (245, 235, 225), "place_block": None, "edible": True, "hunger_restore": 22},
+    "dorayaki":               {"name": "Dorayaki",                   "color": (185, 130,  65), "place_block": None, "edible": True, "hunger_restore": 28},
+    "daifuku":                {"name": "Daifuku",                    "color": (240, 210, 220), "place_block": None, "edible": True, "hunger_restore": 24},
+    "yokan":                  {"name": "Yokan",                      "color": ( 90,  55,  80), "place_block": None, "edible": True, "hunger_restore": 20},
+    "taiyaki":                {"name": "Taiyaki",                    "color": (195, 145,  70), "place_block": None, "edible": True, "hunger_restore": 26},
+    # --- Desserts: Indian ---
+    "gulab_jamun":            {"name": "Gulab Jamun",                "color": (195, 100,  55), "place_block": None, "edible": True, "hunger_restore": 28},
+    "kheer":                  {"name": "Kheer",                      "color": (245, 235, 210), "place_block": None, "edible": True, "hunger_restore": 30},
+    "ladoo":                  {"name": "Ladoo",                      "color": (225, 185,  65), "place_block": None, "edible": True, "hunger_restore": 26},
+    "barfi":                  {"name": "Barfi",                      "color": (235, 215, 195), "place_block": None, "edible": True, "hunger_restore": 26},
+    "rasgulla":               {"name": "Rasgulla",                   "color": (245, 240, 235), "place_block": None, "edible": True, "hunger_restore": 24},
+    # --- Desserts: French ---
+    "eclair":                 {"name": "Eclair",                     "color": ( 85,  55,  30), "place_block": None, "edible": True, "hunger_restore": 28},
+    "creme_brulee":           {"name": "Creme Brulee",               "color": (235, 215, 135), "place_block": None, "edible": True, "hunger_restore": 28},
+    "mille_feuille":          {"name": "Mille-Feuille",              "color": (235, 210, 165), "place_block": None, "edible": True, "hunger_restore": 32},
+    "clafoutis":              {"name": "Clafoutis",                  "color": (200, 150,  95), "place_block": None, "edible": True, "hunger_restore": 30},
+    "profiteroles":           {"name": "Profiteroles",               "color": (100,  65,  35), "place_block": None, "edible": True, "hunger_restore": 28},
+    # --- Desserts: Italian ---
+    "tiramisu":               {"name": "Tiramisu",                   "color": (100,  70,  45), "place_block": None, "edible": True, "hunger_restore": 38},
+    "panna_cotta":            {"name": "Panna Cotta",                "color": (245, 235, 215), "place_block": None, "edible": True, "hunger_restore": 28},
+    "cannoli":                {"name": "Cannoli",                    "color": (200, 160, 100), "place_block": None, "edible": True, "hunger_restore": 30},
+    "zeppole":                {"name": "Zeppole",                    "color": (230, 195, 115), "place_block": None, "edible": True, "hunger_restore": 24},
+    # --- Desserts: British ---
+    "sticky_toffee_pudding":  {"name": "Sticky Toffee Pudding",     "color": (100,  65,  30), "place_block": None, "edible": True, "hunger_restore": 42},
+    "eton_mess":              {"name": "Eton Mess",                  "color": (235, 185, 185), "place_block": None, "edible": True, "hunger_restore": 32},
+    "trifle":                 {"name": "Trifle",                     "color": (185, 140, 175), "place_block": None, "edible": True, "hunger_restore": 35},
+    "jam_roly_poly":          {"name": "Jam Roly-Poly",              "color": (225, 165, 155), "place_block": None, "edible": True, "hunger_restore": 35},
+    # --- Desserts: Mexican & Latin American ---
+    "flan":                   {"name": "Flan",                       "color": (225, 190, 100), "place_block": None, "edible": True, "hunger_restore": 28},
+    "bunuelos":               {"name": "Bunuelos",                   "color": (235, 210, 145), "place_block": None, "edible": True, "hunger_restore": 24},
+    "arroz_con_leche":        {"name": "Arroz con Leche",            "color": (245, 235, 210), "place_block": None, "edible": True, "hunger_restore": 30},
+    # --- Desserts: American ---
+    "brownie":                {"name": "Brownie",                    "color": ( 65,  40,  25), "place_block": None, "edible": True, "hunger_restore": 32},
+    "bread_pudding":          {"name": "Bread Pudding",              "color": (195, 160,  95), "place_block": None, "edible": True, "hunger_restore": 35},
+    "rice_pudding":           {"name": "Rice Pudding",               "color": (245, 235, 215), "place_block": None, "edible": True, "hunger_restore": 30},
     # --- Batch 3: grilled ---
     "apple_pork_skewer":        {"name": "Apple & Pork Skewer",        "color": (190, 115,  50), "place_block": None, "edible": True, "hunger_restore": 65},
     "lemon_herb_fish":          {"name": "Lemon Herb Fish",            "color": (235, 215,  80), "place_block": None, "edible": True, "hunger_restore": 58},
@@ -1352,6 +1414,7 @@ ITEMS = {
     "chicken_coop_item":{"name": "Chicken Coop", "color": (165, 125,  60), "place_block": CHICKEN_COOP_BLOCK},
     "dog_bowl_item":    {"name": "Dog Bowl",     "color": (180, 140,  90), "place_block": DOG_BOWL_BLOCK},
     "trade_block":      {"name": "Trade Post",    "color": (120,  85,  55), "place_block": TRADE_BLOCK},
+    "city_block_item":  {"name": "City Block",    "color": (180, 155,  90), "place_block": CITY_BLOCK},
     # --- Herbalism supply chain ---
     "cave_mushroom":         {"name": "Cave Mushroom",          "color": (140, 110,  70), "place_block": None, "edible": True, "hunger_restore": 4},
     "rare_mushroom":         {"name": "Rare Mushroom",          "color": (160,  60, 180), "place_block": None, "edible": True, "hunger_restore": 6},
@@ -2400,6 +2463,7 @@ ITEMS = {
     "water_bucket":          {"name": "Water Bucket",        "color": (120, 160, 200), "place_block": None, "harvest_water": True},
     "water_bucket_full":     {"name": "Water Bucket (Full)", "color": ( 60, 120, 200), "place_block": None, "is_water_source": True},
     "irrigation_channel_item": {"name": "Irrigation Channel","color": (130, 110,  90), "place_block": IRRIGATION_CHANNEL_BLOCK, "bg_only": True},
+    "grow_lamp_item":          {"name": "Grow Lamp",          "color": (210, 255, 160), "place_block": GROW_LAMP, "bg_only": True},
     "counter_item":      {"name": "Counter",     "color": ( 80, 110, 140), "place_block": COUNTER_BLOCK},
     "comparator_item":   {"name": "Comparator",  "color": (140,  80, 100), "place_block": COMPARATOR_BLOCK},
     "observer_item":     {"name": "Observer",    "color": ( 60,  80,  70), "place_block": OBSERVER_BLOCK},
@@ -2409,4 +2473,36 @@ ITEMS = {
     "automation_bench_item": {"name": "Automation Bench",  "color": ( 70,  90, 110), "place_block": AUTOMATION_BENCH_BLOCK},
     "ice_shard":               {"name": "Ice Shard", "color": (185, 225, 248), "place_block": ICE_SHARD},
     "frozen_bog":              {"name": "Frozen Bog", "color": ( 95, 120, 138), "place_block": FROZEN_BOG},
+    # --- Racing ---
+    "racing_trophy_1st":  {"name": "Gold Racing Trophy",   "color": (210, 175,  40), "place_block": None},
+    "racing_trophy_2nd":  {"name": "Silver Racing Trophy", "color": (185, 185, 195), "place_block": None},
+    "racing_trophy_3rd":  {"name": "Bronze Racing Trophy", "color": (185, 115,  60), "place_block": None},
+    "racing_rail":        {"name": "Racing Rail",          "color": (110,  80,  45), "place_block": RACING_RAIL},
+    "starting_gate":      {"name": "Starting Gate",        "color": (200, 185, 160), "place_block": STARTING_GATE},
+    "winners_post":       {"name": "Winners Post",         "color": (195, 160,  50), "place_block": WINNERS_POST},
+    # --- Pacific / Polynesian raw ingredients ---
+    "taro":          {"name": "Taro",        "color": (155, 130, 175), "place_block": None, "edible": True, "hunger_restore": 10},
+    "breadfruit":    {"name": "Breadfruit",  "color": (135, 165,  85), "place_block": None, "edible": True, "hunger_restore": 12},
+    "coconut":       {"name": "Coconut",     "color": (120,  90,  55), "place_block": None, "edible": True, "hunger_restore":  8},
+    # --- Pacific / Polynesian dishes ---
+    "poi":                {"name": "Poi",                "color": (170, 145, 195), "place_block": None, "edible": True, "hunger_restore": 38},
+    "coconut_rice":       {"name": "Coconut Rice",       "color": (240, 235, 210), "place_block": None, "edible": True, "hunger_restore": 45},
+    "poke_bowl":          {"name": "Poke Bowl",          "color": (195, 100, 100), "place_block": None, "edible": True, "hunger_restore": 58},
+    "laplap":             {"name": "Laplap",             "color": (185, 165, 130), "place_block": None, "edible": True, "hunger_restore": 55},
+    "roasted_breadfruit": {"name": "Roasted Breadfruit", "color": (165, 140,  70), "place_block": None, "edible": True, "hunger_restore": 42},
+    "coconut_fish_curry": {"name": "Coconut Fish Curry", "color": (220, 160,  65), "place_block": None, "edible": True, "hunger_restore": 62},
+    # --- Pacific outpost trade goods ---
+    "raw_pearl":       {"name": "Raw Pearl",       "color": (240, 235, 245), "place_block": None},
+    "pearl_necklace":  {"name": "Pearl Necklace",  "color": (245, 240, 250), "place_block": None},
+    "shell_ornament":  {"name": "Shell Ornament",  "color": (210, 195, 170), "place_block": None},
+    "pearl":           {"name": "Pearl",           "color": (240, 238, 248), "place_block": None},
+    "shell_fragment":  {"name": "Shell Fragment",  "color": (200, 190, 175), "place_block": None},
+    "coral":           {"name": "Coral",           "color": (240, 120, 100), "place_block": None},
+    "coconut_oil":     {"name": "Coconut Oil",     "color": (245, 235, 200), "place_block": None},
+    "tapa_cloth":      {"name": "Tapa Cloth",      "color": (210, 175, 110), "place_block": None},
+    "tropical_spice":  {"name": "Tropical Spice",  "color": (200, 110,  50), "place_block": None},
+    "carved_idol":     {"name": "Carved Idol",     "color": (130, 100,  60), "place_block": None},
+    "bone_fishhook":   {"name": "Bone Fishhook",   "color": (230, 220, 195), "place_block": None},
+    "navigation_chart":{"name": "Navigation Chart","color": (195, 175, 130), "place_block": None},
+    "rare_fish":       {"name": "Rare Fish",       "color": ( 80, 175, 220), "place_block": None},
 }

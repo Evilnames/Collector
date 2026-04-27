@@ -62,7 +62,8 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     CUSTOM_TAPESTRY_ROOT, CUSTOM_TAPESTRY_BODY,
                     POTTERY_DISPLAY_BLOCK,
                     SALT_DEPOSIT,
-                    TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK, LANDMARK_FLAG_BLOCK)
+                    TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK, LANDMARK_FLAG_BLOCK,
+                    CITY_BLOCK)
 import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
@@ -291,6 +292,10 @@ class Player:
         self.dynasty_tiers_reached:    dict = {}      # region_id → tier name
         self.dynasty_titles:           list = []      # e.g. ["Champion of House Voss"]
         self.dynasty_quests_completed: set  = set()   # region_ids with completed dynasty quest
+        self.rivalry_tension:         dict = {}      # "rid_a_rid_b" → int 0-3
+        self.rivalry_last_incident:   dict = {}      # "rid_a_rid_b" → day_count of last incident
+        self.incident_quests_active:  dict = {}      # "rid_a_rid_b" → quest dict with side_a/side_b
+        self.rivalry_dormant_until:   dict = {}      # "rid_a_rid_b" → day_count (set after peace)
         self.inspecting_npc   = None        # NPC ref while inspect overlay is open
         self.gift_panel_open  = False       # True when gift sub-panel is visible
         self.fulfill_request_open = False   # True when fulfill-request sub-panel is visible
@@ -355,12 +360,22 @@ class Player:
         self.horses_bred            = 0
         self.horse_records          = {"best_speed": 0.0, "best_stamina": 0.0}
         self.discovered_coat_biomes = set()
+        # Horse racing tracking
+        self.races_entered          = 0
+        self.races_won              = 0
+        self.gold_won_racing        = 0
+        self.racing_prestige        = {}   # {region_id: wins}
+        self.horse_pbs              = {}   # {horse_uid: best_place (1-8)}
         # Dog companion tracking
         self._pending_dog_view      = None   # Dog ref; set on right-click empty-hand, read by main.py
         self.dogs_tamed             = 0
         self.dogs_bred              = 0
         self.dog_records            = {"best_speed": 0.0, "best_nose": 0.0}
         self.discovered_dog_breeds  = set()
+        # Gladiator cards
+        self.gladiator_cards        = []       # list of GladiatorProfile dicts
+        self.sponsored_gladiator_uid = None    # reserved for future sponsor/train feature
+
         # Weapon crafting
         self.crafted_weapons        = []       # list of Weapon objects
         self.guard_sketches         = []       # list of GuardSketch objects
@@ -431,12 +446,18 @@ class Player:
         self.horses_bred            = d.get("horses_bred", 0)
         self.horse_records          = d.get("horse_records", {"best_speed": 0.0, "best_stamina": 0.0})
         self.discovered_coat_biomes = set(d.get("discovered_coat_biomes", []))
+        self.races_entered          = d.get("races_entered", 0)
+        self.races_won              = d.get("races_won", 0)
+        self.gold_won_racing        = d.get("gold_won_racing", 0)
+        self.racing_prestige        = d.get("racing_prestige", {})
+        self.horse_pbs              = d.get("horse_pbs", {})
         self.dogs_tamed             = d.get("dogs_tamed", 0)
         self.dogs_bred              = d.get("dogs_bred", 0)
         self.dog_records            = d.get("dog_records", {"best_speed": 0.0, "best_nose": 0.0})
         self.discovered_dog_breeds  = set(d.get("discovered_dog_breeds", []))
         self.animals_hunted = d.get("animals_hunted", {})
         self.hunt_trophies  = d.get("hunt_trophies", {})
+        self.gladiator_cards     = d.get("gladiator_cards", [])
         self.crafted_weapons     = [Weapon(**x) for x in d.get("crafted_weapons", [])]
         self.guard_sketches      = [GuardSketch(**x) for x in d.get("guard_sketches", [])]
         self.equipped_weapon_uid = d.get("equipped_weapon_uid", None)
@@ -468,6 +489,10 @@ class Player:
         self.dynasty_tiers_reached    = {int(k): v for k, v in d.get("dynasty_tiers_reached", {}).items()}
         self.dynasty_titles           = d.get("dynasty_titles", [])
         self.dynasty_quests_completed = set(d.get("dynasty_quests_completed", []))
+        self.rivalry_tension        = d.get("rivalry_tension",        {})
+        self.rivalry_last_incident  = d.get("rivalry_last_incident",  {})
+        self.incident_quests_active = d.get("incident_quests_active", {})
+        self.rivalry_dormant_until  = d.get("rivalry_dormant_until",  {})
         # Reconstruct unplaced_vases from saved UIDs
         _piece_by_uid = {p.uid: p for p in self.pottery_pieces}
         _pending_uids = getattr(self.world, "_pending_unplaced_vase_uids", [])
@@ -1716,6 +1741,9 @@ class Player:
                     from blocks import DEPOSIT_TRIGGER_BLOCK as _DTR
                     if block_id == _DTR:
                         _logic.register_deposit_trigger(self.world, bx, by)
+            if block_id == CITY_BLOCK:
+                from player_cities import register_city
+                register_city(bx, by)
         self.inventory[item_id] -= 1
         if self.inventory[item_id] <= 0:
             del self.inventory[item_id]
@@ -2368,9 +2396,13 @@ class Player:
             for dx in range(-2, 3):
                 if dx * self.facing < 0:
                     continue
-                bid = self.world.get_block(cx + dx, cy + dy)
+                bx, by = cx + dx, cy + dy
+                bid = self.world.get_block(bx, by)
                 if bid in EQUIPMENT_BLOCKS:
                     return bid
+                bg = self.world.get_bg_block(bx, by)
+                if bg in EQUIPMENT_BLOCKS:
+                    return bg
         return None
 
     def get_nearby_equipment_pos(self, target_bid):
@@ -2424,6 +2456,16 @@ class Player:
         for dy in range(-3, 4):
             for dx in range(-3, 4):
                 if self.world.get_bg_block(cx + dx, cy + dy) == LANDMARK_FLAG_BLOCK:
+                    return (cx + dx, cy + dy)
+        return None
+
+    def get_nearby_city_block(self):
+        """Return (bx, by) of a CITY_BLOCK within 3 blocks of the player, or None."""
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        for dy in range(-3, 4):
+            for dx in range(-3, 4):
+                if self.world.get_block(cx + dx, cy + dy) == CITY_BLOCK:
                     return (cx + dx, cy + dy)
         return None
 

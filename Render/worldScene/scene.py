@@ -401,6 +401,7 @@ def draw_entities(renderer, entities):
         elif aid == "npc_leader":     renderer._draw_npc_leader(sx, sy, e)
         elif aid == "npc_farmer":     renderer._draw_npc_farmer(sx, sy, e)
         elif aid == "npc_villager":   renderer._draw_npc_villager(sx, sy, e)
+        elif aid == "settler":        renderer._draw_npc_settler(sx, sy, e)
         elif aid == "npc_child":      renderer._draw_npc_child(sx, sy, e)
         elif aid == "npc_guard":      renderer._draw_npc_guard(sx, sy, e)
         elif aid == "npc_elder":      renderer._draw_npc_elder(sx, sy, e)

@@ -756,6 +756,10 @@ class Renderer:
         from Render.Workernpcs import draw_npc_villager
         draw_npc_villager(self.screen, sx, sy, npc)
 
+    def _draw_npc_settler(self, sx, sy, npc):
+        from Render.Workernpcs import draw_npc_settler
+        draw_npc_settler(self.screen, sx, sy, npc)
+
     def _draw_npc_child(self, sx, sy, npc):
         from Render.Workernpcs import draw_npc_child
         draw_npc_child(self.screen, sx, sy, npc)

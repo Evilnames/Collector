@@ -503,6 +503,32 @@ def draw_npc_villager(screen, sx, sy, npc):
     pygame.draw.rect(screen, trim,   (sx + bx_off, sy + 4 + bob, 6, 1))
 
 
+def draw_npc_settler(screen, sx, sy, npc):
+    """Settler NPC — traveler look: travel-worn cloak, pack on back, simple colours."""
+    bob    = int(npc._bob_offset)
+    facing = getattr(npc, "facing", 1)
+    hired  = getattr(npc, "settler_hired", False)
+    # Hired settlers wear warmer, tidier colours
+    cloak = (95, 110, 145) if hired else (110, 88, 65)
+    pack  = (140, 108, 72)
+    skin  = (255, 215, 165)
+    # Body / cloak
+    pygame.draw.rect(screen, cloak, (sx + 1, sy + bob, 18, 18))
+    # Collar / neck
+    pygame.draw.rect(screen, tuple(min(255, v + 40) for v in cloak),
+                     (sx + 7, sy + bob, 6, 6))
+    # Head
+    pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
+    # Eyes
+    pygame.draw.rect(screen, (35, 25, 15), (sx + 4,  sy - 7 + bob, 3, 3))
+    pygame.draw.rect(screen, (35, 25, 15), (sx + 11, sy - 7 + bob, 3, 3))
+    # Travel pack (opposite side from facing)
+    pack_x = sx - 6 if facing == 1 else sx + 18
+    pygame.draw.rect(screen, pack, (pack_x, sy + 2 + bob, 5, 8))
+    pygame.draw.rect(screen, tuple(min(255, v + 30) for v in pack),
+                     (pack_x + 1, sy + 3 + bob, 3, 2))
+
+
 def draw_npc_child(screen, sx, sy, npc):
     bob = int(npc._bob_offset)
     c = getattr(npc, 'clothing', {})

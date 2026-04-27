@@ -344,6 +344,29 @@ _DYNASTY_SAYINGS = [
     "A phrase attributed to the founder that the current generation disputes but has not stopped repeating: 'Every favour is a ledger entry.'",
 ]
 
+_RIVALRY_INCIDENTS = [
+    "{house_a} has seized a shipment bound for {house_b}'s territory. The cause is disputed.",
+    "A representative of {house_b} was turned away at a market under {house_a}'s jurisdiction.",
+    "{house_a} publicly challenged {house_b}'s claim to a border toll road. Neither side has backed down.",
+    "Someone burned a supply cache near {house_b}'s frontier. {house_a} has issued a denial.",
+    "{house_b} circulated a pamphlet attributing {house_a}'s recent prosperity to fraud.",
+    "A caravan flying {house_a}'s colours was stopped and searched by guards loyal to {house_b}.",
+    "A border magistrate has publicly sided with {house_b} in a property dispute against {house_a}.",
+    "{house_a} hired away three of {house_b}'s most experienced traders within the same week.",
+    "{house_b} has placed a competing merchant in a position {house_a} considered their own.",
+    "Graffiti mocking {house_b}'s bloodline appeared in the capital. {house_a} issued a statement of ignorance.",
+    "{house_a} called in a debt {house_b} claims was already settled. Neither will produce the original document.",
+    "Two trade convoys from the rival houses collided at a crossroads. Official accounts of blame differ by source.",
+    "A feast held by {house_b} extended no invitation to {house_a}. It was noticed.",
+    "{house_a} accused {house_b}'s factor of bribery. The factor remains in post.",
+    "A water channel dispute between the two houses has escalated to formal complaint.",
+    "{house_b}'s guards turned back a travelling merchant who claimed {house_a}'s protection.",
+    "Members of {house_a} were refused lodging in a town recently placed under {house_b}'s patronage.",
+    "{house_b} has publicly backed a candidate for a civic post that {house_a} had quietly supported.",
+    "{house_a} is said to have bribed a town official who was previously neutral between the houses.",
+    "A fire at a {house_b} grain store has led to quiet accusations against {house_a}. Nothing has been proven.",
+]
+
 _DARK_SECRETS = [
     "the founder's claim to the seat was not as clean as the formal record suggests — there was a prior claimant, and their departure from the matter was not entirely voluntary",
     "the house carries a substantial undisclosed liability to a creditor who has chosen, so far, not to press it; what they expect in return has never been stated",
@@ -572,3 +595,237 @@ def check_dynasty_milestones(player, npc, world) -> None:
             player.pending_notifications.append(
                 ("Dynasty", f"Warning: {rival_name} now regards you as an enemy.", "rare")
             )
+
+
+# ---------------------------------------------------------------------------
+# Rivalry Tension system
+# ---------------------------------------------------------------------------
+
+TENSION_LEVELS = [
+    (0, "Calm",    (140, 200, 140)),
+    (1, "Tense",   (220, 190,  80)),
+    (2, "Hostile", (210, 120,  60)),
+    (3, "Feud",    (200,  60,  60)),
+]
+
+
+def _rivalry_key(rid_a: int, rid_b: int) -> str:
+    return f"{min(rid_a, rid_b)}_{max(rid_a, rid_b)}"
+
+
+def _dynasty_name_for_region(rid: int, world_seed: int) -> str:
+    from npc_identity import _FAMILY_NAMES
+    rng = random.Random(hash((rid, world_seed, "dynasty")) & 0xFFFFFFFF)
+    return f"House {rng.choice(_FAMILY_NAMES)}"
+
+
+def tension_level(player, key: str) -> int:
+    return getattr(player, "rivalry_tension", {}).get(key, 0)
+
+
+def tension_label(player, key: str) -> tuple:
+    lvl = tension_level(player, key)
+    return TENSION_LEVELS[lvl][1], TENSION_LEVELS[lvl][2]
+
+
+def _escalate_tension(player, key: str) -> None:
+    t = getattr(player, "rivalry_tension", {})
+    t[key] = min(3, t.get(key, 0) + 1)
+    player.rivalry_tension = t
+
+
+def _calm_tension(player, key: str) -> None:
+    t = getattr(player, "rivalry_tension", {})
+    t[key] = max(0, t.get(key, 0) - 1)
+    player.rivalry_tension = t
+
+
+def _apply_region_rel_delta(player, region_id: int, delta: int, world) -> None:
+    """Apply relationship delta to all nobles/elders in a region, then re-check milestones."""
+    for entity in world.entities:
+        if (getattr(entity, "dynasty_id", None) == region_id
+                and getattr(entity, "animal_id", "") in {"npc_noble", "npc_elder"}):
+            uid = getattr(entity, "npc_uid", None)
+            if uid:
+                old = player.npc_relationships.get(uid, 0)
+                player.npc_relationships[uid] = max(-100, min(100, old + delta))
+                check_dynasty_milestones(player, entity, world)
+
+
+def _make_incident_quest(rid: int, house_name: str, rng) -> dict:
+    spec = rng.choice(_DYNASTY_QUEST_SPECS).copy()
+    spec["count"]       = rng.randint(1, 2)
+    spec["reward_gold"] = 200 + rng.randint(0, 4) * 50
+    spec["region_id"]   = rid
+    spec["house_name"]  = house_name
+    return spec
+
+
+def _fire_incident(world, player, rid_a: int, rid_b: int, key: str,
+                   day_count: int, rng) -> None:
+    world_seed   = getattr(world, "seed", 0)
+    house_a_name = _dynasty_name_for_region(rid_a, world_seed)
+    house_b_name = _dynasty_name_for_region(rid_b, world_seed)
+
+    template     = rng.choice(_RIVALRY_INCIDENTS)
+    incident_text = template.format(house_a=house_a_name, house_b=house_b_name)
+
+    player.pending_notifications.append(("Rivalry", incident_text, "uncommon"))
+    player.rivalry_last_incident[key] = day_count
+
+    rng_q = random.Random(hash((key, day_count, "iq")) & 0xFFFFFFFF)
+    player.incident_quests_active[key] = {
+        "side_a":       _make_incident_quest(rid_a, house_a_name, rng_q),
+        "side_b":       _make_incident_quest(rid_b, house_b_name, rng_q),
+        "incident_text": incident_text,
+        "posted_day":   day_count,
+        "expires_day":  day_count + 10,
+    }
+
+
+def tick_rivalry_incidents(world, player, day_count: int) -> None:
+    from towns import REGIONS, rival_region_ids
+
+    if not hasattr(player, "rivalry_tension"):         player.rivalry_tension        = {}
+    if not hasattr(player, "rivalry_last_incident"):   player.rivalry_last_incident  = {}
+    if not hasattr(player, "incident_quests_active"):  player.incident_quests_active = {}
+    if not hasattr(player, "rivalry_dormant_until"):   player.rivalry_dormant_until  = {}
+
+    seen = set()
+    for region_id in list(REGIONS.keys()):
+        for rival_rid in rival_region_ids(region_id):
+            key = _rivalry_key(region_id, rival_rid)
+            if key in seen:
+                continue
+            seen.add(key)
+
+            # Check existing quest expiry
+            iq = player.incident_quests_active.get(key)
+            if iq and day_count > iq["expires_day"]:
+                del player.incident_quests_active[key]
+                _escalate_tension(player, key)
+
+            # Skip dormant rivalries
+            if day_count < player.rivalry_dormant_until.get(key, 0):
+                continue
+
+            # Fire on ~15-day interval with small jitter
+            last = player.rivalry_last_incident.get(key, -99)
+            rng  = random.Random(hash((key, day_count // 15)) & 0xFFFFFFFF)
+            if day_count - last < 15 + rng.randint(0, 4):
+                continue
+
+            _fire_incident(world, player, region_id, rival_rid, key, day_count, rng)
+
+
+def fulfill_incident_quest(player, side: str, key: str, world) -> tuple:
+    """Complete one side of an incident quest. Returns (rel_delta, gold)."""
+    iq = getattr(player, "incident_quests_active", {}).pop(key, None)
+    if not iq:
+        return 0, 0
+
+    quest       = iq[side]
+    other_side  = "side_b" if side == "side_a" else "side_a"
+    other_quest = iq[other_side]
+
+    gold = quest["reward_gold"]
+    player.money += gold
+
+    _apply_region_rel_delta(player, quest["region_id"],       +15, world)
+    _apply_region_rel_delta(player, other_quest["region_id"], -8,  world)
+    _calm_tension(player, key)
+
+    house_name = quest["house_name"]
+    player.pending_notifications.append(
+        ("Rivalry", f"You aided {house_name}. Their gratitude is noted.", "rare")
+    )
+    return 15, gold
+
+
+# ---------------------------------------------------------------------------
+# Broker Peace
+# ---------------------------------------------------------------------------
+
+def can_broker_peace(player, rid_a: int, rid_b: int, world) -> bool:
+    champ         = getattr(player, "champion_dynasty_regions", set())
+    fav           = getattr(player, "favored_dynasty_regions",  set())
+    key           = _rivalry_key(rid_a, rid_b)
+    dormant_until = getattr(player, "rivalry_dormant_until", {}).get(key, 0)
+    current_day   = getattr(world, "day_count", 0)
+    return (
+        rid_a in fav and rid_b in fav
+        and (rid_a in champ or rid_b in champ)
+        and current_day >= dormant_until
+        and tension_level(player, key) >= 1
+    )
+
+
+def generate_peace_quest(rid_a: int, rid_b: int, world_seed: int) -> dict:
+    rng  = random.Random(hash((rid_a, rid_b, world_seed, "peace")) & 0xFFFFFFFF)
+    spec = rng.choice(_DYNASTY_QUEST_SPECS).copy()
+    spec["count"]       = rng.randint(5, 8)
+    spec["reward_gold"] = 800 + rng.randint(0, 4) * 100
+    spec["rid_a"]       = rid_a
+    spec["rid_b"]       = rid_b
+    return spec
+
+
+def fulfill_peace_quest(player, rid_a: int, rid_b: int, world) -> int:
+    key  = _rivalry_key(rid_a, rid_b)
+    quest = generate_peace_quest(rid_a, rid_b, getattr(world, "seed", 0))
+    gold  = quest["reward_gold"]
+    player.money += gold
+
+    if not hasattr(player, "rivalry_tension"):      player.rivalry_tension      = {}
+    if not hasattr(player, "rivalry_dormant_until"): player.rivalry_dormant_until = {}
+
+    player.rivalry_tension[key]      = 0
+    player.rivalry_dormant_until[key] = getattr(world, "day_count", 0) + 60
+
+    _apply_region_rel_delta(player, rid_a, +10, world)
+    _apply_region_rel_delta(player, rid_b, +10, world)
+
+    player.pending_notifications.append(
+        ("Rivalry", "Peace brokered. Both houses acknowledge your intervention.", "epic")
+    )
+    return gold
+
+
+def apply_racing_result(player, bookkeeper_npc, player_place: int) -> None:
+    """Award dynasty favor for horse racing placement. player_place is 1-based (1 = winner)."""
+    region_id = getattr(bookkeeper_npc, "_region_id", None)
+    world     = getattr(player, "world", None)
+    if region_id is None or world is None:
+        return
+
+    if player_place == 1:
+        favor_delta = 10
+        msg = f"Your horse's victory impresses the local nobility!"
+    elif player_place == 2:
+        favor_delta = 6
+        msg = "A strong showing — the local houses take notice."
+    elif player_place == 3:
+        favor_delta = 3
+        msg = "Respectable placement in the race."
+    else:
+        return  # No dynasty gain for 4th+
+
+    _apply_region_rel_delta(player, region_id, favor_delta, world)
+
+    prestige = getattr(player, "racing_prestige", {})
+    prestige[str(region_id)] = prestige.get(str(region_id), 0) + (1 if player_place == 1 else 0)
+    player.racing_prestige = prestige
+
+    # Check rival regions — winning can also affect rivalry dynamics
+    rival_regions = getattr(player, "rival_dynasty_regions", set())
+    for ent in getattr(world, "entities", []):
+        rival_rid = getattr(ent, "_region_id", None)
+        if rival_rid is not None and rival_rid != region_id and rival_rid in rival_regions:
+            _apply_region_rel_delta(player, rival_rid, -4, world)
+            break
+
+    check_dynasty_milestones(player, bookkeeper_npc, world)
+
+    if hasattr(player, "pending_notifications"):
+        player.pending_notifications.append(("Racing", msg, "uncommon" if player_place == 1 else "common"))
+

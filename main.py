@@ -13,7 +13,7 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK, BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK, CHICKEN_COOP_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK, BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK, CHICKEN_COOP_BLOCK, GAMBLING_TABLE, BET_COUNTER
 from elevators import ElevatorCar
 from minecarts import Minecart
 
@@ -539,12 +539,19 @@ def main():
         ui.active_town = None
         ui.outpost_menu_open = False
         ui.active_outpost = None
+        ui.city_block_menu_open = False
+        ui.active_city_block = None
+        ui.hire_panel_open = False
+        ui.active_hire_npc = None
         ui.trade_block_open = False
         ui.active_trade_pos = None
         player.inspecting_npc = None
         player.gift_panel_open = False
         player.fulfill_request_open = False
         player.dynasty_panel_open = False
+        ui.gambling_open = False
+        ui.racing_open = False
+        ui.arena_open = False
 
     def _any_ui_open():
         return any([ui.pause_open, ui.help_open, ui.research_open, ui.inventory_open, ui.crafting_open,
@@ -552,8 +559,8 @@ def main():
                     ui.automation_open, ui.farm_bot_open, ui.chest_open,
                     ui.backhoe_open, ui.breeding_open, ui.garden_open, ui.wildflower_display_open,
                     ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open,
-                    ui.town_menu_open, ui.outpost_menu_open, ui.reputation_screen_open, ui.trade_block_open,
-                    ui.dog_view_open, ui.dog_breeding_open,
+                    ui.town_menu_open, ui.outpost_menu_open, ui.city_block_menu_open, ui.hire_panel_open, ui.reputation_screen_open, ui.trade_block_open,
+                    ui.dog_view_open, ui.dog_breeding_open, ui.gambling_open, ui.racing_open, ui.arena_open,
                     getattr(player, "inspecting_npc", None) is not None])
 
     def _find_nearby_npc(world, player):
@@ -759,6 +766,10 @@ def main():
                 if ui.refinery_open and ui._jw_phase == "name_confirm":
                     ui.handle_jewelry_keydown(event.key, getattr(event, "unicode", ""), player)
 
+                # City Block: text input for city name editing
+                if ui.city_block_menu_open and ui._city_name_editing:
+                    ui.handle_city_block_keydown(event.key, getattr(event, "unicode", ""), player)
+
                 # Sculptor's Bench: Z=undo, ENTER=confirm, ESC=back
                 from blocks import SCULPTORS_BENCH as _SCULPTORS_BENCH
                 if ui.refinery_open and ui.refinery_block_id == _SCULPTORS_BENCH:
@@ -781,6 +792,18 @@ def main():
                 from blocks import FORGE_BLOCK as _FORGE_BLOCK
                 if ui.refinery_open and ui.refinery_block_id == _FORGE_BLOCK:
                     ui.handle_forge_keydown(event.key, player)
+
+                # Gambling Table: ESC navigates phases or closes
+                if ui.gambling_open:
+                    ui.handle_gambling_keydown(event.key, player)
+
+                # Horse Racing: ESC navigates phases or closes
+                if ui.racing_open:
+                    ui.handle_racing_keydown(event.key, player)
+
+                # Arena: ESC skips to result or closes
+                if ui.arena_open:
+                    ui.handle_arena_keydown(event.key, player)
 
                 # Milking mini-game: SPACE pulls the currently lit teat
                 if event.key == pygame.K_SPACE and not _any_ui_open():
@@ -894,7 +917,17 @@ def main():
                 if event.key == pygame.K_i:
                     nearby_any = _find_any_nearby_npc(world, player)
                     if nearby_any is not None:
-                        if getattr(player, "inspecting_npc", None) is nearby_any:
+                        from cities import LandmarkNPC as _LandmarkNPC_i
+                        if isinstance(nearby_any, _LandmarkNPC_i):
+                            _ok, _title, _detail = nearby_any.trigger(player)
+                            if not hasattr(world, "_town_toasts"):
+                                world._town_toasts = []
+                            world._town_toasts.append(_title if not _detail else f"{_title} — {_detail}")
+                            if getattr(world, "pending_arena_open", None) is not None:
+                                _close_all_ui()
+                                ui.open_arena(world.pending_arena_open)
+                                world.pending_arena_open = None
+                        elif getattr(player, "inspecting_npc", None) is nearby_any:
                             player.inspecting_npc = None
                             player.gift_panel_open = False
                             player.fulfill_request_open = False
@@ -903,12 +936,15 @@ def main():
                             player.inspecting_npc = nearby_any
                             player.gift_panel_open = False
                             player.fulfill_request_open = False
+                            ui._inspect_panel_scroll = 0
                             # Rival dynasty first-meeting penalty
                             _uid = getattr(nearby_any, "npc_uid", None)
-                            if (_uid and _uid not in player.npc_relationships):
+                            if _uid and _uid not in player.npc_relationships:
                                 _rid = getattr(nearby_any, "dynasty_id", None)
                                 if _rid in getattr(player, "rival_dynasty_regions", set()):
                                     player.npc_relationships[_uid] = -20
+                                else:
+                                    player.npc_relationships[_uid] = 0
                             import npc_preferences as _npc_prefs
                             _npc_prefs.maybe_generate_request(
                                 player, nearby_any, getattr(world, "day_count", 0)
@@ -966,6 +1002,7 @@ def main():
                     nearby_flag = player.get_nearby_town_flag()
                     nearby_outpost_flag = player.get_nearby_outpost_flag()
                     nearby_landmark_flag = player.get_nearby_landmark_flag()
+                    nearby_city_block = player.get_nearby_city_block()
                     nearby_npc = _find_nearby_npc(world, player)
                     nearby_bed = player.get_nearby_bed()
                     nearby_elev_stop = player.get_nearby_elevator_stop()
@@ -992,6 +1029,15 @@ def main():
                         else:
                             _close_all_ui()
                             ui.open_backhoe(nearby_bh)
+                    elif nearby_city_block is not None:
+                        from player_cities import get_city_at
+                        city = get_city_at(*nearby_city_block)
+                        if city is not None:
+                            if ui.city_block_menu_open and ui.active_city_block is city:
+                                ui.close_city_block_menu()
+                            else:
+                                _close_all_ui()
+                                ui.open_city_block_menu(city)
                     elif nearby_outpost_flag is not None:
                         from outposts import get_outpost_for_block
                         op = get_outpost_for_block(*nearby_outpost_flag)
@@ -1016,10 +1062,31 @@ def main():
                                 world._town_toasts = []
                             msg = title if not detail else f"{title} — {detail}"
                             world._town_toasts.append(msg)
+                            if getattr(world, "pending_arena_open", None) is not None:
+                                _close_all_ui()
+                                ui.open_arena(world.pending_arena_open)
+                                world.pending_arena_open = None
                     elif nearby_npc is not None:
                         from cities import LeaderNPC, LandmarkNPC
+                        from settler_npcs import SettlerNPC as _SettlerNPC
                         if isinstance(nearby_npc, LandmarkNPC):
                             pass  # handled via nearby_landmark_flag above
+                        elif isinstance(nearby_npc, _SettlerNPC) and not nearby_npc.settler_hired:
+                            # Unhired settler → open hire panel
+                            from player_cities import PLAYER_CITIES
+                            _city = PLAYER_CITIES.get((nearby_npc.settler_city_bx,
+                                                       nearby_npc.settler_city_bx))  # by is unknown here
+                            # Find city by city_bx across all cities
+                            _city = next((c for c in PLAYER_CITIES.values()
+                                          if c.bx == nearby_npc.settler_city_bx), None)
+                            _rec  = next((r for r in (_city.npcs if _city else [])
+                                          if r["id"] == nearby_npc.settler_id), None)
+                            if _city and _rec:
+                                if ui.hire_panel_open and ui.active_hire_npc is nearby_npc:
+                                    ui.close_hire_panel()
+                                else:
+                                    _close_all_ui()
+                                    ui.open_hire_panel(nearby_npc, _city, _rec)
                         elif ui.npc_open and ui.active_npc is nearby_npc:
                             ui.npc_open = False
                             ui.active_npc = None
@@ -1200,6 +1267,20 @@ def main():
                                         ui.refinery_open = False
                                 elif equip == CHICKEN_COOP_BLOCK:
                                     ui.active_coop_pos = player.get_nearby_equipment_pos(CHICKEN_COOP_BLOCK)
+                                elif equip == GAMBLING_TABLE:
+                                    _close_all_ui()
+                                    ui.open_gambling_table(3)
+                                elif equip == BET_COUNTER:
+                                    from cities import RacingBookkeeperNPC as _RBN
+                                    _bkp = None
+                                    for _ent in world.entities:
+                                        if isinstance(_ent, _RBN):
+                                            _ex = abs(_ent.x - player.x)
+                                            if _ex < 16 * 32:
+                                                _bkp = _ent
+                                                break
+                                    _close_all_ui()
+                                    ui.open_racing(_bkp, player)
                                 else:
                                     ui.active_compost_bin_pos = None
                             else:
@@ -1248,6 +1329,15 @@ def main():
                         ui._display_scroll = max(0, min(max_s, getattr(ui, '_display_scroll', 0) - event.y))
                     elif ui.research_open or ui.inventory_open or ui.crafting_open or ui.collection_open or ui.refinery_open or ui.chest_open or ui.breeding_open or ui.garden_open or ui.horse_breeding_open or ui.dog_breeding_open or ui.dog_view_open:
                         ui.handle_scroll(event.y)
+                    elif getattr(player, 'dynasty_panel_open', False):
+                        _max = getattr(ui, '_chronicle_max_scroll', 0)
+                        ui._chronicle_scroll = max(0, min(_max,
+                            getattr(ui, '_chronicle_scroll', 0) - event.y * 20))
+                    elif (player.inspecting_npc is not None
+                          and not getattr(player, 'dynasty_panel_open', False)):
+                        _max = getattr(ui, '_inspect_scroll_max', 0)
+                        ui._inspect_panel_scroll = max(0, min(_max,
+                            getattr(ui, '_inspect_panel_scroll', 0) - event.y * 20))
                     elif not _any_ui_open():
                         player.selected_slot = (player.selected_slot - event.y) % 8
 
@@ -1336,6 +1426,10 @@ def main():
                         ui.close_backhoe()
                 elif ui.town_menu_open:
                     ui.handle_town_menu_click(event.pos, player)
+                elif ui.city_block_menu_open:
+                    ui.handle_city_block_click(event.pos, player)
+                elif ui.hire_panel_open:
+                    ui.handle_hire_panel_click(event.pos, player)
                 elif ui.outpost_menu_open:
                     pass  # diplomatic-only — clicks consumed but do nothing
                 elif getattr(player, "inspecting_npc", None) is not None:
@@ -1375,6 +1469,12 @@ def main():
                     ui.handle_kennel_breeding_click(event.pos, player, world)
                 elif ui.dog_view_open:
                     ui.handle_dog_view_click(event.pos, player)
+                elif ui.gambling_open:
+                    ui.handle_gambling_click(event.pos, player)
+                elif ui.racing_open:
+                    ui.handle_racing_click(event.pos, player)
+                elif ui.arena_open:
+                    ui.handle_arena_click(event.pos, player)
                 elif ui.wardrobe_open:
                     ui.handle_wardrobe_click(event.pos, player)
                 elif ui.trade_block_open:
@@ -1400,7 +1500,17 @@ def main():
                                 _clicked_npc = _ent
                                 break
                         if _clicked_npc is not None:
-                            if getattr(player, "inspecting_npc", None) is _clicked_npc:
+                            from cities import LandmarkNPC as _LandmarkNPC_c
+                            if isinstance(_clicked_npc, _LandmarkNPC_c):
+                                _ok, _title, _detail = _clicked_npc.trigger(player)
+                                if not hasattr(world, "_town_toasts"):
+                                    world._town_toasts = []
+                                world._town_toasts.append(_title if not _detail else f"{_title} — {_detail}")
+                                if getattr(world, "pending_arena_open", None) is not None:
+                                    _close_all_ui()
+                                    ui.open_arena(world.pending_arena_open)
+                                    world.pending_arena_open = None
+                            elif getattr(player, "inspecting_npc", None) is _clicked_npc:
                                 player.inspecting_npc = None
                                 player.gift_panel_open = False
                                 player.fulfill_request_open = False
@@ -1409,11 +1519,14 @@ def main():
                                 player.inspecting_npc = _clicked_npc
                                 player.gift_panel_open = False
                                 player.fulfill_request_open = False
+                                ui._inspect_panel_scroll = 0
                                 _uid = getattr(_clicked_npc, "npc_uid", None)
                                 if _uid and _uid not in player.npc_relationships:
                                     _rid = getattr(_clicked_npc, "dynasty_id", None)
                                     if _rid in getattr(player, "rival_dynasty_regions", set()):
                                         player.npc_relationships[_uid] = -20
+                                    else:
+                                        player.npc_relationships[_uid] = 0
                                 import npc_preferences as _npc_prefs
                                 _npc_prefs.maybe_generate_request(
                                     player, _clicked_npc, getattr(world, "day_count", 0)
@@ -1912,6 +2025,14 @@ def main():
             for msg in world._town_toasts:
                 player.pending_notifications.append(("Town", msg, None))
             world._town_toasts.clear()
+        # Drain city settler arrival toasts
+        if hasattr(world, '_city_toasts') and world._city_toasts:
+            for msg in world._city_toasts:
+                player.pending_notifications.append(("City", msg, None))
+            world._city_toasts.clear()
+        # Rivalry incident tick
+        import npc_dynasty as _dyn_mod
+        _dyn_mod.tick_rivalry_incidents(world, player, world.day_count)
         if ui._bird_obs_active:
             ui._draw_bird_observation_overlay(player)
         if ui._insect_obs_active:

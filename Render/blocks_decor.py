@@ -6083,4 +6083,32 @@ def build_decor_surfs():
         pygame.draw.ellipse(s, bog_ice2, (lx2 + 1, ly2, ex - 2, max(1, ey - 1)))
     surfs[bid] = s
 
+    bid = CITY_BLOCK
+    # if bid == CITY_BLOCK — stone pillar with gold trim and a crown atop
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    BS = BLOCK_SIZE
+    stone  = (160, 148, 128)
+    stone2 = (180, 168, 148)
+    gold   = (200, 168,  72)
+    gold_d = (150, 120,  42)
+    # Base
+    pygame.draw.rect(s, stone,  (3,       BS - 6, BS - 6, 6))
+    pygame.draw.rect(s, stone2, (4,       BS - 5, BS - 8, 4))
+    # Shaft
+    pygame.draw.rect(s, stone,  (BS//2 - 5, 10, 10, BS - 16))
+    pygame.draw.rect(s, stone2, (BS//2 - 4, 11,  5, BS - 18))
+    # Capital (top block)
+    pygame.draw.rect(s, stone,  (2, 6, BS - 4, 8))
+    pygame.draw.rect(s, stone2, (3, 7, BS - 6, 5))
+    # Gold trim band on capital
+    pygame.draw.rect(s, gold,   (2, 6,  BS - 4, 2))
+    pygame.draw.rect(s, gold,   (2, 12, BS - 4, 2))
+    # Crown atop: five gold spikes
+    for i, cx_off in enumerate(range(2, BS - 2, (BS - 4) // 5)):
+        h = 5 if i % 2 == 0 else 3
+        pygame.draw.rect(s, gold,   (cx_off, 2 - h, 2, h + 2))
+        pygame.draw.rect(s, gold_d, (cx_off, 2 - h, 1, h + 2))
+    surfs[bid] = s
+
     return surfs

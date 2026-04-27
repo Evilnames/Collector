@@ -26,6 +26,7 @@ from blocks import (
     GRAPEVINE_CROP_MATURE,
     SUNDIAL,
 )
+from landmark_buildings import place_landmark_building
 
 
 # ---------------------------------------------------------------------------
@@ -148,11 +149,8 @@ def landmark_for(agenda: str, biome_group: str = "") -> dict:
 # Placement
 # ---------------------------------------------------------------------------
 
-LANDMARK_W = 7   # block-width of the landmark platform
-
-
 def place_landmark(world, town, region) -> int:
-    """Build the landmark structure to the LEFT of the town (opposite the palace).
+    """Build the grand landmark structure to the LEFT of the town (opposite the palace).
 
     Returns the block-x of the landmark flag (the interaction point), or -1 if
     no region/agenda is set.
@@ -160,52 +158,15 @@ def place_landmark(world, town, region) -> int:
     if region is None or not region.agenda:
         return -1
 
-    spec = landmark_for(region.agenda, getattr(region, "biome_group", ""))
-    marker = spec["marker_block"]
+    spec     = landmark_for(region.agenda, getattr(region, "biome_group", ""))
+    right_bx = town.center_bx - town.half_w - 4
+    sy       = world.surface_y_at(right_bx)
+    rng      = random.Random(town.center_bx ^ (world.seed * 0x517CC1B7))
 
-    # Sit just outside the town, on the surface. Palaces go to the right at
-    # center_bx + half_w + 4 — landmarks mirror that on the left.
-    flag_bx  = town.center_bx - town.half_w - 6
-    left_x   = flag_bx - LANDMARK_W // 2
-    sy       = world.surface_y_at(flag_bx)
-
-    rng = random.Random(town.center_bx ^ (world.seed * 0x517CC1B7))
-
-    # Wealth gives a visible payoff: rich = wider grand variant, poor = narrow modest.
-    width = LANDMARK_W
-    base_block = POLISHED_MARBLE if region.wealth == "rich" else LIMESTONE_BLOCK
-    if region.wealth == "rich":
-        width += 2
-        left_x -= 1
-
-    # Platform — two rows of the base block, flush with surface.
-    for bx in range(left_x, left_x + width):
-        world.set_block(bx, sy,     base_block)
-        world.set_block(bx, sy - 1, base_block)
-        world.set_block(bx, sy - 2, AIR)
-        world.set_block(bx, sy - 3, AIR)
-
-    # Marker — characteristic block stacked on top of the platform.
-    world.set_block(flag_bx, sy - 2, marker)
-
-    # Flag in the background layer so the player can walk through it.
-    flag_x = flag_bx + width // 2 - 1
-    world.set_bg_block(flag_x, sy - 2, LANDMARK_FLAG_BLOCK)
-    world.set_bg_block(flag_x, sy - 3, LANDMARK_FLAG_BLOCK)
-
-    # Light it up — looks better at night, signals it's a special place.
-    world.set_block(left_x,             sy - 2, BRAZIER if region.wealth == "rich" else TORCH)
-    world.set_block(left_x + width - 1, sy - 2, BRAZIER if region.wealth == "rich" else TORCH)
-
-    # Decorative noise so adjacent capitals don't look identical.
-    # Exclude flag_x so the bg landmark flag is never covered.
-    deco_candidates = [bx for bx in range(left_x + 1, left_x + width - 1)
-                       if bx != flag_x and bx != flag_bx]
-    rng.shuffle(deco_candidates)
-    for bx in deco_candidates[:rng.randint(0, 2)]:
-        world.set_block(bx, sy - 2, OLIVE_BRANCH)
-
-    return flag_x
+    return place_landmark_building(
+        world, spec, getattr(region, "biome_group", ""),
+        right_bx, sy, rng, region,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -213,9 +174,21 @@ def place_landmark(world, town, region) -> int:
 # ---------------------------------------------------------------------------
 
 def _apply_arena(player, region):
-    """Martial: small wave-defense stand-in — flat reward + reputation."""
-    player.money += 80
-    return ("Arena cheers your victory.", "+80g, +5 rep across the region")
+    """Martial: open the arena spectator UI if games are scheduled today."""
+    from gladiators import is_games_day, days_until_games, generate_arena_week
+    world      = getattr(player, "world", None)
+    day_count  = getattr(world, "day_count", 0)
+    rseed      = getattr(region, "region_id", 0) * 1013 + hash(getattr(region, "name", ""))
+    biome      = getattr(region, "biome_group", "temperate")
+
+    if not is_games_day(rseed, day_count):
+        left = days_until_games(rseed, day_count)
+        return ("The arena is quiet.", f"Next games in {left} day{'s' if left != 1 else ''}.")
+
+    bouts = generate_arena_week(rseed, day_count, biome)
+    if world is not None:
+        world.pending_arena_open = bouts
+    return ("The crowd roars — the games begin!", "Enter the arena to watch and wager.")
 
 def _apply_bazaar(player, region):
     """Mercantile: rare slot bonus is communicated; actual stock bonus would
@@ -268,9 +241,21 @@ def _apply_war_camp(player, region):
     return ("The war camp drills you hard.", "+60g, speed buff for 5 minutes")
 
 def _apply_gladiator(player, region):
-    """Martial/desert: gladiator bout pay-out — more gold, minor rep bump."""
-    player.money += 120
-    return ("The crowd throws gold into the pit.", "+120g, +3 rep")
+    """Martial/desert: open the arena (gladiator pit variant)."""
+    from gladiators import is_games_day, days_until_games, generate_arena_week
+    world      = getattr(player, "world", None)
+    day_count  = getattr(world, "day_count", 0)
+    rseed      = getattr(region, "region_id", 0) * 1013 + hash(getattr(region, "name", ""))
+    biome      = "desert"
+
+    if not is_games_day(rseed, day_count):
+        left = days_until_games(rseed, day_count)
+        return ("The sands are empty today.", f"Next fights in {left} day{'s' if left != 1 else ''}.")
+
+    bouts = generate_arena_week(rseed, day_count, biome)
+    if world is not None:
+        world.pending_arena_open = bouts
+    return ("The pit masters call for blood!", "Enter the gladiator pits to watch and wager.")
 
 def _apply_harbor(player, region):
     """Mercantile/coastal: sea-trade windfall."""

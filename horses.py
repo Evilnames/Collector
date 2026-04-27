@@ -112,6 +112,12 @@ class Horse(Animal):
                                           round(random.uniform(0.8, 1.2), 3)]
         self.genotype["gait_gene"]     = [round(random.uniform(0.8, 1.2), 3),
                                           round(random.uniform(0.8, 1.2), 3)]
+        self.genotype["reaction_gene"] = [round(random.uniform(0.7, 1.3), 3),
+                                          round(random.uniform(0.7, 1.3), 3)]
+        self.genotype["agility_gene"]  = [round(random.uniform(0.7, 1.3), 3),
+                                          round(random.uniform(0.7, 1.3), 3)]
+        self.genotype["heart_gene"]    = [round(random.uniform(0.7, 1.3), 3),
+                                          round(random.uniform(0.7, 1.3), 3)]
         self.genotype["coat_pattern_gene"] = [
             random.choices(COAT_PATTERN_ORDER, weights=[55, 25, 15, 5])[0],
             random.choices(COAT_PATTERN_ORDER, weights=[55, 25, 15, 5])[0],
@@ -144,6 +150,15 @@ class Horse(Animal):
         if "gait_gene" in self.genotype:
             avg = (self.genotype["gait_gene"][0] + self.genotype["gait_gene"][1]) / 2
             self.traits["gait"] = round(max(0.7, min(1.3, avg)), 3)
+        if "reaction_gene" in self.genotype:
+            avg = (self.genotype["reaction_gene"][0] + self.genotype["reaction_gene"][1]) / 2
+            self.traits["reaction"] = round(max(0.7, min(1.3, avg)), 3)
+        if "agility_gene" in self.genotype:
+            avg = (self.genotype["agility_gene"][0] + self.genotype["agility_gene"][1]) / 2
+            self.traits["agility"] = round(max(0.7, min(1.3, avg)), 3)
+        if "heart_gene" in self.genotype:
+            avg = (self.genotype["heart_gene"][0] + self.genotype["heart_gene"][1]) / 2
+            self.traits["heart"] = round(max(0.7, min(1.3, avg)), 3)
         if "coat_pattern_gene" in self.genotype:
             self.traits["coat_pattern"] = _expressed_categorical(
                 self.genotype["coat_pattern_gene"], COAT_PATTERN_ORDER
@@ -168,6 +183,9 @@ class Horse(Animal):
             ("stamina_gene",  "stamina_max",  0.8, 1.2),
             ("endurance_gene","endurance",    0.8, 1.2),
             ("gait_gene",     "gait",         0.8, 1.2),
+            ("reaction_gene", "reaction",     0.7, 1.3),
+            ("agility_gene",  "agility",      0.7, 1.3),
+            ("heart_gene",    "heart",        0.7, 1.3),
         ]:
             v = self.traits.get(trait_key, 1.0)
             noise = random.uniform(-0.04, 0.04)
@@ -180,6 +198,19 @@ class Horse(Animal):
         self.genotype["mane_color_gene"] = ["match", mc]
         fm = self.traits.get("face_marking", "none")
         self.genotype["face_marking_gene"] = ["none", fm]
+
+    # ------------------------------------------------------------------
+    # Race rating — single composite score for race difficulty / odds
+    # ------------------------------------------------------------------
+
+    @property
+    def race_rating(self):
+        sr = self.traits.get("speed_rating", 1.0)
+        sm = self.traits.get("stamina_max",  1.0)
+        en = self.traits.get("endurance",    1.0)
+        gt = self.traits.get("gait",         1.0)
+        raw = sr * 0.40 + sm * 0.25 + en * 0.20 + gt * 0.15
+        return round(max(0.5, min(1.5, raw)), 3)
 
     # ------------------------------------------------------------------
     # Non-killable — flee instead

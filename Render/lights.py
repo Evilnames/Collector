@@ -149,20 +149,20 @@ def draw_lighting(renderer, player, world, depth, time_of_day=0.0):
 
         for by in range(by0, by1):
             for bx in range(bx0, bx1):
-                bid = world.get_block(bx, by)
-                if bid not in LIGHT_EMITTERS:
-                    continue
-                light_r, pattern = LIGHT_EMITTERS[bid]
-                ff = flicker_frame if pattern == "flicker" else 0
-                key = (light_r, pattern, ff)
-                if key not in renderer._light_grad_cache:
-                    renderer._light_grad_cache[key] = build_block_gradient(pattern, light_r, ff)
-                grad = renderer._light_grad_cache[key]
-                gw, gh = grad.get_size()
-                sx = bx * BLOCK_SIZE + BLOCK_SIZE // 2 - cam_xi
-                sy = by * BLOCK_SIZE + BLOCK_SIZE // 2 - cam_yi
-                renderer._light_surf.blit(grad, (sx - gw // 2, sy - gh // 2),
-                                          special_flags=pygame.BLEND_RGBA_MIN)
+                for bid in (world.get_block(bx, by), world.get_bg_block(bx, by)):
+                    if bid not in LIGHT_EMITTERS:
+                        continue
+                    light_r, pattern = LIGHT_EMITTERS[bid]
+                    ff = flicker_frame if pattern == "flicker" else 0
+                    key = (light_r, pattern, ff)
+                    if key not in renderer._light_grad_cache:
+                        renderer._light_grad_cache[key] = build_block_gradient(pattern, light_r, ff)
+                    grad = renderer._light_grad_cache[key]
+                    gw, gh = grad.get_size()
+                    sx = bx * BLOCK_SIZE + BLOCK_SIZE // 2 - cam_xi
+                    sy = by * BLOCK_SIZE + BLOCK_SIZE // 2 - cam_yi
+                    renderer._light_surf.blit(grad, (sx - gw // 2, sy - gh // 2),
+                                              special_flags=pygame.BLEND_RGBA_MIN)
 
     # Firefly glow — punch soft holes in the darkness overlay
     if night_alpha > 30 and world is not None and hasattr(world, 'insects'):

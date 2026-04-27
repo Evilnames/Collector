@@ -76,6 +76,17 @@ LUXURY_CATEGORIES = {
         "dried_rosemary",    "dried_thyme",      "dried_sage",
         "dried_ginger",      "dried_garlic",
     ],
+    "beer": [
+        "ale",          "lager",          "stout",         "ipa",
+        "wheat_beer",   "saison",         "porter",        "amber_ale",
+        "pilsner",      "brown_ale",      "sour",          "barleywine",
+        "ale_fine",     "lager_fine",     "stout_fine",    "ipa_fine",
+        "wheat_beer_fine", "saison_fine", "porter_fine",   "amber_ale_fine",
+        "pilsner_fine", "brown_ale_fine", "sour_fine",     "barleywine_fine",
+        "ale_reserve",  "lager_reserve",  "stout_reserve", "ipa_reserve",
+        "wheat_beer_reserve", "saison_reserve", "porter_reserve", "amber_ale_reserve",
+        "pilsner_reserve", "brown_ale_reserve", "sour_reserve", "barleywine_reserve",
+    ],
 }
 
 # ── Display metadata ─────────────────────────────────────────────────────────
@@ -92,6 +103,7 @@ CATEGORY_DISPLAY = {
     "pottery": "★ Pottery",
     "tea":     "★ Tea",
     "herbs":   "★ Herbs & Potions",
+    "beer":    "★ Beer",
 }
 
 CATEGORY_COLOR = {
@@ -106,6 +118,7 @@ CATEGORY_COLOR = {
     "pottery": (185, 110,  60),
     "tea":     ( 60, 160, 100),
     "herbs":   ( 70, 170,  80),
+    "beer":    (190, 140,  50),
 }
 
 # ── Gold paid per unit delivered ─────────────────────────────────────────────
@@ -122,6 +135,7 @@ GOLD_PER_UNIT = {
     "pottery": 10,
     "tea":     12,
     "herbs":   8,
+    "beer":    14,
 }
 
 # ── Base need amounts (multiplied by tier+1) ─────────────────────────────────
@@ -141,6 +155,7 @@ BASE_NEED_AMOUNT_LUXURY = {
     "pottery": 12,
     "tea":     15,
     "herbs":   18,
+    "beer":    14,
 }
 
 # ── Preferred variant pools (biome-biased; any quality of the base type counts) ──
@@ -149,15 +164,19 @@ BASE_NEED_AMOUNT_LUXURY = {
 
 LUXURY_VARIANT_POOLS: dict[str, dict[str, list[str]]] = {
     "wine": {
-        "forest":   ["red_wine",      "rose_wine"],
-        "jungle":   ["white_wine",    "sparkling_wine"],
-        "wetland":  ["white_wine",    "rose_wine"],
-        "desert":   ["dessert_wine",  "red_wine"],
-        "alpine":   ["red_wine",      "sparkling_wine"],
-        "steppe":   ["red_wine",      "dessert_wine"],
-        "coastal":  ["white_wine",    "sparkling_wine", "rose_wine"],
-        "highland": ["red_wine",      "rose_wine"],
-        "_default": ["red_wine",      "white_wine",     "rose_wine"],
+        "forest":        ["red_wine",     "rose_wine",      "white_wine"],
+        "jungle":        ["white_wine",   "sparkling_wine", "rose_wine"],
+        "wetland":       ["white_wine",   "rose_wine",      "sparkling_wine"],
+        "desert":        ["dessert_wine", "red_wine",       "rose_wine"],
+        "alpine":        ["red_wine",     "sparkling_wine", "white_wine"],
+        "steppe":        ["red_wine",     "dessert_wine",   "rose_wine"],
+        "coastal":       ["white_wine",   "sparkling_wine", "rose_wine"],
+        "highland":      ["red_wine",     "rose_wine",      "sparkling_wine"],
+        "mediterranean": ["red_wine",     "white_wine",     "rose_wine",    "sparkling_wine"],
+        "levant":        ["red_wine",     "dessert_wine",   "white_wine"],
+        "persia":        ["dessert_wine", "red_wine",       "rose_wine"],
+        "silk_road":     ["white_wine",   "red_wine",       "sparkling_wine"],
+        "_default":      ["red_wine",     "white_wine",     "rose_wine",    "dessert_wine"],
     },
     "coffee": {
         "forest":   ["pour_over",   "french_press"],
@@ -193,15 +212,31 @@ LUXURY_VARIANT_POOLS: dict[str, dict[str, list[str]]] = {
         "_default": ["clay_cooking_pot",  "pottery_vase"],
     },
     "tea": {
-        "forest":   ["green_tea",  "oolong_tea"],
-        "jungle":   ["green_tea",  "oolong_tea"],
-        "wetland":  ["black_tea",  "puerh_tea"],
-        "desert":   ["black_tea",  "puerh_tea"],
-        "alpine":   ["black_tea",  "puerh_tea"],
-        "steppe":   ["black_tea",  "green_tea"],
-        "coastal":  ["green_tea",  "oolong_tea"],
-        "highland": ["black_tea",  "oolong_tea"],
-        "_default": ["green_tea",  "black_tea"],
+        "forest":      ["green_tea",  "oolong_tea",  "puerh_tea"],
+        "jungle":      ["green_tea",  "oolong_tea",  "black_tea"],
+        "wetland":     ["black_tea",  "puerh_tea",   "oolong_tea"],
+        "desert":      ["black_tea",  "puerh_tea",   "green_tea"],
+        "alpine":      ["black_tea",  "puerh_tea",   "green_tea"],
+        "steppe":      ["black_tea",  "green_tea",   "oolong_tea"],
+        "coastal":     ["green_tea",  "oolong_tea",  "black_tea"],
+        "highland":    ["black_tea",  "oolong_tea",  "puerh_tea"],
+        "east_asian":  ["green_tea",  "oolong_tea",  "black_tea",  "puerh_tea"],
+        "yunnan":      ["puerh_tea",  "black_tea",   "green_tea"],
+        "south_asian": ["black_tea",  "green_tea",   "oolong_tea"],
+        "_default":    ["green_tea",  "black_tea",   "oolong_tea", "puerh_tea"],
+    },
+    "beer": {
+        "forest":        ["ale",       "porter",     "brown_ale"],
+        "jungle":        ["wheat_beer","saison",     "sour"],
+        "wetland":       ["stout",     "porter",     "brown_ale"],
+        "desert":        ["barleywine","lager",      "amber_ale"],
+        "alpine":        ["lager",     "ale",        "pilsner"],
+        "steppe":        ["pilsner",   "lager",      "ale"],
+        "coastal":       ["wheat_beer","ale",        "lager",   "saison"],
+        "highland":      ["ale",       "amber_ale",  "stout"],
+        "mediterranean": ["lager",     "wheat_beer", "pilsner"],
+        "east_asian":    ["wheat_beer","pilsner",    "sour"],
+        "_default":      ["ale",       "lager",      "wheat_beer", "amber_ale"],
     },
     "herbs": {
         "forest":   ["health_potion",     "soothe_potion"],

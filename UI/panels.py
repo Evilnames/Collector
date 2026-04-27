@@ -3202,11 +3202,7 @@ class PanelsMixin:
         _pre_ident  = getattr(npc, "identity", None) or {}
         has_rumour  = bool(_pre_ident.get("personal_tension")) and _pre_rel >= 50
         PW = 620
-        PH = 560
-        if has_dynasty:
-            PH += 140
-        if has_rumour:
-            PH += 55
+        PH = min(700, SCREEN_H - 40)
         px = (SCREEN_W - PW) // 2
         py = (SCREEN_H - PH) // 2
 
@@ -3255,6 +3251,13 @@ class PanelsMixin:
 
         pygame.draw.line(self.screen, (60, 55, 80), (px + 8, cy), (px + PW - 8, cy))
         cy += 10
+
+        scroll_top    = cy
+        BTN_AREA      = 52
+        scroll_bottom = py + PH - BTN_AREA
+        scroll_offset = max(0, getattr(self, '_inspect_panel_scroll', 0))
+        cy -= scroll_offset
+        self.screen.set_clip(pygame.Rect(px, scroll_top, PW, scroll_bottom - scroll_top))
 
         self.screen.blit(self.small.render("FAMILY", True, (110, 110, 160)), (px + 16, cy))
         cy += 18
@@ -3319,6 +3322,23 @@ class PanelsMixin:
                     self.small.render(f"Long rivals with: {dynasty_rival}", True, (170, 75, 75)),
                     (px + 24, cy))
                 cy += 16
+                # Rivalry tension display
+                import npc_dynasty as _dyn_inspect
+                npc_rid  = getattr(npc, "dynasty_id", None)
+                rival_rid_inspect = getattr(npc, "dynasty_rival_region_id", None)
+                if npc_rid is not None and rival_rid_inspect is not None:
+                    _rkey = _dyn_inspect._rivalry_key(npc_rid, rival_rid_inspect)
+                    _tlabel, _tcol = _dyn_inspect.tension_label(player, _rkey)
+                    self.screen.blit(
+                        self.small.render(f"Rivalry status: {_tlabel}", True, _tcol),
+                        (px + 24, cy))
+                    cy += 16
+                    if _dyn_inspect.tension_level(player, _rkey) >= 2:
+                        self.screen.blit(
+                            self.small.render("Merchants here charge more while the feud holds.",
+                                              True, (200, 130, 80)),
+                            (px + 24, cy))
+                        cy += 16
             # Rival/favored status for this player
             dynasty_region_id = getattr(npc, "dynasty_id", None)
             if dynasty_region_id in getattr(player, "rival_dynasty_regions", set()):
@@ -3337,6 +3357,55 @@ class PanelsMixin:
                     (px + 24, cy))
                 cy += 16
             cy += 4
+
+            # ---- Incident quest (if one is active for this dynasty's rivalry pair) ----
+            _npc_rid2  = getattr(npc, "dynasty_id", None)
+            _rival_rid2 = getattr(npc, "dynasty_rival_region_id", None)
+            self._incident_quest_btn  = None
+            self._incident_quest_side = None
+            self._incident_quest_key  = None
+            if _npc_rid2 is not None and _rival_rid2 is not None:
+                import npc_dynasty as _dyn_iq
+                _iq_key2 = _dyn_iq._rivalry_key(_npc_rid2, _rival_rid2)
+                _iq2 = getattr(player, "incident_quests_active", {}).get(_iq_key2)
+                if _iq2 and world.day_count <= _iq2["expires_day"]:
+                    _side2 = "side_a" if _iq2["side_a"]["region_id"] == _npc_rid2 else "side_b"
+                    _qdata2 = _iq2[_side2]
+                    _days_left = _iq2["expires_day"] - world.day_count
+                    pygame.draw.line(self.screen, (60, 55, 80), (px + 8, cy), (px + PW - 8, cy))
+                    cy += 8
+                    self.screen.blit(
+                        self.small.render("INCIDENT QUEST", True, (210, 160, 60)), (px + 16, cy))
+                    expiry_s = self.small.render(f"Expires in {_days_left} day(s)", True, (150, 120, 80))
+                    self.screen.blit(expiry_s, (px + PW - expiry_s.get_width() - 16, cy))
+                    cy += 18
+                    for _line in _wrap_text(f'"{_iq2["incident_text"]}"', self.small, PW - 48):
+                        self.screen.blit(self.small.render(_line, True, (190, 170, 110)), (px + 24, cy))
+                        cy += 14
+                    cy += 2
+                    _attr2 = _qdata2["attr"]
+                    _need2 = _qdata2["count"]
+                    _have2 = len(getattr(player, _attr2, []))
+                    _hcol2 = (130, 200, 100) if _have2 >= _need2 else (200, 130, 80)
+                    self.screen.blit(
+                        self.small.render(
+                            f"Help {_qdata2['house_name']}: {_qdata2['label']}  "
+                            f"({_have2}/{_need2})  · Reward: {_qdata2['reward_gold']} gold",
+                            True, _hcol2),
+                        (px + 24, cy))
+                    cy += 18
+                    if _have2 >= _need2:
+                        IQ_W, IQ_H = 150, 26
+                        _iq_btn = pygame.Rect(px + 24, cy, IQ_W, IQ_H)
+                        pygame.draw.rect(self.screen, (50, 55, 20), _iq_btn)
+                        pygame.draw.rect(self.screen, (170, 190, 60), _iq_btn, 1)
+                        _iq_s = self.small.render("Aid This House", True, (220, 240, 100))
+                        self.screen.blit(_iq_s, (_iq_btn.x + (IQ_W - _iq_s.get_width()) // 2,
+                                                  _iq_btn.y + (IQ_H - _iq_s.get_height()) // 2))
+                        cy += IQ_H + 6
+                        self._incident_quest_btn  = _iq_btn
+                        self._incident_quest_side = _side2
+                        self._incident_quest_key  = _iq_key2
 
         pygame.draw.line(self.screen, (60, 55, 80), (px + 8, cy), (px + PW - 8, cy))
         cy += 10
@@ -3407,6 +3476,15 @@ class PanelsMixin:
             reward_s = self.small.render(f"Reward: {active_req['reward_gold']} gold", True, (180, 210, 130))
             self.screen.blit(reward_s, (px + 24, cy))
             cy += 18
+
+        self._inspect_scroll_max = max(0, cy + scroll_offset - scroll_bottom + 20)
+        self.screen.set_clip(None)
+        if self._inspect_scroll_max > 0:
+            sb_total = scroll_bottom - scroll_top
+            sb_h = max(20, sb_total * sb_total // (sb_total + self._inspect_scroll_max))
+            sb_y  = scroll_top + int(scroll_offset / max(1, self._inspect_scroll_max) * (sb_total - sb_h))
+            pygame.draw.rect(self.screen, (40, 36, 55), (px + PW - 7, scroll_top, 5, sb_total))
+            pygame.draw.rect(self.screen, (120, 110, 150), (px + PW - 7, sb_y, 5, sb_h))
 
         # ---- Buttons ----
         BTN_W, BTN_H = 100, 28
@@ -3485,28 +3563,14 @@ class PanelsMixin:
         rel_score     = player.npc_relationships.get(npc_uid, 0)
         identity      = getattr(npc, "identity", None) or {}
 
-        def _section(label, col=(140, 190, 220)):
-            nonlocal cy
-            pygame.draw.line(self.screen, (45, 65, 90), (px + 10, cy), (px + PW - 10, cy))
-            cy += 8
-            self.screen.blit(self.small.render(label, True, col), (px + 14, cy))
-            cy += 20
-
-        def _body(text, col=(190, 183, 168), indent=14):
-            nonlocal cy
-            for line in _wrap_text(text, self.small, PW - indent - 28):
-                self.screen.blit(self.small.render(line, True, col), (px + indent, cy))
-                cy += 15
-            cy += 4
-
         import npc_dynasty as _dyn
 
+        # ---- Fixed header (drawn directly to screen) ----
         cy = py + 14
         title_s = self.font.render(dynasty_name.upper(), True, (220, 200, 130))
         self.screen.blit(title_s, (px + 14, cy))
         cy += 28
 
-        # ---- Favor bar ----
         region_id = getattr(npc, "dynasty_id", None)
         favor     = _dyn.calculate_dynasty_favor(player, region_id, world) if region_id is not None else 0
         tier      = _dyn.favor_tier(favor)
@@ -3525,13 +3589,47 @@ class PanelsMixin:
                 self.screen.blit(self.small.render(line, True, (120, 115, 95)), (px + 14, cy))
                 cy += 14
         cy += 8
+        content_top = cy  # where the scrollable area begins on screen
+
+        # ---- Fixed back button ----
+        BTN_W, BTN_H = 100, 28
+        back_rect = pygame.Rect(px + PW - BTN_W - 12, py + PH - BTN_H - 12, BTN_W, BTN_H)
+        pygame.draw.rect(self.screen, (30, 40, 55), back_rect)
+        pygame.draw.rect(self.screen, (70, 110, 150), back_rect, 1)
+        b_s = self.small.render("Back", True, (140, 190, 220))
+        self.screen.blit(b_s, (back_rect.x + (BTN_W - b_s.get_width()) // 2,
+                                back_rect.y + (BTN_H - b_s.get_height()) // 2))
+        self._chronicle_back_btn = back_rect
+
+        SB_W = 8
+        SCROLL_AREA_H = (py + PH - BTN_H - 20) - content_top
+        CONTENT_W = PW - SB_W - 6
+
+        # ---- Build scrollable content onto an off-screen surface ----
+        content_surf = pygame.Surface((CONTENT_W, 4000), pygame.SRCALPHA)
+        content_surf.fill((0, 0, 0, 0))
+        cy_c = 8
+
+        def _section(label, col=(140, 190, 220)):
+            nonlocal cy_c
+            pygame.draw.line(content_surf, (45, 65, 90), (0, cy_c), (CONTENT_W - 4, cy_c))
+            cy_c += 8
+            content_surf.blit(self.small.render(label, True, col), (4, cy_c))
+            cy_c += 20
+
+        def _body(text, col=(190, 183, 168), indent=14):
+            nonlocal cy_c
+            for line in _wrap_text(text, self.small, CONTENT_W - indent - 14):
+                content_surf.blit(self.small.render(line, True, col), (indent, cy_c))
+                cy_c += 15
+            cy_c += 4
 
         # ---- FOUNDING ----
         _section("THE FOUNDING")
         founder = chronicle.get("founder_full", "")
         if founder:
-            self.screen.blit(self.small.render(f'"{founder}"', True, (215, 200, 145)), (px + 20, cy))
-            cy += 18
+            content_surf.blit(self.small.render(f'"{founder}"', True, (215, 200, 145)), (20, cy_c))
+            cy_c += 18
         _body(chronicle.get("founder_act", ""), col=(185, 178, 160), indent=20)
         _body(chronicle.get("founder_legacy", ""), col=(155, 148, 130), indent=20)
 
@@ -3557,39 +3655,79 @@ class PanelsMixin:
         dynasty_tension = getattr(npc, "dynasty_tension", None)
         if dynasty_tension:
             _body(dynasty_tension, col=(200, 140, 110), indent=20)
-        cy += 4
+        cy_c += 4
 
-        # Members of the house
-        self.screen.blit(self.small.render("Members of the house:", True, (130, 125, 115)), (px + 20, cy))
-        cy += 17
-        # Current NPC first
+        content_surf.blit(self.small.render("Members of the house:", True, (130, 125, 115)), (20, cy_c))
+        cy_c += 17
         npc_display  = identity.get("display_name", "?")
         npc_role_str = getattr(npc, "dynasty_role", "").title()
         from towns import TOWNS
         npc_town = TOWNS.get(getattr(npc, "town_id", -1))
         npc_town_name = npc_town.name if npc_town else "Unknown"
-        member_line = f"  {npc_display}  ·  {npc_role_str}  ·  {npc_town_name}"
-        self.screen.blit(self.small.render(member_line, True, (230, 215, 160)), (px + 20, cy))
-        cy += 16
+        content_surf.blit(
+            self.small.render(f"  {npc_display}  ·  {npc_role_str}  ·  {npc_town_name}", True, (230, 215, 160)),
+            (20, cy_c))
+        cy_c += 16
         ambition = getattr(npc, "dynasty_ambition", None)
         if ambition:
-            for line in _wrap_text(f'    "{ambition}"', self.small, PW - 48):
-                self.screen.blit(self.small.render(line, True, (155, 148, 115)), (px + 20, cy))
-                cy += 14
-            cy += 4
-        # Kin
+            for line in _wrap_text(f'    "{ambition}"', self.small, CONTENT_W - 48):
+                content_surf.blit(self.small.render(line, True, (155, 148, 115)), (20, cy_c))
+                cy_c += 14
+            cy_c += 4
         for kin in getattr(npc, "dynasty_kin", []):
             kin_line = (f"  {kin['display_name']}  ·  {kin['dynasty_role'].title()}"
                         f"  ·  {kin['town_name']}")
-            self.screen.blit(self.small.render(kin_line, True, (190, 183, 155)), (px + 20, cy))
-            cy += 16
-        cy += 4
+            content_surf.blit(self.small.render(kin_line, True, (190, 183, 155)), (20, cy_c))
+            cy_c += 16
+        cy_c += 4
 
         # ---- RIVALRY ----
         rivalry_text = chronicle.get("rivalry_text")
+        rival_rid_chronicle = getattr(npc, "dynasty_rival_region_id", None)
         if rivalry_text and dynasty_rival:
             _section(f"RIVALRY WITH {dynasty_rival.upper()}", col=(200, 110, 90))
             _body(rivalry_text, col=(195, 160, 145), indent=20)
+            if region_id is not None and rival_rid_chronicle is not None:
+                _rkey_c = _dyn._rivalry_key(region_id, rival_rid_chronicle)
+                _tlabel_c, _tcol_c = _dyn.tension_label(player, _rkey_c)
+                content_surf.blit(
+                    self.small.render(f"Current tension: {_tlabel_c}", True, _tcol_c),
+                    (20, cy_c))
+                cy_c += 16
+
+        # ---- BROKER PEACE ----
+        _peace_btn_cy = None
+        self._peace_quest_data = None
+        if region_id is not None and rival_rid_chronicle is not None:
+            if _dyn.can_broker_peace(player, region_id, rival_rid_chronicle, world):
+                world_seed_p = getattr(world, "seed", 0)
+                pq = _dyn.generate_peace_quest(region_id, rival_rid_chronicle, world_seed_p)
+                _section("BROKER PEACE", col=(140, 190, 220))
+                _body(
+                    f"As a Champion trusted by both houses, you could deliver {pq['label']} "
+                    f"as a formal gesture. If accepted, hostilities would pause for 60 days.",
+                    col=(170, 200, 210), indent=20)
+                _phave = len(getattr(player, pq["attr"], []))
+                _pneed = pq["count"]
+                _phcol = (130, 200, 100) if _phave >= _pneed else (200, 130, 80)
+                content_surf.blit(
+                    self.small.render(
+                        f"You have {_phave} / {_pneed}  ·  Reward: {pq['reward_gold']} gold  "
+                        f"·  Rival incidents pause 60 days",
+                        True, _phcol),
+                    (20, cy_c))
+                cy_c += 18
+                if _phave >= _pneed:
+                    PQ_W, PQ_H = 150, 26
+                    _pbtn_c = pygame.Rect(20, cy_c, PQ_W, PQ_H)
+                    pygame.draw.rect(content_surf, (20, 45, 55), _pbtn_c)
+                    pygame.draw.rect(content_surf, (80, 160, 200), _pbtn_c, 1)
+                    _ps = self.small.render("Broker Peace", True, (160, 220, 240))
+                    content_surf.blit(_ps, (_pbtn_c.x + (PQ_W - _ps.get_width()) // 2,
+                                            _pbtn_c.y + (PQ_H - _ps.get_height()) // 2))
+                    _peace_btn_cy = cy_c
+                    cy_c += PQ_H + 6
+                    self._peace_quest_data = pq
 
         # ---- DARK SECRET (Beloved only) ----
         _section("THE HIDDEN TRUTH", col=(120, 100, 140))
@@ -3597,54 +3735,77 @@ class PanelsMixin:
             dark = chronicle.get("dark_secret", "")
             _body(dark, col=(175, 155, 185), indent=20)
         else:
-            self.screen.blit(
+            content_surf.blit(
                 self.small.render("Reach Beloved to learn what those closest to the house will say.",
                                   True, (90, 85, 100)),
-                (px + 20, cy))
-            cy += 16
+                (20, cy_c))
+            cy_c += 16
 
         # ---- Dynasty Quest (Champion only, head of house, not yet completed) ----
         world_seed  = getattr(world, "seed", 0)
         completed   = getattr(player, "dynasty_quests_completed", set())
         is_champion = region_id in getattr(player, "champion_dynasty_regions", set())
-        quest_fulfilled_btn = None
+        _quest_btn_cy = None
+        quest = None
         if is_champion and region_id not in completed:
             quest = _dyn.generate_dynasty_quest(region_id, world_seed)
             attr  = quest["attr"]
             need  = quest["count"]
             have  = len(getattr(player, attr, []))
             _section("DYNASTY QUEST", col=(220, 190, 80))
-            self.screen.blit(
+            content_surf.blit(
                 self.small.render(f"The house requires: {quest['label']}.", True, (210, 195, 145)),
-                (px + 20, cy))
-            cy += 16
+                (20, cy_c))
+            cy_c += 16
             have_col = (130, 200, 100) if have >= need else (200, 130, 80)
-            self.screen.blit(
+            content_surf.blit(
                 self.small.render(f"You have {have} / {need}  ·  Reward: {quest['gold']} gold",
                                   True, have_col),
-                (px + 20, cy))
-            cy += 18
+                (20, cy_c))
+            cy_c += 18
             if have >= need:
                 BTN_W2, BTN_H2 = 140, 26
-                quest_fulfilled_btn = pygame.Rect(px + 20, cy, BTN_W2, BTN_H2)
-                pygame.draw.rect(self.screen, (50, 60, 25), quest_fulfilled_btn)
-                pygame.draw.rect(self.screen, (160, 200, 60), quest_fulfilled_btn, 1)
+                _qbtn_c = pygame.Rect(20, cy_c, BTN_W2, BTN_H2)
+                pygame.draw.rect(content_surf, (50, 60, 25), _qbtn_c)
+                pygame.draw.rect(content_surf, (160, 200, 60), _qbtn_c, 1)
                 qf_s = self.small.render("Fulfill Dynasty Quest", True, (200, 240, 100))
-                self.screen.blit(qf_s, (quest_fulfilled_btn.x + (BTN_W2 - qf_s.get_width()) // 2,
-                                        quest_fulfilled_btn.y + (BTN_H2 - qf_s.get_height()) // 2))
-                cy += BTN_H2 + 6
-        self._chronicle_quest_btn  = quest_fulfilled_btn
+                content_surf.blit(qf_s, (_qbtn_c.x + (BTN_W2 - qf_s.get_width()) // 2,
+                                         _qbtn_c.y + (BTN_H2 - qf_s.get_height()) // 2))
+                _quest_btn_cy = cy_c
+                cy_c += BTN_H2 + 6
         self._chronicle_quest_data = quest if (is_champion and region_id not in completed) else None
 
-        # ---- Back button ----
-        BTN_W, BTN_H = 100, 28
-        back_rect = pygame.Rect(px + PW - BTN_W - 12, py + PH - BTN_H - 12, BTN_W, BTN_H)
-        pygame.draw.rect(self.screen, (30, 40, 55), back_rect)
-        pygame.draw.rect(self.screen, (70, 110, 150), back_rect, 1)
-        b_s = self.small.render("Back", True, (140, 190, 220))
-        self.screen.blit(b_s, (back_rect.x + (BTN_W - b_s.get_width()) // 2,
-                                back_rect.y + (BTN_H - b_s.get_height()) // 2))
-        self._chronicle_back_btn = back_rect
+        content_h = cy_c + 8
+
+        # ---- Scroll state ----
+        if not hasattr(self, "_chronicle_scroll"):
+            self._chronicle_scroll = 0
+        max_scroll = max(0, content_h - SCROLL_AREA_H)
+        self._chronicle_scroll = max(0, min(max_scroll, self._chronicle_scroll))
+        self._chronicle_max_scroll = max_scroll
+        scroll = self._chronicle_scroll
+
+        # ---- Clip and blit content surface ----
+        clip_rect = pygame.Rect(0, scroll, CONTENT_W, SCROLL_AREA_H)
+        self.screen.blit(content_surf, (px, content_top), clip_rect)
+
+        # ---- Scrollbar ----
+        if max_scroll > 0:
+            sb_x = px + PW - SB_W - 2
+            pygame.draw.rect(self.screen, (25, 28, 38), (sb_x, content_top, SB_W, SCROLL_AREA_H))
+            thumb_h = max(20, int(SCROLL_AREA_H * SCROLL_AREA_H / content_h))
+            thumb_y = content_top + int(scroll / max_scroll * (SCROLL_AREA_H - thumb_h))
+            pygame.draw.rect(self.screen, (70, 110, 145), (sb_x, thumb_y, SB_W, thumb_h))
+
+        # ---- Convert content-space button positions to screen rects ----
+        def _to_screen_rect(content_y, w, h):
+            sy = content_top + content_y - scroll
+            if sy < content_top or sy + h > content_top + SCROLL_AREA_H:
+                return None
+            return pygame.Rect(px + 20, sy, w, h)
+
+        self._peace_quest_btn   = _to_screen_rect(_peace_btn_cy, 150, 26) if _peace_btn_cy is not None else None
+        self._chronicle_quest_btn = _to_screen_rect(_quest_btn_cy, 140, 26) if _quest_btn_cy is not None else None
 
     def _draw_npc_gift(self, player, world):
         import npc_preferences as npc_prefs_mod
@@ -3827,6 +3988,20 @@ class PanelsMixin:
         # ---- Dynasty chronicle panel ----
         if getattr(player, "dynasty_panel_open", False):
             import npc_dynasty as _dyn
+            # Peace quest button
+            peace_btn  = getattr(self, "_peace_quest_btn",  None)
+            peace_data = getattr(self, "_peace_quest_data", None)
+            if peace_btn and peace_data and peace_btn.collidepoint(pos):
+                npc = player.inspecting_npc
+                rid_a  = getattr(npc, "dynasty_id", None)
+                rid_b  = getattr(npc, "dynasty_rival_region_id", None)
+                attr   = peace_data["attr"]
+                need   = peace_data["count"]
+                lst    = getattr(player, attr, [])
+                if rid_a is not None and rid_b is not None and len(lst) >= need:
+                    del lst[:need]
+                    _dyn.fulfill_peace_quest(player, rid_a, rid_b, world)
+                return
             quest_btn  = getattr(self, "_chronicle_quest_btn",  None)
             quest_data = getattr(self, "_chronicle_quest_data", None)
             if quest_btn and quest_data and quest_btn.collidepoint(pos):
@@ -3853,6 +4028,24 @@ class PanelsMixin:
                 player.dynasty_panel_open = False
             return
 
+        # ---- Incident quest button ----
+        iq_btn = getattr(self, "_incident_quest_btn", None)
+        if iq_btn and iq_btn.collidepoint(pos):
+            import npc_dynasty as _dyn_click
+            side = getattr(self, "_incident_quest_side", None)
+            key  = getattr(self, "_incident_quest_key",  None)
+            if side and key:
+                iq = getattr(player, "incident_quests_active", {}).get(key)
+                if iq:
+                    qdata = iq[side]
+                    attr  = qdata["attr"]
+                    need  = qdata["count"]
+                    lst   = getattr(player, attr, [])
+                    if len(lst) >= need:
+                        del lst[:need]
+                        _dyn_click.fulfill_incident_quest(player, side, key, world)
+            return
+
         # ---- Main inspect panel buttons ----
         fulfill_btn = getattr(self, "_inspect_fulfill_btn", None)
         if fulfill_btn and fulfill_btn.collidepoint(pos):
@@ -3861,6 +4054,7 @@ class PanelsMixin:
         history_btn = getattr(self, "_inspect_history_btn", None)
         if history_btn and history_btn.collidepoint(pos):
             player.dynasty_panel_open = True
+            self._chronicle_scroll = 0
             return
         if hasattr(self, "_inspect_gift_btn") and self._inspect_gift_btn.collidepoint(pos):
             player.gift_panel_open = True

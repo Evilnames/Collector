@@ -1744,6 +1744,86 @@ class Tropicbird(Bird):
     ACCENT_COLOR     = (220, 80, 30)
 
 
+class BrownNoddy(Bird):
+    SPECIES          = "brown_noddy"
+    RARITY           = "common"
+    BIOMES           = ["beach", "pacific_island", "ocean"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (3, 7)
+    ALTITUDE_BLOCKS  = (4, 10)
+    SPEED            = 75.0
+    W, H             = 18, 9
+    BODY_COLOR       = (55, 45, 35)
+    WING_COLOR       = (45, 38, 28)
+    BEAK_COLOR       = (40, 35, 30)
+    HEAD_COLOR       = (220, 215, 205)
+    ACCENT_COLOR     = (200, 195, 185)
+
+
+class WhiteTern(Bird):
+    SPECIES          = "white_tern"
+    RARITY           = "rare"
+    BIOMES           = ["pacific_island", "beach"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (6, 14)
+    SPEED            = 90.0
+    W, H             = 16, 8
+    BODY_COLOR       = (252, 252, 255)
+    WING_COLOR       = (245, 248, 252)
+    BEAK_COLOR       = (22, 22, 28)
+    HEAD_COLOR       = (252, 252, 255)
+    ACCENT_COLOR     = (200, 225, 240)
+
+
+class PacificGoldenPlover(Bird):
+    SPECIES          = "pacific_golden_plover"
+    RARITY           = "uncommon"
+    BIOMES           = ["pacific_island", "beach"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (2, 5)
+    ALTITUDE_BLOCKS  = (1, 4)
+    SPEED            = 55.0
+    W, H             = 16, 10
+    BODY_COLOR       = (60, 55, 35)
+    WING_COLOR       = (45, 42, 28)
+    BEAK_COLOR       = (35, 30, 25)
+    HEAD_COLOR       = (245, 240, 195)
+    ACCENT_COLOR     = (22, 22, 22)
+
+
+class CommonMyna(Bird):
+    SPECIES          = "common_myna"
+    RARITY           = "common"
+    BIOMES           = ["pacific_island", "tropical", "beach"]
+    IS_FLOCK         = True
+    FLOCK_SIZE_RANGE = (3, 6)
+    ALTITUDE_BLOCKS  = (2, 7)
+    SPEED            = 65.0
+    W, H             = 16, 10
+    BODY_COLOR       = (55, 45, 40)
+    WING_COLOR       = (40, 35, 30)
+    BEAK_COLOR       = (215, 175, 40)
+    HEAD_COLOR       = (30, 25, 22)
+    ACCENT_COLOR     = (240, 190, 30)
+
+
+class ReefHeron(Bird):
+    SPECIES          = "reef_heron"
+    RARITY           = "uncommon"
+    BIOMES           = ["pacific_island", "beach", "ocean"]
+    IS_FLOCK         = False
+    FLOCK_SIZE_RANGE = (1, 1)
+    ALTITUDE_BLOCKS  = (1, 5)
+    SPEED            = 45.0
+    W, H             = 18, 14
+    BODY_COLOR       = (80, 95, 110)
+    WING_COLOR       = (70, 85, 100)
+    BEAK_COLOR       = (175, 155, 90)
+    HEAD_COLOR       = (80, 95, 110)
+    ACCENT_COLOR     = (245, 242, 235)
+
+
 class Dunlin(Bird):
     SPECIES          = "dunlin"
     RARITY           = "common"
@@ -4394,6 +4474,7 @@ ALL_SPECIES = [
     Wren, Nuthatch, Gannet, Frigatebird, NightHeron, Lapwing, Wheatear, Redstart,
     Warbler, LongTailedTit, Oystercatcher, Kite, Harrier, Snipe, Merlin, Goshawk,
     Shoebill, Booby, Tropicbird, Dunlin, Godwit, Oxpecker, Dipper, Skua, Firecrest,
+    BrownNoddy, WhiteTern, PacificGoldenPlover, CommonMyna, ReefHeron,
     RedCrownedCrane, MandarinDuck, ChineseMonal, SilverPheasant, CrestedIbis,
     ChinesePondHeron, FairyPitta, Hwamei, BlackDrongo, RedBilledBlueMagpie,
     AfricanFishEagle, SecretaryBird, MartialEagle, MarabouStork, SuperbStarling,

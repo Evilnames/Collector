@@ -28,16 +28,21 @@ from .pottery import PotteryMixin
 from .salt import SaltMixin
 from .town_menu import TownMenuMixin
 from .outpost_menu import OutpostMenuMixin
+from .city_block_menu import CityBlockMenuMixin
+from .hire_panel import HirePanelMixin
 from .reputation_screen import ReputationScreenMixin
 from .dogs_ui import DogsMixin
 from .weapons import SmithingMixin
+from .gambling import GamblingMixin
+from .racing import RacingMixin
+from .arena import ArenaUIMixin
 
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
     CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, BeerMixin, MinigamesMixin, CollectionsMixin,
     HelpMixin, HorseMixin, DogsMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin,
-    TownMenuMixin, OutpostMenuMixin, ReputationScreenMixin, SmithingMixin,
+    TownMenuMixin, OutpostMenuMixin, CityBlockMenuMixin, HirePanelMixin, ReputationScreenMixin, SmithingMixin, GamblingMixin, RacingMixin, ArenaUIMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -199,6 +204,19 @@ class UI(
         # Outpost menu (diplomatic-only — kingdom & coat of arms)
         self.outpost_menu_open = False
         self.active_outpost    = None
+        # City Block menu (player-run cities)
+        self.city_block_menu_open = False
+        self.active_city_block    = None
+        self._city_name_editing   = False
+        self._city_name_draft     = ""
+        self._city_name_rect      = None
+        # Hire panel (settler NPCs)
+        self.hire_panel_open    = False
+        self.active_hire_npc    = None
+        self.active_hire_city   = None
+        self.active_hire_record = None
+        self._hire_accept_btn   = None
+        self._hire_decline_btn  = None
         # Reputation / kingdoms screen
         self.reputation_screen_open = False
         self._rep_scroll     = 0
@@ -889,6 +907,59 @@ class UI(
         self._salt_codex_selected     = None
         self._salt_codex_rects        = {}
 
+        # ----- Arena state -----
+        self.arena_open              = False
+        self._arena_phase            = "lobby"
+        self._arena_bouts            = []
+        self._arena_selected_bout    = 0
+        self._arena_bet_fighter      = None
+        self._arena_bet_amount       = 10
+        self._arena_current_bout     = 0
+        self._arena_round_idx        = 0
+        self._arena_round_timer      = 0.0
+        self._arena_crowd_favor      = 0.5
+        self._arena_result_card      = None
+        self._arena_gold_delta       = 0
+        self._arena_rects            = {}
+        self._arena_log_lines        = []
+        self._gladiator_codex_scroll = 0
+
+        # ----- Gambling Table state -----
+        self.gambling_open        = False
+        self._gamble_phase        = "bet"
+        self._gamble_bet          = 10
+        self._gamble_num_bots     = 3
+        self._gamble_bot_names    = []
+        self._gamble_bot_picks    = []
+        self._gamble_player_pick  = None
+        self._gamble_roll_timer   = 0.0
+        self._gamble_roll_result  = None
+        self._gamble_die1         = 1
+        self._gamble_die2         = 1
+        self._gamble_result_msg   = ""
+        self._gamble_net_gold     = 0
+        self._gamble_rects        = {}
+
+        # ----- Horse Racing state -----
+        self.racing_open              = False
+        self._race_phase              = "roster"
+        self._race_bookkeeper         = None
+        self._race_player_horse       = None
+        self._race_horses             = []
+        self._race_time               = 0.0
+        self._race_bet_horse          = None
+        self._race_bet_amount         = 10
+        self._race_odds               = {}
+        self._race_surges             = {}
+        self._race_commentary         = None
+        self._race_commentary_triggers = set()
+        self._race_result_msg         = ""
+        self._race_net_gold           = 0
+        self._race_rects              = {}
+        self._race_finished           = False
+        self._race_placements         = []
+        self._race_inspect_uid        = None
+
         # ----- Smithing / Forge mini-game state -----
         self._smith_phase        = "idle"   # idle|select|heating|hammering|quench|part_complete|assemble
         self._smith_type         = None     # weapon type key
@@ -949,6 +1020,10 @@ class UI(
                 self._draw_city_chronicle(self.active_town)
         if self.outpost_menu_open and self.active_outpost is not None:
             self._draw_outpost_menu(player)
+        if self.city_block_menu_open and self.active_city_block is not None:
+            self._draw_city_block_menu(player)
+        if self.hire_panel_open and self.active_hire_record is not None:
+            self._draw_hire_panel(player)
         if self.reputation_screen_open:
             self._draw_reputation_screen(player)
         if self.automation_open and self.active_automation is not None:
@@ -992,6 +1067,12 @@ class UI(
             self._draw_dog_view_panel(player)
         if self.dog_breeding_open:
             self._draw_dog_breeding_panel(player)
+        if self.gambling_open:
+            self._draw_gambling(player, dt)
+        if self.arena_open:
+            self._draw_arena(player, dt)
+        if self.racing_open:
+            self._draw_racing(player, dt)
         if self.wardrobe_open:
             self._draw_wardrobe(player)
         if self._jw_detail_jewelry is not None:

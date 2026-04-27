@@ -123,6 +123,12 @@ OUTPOST_CLOTHING = {
         "trim": (190, 190, 200), "hat": (35, 50, 95),
         "armor": (55, 80, 140), "plate": (100, 115, 160),
     },
+    "polynesian": {
+        # Tapa bark-cloth, warm Pacific brown skin
+        "body": (210, 130, 60), "leg": (240, 210, 150), "skin": (175, 130, 80),
+        "trim": (90, 55, 25), "hat": (225, 180, 80),
+        "armor": (130, 100, 50), "plate": (200, 165, 90),
+    },
     # Shared cultural keys — delegate to cities' palettes
     "mediterranean": None,
     "desert":        None,

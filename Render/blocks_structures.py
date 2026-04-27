@@ -6814,4 +6814,173 @@ def build_structure_surfs():
     pygame.draw.rect(s, dk, s.get_rect(), 1)
     surfs[bid] = s
 
+    # --- TIMBER BRIDGE: log-and-plank deck, warm brown, boreal/birch ---
+    bid = TIMBER_BRIDGE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    c = BLOCKS[bid]["color"]          # (110, 75, 42)
+    dk = _darken(c, 30)
+    lt = _lighter(c, 18)
+    grain = _darken(c, 15)
+    BS = BLOCK_SIZE
+    s.fill(c)
+    # horizontal plank lines
+    for gy in range(4, BS, 6):
+        pygame.draw.line(s, dk, (0, gy), (BS, gy), 1)
+    # vertical wood-grain streaks
+    for gx in range(0, BS, 10):
+        offset = (gx // 10) % 2
+        pygame.draw.line(s, grain, (gx + offset, 0), (gx + offset, BS), 1)
+    # small knot circles on alternating planks
+    for row, kx in enumerate(range(3, BS - 3, 10)):
+        ky = 2 + (row % 3) * 6 + 1
+        if ky < BS - 2:
+            pygame.draw.circle(s, dk, (kx + 2, ky), 2, 1)
+    # bright top-edge highlight on each plank
+    for gy in range(0, BS, 6):
+        pygame.draw.line(s, lt, (1, gy), (BS - 1, gy), 1)
+    pygame.draw.rect(s, dk, s.get_rect(), 1)
+    surfs[bid] = s
+
+    # --- MOSSY BRIDGE: cracked weathered stone with green moss, wetland/swamp ---
+    bid = MOSSY_BRIDGE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    c = BLOCKS[bid]["color"]          # (78, 95, 72)
+    dk = _darken(c, 28)
+    lt = _lighter(c, 14)
+    moss = (90, 118, 68)
+    BS = BLOCK_SIZE
+    s.fill(c)
+    # irregular stone courses (shorter slabs than STONE_BRIDGE)
+    for gy in range(5, BS, 6):
+        pygame.draw.line(s, dk, (0, gy), (BS, gy), 1)
+    # staggered vertical joints
+    for row in range(BS // 6 + 1):
+        gy = row * 6
+        offset = (row % 2) * 4
+        for gx in range(offset, BS, 8):
+            pygame.draw.line(s, dk, (gx, gy), (gx, min(gy + 6, BS)), 1)
+    # moss patches across upper half
+    _rnd_m = _rnd.Random(0xB4057)
+    for _ in range(8):
+        mx = _rnd_m.randint(1, BS - 4)
+        my = _rnd_m.randint(1, BS // 2)
+        mw = _rnd_m.randint(2, 5)
+        mh = _rnd_m.randint(1, 3)
+        pygame.draw.rect(s, moss, (mx, my, mw, mh))
+    # subtle stone-face highlight
+    for row in range(BS // 6 + 1):
+        gy = row * 6 + 1
+        for gx in range((row % 2) * 4, BS, 8):
+            if gx + 1 < BS and gy < BS:
+                pygame.draw.line(s, lt, (gx + 1, gy), (gx + 6, gy), 1)
+    pygame.draw.rect(s, dk, s.get_rect(), 1)
+    surfs[bid] = s
+
+    # --- SANDSTONE BRIDGE: warm banded sandstone, jungle/tropical ---
+    bid = SANDSTONE_BRIDGE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    c = BLOCKS[bid]["color"]          # (192, 158, 100)
+    dk = _darken(c, 28)
+    lt = _lighter(c, 16)
+    band_hi = _lighter(c, 8)
+    band_lo = _darken(c, 12)
+    BS = BLOCK_SIZE
+    s.fill(c)
+    # sedimentary banding — alternating slightly lighter/darker horizontal strata
+    band_h = 4
+    for row in range(BS // band_h + 1):
+        gy = row * band_h
+        col = band_hi if row % 2 == 0 else band_lo
+        pygame.draw.line(s, col, (0, gy), (BS, gy), band_h - 1)
+    # faint vertical block joints for carved-stone look
+    for row in range(BS // band_h + 1):
+        gy = row * band_h
+        offset = (row % 3) * 4
+        for gx in range(offset, BS, 11):
+            pygame.draw.line(s, dk, (gx, gy), (gx, min(gy + band_h, BS)), 1)
+    # warm highlight on top edge of each band
+    for row in range(BS // band_h + 1):
+        gy = row * band_h
+        pygame.draw.line(s, lt, (1, gy), (BS - 1, gy), 1)
+    pygame.draw.rect(s, dk, s.get_rect(), 1)
+    surfs[bid] = s
+
+    # --- BRICK BRIDGE: red-brick running bond with mortar, rolling-hills ---
+    bid = BRICK_BRIDGE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    c = BLOCKS[bid]["color"]          # (168, 82, 52)
+    mortar = _darken(c, 35)
+    lt = _lighter(c, 18)
+    face = _lighter(c, 6)
+    BS = BLOCK_SIZE
+    s.fill(mortar)
+    brick_h = 5
+    brick_w = 9
+    for row in range(BS // brick_h + 1):
+        gy = row * brick_h
+        offset = (row % 2) * (brick_w // 2)
+        for gx in range(-brick_w + offset, BS + brick_w, brick_w + 1):
+            bx0 = gx + 1
+            by0 = gy + 1
+            bw  = brick_w - 1
+            bh  = brick_h - 1
+            if bx0 < BS and by0 < BS:
+                pygame.draw.rect(s, face, (bx0, by0, min(bw, BS - bx0), min(bh, BS - by0)))
+                # top highlight
+                pygame.draw.line(s, lt, (bx0, by0), (min(bx0 + bw - 1, BS - 1), by0), 1)
+    pygame.draw.rect(s, mortar, s.get_rect(), 1)
+    surfs[bid] = s
+
+    # --- COBBLE BRIDGE: tightly packed rounded cobblestones, steppe ---
+    bid = COBBLE_BRIDGE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    c = BLOCKS[bid]["color"]          # (108, 98, 84)
+    dk = _darken(c, 28)
+    lt = _lighter(c, 16)
+    gap = _darken(c, 40)
+    BS = BLOCK_SIZE
+    s.fill(gap)
+    _rnd_c = _rnd.Random(0xC0BB1E)
+    cobble_cx = [(x, y) for y in range(4, BS, 7) for x in range(3 + (y // 7 % 2) * 3, BS, 8)]
+    shades = [_darken(c, v) for v in (0, 8, 16)] + [_lighter(c, v) for v in (6, 12)]
+    for (cx2, cy2) in cobble_cx:
+        rx = _rnd_c.randint(3, 4)
+        ry = _rnd_c.randint(2, 3)
+        shade = shades[_rnd_c.randint(0, len(shades) - 1)]
+        pygame.draw.ellipse(s, shade, (cx2 - rx, cy2 - ry, rx * 2, ry * 2))
+        pygame.draw.ellipse(s, lt, (cx2 - rx + 1, cy2 - ry, rx - 1, ry - 1))
+        pygame.draw.ellipse(s, dk, (cx2 - rx, cy2 - ry, rx * 2, ry * 2), 1)
+    pygame.draw.rect(s, dk, s.get_rect(), 1)
+    surfs[bid] = s
+
+    # --- DRIFTWOOD BRIDGE: pale weathered sea-worn planks, coastal ---
+    bid = DRIFTWOOD_BRIDGE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    c = BLOCKS[bid]["color"]          # (185, 172, 148)
+    dk = _darken(c, 22)
+    lt = _lighter(c, 14)
+    bleach = _lighter(c, 24)
+    BS = BLOCK_SIZE
+    s.fill(c)
+    # irregular plank seams — slightly uneven spacing for weathered look
+    _rnd_d = _rnd.Random(0xD4175)
+    seams = sorted([_rnd_d.randint(4, BS - 4) for _ in range(BS // 5)])
+    for gy in seams:
+        pygame.draw.line(s, dk, (0, gy), (BS, gy), 1)
+    # bleached salt-streaks across planks
+    for _ in range(6):
+        sx = _rnd_d.randint(0, BS - 6)
+        sy = _rnd_d.randint(1, BS - 2)
+        pygame.draw.line(s, bleach, (sx, sy), (sx + _rnd_d.randint(4, 8), sy), 1)
+    # vertical grain lines
+    for gx in range(0, BS, 9):
+        pygame.draw.line(s, dk, (gx, 0), (gx, BS), 1)
+    # top-edge plank highlight
+    prev = 0
+    for gy in seams + [BS]:
+        pygame.draw.line(s, lt, (1, prev), (BS - 1, prev), 1)
+        prev = gy
+    pygame.draw.rect(s, dk, s.get_rect(), 1)
+    surfs[bid] = s
+
     return surfs

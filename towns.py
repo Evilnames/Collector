@@ -55,6 +55,8 @@ _BIOME_GROUP: dict[str, str] = {
     "steppe": "steppe",       "wasteland": "steppe",
     "canyon": "yunnan",
     "beach": "coastal",
+    "ocean": "coastal",
+    "pacific_island": "coastal",
     "mediterranean": "mediterranean",
     "east_asian":    "east_asian",
     "south_asian":   "south_asian",
@@ -642,14 +644,14 @@ _NEED_WEIGHTS: dict[str, dict[str, float]] = {
 # Luxury goods each biome group craves.
 # Primary luxury is wanted by all tiers; secondary is unlocked at tier >= 1.
 _LUXURY_SPECIALTY: dict[str, list[str]] = {
-    "forest":   ["wine",    "herbs"],
-    "jungle":   ["coffee",  "pottery"],
-    "wetland":  ["tea",     "herbs"],
-    "desert":   ["coffee",  "spirits"],
-    "alpine":   ["spirits", "tea"],
-    "steppe":   ["spirits", "herbs"],
-    "coastal":  ["wine",    "tea"],
-    "highland":      ["wine",    "pottery"],
+    "forest":        ["wine",    "beer"],
+    "jungle":        ["coffee",  "pottery"],
+    "wetland":       ["tea",     "herbs"],
+    "desert":        ["coffee",  "spirits"],
+    "alpine":        ["spirits", "beer"],
+    "steppe":        ["beer",    "spirits"],
+    "coastal":       ["wine",    "beer"],
+    "highland":      ["wine",    "beer"],
     "mediterranean": ["wine",    "pottery"],
     "east_asian":    ["tea",     "pottery"],
     "arabia":        ["coffee",  "herbs"],
@@ -1346,6 +1348,7 @@ def _place_capital_structures(town: Town, world) -> None:
         _place_french_baroque_palace,
         _place_incan_palace,
         _place_persian_palace,
+        _place_polynesian_palace,
         PALACE_NPC_OFFSET,
         LeaderNPC,
     )
@@ -1400,6 +1403,8 @@ def _place_capital_structures(town: Town, world) -> None:
         _place_incan_palace(world, palace_left, sy)
     elif ptype == "persian":
         _place_persian_palace(world, palace_left, sy)
+    elif ptype == "polynesian":
+        _place_polynesian_palace(world, palace_left, sy)
     else:
         castle_w = _place_castle(world, palace_left, sy)
         castle_rng = random.Random(palace_left ^ (world.seed * 0x9E3779B9) ^ 0xBEEF1)

@@ -792,6 +792,16 @@ def assign_ruling_dynasties(world, world_seed: int) -> None:
             town_names=town_names,
         )
 
+        # Compute court visual attributes for this region
+        from cities import PALACE_TYPES
+        capital = TOWNS.get(region.capital_town_id)
+        court_palace_type = ""
+        if capital:
+            palace_left = capital.center_bx + capital.half_w + 4
+            court_palace_type = random.Random(
+                palace_left ^ world_seed ^ 0xCAFEBABE
+            ).choice(PALACE_TYPES)
+
         # Apply dynasty data to each noble/elder ruler
         for (npc, _tid), role in zip(region_rulers, roles):
             npc.dynasty_id              = region_id
@@ -805,6 +815,8 @@ def assign_ruling_dynasties(world, world_seed: int) -> None:
             npc.dynasty_ambition  = _dyn.generate_ruler_ambition(
                 getattr(npc, "npc_uid", str(id(npc))), world_seed
             )
+            npc.leader_color = region.leader_color
+            npc.palace_type  = court_palace_type
             if hasattr(npc, "identity") and npc.identity:
                 npc.identity["family_name"] = dynasty_family
                 npc.identity["display_name"] = (

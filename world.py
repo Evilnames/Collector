@@ -56,6 +56,9 @@ _CROP_MATURE_MAP = {
     GRAPEVINE_CROP_YOUNG:    GRAPEVINE_CROP_MATURE,
     FLAX_CROP_YOUNG:         FLAX_CROP_MATURE,
     COTTON_CROP_YOUNG:       COTTON_CROP_MATURE,
+    TARO_CROP_YOUNG:         TARO_CROP_MATURE,
+    BREADFRUIT_CROP_YOUNG:   BREADFRUIT_CROP_MATURE,
+    COCONUT_CROP_YOUNG:      COCONUT_CROP_MATURE,
     CHAMOMILE_CROP_YOUNG:    CHAMOMILE_CROP_MATURE,
     LAVENDER_CROP_YOUNG:     LAVENDER_CROP_MATURE,
     MINT_CROP_YOUNG:         MINT_CROP_MATURE,
@@ -99,6 +102,11 @@ _CROP_MATURE_MAP = {
     CORN_CROP_YOUNG_P:       CORN_CROP_MATURE_P,
     RICE_CROP_YOUNG_P:       RICE_CROP_MATURE_P,
 }
+
+
+_OCEAN_SPREAD    = 2     # zones on each side of an ocean seed that expand to ocean
+_OCEAN_SEED_PROB = 0.025 # probability a zone seeds an ocean cluster
+_ISLAND_PROB     = 0.22  # probability an ocean zone becomes a pacific_island
 
 
 class World:
@@ -183,6 +191,7 @@ class World:
         self._crop_interval = 20.0
         self._crop_rng      = random.Random(seed + 11111)
         self.pending_crops  = set()
+        self._grow_lamps    = set()   # (x, y) of all placed GROW_LAMP bg blocks
         # Fruit tree regrowth — tracks leaf positions that may regrow a fruit cluster
         self._fruit_timer    = 0.0
         self._fruit_interval = 30.0
@@ -204,6 +213,7 @@ class World:
         # Day/night cycle
         self.time_of_day = 0.0   # seconds, 0 = start of day, wraps at CYCLE_DURATION
         self.day_count = 0
+        self.pending_arena_open = None  # set by landmark effect; consumed by main loop
         self.town_centers: list[int] = []  # city_bx values from generate_cities
         self.city_slot_xs: list[int] = []  # un-jittered slot centers, parallel to town_centers
         self.city_zones:   list     = []   # (lo, hi) block ranges occupied by cities
@@ -220,6 +230,8 @@ class World:
             npc_identity.assign_ruling_dynasties(self, self.seed)
         from outposts import init_outposts
         init_outposts(self)
+        from player_cities import init_player_cities
+        init_player_cities(self)
         self._spawn_birds()
         self._spawn_insects()
 
@@ -246,6 +258,18 @@ class World:
     def _zone_seed(world_seed, z, purpose):
         return (world_seed * 1000003 + z * 31337 + purpose) & 0x7FFFFFFF
 
+    def _zone_biodome(self, z: int) -> str:
+        """Effective biodome for ecological zone z, including ocean-cluster spreading."""
+        for z_check in range(z - _OCEAN_SPREAD, z + _OCEAN_SPREAD + 1):
+            seed_rng = random.Random(self._zone_seed(self.seed, z_check, 14))
+            if seed_rng.random() < _OCEAN_SEED_PROB:
+                island_rng = random.Random(self._zone_seed(self.seed, z, 13))
+                if island_rng.random() < _ISLAND_PROB:
+                    return "pacific_island"
+                return "ocean"
+        brng = random.Random(self._zone_seed(self.seed, z, 3))
+        return brng.choice(BIODOME_TYPES)
+
     def _biodome_terrain_mod(self, x: int):
         """Return (height_bias, amplitude_scale) blended from the two nearest biodome zones."""
         zone = x // 200
@@ -253,8 +277,7 @@ class World:
         for z in range(zone - 1, zone + 2):
             rng_c = random.Random(self._zone_seed(self.seed, z, 2))
             cx = z * 200 + rng_c.randint(-40, 40)
-            rng_t = random.Random(self._zone_seed(self.seed, z, 3))
-            biodome = rng_t.choice(BIODOME_TYPES)
+            biodome = self._zone_biodome(z)
             bias, scale = BIODOME_TERRAIN_MODS.get(biodome, (0, 1.0))
             data.append((abs(x - cx), bias, scale))
         data.sort()
@@ -300,8 +323,7 @@ class World:
             dist = abs(x - cxz)
             if dist < nearest_dist:
                 nearest_dist = dist
-                brng = random.Random(self._zone_seed(self.seed, z, 3))
-                nearest = brng.choice(BIODOME_TYPES)
+                nearest = self._zone_biodome(z)
         return nearest
 
     def _biodome_owning_zone(self, x: int) -> int:
@@ -343,7 +365,7 @@ class World:
     # ------------------------------------------------------------------
 
     def _scan_chunk_for_crops(self, cx: int):
-        """Rebuild pending_crops and pending_saplings for a chunk loaded from the DB."""
+        """Rebuild pending_crops, pending_saplings, and _grow_lamps for a loaded chunk."""
         chunk = self._chunks.get(cx)
         if chunk is None:
             return
@@ -358,6 +380,13 @@ class World:
                     self.pending_saplings.add((x_base + lx, y))
                 elif bid in LEAF_FRUIT_CLUSTER_MAP:
                     self.pending_fruit_leaves.add((x_base + lx, y))
+        bg = self._bg_chunks.get(cx)
+        if bg is not None:
+            for y in range(WORLD_H):
+                row = bg[y]
+                for lx in range(CHUNK_W):
+                    if row[lx] == GROW_LAMP:
+                        self._grow_lamps.add((x_base + lx, y))
 
     def load_chunk(self, cx: int):
         """Load chunk from DB, or generate fresh if unseen."""
@@ -416,6 +445,9 @@ class World:
                              for cx in to_unload]
             self.insects = [i for i in self.insects
                             if not any(x0 <= i.x < x1 for x0, x1 in unload_ranges)]
+            unload_x_ranges = [(cx * CHUNK_W, (cx + 1) * CHUNK_W) for cx in to_unload]
+            self._grow_lamps = {(lx, ly) for lx, ly in self._grow_lamps
+                                if not any(x0 <= lx < x1 for x0, x1 in unload_x_ranges)}
         for cx in to_unload:
             del self._chunks[cx]
             self._bg_chunks.pop(cx, None)
@@ -664,14 +696,20 @@ class World:
             biome = self.biome_at(x)
             biodome = self.biodome_at(x)
             rocky = biodome in ("alpine_mountain", "rocky_mountain", "tundra", "canyon")
-            sandy = biodome in ("desert", "beach")
+            sandy = biodome in ("desert", "beach", "ocean")
+            submerged = biodome == "ocean" and sy >= SURFACE_Y
             for y in range(WORLD_H):
                 if y < sy:
-                    chunk[y][lx] = AIR
+                    if submerged and y >= SURFACE_Y:
+                        chunk[y][lx] = WATER
+                        self._water_level[(x, y)] = 8
+                        self._lake_cells.append((y, x))
+                    else:
+                        chunk[y][lx] = AIR
                 elif y == sy:
                     if biodome in ("alpine_mountain", "tundra"):
                         chunk[y][lx] = SNOW
-                    elif sandy:
+                    elif sandy or submerged:
                         chunk[y][lx] = SAND
                     elif biodome == "canyon":
                         chunk[y][lx] = STONE
@@ -711,7 +749,7 @@ class World:
             x = cx * CHUNK_W + lx
             sy = self.surface_height(x)
             biodome = self.biodome_at(x)
-            if chunk[sy][lx] != WATER:
+            if chunk[sy][lx] != WATER and biodome != "ocean":
                 self._dispatch_grow(x, sy - 1, biodome, tree_rng)
             lo, hi = {
                 "jungle":          (3, 6),  "fungal":         (3, 7),
@@ -723,6 +761,7 @@ class World:
                 "desert":          (18, 32),"tundra":         (16, 28),
                 "swamp":           (3, 7),  "beach":          (9, 16),
                 "canyon":          (12, 22),
+                "pacific_island":  ( 6, 12),
             }.get(biodome, (5, 10))
             factor = self.biodome_tree_density(x)
             lo = max(2, int(lo * factor))
@@ -804,6 +843,9 @@ class World:
             "swamp":          [RICE_BUSH, CELERY_BUSH, LEEK_BUSH, SCALLION_BUSH, COFFEE_BUSH, MINT_BUSH, MINT_BUSH,
                                VALERIAN_BUSH, ANGELICA_BUSH, COMFREY_BUSH, CATNIP_BUSH],
             "beach":          [WATERMELON_BUSH, SWEET_POTATO_BUSH, CORN_BUSH, COFFEE_BUSH],
+            "pacific_island": [SWEET_POTATO_BUSH, CORN_BUSH, WATERMELON_BUSH, GINGER_BUSH,
+                               RICE_BUSH, COFFEE_BUSH, COFFEE_BUSH,
+                               TARO_BUSH, BREADFRUIT_BUSH, COCONUT_BUSH],
             "canyon":         [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, TOMATO_BUSH, CORN_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
                                OREGANO_BUSH, FENNEL_BUSH, LEMON_VERBENA_BUSH, WORMWOOD_BUSH],
         }
@@ -1003,7 +1045,7 @@ class World:
     _SURF_WATER_ZONE_W = 300
     _SURF_WATER_LAKE_BIOMES = frozenset({
         "temperate", "boreal", "birch_forest", "wetland", "swamp",
-        "tundra", "jungle", "tropical", "rolling_hills",
+        "tundra", "jungle", "tropical", "rolling_hills", "pacific_island",
     })
     _SURF_WATER_RIVER_BIOMES = frozenset({
         "temperate", "boreal", "wetland", "swamp", "rolling_hills",
@@ -1104,6 +1146,23 @@ class World:
                         chunk[y][lx] = WATER
                         self._water_level[(x, y)] = 8
                         self._lake_cells.append((y, x))
+
+            # Bank fill: where terrain dips below the water surface level on
+            # the shore or at skipped edge columns, fill with dirt so the
+            # waterline is never visually "above" a dirt-free gap.
+            shore_fill = 4
+            bx0 = max(x_start - shore_fill, chunk_x0)
+            bx1 = min(x_end + shore_fill, chunk_x1)
+            for x in range(bx0, bx1 + 1):
+                lx = x - chunk_x0
+                local_sy = self.surface_height(x)
+                if local_sy <= water_top_y:
+                    continue  # terrain at or above water surface — no gap to fill
+                for y in range(water_top_y, local_sy):
+                    if y <= 0 or y >= WORLD_H - 1:
+                        continue
+                    if chunk[y][lx] == AIR:
+                        chunk[y][lx] = DIRT
 
     # ------------------------------------------------------------------ caves --
 
@@ -1688,7 +1747,12 @@ class World:
         cx = x // CHUNK_W
         if cx not in self._bg_chunks:
             self._bg_chunks[cx] = [[AIR] * CHUNK_W for _ in range(WORLD_H)]
+        old = self._bg_chunks[cx][y][x % CHUNK_W]
+        if old == GROW_LAMP:
+            self._grow_lamps.discard((x, y))
         self._bg_chunks[cx][y][x % CHUNK_W] = block_id
+        if block_id == GROW_LAMP:
+            self._grow_lamps.add((x, y))
         self._dirty_bg_chunks.add(cx)
 
     def get_wire(self, x, y) -> int:
@@ -1730,6 +1794,8 @@ class World:
             advance_day(self)
             from outposts import tick_outpost_day
             tick_outpost_day(self.day_count)
+            from player_cities import tick_city_day
+            tick_city_day(self)
         self._tick_light_traps(dt)
 
     def _tick_light_traps(self, dt):
@@ -1894,6 +1960,15 @@ class World:
             if bid != AIR and bid not in _transparent:
                 return False
         return True
+
+    _LAMP_H_RADIUS = 8   # tiles left/right a grow lamp reaches
+    _LAMP_V_RANGE  = 12  # max tiles above the crop a lamp can sit
+
+    def _has_grow_light(self, x, y):
+        for lx, ly in self._grow_lamps:
+            if abs(lx - x) <= self._LAMP_H_RADIUS and (y - self._LAMP_V_RANGE) <= ly < y:
+                return True
+        return False
 
     def _place_canopy(self, layers, leaf_bid, rng=None, density=1.0):
         for ly, lx_range in layers:
@@ -2340,6 +2415,8 @@ class World:
             "tundra":          [(self._grow_pine, 1)],
             # beach: citrus common, mangrove in wet pockets
             "beach":           [(self._grow_palm, 4),   (self._grow_mangrove, 3),(self._grow_citrus, 3)],
+            "pacific_island":  [(self._grow_palm, 4),   (self._grow_mangrove, 2),(self._grow_citrus, 3),
+                                (self._grow_banyan, 2)],
             "fungal":          [(self._grow_mushroom, 1)],
         }.get(biodome, [(self._grow_oak, 1)])
         fns, wts = zip(*options)
@@ -2410,7 +2487,7 @@ class World:
             below = self.get_block(x, y + 1)
             # Wild desert plants grow on SAND without tilled soil.
             if bid in WILD_DESERT_PLANT_BLOCKS and below == SAND:
-                if not self._has_sky_view(x, y):
+                if not self._has_sky_view(x, y) and not self._has_grow_light(x, y):
                     still_pending.add((x, y))
                     continue
                 delta = max(1, int(_soil.GROWTH_DELTA_MAX * _soil.DESERT_GROWTH_SPEED))
@@ -2420,7 +2497,7 @@ class World:
                 if below != TILLED_SOIL:
                     still_pending.add((x, y))
                     continue
-                if not self._has_sky_view(x, y):
+                if not self._has_sky_view(x, y) and not self._has_grow_light(x, y):
                     still_pending.add((x, y))
                     continue
                 moisture  = self._soil_moisture.get((x, y + 1), 0)
@@ -2951,8 +3028,15 @@ class World:
                     continue
 
                 species_cls = rng.choice(candidates)
-                alt_px = rng.randint(*species_cls.ALTITUDE_BLOCKS) * BLOCK_SIZE
+                is_ground = getattr(species_cls, 'IS_GROUND', False)
                 sy = self.surface_height(x)
+                # Over water, treat the sea surface as ground; skip ground birds
+                if sy >= SURFACE_Y:
+                    if is_ground:
+                        x += rng.randint(spacing, spacing * 2)
+                        continue
+                    sy = SURFACE_Y
+                alt_px = rng.randint(*species_cls.ALTITUDE_BLOCKS) * BLOCK_SIZE
                 spawn_x = float(x * BLOCK_SIZE)
                 spawn_y = float(sy * BLOCK_SIZE - alt_px)
 
@@ -2961,7 +3045,7 @@ class World:
                     leader = species_cls(spawn_x, spawn_y, self)
                     leader._pick_flight_target(rng)
                     self.birds.append(leader)
-                    if getattr(species_cls, 'IS_GROUND', False):
+                    if is_ground:
                         self.nests.append(Nest(x + rng.randint(-5, 5), sy, species_cls))
                     for _ in range(n - 1):
                         if len(self.birds) >= max_birds:
@@ -2981,7 +3065,7 @@ class World:
                     bird = species_cls(spawn_x, spawn_y, self)
                     bird._pick_flight_target(rng)
                     self.birds.append(bird)
-                    if getattr(species_cls, 'IS_GROUND', False):
+                    if is_ground:
                         self.nests.append(Nest(x + rng.randint(-5, 5), sy, species_cls))
 
                 x += rng.randint(spacing, spacing * 2)
@@ -3142,8 +3226,15 @@ class World:
                 x += rng.randint(spacing, spacing * 2)
                 continue
             species_cls = rng.choice(candidates)
-            alt_px = rng.randint(*species_cls.ALTITUDE_BLOCKS) * BLOCK_SIZE
+            is_ground = getattr(species_cls, 'IS_GROUND', False)
             sy = self.surface_height(x)
+            # Over water, treat the sea surface as ground; skip ground birds
+            if sy >= SURFACE_Y:
+                if is_ground:
+                    x += rng.randint(spacing, spacing * 2)
+                    continue
+                sy = SURFACE_Y
+            alt_px = rng.randint(*species_cls.ALTITUDE_BLOCKS) * BLOCK_SIZE
             spawn_x = float(x * BLOCK_SIZE)
             spawn_y = float(sy * BLOCK_SIZE - alt_px)
             if species_cls.IS_FLOCK:
@@ -3151,7 +3242,7 @@ class World:
                 leader = species_cls(spawn_x, spawn_y, self)
                 leader._pick_flight_target(rng)
                 self.birds.append(leader)
-                if getattr(species_cls, 'IS_GROUND', False):
+                if is_ground:
                     self.nests.append(Nest(x + rng.randint(-5, 5), sy, species_cls))
                 for _ in range(n - 1):
                     follower = species_cls(
@@ -3166,7 +3257,7 @@ class World:
                 bird = species_cls(spawn_x, spawn_y, self)
                 bird._pick_flight_target(rng)
                 self.birds.append(bird)
-                if getattr(species_cls, 'IS_GROUND', False):
+                if is_ground:
                     self.nests.append(Nest(x + rng.randint(-5, 5), sy, species_cls))
             x += rng.randint(spacing, spacing * 2)
 
@@ -3185,6 +3276,9 @@ class World:
                 x += rng.randint(spacing, spacing * 2)
                 continue
             sy = self.surface_height(x)
+            if sy >= SURFACE_Y:  # submerged — no insects underwater
+                x += rng.randint(spacing, spacing * 2)
+                continue
             near_feature = (
                 self.get_block(x, sy - 1) == WILDFLOWER_PATCH
                 or self.get_block(x, sy) == WATER
