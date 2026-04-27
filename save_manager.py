@@ -40,7 +40,7 @@ class SaveManager:
                             "tea_leaves", "textiles", "cheese_wheels", "jewelry", "sculptures", "custom_tapestries", "pottery_pieces", "salt_crystals",
                             "research", "automations",
                             "towns", "regions", "outposts", "player_cities",
-                            "farm_bots", "backhoes", "elevator_cars", "minecarts", "entities", "dropped_items", "chests"):
+                            "farm_bots", "backhoes", "elevator_cars", "minecarts", "entities", "dropped_items", "chests", "banners"):
                     # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
                 con.commit()
@@ -105,6 +105,7 @@ class SaveManager:
             self._save_entities(con, world)
             self._save_dropped_items(con, world)
             self._save_chests(con, world)
+            self._save_banners(con, world)
             self._merge_global_collection(con, player)
             newly_unlocked = self._check_and_save_achievements(con)
             con.commit()
@@ -129,6 +130,7 @@ class SaveManager:
             research = self._load_research(con)
             dropped_items = self._load_dropped_items(con)
             chest_data = self._load_chests(con)
+            banner_data = self._load_banners(con)
         return {
             "seed": seed,
             "water_level":     world_meta["water_level"],
@@ -154,6 +156,7 @@ class SaveManager:
             "research": research,
             "dropped_items": dropped_items,
             "chest_data": chest_data,
+            "banner_data": banner_data,
         }
 
     def load_chunk(self, chunk_x):
@@ -443,6 +446,9 @@ class SaveManager:
         CREATE TABLE IF NOT EXISTS chests (
             x INTEGER, y INTEGER, contents TEXT
         );
+        CREATE TABLE IF NOT EXISTS banners (
+            x INTEGER, y INTEGER, coat_of_arms_json TEXT
+        );
         CREATE TABLE IF NOT EXISTS coffee_beans (
             uid                TEXT PRIMARY KEY,
             origin_biome       TEXT,
@@ -544,7 +550,8 @@ class SaveManager:
             blend_components  TEXT,
             wither_method     TEXT DEFAULT '',
             herbal_additions  TEXT DEFAULT '[]',
-            age_duration      TEXT DEFAULT ''
+            age_duration      TEXT DEFAULT '',
+            roasting_level    TEXT DEFAULT ''
         );
         CREATE TABLE IF NOT EXISTS textiles (
             uid            TEXT PRIMARY KEY,
@@ -883,7 +890,7 @@ class SaveManager:
                 con.execute(f"ALTER TABLE spirits ADD COLUMN {col} TEXT DEFAULT ''")
             except Exception:
                 pass
-        for col, default in [("wither_method", "''"), ("herbal_additions", "'[]'"), ("age_duration", "''")]:
+        for col, default in [("wither_method", "''"), ("herbal_additions", "'[]'"), ("age_duration", "''"), ("roasting_level", "''")]:
             try:
                 con.execute(f"ALTER TABLE tea_leaves ADD COLUMN {col} TEXT DEFAULT {default}")
             except Exception:
@@ -1252,6 +1259,12 @@ class SaveManager:
                 json.dumps(getattr(player, "gladiator_cards", [])),
             )
         )
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN fish_bests TEXT DEFAULT '{}'")
+        except Exception:
+            pass
+        con.execute("UPDATE player SET fish_bests=?",
+                    (json.dumps(getattr(player, "fish_bests", {})),))
 
     def _save_npc_relationships(self, con, player):
         con.execute("DELETE FROM npc_relationships")
@@ -1426,7 +1439,7 @@ class SaveManager:
         con.execute("DELETE FROM tea_leaves")
         for x in player.tea_leaves:
             con.execute(
-                "INSERT OR REPLACE INTO tea_leaves VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT OR REPLACE INTO tea_leaves VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     x.uid, x.origin_biome, x.variety, x.state, x.tea_type,
                     x.oxidation, x.astringency, x.floral, x.vegetal,
@@ -1436,6 +1449,7 @@ class SaveManager:
                     getattr(x, "wither_method", ""),
                     json.dumps(getattr(x, "herbal_additions", [])),
                     getattr(x, "age_duration", ""),
+                    getattr(x, "roasting_level", ""),
                 )
             )
 
@@ -1908,6 +1922,25 @@ class SaveManager:
                 con.execute("INSERT INTO chests (x, y, contents) VALUES (?,?,?)",
                             (bx, by, json.dumps(non_empty)))
 
+    def _save_banners(self, con, world):
+        con.execute("DELETE FROM banners")
+        for (bx, by), coa in world.banner_data.items():
+            con.execute("INSERT INTO banners (x, y, coat_of_arms_json) VALUES (?,?,?)",
+                        (bx, by, json.dumps(coa)))
+
+    def _load_banners(self, con) -> dict:
+        try:
+            rows = con.execute("SELECT x, y, coat_of_arms_json FROM banners").fetchall()
+        except Exception:
+            return {}
+        result = {}
+        for r in rows:
+            try:
+                result[(r[0], r[1])] = json.loads(r[2]) if r[2] else {}
+            except Exception:
+                pass
+        return result
+
     def _save_dropped_items(self, con, world):
         con.execute("DELETE FROM dropped_items")
         for item in world.dropped_items:
@@ -2120,7 +2153,8 @@ class SaveManager:
                    COALESCE(gold_won_racing, 0),
                    COALESCE(racing_prestige, '{}'),
                    COALESCE(horse_pbs, '{}'),
-                   COALESCE(gladiator_cards, '[]')
+                   COALESCE(gladiator_cards, '[]'),
+                   COALESCE(fish_bests, '{}')
             FROM player LIMIT 1
         """).fetchone()
 
@@ -2146,7 +2180,7 @@ class SaveManager:
          incident_quests_active_raw, rivalry_dormant_until_raw,
          races_entered_raw, races_won_raw, gold_won_racing_raw,
          racing_prestige_raw, horse_pbs_raw,
-         gladiator_cards_raw) = row
+         gladiator_cards_raw, fish_bests_raw) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -2312,7 +2346,8 @@ class SaveManager:
                        flavor_notes, seed, blend_components,
                        COALESCE(wither_method, ''),
                        COALESCE(herbal_additions, '[]'),
-                       COALESCE(age_duration, '')
+                       COALESCE(age_duration, ''),
+                       COALESCE(roasting_level, '')
                 FROM tea_leaves
             """).fetchall()
         except Exception:
@@ -2330,6 +2365,7 @@ class SaveManager:
                 "wither_method": t[16] or "",
                 "herbal_additions": json.loads(t[17]) if t[17] else [],
                 "age_duration": t[18] or "",
+                "roasting_level": t[19] or "",
             })
 
         try:
@@ -2561,6 +2597,7 @@ class SaveManager:
             "insects_observed": insect_obs or {},
             "discovered_insect_types": list((insect_obs or {}).keys()),
             "fish": fish_data,
+            "fish_bests": json.loads(fish_bests_raw or "{}"),
             "discovered_fish_species": list({f["species"] for f in fish_data}),
             "coffee_beans": coffee_data,
             "discovered_coffee_origins": list({

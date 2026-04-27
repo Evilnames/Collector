@@ -40,7 +40,7 @@ def _noop(player, world):
 
 
 class ResearchTree:
-    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship", "Tea Cultivation", "Herbalism", "Textile Arts", "Dairy Arts", "Hunting", "Jewelry Arts", "Garden Arts", "Masonry Arts", "Ceramics", "Cynology", "Smithing Arts"]
+    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship", "Tea Cultivation", "Herbalism", "Textile Arts", "Dairy Arts", "Hunting", "Jewelry Arts", "Garden Arts", "Masonry Arts", "Ceramics", "Cynology", "Smithing Arts", "Brewing", "Salting Arts"]
 
     def __init__(self):
         self.nodes = {}    # id -> ResearchNode
@@ -651,6 +651,20 @@ class ResearchTree:
             "All forged weapon parts receive a +0.10 quality bonus automatically",
             {"steel_ingot": 2, "iron_bar": 4}, ["steel_forging"],
             _noop, money_cost=100), 19, 3)
+
+        # --- Brewing (column 20) ---
+        self._add(ResearchNode(
+            "brewing_basics", "Brewing Basics",
+            "Learn to brew beer — unlocks Brew Kettle, Fermentation Vessel, and Taproom",
+            {"wheat": 6, "coal": 3}, [],
+            _noop, money_cost=20), 20, 0)
+
+        # --- Salting Arts (column 21) ---
+        self._add(ResearchNode(
+            "salt_basics", "Salting Arts",
+            "Learn to harvest salt — unlocks Evaporation Pan and Salt Grinder",
+            {"stone_chip": 5, "coal": 2}, [],
+            _noop, money_cost=15), 21, 0)
 
     def prereqs_met(self, node_id):
         return all(self.nodes[p].unlocked for p in self.nodes[node_id].prerequisites)

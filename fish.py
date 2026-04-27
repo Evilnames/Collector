@@ -2706,18 +2706,88 @@ _RARITY_WEIGHT = {
     "common": 40, "uncommon": 25, "rare": 10, "epic": 4, "legendary": 1
 }
 
+# time_pref: "night" | "dawn_dusk" | "day" — fish that bite more at specific times of day.
+# dawn_dusk = first or last 60s of the 480s day cycle.
+_FISH_TIME_PREF = {
+    "eel":           "night",
+    "bowfin":        "night",
+    "bullhead":      "night",
+    "burbot":        "night",
+    "wels_catfish":  "night",
+    "tench":         "night",
+    "snakehead":     "night",
+    "ayu":           "dawn_dusk",
+    "trout":         "dawn_dusk",
+    "grayling":      "dawn_dusk",
+    "arctic_grayling": "dawn_dusk",
+    "brown_trout":   "dawn_dusk",
+    "rainbow_trout": "dawn_dusk",
+    "walleye":       "dawn_dusk",
+    "golden_koi":    "dawn_dusk",
+    "arapaima":      "day",
+    "tigerfish":     "day",
+    "piranha":       "day",
+}
+
+# season_pref: "winter" | "summer" — bonus chance in that season (day_count % 40).
+# winter = day_count % 40 >= 30; summer = day_count % 40 in [10, 20).
+_FISH_SEASON_PREF = {
+    "burbot":            "winter",
+    "arctic_grayling":   "winter",
+    "arctic_char":       "winter",
+    "lake_trout":        "winter",
+    "whitefish":         "winter",
+    "arapaima":          "summer",
+    "peacock_bass":      "summer",
+    "tigerfish":         "summer",
+    "piranha":           "summer",
+    "discus":            "summer",
+}
+
 
 class FishGenerator:
     def __init__(self, world_seed):
         self._world_seed = world_seed
         self._counter = 0
 
-    def generate(self, bx, by, biome, bait=None):
+    def generate(self, bx, by, biome, bait=None, time_of_day=0.0, day_count=0, is_hotspot=False):
         self._counter += 1
         seed = (self._world_seed * 31337 + bx * 7919 + by * 4481 + self._counter) & 0x7FFFFFFF
         rng = random.Random(seed)
 
         bait_preferred = BAIT_AFFINITIES.get(bait, set()) if bait else set()
+
+        # Determine current time category and season for preference bonuses.
+        _DAY_DUR = 480.0
+        _DAWN_DUSK_WINDOW = 60.0
+        is_night = time_of_day >= _DAY_DUR
+        is_dawn_dusk = not is_night and (time_of_day < _DAWN_DUSK_WINDOW or time_of_day > _DAY_DUR - _DAWN_DUSK_WINDOW)
+        is_day = not is_night and not is_dawn_dusk
+        season_phase = day_count % 40
+        is_summer = 10 <= season_phase < 20
+        is_winter = season_phase >= 30
+
+        def _time_multiplier(species):
+            pref = _FISH_TIME_PREF.get(species)
+            if pref is None:
+                return 1
+            if pref == "night" and is_night:
+                return 3
+            if pref == "dawn_dusk" and is_dawn_dusk:
+                return 3
+            if pref == "day" and is_day:
+                return 3
+            return 1  # no time penalty — available all day, just less common
+
+        def _season_multiplier(species):
+            pref = _FISH_SEASON_PREF.get(species)
+            if pref is None:
+                return 1
+            if pref == "summer" and is_summer:
+                return 3
+            if pref == "winter" and is_winter:
+                return 3
+            return 1
 
         # Build weighted species list filtered by biome and bait preference.
         # Without bait only universal fish (not in _ALL_BAIT_FISH) are eligible.
@@ -2743,6 +2813,7 @@ class FishGenerator:
             w = _RARITY_WEIGHT.get(base_rarity, 10)
             if is_universal and bait:
                 w = max(1, w // 3)
+            w = w * _time_multiplier(species) * _season_multiplier(species)
             eligible.extend([species] * w)
 
         # Fallback: if the biome has no specific fish, use universal-only fish
@@ -2755,7 +2826,13 @@ class FishGenerator:
 
         species = rng.choice(eligible)
         fdata = FISH_TYPES[species]
-        rarity = rng.choice(fdata["rarity_pool"])
+
+        # Hotspot: bias rarity toward rare+ by extending the rarity pool with extras.
+        rarity_pool = list(fdata["rarity_pool"])
+        if is_hotspot:
+            rarity_pool += [r for r in rarity_pool if r in ("rare", "epic", "legendary")]
+            rarity_pool += [r for r in rarity_pool if r in ("epic", "legendary")]
+        rarity = rng.choice(rarity_pool)
 
         wmin, wmax = fdata["weight_range"]
         weight_kg = round(rng.uniform(wmin, wmax), 2)

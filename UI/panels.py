@@ -1286,88 +1286,199 @@ class PanelsMixin:
     }
 
     def _draw_garden(self, player):
+        from wildflowers import render_wildflower
+
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 210))
+        overlay.fill((0, 0, 0, 215))
         self.screen.blit(overlay, (0, 0))
 
-        PW, PH = 1140, 580
+        PW, PH = 1160, 600
         px = (SCREEN_W - PW) // 2
         py = (SCREEN_H - PH) // 2
-        pygame.draw.rect(self.screen, (14, 26, 14), (px, py, PW, PH))
-        pygame.draw.rect(self.screen, ( 60, 140, 60), (px, py, PW, PH), 2)
+        pygame.draw.rect(self.screen, (10, 20, 10), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (55, 130, 55), (px, py, PW, PH), 2)
 
-        hint = self.small.render(
-            "Left-click: move flower  |  E or ESC: close",
-            True, (90, 150, 90))
-        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, py + 8))
+        title_s = self.font.render("FLOWER ARRANGEMENT", True, (170, 235, 120))
+        self.screen.blit(title_s, (SCREEN_W // 2 - title_s.get_width() // 2, py + 7))
+        hint_s = self.small.render("Drag flowers into garden slots  |  E or ESC: close", True, (80, 140, 80))
+        self.screen.blit(hint_s, (SCREEN_W // 2 - hint_s.get_width() // 2, py + 27))
 
-        has_flowers = bool(self.active_garden_flowers)
-        status_color = (80, 200, 80) if has_flowers else (160, 80, 80)
-        status_text  = "Attracting insects" if has_flowers else "No wildflowers — insects won't visit"
-        status_s = self.small.render(status_text, True, status_color)
-        self.screen.blit(status_s, (SCREEN_W // 2 - status_s.get_width() // 2, py + PH - 24))
+        flowers      = self.active_garden_flowers   # dense list, no Nones
+        drag_wf      = self._garden_drag_flower
+        CAPACITY     = 12                           # 4 × 3 grid
 
-        half = (PW - 30) // 2
-        lx = px + 10
-        rx = px + 20 + half
-        pygame.draw.line(self.screen, (40, 90, 40),
-                         (px + half + 15, py + 30), (px + half + 15, py + PH - 30), 1)
+        # ── Left: arrangement canvas ──────────────────────────────────────
+        CANVAS_W = 730
+        COLS, ROWS   = 4, 3
+        SLOT_W, SLOT_H, SLOT_GAP = 148, 126, 10
+        grid_w = COLS * SLOT_W + (COLS - 1) * SLOT_GAP  # 622
+        grid_h = ROWS * SLOT_H + (ROWS - 1) * SLOT_GAP  # 398
+        grid_x = px + 10 + (CANVAS_W - grid_w) // 2
+        grid_y = py + 48 + (PH - 48 - 100 - grid_h) // 2
 
-        CW, CH, GAP = 520, 52, 6
-        VISIBLE_ROWS = 7
-        AREA_H = VISIBLE_ROWS * (CH + GAP)
+        self._garden_slot_rects.clear()
 
-        def _draw_section(title, flowers, start_x, scroll, rects_out):
-            title_s = self.font.render(title, True, (140, 220, 100))
-            self.screen.blit(title_s, (start_x + half // 2 - title_s.get_width() // 2, py + 30))
+        for slot_idx in range(CAPACITY):
+            col = slot_idx % COLS
+            row = slot_idx // COLS
+            sx = grid_x + col * (SLOT_W + SLOT_GAP)
+            sy = grid_y + row * (SLOT_H + SLOT_GAP)
+            slot_rect = pygame.Rect(sx, sy, SLOT_W, SLOT_H)
+            self._garden_slot_rects[slot_idx] = slot_rect
 
-            clip_rect = pygame.Rect(start_x, py + 55, half, AREA_H + 5)
-            self.screen.set_clip(clip_rect)
-            rects_out.clear()
+            # Soil background
+            pygame.draw.rect(self.screen, (22, 14, 8), slot_rect)
+            pygame.draw.rect(self.screen, (48, 32, 16), slot_rect, 1)
+            for di in range(4):
+                pygame.draw.circle(self.screen, (36, 24, 10),
+                                   (sx + 10 + di * 18, sy + SLOT_H - 10), 2)
 
-            for idx, wf in enumerate(flowers):
-                row = idx - scroll
-                if row < 0 or row >= VISIBLE_ROWS:
-                    continue
-                y = py + 58 + row * (CH + GAP)
-                rect = pygame.Rect(start_x + 10, y, CW, CH)
-                rects_out[wf.uid] = rect
-                pygame.draw.rect(self.screen, (24, 40, 24), rect)
-                pygame.draw.rect(self.screen, (50, 110, 50), rect, 1)
+            # Which flower occupies this slot?
+            wf = flowers[slot_idx] if slot_idx < len(flowers) else None
+            if self._garden_drag_source == 'slot' and drag_wf and slot_idx < len(flowers) and flowers[slot_idx] is drag_wf:
+                wf = None  # visually empty while being dragged
 
-                # Color swatch
-                swatch = pygame.Rect(start_x + 16, y + 8, 36, 36)
-                pygame.draw.rect(self.screen, wf.primary_color, swatch)
-                pygame.draw.rect(self.screen, wf.secondary_color, swatch, 3)
+            if wf is not None:
+                surf = render_wildflower(wf, 88)
+                blit_x = sx + (SLOT_W - surf.get_width()) // 2
+                blit_y = sy + (SLOT_H - surf.get_height()) // 2 - 8
+                self.screen.blit(surf, (blit_x, blit_y))
+                rar_col = self._RARITY_COLOR.get(wf.rarity, (100, 100, 100))
+                pygame.draw.rect(self.screen, rar_col, slot_rect, 2)
+                name_s = self.small.render(wf.flower_type.replace("_", " ").title(), True, (200, 240, 175))
+                self.screen.blit(name_s, (sx + SLOT_W // 2 - name_s.get_width() // 2, sy + SLOT_H - 18))
+                if wf.specials:
+                    sp_s = self.small.render(wf.specials[0], True, (180, 220, 120))
+                    self.screen.blit(sp_s, (sx + SLOT_W // 2 - sp_s.get_width() // 2, sy + 4))
+            elif drag_wf is not None:
+                # Empty slot: highlight as valid drop target
+                hover = pygame.mouse.get_pos()
+                if slot_rect.collidepoint(hover):
+                    pygame.draw.rect(self.screen, (70, 120, 70), slot_rect, 2)
+                else:
+                    pygame.draw.rect(self.screen, (40, 70, 40), slot_rect, 1)
+            else:
+                num_s = self.small.render(str(slot_idx + 1), True, (36, 26, 14))
+                self.screen.blit(num_s, (sx + 4, sy + 4))
 
-                # Name and rarity
-                name = wf.flower_type.replace("_", " ").title()
-                rarity_col = self._RARITY_COLOR.get(wf.rarity, (160, 160, 160))
-                self.screen.blit(self.small.render(name, True, (220, 255, 200)),
-                                 (start_x + 60, y + 8))
-                self.screen.blit(self.small.render(wf.rarity.capitalize(), True, rarity_col),
-                                 (start_x + 60, y + 28))
-                biome_s = self.small.render(f"  {wf.biodome_found}", True, (100, 160, 100))
-                self.screen.blit(biome_s, (start_x + 200, y + 28))
+        # ── Stats bar ─────────────────────────────────────────────────────
+        stats_y = grid_y + grid_h + 14
+        placed  = list(flowers)
 
-            self.screen.set_clip(None)
-            return max(0, len(flowers) - VISIBLE_ROWS)
+        if placed:
+            avg_frag = sum(f.fragrance for f in placed) / len(placed)
+            avg_vibr = sum(f.vibrancy  for f in placed) / len(placed)
+            unique_sp  = len(set(f.flower_type   for f in placed))
+            variety    = unique_sp / max(1, len(placed))
+            biodomes   = len(set(f.biodome_found for f in placed))
+            all_specials = sorted({s for f in placed for s in f.specials})
 
-        self._max_garden_scroll = _draw_section(
-            "IN GARDEN", self.active_garden_flowers, lx, self._garden_scroll, self._garden_rects)
-        self._garden_scroll = min(self._garden_scroll, self._max_garden_scroll)
+            def _bar(label, val, col, bx):
+                ls = self.small.render(label, True, (130, 175, 110))
+                self.screen.blit(ls, (bx, stats_y))
+                bw = 150
+                bx2 = bx + ls.get_width() + 5
+                pygame.draw.rect(self.screen, (22, 32, 18), (bx2, stats_y + 2, bw, 13))
+                fill = int(bw * min(1.0, val))
+                if fill > 0:
+                    pygame.draw.rect(self.screen, col, (bx2, stats_y + 2, fill, 13))
+                pygame.draw.rect(self.screen, (50, 80, 45), (bx2, stats_y + 2, bw, 13), 1)
+                pct = self.small.render(f"{int(val * 100)}%", True, (155, 195, 130))
+                self.screen.blit(pct, (bx2 + bw + 4, stats_y))
 
-        self._max_player_garden_scroll = _draw_section(
-            "YOUR WILDFLOWERS", player.wildflowers, rx, self._player_garden_scroll,
-            self._player_garden_rects)
-        self._player_garden_scroll = min(self._player_garden_scroll, self._max_player_garden_scroll)
+            sx0 = px + 12
+            _bar("Fragrance", avg_frag, (170, 100, 210), sx0)
+            _bar("Vibrancy",  avg_vibr, (210, 170,  40), sx0 + 246)
+            _bar("Variety",   variety,  ( 80, 185, 120), sx0 + 492)
 
-        if not self.active_garden_flowers:
-            empty_s = self.small.render("Garden is empty", True, (50, 90, 50))
-            self.screen.blit(empty_s, (lx + half // 2 - empty_s.get_width() // 2, py + 280))
-        if not player.wildflowers:
-            empty_s = self.small.render("No wildflowers in collection", True, (50, 90, 50))
-            self.screen.blit(empty_s, (rx + half // 2 - empty_s.get_width() // 2, py + 280))
+            info_y = stats_y + 20
+            bio_s = self.small.render(f"{biodomes} biodome{'s' if biodomes != 1 else ''} · {unique_sp} species · {len(placed)}/{CAPACITY} slots", True, (120, 185, 140))
+            self.screen.blit(bio_s, (sx0, info_y))
+            if all_specials:
+                sp_s = self.small.render("Traits: " + ", ".join(all_specials), True, (175, 210, 120))
+                self.screen.blit(sp_s, (sx0 + 370, info_y))
+            ins_col  = (80, 200, 80)
+            ins_text = "Attracting insects!"
+            ins_s = self.small.render(ins_text, True, ins_col)
+            self.screen.blit(ins_s, (sx0 + CANVAS_W - ins_s.get_width() - 16, info_y))
+        else:
+            es = self.small.render("Arrange wildflowers to attract insects and boost your garden", True, (60, 100, 60))
+            self.screen.blit(es, (px + CANVAS_W // 2 - es.get_width() // 2 + 10, stats_y + 12))
+
+        # ── Divider ───────────────────────────────────────────────────────
+        div_x = px + CANVAS_W + 18
+        pygame.draw.line(self.screen, (40, 90, 40), (div_x, py + 44), (div_x, py + PH - 16), 1)
+
+        # ── Right: collection panel ───────────────────────────────────────
+        rx  = div_x + 8
+        RW  = PW - CANVAS_W - 38
+        title2 = self.font.render("YOUR WILDFLOWERS", True, (140, 215, 100))
+        self.screen.blit(title2, (rx + RW // 2 - title2.get_width() // 2, py + 30))
+
+        placed_uids = {f.uid for f in flowers}
+        if drag_wf and self._garden_drag_source == 'collection':
+            placed_uids.add(drag_wf.uid)
+        available = [f for f in player.wildflowers if f.uid not in placed_uids]
+
+        CH, GAP   = 58, 6
+        VISIBLE   = 7
+        AREA_H    = VISIBLE * (CH + GAP)
+        self._max_garden_col_scroll = max(0, len(available) - VISIBLE)
+        self._garden_col_scroll = min(self._garden_col_scroll, self._max_garden_col_scroll)
+
+        clip = pygame.Rect(rx, py + 52, RW, AREA_H + 4)
+        self.screen.set_clip(clip)
+        self._garden_col_rects.clear()
+
+        for i, wf in enumerate(available):
+            row = i - self._garden_col_scroll
+            if row < 0 or row >= VISIBLE:
+                continue
+            ry = py + 55 + row * (CH + GAP)
+            rect = pygame.Rect(rx + 4, ry, RW - 8, CH)
+            self._garden_col_rects[wf.uid] = rect
+
+            pygame.draw.rect(self.screen, (18, 32, 18), rect)
+            rar_col = self._RARITY_COLOR.get(wf.rarity, (100, 100, 100))
+            pygame.draw.rect(self.screen, rar_col, rect, 1)
+
+            surf = render_wildflower(wf, 44)
+            self.screen.blit(surf, (rx + 8, ry + (CH - 44) // 2))
+
+            name = wf.flower_type.replace("_", " ").title()
+            self.screen.blit(self.small.render(name, True, (210, 245, 188)), (rx + 58, ry + 6))
+            self.screen.blit(self.small.render(wf.rarity.capitalize(), True, rar_col), (rx + 58, ry + 24))
+            bio_s = self.small.render(wf.biodome_found, True, (95, 155, 105))
+            self.screen.blit(bio_s, (rx + 58, ry + 40))
+            if wf.specials:
+                sp_label = self.small.render(wf.specials[0], True, (160, 200, 115))
+                self.screen.blit(sp_label, (rx + RW - sp_label.get_width() - 12, ry + 6))
+
+        self.screen.set_clip(None)
+
+        if not available and not placed:
+            es = self.small.render("No wildflowers in collection", True, (50, 90, 55))
+            self.screen.blit(es, (rx + RW // 2 - es.get_width() // 2, py + 280))
+        elif len(flowers) >= CAPACITY:
+            full_s = self.small.render("Garden full (12/12)", True, (140, 100, 40))
+            self.screen.blit(full_s, (rx + RW // 2 - full_s.get_width() // 2, py + 510))
+
+        # Collection drop-zone highlight when dragging from garden
+        if drag_wf and self._garden_drag_source == 'slot':
+            col_zone = pygame.Rect(rx, py + 44, RW, PH - 60)
+            hover = pygame.mouse.get_pos()
+            if col_zone.collidepoint(hover):
+                pygame.draw.rect(self.screen, (100, 60, 60), col_zone, 2)
+            return_s = self.small.render("Drop here to return to collection", True, (180, 100, 100))
+            self.screen.blit(return_s, (rx + RW // 2 - return_s.get_width() // 2, py + 530))
+
+        # ── Dragged flower follows cursor ─────────────────────────────────
+        if drag_wf is not None:
+            surf = render_wildflower(drag_wf, 72)
+            surf = surf.copy()
+            surf.set_alpha(210)
+            mx, my = self._garden_drag_pos
+            self.screen.blit(surf, (mx - surf.get_width() // 2, my - surf.get_height() // 2))
 
     def _draw_wildflower_display(self, player):
         world = player.world

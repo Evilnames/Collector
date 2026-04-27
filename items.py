@@ -47,7 +47,7 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     WILDFLOWER_DISPLAY_BLOCK,
                     STABLE_BLOCK, HORSE_TROUGH_BLOCK,
                     KENNEL_BLOCK, DOG_BOWL_BLOCK, CHICKEN_COOP_BLOCK,
-                    TEA_CROP_YOUNG, WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK,
+                    TEA_CROP_YOUNG, WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK, ROASTING_KILN_BLOCK,
                     DRYING_RACK_BLOCK,
                     CHAMOMILE_CROP_YOUNG, LAVENDER_CROP_YOUNG, MINT_CROP_YOUNG, ROSEMARY_CROP_YOUNG,
                     THYME_CROP_YOUNG, SAGE_CROP_YOUNG, BASIL_CROP_YOUNG, OREGANO_CROP_YOUNG,
@@ -60,7 +60,7 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     POMEGRANATE_TREE_YOUNG, OLIVE_TREE_YOUNG, SAFFRON_CROP_YOUNG,
                     SAGUARO_YOUNG, BARREL_CACTUS_YOUNG, OCOTILLO_YOUNG,
                     PRICKLY_PEAR_YOUNG, CHOLLA_YOUNG, PALO_VERDE_YOUNG,
-                    BAIT_STATION_BLOCK,
+                    BAIT_STATION_BLOCK, FISH_TROPHY_BLOCK,
                     WHITE_PLASTER_WALL, CARVED_PLASTER, MUQARNAS_BLOCK,
                     MASHRABIYA, ZELLIGE_TILE, ARABESQUE_PANEL,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT,
@@ -343,7 +343,7 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     ICE_SHARD,
                     FROZEN_BOG,
                     RACING_RAIL, STARTING_GATE, WINNERS_POST,
-                    CITY_BLOCK, GROW_LAMP)
+                    CITY_BLOCK, GROW_LAMP, MINING_POST_BLOCK, BANNER_BLOCK)
 
 ITEMS = {
     # --- Natural resources ---
@@ -1035,9 +1035,12 @@ ITEMS = {
     "oil_barrel":   {"name": "Oil Barrel",   "color": ( 30, 25,  15),  "place_block": None},
     "backhoe_item": {"name": "Backhoe",      "color": (210, 160, 30),  "place_block": None, "spawn_backhoe": True},
     # --- Fishing ---
-    "fishing_pole":      {"name": "Fishing Pole", "color": (139, 90,  43),  "place_block": None, "fishing_tool": True, "max_uses": 60},
-    "fish":              {"name": "Fish",         "color": (100, 160, 200), "place_block": None, "edible": True, "hunger_restore": 30},
-    "bait_station_item": {"name": "Bait Station", "color": (100, 70,  40),  "place_block": BAIT_STATION_BLOCK},
+    "fishing_pole":      {"name": "Fishing Pole",   "color": (139, 90,  43),  "place_block": None, "fishing_tool": True, "max_uses":  60, "rod_tier": 1, "reel_bonus": 0.00},
+    "cane_rod":          {"name": "Cane Rod",        "color": (160, 130,  60), "place_block": None, "fishing_tool": True, "max_uses": 100, "rod_tier": 2, "reel_bonus": 0.30},
+    "composite_rod":     {"name": "Composite Rod",   "color": ( 60, 110, 155), "place_block": None, "fishing_tool": True, "max_uses": 150, "rod_tier": 3, "reel_bonus": 0.60},
+    "fish":              {"name": "Fish",             "color": (100, 160, 200), "place_block": None, "edible": True, "hunger_restore": 30},
+    "bait_station_item": {"name": "Bait Station",    "color": (100, 70,  40),  "place_block": BAIT_STATION_BLOCK},
+    "fish_trophy_item":  {"name": "Fish Trophy",     "color": (160, 110,  60), "place_block": FISH_TROPHY_BLOCK},
     # --- Bait (consumable; place in hotbar slot right of fishing rod) ---
     "worm_bait":   {"name": "Worm Bait",   "color": (110,  70, 30), "place_block": None, "bait": True},
     "insect_bait": {"name": "Insect Bait", "color": ( 80, 130, 50), "place_block": None, "bait": True},
@@ -1415,6 +1418,8 @@ ITEMS = {
     "dog_bowl_item":    {"name": "Dog Bowl",     "color": (180, 140,  90), "place_block": DOG_BOWL_BLOCK},
     "trade_block":      {"name": "Trade Post",    "color": (120,  85,  55), "place_block": TRADE_BLOCK},
     "city_block_item":  {"name": "City Block",    "color": (180, 155,  90), "place_block": CITY_BLOCK},
+    "mining_post_item": {"name": "Mining Post",  "color": (110,  85,  60), "place_block": MINING_POST_BLOCK},
+    "banner_item":      {"name": "Banner",       "color": (160,  80,  40), "place_block": BANNER_BLOCK},
     # --- Herbalism supply chain ---
     "cave_mushroom":         {"name": "Cave Mushroom",          "color": (140, 110,  70), "place_block": None, "edible": True, "hunger_restore": 4},
     "rare_mushroom":         {"name": "Rare Mushroom",          "color": (160,  60, 180), "place_block": None, "edible": True, "hunger_restore": 6},
@@ -1544,21 +1549,31 @@ ITEMS = {
     "withering_rack_item":       {"name": "Withering Rack",            "color": (165, 130,  70), "place_block": WITHERING_RACK_BLOCK},
     "oxidation_station_item":    {"name": "Oxidation Station",         "color": ( 95,  75,  50), "place_block": OXIDATION_STATION_BLOCK},
     "tea_cellar_item":           {"name": "Tea Cellar",                "color": ( 55,  45,  35), "place_block": TEA_CELLAR_BLOCK},
+    "roasting_kiln_item":        {"name": "Roasting Kiln",             "color": (110,  65,  30), "place_block": ROASTING_KILN_BLOCK},
     # Brewed teas — base quality
+    "white_tea":                 {"name": "White Tea",                 "color": (215, 210, 190), "place_block": None, "edible": True, "hunger_restore":  6, "tea_buff": "radiance",    "tea_buff_duration":  80.0},
+    "yellow_tea":                {"name": "Yellow Tea",                "color": (210, 190,  90), "place_block": None, "edible": True, "hunger_restore":  7, "tea_buff": "clarity",     "tea_buff_duration":  90.0},
     "green_tea":                 {"name": "Green Tea",                 "color": ( 80, 160,  80), "place_block": None, "edible": True, "hunger_restore":  7, "tea_buff": "tranquility", "tea_buff_duration":  90.0},
     "oolong_tea":                {"name": "Oolong Tea",                "color": (180, 140,  60), "place_block": None, "edible": True, "hunger_restore":  8, "tea_buff": "harmony",     "tea_buff_duration": 100.0},
     "black_tea":                 {"name": "Black Tea",                 "color": ( 60,  35,  15), "place_block": None, "edible": True, "hunger_restore":  9, "tea_buff": "alertness",   "tea_buff_duration":  80.0},
     "puerh_tea":                 {"name": "Pu-erh Tea",               "color": ( 45,  30,  10), "place_block": None, "edible": True, "hunger_restore": 10, "tea_buff": "longevity",   "tea_buff_duration": 150.0},
-    # Brewed teas — fine quality (+25% duration, +2 hunger)
+    "hojicha":                   {"name": "Hojicha",                   "color": (130,  70,  30), "place_block": None, "edible": True, "hunger_restore":  9, "tea_buff": "warmth",      "tea_buff_duration": 110.0},
+    # Brewed teas — fine quality
+    "white_tea_fine":            {"name": "White Tea (Fine)",          "color": (228, 224, 208), "place_block": None, "edible": True, "hunger_restore":  8, "tea_buff": "radiance",    "tea_buff_duration": 100.0},
+    "yellow_tea_fine":           {"name": "Yellow Tea (Fine)",         "color": (225, 208, 108), "place_block": None, "edible": True, "hunger_restore":  9, "tea_buff": "clarity",     "tea_buff_duration": 112.0},
     "green_tea_fine":            {"name": "Green Tea (Fine)",          "color": ( 95, 175,  95), "place_block": None, "edible": True, "hunger_restore":  9, "tea_buff": "tranquility", "tea_buff_duration": 112.0},
     "oolong_tea_fine":           {"name": "Oolong Tea (Fine)",         "color": (195, 155,  75), "place_block": None, "edible": True, "hunger_restore": 10, "tea_buff": "harmony",     "tea_buff_duration": 125.0},
     "black_tea_fine":            {"name": "Black Tea (Fine)",          "color": ( 75,  45,  20), "place_block": None, "edible": True, "hunger_restore": 11, "tea_buff": "alertness",   "tea_buff_duration": 100.0},
     "puerh_tea_fine":            {"name": "Pu-erh Tea (Fine)",        "color": ( 60,  42,  18), "place_block": None, "edible": True, "hunger_restore": 12, "tea_buff": "longevity",   "tea_buff_duration": 188.0},
-    # Brewed teas — aged quality (+50% duration, +4 hunger)
+    "hojicha_fine":              {"name": "Hojicha (Fine)",            "color": (148,  85,  42), "place_block": None, "edible": True, "hunger_restore": 11, "tea_buff": "warmth",      "tea_buff_duration": 138.0},
+    # Brewed teas — aged quality
+    "white_tea_aged":            {"name": "White Tea (Aged)",          "color": (238, 235, 220), "place_block": None, "edible": True, "hunger_restore": 10, "tea_buff": "radiance",    "tea_buff_duration": 120.0},
+    "yellow_tea_aged":           {"name": "Yellow Tea (Aged)",         "color": (238, 222, 128), "place_block": None, "edible": True, "hunger_restore": 11, "tea_buff": "clarity",     "tea_buff_duration": 135.0},
     "green_tea_aged":            {"name": "Green Tea (Aged)",          "color": (112, 192, 112), "place_block": None, "edible": True, "hunger_restore": 11, "tea_buff": "tranquility", "tea_buff_duration": 135.0},
     "oolong_tea_aged":           {"name": "Oolong Tea (Aged)",         "color": (210, 170,  90), "place_block": None, "edible": True, "hunger_restore": 12, "tea_buff": "harmony",     "tea_buff_duration": 150.0},
     "black_tea_aged":            {"name": "Black Tea (Aged)",          "color": ( 90,  55,  25), "place_block": None, "edible": True, "hunger_restore": 13, "tea_buff": "alertness",   "tea_buff_duration": 120.0},
     "puerh_tea_aged":            {"name": "Pu-erh Tea (Aged)",        "color": ( 75,  52,  25), "place_block": None, "edible": True, "hunger_restore": 14, "tea_buff": "longevity",   "tea_buff_duration": 225.0},
+    "hojicha_aged":              {"name": "Hojicha (Aged)",            "color": (165, 100,  55), "place_block": None, "edible": True, "hunger_restore": 13, "tea_buff": "warmth",      "tea_buff_duration": 165.0},
     # --- Textile supply chain ---
     "flax_seed":             {"name": "Flax Seed",           "color": (155, 175, 210), "place_block": FLAX_CROP_YOUNG},
     "flax_fiber":            {"name": "Flax Fiber",          "color": (175, 190, 215), "place_block": None},

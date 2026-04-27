@@ -84,9 +84,9 @@ VESSEL_TYPES = {
 }
 
 CONDITION_DURATIONS = {
-    "quick":    {"label": "Quick (2 weeks)",    "quality_mult": 1.00, "complexity_delta": 0.03},
-    "standard": {"label": "Standard (4 weeks)", "quality_mult": 1.05, "complexity_delta": 0.07},
-    "extended": {"label": "Extended (8 weeks)", "quality_mult": 1.10, "complexity_delta": 0.14},
+    "quick":    {"label": "Quick (2 days)",    "days": 2, "quality_mult": 1.00, "complexity_delta": 0.03},
+    "standard": {"label": "Standard (4 days)", "days": 4, "quality_mult": 1.05, "complexity_delta": 0.07},
+    "extended": {"label": "Extended (8 days)", "days": 8, "quality_mult": 1.10, "complexity_delta": 0.14},
 }
 
 BEER_TYPE_DESCS = {

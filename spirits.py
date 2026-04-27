@@ -102,9 +102,9 @@ BARREL_TYPES = {
 }
 
 AGE_DURATIONS = {
-    "short":  {"label": "Short (6mo)",  "quality_mult": 1.00, "complexity_delta": 0.04},
-    "medium": {"label": "Medium (2yr)", "quality_mult": 1.06, "complexity_delta": 0.10},
-    "long":   {"label": "Long (5yr)",   "quality_mult": 1.12, "complexity_delta": 0.20},
+    "short":  {"label": "Short (1 day)",   "days": 1,  "quality_mult": 1.00, "complexity_delta": 0.04},
+    "medium": {"label": "Medium (8 days)", "days": 8,  "quality_mult": 1.06, "complexity_delta": 0.10},
+    "long":   {"label": "Long (16 days)",  "days": 16, "quality_mult": 1.12, "complexity_delta": 0.20},
 }
 
 BUFF_DESCS = {

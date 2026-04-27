@@ -6111,4 +6111,59 @@ def build_decor_surfs():
         pygame.draw.rect(s, gold_d, (cx_off, 2 - h, 1, h + 2))
     surfs[bid] = s
 
+    bid = MINING_POST_BLOCK
+    # Wooden post with iron mounting plate and a directional arrow
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    BS = BLOCK_SIZE
+    wood  = (120,  85,  50)
+    wood2 = (145, 105,  65)
+    iron  = (150, 145, 140)
+    iron2 = (180, 175, 170)
+    # Post shaft
+    pygame.draw.rect(s, wood,  (BS//2 - 3, 6, 6, BS - 8))
+    pygame.draw.rect(s, wood2, (BS//2 - 2, 7, 3, BS - 10))
+    # Iron mounting bracket (horizontal bar near top)
+    pygame.draw.rect(s, iron,  (4, 10, BS - 8, 5))
+    pygame.draw.rect(s, iron2, (5, 11, BS - 10, 3))
+    # Iron base plate
+    pygame.draw.rect(s, iron,  (4, BS - 8, BS - 8, 5))
+    pygame.draw.rect(s, iron2, (5, BS - 7, BS - 10, 3))
+    # Pickaxe symbol: diagonal handle + head
+    hx, hy = BS//2 - 1, 15
+    pygame.draw.line(s, iron, (hx, hy), (hx + 6, hy + 6), 2)
+    pygame.draw.rect(s, iron2, (hx - 1, hy - 2, 4, 3))
+    surfs[bid] = s
+
+    bid = BANNER_BLOCK
+    # Vertical wooden pole with a rectangular banner cloth hanging from a crossbar
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    BS = BLOCK_SIZE
+    pole  = (110,  80,  45)
+    pole2 = (140, 105,  60)
+    cloth = ( 60, 100, 180)   # default field color (blue)
+    cloth2 = _darken(cloth)
+    gold  = (200, 168,  72)
+    # Pole shaft (left-side vertical)
+    pygame.draw.rect(s, pole,  (4,       0, 4, BS))
+    pygame.draw.rect(s, pole2, (5,       1, 2, BS - 2))
+    # Crossbar at top
+    pygame.draw.rect(s, pole,  (4, 4, BS - 6, 3))
+    pygame.draw.rect(s, pole2, (5, 5, BS - 8, 1))
+    # Banner cloth hanging from crossbar (right of pole)
+    bx0, by0 = 8, 7
+    bw,  bh  = BS - 10, BS - 14
+    pygame.draw.rect(s, cloth,  (bx0,     by0, bw, bh))
+    pygame.draw.rect(s, cloth2, (bx0 + 1, by0, bw - 2, 2))
+    # Gold border stripe
+    pygame.draw.rect(s, gold, (bx0, by0,      bw, 2))
+    pygame.draw.rect(s, gold, (bx0, by0 + bh - 2, bw, 2))
+    # Small gold cross charge placeholder
+    cx2 = bx0 + bw // 2
+    cy2 = by0 + bh // 2
+    pygame.draw.rect(s, gold, (cx2 - 1, by0 + 4, 2, bh - 8))
+    pygame.draw.rect(s, gold, (bx0 + 3, cy2 - 1, bw - 6, 2))
+    surfs[bid] = s
+
     return surfs

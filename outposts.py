@@ -1030,8 +1030,10 @@ def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
         npc_py = (sy - 2)      * BLOCK_SIZE
 
     if flag_bx is not None and 0 <= flag_by < world.height:
-        if world.get_block(flag_bx, flag_by) == AIR:
-            world.set_bg_block(flag_bx, flag_by, OUTPOST_FLAG_BLOCK)
+        world.set_bg_block(flag_bx, flag_by, OUTPOST_FLAG_BLOCK)
+    else:
+        print(f"[WARNING] Outpost '{otype}' at bx={out_bx}: flag block not placed "
+              f"(flag_bx={flag_bx}, flag_by={flag_by}). E-key will not work.")
 
     # Build initial stock dict
     initial_stock = {item_id: cfg["base_stock"] for item_id, _ in cfg["sells"]}

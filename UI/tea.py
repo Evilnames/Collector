@@ -1,11 +1,11 @@
 import pygame
 from constants import SCREEN_W, SCREEN_H
 from tea import (
-    apply_wither, apply_oxidation, apply_aging, apply_herbal_blend,
+    apply_wither, apply_oxidation, apply_aging, apply_herbal_blend, apply_roasting,
     get_brew_item_id, make_blend,
     WITHER_METHODS, TEA_TYPE_DESCS, TEA_TYPE_COLORS, TEA_TYPE_BUFFS,
     BUFF_DESCS, BIOME_DISPLAY_NAMES, VARIETY_DISPLAY_NAMES,
-    HERBAL_ADDITIVES, AGE_DURATIONS, _CODEX_BIOMES,
+    HERBAL_ADDITIVES, AGE_DURATIONS, ROASTING_LEVELS, _CODEX_BIOMES, _CODEX_TEA_TYPES,
 )
 
 
@@ -184,10 +184,12 @@ class TeaMixin:
             def _zone_y(v): return BAR_Y + BAR_H - int(BAR_H * v)
 
             zone_bands = [
-                (0.00, 0.20,  ( 50, 140,  50), "Green"),
-                (0.20, 0.75,  (160, 130,  40), "Oolong"),
-                (0.75, 0.95,  ( 55,  25,  10), "Black"),
-                (0.95, 1.00,  ( 35,  20,   8), "Pu-erh"),
+                (0.00, 0.08,  (205, 200, 180), "White"),
+                (0.08, 0.18,  (190, 170,  70), "Yellow"),
+                (0.18, 0.28,  ( 50, 140,  50), "Green"),
+                (0.28, 0.75,  (160, 130,  40), "Oolong"),
+                (0.75, 0.93,  ( 55,  25,  10), "Black"),
+                (0.93, 1.00,  ( 35,  20,   8), "Pu-erh"),
             ]
             for lo, hi, band_col, band_lbl in zone_bands:
                 y_top = _zone_y(hi)
@@ -198,7 +200,7 @@ class TeaMixin:
                                          (y_top + y_bot) // 2 - lbl_s.get_height() // 2))
 
             # Zone divider lines
-            for v in (0.20, 0.75, 0.95):
+            for v in (0.08, 0.18, 0.28, 0.75, 0.93):
                 yl = _zone_y(v)
                 pygame.draw.line(self.screen, (180, 180, 160), (BAR_X, yl), (BAR_X + BAR_W, yl), 1)
 
@@ -359,7 +361,7 @@ class TeaMixin:
         self.screen.blit(hint, (SCREEN_W - hint.get_width() - 8, 6))
 
         # Tab bar
-        tabs     = [("brew", "Brew"), ("blend", "Blend"), ("age", "Age (Pu-erh)")]
+        tabs     = [("brew", "Brew"), ("blend", "Blend"), ("age", "Age (Pu-erh)"), ("roast", "Roast")]
         tab_w    = 180
         tab_x    = SCREEN_W // 2 - (len(tabs) * tab_w) // 2
         self._tea_cellar_tab_rects = {}
@@ -379,6 +381,8 @@ class TeaMixin:
             self._draw_tea_cellar_blend(player)
         elif self._tea_cellar_tab == "age":
             self._draw_tea_cellar_age(player)
+        elif self._tea_cellar_tab == "roast":
+            self._draw_tea_cellar_roast(player)
 
     def _draw_tea_cellar_brew(self, player):
         self._tea_cellar_select_rects.clear()
@@ -563,6 +567,196 @@ class TeaMixin:
                         self._tea_cellar_leaf_idx = None
                         return
 
+        elif self._tea_cellar_tab == "roast":
+            for bi, rect in self._tea_cellar_select_rects.items():
+                if rect.collidepoint(pos):
+                    self._tea_cellar_leaf_idx = bi
+                    return
+            if self._tea_cellar_leaf_idx is not None:
+                leaf = player.tea_leaves[self._tea_cellar_leaf_idx]
+                for rkey, rrect in self._tea_cellar_roast_rects.items():
+                    if rrect.collidepoint(pos):
+                        apply_roasting(leaf, rkey)
+                        player.discovered_tea_origins.add(f"{leaf.origin_biome}_hojicha")
+                        self._tea_cellar_leaf_idx = None
+                        return
+
+    def _draw_tea_cellar_roast(self, player):
+        self._tea_cellar_select_rects.clear()
+        roastable = [(i, x) for i, x in enumerate(player.tea_leaves)
+                     if x.state == "oxidized" and x.tea_type in ("green", "oolong", "white", "yellow")]
+        if not roastable:
+            msg = self.font.render("No roastable leaves! Use oxidized Green, White, Yellow, or Oolong.", True, _LABEL_C)
+            self.screen.blit(msg, (SCREEN_W // 2 - msg.get_width() // 2, SCREEN_H // 2 - 20))
+            return
+        sub = self.small.render("Select a leaf to roast into Hojicha:", True, _LABEL_C)
+        self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 62))
+        CELL_W, CELL_H, GAP, COLS = 220, 56, 8, 4
+        gx0 = (SCREEN_W - (COLS * CELL_W + (COLS - 1) * GAP)) // 2
+        for li, (bi, leaf) in enumerate(roastable[:12]):
+            col_i, row_i = li % COLS, li // COLS
+            rx = gx0 + col_i * (CELL_W + GAP)
+            ry = 82 + row_i * (CELL_H + GAP)
+            rect = pygame.Rect(rx, ry, CELL_W, CELL_H)
+            self._tea_cellar_select_rects[bi] = rect
+            tea_col = TEA_TYPE_COLORS.get(leaf.tea_type, _ACCENT)
+            pygame.draw.rect(self.screen, _CELL_BG, rect)
+            pygame.draw.rect(self.screen, tea_col, rect, 2)
+            nm  = BIOME_DISPLAY_NAMES.get(leaf.origin_biome, leaf.origin_biome)
+            ns  = self.small.render(nm + " — " + leaf.tea_type.title(), True, tea_col)
+            self.screen.blit(ns, (rx + 6, ry + 8))
+            stars = "★" * round(leaf.steep_quality * 5)
+            ss = self.small.render(stars, True, (220, 200, 80))
+            self.screen.blit(ss, (rx + 6, ry + 26))
+
+        if self._tea_cellar_leaf_idx is not None and \
+           0 <= self._tea_cellar_leaf_idx < len(player.tea_leaves):
+            leaf = player.tea_leaves[self._tea_cellar_leaf_idx]
+            rx0 = SCREEN_W - 300
+            ry0 = 82
+            pygame.draw.rect(self.screen, _DARK_BG, (rx0, ry0, 280, 240))
+            pygame.draw.rect(self.screen, TEA_TYPE_COLORS.get("hojicha", _ACCENT), (rx0, ry0, 280, 240), 2)
+            hdr = self.small.render("Choose roast level:", True, _LABEL_C)
+            self.screen.blit(hdr, (rx0 + 8, ry0 + 6))
+            self._tea_cellar_roast_rects.clear()
+            for ri, (rkey, rdata) in enumerate(ROASTING_LEVELS.items()):
+                rrect = pygame.Rect(rx0 + 8, ry0 + 32 + ri * 62, 264, 54)
+                self._tea_cellar_roast_rects[rkey] = rrect
+                pygame.draw.rect(self.screen, (35, 20, 10), rrect)
+                pygame.draw.rect(self.screen, TEA_TYPE_COLORS.get("hojicha", _ACCENT), rrect, 2)
+                rl  = self.font.render(rdata["label"], True, (200, 140, 70))
+                self.screen.blit(rl, (rrect.x + 10, rrect.y + 6))
+                desc_lines = rdata["desc"].split(". ")
+                for di, dl in enumerate(desc_lines[:1]):
+                    ds = self.small.render(dl, True, _HINT_C)
+                    self.screen.blit(ds, (rrect.x + 10, rrect.y + 28))
+                qm = self.small.render(f"Quality ×{rdata['quality_mult']:.2f}  +{rdata['complexity_bonus']:.0%} complexity",
+                                       True, _DIM_C)
+                self.screen.blit(qm, (rrect.x + 10, rrect.y + 40))
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # ROASTING KILN (standalone block)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _draw_roasting_kiln(self, player, dt=0.0):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 215))
+        self.screen.blit(overlay, (0, 0))
+
+        title = self.font.render("ROASTING KILN", True, (200, 140, 70))
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 6))
+        hint = self.small.render("ESC to close", True, _HINT_C)
+        self.screen.blit(hint, (SCREEN_W - hint.get_width() - 8, 6))
+
+        if self._roasting_phase == "select_leaf":
+            self._roasting_select_rects.clear()
+            roastable = [(i, x) for i, x in enumerate(player.tea_leaves)
+                         if x.state == "oxidized" and x.tea_type in ("green", "oolong", "white", "yellow")]
+            if not roastable:
+                msg = self.font.render("No roastable leaves! Use oxidized Green, White, Yellow, or Oolong.", True, _LABEL_C)
+                self.screen.blit(msg, (SCREEN_W // 2 - msg.get_width() // 2, SCREEN_H // 2))
+                return
+            sub = self.small.render("Select a leaf to roast into Hojicha:", True, _LABEL_C)
+            self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 32))
+            CELL_W, CELL_H, GAP, COLS = 200, 56, 8, 5
+            gx0 = (SCREEN_W - (COLS * CELL_W + (COLS - 1) * GAP)) // 2
+            for li, (bi, leaf) in enumerate(roastable[:20]):
+                col_i, row_i = li % COLS, li // COLS
+                rx = gx0 + col_i * (CELL_W + GAP)
+                ry = 55 + row_i * (CELL_H + GAP)
+                rect = pygame.Rect(rx, ry, CELL_W, CELL_H)
+                self._roasting_select_rects[bi] = rect
+                tea_col = TEA_TYPE_COLORS.get(leaf.tea_type, _ACCENT)
+                pygame.draw.rect(self.screen, _CELL_BG, rect)
+                pygame.draw.rect(self.screen, tea_col, rect, 2)
+                nm = BIOME_DISPLAY_NAMES.get(leaf.origin_biome, leaf.origin_biome)
+                ns = self.small.render(nm + " — " + leaf.tea_type.title(), True, tea_col)
+                self.screen.blit(ns, (rx + 6, ry + 8))
+                stars = "★" * round(leaf.steep_quality * 5)
+                ss = self.small.render(stars, True, (220, 200, 80))
+                self.screen.blit(ss, (rx + 6, ry + 26))
+
+        elif self._roasting_phase == "select_level":
+            sub = self.small.render("Choose a roast level:", True, _LABEL_C)
+            self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 32))
+            self._roasting_level_rects.clear()
+            BTN_W, BTN_H, BTN_GAP = 280, 120, 20
+            total_w = len(ROASTING_LEVELS) * BTN_W + (len(ROASTING_LEVELS) - 1) * BTN_GAP
+            gx0 = (SCREEN_W - total_w) // 2
+            for ri, (rkey, rdata) in enumerate(ROASTING_LEVELS.items()):
+                px = gx0 + ri * (BTN_W + BTN_GAP)
+                py = SCREEN_H // 2 - BTN_H // 2
+                prect = pygame.Rect(px, py, BTN_W, BTN_H)
+                self._roasting_level_rects[rkey] = prect
+                pygame.draw.rect(self.screen, (30, 18, 8), prect)
+                pygame.draw.rect(self.screen, (160, 90, 35), prect, 2)
+                lbl = self.font.render(rdata["label"], True, (210, 150, 80))
+                self.screen.blit(lbl, (px + BTN_W // 2 - lbl.get_width() // 2, py + 10))
+                desc_lines = rdata["desc"].split(". ")
+                for di, dl in enumerate(desc_lines[:2]):
+                    ds = self.small.render(dl, True, _LABEL_C)
+                    self.screen.blit(ds, (px + 8, py + 40 + di * 16))
+                qm = self.small.render(f"Quality ×{rdata['quality_mult']:.2f}  +{rdata['complexity_bonus']:.0%} complexity",
+                                       True, _HINT_C)
+                self.screen.blit(qm, (px + 8, py + 90))
+
+        elif self._roasting_phase == "result":
+            leaf = player.tea_leaves[self._roasting_leaf_idx]
+            hojicha_col = TEA_TYPE_COLORS.get("hojicha", _ACCENT)
+            cx, cy = SCREEN_W // 2, 80
+            pygame.draw.circle(self.screen, hojicha_col, (cx, cy + 40), 36)
+            pygame.draw.circle(self.screen, (min(255, hojicha_col[0] + 40),
+                                              min(255, hojicha_col[1] + 40),
+                                              min(255, hojicha_col[2] + 40)),
+                                (cx, cy + 40), 36, 3)
+
+            iy = cy + 95
+            def rline(txt, col=_TITLE_C):
+                nonlocal iy
+                s = self.font.render(txt, True, col)
+                self.screen.blit(s, (cx - s.get_width() // 2, iy))
+                iy += 28
+
+            rline(BIOME_DISPLAY_NAMES.get(leaf.origin_biome, leaf.origin_biome) + " " +
+                  VARIETY_DISPLAY_NAMES.get(leaf.variety, leaf.variety))
+            rline(TEA_TYPE_DESCS.get("hojicha", "Hojicha"), hojicha_col)
+            rline(f"Roast: {ROASTING_LEVELS.get(leaf.roasting_level, {}).get('label', leaf.roasting_level)}", (200, 140, 70))
+            stars = "★" * round(leaf.steep_quality * 5) + "☆" * (5 - round(leaf.steep_quality * 5))
+            rline(stars, (220, 200, 80))
+            if leaf.flavor_notes:
+                rline("Flavour Notes:", (160, 200, 130))
+                for note in leaf.flavor_notes:
+                    rline(f"  • {note.title()}", _TITLE_C)
+
+            done_rect = pygame.Rect(cx - 70, iy + 20, 140, 34)
+            pygame.draw.rect(self.screen, _DARK_BG, done_rect)
+            pygame.draw.rect(self.screen, (160, 90, 35), done_rect, 2)
+            dl = self.font.render("DONE", True, _TITLE_C)
+            self.screen.blit(dl, (done_rect.centerx - dl.get_width() // 2,
+                                  done_rect.centery - dl.get_height() // 2))
+            self._roasting_result_btn = done_rect
+
+    def _handle_roasting_kiln_click(self, pos, player):
+        if self._roasting_phase == "select_leaf":
+            for bi, rect in self._roasting_select_rects.items():
+                if rect.collidepoint(pos):
+                    if player.tea_leaves[bi].state == "oxidized":
+                        self._roasting_leaf_idx = bi
+                        self._roasting_phase    = "select_level"
+                    return
+        elif self._roasting_phase == "select_level":
+            for rkey, rect in self._roasting_level_rects.items():
+                if rect.collidepoint(pos):
+                    leaf = player.tea_leaves[self._roasting_leaf_idx]
+                    apply_roasting(leaf, rkey)
+                    player.discovered_tea_origins.add(f"{leaf.origin_biome}_hojicha")
+                    self._roasting_phase = "result"
+                    return
+        elif self._roasting_phase == "result":
+            if self._roasting_result_btn and self._roasting_result_btn.collidepoint(pos):
+                self._roasting_phase    = "select_leaf"
+                self._roasting_leaf_idx = None
+
     # ─────────────────────────────────────────────────────────────────────────
     # BUFF HUD
     # ─────────────────────────────────────────────────────────────────────────
@@ -591,10 +785,10 @@ class TeaMixin:
 
     def _draw_tea_codex(self, player, gy0=58, gx_off=0):
         from tea import TEA_TYPE_ORDER
-        TEA_TYPES = ["green", "oolong", "black", "puerh"]
+        TEA_TYPES = _CODEX_TEA_TYPES
         BIOMES    = _CODEX_BIOMES
         COLS      = len(TEA_TYPES)
-        CELL_W, CELL_H, GAP = 120, 64, 6
+        CELL_W, CELL_H, GAP = 96, 64, 4
         HDR_H     = 22
         gx0 = gx_off + (SCREEN_W - gx_off - (COLS * CELL_W + (COLS - 1) * GAP)) // 2
 

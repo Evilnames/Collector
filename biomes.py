@@ -8,6 +8,7 @@ BIODOME_TYPES = [
     "steppe", "arid_steppe",
     "desert", "tundra", "swamp", "beach", "canyon",
     "mediterranean", "east_asian", "south_asian",
+    # "coastal" is not in the random pool — it is auto-assigned adjacent to ocean zones
 ]
 
 # (height_bias, noise_amplitude_scale) per biodome.
@@ -24,7 +25,8 @@ BIODOME_TERRAIN_MODS = {
     "desert":          (  1, 0.55),
     "tundra":          (  1, 0.40),
     "swamp":           (  5, 0.20),
-    "beach":           (  7, 0.15),
+    "beach":           ( -2, 0.15),   # slightly above sea level — sandy shore
+    "coastal":         (  0, 0.30),   # flat at sea level — transitions into ocean
     "canyon":          ( -5, 2.50),
     "mediterranean":   (  2, 0.65),
     "east_asian":      (  0, 1.10),

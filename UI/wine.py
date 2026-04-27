@@ -10,7 +10,11 @@ from wine import (
     BIOME_DISPLAY_NAMES, VARIETY_DISPLAY_NAMES,
 )
 
-_WINE_AGE_TIMES = {"short": 12.0, "medium": 24.0, "long": 40.0}
+_SECS_PER_AGING_DAY = 5.0
+
+
+def _age_duration_secs(key):
+    return AGE_DURATIONS.get(key, {}).get("days", 8) * _SECS_PER_AGING_DAY
 
 
 class WineMixin:
@@ -855,7 +859,8 @@ class WineMixin:
             return
         g = player.wine_grapes[bi]
 
-        duration_secs = _WINE_AGE_TIMES.get(self._age_duration, 24.0)
+        duration_secs = _age_duration_secs(self._age_duration)
+        total_days = AGE_DURATIONS.get(self._age_duration, {}).get("days", 8)
         if not self._age_game_done:
             self._age_progress = min(1.0, self._age_progress + dt / duration_secs)
             self._age_care_prompt_timer -= dt
@@ -888,8 +893,9 @@ class WineMixin:
         pygame.draw.rect(self.screen, (20, 12, 16), (bar_x, bar_y, bar_w, 30))
         pygame.draw.rect(self.screen, col, (bar_x, bar_y, int(bar_w * self._age_progress), 30))
         pygame.draw.rect(self.screen, (180, 130, 140), (bar_x, bar_y, bar_w, 30), 2)
-        pct = int(self._age_progress * 100)
-        pl = self.small.render(f"Aging: {pct}%", True, (200, 160, 170))
+        days_elapsed = int(self._age_progress * total_days)
+        day_lbl = "day" if total_days == 1 else "days"
+        pl = self.small.render(f"Aging: Day {days_elapsed} / {total_days} {day_lbl}", True, (200, 160, 170))
         self.screen.blit(pl, (cx - pl.get_width() // 2, SCREEN_H // 2 + 30))
         bonus_pct = int(self._age_care_bonus * 100)
         bl = self.small.render(f"Care bonus: +{bonus_pct}%", True, (170, 140, 150))
@@ -1082,8 +1088,7 @@ class WineMixin:
         if key == pygame.K_w and self._age_care_active:
             self._age_care_bonus = min(1.0, self._age_care_bonus + 0.12)
             self._age_care_active = False
-            duration_secs = _WINE_AGE_TIMES.get(self._age_duration, 24.0)
-            self._age_care_prompt_timer = max(5.0, duration_secs / 3)
+            self._age_care_prompt_timer = max(5.0, _age_duration_secs(self._age_duration) / 3)
 
     def _handle_cellar_age_click(self, pos, player):
         if self._age_phase == "result":
@@ -1110,12 +1115,11 @@ class WineMixin:
             bi = self._age_wine_idx
             if (bi is not None and bi < len(player.wine_grapes)
                     and self._age_vessel in VESSELS):
-                duration_secs = _WINE_AGE_TIMES.get(self._age_duration, 24.0)
                 self._age_phase = "aging"
                 self._age_progress = 0.0
                 self._age_care_active = False
                 self._age_care_window = 0.0
-                self._age_care_prompt_timer = max(4.0, duration_secs / 3)
+                self._age_care_prompt_timer = max(4.0, _age_duration_secs(self._age_duration) / 3)
                 self._age_care_bonus = 0.0
                 self._age_game_done = False
 

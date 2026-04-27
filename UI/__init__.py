@@ -28,8 +28,11 @@ from .pottery import PotteryMixin
 from .salt import SaltMixin
 from .town_menu import TownMenuMixin
 from .outpost_menu import OutpostMenuMixin
+from .landmark_menu import LandmarkMenuMixin
 from .city_block_menu import CityBlockMenuMixin
+from .coat_of_arms import CoatOfArmsDesignerMixin
 from .hire_panel import HirePanelMixin
+from .job_panel import JobPanelMixin
 from .reputation_screen import ReputationScreenMixin
 from .dogs_ui import DogsMixin
 from .weapons import SmithingMixin
@@ -42,7 +45,7 @@ class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
     CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, BeerMixin, MinigamesMixin, CollectionsMixin,
     HelpMixin, HorseMixin, DogsMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin,
-    TownMenuMixin, OutpostMenuMixin, CityBlockMenuMixin, HirePanelMixin, ReputationScreenMixin, SmithingMixin, GamblingMixin, RacingMixin, ArenaUIMixin,
+    TownMenuMixin, OutpostMenuMixin, LandmarkMenuMixin, CityBlockMenuMixin, CoatOfArmsDesignerMixin, HirePanelMixin, JobPanelMixin, ReputationScreenMixin, SmithingMixin, GamblingMixin, RacingMixin, ArenaUIMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -204,19 +207,56 @@ class UI(
         # Outpost menu (diplomatic-only — kingdom & coat of arms)
         self.outpost_menu_open = False
         self.active_outpost    = None
+        # Landmark menu (dedicated landmark info + activation screen)
+        self.landmark_menu_open     = False
+        self.active_landmark_region = None
+        self.active_landmark_spec   = None
         # City Block menu (player-run cities)
         self.city_block_menu_open = False
         self.active_city_block    = None
         self._city_name_editing   = False
         self._city_name_draft     = ""
         self._city_name_rect      = None
+        self._city_design_btn     = None
+        # Coat of Arms designer
+        self.coa_designer_open    = False
+        self._coa_city            = None
+        self._coa_division        = "plain"
+        self._coa_ordinary        = "none"
+        self._coa_charge          = "none"
+        self._coa_primary         = (60, 100, 180)
+        self._coa_secondary       = (200, 168, 72)
+        self._coa_metal           = (200, 168, 72)
+        self._coa_motto           = "Stand Firm"
+        self._coa_charge_scroll   = 0
+        self._coa_rects           = {}
         # Hire panel (settler NPCs)
-        self.hire_panel_open    = False
-        self.active_hire_npc    = None
-        self.active_hire_city   = None
-        self.active_hire_record = None
-        self._hire_accept_btn   = None
-        self._hire_decline_btn  = None
+        self.hire_panel_open      = False
+        self.active_hire_npc      = None
+        self.active_hire_city     = None
+        self.active_hire_record   = None
+        self._hire_accept_btn     = None
+        self._hire_decline_btn    = None
+        self._hire_assign_job_btn = None
+        # Job assignment panel
+        self.job_panel_open    = False
+        self.active_job_record = None
+        self.active_job_city   = None
+        self._jp_job_type      = None
+        self._jp_radius        = 3
+        self._jp_target        = "all"
+        self._jp_depth         = 20
+        self._jp_src_bx        = ""
+        self._jp_src_by        = ""
+        self._jp_dst_bx        = ""
+        self._jp_dst_by        = ""
+        self._jp_active_field  = None
+        self._jp_job_btns      = {}
+        self._jp_radius_btns   = {}
+        self._jp_target_btns   = {}
+        self._jp_haul_fields   = {}
+        self._jp_confirm       = None
+        self._jp_cancel        = None
         # Reputation / kingdoms screen
         self.reputation_screen_open = False
         self._rep_scroll     = 0
@@ -255,15 +295,16 @@ class UI(
         self._player_chest_scroll = 0
         self._max_player_chest_scroll = 0
         # Garden UI
-        self.garden_open           = False
-        self.active_garden_flowers = None  # direct reference to world.garden_data[(bx,by)]
-        self.active_garden_pos     = None  # (bx, by)
-        self._garden_rects         = {}    # uid -> Rect  (garden side)
-        self._player_garden_rects  = {}    # uid -> Rect  (player side)
-        self._garden_scroll        = 0
-        self._max_garden_scroll    = 0
-        self._player_garden_scroll = 0
-        self._max_player_garden_scroll = 0
+        self.garden_open             = False
+        self.active_garden_flowers   = None  # direct reference to world.garden_data[(bx,by)]
+        self.active_garden_pos       = None  # (bx, by)
+        self._garden_slot_rects      = {}    # slot_idx -> Rect (arrangement grid)
+        self._garden_col_rects       = {}    # uid -> Rect (collection panel)
+        self._garden_col_scroll      = 0
+        self._max_garden_col_scroll  = 0
+        self._garden_drag_flower     = None  # Wildflower currently being dragged
+        self._garden_drag_source     = None  # 'slot' | 'collection'
+        self._garden_drag_pos        = (0, 0)
         # Wildflower display UI
         self.wildflower_display_open = False
         self.active_display_pos      = None  # (bx, by)
@@ -673,11 +714,17 @@ class UI(
         self._tea_cellar_select_rects = {}
         self._tea_cellar_age_rects    = {}
         self._tea_cellar_tab_rects    = {}
+        self._tea_cellar_roast_rects  = {}
         self._tea_herbal_rects        = {}
         self._tea_codex_scroll        = 0
         self._max_tea_codex_scroll    = 0
         self._tea_codex_selected      = None
         self._tea_codex_rects         = {}
+        self._roasting_phase        = "select_leaf"
+        self._roasting_leaf_idx     = None
+        self._roasting_select_rects = {}
+        self._roasting_level_rects  = {}
+        self._roasting_result_btn   = None
         # ----- Herbalism UI state -----
         self._research           = None   # set each frame in draw(); used by kiln/resonance
         self._dry_select_rects   = {}
@@ -708,12 +755,6 @@ class UI(
         self._bird_obs_timer     = 0.0   # 0.0 → 2.0 when complete
         self._bird_obs_failed    = False
         self._bird_obs_fail_timer = 0.0
-        # Insect catch mini-game overlay
-        self._insect_obs_active   = False
-        self._insect_obs_insect   = None
-        self._insect_obs_timer    = 0.0   # 0.0 → 1.5 when complete
-        self._insect_obs_failed   = False
-        self._insect_obs_fail_timer = 0.0
         # Bird collection
         self._bird_journal_rects  = {}
         self._bird_journal_scroll = 0
@@ -1020,10 +1061,16 @@ class UI(
                 self._draw_city_chronicle(self.active_town)
         if self.outpost_menu_open and self.active_outpost is not None:
             self._draw_outpost_menu(player)
+        if self.landmark_menu_open and self.active_landmark_region is not None:
+            self._draw_landmark_menu(player)
         if self.city_block_menu_open and self.active_city_block is not None:
             self._draw_city_block_menu(player)
+        if self.coa_designer_open:
+            self._draw_coat_of_arms_designer()
         if self.hire_panel_open and self.active_hire_record is not None:
             self._draw_hire_panel(player)
+        if self.job_panel_open and self.active_job_record is not None:
+            self._draw_job_panel()
         if self.reputation_screen_open:
             self._draw_reputation_screen(player)
         if self.automation_open and self.active_automation is not None:

@@ -90,94 +90,6 @@ class MinigamesMixin:
         self.screen.blit(hs, (px + PANEL_W // 2 - hs.get_width() // 2, py + PANEL_H - 38))
 
     # ------------------------------------------------------------------
-    # Insect catch observation
-    # ------------------------------------------------------------------
-
-    def open_insect_observation(self, insect):
-        if self._insect_obs_active:
-            return
-        self._insect_obs_active     = True
-        self._insect_obs_insect     = insect
-        self._insect_obs_timer      = 0.0
-        self._insect_obs_failed     = False
-        self._insect_obs_fail_timer = 0.0
-        self._insect_obs_moved      = False
-
-    def _draw_insect_observation_overlay(self, player):
-        import math
-        PANEL_W, PANEL_H = 200, 140
-        px = SCREEN_W - PANEL_W - 12
-        py = SCREEN_H - PANEL_H - 60
-
-        surf = pygame.Surface((PANEL_W, PANEL_H), pygame.SRCALPHA)
-        surf.fill((15, 25, 18, 210))
-        self.screen.blit(surf, (px, py))
-        pygame.draw.rect(self.screen, (70, 170, 90), (px, py, PANEL_W, PANEL_H), 2)
-
-        ins = self._insect_obs_insect
-        already_seen = ins.SPECIES in getattr(player, "insects_observed", {})
-
-        title = "INSECT SPOTTED!" if not self._insect_obs_failed else "INSECT FLEW AWAY!"
-        title_col = (160, 240, 170) if not self._insect_obs_failed else (255, 120, 80)
-        ts = self.small.render(title, True, title_col)
-        self.screen.blit(ts, (px + PANEL_W // 2 - ts.get_width() // 2, py + 6))
-
-        # Draw insect preview
-        iw, ih = ins.W * 3, ins.H * 3
-        ins_surf = pygame.Surface((iw, ih), pygame.SRCALPHA)
-        ins_surf.fill((0, 0, 0, 0))
-        wt = ins.WING_TYPE
-        wc = ins.WING_COLOR if already_seen or self._insect_obs_timer >= 1.5 else (70, 90, 70)
-        bc = ins.BODY_COLOR if already_seen or self._insect_obs_timer >= 1.5 else (50, 65, 50)
-        ac = ins.ACCENT_COLOR if already_seen or self._insect_obs_timer >= 1.5 else (60, 80, 60)
-        if wt in ("butterfly", "moth"):
-            pygame.draw.ellipse(ins_surf, wc, (0, 0, iw // 2, ih))
-            pygame.draw.ellipse(ins_surf, wc, (iw // 2, 0, iw // 2, ih))
-            pygame.draw.ellipse(ins_surf, ac, (2, 2, iw // 2 - 3, ih - 4))
-            pygame.draw.ellipse(ins_surf, bc, (iw // 2 - 1, 1, 3, ih - 2))
-        elif wt == "dragonfly":
-            pygame.draw.ellipse(ins_surf, wc, (0, 0, iw // 2, ih // 3))
-            pygame.draw.ellipse(ins_surf, wc, (iw // 2, 0, iw // 2, ih // 3))
-            pygame.draw.ellipse(ins_surf, bc, (2, ih // 4, iw - 4, ih // 2))
-        elif wt in ("beetle", "firefly"):
-            pygame.draw.ellipse(ins_surf, wc, (0, ih // 4, iw, ih // 2))
-            pygame.draw.ellipse(ins_surf, bc, (2, ih // 4 + 1, iw - 4, ih // 2 - 2))
-            pygame.draw.line(ins_surf, wc, (iw // 2, ih // 4 + 1), (iw // 2, ih // 4 + ih // 2 - 2))
-        else:
-            pygame.draw.ellipse(ins_surf, wc, (0, 0, iw, ih))
-            pygame.draw.ellipse(ins_surf, bc, (iw // 4, 2, iw // 2, ih - 4))
-        self.screen.blit(ins_surf, (px + PANEL_W // 2 - iw // 2, py + 22))
-
-        if already_seen or self._insect_obs_timer >= 1.5:
-            name_str = ins.SPECIES.replace("_", " ").title()
-            name_col = (200, 255, 200)
-        else:
-            full = ins.SPECIES.replace("_", " ").title()
-            chars_shown = max(1, int(len(full) * (self._insect_obs_timer / 1.5)))
-            name_str = full[:chars_shown] + "?" * (len(full) - chars_shown)
-            name_col = (140, 190, 140)
-        ns = self.small.render(name_str, True, name_col)
-        self.screen.blit(ns, (px + PANEL_W // 2 - ns.get_width() // 2, py + 22 + ih + 4))
-
-        rarity_cols = {"common": (160, 210, 160), "uncommon": (100, 220, 130),
-                       "rare": (120, 255, 150)}
-        rc = rarity_cols.get(ins.RARITY, (180, 180, 180))
-        rs = self.small.render(ins.RARITY.upper(), True, rc)
-        self.screen.blit(rs, (px + PANEL_W // 2 - rs.get_width() // 2, py + 22 + ih + 18))
-
-        bar_y = py + PANEL_H - 22
-        bar_w = PANEL_W - 24
-        pygame.draw.rect(self.screen, (20, 35, 22), (px + 12, bar_y, bar_w, 10))
-        fill = int(bar_w * min(1.0, self._insect_obs_timer / 1.5))
-        if not self._insect_obs_failed and fill > 0:
-            pygame.draw.rect(self.screen, (70, 210, 110), (px + 12, bar_y, fill, 10))
-        pygame.draw.rect(self.screen, (70, 170, 90), (px + 12, bar_y, bar_w, 10), 1)
-
-        hint = "Stay still!" if not self._insect_obs_failed else ""
-        hs = self.small.render(hint, True, (120, 190, 130))
-        self.screen.blit(hs, (px + PANEL_W // 2 - hs.get_width() // 2, py + PANEL_H - 38))
-
-    # ------------------------------------------------------------------
     # Gem Cutter mini-game
     # ------------------------------------------------------------------
 
@@ -830,8 +742,10 @@ class MinigamesMixin:
         if state == "casting":
             tick = pygame.time.get_ticks()
             dots = "." * (1 + (tick // 500) % 3)
-            msg = f"Fishing{dots}"
-            s = self.font.render(msg, True, (160, 210, 255))
+            hotspot_tag = "  [HOTSPOT]" if getattr(player, "_fishing_is_hotspot", False) else ""
+            msg = f"Fishing{dots}{hotspot_tag}"
+            col_msg = (255, 220, 80) if hotspot_tag else (160, 210, 255)
+            s = self.font.render(msg, True, col_msg)
             bw = s.get_width() + 24
             bh = s.get_height() + 10
             bx2 = cx - bw // 2
@@ -839,7 +753,8 @@ class MinigamesMixin:
             box = pygame.Surface((bw + 4, bh + 4), pygame.SRCALPHA)
             box.fill((12, 28, 48, 200))
             self.screen.blit(box, (bx2 - 2, by2 - 2))
-            pygame.draw.rect(self.screen, (60, 120, 200), (bx2 - 2, by2 - 2, bw + 4, bh + 4), 1)
+            border_col = (200, 160, 30) if hotspot_tag else (60, 120, 200)
+            pygame.draw.rect(self.screen, border_col, (bx2 - 2, by2 - 2, bw + 4, bh + 4), 1)
             self.screen.blit(s, (bx2 + 12, by2 + 5))
 
         elif state == "biting":
@@ -850,7 +765,7 @@ class MinigamesMixin:
             glow_col = (r, g, 20)
 
             bite_s = self._fish_bite_font.render("! BITE !", True, glow_col)
-            sub_s = self.small.render("Press  F  to reel in!", True, (230, 230, 230))
+            sub_s = self.small.render("Press  F  to start reeling!", True, (230, 230, 230))
 
             bar_w = 220
             bar_h = 11
@@ -878,23 +793,98 @@ class MinigamesMixin:
                 pygame.draw.rect(self.screen, bar_col, (bar_x, bar_y, fill, bar_h))
             pygame.draw.rect(self.screen, (110, 90, 40), (bar_x, bar_y, bar_w, bar_h), 1)
 
+        elif state == "reeling":
+            self._draw_reeling_overlay(player)
+
         elif state == "result":
             if player._fishing_result == "caught" and player.fish_caught:
                 last = player.fish_caught[-1]
                 species_name = FISH_TYPES.get(last.species, {}).get("name", last.species.replace("_", " ").title())
                 msg = f"Caught a {species_name}!  ({last.weight_kg:.2f} kg)"
                 col = FISH_RARITY_COLORS.get(last.rarity, (180, 220, 180))
+                # Check personal best
+                prev = player.fish_bests.get(last.species, {})
+                is_record = prev.get("weight_kg", 0) == last.weight_kg
+                sub_msg = "NEW PERSONAL BEST!" if is_record else f"Best: {prev.get('weight_kg', last.weight_kg):.2f} kg"
+                sub_col = (255, 220, 60) if is_record else (160, 190, 160)
             else:
                 msg = "The fish got away..."
                 col = (180, 145, 100)
+                sub_msg = ""
+                sub_col = (150, 120, 90)
 
             s = self.font.render(msg, True, col)
-            bw = s.get_width() + 24
-            bh = s.get_height() + 10
+            sub_s = self.small.render(sub_msg, True, sub_col) if sub_msg else None
+            bw = max(s.get_width(), sub_s.get_width() if sub_s else 0) + 24
+            bh = s.get_height() + (sub_s.get_height() + 4 if sub_s else 0) + 10
             bx2 = cx - bw // 2
-            by2 = H - 110
+            by2 = H - 120
             box = pygame.Surface((bw + 4, bh + 4), pygame.SRCALPHA)
             box.fill((12, 22, 14, 205))
             self.screen.blit(box, (bx2 - 2, by2 - 2))
             pygame.draw.rect(self.screen, col, (bx2 - 2, by2 - 2, bw + 4, bh + 4), 1)
-            self.screen.blit(s, (bx2 + 12, by2 + 5))
+            self.screen.blit(s, (cx - s.get_width() // 2, by2 + 5))
+            if sub_s:
+                self.screen.blit(sub_s, (cx - sub_s.get_width() // 2, by2 + 5 + s.get_height() + 4))
+
+    def _draw_reeling_overlay(self, player):
+        import math
+        W, H = SCREEN_W, SCREEN_H
+        cx = W // 2
+
+        fish = getattr(player, "_fishing_pending_fish", None)
+        reel_pos = getattr(player, "_reel_pos", 0.5)
+
+        # Background panel
+        BAR_W = 420
+        BOX_H = 100
+        bx = cx - BAR_W // 2 - 16
+        by = H - 155
+        box = pygame.Surface((BAR_W + 32, BOX_H), pygame.SRCALPHA)
+        box.fill((12, 22, 35, 220))
+        self.screen.blit(box, (bx, by))
+        pygame.draw.rect(self.screen, (60, 140, 200), (bx, by, BAR_W + 32, BOX_H), 2)
+
+        # Title
+        pulse = (math.sin(pygame.time.get_ticks() * 0.008) + 1) * 0.5
+        tc = (int(140 + 80 * pulse), int(200 + 55 * pulse), 255)
+        title_s = self.font.render("REELING!", True, tc)
+        self.screen.blit(title_s, (cx - title_s.get_width() // 2, by + 6))
+
+        # Fish hint
+        if fish:
+            species_name = FISH_TYPES.get(fish.species, {}).get("name", fish.species.replace("_", " ").title())
+            rar_col = FISH_RARITY_COLORS.get(fish.rarity, (180, 220, 180))
+            hint_s = self.small.render(f"{fish.rarity.upper()}  {species_name}  ~{fish.weight_kg:.1f} kg", True, rar_col)
+            self.screen.blit(hint_s, (cx - hint_s.get_width() // 2, by + 26))
+
+        # Tension bar
+        bar_x = bx + 16
+        bar_y = by + BOX_H - 30
+        bar_w = BAR_W
+        bar_h = 18
+
+        # Zone backgrounds: danger (snap), tension, safe (reel in)
+        snap_w  = int(bar_w * 0.25)
+        tense_w = int(bar_w * 0.45)
+        safe_w  = bar_w - snap_w - tense_w
+        pygame.draw.rect(self.screen, (100, 30, 25), (bar_x,             bar_y, snap_w,  bar_h))
+        pygame.draw.rect(self.screen, ( 90, 80, 20), (bar_x + snap_w,   bar_y, tense_w, bar_h))
+        pygame.draw.rect(self.screen, ( 25, 90, 40), (bar_x + snap_w + tense_w, bar_y, safe_w, bar_h))
+
+        # Zone labels
+        snap_lbl  = self.small.render("SNAP", True, (200, 80, 70))
+        safe_lbl  = self.small.render("REEL IN", True, (80, 200, 110))
+        self.screen.blit(snap_lbl, (bar_x + snap_w // 2 - snap_lbl.get_width() // 2, bar_y + 2))
+        self.screen.blit(safe_lbl, (bar_x + snap_w + tense_w + safe_w // 2 - safe_lbl.get_width() // 2, bar_y + 2))
+
+        # Marker (white triangle / vertical bar at reel_pos)
+        marker_x = bar_x + int(bar_w * reel_pos)
+        pygame.draw.rect(self.screen, (255, 255, 255), (marker_x - 3, bar_y - 4, 6, bar_h + 8))
+        pygame.draw.rect(self.screen, (40, 40, 40),    (marker_x - 2, bar_y - 3, 4, bar_h + 6))
+
+        pygame.draw.rect(self.screen, (120, 160, 200), (bar_x, bar_y, bar_w, bar_h), 1)
+
+        # Hint text
+        hint_s = self.small.render("Hold  F  to reel in  |  Release to ease tension", True, (140, 190, 220))
+        self.screen.blit(hint_s, (cx - hint_s.get_width() // 2, bar_y - 16))

@@ -1,5 +1,5 @@
 import pygame
-from blocks import (AIR, WATER, TILLED_SOIL, GRASS, DIRT, SAND, SNOW,
+from blocks import (AIR, WATER, FISHING_SPOT_BLOCK, TILLED_SOIL, GRASS, DIRT, SAND, SNOW,
                     ALL_LOGS, ALL_LEAVES, ALL_FRUIT_CLUSTERS, STONE,
                     ELEVATOR_CABLE_BLOCK, LADDER, ELEVATOR_STOP_BLOCK,
                     MINE_TRACK_BLOCK, MINE_TRACK_STOP_BLOCK,
@@ -10,7 +10,7 @@ from blocks import (AIR, WATER, TILLED_SOIL, GRASS, DIRT, SAND, SNOW,
                     SHOJI_DOOR_OPEN, GILDED_DOOR_OPEN,
                     BRONZE_DOOR_OPEN, SWAHILI_DOOR_OPEN,
                     SANDALWOOD_DOOR_OPEN, STONE_SLAB_DOOR_OPEN,
-                    TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK,
+                    TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK, BANNER_BLOCK,
                     RESOURCE_BLOCKS,
                     LIMESTONE_STONE, GRANITE_STONE, BASALT_STONE, MAGMATIC_STONE)
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE
@@ -145,6 +145,23 @@ def draw_world(renderer, world, player=None):
                 wh = wsurf.get_height()
                 screen.blit(wsurf, (bx * BLOCK_SIZE - cam_xi,
                                     by * BLOCK_SIZE - cam_yi + BLOCK_SIZE - wh))
+                continue
+            if bid == FISHING_SPOT_BLOCK:
+                # Render as full-level water with animated shimmer sparkles
+                wsurf = renderer._water_surfs[7]
+                screen.blit(wsurf, (bx * BLOCK_SIZE - cam_xi, by * BLOCK_SIZE - cam_yi))
+                tick = pygame.time.get_ticks()
+                import random as _rnd
+                spark_rng = _rnd.Random((bx * 7919 + by * 4481 + tick // 800) & 0x7FFFFFFF)
+                sx2 = bx * BLOCK_SIZE - cam_xi
+                sy2 = by * BLOCK_SIZE - cam_yi
+                for _ in range(4):
+                    spx = sx2 + spark_rng.randint(2, BLOCK_SIZE - 3)
+                    spy = sy2 + spark_rng.randint(2, BLOCK_SIZE - 3)
+                    alpha = spark_rng.randint(160, 255)
+                    spark = pygame.Surface((4, 4), pygame.SRCALPHA)
+                    spark.fill((200, 235, 255, alpha))
+                    screen.blit(spark, (spx, spy))
                 continue
             if bid == TILLED_SOIL:
                 moisture = world._soil_moisture.get((bx, by), 0)
@@ -309,6 +326,13 @@ def draw_world(renderer, world, player=None):
                         col = OUTPOST_FLAG_COLORS.get(best.outpost_type)
                         if col:
                             surf = renderer._get_outpost_flag_surf(best.outpost_type, col)
+                except Exception:
+                    pass
+            if bid == BANNER_BLOCK:
+                try:
+                    coa = world.banner_data.get((bx, by))
+                    if coa:
+                        surf = renderer._get_banner_surf(coa)
                 except Exception:
                     pass
             if surf:

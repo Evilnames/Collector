@@ -8,7 +8,11 @@ from beer import (
     _CODEX_BIOMES, BEER_TYPE_ORDER,
 )
 
-_CONDITION_TIMES = {"quick": 10.0, "standard": 20.0, "extended": 35.0}
+_SECS_PER_AGING_DAY = 5.0
+
+
+def _condition_duration_secs(key):
+    return CONDITION_DURATIONS.get(key, {}).get("days", 4) * _SECS_PER_AGING_DAY
 
 _ACCENT   = (155, 205,  70)   # hoppy green
 _MUTED    = ( 90, 130,  50)
@@ -651,7 +655,8 @@ class BeerMixin:
             return
         beer = player.beers[bi]
 
-        duration_secs = _CONDITION_TIMES.get(self._tap_duration_sel, 20.0)
+        duration_secs = _condition_duration_secs(self._tap_duration_sel)
+        total_days = CONDITION_DURATIONS.get(self._tap_duration_sel, {}).get("days", 4)
         if not self._tap_cond_done:
             self._tap_cond_progress = min(1.0, self._tap_cond_progress + dt / duration_secs)
             # Dry-hop window: last 30%
@@ -683,7 +688,9 @@ class BeerMixin:
             pygame.draw.line(self.screen, _ACCENT, (mx, bar_y - 4), (mx, bar_y + 34), 2)
             hl = self.small.render("DH", True, _ACCENT)
             self.screen.blit(hl, (mx + 4, bar_y - 4))
-        pl = self.small.render(f"Conditioning: {int(self._tap_cond_progress * 100)}%", True, (180, 150, 70))
+        days_elapsed = int(self._tap_cond_progress * total_days)
+        day_lbl = "day" if total_days == 1 else "days"
+        pl = self.small.render(f"Conditioning: Day {days_elapsed} / {total_days} {day_lbl}", True, (180, 150, 70))
         self.screen.blit(pl, (CX - pl.get_width() // 2, SCREEN_H // 2 + 30))
         if self._tap_dry_hop:
             dh_bonus_pct = int(self._tap_dryhop_bonus * 100)

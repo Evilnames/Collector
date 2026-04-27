@@ -38,11 +38,12 @@ class SettlerNPC(AmbientNPC):
         self.patrol_cx  = city_bx * BLOCK_SIZE
         self.settler_id = settler_id
         # These are set after construction from the npc record dict
-        self.display_name = ""
-        self.settler_trait = ""
+        self.display_name        = ""
+        self.settler_trait       = ""
         self.settler_stats: dict = {}
-        self.settler_hired = False
-        self.settler_city_bx = city_bx
+        self.settler_hired       = False
+        self.settler_disgruntled = False
+        self.settler_city_bx     = city_bx
 
     def update(self, dt):
         from world import DAY_DURATION
@@ -102,18 +103,28 @@ def generate_settler_record(city_bx: int, city_by: int, world_seed: int, day: in
     wage  = _wage_from_stats(stats)
 
     return {
-        "id":       settler_id,
-        "name":     f"{first} {family}",
-        "gender":   gender,
-        "trait":    trait,
-        "stats":    stats,
-        "hired":    False,
-        "job":      None,
-        "wage":     wage,
-        "days_unpaid": 0,
-        "days_unfed":  0,
-        "disgruntled": False,
+        "id":         settler_id,
+        "name":       f"{first} {family}",
+        "gender":     gender,
+        "trait":      trait,
+        "stats":      stats,
+        "hired":      False,
+        "job":        None,
+        "job_config": {},
+        "wage":       wage,
+        "days_unpaid":  0,
+        "days_unfed":   0,
+        "disgruntled":  False,
     }
+
+
+def sync_settler_entity(world, record: dict) -> None:
+    """Push record flags onto the live SettlerNPC entity (call after upkeep changes)."""
+    for e in world.entities:
+        if isinstance(e, SettlerNPC) and e.settler_id == record["id"]:
+            e.settler_hired      = record.get("hired", False)
+            e.settler_disgruntled = record.get("disgruntled", False)
+            break
 
 
 def spawn_settler_entity(world, city, record: dict) -> SettlerNPC:
@@ -124,10 +135,11 @@ def spawn_settler_entity(world, city, record: dict) -> SettlerNPC:
     spawn_x  = spawn_bx * BS
 
     npc = SettlerNPC(spawn_x, spawn_y, world, city.bx, record["id"])
-    npc.display_name   = record["name"]
-    npc.settler_trait  = record["trait"]
-    npc.settler_stats  = record["stats"]
-    npc.settler_hired  = record["hired"]
+    npc.display_name         = record["name"]
+    npc.settler_trait        = record["trait"]
+    npc.settler_stats        = record["stats"]
+    npc.settler_hired        = record.get("hired", False)
+    npc.settler_disgruntled  = record.get("disgruntled", False)
 
     world.entities.append(npc)
     return npc

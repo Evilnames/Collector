@@ -8,8 +8,8 @@ class TeaLeaf:
     uid: str
     origin_biome: str       # biome harvested in ("blend" for blended)
     variety: str            # "assam"|"yunnan"|"darjeeling"|"ceylon"|"high_mountain"|"blend"
-    state: str              # "raw"|"withered"|"oxidized"|"brewed"|"blended"
-    tea_type: str           # ""|"green"|"oolong"|"black"|"puerh"
+    state: str              # "raw"|"withered"|"oxidized"|"roasted"|"brewed"|"blended"
+    tea_type: str           # ""|"white"|"yellow"|"green"|"oolong"|"black"|"puerh"|"hojicha"
     oxidation: float        # 0.0–1.0, set by mini-game
     astringency: float
     floral: float
@@ -24,6 +24,7 @@ class TeaLeaf:
     wither_method: str = ""         # "sun"|"shade"|"indoor"
     herbal_additions: list = field(default_factory=list)  # item keys added at blend
     age_duration: str = ""          # ""|"short"|"medium"|"long"
+    roasting_level: str = ""        # ""|"light"|"medium"|"heavy"
 
 
 # Base flavor profiles per biome — only biomes where tea grows
@@ -33,6 +34,9 @@ BIOME_TEA_PROFILES = {
     "alpine_mountain": {"astringency": 0.35, "floral": 0.90, "vegetal": 0.55, "earthiness": 0.20, "sweetness": 0.70, "variety": "darjeeling"},
     "rolling_hills":   {"astringency": 0.55, "floral": 0.55, "vegetal": 0.50, "earthiness": 0.50, "sweetness": 0.55, "variety": "ceylon"},
     "tundra":          {"astringency": 0.25, "floral": 0.80, "vegetal": 0.65, "earthiness": 0.15, "sweetness": 0.75, "variety": "high_mountain"},
+    "coastal":         {"astringency": 0.30, "floral": 0.70, "vegetal": 0.80, "earthiness": 0.10, "sweetness": 0.65, "variety": "sencha"},
+    "mediterranean":   {"astringency": 0.45, "floral": 0.75, "vegetal": 0.35, "earthiness": 0.30, "sweetness": 0.70, "variety": "sage_mint"},
+    "bamboo_forest":   {"astringency": 0.20, "floral": 0.85, "vegetal": 0.70, "earthiness": 0.15, "sweetness": 0.80, "variety": "longjing"},
 }
 
 _FLAVOR_POOLS = {
@@ -41,6 +45,12 @@ _FLAVOR_POOLS = {
     "vegetal":     ["fresh grass", "steamed spinach", "snap pea", "seaweed", "hay", "matcha"],
     "earthiness":  ["forest floor", "wet stone", "aged wood", "mushroom", "dark soil", "petrichor"],
     "sweetness":   ["honey", "peach", "lychee", "apricot", "caramel", "dried fruit"],
+}
+
+_ROAST_NOTES = {
+    "light":  ["toasted grain", "light caramel", "mild smoke"],
+    "medium": ["roasted hazelnut", "caramelized sugar", "warm toast", "smoky sweetness"],
+    "heavy":  ["dark roast", "charcoal smoke", "burnt caramel", "deep earthen smoke"],
 }
 
 _WITHER_NOTES = {
@@ -85,24 +95,32 @@ WITHER_METHODS = {
 
 # Oxidation level → tea type thresholds
 OXIDATION_ZONES = {
-    "green":  (0.00, 0.20),
-    "oolong": (0.20, 0.75),
-    "black":  (0.75, 0.95),
-    "puerh":  (0.95, 1.00),
+    "white":  (0.00, 0.08),
+    "yellow": (0.08, 0.18),
+    "green":  (0.18, 0.28),
+    "oolong": (0.28, 0.75),
+    "black":  (0.75, 0.93),
+    "puerh":  (0.93, 1.00),
 }
 
 TEA_TYPE_DESCS = {
-    "green":  "Green Tea — fresh, vegetal, bright",
-    "oolong": "Oolong — complex, floral, semi-oxidized",
-    "black":  "Black Tea — bold, malty, brisk",
-    "puerh":  "Pu-erh — earthy, aged, deep",
+    "white":   "White Tea — delicate, floral, barely touched",
+    "yellow":  "Yellow Tea — mellow, smooth, gently processed",
+    "green":   "Green Tea — fresh, vegetal, bright",
+    "oolong":  "Oolong — complex, floral, semi-oxidized",
+    "black":   "Black Tea — bold, malty, brisk",
+    "puerh":   "Pu-erh — earthy, aged, deep",
+    "hojicha": "Hojicha — roasted, smoky, warming",
 }
 
 TEA_TYPE_COLORS = {
-    "green":  ( 80, 160,  80),
-    "oolong": (180, 140,  60),
-    "black":  ( 60,  35,  15),
-    "puerh":  ( 45,  30,  10),
+    "white":   (215, 210, 190),
+    "yellow":  (210, 190,  90),
+    "green":   ( 80, 160,  80),
+    "oolong":  (180, 140,  60),
+    "black":   ( 60,  35,  15),
+    "puerh":   ( 45,  30,  10),
+    "hojicha": (130,  70,  30),
 }
 
 BUFF_DESCS = {
@@ -110,14 +128,20 @@ BUFF_DESCS = {
     "harmony":     "Farm yield +25%",
     "alertness":   "Discovery XP +30%",
     "longevity":   "Hunger drain -55%",
+    "radiance":    "Movement speed +15%",
+    "clarity":     "Food restores +15% more hunger",
+    "warmth":      "Passive health regen (+0.8 HP/s)",
 }
 
 # Maps tea_type → buff granted when consumed
 TEA_TYPE_BUFFS = {
-    "green":  "tranquility",
-    "oolong": "harmony",
-    "black":  "alertness",
-    "puerh":  "longevity",
+    "white":   "radiance",
+    "yellow":  "clarity",
+    "green":   "tranquility",
+    "oolong":  "harmony",
+    "black":   "alertness",
+    "puerh":   "longevity",
+    "hojicha": "warmth",
 }
 
 HERBAL_ADDITIVES = {
@@ -209,13 +233,36 @@ HERBAL_ADDITIVES = {
 }
 
 AGE_DURATIONS = {
-    "short":  {"label": "Short (3mo)",  "quality_mult": 1.00, "complexity_delta": 0.06},
-    "medium": {"label": "Medium (1yr)", "quality_mult": 1.06, "complexity_delta": 0.12},
-    "long":   {"label": "Long (3yr)",   "quality_mult": 1.12, "complexity_delta": 0.20},
+    "short":  {"label": "Short (1 day)",   "days": 1,  "quality_mult": 1.00, "complexity_delta": 0.06},
+    "medium": {"label": "Medium (8 days)", "days": 8,  "quality_mult": 1.06, "complexity_delta": 0.12},
+    "long":   {"label": "Long (16 days)",  "days": 16, "quality_mult": 1.12, "complexity_delta": 0.20},
 }
 
-_CODEX_BIOMES = ["tropical", "jungle", "alpine_mountain", "rolling_hills", "tundra"]
-TEA_TYPE_ORDER = [f"{b}_{t}" for b in _CODEX_BIOMES for t in ["green", "oolong", "black", "puerh"]]
+ROASTING_LEVELS = {
+    "light":  {
+        "label": "Light Roast",
+        "desc":  "Brief heat. Preserves floral notes, adds toasted grain character.",
+        "vegetal": -0.10, "floral": -0.05, "earthiness": +0.08, "sweetness": +0.05,
+        "quality_mult": 1.00, "complexity_bonus": 0.06,
+    },
+    "medium": {
+        "label": "Medium Roast",
+        "desc":  "Balanced heat. Smooth, nutty, smoky sweetness.",
+        "vegetal": -0.20, "floral": -0.12, "earthiness": +0.18, "sweetness": +0.08, "astringency": -0.08,
+        "quality_mult": 1.05, "complexity_bonus": 0.10,
+    },
+    "heavy":  {
+        "label": "Heavy Roast",
+        "desc":  "Deep charcoal roast. Bold, smoky, dark-earthen.",
+        "vegetal": -0.30, "floral": -0.20, "earthiness": +0.28, "sweetness": -0.05, "astringency": -0.15,
+        "quality_mult": 1.08, "complexity_bonus": 0.14,
+    },
+}
+
+_CODEX_BIOMES = ["tropical", "jungle", "alpine_mountain", "rolling_hills", "tundra",
+                 "coastal", "mediterranean", "bamboo_forest"]
+_CODEX_TEA_TYPES = ["white", "yellow", "green", "oolong", "black", "puerh", "hojicha"]
+TEA_TYPE_ORDER = [f"{b}_{t}" for b in _CODEX_BIOMES for t in _CODEX_TEA_TYPES]
 
 BIOME_DISPLAY_NAMES = {
     "tropical":        "Tropical",
@@ -223,6 +270,9 @@ BIOME_DISPLAY_NAMES = {
     "alpine_mountain": "Alpine",
     "rolling_hills":   "Rolling Hills",
     "tundra":          "Tundra",
+    "coastal":         "Coastal",
+    "mediterranean":   "Mediterranean",
+    "bamboo_forest":   "Bamboo Forest",
     "blend":           "Blend",
 }
 
@@ -232,6 +282,9 @@ VARIETY_DISPLAY_NAMES = {
     "darjeeling":   "Darjeeling",
     "ceylon":       "Ceylon",
     "high_mountain": "High Mountain",
+    "sencha":       "Sencha",
+    "sage_mint":    "Sage-Mint",
+    "longjing":     "Longjing",
     "blend":        "Blend",
 }
 
@@ -319,6 +372,17 @@ def generate_flavor_notes(leaf: "TeaLeaf") -> list:
         notes = [n for n in notes if n not in ("fresh grass", "snap pea")] + ["aged earth", "camphor"]
     elif leaf.tea_type == "green":
         notes = [n for n in notes if n not in ("brisk", "tannic grip")] + ["fresh finish"]
+    elif leaf.tea_type == "white":
+        notes = [n for n in notes if n not in ("brisk", "tannic grip", "fresh grass")] + ["white blossom", "dew-soft"]
+    elif leaf.tea_type == "yellow":
+        notes = [n for n in notes if n not in ("brisk", "tannic grip")] + ["mellow grain", "soft floral"]
+    elif leaf.tea_type == "hojicha":
+        if leaf.roasting_level in _ROAST_NOTES:
+            pool = _ROAST_NOTES[leaf.roasting_level]
+            notes = [rng.choice(pool), rng.choice(pool)]
+        else:
+            notes = ["roasted grain", "toasty warmth"]
+        notes = [n for n in notes if n not in ("fresh grass", "snap pea", "seaweed", "brisk")] + notes[:2]
     seen = []
     for n in notes:
         if n not in seen:
@@ -327,12 +391,27 @@ def generate_flavor_notes(leaf: "TeaLeaf") -> list:
 
 
 def get_brew_item_id(leaf: "TeaLeaf") -> str:
-    base = f"{leaf.tea_type}_tea"
+    base = "hojicha" if leaf.tea_type == "hojicha" else f"{leaf.tea_type}_tea"
     if leaf.steep_quality >= 0.7 or (leaf.tea_type == "puerh" and leaf.age_duration in ("medium", "long")):
         return f"{base}_aged"
     elif leaf.steep_quality >= 0.4:
         return f"{base}_fine"
     return base
+
+
+def apply_roasting(leaf: "TeaLeaf", level: str):
+    rmods = ROASTING_LEVELS.get(level)
+    if not rmods:
+        return
+    leaf.roasting_level = level
+    for attr in ("astringency", "floral", "vegetal", "earthiness", "sweetness"):
+        if attr in rmods:
+            setattr(leaf, attr, _clamp(getattr(leaf, attr) + rmods[attr]))
+    leaf.complexity    = _clamp(leaf.complexity + rmods.get("complexity_bonus", 0.0))
+    leaf.steep_quality = _clamp(leaf.steep_quality * rmods.get("quality_mult", 1.0))
+    leaf.tea_type      = "hojicha"
+    leaf.state         = "roasted"
+    leaf.flavor_notes  = generate_flavor_notes(leaf)
 
 
 def make_blend(components: list) -> "TeaLeaf":

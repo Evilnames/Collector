@@ -17,7 +17,7 @@ from blocks import (BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BB
                     STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
                     BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK,
                     COMPOST_BIN_BLOCK, GARDEN_BLOCK,
-                    WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK,
+                    WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK, ROASTING_KILN_BLOCK,
                     DRYING_RACK_BLOCK, KILN_BLOCK, RESONANCE_BLOCK,
                     BAIT_STATION_BLOCK,
                     SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK,
@@ -89,7 +89,7 @@ class HandlersMixin:
                 return True
         return False
 
-    def handle_crafting_click(self, pos, player, button=1, research=None):
+    def handle_crafting_click(self, pos, player, button=1, research=None, debug=False):
         for (r, c), rect in self._cell_rects.items():
             if rect.collidepoint(pos):
                 if button == 3:
@@ -98,7 +98,7 @@ class HandlersMixin:
                     self._craft_grid[r][c] = self._cycle_craft_item(r, c, player)
                 return
         if button == 1 and self._craft_btn and self._craft_btn.collidepoint(pos):
-            self._do_grid_craft(player, research)
+            self._do_grid_craft(player, research, debug=debug)
             return
         if button == 1:
             for ridx, rect in self._recipe_rects.items():
@@ -115,9 +115,14 @@ class HandlersMixin:
         idx = choices.index(cur) if cur in choices else -1
         return choices[(idx + 1) % len(choices)]
 
-    def _do_grid_craft(self, player, research=None):
+    def _do_grid_craft(self, player, research=None, debug=False):
         out_id, out_count = match_recipe(self._craft_grid)
-        if out_id and can_craft_with_research(self._craft_grid, player.inventory, research):
+        if not out_id:
+            return
+        if debug:
+            for _ in range(out_count):
+                player._add_item(out_id)
+        elif can_craft_with_research(self._craft_grid, player.inventory, research):
             costs = craft_costs(self._craft_grid)
             for iid, needed in costs.items():
                 player.inventory[iid] = player.inventory.get(iid, 0) - needed
@@ -350,13 +355,7 @@ class HandlersMixin:
             else:
                 self._player_chest_scroll = max(0, min(self._max_player_chest_scroll, self._player_chest_scroll - dy))
         elif self.garden_open:
-            mouse = pygame.mouse.get_pos()
-            PW = 1140
-            px = (SCREEN_W - PW) // 2
-            if mouse[0] < px + PW // 2:
-                self._garden_scroll = max(0, min(self._max_garden_scroll, self._garden_scroll - dy))
-            else:
-                self._player_garden_scroll = max(0, min(self._max_player_garden_scroll, self._player_garden_scroll - dy))
+            self._garden_col_scroll = max(0, min(self._max_garden_col_scroll, self._garden_col_scroll - dy))
 
     def handle_chest_click(self, pos, player, button):
         """Left-click transfers whole stack; right-click transfers one."""
@@ -412,34 +411,87 @@ class HandlersMixin:
                         player.world.wildflower_display_data[(bx, by)] = player.wildflowers.pop(i)
                         return
 
-    def handle_garden_click(self, pos, player):
-        flowers = self.active_garden_flowers
+    def handle_garden_mousedown(self, pos, player):
+        flowers    = self.active_garden_flowers
         garden_pos = self.active_garden_pos
         if flowers is None or garden_pos is None:
             return
-        # Click on a flower in the garden → return to player collection
-        for uid, rect in self._garden_rects.items():
-            if rect.collidepoint(pos):
-                for i, wf in enumerate(flowers):
-                    if wf.uid == uid:
-                        player.wildflowers.append(flowers.pop(i))
-                        # Remove garden insects if now empty
-                        if not flowers:
-                            player.world.insects = [
-                                ins for ins in player.world.insects
-                                if not _is_garden_insect(ins, garden_pos)
-                            ]
-                        return
-        # Click on a wildflower in the player collection → move to garden
-        for uid, rect in self._player_garden_rects.items():
+        CAPACITY = 12
+        # Pick up from an occupied garden slot
+        for slot_idx, rect in self._garden_slot_rects.items():
+            if rect.collidepoint(pos) and slot_idx < len(flowers):
+                self._garden_drag_flower = flowers[slot_idx]
+                self._garden_drag_source = 'slot'
+                self._garden_drag_pos    = pos
+                flowers.pop(slot_idx)
+                if not flowers:
+                    player.world.insects = [
+                        ins for ins in player.world.insects
+                        if not _is_garden_insect(ins, garden_pos)
+                    ]
+                return
+        # Pick up from the collection panel
+        for uid, rect in self._garden_col_rects.items():
             if rect.collidepoint(pos):
                 for i, wf in enumerate(player.wildflowers):
-                    if wf.uid == uid:
-                        was_empty = not flowers
-                        flowers.append(player.wildflowers.pop(i))
-                        if was_empty:
-                            player.world.spawn_insects_near_garden(*garden_pos)
+                    if wf.uid == uid and len(flowers) < CAPACITY:
+                        self._garden_drag_flower = player.wildflowers.pop(i)
+                        self._garden_drag_source = 'collection'
+                        self._garden_drag_pos    = pos
                         return
+
+    def handle_garden_mousemotion(self, pos):
+        if self._garden_drag_flower is not None:
+            self._garden_drag_pos = pos
+
+    def handle_garden_mouseup(self, pos, player):
+        drag_wf    = self._garden_drag_flower
+        drag_src   = self._garden_drag_source
+        flowers    = self.active_garden_flowers
+        garden_pos = self.active_garden_pos
+        if drag_wf is None or flowers is None:
+            return
+
+        CAPACITY = 12
+        dropped  = False
+
+        # Drop onto a garden slot
+        for slot_idx, rect in self._garden_slot_rects.items():
+            if rect.collidepoint(pos):
+                insert_idx = min(slot_idx, len(flowers))
+                flowers.insert(insert_idx, drag_wf)
+                was_first = len(flowers) == 1
+                if was_first:
+                    player.world.spawn_insects_near_garden(*garden_pos)
+                dropped = True
+                break
+
+        if not dropped:
+            # Drop onto the collection panel → return flower to inventory
+            PW = 1160
+            px = (SCREEN_W - PW) // 2
+            col_zone_x = px + 730 + 18 + 8
+            col_zone_w = PW - (730 + 18 + 8 + 10)
+            if pos[0] >= col_zone_x and pos[0] <= col_zone_x + col_zone_w:
+                player.wildflowers.append(drag_wf)
+                if drag_src == 'slot' and not flowers:
+                    player.world.insects = [
+                        ins for ins in player.world.insects
+                        if not _is_garden_insect(ins, garden_pos)
+                    ]
+                dropped = True
+
+        if not dropped:
+            # Dropped nowhere — return to original source
+            if drag_src == 'slot':
+                flowers.append(drag_wf)
+                if len(flowers) == 1:
+                    player.world.spawn_insects_near_garden(*garden_pos)
+            else:
+                player.wildflowers.append(drag_wf)
+
+        self._garden_drag_flower = None
+        self._garden_drag_source = None
 
 
     def handle_npc_click(self, pos, player):
@@ -654,6 +706,9 @@ class HandlersMixin:
             return
         if self.refinery_block_id == TEA_CELLAR_BLOCK:
             self._handle_tea_cellar_click(pos, player)
+            return
+        if self.refinery_block_id == ROASTING_KILN_BLOCK:
+            self._handle_roasting_kiln_click(pos, player)
             return
         if self.refinery_block_id == DRYING_RACK_BLOCK:
             self._handle_drying_rack_click(pos, player)

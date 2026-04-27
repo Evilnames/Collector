@@ -7,7 +7,11 @@ from spirits import (
     SPIRIT_TYPE_DESCS, SPIRIT_TYPE_COLORS, BIOME_DISPLAY_NAMES,
 )
 
-_BARREL_AGE_TIMES = {"short": 12.0, "medium": 24.0, "long": 40.0}
+_SECS_PER_AGING_DAY = 5.0
+
+
+def _barrel_duration_secs(key):
+    return AGE_DURATIONS.get(key, {}).get("days", 8) * _SECS_PER_AGING_DAY
 
 
 class SpiritsMixin:
@@ -365,7 +369,8 @@ class SpiritsMixin:
             return
         spirit = player.spirits[si]
 
-        duration_secs = _BARREL_AGE_TIMES.get(self._barrel_duration_sel, 24.0)
+        duration_secs = _barrel_duration_secs(self._barrel_duration_sel)
+        total_days = AGE_DURATIONS.get(self._barrel_duration_sel, {}).get("days", 8)
         if not self._barrel_age_done:
             self._barrel_age_progress = min(1.0, self._barrel_age_progress + dt / duration_secs)
             self._barrel_age_care_timer -= dt
@@ -397,8 +402,9 @@ class SpiritsMixin:
         pygame.draw.rect(self.screen, (20, 15, 8), (bar_x, bar_y, bar_w, 30))
         pygame.draw.rect(self.screen, col, (bar_x, bar_y, int(bar_w * self._barrel_age_progress), 30))
         pygame.draw.rect(self.screen, (160, 130, 55), (bar_x, bar_y, bar_w, 30), 2)
-        pct = int(self._barrel_age_progress * 100)
-        pl = self.small.render(f"Aging: {pct}%", True, (190, 160, 80))
+        days_elapsed = int(self._barrel_age_progress * total_days)
+        day_lbl = "day" if total_days == 1 else "days"
+        pl = self.small.render(f"Aging: Day {days_elapsed} / {total_days} {day_lbl}", True, (190, 160, 80))
         self.screen.blit(pl, (CX - pl.get_width() // 2, SCREEN_H // 2 + 30))
         bonus_pct = int(self._barrel_age_care_bonus * 100)
         bl2 = self.small.render(f"Care bonus: +{bonus_pct}%", True, (160, 135, 65))
@@ -439,8 +445,7 @@ class SpiritsMixin:
         if key == pygame.K_w and self._barrel_age_care_active:
             self._barrel_age_care_bonus = min(1.0, self._barrel_age_care_bonus + 0.12)
             self._barrel_age_care_active = False
-            duration_secs = _BARREL_AGE_TIMES.get(self._barrel_duration_sel, 24.0)
-            self._barrel_age_care_timer = max(5.0, duration_secs / 3)
+            self._barrel_age_care_timer = max(5.0, _barrel_duration_secs(self._barrel_duration_sel) / 3)
 
     def _handle_barrel_room_click(self, pos, player):
         if self._barrel_phase == "result":
@@ -467,12 +472,11 @@ class SpiritsMixin:
                 and self._barrel_spirit_idx is not None
                 and self._barrel_spirit_idx < len(player.spirits)
                 and self._barrel_type_sel and self._barrel_duration_sel):
-            duration_secs = _BARREL_AGE_TIMES.get(self._barrel_duration_sel, 24.0)
             self._barrel_phase = "aging"
             self._barrel_age_progress = 0.0
             self._barrel_age_care_active = False
             self._barrel_age_care_window = 0.0
-            self._barrel_age_care_timer = max(4.0, duration_secs / 3)
+            self._barrel_age_care_timer = max(4.0, _barrel_duration_secs(self._barrel_duration_sel) / 3)
             self._barrel_age_care_bonus = 0.0
             self._barrel_age_done = False
 

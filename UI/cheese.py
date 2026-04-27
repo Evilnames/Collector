@@ -9,6 +9,8 @@ from cheese import (
     _CODEX_BIOMES, BIOME_CHEESE_PROFILES,
 )
 
+_SECS_PER_AGING_DAY = 5.0
+
 _ACCENT  = (210, 185, 110)
 _DARK_BG = ( 28,  22,  12)
 _CELL_BG = ( 40,  32,  18)
@@ -305,7 +307,7 @@ class CheeseMixin:
             desc_short = ct_desc.split("—")[-1].strip()
             dl = self.small.render(desc_short, True, _LABEL_C)
             self.screen.blit(dl, (px + BTN_W // 2 - dl.get_width() // 2, py + 38))
-            ag = self.small.render(f"Aging: {age_cycles} cycle{'s' if age_cycles != 1 else ''}", True, _HINT_C)
+            ag = self.small.render(f"Aging: {age_cycles} day{'s' if age_cycles != 1 else ''}", True, _HINT_C)
             self.screen.blit(ag, (px + BTN_W // 2 - ag.get_width() // 2, py + 62))
             opt = CHEESE_PRESS_INGREDIENTS.get(ct_key)
             if opt:
@@ -372,7 +374,7 @@ class CheeseMixin:
         if aging_cycles == 0:
             msg2 = self.small.render("Fresh — no aging needed. Collect from Aging Cave.", True, _LABEL_C)
         else:
-            msg2 = self.small.render(f"Needs {aging_cycles} aging cycle(s) in the Aging Cave.", True, _LABEL_C)
+            msg2 = self.small.render(f"Needs {aging_cycles} aging day(s) in the Aging Cave.", True, _LABEL_C)
         self.screen.blit(msg2, (cx - msg2.get_width() // 2, SCREEN_H // 2 + 18))
         ok = self.small.render("Click anywhere to continue", True, _HINT_C)
         self.screen.blit(ok, (cx - ok.get_width() // 2, SCREEN_H // 2 + 50))
@@ -471,7 +473,7 @@ class CheeseMixin:
                 bn = self.small.render(f"{wheel.animal_type.capitalize()} — {biome_nm}", True, _HINT_C)
                 self.screen.blit(bn, (rx + 6, ry + 28))
                 req = CHEESE_TYPE_AGING.get(wheel.cheese_type, 0)
-                ag = self.small.render(f"Needs {req} cycle(s)", True, _DIM_C)
+                ag = self.small.render(f"Needs {req} day(s)", True, _DIM_C)
                 self.screen.blit(ag, (rx + 6, ry + 46))
 
         elif self._cave_phase == "select_duration":
@@ -487,7 +489,7 @@ class CheeseMixin:
         self._cave_duration_rects.clear()
         w = self._cave_current_wheel
         required = CHEESE_TYPE_AGING.get(w.cheese_type, 1)
-        sub = self.small.render("Choose aging duration (more cycles = sharper, nuttier):", True, _LABEL_C)
+        sub = self.small.render("Choose aging duration (more days = sharper, nuttier):", True, _LABEL_C)
         self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 32))
         max_cycles = 6 if getattr(player, "blue_cheese_unlocked", False) else 5
         durations = list(range(required, max_cycles + 1))
@@ -503,7 +505,7 @@ class CheeseMixin:
             pygame.draw.rect(self.screen, _ACCENT, prect, 2)
             lbl = self.font.render(f"{cycles}", True, _TITLE_C)
             self.screen.blit(lbl, (px + BTN_W // 2 - lbl.get_width() // 2, py + 8))
-            cl = self.small.render("cycle" if cycles == 1 else "cycles", True, _LABEL_C)
+            cl = self.small.render("day" if cycles == 1 else "days", True, _LABEL_C)
             self.screen.blit(cl, (px + BTN_W // 2 - cl.get_width() // 2, py + 34))
             tier = "Superior" if cycles >= 5 else "Fine" if cycles >= 3 else "Base"
             tl = self.small.render(tier, True, _HINT_C)
@@ -515,7 +517,8 @@ class CheeseMixin:
 
         # Advance aging bar
         if not self._cave_game_done:
-            self._cave_age_progress = min(1.0, self._cave_age_progress + dt / (self._cave_cycles * 6.0))
+            total_secs = self._cave_cycles * _SECS_PER_AGING_DAY
+            self._cave_age_progress = min(1.0, self._cave_age_progress + dt / total_secs)
             # Periodic care prompt
             self._cave_care_prompt_timer -= dt
             if self._cave_care_prompt_timer <= 0 and not self._cave_care_active:
@@ -540,8 +543,9 @@ class CheeseMixin:
 
         ct = self.font.render(w.cheese_type.replace("_", " ").title(), True, _TITLE_C)
         self.screen.blit(ct, (cx - ct.get_width() // 2, SCREEN_H // 2 - 55))
-        pct = int(self._cave_age_progress * 100)
-        pl = self.small.render(f"Aging: {pct}%", True, _LABEL_C)
+        days_elapsed = int(self._cave_age_progress * self._cave_cycles)
+        day_lbl = "day" if self._cave_cycles == 1 else "days"
+        pl = self.small.render(f"Aging: Day {days_elapsed} / {self._cave_cycles} {day_lbl}", True, _LABEL_C)
         self.screen.blit(pl, (cx - pl.get_width() // 2, SCREEN_H // 2 + 30))
 
         bonus_pct = int(self._cave_care_bonus * 100)

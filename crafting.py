@@ -1488,6 +1488,36 @@ RECIPES = [
         "output_id":    "fishing_pole",
         "output_count": 1,
     },
+    {
+        "name": "Cane Rod",
+        "pattern": [
+            [None,           None,           "lumber"     ],
+            [None,           "lumber",       None         ],
+            ["iron_chunk",   "lumber",       None         ],
+        ],
+        "output_id":    "cane_rod",
+        "output_count": 1,
+    },
+    {
+        "name": "Composite Rod",
+        "pattern": [
+            [None,              None,           "lumber"     ],
+            [None,              "lumber",       None         ],
+            ["crystal_shard",   "lumber",       "iron_chunk" ],
+        ],
+        "output_id":    "composite_rod",
+        "output_count": 1,
+    },
+    {
+        "name": "Fish Trophy",
+        "pattern": [
+            ["lumber",     "iron_chunk", "lumber"    ],
+            ["lumber",     None,         "lumber"    ],
+            [None,         None,         None        ],
+        ],
+        "output_id":    "fish_trophy_item",
+        "output_count": 1,
+    },
     # --- Bird furniture ---
     {
         "name": "Bird Feeder",
@@ -1753,6 +1783,26 @@ RECIPES = [
         "output_id":    "city_block_item",
         "output_count": 1,
     },
+    {
+        "name": "Mining Post",
+        "pattern": [
+            ["iron_chunk",  "stone_chip",  "iron_chunk" ],
+            ["stone_chip",  "stone_chip",  "stone_chip" ],
+            ["stone_chip",  "lumber",      "stone_chip" ],
+        ],
+        "output_id":    "mining_post_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Banner",
+        "pattern": [
+            ["wool",    "wool",    "wool"  ],
+            ["lumber",  "wool",    "lumber"],
+            [None,      "lumber",  None    ],
+        ],
+        "output_id":    "banner_item",
+        "output_count": 1,
+    },
     # --- Wine equipment ---
     {
         "name": "Grape Press",
@@ -1855,6 +1905,16 @@ RECIPES = [
             ["stone_chip", "lumber",  "stone_chip"],
         ],
         "output_id":    "tea_cellar_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Roasting Kiln",
+        "pattern": [
+            ["iron_chunk", "coal",       "iron_chunk"],
+            ["stone_chip", "coal",       "stone_chip"],
+            ["stone_chip", "stone_chip", "stone_chip"],
+        ],
+        "output_id":    "roasting_kiln_item",
         "output_count": 1,
     },
     # --- Textile equipment ---
@@ -2705,7 +2765,7 @@ RECIPE_GROUPS = {
         "brew_kettle_item", "ferm_vessel_item", "taproom_item",
     ],
     "Tea": [
-        "withering_rack_item", "oxidation_station_item", "tea_cellar_item",
+        "withering_rack_item", "oxidation_station_item", "tea_cellar_item", "roasting_kiln_item",
     ],
     "Herbalism": [
         "drying_rack_item",
@@ -2720,7 +2780,7 @@ RECIPE_GROUPS = {
         "dairy_vat_item", "cheese_press_item", "aging_cave_item",
     ],
     "Fishing": [
-        "fishing_pole", "bait_station_item",
+        "fishing_pole", "cane_rod", "composite_rod", "bait_station_item", "fish_trophy_item",
     ],
     "Wildlife": [
         "bird_feeder", "bird_bath", "bug_net", "insect_display_case", "light_trap",
@@ -2799,6 +2859,7 @@ RESEARCH_LOCKED_RECIPES = {
     "withering_rack_item":   "tea_cultivation",
     "oxidation_station_item":"tea_processing_arts",
     "tea_cellar_item":       "tea_ceremony",
+    "roasting_kiln_item":    "tea_blending",
     "strawberry_seed_premium": "selective_breeding",
     "tomato_seed_premium":     "selective_breeding",
     "watermelon_seed_premium": "selective_breeding",

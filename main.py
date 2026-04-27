@@ -529,6 +529,8 @@ def main():
         ui.garden_open = False
         ui.active_garden_flowers = None
         ui.active_garden_pos = None
+        ui._garden_drag_flower = None
+        ui._garden_drag_source = None
         ui.wildflower_display_open = False
         ui.active_display_pos = None
         ui.wardrobe_open = False
@@ -539,10 +541,17 @@ def main():
         ui.active_town = None
         ui.outpost_menu_open = False
         ui.active_outpost = None
+        ui.landmark_menu_open = False
+        ui.active_landmark_region = None
+        ui.active_landmark_spec = None
         ui.city_block_menu_open = False
         ui.active_city_block = None
+        ui.coa_designer_open = False
+        ui._coa_city = None
         ui.hire_panel_open = False
         ui.active_hire_npc = None
+        ui.job_panel_open  = False
+        ui.active_job_record = None
         ui.trade_block_open = False
         ui.active_trade_pos = None
         player.inspecting_npc = None
@@ -559,7 +568,7 @@ def main():
                     ui.automation_open, ui.farm_bot_open, ui.chest_open,
                     ui.backhoe_open, ui.breeding_open, ui.garden_open, ui.wildflower_display_open,
                     ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open,
-                    ui.town_menu_open, ui.outpost_menu_open, ui.city_block_menu_open, ui.hire_panel_open, ui.reputation_screen_open, ui.trade_block_open,
+                    ui.town_menu_open, ui.outpost_menu_open, ui.landmark_menu_open, ui.city_block_menu_open, ui.coa_designer_open, ui.hire_panel_open, ui.job_panel_open, ui.reputation_screen_open, ui.trade_block_open,
                     ui.dog_view_open, ui.dog_breeding_open, ui.gambling_open, ui.racing_open, ui.arena_open,
                     getattr(player, "inspecting_npc", None) is not None])
 
@@ -770,6 +779,10 @@ def main():
                 if ui.city_block_menu_open and ui._city_name_editing:
                     ui.handle_city_block_keydown(event.key, getattr(event, "unicode", ""), player)
 
+                # Job panel: text input for hauling config
+                if ui.job_panel_open:
+                    ui.handle_job_panel_keydown(event.key, getattr(event, "unicode", ""))
+
                 # Sculptor's Bench: Z=undo, ENTER=confirm, ESC=back
                 from blocks import SCULPTORS_BENCH as _SCULPTORS_BENCH
                 if ui.refinery_open and ui.refinery_block_id == _SCULPTORS_BENCH:
@@ -832,11 +845,17 @@ def main():
                     ui.town_chronicle_open = not ui.town_chronicle_open
 
                 if event.key == pygame.K_ESCAPE:
-                    if ui.town_chronicle_open:
+                    if ui.coa_designer_open:
+                        ui.close_coat_of_arms_designer()
+                    elif ui.town_chronicle_open:
                         ui.town_chronicle_open = False
-                    elif player.fishing_state in ("casting", "biting"):
+                    elif ui.job_panel_open:
+                        ui.close_job_panel()
+                    elif player.fishing_state in ("casting", "biting", "reeling"):
                         player.fishing_state = None
                         player._fishing_biome = None
+                        player._fishing_is_hotspot = False
+                        player._fishing_pending_fish = None
                     elif ui.pause_open:
                         ui.pause_open = False
                     elif _any_ui_open():
@@ -919,14 +938,7 @@ def main():
                     if nearby_any is not None:
                         from cities import LandmarkNPC as _LandmarkNPC_i
                         if isinstance(nearby_any, _LandmarkNPC_i):
-                            _ok, _title, _detail = nearby_any.trigger(player)
-                            if not hasattr(world, "_town_toasts"):
-                                world._town_toasts = []
-                            world._town_toasts.append(_title if not _detail else f"{_title} — {_detail}")
-                            if getattr(world, "pending_arena_open", None) is not None:
-                                _close_all_ui()
-                                ui.open_arena(world.pending_arena_open)
-                                world.pending_arena_open = None
+                            pass  # landmark interaction is handled via E on the flag
                         elif getattr(player, "inspecting_npc", None) is nearby_any:
                             player.inspecting_npc = None
                             player.gift_panel_open = False
@@ -1041,42 +1053,59 @@ def main():
                     elif nearby_outpost_flag is not None:
                         from outposts import get_outpost_for_block
                         op = get_outpost_for_block(*nearby_outpost_flag)
-                        if op is not None:
-                            if ui.outpost_menu_open and ui.active_outpost is op:
-                                ui.close_outpost_menu()
-                            else:
-                                _close_all_ui()
-                                ui.open_outpost_menu(op)
+                        if op is None:
+                            print(f"[WARNING] Outpost flag at {nearby_outpost_flag} "
+                                  f"has no matching Outpost record. "
+                                  f"E-key will not work.")
+                        elif ui.outpost_menu_open and ui.active_outpost is op:
+                            ui.close_outpost_menu()
+                        else:
+                            _close_all_ui()
+                            ui.open_outpost_menu(op)
                     elif nearby_landmark_flag is not None:
-                        from landmarks import apply_effect
+                        from landmarks import apply_effect, landmark_for
                         from towns import REGIONS, TOWNS
-                        lbx, _ = nearby_landmark_flag
-                        _reg = next(
-                            (REGIONS[t.region_id] for t in TOWNS.values()
-                             if abs(t.center_bx - lbx) < 30 and t.region_id in REGIONS),
-                            None)
+                        lbx, lby = nearby_landmark_flag
+                        _reg = None
+                        if TOWNS:
+                            _nearest_t = min(TOWNS.values(),
+                                             key=lambda t: abs(t.center_bx - lbx))
+                            if _nearest_t.region_id in REGIONS:
+                                _reg = REGIONS[_nearest_t.region_id]
+                        if _reg is None:
+                            print(f"[WARNING] Landmark flag at ({lbx},{lby}) has no "
+                                  f"matching region. Nearest town center: "
+                                  f"{_nearest_t.center_bx if TOWNS else 'none'}. "
+                                  f"E-key will not work.")
                         if _reg:
-                            ok, title, detail = apply_effect(player, _reg,
-                                                             getattr(world, "day_count", 0))
-                            if not hasattr(world, "_town_toasts"):
-                                world._town_toasts = []
-                            msg = title if not detail else f"{title} — {detail}"
-                            world._town_toasts.append(msg)
-                            if getattr(world, "pending_arena_open", None) is not None:
+                            if ui.landmark_menu_open and ui.active_landmark_region is _reg:
+                                # Second E: fire the effect
+                                ok, title, detail = apply_effect(
+                                    player, _reg, getattr(world, "day_count", 0))
+                                if not hasattr(world, "_town_toasts"):
+                                    world._town_toasts = []
+                                msg = title if not detail else f"{title} — {detail}"
+                                world._town_toasts.append(msg)
+                                ui.close_landmark_menu()
+                                if getattr(world, "pending_arena_open", None) is not None:
+                                    _close_all_ui()
+                                    ui.open_arena(world.pending_arena_open)
+                                    world.pending_arena_open = None
+                            else:
+                                # First E: open the info screen
                                 _close_all_ui()
-                                ui.open_arena(world.pending_arena_open)
-                                world.pending_arena_open = None
+                                _spec = landmark_for(
+                                    _reg.agenda,
+                                    getattr(_reg, "biome_group", ""))
+                                ui.open_landmark_menu(_reg, _spec)
                     elif nearby_npc is not None:
                         from cities import LeaderNPC, LandmarkNPC
                         from settler_npcs import SettlerNPC as _SettlerNPC
                         if isinstance(nearby_npc, LandmarkNPC):
                             pass  # handled via nearby_landmark_flag above
-                        elif isinstance(nearby_npc, _SettlerNPC) and not nearby_npc.settler_hired:
-                            # Unhired settler → open hire panel
+                        elif isinstance(nearby_npc, _SettlerNPC):
+                            # Any settler (hired or not) → hire/status panel
                             from player_cities import PLAYER_CITIES
-                            _city = PLAYER_CITIES.get((nearby_npc.settler_city_bx,
-                                                       nearby_npc.settler_city_bx))  # by is unknown here
-                            # Find city by city_bx across all cities
                             _city = next((c for c in PLAYER_CITIES.values()
                                           if c.bx == nearby_npc.settler_city_bx), None)
                             _rec  = next((r for r in (_city.npcs if _city else [])
@@ -1253,7 +1282,7 @@ def main():
                                     if len(tamed_horses) >= 2:
                                         stable_pos = player.get_nearby_equipment_pos(STABLE_BLOCK)
                                         ui.open_horse_breeding(stable_pos, tamed_horses[0], tamed_horses[1])
-                                        ui.refinery_open = False
+                                    ui.refinery_open = False
                                 elif equip == KENNEL_BLOCK:
                                     from dogs import Dog as _Dog
                                     tamed_dogs = [
@@ -1264,7 +1293,7 @@ def main():
                                     if len(tamed_dogs) >= 2:
                                         kennel_pos = player.get_nearby_equipment_pos(KENNEL_BLOCK)
                                         ui.open_dog_breeding(kennel_pos, tamed_dogs[0], tamed_dogs[1])
-                                        ui.refinery_open = False
+                                    ui.refinery_open = False
                                 elif equip == CHICKEN_COOP_BLOCK:
                                     ui.active_coop_pos = player.get_nearby_equipment_pos(CHICKEN_COOP_BLOCK)
                                 elif equip == GAMBLING_TABLE:
@@ -1320,7 +1349,9 @@ def main():
 
             if event.type == pygame.MOUSEWHEEL:
                 if not player.dead and not ui.cheat_open:
-                    if ui.reputation_screen_open:
+                    if ui.coa_designer_open:
+                        ui.handle_coa_scroll(event.y)
+                    elif ui.reputation_screen_open:
                         ui.handle_reputation_screen_scroll(-event.y * 20)
                     elif ui.help_open:
                         ui._help_scroll = max(0, min(ui._help_max_scroll, ui._help_scroll - event.y * 20))
@@ -1346,12 +1377,16 @@ def main():
                     ui.handle_inventory_drag(event.pos)
                 if ui._jw_drag_uid is not None:
                     ui._jw_drag_pos = event.pos
+                if ui.garden_open:
+                    ui.handle_garden_mousemotion(event.pos)
 
             if event.type == pygame.MOUSEBUTTONUP:
                 if ui.inventory_open:
                     ui.handle_inventory_release(event.pos, player)
                 if ui._jw_drag_uid is not None:
                     ui._handle_jewelry_drop(event.pos, player)
+                if ui.garden_open:
+                    ui.handle_garden_mouseup(event.pos, player)
                 # End sculpt drag on any mouse release
                 if getattr(ui, '_sculpt_drag_mode', None) is not None:
                     ui._sculpt_drag_mode = None
@@ -1426,8 +1461,12 @@ def main():
                         ui.close_backhoe()
                 elif ui.town_menu_open:
                     ui.handle_town_menu_click(event.pos, player)
+                elif ui.coa_designer_open:
+                    ui.handle_coa_click(event.pos)
                 elif ui.city_block_menu_open:
                     ui.handle_city_block_click(event.pos, player)
+                elif ui.job_panel_open:
+                    ui.handle_job_panel_click(event.pos, player)
                 elif ui.hire_panel_open:
                     ui.handle_hire_panel_click(event.pos, player)
                 elif ui.outpost_menu_open:
@@ -1441,7 +1480,8 @@ def main():
                 elif ui.inventory_open:
                     ui.handle_inventory_click(event.pos, player)
                 elif ui.crafting_open:
-                    ui.handle_crafting_click(event.pos, player, event.button, research)
+                    ui.handle_crafting_click(event.pos, player, event.button, research,
+                                             debug=settings.get("debug", False))
                 elif ui.collection_open:
                     ui.handle_collection_click(event.pos, player)
                 elif ui.breeding_open:
@@ -1482,7 +1522,7 @@ def main():
                 elif ui.chest_open:
                     ui.handle_chest_click(event.pos, player, event.button)
                 elif ui.garden_open:
-                    ui.handle_garden_click(event.pos, player)
+                    ui.handle_garden_mousedown(event.pos, player)
                 elif ui.wildflower_display_open:
                     ui.handle_wildflower_display_click(event.pos, player)
                 else:
@@ -1502,14 +1542,7 @@ def main():
                         if _clicked_npc is not None:
                             from cities import LandmarkNPC as _LandmarkNPC_c
                             if isinstance(_clicked_npc, _LandmarkNPC_c):
-                                _ok, _title, _detail = _clicked_npc.trigger(player)
-                                if not hasattr(world, "_town_toasts"):
-                                    world._town_toasts = []
-                                world._town_toasts.append(_title if not _detail else f"{_title} — {_detail}")
-                                if getattr(world, "pending_arena_open", None) is not None:
-                                    _close_all_ui()
-                                    ui.open_arena(world.pending_arena_open)
-                                    world.pending_arena_open = None
+                                pass  # landmark interaction is via E on the flag
                             elif getattr(player, "inspecting_npc", None) is _clicked_npc:
                                 player.inspecting_npc = None
                                 player.gift_panel_open = False
@@ -1542,8 +1575,7 @@ def main():
                                 break
                     # Check for insect clicks (requires bug_net equipped)
                     held = player.hotbar[player.selected_slot]
-                    if (event.button == 1 and not ui._insect_obs_active
-                            and held == "bug_net"):
+                    if event.button == 1 and held == "bug_net":
                         mx, my = event.pos
                         _night_a = renderer._sky_night_alpha(world.time_of_day)
                         from world import DAY_DURATION as _DAY_DUR
@@ -1561,8 +1593,26 @@ def main():
                                 continue
                             isx = int(ins.x - renderer.cam_x)
                             isy = int(ins.y - renderer.cam_y)
-                            if pygame.Rect(isx - 4, isy - 4, ins.W + 8, ins.H + 8).collidepoint(mx, my):
-                                ui.open_insect_observation(ins)
+                            pad = 14 if ins.WING_TYPE == "firefly" else 4
+                            if pygame.Rect(isx - pad, isy - pad, ins.W + pad * 2, ins.H + pad * 2).collidepoint(mx, my):
+                                sp = ins.SPECIES
+                                biome = world.biodome_at(int(ins.x // BLOCK_SIZE))
+                                morph = _insect_morph_at(ins, world.seed)
+                                existing = player.insects_observed.get(sp)
+                                if existing is None:
+                                    player.insects_observed[sp] = {"count": 1, "biome": biome,
+                                                                    "best_condition": "perfect", "morph": morph}
+                                else:
+                                    existing["count"] += 1
+                                    if morph and not existing.get("morph"):
+                                        existing["morph"] = morph
+                                player.discovered_insect_types.add(sp)
+                                player.pending_notifications.append(
+                                    ("Insect", sp.replace("_", " ").title(), ins.RARITY))
+                                drop = INSECT_DROP_TABLE.get(sp)
+                                if drop:
+                                    player.inventory[drop] = player.inventory.get(drop, 0) + 1
+                                ins.spook()
                                 break
                     # Bow firing — left-click with bow equipped fires an arrow
                     if event.button == 1 and not player.dead:
@@ -1919,50 +1969,6 @@ def main():
                 ui._bird_obs_active = False
                 ui._bird_obs_failed = False
                 ui._bird_obs_bird = None
-        # Insect catch mini-game tick
-        if ui._insect_obs_active and ui._insect_obs_insect is not None:
-            ins = ui._insect_obs_insect
-            player_moving = abs(player.vx) > 0.5
-            if player_moving:
-                ui._insect_obs_moved = True
-            if ins.spooked:
-                if not ui._insect_obs_failed:
-                    ui._insect_obs_failed = True
-                    ui._insect_obs_fail_timer = 1.5
-                    ui._insect_obs_timer = 0.0
-            elif not player_moving:
-                ui._insect_obs_timer += dt
-            if ui._insect_obs_timer >= 1.5:
-                sp = ins.SPECIES
-                biome = world.biodome_at(int(ins.x // BLOCK_SIZE))
-                condition = "perfect" if not ui._insect_obs_moved else "good"
-                morph = _insect_morph_at(ins, world.seed)
-                existing = player.insects_observed.get(sp)
-                if existing is None:
-                    player.insects_observed[sp] = {"count": 1, "biome": biome,
-                                                   "best_condition": condition, "morph": morph}
-                else:
-                    existing["count"] += 1
-                    _cond_rank = {"perfect": 2, "good": 1, "worn": 0}
-                    if _cond_rank[condition] > _cond_rank.get(existing.get("best_condition", "good"), 1):
-                        existing["best_condition"] = condition
-                    if morph and not existing.get("morph"):
-                        existing["morph"] = morph
-                player.discovered_insect_types.add(sp)
-                player.pending_notifications.append(
-                    ("Insect", sp.replace("_", " ").title(), ins.RARITY))
-                drop = INSECT_DROP_TABLE.get(sp)
-                if drop:
-                    player.inventory[drop] = player.inventory.get(drop, 0) + 1
-                ins.spook()
-                ui._insect_obs_active = False
-                ui._insect_obs_insect = None
-        if ui._insect_obs_failed:
-            ui._insect_obs_fail_timer -= dt
-            if ui._insect_obs_fail_timer <= 0:
-                ui._insect_obs_active = False
-                ui._insect_obs_failed = False
-                ui._insect_obs_insect = None
         for car in world.elevator_cars:
             car.update(dt, world, player)
         for cart in world.minecarts:
@@ -2035,8 +2041,6 @@ def main():
         _dyn_mod.tick_rivalry_incidents(world, player, world.day_count)
         if ui._bird_obs_active:
             ui._draw_bird_observation_overlay(player)
-        if ui._insect_obs_active:
-            ui._draw_insect_observation_overlay(player)
         ui.draw_fishing_overlay(player, dt)
         renderer.draw_minimap(world, player, dt)
 

@@ -559,7 +559,7 @@ class CraftingMixin:
                             STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
                             BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK,
                             COMPOST_BIN_BLOCK,
-                            WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK,
+                            WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK, ROASTING_KILN_BLOCK,
                             DRYING_RACK_BLOCK, KILN_BLOCK, RESONANCE_BLOCK,
                             BAIT_STATION_BLOCK,
                             SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK,
@@ -618,6 +618,9 @@ class CraftingMixin:
             return
         if self.refinery_block_id == TEA_CELLAR_BLOCK:
             self._draw_tea_cellar(player, dt)
+            return
+        if self.refinery_block_id == ROASTING_KILN_BLOCK:
+            self._draw_roasting_kiln(player, dt)
             return
         if self.refinery_block_id == DRYING_RACK_BLOCK:
             self._draw_drying_rack(player, dt)

@@ -38,36 +38,42 @@ LANDMARK_TYPES = {
     "martial": {
         "name":         "Arena",
         "tagline":      "where champions are made and broken",
+        "description":  "Twice a week the city's finest fighters clash before a roaring crowd. Watch the bouts, place your wagers, and walk away richer — or humbled.",
         "marker_block": TROPHY_PANEL_REN,
         "effect":       "arena",
     },
     "mercantile": {
         "name":         "Grand Bazaar",
         "tagline":      "every trade route ends here",
+        "description":  "Merchants from a dozen regions converge in a labyrinth of stalls. Rare goods surface daily and the city's traders will deal generously with a known face.",
         "marker_block": MARBLE_PLINTH,
         "effect":       "bazaar",
     },
     "scholarly": {
         "name":         "Archive",
         "tagline":      "where every page is a doorway",
+        "description":  "The Archive holds centuries of accumulated craft knowledge. A scholar on duty will walk you through a forgotten technique you have yet to master.",
         "marker_block": MARBLE_STATUE,
         "effect":       "archive",
     },
     "pious": {
         "name":         "Great Shrine",
         "tagline":      "the prayer that the city keeps",
+        "description":  "The city's holiest site draws pilgrims from every corner of the region. Receive the blessing of the patron deity — luck and loot bend in your favour.",
         "marker_block": PRAYER_FLAG_BLOCK,
         "effect":       "shrine",
     },
     "builder": {
         "name":         "Stoneworks",
         "tagline":      "the city's hands and its tools",
+        "description":  "The masons' guildhall has surplus stone and timber from the latest civic project. They're happy to load your pack in exchange for a word of goodwill.",
         "marker_block": FORGE_BLOCK,
         "effect":       "stoneworks",
     },
     "hedonist": {
         "name":         "Pleasure Garden",
         "tagline":      "no day worth living is without one",
+        "description":  "Winding paths, fountains, and the scent of rare blossoms. An hour here refreshes the body and sharpens the senses for whatever comes next.",
         "marker_block": OLIVE_BRANCH,
         "effect":       "garden",
     },
@@ -76,60 +82,70 @@ LANDMARK_TYPES = {
     ("martial", "steppe"): {
         "name":         "War Camp",
         "tagline":      "the steppe sharpens the warrior",
+        "description":  "Clan warriors drill in the open wind. The camp master charges a stiff entry fee — but those who train here ride faster and earn more than those who don't.",
         "marker_block": WEAPON_RACK_BLOCK,
         "effect":       "war_camp",
     },
     ("martial", "desert"): {
         "name":         "Gladiator Pits",
         "tagline":      "the sands drink glory and blood alike",
+        "description":  "Twice a week the desert clans bring their finest fighters to the open pits. Wager on the bouts, watch fortunes shift with every round, and leave richer — if you read the sand right.",
         "marker_block": TROPHY_PANEL_REN,
         "effect":       "gladiator",
     },
     ("mercantile", "coastal"): {
         "name":         "Harbor Exchange",
         "tagline":      "where the sea brings every price",
+        "description":  "Ships from distant ports unload rarities that never reach inland markets. The harbor master will cut you in on a day's take for the price of a favour.",
         "marker_block": COMPASS_PAVING,
         "effect":       "harbor",
     },
     ("mercantile", "silk_road"): {
         "name":         "Caravanserai",
         "tagline":      "rest here, then carry the world forward",
+        "description":  "A waystation at the crossroads of two great trade routes. Caravans pass through daily; the keeper stocks road provisions and is generous with known travellers.",
         "marker_block": STONE_LANTERN,
         "effect":       "caravanserai",
     },
     ("scholarly", "east_asian"): {
         "name":         "Imperial Library",
         "tagline":      "ten thousand scrolls, one truth",
+        "description":  "The empire's knowledge is catalogued here across lacquered shelves. The head librarian will unseal a restricted collection for a visitor of good standing.",
         "marker_block": PHILOSOPHERS_SCROLL,
         "effect":       "imperial_library",
     },
     ("scholarly", "mediterranean"): {
         "name":         "Observatory",
         "tagline":      "the stars were the first map",
+        "description":  "Atop a white-stone tower, scholars track the heavens with brass instruments. A night's study here reveals a hidden technique and grants uncommon clarity of mind.",
         "marker_block": TALL_SUNDIAL,
         "effect":       "observatory",
     },
     ("pious", "coastal"): {
         "name":         "Sea Temple",
         "tagline":      "offerings cast upon the tide",
+        "description":  "The sea goddess is worshipped at the edge of the water where offerings drift out on the tide. Fishermen swear by her blessing — nets fill and storms pass wide.",
         "marker_block": SHELL_FOUNTAIN,
         "effect":       "sea_temple",
     },
     ("pious", "jungle"): {
         "name":         "Canopy Sanctum",
         "tagline":      "the forest itself is the god here",
+        "description":  "Deep in the jungle canopy, a sanctum of living wood and moss. The priests say the forest watches — those who enter respectfully leave changed.",
         "marker_block": PAPER_LANTERN,
         "effect":       "canopy_sanctum",
     },
     ("builder", "alpine"): {
         "name":         "Stonecutters Guild",
         "tagline":      "the mountain gives; they shape",
+        "description":  "Alpine stonemasons who have quarried this range for generations. They trade surplus stone and ore for goodwill — and their cut is always clean.",
         "marker_block": TRIPOD_BRAZIER,
         "effect":       "stonecutters",
     },
     ("hedonist", "mediterranean"): {
         "name":         "Vineyard Hall",
         "tagline":      "the vine makes time worth tasting",
+        "description":  "The region's finest vintage is pressed and stored beneath this hall. The sommelier pours freely for guests of good reputation; the glow lasts for hours.",
         "marker_block": GRAPEVINE_CROP_MATURE,
         "effect":       "vineyard",
     },
@@ -356,6 +372,31 @@ _EFFECT_FNS = {
     "stonecutters":    _apply_stonecutters,
     "vineyard":        _apply_vineyard,
 }
+
+
+def preview_effect(region, day_count: int) -> tuple[str, bool]:
+    """Return (status_string, ready) without firing anything.
+
+    ready=True means the player can activate the effect right now.
+    """
+    if region is None or not region.agenda:
+        return ("", False)
+
+    if region.landmark_used_day == day_count:
+        return ("Already visited today. Come back tomorrow.", False)
+
+    spec   = landmark_for(region.agenda, getattr(region, "biome_group", ""))
+    effect = spec.get("effect", "")
+
+    if effect in ("arena", "gladiator"):
+        from gladiators import is_games_day, days_until_games
+        rseed = getattr(region, "region_id", 0) * 1013 + hash(getattr(region, "name", ""))
+        if is_games_day(rseed, day_count):
+            return ("Games are on today — enter and wager!", True)
+        left = days_until_games(rseed, day_count)
+        return (f"No fights today. Next games in {left} day{'s' if left != 1 else ''}.", False)
+
+    return ("Ready to use.", True)
 
 
 def apply_effect(player, region, day_count: int) -> tuple[bool, str, str]:

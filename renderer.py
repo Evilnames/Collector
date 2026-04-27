@@ -182,7 +182,7 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER, GRASS, DIRT, SA
                     GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
                     STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK, COMPOST_BIN_BLOCK,
                     STABLE_BLOCK, HORSE_TROUGH_BLOCK,
-                    WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK,
+                    WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK, ROASTING_KILN_BLOCK,
                     DRYING_RACK_BLOCK, BAIT_STATION_BLOCK,
                     EVAPORATION_PAN_BLOCK, SALT_GRINDER_BLOCK,
                     DAIRY_VAT_BLOCK, CHEESE_PRESS_BLOCK, AGING_CAVE_BLOCK,
@@ -425,6 +425,7 @@ class Renderer:
         self._light_grad_cache = {}  # (radius, pattern, flicker_frame) -> Surface
         self._town_flag_surfs   = {}  # region_id -> Surface (colored pennant, built lazily)
         self._outpost_flag_surfs = {}  # outpost_type -> Surface (colored pennant, built lazily)
+        self._banner_surfs      = {}  # coa_key -> Surface (coat of arms banner, built lazily)
 
     def _build_bg_darken_surf(self):
         from Render.surface.surfaceAndCamera import build_bg_darken_surf
@@ -469,6 +470,38 @@ class Renderer:
     def _get_outpost_flag_surf(self, outpost_type, flag_col):
         from Render.surface.flags import get_outpost_flag_surf
         return get_outpost_flag_surf(self._outpost_flag_surfs, outpost_type, flag_col)
+
+    def _get_banner_surf(self, coa: dict):
+        """Return a cached BLOCK_SIZE surface rendering the given coat of arms on a banner."""
+        from blocks import BLOCK_SIZE as _BS
+        from player_cities import coa_from_dict
+        import heraldry, pygame
+        key = (
+            tuple(coa.get("primary",   [])),
+            tuple(coa.get("secondary", [])),
+            tuple(coa.get("metal",     [])),
+            coa.get("division", "plain"),
+            coa.get("ordinary", "none"),
+            coa.get("charge",   "none"),
+        )
+        if key in self._banner_surfs:
+            return self._banner_surfs[key]
+        s = pygame.Surface((_BS, _BS), pygame.SRCALPHA)
+        s.fill((0, 0, 0, 0))
+        pole  = (110, 80, 45)
+        pole2 = (140, 105, 60)
+        pygame.draw.rect(s, pole,  (4, 0, 4, _BS))
+        pygame.draw.rect(s, pole2, (5, 1, 2, _BS - 2))
+        pygame.draw.rect(s, pole,  (4, 4, _BS - 6, 3))
+        pygame.draw.rect(s, pole2, (5, 5, _BS - 8, 1))
+        bx0, by0 = 8, 7
+        bw,  bh  = _BS - 10, _BS - 14
+        coa_obj = coa_from_dict(coa)
+        mini = pygame.Surface((bw, bh), pygame.SRCALPHA)
+        heraldry.draw(mini, 0, 0, bw, bh, coa_obj)
+        s.blit(mini, (bx0, by0))
+        self._banner_surfs[key] = s
+        return s
 
     def _build_log_variants(self):
         from Render.surface.terrain import build_log_variants

@@ -39,7 +39,7 @@ Players can establish and grow their own settlement by placing a **City Block** 
 ## C. NPC Hiring & Stats
 
 ### Hiring
-- Attracted NPCs are **unhired** by default — they wander the city region and sleep in their bed.
+- Attracted NPCs are **unhired** by default — they wander the city region and leave if not hired within a day.
 - The player interacts with them to open a **Hire panel** showing:
   - Name, portrait, personality trait (hardworking / lazy / skilled / clumsy / etc.)
   - Stat spread (see below)

@@ -63,7 +63,7 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     POTTERY_DISPLAY_BLOCK,
                     SALT_DEPOSIT,
                     TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK, LANDMARK_FLAG_BLOCK,
-                    CITY_BLOCK)
+                    CITY_BLOCK, BANNER_BLOCK, FISHING_SPOT_BLOCK)
 import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
@@ -178,6 +178,7 @@ class Player:
         # Fish collection
         self.fish_caught = []
         self.discovered_fish_species = set()
+        self.fish_bests = {}   # species -> {"weight_kg": float, "length_cm": int}
         self._fish_gen = FishGenerator(world.seed)
         # Coffee collection
         self.coffee_beans = []
@@ -259,10 +260,14 @@ class Player:
         self._bow_cooldown   = 0.0
         self.master_hunter   = False  # set True by research bonus
         # Fishing mini-game state
-        self.fishing_state = None     # None | "casting" | "biting" | "result"
+        self.fishing_state = None       # None | "casting" | "biting" | "reeling" | "result"
         self._fishing_timer = 0.0
-        self._fishing_result = None   # "caught" | "missed"
+        self._fishing_result = None     # "caught" | "missed"
         self._fishing_biome = None
+        self._fishing_is_hotspot = False
+        self._fishing_pending_fish = None  # Fish generated at bite time, resolved on reel success
+        self._reel_pos = 0.0               # 0.0 = snap/lost, 1.0 = caught
+        self._reel_pull_speed = 0.0        # fish-driven pull speed (reel_pos per second)
         # Bird observations
         self.birds_observed = {}           # species_id -> {"count": int, "biome": str}
         self.discovered_bird_types = set()
@@ -408,6 +413,7 @@ class Player:
         self.fossils = [Fossil(**f) for f in d.get("fossils", [])]
         self.gems = [Gemstone(**g) for g in d.get("gems", [])]
         self.fish_caught = [Fish(**f) for f in d.get("fish", [])]
+        self.fish_bests  = d.get("fish_bests", {})
         self.coffee_beans = [CoffeeBean(**cb) for cb in d.get("coffee_beans", [])]
         self.discovered_coffee_origins = set(d.get("discovered_coffee_origins", []))
         self.roast_profiles = d.get("roast_profiles", [])
@@ -653,6 +659,8 @@ class Player:
             speed *= 1.35
         if "nimbleness" in self.cheese_buffs:
             speed *= 1.20
+        if "radiance" in self.tea_buffs:
+            speed *= 1.15
         textile_swift = self.get_textile_bonus("swiftness")
         if textile_swift > 0:
             speed *= (1.0 + textile_swift)
@@ -1124,6 +1132,8 @@ class Player:
                     for item_id, count in self.world.chest_data.pop((bx, by), {}).items():
                         if count > 0:
                             self._add_item(item_id, count)
+                if block_id == BANNER_BLOCK:
+                    self.world.banner_data.pop((bx, by), None)
                 if block_id == GARDEN_BLOCK:
                     garden_flowers = self.world.garden_data.pop((bx, by), [])
                     for wf in garden_flowers:
@@ -1744,6 +1754,17 @@ class Player:
             if block_id == CITY_BLOCK:
                 from player_cities import register_city
                 register_city(bx, by)
+            if block_id == BANNER_BLOCK:
+                from player_cities import PLAYER_CITIES, CITY_REGION_HALF
+                best = min(
+                    PLAYER_CITIES.values(),
+                    key=lambda c: abs(c.bx - bx),
+                    default=None,
+                )
+                if best and abs(best.bx - bx) <= CITY_REGION_HALF:
+                    self.world.banner_data[(bx, by)] = dict(best.coat_of_arms)
+                else:
+                    self.world.banner_data[(bx, by)] = {}
         self.inventory[item_id] -= 1
         if self.inventory[item_id] <= 0:
             del self.inventory[item_id]
@@ -1970,51 +1991,78 @@ class Player:
         return None
 
     def get_nearby_water_biome(self):
-        """Return biome string if water is within 3 blocks and player is not in water, else None."""
+        """Return (biome, is_hotspot) if water is within 3 blocks and player is not in water, else (None, False)."""
         if self._in_water():
-            return None
+            return None, False
         cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
         cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        found_biome = None
+        found_hotspot = False
         for dy in range(-2, 3):
             for dx in range(-3, 4):
-                if self.world.get_block(cx + dx, cy + dy) == WATER:
-                    return self.world.get_biome(cx + dx)
-        return None
+                bid = self.world.get_block(cx + dx, cy + dy)
+                if bid == FISHING_SPOT_BLOCK:
+                    found_biome = self.world.get_biome(cx + dx)
+                    found_hotspot = True
+                elif bid == WATER and found_biome is None:
+                    found_biome = self.world.get_biome(cx + dx)
+        return found_biome, found_hotspot
 
     def on_fish_press(self):
-        """Called when the player presses the fishing key (F)."""
         if self.fishing_state is None:
             return self._start_fishing()
         elif self.fishing_state == "biting":
-            self._catch_fish()
+            self._start_reel()
             return True
         elif self.fishing_state == "casting":
-            # Cancel
             self.fishing_state = None
             self._fishing_biome = None
+            self._fishing_is_hotspot = False
             return True
         return False
 
     def _start_fishing(self):
         if not self.has_fishing_pole():
             return False
-        biome = self.get_nearby_water_biome()
+        biome, is_hotspot = self.get_nearby_water_biome()
         if biome is None:
             return False
         self.fishing_state = "casting"
         self._fishing_timer = random.uniform(3.0, 8.0)
         self._fishing_biome = biome
+        self._fishing_is_hotspot = is_hotspot
         return True
 
-    def _catch_fish(self):
+    def _start_reel(self):
+        """Called when player presses F on a bite: generate the fish and enter reeling state."""
         cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
         cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
         bait = self.get_active_bait()
-        fish = self._fish_gen.generate(cx, cy, self._fishing_biome or "", bait=bait)
+        tod = getattr(self.world, "time_of_day", 0.0)
+        day = getattr(self.world, "day_count", 0)
+        fish = self._fish_gen.generate(
+            cx, cy, self._fishing_biome or "",
+            bait=bait, time_of_day=tod, day_count=day,
+            is_hotspot=self._fishing_is_hotspot,
+        )
+        self._fishing_pending_fish = fish
+        # Pull speed: heavier and rarer fish fight harder
+        _PULL_BASE = {"common": 0.14, "uncommon": 0.19, "rare": 0.25, "epic": 0.31, "legendary": 0.40}
+        pull_base = _PULL_BASE.get(fish.rarity, 0.20)
+        self._reel_pull_speed = pull_base * (1.0 + fish.weight_kg / 60.0)
+        self._reel_pos = 0.40   # start with some slack
+        self.fishing_state = "reeling"
+        self._fishing_timer = 35.0  # failsafe max duration
+
+    def _resolve_reel_catch(self):
+        """Called when reel_pos reaches 1.0: commit the catch."""
+        fish = self._fishing_pending_fish
+        self._fishing_pending_fish = None
         self.fish_caught.append(fish)
         self.discovered_fish_species.add(fish.species)
         self._add_item("fish")
         self._consume_tool_use()
+        bait = self.get_active_bait()
         if bait:
             self.inventory[bait] -= 1
             if self.inventory[bait] <= 0:
@@ -2022,20 +2070,26 @@ class Player:
                 bait_slot = self.selected_slot + 1
                 if bait_slot < HOTBAR_SIZE and self.hotbar[bait_slot] == bait:
                     self.hotbar[bait_slot] = None
+        # Check personal best
+        prev = self.fish_bests.get(fish.species)
+        if prev is None or fish.weight_kg > prev["weight_kg"]:
+            self.fish_bests[fish.species] = {"weight_kg": fish.weight_kg, "length_cm": fish.length_cm}
         self.pending_notifications.append(
             ("Fish", fish.species.replace("_", " ").title(), fish.rarity))
         self.fishing_state = "result"
         self._fishing_result = "caught"
-        self._fishing_timer = 2.0
+        self._fishing_timer = 2.5
 
     def _update_fishing(self, dt):
         if self.fishing_state is None:
             return
-        # Auto-cancel if pole no longer equipped or left the water
+        # Auto-cancel if pole lost or left water (not during reeling/result — committed at that point)
         if self.fishing_state in ("casting", "biting"):
-            if not self.has_fishing_pole() or self.get_nearby_water_biome() is None:
+            biome, _ = self.get_nearby_water_biome()
+            if not self.has_fishing_pole() or biome is None:
                 self.fishing_state = None
                 self._fishing_biome = None
+                self._fishing_is_hotspot = False
                 return
 
         self._fishing_timer -= dt
@@ -2051,11 +2105,31 @@ class Player:
                 self._fishing_result = "missed"
                 self._fishing_timer = 1.5
 
+        elif self.fishing_state == "reeling":
+            import pygame as _pg
+            holding_f = _pg.key.get_pressed()[_pg.K_f]
+            item_id = self.hotbar[self.selected_slot]
+            reel_bonus = ITEMS.get(item_id, {}).get("reel_bonus", 0.0) if item_id else 0.0
+            reel_speed = 0.25 + reel_bonus
+            if holding_f:
+                self._reel_pos += reel_speed * dt
+            else:
+                self._reel_pos -= self._reel_pull_speed * dt
+            self._reel_pos = max(0.0, min(1.0, self._reel_pos))
+            if self._reel_pos >= 1.0:
+                self._resolve_reel_catch()
+            elif self._reel_pos <= 0.0 or self._fishing_timer <= 0:
+                self._fishing_pending_fish = None
+                self.fishing_state = "result"
+                self._fishing_result = "missed"
+                self._fishing_timer = 1.5
+
         elif self.fishing_state == "result":
             if self._fishing_timer <= 0:
                 self.fishing_state = None
                 self._fishing_result = None
                 self._fishing_biome = None
+                self._fishing_is_hotspot = False
 
     def _try_eat(self):
         if self._eat_cooldown > 0:
@@ -2073,6 +2147,8 @@ class Player:
             hunger_restore = int(hunger_restore * 1.25)
         if "abundance" in self.beer_buffs:
             hunger_restore = int(hunger_restore * 1.20)
+        if "clarity" in self.tea_buffs:
+            hunger_restore = int(hunger_restore * 1.15)
         self.hunger = min(100.0, self.hunger + hunger_restore)
         self.health = min(MAX_HEALTH, self.health + hunger_restore * 0.25)
         self._eat_cooldown = 0.5
@@ -2257,6 +2333,8 @@ class Player:
             self.health = min(MAX_HEALTH, self.health + 1.0 * dt)
         if "immunity" in self.beer_buffs and self.hunger > 10.0:
             self.health = min(MAX_HEALTH, self.health + 0.8 * dt)
+        if "warmth" in self.tea_buffs and self.hunger > 15.0:
+            self.health = min(MAX_HEALTH, self.health + 0.8 * dt)
         if not self.god_mode and not self.no_hunger:
             self.hunger = max(0.0, self.hunger - self._hunger_drain_rate * drain_mult * dt)
             if self.hunger == 0.0:
@@ -2358,9 +2436,10 @@ class Player:
         right = int((self.x + PLAYER_W - 1) // BLOCK_SIZE)
         top   = int(self.y // BLOCK_SIZE)
         bot   = int((self.y + PLAYER_H - 1) // BLOCK_SIZE)
+        _WATER_BLOCKS = (WATER, FISHING_SPOT_BLOCK)
         for bx in range(left, right + 1):
             for by in range(top, bot + 1):
-                if self.world.get_block(bx, by) == WATER:
+                if self.world.get_block(bx, by) in _WATER_BLOCKS:
                     return True
         return False
 
@@ -2368,8 +2447,9 @@ class Player:
         left  = int(self.x // BLOCK_SIZE)
         right = int((self.x + PLAYER_W - 1) // BLOCK_SIZE)
         head_y = int(self.y // BLOCK_SIZE)
+        _WATER_BLOCKS = (WATER, FISHING_SPOT_BLOCK)
         for bx in range(left, right + 1):
-            if self.world.get_block(bx, head_y) == WATER:
+            if self.world.get_block(bx, head_y) in _WATER_BLOCKS:
                 return True
         return False
 

@@ -284,6 +284,7 @@ TEA_CROP_MATURE         = 295  # special: mine → TeaLeaf object + tea_seed dro
 WITHERING_RACK_BLOCK    = 296  # placed Withering Rack (wither method choice)
 OXIDATION_STATION_BLOCK = 297  # placed Oxidation Station (oxidation timing mini-game)
 TEA_CELLAR_BLOCK        = 298  # placed Tea Cellar (brew, blend, age)
+ROASTING_KILN_BLOCK     = 1251 # placed Roasting Kiln (roast green/oolong → hojicha)
 RESTAURANT_WALL         = 299  # city restaurant wall (warm terracotta)
 RESTAURANT_AWNING       = 300  # city restaurant awning/roof (deep crimson)
 
@@ -1409,7 +1410,7 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
                     FOSSIL_TABLE_BLOCK, ARTISAN_BENCH_BLOCK, COMPOST_BIN_BLOCK,
                     STABLE_BLOCK, HORSE_TROUGH_BLOCK,
-                    WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK,
+                    WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK, ROASTING_KILN_BLOCK,
                     DRYING_RACK_BLOCK, BAIT_STATION_BLOCK,
                     SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK,
                     DAIRY_VAT_BLOCK, CHEESE_PRESS_BLOCK, AGING_CAVE_BLOCK,
@@ -1742,6 +1743,10 @@ COBBLE_BRIDGE                = 1247  # rough cobblestone bridge; steppe cities
 DRIFTWOOD_BRIDGE             = 1248  # pale weathered driftwood bridge; coastal cities
 CITY_BLOCK                   = 1249  # player-placed city anchor/management block
 GROW_LAMP                    = 1250  # bg-layer artificial grow light; enables underground crop growth
+MINING_POST_BLOCK            = 1252  # placed by player to assign a miner's work zone
+BANNER_BLOCK                 = 1253  # decorative banner displaying a city's coat of arms
+FISHING_SPOT_BLOCK           = 1254  # shimmering surface water; boosts rare fish chance
+FISH_TROPHY_BLOCK            = 1255  # bg-layer wall-mounted decorative fish trophy
 BLOCKS = {
     AIR:              {"name": "Air",               "hardness": 0,            "color": None,            "drop": None},
     GRASS:            {"name": "Grass",             "hardness": 1,            "color": (58, 154, 58),   "drop": "dirt_clump"},
@@ -2115,6 +2120,7 @@ BLOCKS = {
     WITHERING_RACK_BLOCK:      {"name": "Withering Rack",           "hardness": 1.5, "color": (165, 130,  70), "drop": "withering_rack_item"},
     OXIDATION_STATION_BLOCK:   {"name": "Oxidation Station",        "hardness": 1.5, "color": ( 95,  75,  50), "drop": "oxidation_station_item"},
     TEA_CELLAR_BLOCK:          {"name": "Tea Cellar",               "hardness": 1.5, "color": ( 55,  45,  35), "drop": "tea_cellar_item"},
+    ROASTING_KILN_BLOCK:       {"name": "Roasting Kiln",            "hardness": 2.0, "color": (110,  65,  30), "drop": "roasting_kiln_item"},
     # --- Herb bushes ---
     CHAMOMILE_BUSH:            {"name": "Chamomile Bush",           "hardness": 0.5, "color": (230, 215, 140), "drop": "chamomile_seed",  "drop_chance": 1.0},
     CHAMOMILE_CROP_YOUNG:      {"name": "Chamomile Plant",          "hardness": 0.5, "color": (130, 185,  90), "drop": "chamomile_seed",  "drop_chance": 1.0},
@@ -3062,6 +3068,10 @@ BLOCKS = {
     DRIFTWOOD_BRIDGE:          {"name": "Driftwood Bridge", "hardness": 1.5, "color": (185, 172, 148), "drop": "lumber"},
     CITY_BLOCK:                {"name": "City Block",       "hardness": float('inf'), "color": (180, 155, 90), "drop": None},
     GROW_LAMP:                 {"name": "Grow Lamp",        "hardness": 1.5,          "color": (210, 255, 160), "drop": "grow_lamp_item"},
+    MINING_POST_BLOCK:         {"name": "Mining Post",      "hardness": 2.0,          "color": (110,  85,  60), "drop": "mining_post_item"},
+    BANNER_BLOCK:              {"name": "Banner",           "hardness": 1.0,          "color": (160,  80,  40), "drop": "banner_item"},
+    FISHING_SPOT_BLOCK:        {"name": "Fishing Spot",     "hardness": -1,           "color": ( 50, 140, 235), "drop": None},
+    FISH_TROPHY_BLOCK:         {"name": "Fish Trophy",      "hardness": 0.5,          "color": (160, 110,  60), "drop": "fish_trophy_item"},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}

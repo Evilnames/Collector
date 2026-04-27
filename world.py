@@ -107,6 +107,7 @@ _CROP_MATURE_MAP = {
 _OCEAN_SPREAD    = 2     # zones on each side of an ocean seed that expand to ocean
 _OCEAN_SEED_PROB = 0.025 # probability a zone seeds an ocean cluster
 _ISLAND_PROB     = 0.22  # probability an ocean zone becomes a pacific_island
+_COASTAL_BUFFER  = 1     # zones just outside ocean spread that become coastal (beach transition)
 
 
 class World:
@@ -135,6 +136,7 @@ class World:
         self.insects = []
         self.dropped_items = []
         self.chest_data = {}     # (bx, by) -> {item_id: count}
+        self.banner_data = {}    # (bx, by) -> coat_of_arms dict
         self.light_traps = {}    # (bx, by) -> {"accumulated": [species_id, ...]}
         self.garden_data = {}    # (bx, by) -> [Wildflower, ...]
         self.wildflower_display_data = {}  # (bx, by) -> Wildflower | None
@@ -267,6 +269,12 @@ class World:
                 if island_rng.random() < _ISLAND_PROB:
                     return "pacific_island"
                 return "ocean"
+        # Coastal buffer — one zone ring outside the ocean spread becomes beach/transition
+        for dz in range(1, _COASTAL_BUFFER + 1):
+            for z_outer in (z - (_OCEAN_SPREAD + dz), z + (_OCEAN_SPREAD + dz)):
+                seed_rng = random.Random(self._zone_seed(self.seed, z_outer, 14))
+                if seed_rng.random() < _OCEAN_SEED_PROB:
+                    return "coastal"
         brng = random.Random(self._zone_seed(self.seed, z, 3))
         return brng.choice(BIODOME_TYPES)
 
@@ -518,6 +526,11 @@ class World:
             tuple(int(v) for v in k.split(",")): inv
             for k, inv in raw_chests.items()
         }
+        raw_banners = data.get("banner_data", {})
+        self.banner_data = {
+            tuple(int(v) for v in k.split(",")): coa
+            for k, coa in raw_banners.items()
+        }
         self.garden_data = data.get("garden_data", {})
         self.wildflower_display_data = data.get("wildflower_display_data", {})
         # sculpture_positions loaded here as uid strings; resolved in main.py
@@ -696,8 +709,8 @@ class World:
             biome = self.biome_at(x)
             biodome = self.biodome_at(x)
             rocky = biodome in ("alpine_mountain", "rocky_mountain", "tundra", "canyon")
-            sandy = biodome in ("desert", "beach", "ocean")
-            submerged = biodome == "ocean" and sy >= SURFACE_Y
+            sandy = biodome in ("desert", "beach", "coastal", "ocean")
+            submerged = sy > SURFACE_Y and biodome in ("ocean", "coastal")
             for y in range(WORLD_H):
                 if y < sy:
                     if submerged and y >= SURFACE_Y:
@@ -749,7 +762,8 @@ class World:
             x = cx * CHUNK_W + lx
             sy = self.surface_height(x)
             biodome = self.biodome_at(x)
-            if chunk[sy][lx] != WATER and biodome != "ocean":
+            coast_submerged = sy > SURFACE_Y and biodome in ("ocean", "coastal")
+            if chunk[sy][lx] != WATER and biodome != "ocean" and not coast_submerged:
                 self._dispatch_grow(x, sy - 1, biodome, tree_rng)
             lo, hi = {
                 "jungle":          (3, 6),  "fungal":         (3, 7),
@@ -760,6 +774,7 @@ class World:
                 "steppe":          (13, 22),"arid_steppe":    (18, 30),
                 "desert":          (18, 32),"tundra":         (16, 28),
                 "swamp":           (3, 7),  "beach":          (9, 16),
+                "coastal":         (9, 16),
                 "canyon":          (12, 22),
                 "pacific_island":  ( 6, 12),
             }.get(biodome, (5, 10))
@@ -840,6 +855,15 @@ class World:
                                THYME_BUSH, SAGE_BUSH, WORMWOOD_BUSH, RUE_BUSH],
             "tundra":         [BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, RADISH_BUSH, COFFEE_BUSH, TEA_BUSH, CHAMOMILE_BUSH,
                                YARROW_BUSH, ANGELICA_BUSH],
+            "coastal":        [WATERMELON_BUSH, SWEET_POTATO_BUSH, CORN_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
+                               TEA_BUSH, TEA_BUSH, MINT_BUSH, LAVENDER_BUSH, FENNEL_BUSH, LEMON_VERBENA_BUSH],
+            "mediterranean":  [TOMATO_BUSH, ONION_BUSH, GARLIC_BUSH, PEPPER_BUSH, CORN_BUSH,
+                               COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH,
+                               TEA_BUSH, TEA_BUSH, LAVENDER_BUSH, ROSEMARY_BUSH, THYME_BUSH,
+                               SAGE_BUSH, FENNEL_BUSH, OREGANO_BUSH, MARJORAM_BUSH],
+            "bamboo_forest":  [RICE_BUSH, BOK_CHOY_BUSH, SCALLION_BUSH, GINGER_BUSH,
+                               TEA_BUSH, TEA_BUSH, TEA_BUSH, MINT_BUSH, BASIL_BUSH,
+                               CHAMOMILE_BUSH, LEMON_VERBENA_BUSH],
             "swamp":          [RICE_BUSH, CELERY_BUSH, LEEK_BUSH, SCALLION_BUSH, COFFEE_BUSH, MINT_BUSH, MINT_BUSH,
                                VALERIAN_BUSH, ANGELICA_BUSH, COMFREY_BUSH, CATNIP_BUSH],
             "beach":          [WATERMELON_BUSH, SWEET_POTATO_BUSH, CORN_BUSH, COFFEE_BUSH],
@@ -1139,11 +1163,14 @@ class World:
                         edge_t = (dx - flat_half) / (half_w - flat_half)
                         depth_x = max(1, round(max_depth * (1.0 - edge_t)))
 
+                spot_rng = random.Random(hash((self.seed, x, zone_idx, 'fspot')) & 0x7FFFFFFF)
                 for y in range(water_top_y, water_top_y + depth_x):
                     if y <= 0 or y >= WORLD_H - 1:
                         continue
                     if chunk[y][lx] not in _impassable:
-                        chunk[y][lx] = WATER
+                        is_surface_row = (y == water_top_y)
+                        use_spot = is_surface_row and spot_rng.random() < 0.08
+                        chunk[y][lx] = FISHING_SPOT_BLOCK if use_spot else WATER
                         self._water_level[(x, y)] = 8
                         self._lake_cells.append((y, x))
 
@@ -1708,7 +1735,7 @@ class World:
         if old_bid == TILLED_SOIL and block_id != TILLED_SOIL:
             self._soil_moisture.pop((x, y), None)
             self._soil_fallow.pop((x, y), None)
-        if old_bid == WATER:
+        if old_bid in (WATER, FISHING_SPOT_BLOCK):
             self._water_level.pop((x, y), None)
         if block_id == AIR:
             for ddx, ddy in ((0, -1), (-1, 0), (1, 0)):
@@ -1776,7 +1803,7 @@ class World:
     def is_solid(self, x, y):
         bid = self.get_block(x, y)
         return (bid != AIR and bid != LADDER
-                and bid != WATER and bid != OIL and bid != SAPLING and bid not in ALL_FRUIT_SAPLINGS
+                and bid != WATER and bid != FISHING_SPOT_BLOCK and bid != OIL and bid != SAPLING and bid not in ALL_FRUIT_SAPLINGS
                 and bid != WILDFLOWER_PATCH
                 and bid not in BUSH_BLOCKS and bid not in CROP_BLOCKS
                 and bid not in OPEN_DOORS
@@ -2413,8 +2440,9 @@ class World:
             "arid_steppe":     [(self._grow_dead, 1)],
             "desert":          [(self._grow_dead, 1)],
             "tundra":          [(self._grow_pine, 1)],
-            # beach: citrus common, mangrove in wet pockets
+            # beach/coastal: palms and mangroves along the shore
             "beach":           [(self._grow_palm, 4),   (self._grow_mangrove, 3),(self._grow_citrus, 3)],
+            "coastal":         [(self._grow_palm, 4),   (self._grow_mangrove, 3),(self._grow_citrus, 3)],
             "pacific_island":  [(self._grow_palm, 4),   (self._grow_mangrove, 2),(self._grow_citrus, 3),
                                 (self._grow_banyan, 2)],
             "fungal":          [(self._grow_mushroom, 1)],
