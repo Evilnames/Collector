@@ -654,7 +654,10 @@ class SmithingMixin:
                 self._smith_target = []
                 self._smith_mistakes = 0
             elif self._smith_assemble_btn and self._smith_assemble_btn.collidepoint(pos):
-                self._smith_phase = "assemble"
+                wtype = self._smith_type or "sword"
+                handle_id = ASSEMBLY_HANDLES.get(wtype, "")
+                if player.inventory.get(handle_id, 0) >= 1:
+                    self._smith_phase = "assemble"
 
         elif phase == "assemble":
             if hasattr(self, "_smith_confirm_btn") and self._smith_confirm_btn.collidepoint(pos):

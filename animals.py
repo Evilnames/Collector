@@ -714,6 +714,16 @@ class Animal:
         self.x -= direction
         return result
 
+    def _near_fence(self, radius=4):
+        cx = int((self.x + self.W / 2) // BLOCK_SIZE)
+        cy = int((self.y + self.H / 2) // BLOCK_SIZE)
+        for bx in range(cx - radius, cx + radius + 1):
+            for by in range(cy - radius, cy + radius + 1):
+                bid = self.world.get_block(bx, by)
+                if bid in (WOOD_FENCE, IRON_FENCE):
+                    return True
+        return False
+
     def _in_ladder(self):
         left  = int(self.x // BLOCK_SIZE)
         right = int((self.x + self.W - 1) // BLOCK_SIZE)
@@ -785,8 +795,8 @@ class Animal:
                         self._breed(other, self.world)
                         break
 
-        # Tamed: follow player instead of wandering
-        if self.tamed:
+        # Tamed: follow player instead of wandering (not when penned in a fence)
+        if self.tamed and not self._near_fence():
             player = getattr(self.world, '_player_ref', None)
             if player is not None:
                 pdx = (player.x + PLAYER_W / 2) - (self.x + self.W / 2)
@@ -1684,7 +1694,7 @@ class BigCat(Animal):
             return
 
         player = getattr(self.world, '_player_ref', None)
-        if player is not None:
+        if player is not None and not self._near_fence():
             pdx = (player.x + PLAYER_W / 2) - (self.x + self.W / 2)
             pdy = (player.y + PLAYER_H / 2) - (self.y + self.H / 2)
             dist = ((pdx / BLOCK_SIZE) ** 2 + (pdy / BLOCK_SIZE) ** 2) ** 0.5

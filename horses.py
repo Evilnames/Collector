@@ -19,15 +19,15 @@ TEMPERAMENT_THRESHOLDS = {
 }
 
 TEMPERAMENT_BUCK_INTERVAL = {
-    "calm":     1.8,
-    "spirited": 1.2,
-    "wild":     0.8,
+    "calm":     1.4,
+    "spirited": 0.9,
+    "wild":     0.55,
 }
 
 TEMPERAMENT_BREAK_TIME = {
-    "calm":  6.0,
-    "spirited": 8.0,
-    "wild":  10.0,
+    "calm":     10.0,
+    "spirited": 16.0,
+    "wild":     24.0,
 }
 
 # Coat color options keyed by biodome name (3 shades per biome)
@@ -64,6 +64,8 @@ HORSE_BIOMES = {
 }
 
 STABLE_SEARCH_RADIUS = 6   # blocks from each horse to look for STABLE_BLOCK
+TROUGH_SEARCH_RADIUS = 5   # blocks from each horse to look for WATER_TROUGH
+TROUGH_TAME_RATE     = 0.04  # tame progress per second when near a trough (wild only)
 
 
 class Horse(Animal):
@@ -298,6 +300,8 @@ class Horse(Animal):
         """Player-triggered breeding at a stable. Returns offspring or None."""
         if self.no_breed or other.no_breed:
             return None
+        if self.traits.get("sex") == other.traits.get("sex"):
+            return None
         if not (self.tamed and other.tamed):
             return None
         if not (self._stable_nearby(world) or other._stable_nearby(world)):
@@ -372,6 +376,16 @@ class Horse(Animal):
                     return True
         return False
 
+    def _trough_nearby(self, world):
+        from blocks import WATER_TROUGH
+        cx = int((self.x + self.W / 2) // BLOCK_SIZE)
+        cy = int((self.y + self.H / 2) // BLOCK_SIZE)
+        for dx in range(-TROUGH_SEARCH_RADIUS, TROUGH_SEARCH_RADIUS + 1):
+            for dy in range(-TROUGH_SEARCH_RADIUS, TROUGH_SEARCH_RADIUS + 1):
+                if world.get_block(cx + dx, cy + dy) == WATER_TROUGH:
+                    return True
+        return False
+
     # ------------------------------------------------------------------
     # Update — handles flee, mounted state, tame-follow, wander
     # ------------------------------------------------------------------
@@ -386,9 +400,9 @@ class Horse(Animal):
             self.stamina = min(100.0, self.stamina + regen)
         # Endurance slows drain when sprinting (accessed in player.py via trait key)
 
-        # Keep breed cooldown high to prevent auto-breed
+        # Tick post-breed cooldown; 9999 means "not on cooldown" so leave it alone
         if self._breed_cooldown < 9999.0:
-            self._breed_cooldown = 9999.0
+            self._breed_cooldown = max(0.0, self._breed_cooldown - dt)
 
         # Rider drives position — skip all locomotion
         if self.rider is not None:
@@ -438,8 +452,18 @@ class Horse(Animal):
             self._move_y(self.vy)
             return
 
-        # Wild horse flees from nearby player
-        if not self.tamed:
+        # Passive taming from nearby water trough
+        if not self.tamed and self._trough_nearby(self.world):
+            self.tame_progress += TROUGH_TAME_RATE * dt
+            threshold = TEMPERAMENT_THRESHOLDS[self.traits["temperament"]]
+            if self.tame_progress >= threshold:
+                self.tamed = True
+                player = getattr(self.world, '_player_ref', None)
+                if player is not None:
+                    player.horses_tamed = getattr(player, "horses_tamed", 0) + 1
+
+        # Wild horse flees from nearby player (not when penned in a fence)
+        if not self.tamed and not self._near_fence():
             player = getattr(self.world, '_player_ref', None)
             if player is not None:
                 pdx = (player.x + PLAYER_W / 2) - (self.x + self.W / 2)
@@ -457,8 +481,8 @@ class Horse(Animal):
                     self._move_y(self.vy)
                     return
 
-        # Tamed: follow player
-        if self.tamed:
+        # Tamed: follow player (not when penned in a fence)
+        if self.tamed and not self._near_fence():
             player = getattr(self.world, '_player_ref', None)
             if player is not None:
                 pdx = (player.x + PLAYER_W / 2) - (self.x + self.W / 2)

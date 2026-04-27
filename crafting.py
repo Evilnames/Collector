@@ -974,19 +974,22 @@ ARTISAN_RECIPES = [
     {"name": "Cross Lantern", "ingredients": {"iron_chunk": 2, "coal": 1},                "output_id": "cross_lantern", "output_count": 2},
     {"name": "Star Lamp",     "ingredients": {"crystal_shard": 1, "gold_nugget": 2},      "output_id": "star_lamp",     "output_count": 2},
     {"name": "Glow Vine",     "ingredients": {"lumber": 1, "crystal_shard": 1},           "output_id": "glow_vine",     "output_count": 4},
-    # Weapon handles (crafting bench)
-    {"name": "Sword Hilt",     "ingredients": {"lumber": 2},                               "output_id": "sword_hilt",     "output_count": 1},
-    {"name": "Dagger Handle",  "ingredients": {"lumber": 1},                               "output_id": "dagger_handle",  "output_count": 1},
-    {"name": "Spear Shaft",    "ingredients": {"lumber": 3},                               "output_id": "spear_shaft",    "output_count": 1},
-    {"name": "Axe Haft",       "ingredients": {"lumber": 2},                               "output_id": "axe_haft",       "output_count": 1},
-    {"name": "Mace Haft",      "ingredients": {"lumber": 2},                               "output_id": "mace_haft",      "output_count": 1},
-    {"name": "Halberd Shaft",  "ingredients": {"lumber": 4},                               "output_id": "halberd_shaft",  "output_count": 1},
-    {"name": "Glaive Pole",    "ingredients": {"lumber": 3},                               "output_id": "glaive_pole",    "output_count": 1},
-    {"name": "Rapier Grip",    "ingredients": {"lumber": 1},                               "output_id": "rapier_grip",    "output_count": 1},
-    {"name": "Trident Shaft",  "ingredients": {"lumber": 3},                               "output_id": "trident_shaft",  "output_count": 1},
-    {"name": "Scythe Snath",   "ingredients": {"lumber": 4},                               "output_id": "scythe_snath",   "output_count": 1},
     {"name": "Ice Shard", "ingredients": {"stone_chip": 2}, "output_id": "ice_shard", "output_count": 2},
     {"name": "Frozen Bog", "ingredients": {"stone_chip": 2}, "output_id": "frozen_bog", "output_count": 2},
+    {"name": "Weapon Assembler", "ingredients": {"lumber": 4, "iron_chunk": 2}, "output_id": "weapon_assembler", "output_count": 1},
+]
+
+WEAPON_ASSEMBLER_RECIPES = [
+    {"name": "Sword Hilt",    "ingredients": {"lumber": 2},                    "output_id": "sword_hilt",    "output_count": 1},
+    {"name": "Dagger Handle", "ingredients": {"lumber": 1},                    "output_id": "dagger_handle", "output_count": 1},
+    {"name": "Spear Shaft",   "ingredients": {"lumber": 3},                    "output_id": "spear_shaft",   "output_count": 1},
+    {"name": "Axe Haft",      "ingredients": {"lumber": 2},                    "output_id": "axe_haft",      "output_count": 1},
+    {"name": "Mace Haft",     "ingredients": {"lumber": 2},                    "output_id": "mace_haft",     "output_count": 1},
+    {"name": "Halberd Shaft", "ingredients": {"lumber": 4},                    "output_id": "halberd_shaft", "output_count": 1},
+    {"name": "Glaive Pole",   "ingredients": {"lumber": 3},                    "output_id": "glaive_pole",   "output_count": 1},
+    {"name": "Rapier Grip",   "ingredients": {"lumber": 1},                    "output_id": "rapier_grip",   "output_count": 1},
+    {"name": "Trident Shaft", "ingredients": {"lumber": 3},                    "output_id": "trident_shaft", "output_count": 1},
+    {"name": "Scythe Snath",  "ingredients": {"lumber": 4},                    "output_id": "scythe_snath",  "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -1537,6 +1540,16 @@ RECIPES = [
             [None,         "stone_chip", None        ],
         ],
         "output_id":    "bird_bath",
+        "output_count": 1,
+    },
+    {
+        "name": "Binoculars",
+        "pattern": [
+            ["clear_glass", None,     "clear_glass"],
+            ["iron_bar",    "lumber", "iron_bar"   ],
+            ["clear_glass", None,     "clear_glass"],
+        ],
+        "output_id":    "binoculars",
         "output_count": 1,
     },
     # --- Insect collecting ---
@@ -2119,7 +2132,7 @@ RECIPES = [
         "name": "Track Stop",
         "pattern": [
             ["iron_chunk", "iron_chunk", "iron_chunk"],
-            ["iron_chunk", None,         "iron_chunk"],
+            ["iron_chunk", "lumber",     "iron_chunk"],
             ["stone_chip", "stone_chip", "stone_chip"],
         ],
         "output_id":    "mine_track_stop",
@@ -2783,7 +2796,7 @@ RECIPE_GROUPS = {
         "fishing_pole", "cane_rod", "composite_rod", "bait_station_item", "fish_trophy_item",
     ],
     "Wildlife": [
-        "bird_feeder", "bird_bath", "bug_net", "insect_display_case", "light_trap",
+        "bird_feeder", "bird_bath", "binoculars", "bug_net", "insect_display_case", "light_trap",
         "wildflower_display",
     ],
     "Horses": [
@@ -2815,14 +2828,14 @@ RECIPE_GROUPS = {
         "dog_collar", "dog_treat", "dog_whistle", "kennel_item", "dog_bowl_item",
     ],
     "Blacksmithing": [
-        "forge_item", "weapon_rack_item",
+        "forge_item", "weapon_rack_item", "weapon_assembler",
     ],
 }
 
 RECIPE_GROUPS_ORDER = [
     "Tools", "Farming", "Building", "Automation", "Rock & Gems", "Smelting",
-    "Cooking Stations", "Coffee", "Wine", "Spirits", "Tea",
-    "Herbalism", "Textiles", "Glassblowing", "Fishing", "Wildlife", "Horses", "Dogs", "Hunting", "Jewelry",
+    "Cooking Stations", "Coffee", "Wine", "Spirits", "Brewery", "Tea",
+    "Herbalism", "Textiles", "Glassblowing", "Cheese", "Fishing", "Wildlife", "Horses", "Dogs", "Hunting", "Jewelry",
     "Garden", "Sculpture", "Pottery", "Tapestry", "Blacksmithing",
 ]
 
@@ -2849,6 +2862,7 @@ RESEARCH_LOCKED_RECIPES = {
     "taproom_item":          "brewing_basics",
     "bird_feeder":           "bird_watching",
     "bird_bath":             "bird_sanctuary",
+    "binoculars":            "bird_watching",
     "bug_net":               "entomology_basics",
     "insect_display_case":   "entomology_basics",
     "light_trap":            "entomology_basics",

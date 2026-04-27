@@ -993,20 +993,20 @@ class World:
             sy = self.surface_height(x)
             biodome = self.biodome_at(x)
             if 0 < sy < WORLD_H and chunk[sy - 1][lx] == AIR and chunk[sy][lx] == GRASS:
-                if flower_rng.random() < 0.75:
+                if flower_rng.random() < 0.25:
                     chunk[sy - 1][lx] = WILDFLOWER_PATCH
             lo, hi = {
-                "jungle": (2, 5), "tropical": (2, 5), "wetland": (3, 7),
-                "temperate": (4, 9), "boreal": (5, 10), "birch_forest": (4, 9),
-                "redwood": (5, 11), "savanna": (6, 13), "wasteland": (12, 25),
-                "fungal": (4, 10),
-                "alpine_mountain": (18, 35), "rocky_mountain": (14, 28),
-                "rolling_hills": (4, 9), "steep_hills": (5, 10),
-                "steppe": (9, 18), "arid_steppe": (15, 30),
-                "desert": (22, 45), "tundra": (18, 35),
-                "swamp": (2, 5), "beach": (12, 22),
-                "canyon": (12, 24),
-            }.get(biodome, (5, 10))
+                "jungle": (5, 10), "tropical": (5, 10), "wetland": (6, 12),
+                "temperate": (8, 16), "boreal": (9, 18), "birch_forest": (8, 16),
+                "redwood": (9, 18), "savanna": (10, 20), "wasteland": (20, 40),
+                "fungal": (8, 16),
+                "alpine_mountain": (30, 55), "rocky_mountain": (22, 42),
+                "rolling_hills": (8, 16), "steep_hills": (9, 18),
+                "steppe": (15, 28), "arid_steppe": (24, 46),
+                "desert": (35, 65), "tundra": (28, 50),
+                "swamp": (5, 10), "beach": (18, 34),
+                "canyon": (20, 38),
+            }.get(biodome, (9, 18))
             lx += flower_rng.randint(lo, hi)
 
         # Lakes (chunk-local)

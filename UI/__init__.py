@@ -192,6 +192,8 @@ class UI(
         self._juicer_recipe_rects             = {}
         self._automation_selected_recipe      = 0
         self._automation_recipe_rects         = {}
+        self._assembler_selected_recipe       = 0
+        self._assembler_recipe_rects          = {}
         self._cook_station_scroll        = {}
         self._cook_station_max_scroll    = {}
         self.npc_open   = False

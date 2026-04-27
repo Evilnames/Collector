@@ -1402,6 +1402,8 @@ COCONUT_BUSH          = 1240
 COCONUT_CROP_YOUNG    = 1241
 COCONUT_CROP_MATURE   = 1242
 
+WEAPON_ASSEMBLER_BLOCK       = 1256  # weapon assembler
+
 EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, BAKERY_BLOCK,
                     WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
                     DESERT_FORGE_BLOCK,
@@ -1432,7 +1434,8 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     AUTOMATION_BENCH_BLOCK,
                     CHICKEN_COOP_BLOCK,
                     GAMBLING_TABLE,
-                    BET_COUNTER}
+                    BET_COUNTER,
+                    WEAPON_ASSEMBLER_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT}
 
@@ -3072,6 +3075,7 @@ BLOCKS = {
     BANNER_BLOCK:              {"name": "Banner",           "hardness": 1.0,          "color": (160,  80,  40), "drop": "banner_item"},
     FISHING_SPOT_BLOCK:        {"name": "Fishing Spot",     "hardness": -1,           "color": ( 50, 140, 235), "drop": None},
     FISH_TROPHY_BLOCK:         {"name": "Fish Trophy",      "hardness": 0.5,          "color": (160, 110,  60), "drop": "fish_trophy_item"},
+    WEAPON_ASSEMBLER_BLOCK:    {"name": "Weapon Assembler", "hardness": 1, "color": (120,  90,  60), "drop": "weapon_assembler"},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}

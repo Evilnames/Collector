@@ -1928,129 +1928,57 @@ class PanelsMixin:
 
     def _draw_animal_preview(self, animal, cx, cy, scale=3.5):
         """Draw a scaled animal preview centred at (cx, cy) on self.screen."""
-        def _t(base, sh):
-            return tuple(max(0, min(255, int(base[i] + sh[i] * 255))) for i in range(3))
+        from Render.farmanimal import draw_sheep, draw_goat, draw_cow, draw_chicken, draw_capybara
+        from Render.largeAnimal import draw_horse
+        import types
+
         aid    = getattr(animal, 'animal_id', '')
-        traits = getattr(animal, 'traits', {})
-        sh     = traits.get("color_shift", (0, 0, 0))
+        traits = dict(getattr(animal, 'traits', {}))
         if traits.get("mutation") == "golden":
-            sh = (0.35, 0.25, -0.30)
-        s      = traits.get("size", 1.0) * scale
+            traits["color_shift"] = (0.35, 0.25, -0.30)
+
+        sz    = traits.get("size", 1.0)
+        eff_s = sz * scale
+        traits["size"] = eff_s  # draw functions read size from traits for pixel offsets
+
+        def _make_stub(base_w, base_h, **extra):
+            stub = types.SimpleNamespace(
+                traits=traits,
+                W=int(base_w * eff_s),
+                H=int(base_h * eff_s),
+                facing=1,
+                tamed=False,
+                being_harvested=False,
+                _kill_timer=0,
+                _harvest_time=0,
+                health=3,
+            )
+            for k, v in extra.items():
+                setattr(stub, k, v)
+            return stub
+
         if aid == "sheep":
-            BW, BH = int(24 * s), int(18 * s)
-            sx, sy = cx - BW // 2, cy - BH // 2
-            bh = BH - int(8 * s)
-            for lo in (2, 7, 14, 19):
-                pygame.draw.rect(self.screen, (80, 60, 40),
-                                 (sx + int(lo * s), sy + bh, max(1, int(3 * s)), int(8 * s)))
-            bclr = _t((220, 220, 220) if getattr(animal, 'has_wool', True) else (175, 140, 95), sh)
-            pygame.draw.rect(self.screen, bclr, (sx, sy, BW, bh))
-            hw, hh = int(9 * s), int(9 * s)
-            hclr = _t((200, 200, 200) if getattr(animal, 'has_wool', True) else (155, 125, 85), sh)
-            hx = sx + BW - int(2 * s)
-            hy = sy - max(1, int(1 * s))
-            pygame.draw.rect(self.screen, hclr, (hx, hy, hw, hh))
-            pygame.draw.rect(self.screen, (30, 30, 30),
-                             (hx + hw - int(3 * s), hy + int(3 * s), max(1, int(2 * s)), max(1, int(2 * s))))
+            stub = _make_stub(24, 18, has_wool=getattr(animal, 'has_wool', True))
+            draw_sheep(self.screen, cx - stub.W // 2, cy - stub.H // 2, stub)
         elif aid == "cow":
-            BW, BH = int(30 * s), int(20 * s)
-            sx, sy = cx - BW // 2, cy - BH // 2
-            bh = BH - int(8 * s)
-            for lo in (2, 8, 18, 24):
-                pygame.draw.rect(self.screen, (60, 40, 30),
-                                 (sx + int(lo * s), sy + bh, max(1, int(4 * s)), int(8 * s)))
-            bclr = _t((140, 85, 45), sh)
-            pygame.draw.rect(self.screen, bclr, (sx, sy, BW, bh))
-            pygame.draw.rect(self.screen, (30, 20, 10),
-                             (sx + int(8 * s), sy + int(2 * s), int(10 * s), int(5 * s)))
-            hw, hh = int(11 * s), int(11 * s)
-            hx = sx + BW - int(3 * s)
-            hy = sy - int(2 * s)
-            hclr = _t((140, 85, 45), sh)
-            pygame.draw.rect(self.screen, hclr, (hx, hy, hw, hh))
-            pygame.draw.rect(self.screen, _t((190, 130, 100), sh),
-                             (hx + hw - int(4 * s), hy + int(6 * s), int(4 * s), int(4 * s)))
-            pygame.draw.rect(self.screen, (20, 10, 5),
-                             (hx + hw - int(4 * s), hy + int(2 * s), max(1, int(2 * s)), max(1, int(2 * s))))
+            stub = _make_stub(30, 20,
+                              has_milk=getattr(animal, 'has_milk', False),
+                              _milking=None)
+            draw_cow(self.screen, cx - stub.W // 2, cy - stub.H // 2, stub)
         elif aid == "goat":
-            BW, BH = int(22 * s), int(18 * s)
-            sx, sy = cx - BW // 2, cy - BH // 2
-            bh = BH - int(8 * s)
-            for lo in (2, 6, 13, 17):
-                pygame.draw.rect(self.screen, _t((90, 70, 50), sh),
-                                 (sx + int(lo * s), sy + bh, max(1, int(3 * s)), int(8 * s)))
-            bclr = _t((195, 180, 155), sh)
-            pygame.draw.rect(self.screen, bclr, (sx, sy, BW, bh))
-            hw, hh = int(9 * s), int(9 * s)
-            hclr = _t((185, 170, 145), sh)
-            hx = sx + BW - int(2 * s)
-            hy = sy - int(2 * s)
-            pygame.draw.rect(self.screen, hclr, (hx, hy, hw, hh))
-            # horns
-            horn_c = _t((80, 65, 45), sh)
-            pygame.draw.rect(self.screen, horn_c, (hx + int(1 * s), hy - int(4 * s), max(1, int(2 * s)), int(4 * s)))
-            pygame.draw.rect(self.screen, horn_c, (hx + int(5 * s), hy - int(5 * s), max(1, int(2 * s)), int(5 * s)))
-            # beard
-            pygame.draw.rect(self.screen, _t((155, 140, 115), sh),
-                             (hx + int(1 * s), hy + hh, max(1, int(2 * s)), max(1, int(4 * s))))
-            # eye
-            pygame.draw.rect(self.screen, (20, 12, 5),
-                             (hx + hw - int(3 * s), hy + int(3 * s), max(1, int(2 * s)), max(1, int(2 * s))))
+            stub = _make_stub(22, 18, has_milk=getattr(animal, 'has_milk', False))
+            draw_goat(self.screen, cx - stub.W // 2, cy - stub.H // 2, stub)
         elif aid == "chicken":
-            BW, BH = int(18 * s), int(16 * s)
-            sx, sy = cx - BW // 2, cy - BH // 2
-            for lo in (4, 11):
-                pygame.draw.rect(self.screen, (220, 160, 30),
-                                 (sx + int(lo * s), sy + BH - int(6 * s), max(1, int(2 * s)), int(6 * s)))
-            bclr = _t((235, 235, 210), sh)
-            pygame.draw.ellipse(self.screen, bclr,
-                                (sx + max(1, int(1 * s)), sy + int(2 * s),
-                                 max(2, BW - int(4 * s)), max(2, BH - int(8 * s))))
-            hw, hh = int(8 * s), int(8 * s)
-            hx = sx + BW - int(4 * s)
-            hy = sy - int(2 * s)
-            pygame.draw.ellipse(self.screen, bclr, (hx, hy, max(4, hw), max(4, hh)))
-            pygame.draw.rect(self.screen, (220, 160, 30),
-                             (hx + hw - max(1, int(1 * s)), hy + int(3 * s),
-                              max(1, int(3 * s)), max(1, int(2 * s))))
-            pygame.draw.rect(self.screen, (20, 20, 20),
-                             (hx + hw - int(3 * s), hy + int(2 * s), max(1, int(2 * s)), max(1, int(2 * s))))
-            pygame.draw.rect(self.screen, (220, 50, 50),
-                             (hx + int(2 * s), hy - max(1, int(2 * s)),
-                              max(1, int(4 * s)), max(1, int(3 * s))))
+            stub = _make_stub(18, 16, has_egg=getattr(animal, 'has_egg', False))
+            draw_chicken(self.screen, cx - stub.W // 2, cy - stub.H // 2, stub)
+        elif aid == "capybara":
+            stub = _make_stub(34, 18)
+            draw_capybara(self.screen, cx - stub.W // 2, cy - stub.H // 2, stub)
         elif aid == "dog":
-            draw_dog(self.screen, cx - int(17 * s), cy - int(11 * s), animal, scale=s, facing=1)
+            draw_dog(self.screen, cx - int(17 * eff_s), cy - int(11 * eff_s), animal, scale=eff_s, facing=1)
         elif aid == "horse":
-            coat  = traits.get("coat_color", (160, 115, 65))
-            sh    = traits.get("color_shift", (0, 0, 0))
-            body_color = _t(coat, sh)
-            dark_coat  = tuple(max(0, c - 40) for c in body_color)
-            mane_color = tuple(max(0, c - 60) for c in body_color)
-            BW, BH = int(40 * s), int(26 * s)
-            sx2, sy2 = cx - BW // 2, cy - BH // 2
-            body_h = int(BH * 0.65)
-            leg_h  = BH - body_h
-            leg_y  = sy2 + body_h
-            leg_w  = max(1, int(4 * s))
-            for lx_off in [3, 9, 22, 28]:
-                pygame.draw.rect(self.screen, dark_coat,
-                                 (sx2 + int(lx_off * s), leg_y, leg_w, leg_h))
-                pygame.draw.rect(self.screen, (30, 25, 20),
-                                 (sx2 + int(lx_off * s), leg_y + leg_h - max(1, int(2 * s)), leg_w, max(1, int(2 * s))))
-            pygame.draw.rect(self.screen, body_color, (sx2, sy2, BW, body_h))
-            pygame.draw.rect(self.screen, mane_color,
-                             (sx2 + int(4 * s), sy2, int((BW - 8) * s), max(2, int(4 * s))))
-            pygame.draw.rect(self.screen, mane_color,
-                             (sx2, sy2 + int(4 * s), max(2, int(4 * s)), int(body_h * 0.6)))
-            head_w = int(12 * s)
-            head_h = int(12 * s)
-            hx2 = sx2 + BW - int(2 * s)
-            hy2 = sy2 - int(4 * s)
-            pygame.draw.rect(self.screen, body_color, (hx2, hy2, head_w, head_h))
-            pygame.draw.rect(self.screen, _t((200, 175, 145), sh),
-                             (hx2 + head_w - int(5 * s), hy2 + int(6 * s), int(5 * s), int(5 * s)))
-            pygame.draw.rect(self.screen, (15, 10, 5),
-                             (hx2 + head_w - int(5 * s), hy2 + int(3 * s), max(1, int(2 * s)), max(1, int(2 * s))))
+            stub = _make_stub(40, 26, tamed=False, _broken=False, _on_trade_run=False)
+            draw_horse(self.screen, cx - stub.W // 2, cy - stub.H // 2, stub)
 
     def handle_breeding_click(self, pos, player):
         for tab_idx, rect in self._breed_tab_rects.items():
@@ -2213,12 +2141,20 @@ class PanelsMixin:
             self._breed_selected_uid = None
             return
 
+        old_right_clip = self.screen.get_clip()
+        self.screen.set_clip(pygame.Rect(rx0, py, rw, PH))
+
         num   = animal_numbers.get(animal.uid, 1)
         tname = TYPE_LABELS.get(animal.animal_id, animal.animal_id)
 
         # Header row
         hdg = self.font.render(f"{tname}  #{num}", True, (170, 255, 195))
         self.screen.blit(hdg, (rx0 + 12, py + 12))
+        sex = getattr(animal, 'traits', {}).get("sex", "female")
+        sex_sym  = "M" if sex == "male" else "F"
+        sex_col  = (110, 175, 255) if sex == "male" else (255, 140, 180)
+        sex_lbl  = self.font.render(sex_sym, True, sex_col)
+        self.screen.blit(sex_lbl, (rx0 + 12 + hdg.get_width() + 8, py + 12))
 
         uid_lbl = self.small.render(f"uid: {animal.uid[:18]}…", True, (65, 90, 75))
         self.screen.blit(uid_lbl, (rx0 + 12, py + 35))
@@ -2277,9 +2213,20 @@ class PanelsMixin:
 
         traits  = animal.traits
         geno    = getattr(animal, 'genotype', {})
-        BAR_W   = 80
+        BAR_W   = 72
         BAR_H   = 8
+        BAR_GAP = 5   # gap between the two allele bars
         COL_W   = 130  # width for one allele column
+
+        # Column header row: explains what A / B / → mean
+        _HDR_LW = 60
+        hdr_a = self.small.render("A", True, (65, 95, 75))
+        hdr_b = self.small.render("B", True, (65, 95, 75))
+        hdr_e = self.small.render("→ expressed", True, (80, 115, 90))
+        self.screen.blit(hdr_a, (stats_x + _HDR_LW + BAR_W // 2 - hdr_a.get_width() // 2, sy))
+        self.screen.blit(hdr_b, (stats_x + _HDR_LW + BAR_W + BAR_GAP + BAR_W // 2 - hdr_b.get_width() // 2, sy))
+        self.screen.blit(hdr_e, (stats_x + _HDR_LW + 2 * (BAR_W + BAR_GAP) + 8, sy))
+        sy += 14
 
         def _draw_allele_quant(label, gene_key, lo, hi, bar_col, label_w=60):
             nonlocal sy
@@ -2288,14 +2235,13 @@ class PanelsMixin:
             lbl_s = self.small.render(label, True, (150, 195, 165))
             self.screen.blit(lbl_s, (stats_x, sy))
             for ai, av in enumerate(pair if pair else [expressed, expressed]):
-                ax = stats_x + label_w + ai * (BAR_W + 14)
+                ax = stats_x + label_w + ai * (BAR_W + BAR_GAP)
                 fill = max(0, min(BAR_W, int(BAR_W * (av - lo) / (hi - lo))))
                 pygame.draw.rect(self.screen, (22, 40, 30), (ax, sy + 1, BAR_W, BAR_H))
                 pygame.draw.rect(self.screen, bar_col, (ax, sy + 1, fill, BAR_H))
-                vl = self.small.render(f"{av:.2f}", True, (160, 205, 175))
-                self.screen.blit(vl, (ax + BAR_W + 3, sy))
-            exp_s = self.small.render(f"→{expressed:.2f}", True, (220, 240, 225))
-            self.screen.blit(exp_s, (stats_x + label_w + 2 * (BAR_W + 14) + 4, sy))
+            exp_x = stats_x + label_w + 2 * (BAR_W + BAR_GAP) + 8
+            exp_s = self.small.render(f"{expressed:.2f}", True, (220, 240, 225))
+            self.screen.blit(exp_s, (exp_x, sy))
             sy += 18
 
         def _draw_allele_cat(label, gene_key, label_w=60):
@@ -2338,7 +2284,7 @@ class PanelsMixin:
         elif animal.animal_id == "horse":
             _draw_allele_quant("Speed",     "speed_gene",    0.7, 1.4, (65, 155, 235))
             _draw_allele_quant("Stamina",   "stamina_gene",  0.8, 1.2, (80, 210, 120))
-            _draw_allele_quant("Endurance", "endurance_gene",0.7, 1.3, (100, 185, 240))
+            _draw_allele_quant("Recovery",  "endurance_gene",0.7, 1.3, (100, 185, 240))
             _draw_allele_quant("Gait",      "gait_gene",     0.7, 1.3, (160, 120, 230))
             temp = traits.get("temperament", "spirited")
             temp_lbl = self.small.render("Temper", True, (150, 195, 165))
@@ -2524,6 +2470,8 @@ class PanelsMixin:
                 ch_s  = self.small.render(ctxt, True, (140, 195, 155))
                 self.screen.blit(ch_s, (stats_x, sy))
                 sy += 14
+
+        self.screen.set_clip(old_right_clip)
 
     # ------------------------------------------------------------------
     # Merchant / Restaurant / Shrine panels

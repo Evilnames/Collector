@@ -4,7 +4,8 @@ from item_icons import render_item_icon
 from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOODLE_POT_RECIPES,
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
                       BAIT_STATION_RECIPES, FLETCHING_RECIPES, SMELTER_RECIPES, GLASS_KILN_RECIPES,
-                      GARDEN_WORKSHOP_RECIPES, JUICER_RECIPES,
+                      GARDEN_WORKSHOP_RECIPES, JUICER_RECIPES, AUTOMATION_RECIPES,
+                      WEAPON_ASSEMBLER_RECIPES,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
 from rocks import get_refinery_equipment
@@ -23,7 +24,8 @@ from blocks import (BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BB
                     SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK,
                     DAIRY_VAT_BLOCK, CHEESE_PRESS_BLOCK, AGING_CAVE_BLOCK,
                     FLETCHING_TABLE_BLOCK, SMELTER_BLOCK, ANAEROBIC_TANK_BLOCK,
-                    GLASS_KILN_BLOCK, GARDEN_WORKSHOP_BLOCK)
+                    GLASS_KILN_BLOCK, GARDEN_WORKSHOP_BLOCK, AUTOMATION_BENCH_BLOCK,
+                    WEAPON_ASSEMBLER_BLOCK)
 from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, BLOCK_SIZE
 
 
@@ -658,7 +660,7 @@ class HandlersMixin:
                     self._gc_gem_idx = None
                     return
 
-    def handle_refinery_click(self, pos, player):
+    def handle_refinery_click(self, pos, player, debug=False):
         if self.refinery_block_id == FOSSIL_TABLE_BLOCK:
             self._handle_fossil_table_click(pos, player)
             return
@@ -826,7 +828,7 @@ class HandlersMixin:
                     self._artisan_selected_recipe = i
                     return
             if self._refine_btn and self._refine_btn.collidepoint(pos):
-                self._do_cook(player, ARTISAN_RECIPES, self._artisan_selected_recipe)
+                self._do_cook(player, ARTISAN_RECIPES, self._artisan_selected_recipe, debug=debug)
             return
         if self.refinery_block_id == BAIT_STATION_BLOCK:
             for i, rect in self._bait_station_recipe_rects.items():
@@ -843,6 +845,14 @@ class HandlersMixin:
                     return
             if self._refine_btn and self._refine_btn.collidepoint(pos):
                 self._do_cook(player, FLETCHING_RECIPES, self._fletching_selected_recipe)
+            return
+        if self.refinery_block_id == WEAPON_ASSEMBLER_BLOCK:
+            for i, rect in self._assembler_recipe_rects.items():
+                if rect.collidepoint(pos):
+                    self._assembler_selected_recipe = i
+                    return
+            if self._refine_btn and self._refine_btn.collidepoint(pos):
+                self._do_cook(player, WEAPON_ASSEMBLER_RECIPES, self._assembler_selected_recipe)
             return
         if self.refinery_block_id == SMELTER_BLOCK:
             for i, rect in self._smelter_recipe_rects.items():
@@ -866,7 +876,7 @@ class HandlersMixin:
                     self._garden_workshop_selected_recipe = i
                     return
             if self._refine_btn and self._refine_btn.collidepoint(pos):
-                self._do_cook(player, GARDEN_WORKSHOP_RECIPES, self._garden_workshop_selected_recipe)
+                self._do_cook(player, GARDEN_WORKSHOP_RECIPES, self._garden_workshop_selected_recipe, debug=debug)
             return
         if self.refinery_block_id == JUICER_BLOCK:
             for i, rect in self._juicer_recipe_rects.items():
@@ -875,6 +885,14 @@ class HandlersMixin:
                     return
             if self._refine_btn and self._refine_btn.collidepoint(pos):
                 self._do_cook(player, JUICER_RECIPES, self._juicer_selected_recipe)
+            return
+        if self.refinery_block_id == AUTOMATION_BENCH_BLOCK:
+            for i, rect in self._automation_recipe_rects.items():
+                if rect.collidepoint(pos):
+                    self._automation_selected_recipe = i
+                    return
+            if self._refine_btn and self._refine_btn.collidepoint(pos):
+                self._do_cook(player, AUTOMATION_RECIPES, self._automation_selected_recipe, debug=debug)
             return
         if self.refinery_block_id == COMPOST_BIN_BLOCK:
             self._handle_compost_bin_click(pos, player)
@@ -924,8 +942,13 @@ class HandlersMixin:
             player._add_item(recipe["output_id"])
         self._record_food_discovery(player, recipe["output_id"])
 
-    def _do_cook(self, player, recipe_list, selected_idx):
+    def _do_cook(self, player, recipe_list, selected_idx, debug=False):
         recipe = recipe_list[selected_idx]
+        if debug:
+            for _ in range(recipe["output_count"]):
+                player._add_item(recipe["output_id"])
+            self._record_food_discovery(player, recipe["output_id"])
+            return
         for item_id, needed in recipe["ingredients"].items():
             if player.inventory.get(item_id, 0) < needed:
                 return

@@ -1490,7 +1490,7 @@ def main():
                     if ui.refinery_block_id == GEM_CUTTER_BLOCK:
                         ui.handle_gem_cutter_click(event.pos, player)
                     else:
-                        ui.handle_refinery_click(event.pos, player)
+                        ui.handle_refinery_click(event.pos, player, debug=settings.get("debug", False))
                         # Roaster heat button also responds to mouse down
                         if ui.refinery_block_id == ROASTER_BLOCK:
                             if hasattr(ui, '_roast_heat_btn') and ui._roast_heat_btn and ui._roast_heat_btn.collidepoint(event.pos):
@@ -1566,12 +1566,15 @@ def main():
                                 )
                     # Check for bird clicks before falling through to hotbar/world
                     if event.button == 1 and not ui._bird_obs_active:
+                        _bino_held = player.hotbar[player.selected_slot] == "binoculars"
                         mx, my = event.pos
                         for bird in world.birds:
                             bsx = int(bird.x - renderer.cam_x)
                             bsy = int(bird.y - renderer.cam_y)
                             if pygame.Rect(bsx - 4, bsy - 4, bird.W + 8, bird.H + 8).collidepoint(mx, my):
-                                ui.open_bird_observation(bird)
+                                _settled = bird.state in ("perching", "stopped", "landing")
+                                if _bino_held or _settled:
+                                    ui.open_bird_observation(bird)
                                 break
                     # Check for insect clicks (requires bug_net equipped)
                     held = player.hotbar[player.selected_slot]
@@ -1851,15 +1854,6 @@ def main():
             player.x = bh.x + (bh.W - PLAYER_W) / 2
             player.y = bh.y
 
-        # Horse mounted physics
-        if player.mounted_horse is not None and not _any_ui_open() and not ui.cheat_open:
-            horse = player.mounted_horse
-            from constants import GRAVITY, MAX_FALL
-            horse.vy = min(horse.vy + GRAVITY, MAX_FALL)
-            horse._move_x(horse.vx)
-            horse._move_y(horse.vy)
-            player.on_ground = horse.on_ground
-
         # Pending horse break minigame trigger
         if getattr(player, '_pending_horse_break', None) is not None:
             ui.open_horse_breaking(player._pending_horse_break)
@@ -1944,8 +1938,10 @@ def main():
         # Bird observation mini-game tick
         if ui._bird_obs_active and ui._bird_obs_bird is not None:
             bird = ui._bird_obs_bird
+            _bino_held = player.hotbar[player.selected_slot] == "binoculars"
             player_moving = abs(player.vx) > 0.5
-            if bird.state in ("flying", "taking_off"):
+            bird_escaped = bird.state in ("flying", "taking_off", "fleeing") and not _bino_held
+            if bird_escaped:
                 if not ui._bird_obs_failed:
                     ui._bird_obs_failed = True
                     ui._bird_obs_fail_timer = 1.5

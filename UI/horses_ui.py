@@ -50,26 +50,26 @@ class HorseMixin:
 
         # Player presses A or D to counter-balance
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            self._hb_balance -= 30 * dt
+            self._hb_balance -= 22 * dt
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            self._hb_balance += 30 * dt
+            self._hb_balance += 22 * dt
 
         # Horse bucks every buck_interval seconds
         self._hb_buck_timer -= dt
         if self._hb_buck_timer <= 0:
             self._hb_direction = random.choice([-1, 1])
-            self._hb_balance += self._hb_direction * 18
-            # Bucks faster as time progresses (horse tires but fights harder briefly)
-            self._hb_buck_timer = max(0.4, self._hb_buck_interval - self._hb_active_timer * 0.04)
+            self._hb_balance += self._hb_direction * 26
+            # Bucks get faster as the ride progresses
+            self._hb_buck_timer = max(0.3, self._hb_buck_interval - self._hb_active_timer * 0.06)
 
-        # Natural drift back toward center (friction)
-        self._hb_balance += (50.0 - self._hb_balance) * 0.5 * dt
+        # Mild drift toward center — not enough to save you if you're losing
+        self._hb_balance += (50.0 - self._hb_balance) * 0.25 * dt
 
         # Clamp balance
         self._hb_balance = max(0.0, min(100.0, self._hb_balance))
 
         # Fall off if outside safe range
-        if self._hb_balance < 8 or self._hb_balance > 92:
+        if self._hb_balance < 15 or self._hb_balance > 85:
             self._hb_phase = "result"
             self._hb_result = "fail"
             self._hb_result_timer = 1.5
@@ -142,8 +142,8 @@ class HorseMixin:
         pygame.draw.rect(self.screen, (50, 38, 24), (bar_x, bar_y, bar_w, bar_h))
 
         # Safe zone (center band)
-        safe_w = int(bar_w * 0.84)   # [8%, 92%]
-        safe_x = bar_x + int(bar_w * 0.08)
+        safe_w = int(bar_w * 0.70)   # [15%, 85%]
+        safe_x = bar_x + int(bar_w * 0.15)
         pygame.draw.rect(self.screen, (40, 70, 40), (safe_x, bar_y, safe_w, bar_h))
 
         # Balance indicator
@@ -152,9 +152,9 @@ class HorseMixin:
                          (ind_x - 4, bar_y - 3, 8, bar_h + 6))
 
         # Danger zones highlight
-        pygame.draw.rect(self.screen, (180, 50, 50), (bar_x, bar_y, int(bar_w * 0.08), bar_h))
+        pygame.draw.rect(self.screen, (180, 50, 50), (bar_x, bar_y, int(bar_w * 0.15), bar_h))
         pygame.draw.rect(self.screen, (180, 50, 50),
-                         (bar_x + int(bar_w * 0.92), bar_y, int(bar_w * 0.08) + 1, bar_h))
+                         (bar_x + int(bar_w * 0.85), bar_y, int(bar_w * 0.15) + 1, bar_h))
 
         pygame.draw.rect(self.screen, (160, 130, 80), (bar_x, bar_y, bar_w, bar_h), 2)
 

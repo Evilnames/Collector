@@ -2157,4 +2157,41 @@ def build_crop_surfs():
         pygame.draw.ellipse(s, (250, 252, 246), (stx-3, BLOCK_SIZE - sth - 3, 7, 5))
     surfs[bid] = s
 
+    bid = TEA_BUSH
+    # if bid == TEA_BUSH
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx, sth in [(5, 20), (13, 24), (22, 18)]:
+        pygame.draw.rect(s, (65, 100, 50), (stx, BLOCK_SIZE - sth, 2, sth - 8))
+    for lx, ly in [(2, 12), (8, 7), (16, 10), (22, 14), (6, 17), (19, 18)]:
+        pygame.draw.ellipse(s, (50, 115, 45), (lx, ly, 10, 7))
+        pygame.draw.ellipse(s, (70, 140, 60), (lx + 1, ly + 1, 7, 4))
+    for fx, fy in [(5, 8), (18, 10)]:
+        pygame.draw.circle(s, (245, 240, 220), (fx, fy), 3)
+        pygame.draw.circle(s, (230, 200, 80), (fx, fy), 1)
+    surfs[bid] = s
+
+    bid = TEA_CROP_YOUNG
+    # if bid == TEA_CROP_YOUNG
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx, sth in [(7, 14), (15, 18), (23, 12)]:
+        pygame.draw.rect(s, (65, 105, 50), (stx, BLOCK_SIZE - sth, 2, sth - 5))
+        pygame.draw.ellipse(s, (75, 135, 60), (stx - 2, BLOCK_SIZE - sth - 4, 7, 5))
+    surfs[bid] = s
+
+    bid = TEA_CROP_MATURE
+    # if bid == TEA_CROP_MATURE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx, sth in [(4, 24), (13, 28), (22, 22)]:
+        pygame.draw.rect(s, (60, 95, 45), (stx, BLOCK_SIZE - sth, 2, sth - 10))
+    for lx, ly in [(1, 10), (7, 5), (15, 8), (21, 12), (5, 16), (18, 17), (10, 14)]:
+        pygame.draw.ellipse(s, (45, 110, 40), (lx, ly, 11, 8))
+        pygame.draw.ellipse(s, (65, 135, 55), (lx + 1, ly + 1, 8, 5))
+    for fx, fy in [(4, 6), (14, 4), (22, 8)]:
+        pygame.draw.circle(s, (245, 240, 222), (fx, fy), 3)
+        pygame.draw.circle(s, (225, 195, 75), (fx, fy), 1)
+    surfs[bid] = s
+
     return surfs

@@ -343,7 +343,8 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     ICE_SHARD,
                     FROZEN_BOG,
                     RACING_RAIL, STARTING_GATE, WINNERS_POST,
-                    CITY_BLOCK, GROW_LAMP, MINING_POST_BLOCK, BANNER_BLOCK)
+                    CITY_BLOCK, GROW_LAMP, MINING_POST_BLOCK, BANNER_BLOCK,
+                    WEAPON_ASSEMBLER_BLOCK)
 
 ITEMS = {
     # --- Natural resources ---
@@ -1010,6 +1011,7 @@ ITEMS = {
     "chest_item":         {"name": "Chest",          "color": (160, 110, 55),  "place_block": CHEST_BLOCK},
     "bird_feeder":        {"name": "Bird Feeder",    "color": (160, 115,  65), "place_block": BIRD_FEEDER_BLOCK},
     "bird_bath":          {"name": "Bird Bath",      "color": (185, 180, 172), "place_block": BIRD_BATH_BLOCK},
+    "binoculars":         {"name": "Binoculars",    "color": ( 40,  40,  55), "place_block": None, "binoculars": True},
     # --- Insect collecting ---
     "bug_net":             {"name": "Bug Net",            "color": (140, 200, 140), "place_block": None, "insect_tool": True},
     "insect_display_case": {"name": "Insect Display Case","color": (180, 160, 120), "place_block": INSECT_DISPLAY_CASE_BLOCK},
@@ -2520,4 +2522,5 @@ ITEMS = {
     "bone_fishhook":   {"name": "Bone Fishhook",   "color": (230, 220, 195), "place_block": None},
     "navigation_chart":{"name": "Navigation Chart","color": (195, 175, 130), "place_block": None},
     "rare_fish":       {"name": "Rare Fish",       "color": ( 80, 175, 220), "place_block": None},
+    "weapon_assembler":        {"name": "Weapon Assembler", "color": (120,  90,  60), "place_block": WEAPON_ASSEMBLER_BLOCK},
 }

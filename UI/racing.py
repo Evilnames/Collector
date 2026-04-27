@@ -332,8 +332,9 @@ class RacingMixin:
         self.screen.blit(hint, (px + pw // 2 - hint.get_width() // 2, py + ph - 108))
 
         # Buttons
-        has_horse = self._race_player_horse is not None
-        can_enter = has_horse and player.money >= fee
+        has_horse  = self._race_player_horse is not None
+        has_field  = any(not h.get("is_player") for h in self._race_horses)
+        can_enter  = has_horse and has_field and player.money >= fee
 
         enter_rect = pygame.Rect(px + pw // 2 - 130, py + ph - 80, 120, 36)
         ec = (55, 140, 55) if can_enter else (50, 50, 50)
@@ -345,6 +346,9 @@ class RacingMixin:
 
         if not has_horse:
             nh = self.small.render("(Bring a tamed horse)", True, (170, 120, 80))
+            self.screen.blit(nh, (px + pw // 2 - nh.get_width() // 2, py + ph - 38))
+        elif not has_field:
+            nh = self.small.render("(No other horses entered)", True, (170, 120, 80))
             self.screen.blit(nh, (px + pw // 2 - nh.get_width() // 2, py + ph - 38))
 
         close_rect = pygame.Rect(px + pw // 2 + 10, py + ph - 80, 120, 36)
@@ -478,7 +482,8 @@ class RacingMixin:
         npc_entry = npc
         fee = npc_entry.entry_fee(player) if npc_entry else 50
         has_horse = self._race_player_horse is not None
-        can_enter = has_horse and player.money >= fee
+        has_field = any(not h.get("is_player") for h in self._race_horses)
+        can_enter = has_horse and has_field and player.money >= fee
 
         enter_rect = pygame.Rect(px + pw // 2 + 10, py + ph - 64, 120, 36)
         ec = (55, 140, 55) if can_enter else (50, 50, 50)
@@ -1020,7 +1025,8 @@ class RacingMixin:
                 elif key == "enter":
                     npc = self._race_bookkeeper
                     fee = npc.entry_fee(player) if npc else 50
-                    if self._race_player_horse is not None and player.money >= fee:
+                    has_field = any(not h.get("is_player") for h in self._race_horses)
+                    if self._race_player_horse is not None and has_field and player.money >= fee:
                         player.money -= fee
                         player.races_entered = getattr(player, "races_entered", 0) + 1
                         self._race_horses = self._build_race_field(player)
@@ -1033,7 +1039,8 @@ class RacingMixin:
                 elif key == "enter":
                     npc = self._race_bookkeeper
                     fee = npc.entry_fee(player) if npc else 50
-                    if self._race_player_horse is not None and player.money >= fee:
+                    has_field = any(not h.get("is_player") for h in self._race_horses)
+                    if self._race_player_horse is not None and has_field and player.money >= fee:
                         player.money -= fee
                         player.races_entered = getattr(player, "races_entered", 0) + 1
                         self._race_horses = self._build_race_field(player)

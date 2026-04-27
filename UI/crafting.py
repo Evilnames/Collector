@@ -5,6 +5,7 @@ from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOO
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
                       BAIT_STATION_RECIPES, FLETCHING_RECIPES, SMELTER_RECIPES, GLASS_KILN_RECIPES,
                       GARDEN_WORKSHOP_RECIPES, JUICER_RECIPES, AUTOMATION_RECIPES,
+                      WEAPON_ASSEMBLER_RECIPES,
                       RECIPE_GROUPS, RECIPE_GROUPS_ORDER,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
@@ -567,7 +568,7 @@ class CraftingMixin:
                             FLETCHING_TABLE_BLOCK, SMELTER_BLOCK, ANAEROBIC_TANK_BLOCK,
                             GLASS_KILN_BLOCK, GARDEN_WORKSHOP_BLOCK,
                             JEWELRY_WORKBENCH_BLOCK, JUICER_BLOCK,
-                            AUTOMATION_BENCH_BLOCK)
+                            AUTOMATION_BENCH_BLOCK, WEAPON_ASSEMBLER_BLOCK)
         if self.refinery_block_id == JEWELRY_WORKBENCH_BLOCK:
             self._draw_jewelry_workbench(player, dt)
             return
@@ -710,6 +711,13 @@ class CraftingMixin:
                                        (139, 110, 75), self._fletching_selected_recipe,
                                        self._fletching_recipe_rects, "_fletching_selected_recipe",
                                        block_id=FLETCHING_TABLE_BLOCK,
+                                       action_label="CRAFT")
+            return
+        if self.refinery_block_id == WEAPON_ASSEMBLER_BLOCK:
+            self._draw_cooking_station(player, WEAPON_ASSEMBLER_RECIPES, "WEAPON ASSEMBLER",
+                                       (120, 90, 60), self._assembler_selected_recipe,
+                                       self._assembler_recipe_rects, "_assembler_selected_recipe",
+                                       block_id=WEAPON_ASSEMBLER_BLOCK,
                                        action_label="CRAFT")
             return
         if self.refinery_block_id == SMELTER_BLOCK:

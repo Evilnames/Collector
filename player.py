@@ -814,6 +814,7 @@ class Player:
                     self.place_target = None
         else:
             self.place_target = None
+            self._wire_drag_placed = set()
 
     def _handle_horse_input(self, keys, dt):
         horse = self.mounted_horse
@@ -833,17 +834,19 @@ class Player:
         else:
             self._sprint_cooldown = max(0.0, self._sprint_cooldown - dt)
 
-        self.vx = 0.0
+        horse.vx = 0.0
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            self.vx = -base_speed
+            horse.vx = -base_speed
+            horse.facing = -1
             self.facing = -1
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            self.vx = base_speed
+            horse.vx = base_speed
+            horse.facing = 1
             self.facing = 1
 
-        if (keys[pygame.K_w] or keys[pygame.K_UP]) and self.on_ground:
-            self.vy = JUMP_FORCE * 0.9
-            self.on_ground = False
+        if (keys[pygame.K_w] or keys[pygame.K_UP]) and horse.on_ground:
+            horse.vy = JUMP_FORCE * 0.9
+            horse.on_ground = False
 
     def _find_animal_at(self, mx, my):
         for entity in getattr(self.world, 'entities', []):
@@ -1674,15 +1677,22 @@ class Player:
         if item_data.get("wire_layer"):
             if not bg:
                 import logic as _logic
-                self.world.set_wire(bx, by, 0 if self.world.get_wire(bx, by) else 1)
-                self.inventory[item_id] -= 1
-                if self.inventory[item_id] <= 0:
-                    del self.inventory[item_id]
-                    for i in range(HOTBAR_SIZE):
-                        if self.hotbar[i] == item_id:
-                            self.hotbar[i] = None
-                            break
-                _logic.evaluate_full_network(self.world)
+                drag = getattr(self, '_wire_drag_placed', set())
+                if (bx, by) not in drag:
+                    drag.add((bx, by))
+                    self._wire_drag_placed = drag
+                    if not self.world.get_wire(bx, by):
+                        self.world.set_wire(bx, by, 1)
+                        self.inventory[item_id] -= 1
+                        if self.inventory[item_id] <= 0:
+                            del self.inventory[item_id]
+                            for i in range(HOTBAR_SIZE):
+                                if self.hotbar[i] == item_id:
+                                    self.hotbar[i] = None
+                                    break
+                    else:
+                        self.world.set_wire(bx, by, 0)
+                    _logic.evaluate_full_network(self.world)
             return
         block_id = item_data.get("place_block")
         if block_id is None:
@@ -2231,6 +2241,16 @@ class Player:
             self.vx = 0.0
             self.on_ground = True
             return  # cart.update() sets player x/y each frame
+        if self.mounted_horse is not None:
+            h = self.mounted_horse
+            h.vy = min(h.vy + GRAVITY, MAX_FALL)
+            h._move_x(h.vx)
+            h._move_y(h.vy)
+            self.on_ground = h.on_ground
+            self.vy = h.vy
+            self.x = h.x + h.W // 2 - PLAYER_W // 2
+            self.y = h.y - PLAYER_H
+            return
         if self.blessing_timer > 0:
             self.blessing_timer -= dt
             if self.blessing_timer <= 0:

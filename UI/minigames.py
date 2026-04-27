@@ -41,9 +41,15 @@ class MinigamesMixin:
 
         bird = self._bird_obs_bird
         already_seen = bird.SPECIES in player.birds_observed
+        _bino = player.hotbar[player.selected_slot] == "binoculars"
+        _in_flight = bird.state in ("flying", "taking_off", "fleeing")
 
-        title = "OBSERVING..." if not self._bird_obs_failed else "BIRD FLEW AWAY!"
-        title_col = (180, 220, 255) if not self._bird_obs_failed else (255, 120, 80)
+        if self._bird_obs_failed:
+            title, title_col = "BIRD FLEW AWAY!", (255, 120, 80)
+        elif _bino and _in_flight:
+            title, title_col = "TRACKING...", (140, 220, 255)
+        else:
+            title, title_col = "OBSERVING...", (180, 220, 255)
         ts = self.small.render(title, True, title_col)
         self.screen.blit(ts, (px + PANEL_W // 2 - ts.get_width() // 2, py + 6))
 
