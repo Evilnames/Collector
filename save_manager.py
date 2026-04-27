@@ -92,6 +92,7 @@ class SaveManager:
             self._save_pottery_pieces(con, player)
             self._save_salt_crystals(con, player)
             self._save_crafted_weapons(con, player)
+            self._save_guard_sketches(con, player)
             self._save_bird_observations(con, player)
             self._save_insect_observations(con, player)
             self._save_research(con, research)
@@ -116,7 +117,8 @@ class SaveManager:
             world_meta  = self._load_world_meta(con)
             bird_obs    = self._load_bird_observations(con)
             insect_obs  = self._load_insect_observations(con)
-            player_data = self._load_player(con, bird_obs, insect_obs)
+            guard_sketches = self._load_guard_sketches(con)
+            player_data = self._load_player(con, bird_obs, insect_obs, guard_sketches)
             automations = self._load_automations(con)
             farm_bots = self._load_farm_bots(con)
             backhoes = self._load_backhoes(con)
@@ -588,6 +590,20 @@ class SaveManager:
             category TEXT NOT NULL,
             item_id  TEXT NOT NULL,
             PRIMARY KEY (category, item_id)
+        );
+        CREATE TABLE IF NOT EXISTS guard_sketches (
+            uid TEXT PRIMARY KEY,
+            name TEXT, biodome TEXT, kit TEXT,
+            helmet TEXT, cape TEXT, beard TEXT, emblem TEXT,
+            tint INT, weapon_variant INT, helmet_finish TEXT, tabard TEXT,
+            skin_r INT, skin_g INT, skin_b INT,
+            shield_r INT, shield_g INT, shield_b INT,
+            boot_r INT, boot_g INT, boot_b INT,
+            sash INT,
+            clothing_armor_r INT, clothing_armor_g INT, clothing_armor_b INT,
+            clothing_plate_r INT, clothing_plate_g INT, clothing_plate_b INT,
+            clothing_trim_r INT, clothing_trim_g INT, clothing_trim_b INT,
+            location TEXT
         );
         CREATE TABLE IF NOT EXISTS achievements (
             id           TEXT PRIMARY KEY,
@@ -1492,6 +1508,33 @@ class SaveManager:
                 ),
             )
 
+    def _save_guard_sketches(self, con, player):
+        con.execute("DELETE FROM guard_sketches")
+        for s in getattr(player, "guard_sketches", []):
+            con.execute(
+                "INSERT OR REPLACE INTO guard_sketches VALUES "
+                "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (s.uid, s.name, s.biodome, s.kit,
+                 s.helmet, s.cape, s.beard, s.emblem,
+                 s.tint, s.weapon_variant, s.helmet_finish, s.tabard,
+                 s.skin_r, s.skin_g, s.skin_b,
+                 s.shield_r, s.shield_g, s.shield_b,
+                 s.boot_r, s.boot_g, s.boot_b,
+                 s.sash,
+                 s.clothing_armor_r, s.clothing_armor_g, s.clothing_armor_b,
+                 s.clothing_plate_r, s.clothing_plate_g, s.clothing_plate_b,
+                 s.clothing_trim_r, s.clothing_trim_g, s.clothing_trim_b,
+                 s.location),
+            )
+
+    def _load_guard_sketches(self, con):
+        try:
+            rows = con.execute("SELECT * FROM guard_sketches").fetchall()
+        except Exception:
+            return []
+        cols = [d[0] for d in con.execute("PRAGMA table_info(guard_sketches)").fetchall()]
+        return [dict(zip(cols, row)) for row in rows]
+
     def _save_bird_observations(self, con, player):
         con.execute("DELETE FROM bird_observations")
         for species_id, data in player.birds_observed.items():
@@ -1958,7 +2001,7 @@ class SaveManager:
             "chicken_coop_data":      coop_data_loaded,
         }
 
-    def _load_player(self, con, bird_obs=None, insect_obs=None):
+    def _load_player(self, con, bird_obs=None, insect_obs=None, guard_sketches=None):
         row = con.execute("""
             SELECT x, y, vx, vy, facing, health, hunger, pick_power, money,
                    selected_slot, inventory, hotbar, hotbar_uses, known_recipes,
@@ -2423,6 +2466,7 @@ class SaveManager:
             "discovered_gem_types": list({g["gem_type"] for g in gems_data}),
             "birds_observed": bird_obs or {},
             "discovered_bird_types": list((bird_obs or {}).keys()),
+            "guard_sketches": guard_sketches or [],
             "insects_observed": insect_obs or {},
             "discovered_insect_types": list((insect_obs or {}).keys()),
             "fish": fish_data,

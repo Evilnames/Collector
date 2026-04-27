@@ -836,6 +836,26 @@ class NobleNPC(AmbientNPC):
         self._pause_max  = 2.5
 
 
+class RoyalSpouseNPC(AmbientNPC):
+    def __init__(self, x, y, world, patrol_half=24, biodome="temperate",
+                 leader_color=(160, 40, 80), palace_type="castle"):
+        super().__init__(x, y, world, "npc_royal_spouse", patrol_half, biodome)
+        self._walk_speed  = 16.0
+        self._pause_max   = 4.0
+        self.leader_color = leader_color
+        self.palace_type  = palace_type
+
+
+class RoyalChildNPC(AmbientNPC):
+    def __init__(self, x, y, world, patrol_half=18, biodome="temperate",
+                 leader_color=(160, 40, 80), palace_type="castle"):
+        super().__init__(x, y, world, "npc_royal_child", patrol_half, biodome)
+        self._walk_speed  = 26.0
+        self._pause_max   = 1.5
+        self.leader_color = leader_color
+        self.palace_type  = palace_type
+
+
 class PilgrimNPC(AmbientNPC):
     def __init__(self, x, y, world, patrol_half=64, biodome="temperate"):
         super().__init__(x, y, world, "npc_pilgrim", patrol_half, biodome)

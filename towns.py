@@ -877,6 +877,7 @@ class Town:
     grown_buildings:  list   # [(offset, variant, width, height), ...]
     founded_day:      int
     size:             str    # "small"/"medium"/"large"
+    chronicle:        Optional[dict] = None
 
     def tier_name(self) -> str:
         return TIER_NAMES[min(self.tier, len(TIER_NAMES) - 1)]
@@ -981,6 +982,15 @@ def _scan_bg_for_flags(world) -> list:
     return sorted(bxs)
 
 
+def _stamp_city_chronicles(world_seed: int) -> None:
+    import city_history as _ch
+    for town in TOWNS.values():
+        if town.chronicle is None:
+            town.chronicle = _ch.generate_city_chronicle(
+                town.town_id, town.name, town.biome, world_seed
+            )
+
+
 def init_towns(world) -> None:
     """Populate TOWNS and REGIONS from world.town_centers (set by generate_cities)."""
     TOWNS.clear()
@@ -993,6 +1003,7 @@ def init_towns(world) -> None:
             _fill_missing_coat_of_arms(world.seed)
             _restore_world_city_metadata(world)
             _respawn_leader_npcs(world)
+            _stamp_city_chronicles(world.seed)
             return
 
     centers = world.town_centers
@@ -1112,6 +1123,8 @@ def init_towns(world) -> None:
         if town.is_capital:
             _place_capital_structures(town, world)
 
+    _stamp_city_chronicles(world.seed)
+
 
 def register_new_town(world, city_bx: int, city_size: str,
                       region_id: int = 0, is_capital: bool = False) -> None:
@@ -1200,6 +1213,11 @@ def register_new_town(world, city_bx: int, city_size: str,
     if is_capital:
         _place_capital_structures(TOWNS[town_id], world)
 
+    import city_history as _ch
+    TOWNS[town_id].chronicle = _ch.generate_city_chronicle(
+        town_id, TOWNS[town_id].name, biome, world.seed
+    )
+
 
 def _restore_world_city_metadata(world) -> None:
     """Populate world.town_centers/city_zones/etc. from loaded TOWNS after a DB load."""
@@ -1254,6 +1272,7 @@ def _respawn_leader_npcs(world) -> None:
                       leader_color= region.leader_color,
                       palace_type = ptype)
         )
+        _spawn_royal_family(world, region, palace_left, sy, ptype)
 
         # Landmark NPC — find or build the landmark structure on the
         # opposite side of town, then spawn the NPC at the flag.
@@ -1282,6 +1301,24 @@ def _respawn_leader_npcs(world) -> None:
                             landmark_name= spec["name"],
                             tagline      = spec["tagline"])
             )
+
+
+def _spawn_royal_family(world, region, palace_left: int, sy: int, ptype: str) -> None:
+    """Spawn royal spouse and children near the palace leader position."""
+    from cities import RoyalSpouseNPC, RoyalChildNPC, PALACE_NPC_OFFSET, BLOCK_SIZE
+    rng      = random.Random(region.region_id ^ world.seed ^ 0xF00DCAFE)
+    lc       = region.leader_color
+    npc_bx   = palace_left + PALACE_NPC_OFFSET[ptype]
+    spouse_bx = npc_bx - 4
+    world.entities.append(
+        RoyalSpouseNPC(spouse_bx * BLOCK_SIZE, (sy - 3) * BLOCK_SIZE, world,
+                       leader_color=lc, palace_type=ptype)
+    )
+    for i in range(rng.randint(1, 3)):
+        world.entities.append(
+            RoyalChildNPC((npc_bx - 6 - i * 2) * BLOCK_SIZE, (sy - 3) * BLOCK_SIZE,
+                          world, leader_color=lc, palace_type=ptype)
+        )
 
 
 def _place_capital_structures(town: Town, world) -> None:
@@ -1383,6 +1420,7 @@ def _place_capital_structures(town: Town, world) -> None:
                   leader_color= region.leader_color,
                   palace_type = ptype)
     )
+    _spawn_royal_family(world, region, palace_left, sy, ptype)
 
     import npc_identity
     palace_npcs = world.entities[_entities_before:]

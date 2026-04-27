@@ -745,9 +745,27 @@ class Animal:
                     return True
         return False
 
+    def _unstuck(self):
+        if not self._collides():
+            return
+        by = int(self.y // BLOCK_SIZE)
+        for dy in range(1, self.world.height):
+            ty = by - dy
+            if ty < 0:
+                break
+            test_y = ty * BLOCK_SIZE
+            old_y, self.y = self.y, float(test_y)
+            if not self._collides():
+                self.vy = 0.0
+                self.on_ground = False
+                return
+            self.y = old_y
+
     def update(self, dt):
         if self.dead:
             return
+
+        self._unstuck()
 
         # Breeding cooldown
         self._breed_cooldown -= dt
@@ -1914,12 +1932,24 @@ class Fox(HuntableAnimal):
         self.health = 1
 
 
-WOLF_BIOMES  = {"boreal", "tundra", "birch_forest", "redwood", "alpine_mountain"}
-BEAR_BIOMES  = {"boreal", "redwood", "alpine_mountain", "rocky_mountain"}
-DUCK_BIOMES  = {"wetland", "swamp", "temperate"}
-ELK_BIOMES   = {"boreal", "tundra", "alpine_mountain", "rocky_mountain"}
-BISON_BIOMES = {"steppe", "savanna", "arid_steppe", "rolling_hills"}
-FOX_BIOMES   = {"temperate", "boreal", "rolling_hills", "birch_forest"}
+class ArcticFox(HuntableAnimal):
+    ANIMAL_W = 20
+    ANIMAL_H = 14
+    MEAT_DROP = [("arctic_fox_pelt", 1), ("bone", 1)]
+    TROPHY_STATS = {"weight": (6, 20, "lbs")}
+
+    def __init__(self, x, y, world):
+        super().__init__(x, y, world, "arctic_fox")
+        self.health = 1
+
+
+WOLF_BIOMES       = {"boreal", "tundra", "birch_forest", "redwood", "alpine_mountain"}
+BEAR_BIOMES       = {"boreal", "redwood", "alpine_mountain", "rocky_mountain"}
+DUCK_BIOMES       = {"wetland", "swamp", "temperate"}
+ELK_BIOMES        = {"boreal", "tundra", "alpine_mountain", "rocky_mountain"}
+BISON_BIOMES      = {"steppe", "savanna", "arid_steppe", "rolling_hills"}
+FOX_BIOMES        = {"temperate", "boreal", "rolling_hills", "birch_forest"}
+ARCTIC_FOX_BIOMES = {"tundra", "alpine_mountain", "frozen_tundra"}
 
 
 class Moose(HuntableAnimal):

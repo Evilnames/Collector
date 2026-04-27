@@ -109,6 +109,38 @@ def draw_fox(screen, sx, sy, e):
     pygame.draw.polygon(screen, col, [(ex, sy + int(H*0.1)), (ex-2, sy - int(5*s)), (ex+2, sy - int(5*s))])
 
 
+def draw_arctic_fox(screen, sx, sy, e):
+    W, H = e.W, e.H
+    s = e.traits.get("size", 1.0)
+    col   = (230, 235, 240)   # white-grey coat
+    belly = (250, 252, 255)   # bright white belly
+    # Slender body
+    pygame.draw.rect(screen, col, (sx, sy + int(H * 0.3), W, int(H * 0.52)))
+    # White belly
+    pygame.draw.rect(screen, belly, (sx + int(W*0.2), sy + int(H*0.38), int(W*0.6), int(H*0.35)))
+    # Legs
+    for i in range(4):
+        lx = sx + int(W * (0.12 + i * 0.22))
+        pygame.draw.rect(screen, (190, 195, 200), (lx, sy + int(H*0.72), max(2, int(2*s)), int(H*0.28)))
+    # Bushy tail
+    tail_x = (sx - int(5*s)) if e.facing == 1 else (sx + W)
+    pygame.draw.ellipse(screen, col, (tail_x, sy + int(H*0.25), int(7*s), int(5*s)))
+    pygame.draw.ellipse(screen, belly, (tail_x + int(2*s), sy + int(H*0.4), int(3*s), int(2*s)))
+    # Head + pointed snout
+    head_w = int(7 * s)
+    hx = (sx + W - head_w + 1) if e.facing == 1 else sx
+    pygame.draw.rect(screen, col, (hx, sy + int(H*0.1), head_w, int(H*0.35)))
+    snout_x = hx + (head_w - 1 if e.facing == 1 else -int(3*s))
+    pygame.draw.polygon(screen, col, [
+        (snout_x, sy + int(H*0.22)),
+        (snout_x + (int(3*s) if e.facing == 1 else -int(3*s)), sy + int(H*0.28)),
+        (snout_x, sy + int(H*0.34)),
+    ])
+    # Ear
+    ex = hx + (int(head_w*0.4) if e.facing == 1 else int(head_w*0.5))
+    pygame.draw.polygon(screen, col, [(ex, sy + int(H*0.1)), (ex-2, sy - int(5*s)), (ex+2, sy - int(5*s))])
+
+
 def draw_moose(screen, sx, sy, e):
     W, H = e.W, e.H
     s = e.traits.get("size", 1.0)

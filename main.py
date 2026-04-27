@@ -805,8 +805,13 @@ def main():
                 if event.key == pygame.K_ESCAPE and ui.wardrobe_open:
                     ui.wardrobe_open = False
 
+                if event.key == pygame.K_h and ui.town_menu_open:
+                    ui.town_chronicle_open = not ui.town_chronicle_open
+
                 if event.key == pygame.K_ESCAPE:
-                    if player.fishing_state in ("casting", "biting"):
+                    if ui.town_chronicle_open:
+                        ui.town_chronicle_open = False
+                    elif player.fishing_state in ("casting", "biting"):
                         player.fishing_state = None
                         player._fishing_biome = None
                     elif ui.pause_open:

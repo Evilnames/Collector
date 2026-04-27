@@ -421,6 +421,7 @@ def draw_entities(renderer, entities):
         elif aid == "elk":            renderer._draw_elk(sx, sy, e)
         elif aid == "bison":          renderer._draw_bison(sx, sy, e)
         elif aid == "fox":            renderer._draw_fox(sx, sy, e)
+        elif aid == "arctic_fox":     renderer._draw_arctic_fox(sx, sy, e)
         elif aid == "moose":          renderer._draw_moose(sx, sy, e)
         elif aid == "bighorn":        renderer._draw_bighorn(sx, sy, e)
         elif aid == "pheasant":       renderer._draw_pheasant_animal(sx, sy, e)

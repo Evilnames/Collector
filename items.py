@@ -1683,7 +1683,8 @@ ITEMS = {
     "bear_pelt":    {"name": "Bear Pelt",    "color": (100,  75,  55), "place_block": None},
     "wolf_pelt":    {"name": "Wolf Pelt",    "color": (140, 130, 120), "place_block": None},
     "bison_hide":   {"name": "Bison Hide",   "color": (130,  95,  60), "place_block": None},
-    "fox_pelt":     {"name": "Fox Pelt",     "color": (210, 100,  35), "place_block": None},
+    "fox_pelt":        {"name": "Fox Pelt",        "color": (210, 100,  35), "place_block": None},
+    "arctic_fox_pelt": {"name": "Arctic Fox Pelt", "color": (235, 240, 245), "place_block": None},
     # Complex game dishes
     "venison_steak":     {"name": "Venison Steak",     "color": (130,  55,  30), "place_block": None, "edible": True, "hunger_restore": 20},
     "wild_boar_chop":    {"name": "Wild Boar Chop",    "color": (140,  60,  35), "place_block": None, "edible": True, "hunger_restore": 19},

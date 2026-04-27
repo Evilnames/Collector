@@ -1,6 +1,7 @@
 import random
 import pygame
 from automations import Automation, AUTOMATION_DEFS, FarmBot, FARM_BOT_DEFS, FARM_BOT_TYPES, Backhoe
+from guard_sketches import GuardSketch, sketch_from_npc
 from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT, GEM_DEPOSIT, CAVE_MUSHROOMS, EQUIPMENT_BLOCKS, LADDER, WATER,
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
                     COBALT_DOOR_CLOSED, COBALT_DOOR_OPEN,
@@ -362,6 +363,7 @@ class Player:
         self.discovered_dog_breeds  = set()
         # Weapon crafting
         self.crafted_weapons        = []       # list of Weapon objects
+        self.guard_sketches         = []       # list of GuardSketch objects
         self.equipped_weapon_uid    = None     # str UID or None
         self.pending_parts          = {}       # {weapon_uid: {part_key: quality_float}} — temp during smithing
         self._melee_cooldown        = 0.0
@@ -436,6 +438,7 @@ class Player:
         self.animals_hunted = d.get("animals_hunted", {})
         self.hunt_trophies  = d.get("hunt_trophies", {})
         self.crafted_weapons     = [Weapon(**x) for x in d.get("crafted_weapons", [])]
+        self.guard_sketches      = [GuardSketch(**x) for x in d.get("guard_sketches", [])]
         self.equipped_weapon_uid = d.get("equipped_weapon_uid", None)
         self.pending_sculptures = [Sculpture.from_dict(x) for x in d.get("pending_sculptures", [])]
         self.sculptures_created = [Sculpture.from_dict(x) for x in d.get("sculptures_created", [])]
@@ -769,7 +772,7 @@ class Player:
                                 feed_target.stay_mode = not feed_target.stay_mode
                             else:
                                 feed_target.try_feed(self)
-                        else:
+                        elif hasattr(feed_target, 'try_feed'):
                             feed_target.try_feed(self)
                     else:
                         self.place_target = (bx, by)

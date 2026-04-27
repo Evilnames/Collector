@@ -7,6 +7,8 @@ from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE
 from automations import AUTOMATION_ITEM
 from ._data import RARITY_LABEL, SPECIAL_DESCS
 from Render.dogs import draw_dog
+from cities import GuardNPC
+from guard_sketches import sketch_from_npc
 
 
 def _item_matches_system(item, system_id: str) -> bool:
@@ -3214,6 +3216,17 @@ class PanelsMixin:
         hint = self.small.render("I or ESC to close", True, (90, 90, 110))
         self.screen.blit(hint, (px + PW - hint.get_width() - 8, py + 8))
 
+        is_guard = isinstance(npc, GuardNPC)
+        sketch_rect = None
+        if is_guard:
+            BTN_W2, BTN_H2 = 130, 24
+            sketch_rect = pygame.Rect(px + PW - BTN_W2 - 8, py + 26, BTN_W2, BTN_H2)
+            pygame.draw.rect(self.screen, (30, 40, 55), sketch_rect)
+            pygame.draw.rect(self.screen, (80, 130, 180), sketch_rect, 1)
+            sk_s = self.small.render("Make a Sketch", True, (160, 200, 240))
+            self.screen.blit(sk_s, (sketch_rect.x + (BTN_W2 - sk_s.get_width()) // 2,
+                                    sketch_rect.y + (BTN_H2 - sk_s.get_height()) // 2))
+
         identity = getattr(npc, "identity", None) or {}
         first  = identity.get("first_name", "???")
         family = identity.get("family_name", "")
@@ -3429,6 +3442,7 @@ class PanelsMixin:
         self._inspect_close_btn   = close_rect
         self._inspect_fulfill_btn = fulfill_rect
         self._inspect_history_btn = history_rect
+        self._inspect_sketch_btn  = sketch_rect
 
     def _resolve_npc_name(self, npc_uid, world):
         for e in world.entities:
@@ -3452,7 +3466,7 @@ class PanelsMixin:
         overlay.fill((0, 0, 0, 210))
         self.screen.blit(overlay, (0, 0))
 
-        PW, PH = 700, 660
+        PW, PH = 700, 760
         px = (SCREEN_W - PW) // 2
         py = (SCREEN_H - PH) // 2
 
@@ -3519,9 +3533,21 @@ class PanelsMixin:
         _section("THE SECOND GENERATION")
         _body(chronicle.get("gen2", ""), indent=20)
 
+        # ---- THIRD GENERATION ----
+        gen3 = chronicle.get("gen3", "")
+        if gen3:
+            _section("THE THIRD GENERATION")
+            _body(gen3, indent=20)
+
         # ---- TODAY ----
         _section("TODAY")
+        house_trait = chronicle.get("house_trait", "")
+        if house_trait:
+            _body(house_trait, col=(160, 155, 130), indent=20)
         _body(chronicle.get("current_era", ""), indent=20)
+        house_saying = chronicle.get("house_saying", "")
+        if house_saying:
+            _body(house_saying, col=(130, 125, 105), indent=20)
         dynasty_tension = getattr(npc, "dynasty_tension", None)
         if dynasty_tension:
             _body(dynasty_tension, col=(200, 140, 110), indent=20)
@@ -3838,6 +3864,18 @@ class PanelsMixin:
             player.gift_panel_open = False
             player.fulfill_request_open = False
             player.dynasty_panel_open = False
+            return
+
+        sketch_btn = getattr(self, "_inspect_sketch_btn", None)
+        if sketch_btn and sketch_btn.collidepoint(pos):
+            npc = player.inspecting_npc
+            biodome = getattr(npc, "biodome", "unknown")
+            location = biodome.replace("_", " ").title()
+            sketch = sketch_from_npc(npc, location)
+            player.guard_sketches.append(sketch)
+            player.pending_notifications.append(
+                ("Guards", f"Sketched {sketch.name} — {sketch.kit.title()}", "common")
+            )
             return
 
     def _remove_gifted_item(self, player, item):

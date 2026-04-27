@@ -38,16 +38,20 @@ _SHIELD_H = 200
 class TownMenuMixin:
 
     def open_town_menu(self, town, player=None):
-        self.town_menu_open = True
-        self.active_town    = town
-        self._town_supply_btns = {}
+        self.town_menu_open      = True
+        self.town_chronicle_open = False
+        self.active_town         = town
+        self._town_supply_btns   = {}
+        self._town_history_btn   = None
         if player is not None:
             player.visited_town_ids.add(town.town_id)
 
     def close_town_menu(self):
-        self.town_menu_open = False
-        self.active_town    = None
-        self._town_supply_btns = {}
+        self.town_menu_open      = False
+        self.town_chronicle_open = False
+        self.active_town         = None
+        self._town_supply_btns   = {}
+        self._town_history_btn   = None
 
     def _draw_town_menu(self, player):
         from towns import REGIONS, TOWNS
@@ -172,6 +176,14 @@ class TownMenuMixin:
                 pygame.draw.line(self.screen, (60, 55, 45),
                                  (px + 16, line_y), (px + _PW - 16, line_y))
 
+        # History button
+        hist_rect = pygame.Rect(px + 16, py + _PH - 34, 80, 22)
+        pygame.draw.rect(self.screen, (55, 70, 55), hist_rect)
+        pygame.draw.rect(self.screen, _BORDER, hist_rect, 1)
+        hs = self.small.render("History", True, _WHITE)
+        self.screen.blit(hs, hs.get_rect(center=hist_rect.center))
+        self._town_history_btn = hist_rect
+
         hint_s = self.small.render("[E] or [ESC] to close", True, _DIM_C)
         self.screen.blit(hint_s, (px + _PW - hint_s.get_width() - 14, py + _PH - 20))
 
@@ -293,7 +305,95 @@ class TownMenuMixin:
                 self.screen.blit(imp_s, (cx + 8, detail_y))
                 detail_y += 14
 
+    def _draw_city_chronicle(self, town):
+        chronicle = getattr(town, "chronicle", None)
+        if not chronicle:
+            return
+
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 210))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 700, 660
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+
+        pygame.draw.rect(self.screen, (14, 12, 10), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (130, 100, 55), (px, py, PW, PH), 2)
+
+        cy = [py + 14]  # mutable via list so closures can update it
+
+        def _section(label):
+            pygame.draw.line(self.screen, (80, 65, 35),
+                             (px + 10, cy[0]), (px + PW - 10, cy[0]))
+            cy[0] += 8
+            self.screen.blit(
+                self.small.render(label, True, (190, 160, 90)),
+                (px + 14, cy[0]))
+            cy[0] += 20
+
+        def _body(text, col=(190, 183, 168), indent=14):
+            max_w = PW - indent - 28
+            words = text.split()
+            line_words, lines = [], []
+            for word in words:
+                test = " ".join(line_words + [word])
+                if self.small.size(test)[0] > max_w:
+                    if line_words:
+                        lines.append(" ".join(line_words))
+                    line_words = [word]
+                else:
+                    line_words.append(word)
+            if line_words:
+                lines.append(" ".join(line_words))
+            for ln in lines:
+                self.screen.blit(
+                    self.small.render(ln, True, col),
+                    (px + indent, cy[0]))
+                cy[0] += 15
+            cy[0] += 4
+
+        # Title
+        title_s = self.font.render(town.name.upper(), True, (230, 210, 140))
+        self.screen.blit(title_s, (px + 14, cy[0]))
+        cy[0] += 30
+
+        # THE FOUNDING
+        _section("THE FOUNDING")
+        _body(f"It began as {chronicle['founding_type']}.", indent=20)
+        _body(chronicle["founding_act"].capitalize() + ".", col=(180, 175, 158), indent=20)
+        _body(chronicle["founding_legacy"].capitalize() + ".", col=(155, 148, 130), indent=20)
+
+        # A NOTABLE FIGURE
+        _section("A NOTABLE FIGURE")
+        self.screen.blit(
+            self.small.render(f'"{chronicle["figure_full"]}"', True, (215, 200, 145)),
+            (px + 20, cy[0]))
+        cy[0] += 18
+        _body(chronicle["figure_act"].capitalize() + ".", col=(185, 178, 160), indent=20)
+
+        # A TURNING POINT
+        _section("A TURNING POINT")
+        _body(chronicle["notable_event"].capitalize() + ".", indent=20)
+
+        # TODAY
+        _section("TODAY")
+        _body(chronicle["current_era"].capitalize() + ".", indent=20)
+
+        # LOCAL LEGEND
+        _section("LOCAL LEGEND")
+        _body(chronicle["local_legend"].capitalize() + ".", col=(170, 155, 130), indent=20)
+
+        # Close hint
+        hint = self.small.render("[H] or [ESC] to close", True, (90, 80, 55))
+        self.screen.blit(hint, (px + PW - hint.get_width() - 14, py + PH - 18))
+
     def handle_town_menu_click(self, pos, player):
+        if self.town_chronicle_open:
+            return True  # absorb clicks while chronicle is open
+        if self._town_history_btn and self._town_history_btn.collidepoint(pos):
+            self.town_chronicle_open = True
+            return True
         for (cat, amount), rect in self._town_supply_btns.items():
             if rect.collidepoint(pos):
                 from towns import supply_need

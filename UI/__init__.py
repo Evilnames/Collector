@@ -191,9 +191,11 @@ class UI(
         self._trade_rects = {}
         self._quest_btn   = None
         # Town menu
-        self.town_menu_open  = False
-        self.active_town     = None
-        self._town_supply_btns = {}
+        self.town_menu_open      = False
+        self.town_chronicle_open = False
+        self.active_town         = None
+        self._town_supply_btns   = {}
+        self._town_history_btn   = None
         # Outpost menu (diplomatic-only — kingdom & coat of arms)
         self.outpost_menu_open = False
         self.active_outpost    = None
@@ -259,6 +261,10 @@ class UI(
         self._help_scroll       = 0
         self._help_max_scroll   = 0
         self._help_topic_rects  = {}
+        # Guard sketches codex UI state
+        self._guard_codex_scroll      = 0
+        self._max_guard_codex_scroll  = 0
+        self._guard_codex_rects       = {}
         # Bird codex UI state
         self._bird_codex_scroll        = 0
         self._max_bird_codex_scroll    = 0
@@ -939,6 +945,8 @@ class UI(
             self._draw_npc_panel(player)
         if self.town_menu_open and self.active_town is not None:
             self._draw_town_menu(player)
+            if self.town_chronicle_open:
+                self._draw_city_chronicle(self.active_town)
         if self.outpost_menu_open and self.active_outpost is not None:
             self._draw_outpost_menu(player)
         if self.reputation_screen_open:

@@ -27,6 +27,19 @@ from ._data import (_MUSHROOM_ORDER, _MUSHROOM_BIOME, _MUSHROOM_DROP_COLOR,
                     _MUSHROOM_SHAPES, _MUSHROOM_NAMES, SPECIAL_DESCS, RARITY_LABEL)
 
 
+def _draw_guard_sketch_icon(surf, sk, ox=10, oy=8):
+    """Draw a simplified guard silhouette onto surf at offset ox, oy."""
+    from Render.Guardsystem import draw_npc_guard
+
+    class _FakeNPC:
+        _bob_offset = 0
+        facing = 1
+        def __getattr__(self, name):
+            return getattr(sk, name, None)
+
+    draw_npc_guard(surf, ox, oy, _FakeNPC())
+
+
 class CollectionsMixin:
 
     def _draw_collection(self, player):
@@ -66,12 +79,13 @@ class CollectionsMixin:
         n_salt_owned       = len(getattr(player, "salt_crystals", []))
         n_dogs_tamed       = getattr(player, "dogs_tamed", 0)
         n_weapons_crafted  = len(getattr(player, "crafted_weapons", []))
+        n_guard_sketches   = len(getattr(player, "guard_sketches", []))
         total_collected = (len(player.rocks) + len(player.wildflowers) +
                            len(player.fossils) + len(player.gems) + n_mush_owned +
                            n_coffee_owned + n_wine_owned + n_spirits_owned + n_beer_owned + n_tea_owned +
                            n_potions_owned + n_textiles_owned + n_cheese_owned + n_jewelry_owned +
                            n_sculptures_owned + n_tapestries_owned + n_pottery_owned + n_salt_owned +
-                           n_dogs_tamed + n_weapons_crafted)
+                           n_dogs_tamed + n_weapons_crafted + n_guard_sketches)
 
         # ---- 3 main tabs ----
         self._tab_rects.clear()
@@ -100,8 +114,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX", "BEER CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165), (155, 215, 90)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX", "BEER CODEX", "GUARD SKETCHES"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165), (155, 215, 90), (150, 200, 240)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -139,6 +153,7 @@ class CollectionsMixin:
                 ("salt",       f"SALT ({n_salt_owned})",             (32, 30, 28),  (190, 185, 165), (235, 232, 215)),
                 ("dogs",       f"DOGS ({n_dogs_tamed})",              (28, 20, 10),  (170, 130,  60), (215, 180, 110)),
                 ("weapons",    f"WEAPONS ({n_weapons_crafted})",      (30, 22, 12),  (155, 140, 120), (210, 195, 165)),
+                ("guards",     f"GUARDS ({n_guard_sketches})",        (22, 32, 48),  ( 80, 130, 185), (150, 200, 240)),
             ]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._collection_filter_rects.clear()
@@ -201,9 +216,10 @@ class CollectionsMixin:
                 ((45, 35, 20),  (180, 120,  60), (220, 170, 100)),   # Hunting
                 ((30, 22, 12),  (155, 140, 120), (210, 195, 165)),   # Weapons
                 ((18, 28, 10),  (110, 160,  55), (155, 215,  80)),   # Beer
+                ((20, 30, 45),  ( 75, 125, 180), (150, 200, 240)),   # Guards
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
-                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER"]
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER", "GUARDS"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
             total_sb_h = len(enc_labels) * (SB_BTN_H + SB_GAP)
@@ -264,6 +280,7 @@ class CollectionsMixin:
                 self._draw_hunting_codex,
                 self._draw_weapons_codex,
                 self._draw_beer_codex,
+                self._draw_guard_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)
@@ -335,6 +352,8 @@ class CollectionsMixin:
             items.extend(("salt", i) for i in range(len(getattr(player, "salt_crystals", []))))
         if flt in ("all", "weapons"):
             items.extend(("weapon", i) for i in range(len(getattr(player, "crafted_weapons", []))))
+        if flt in ("all", "guards"):
+            items.extend(("guard", i) for i in range(len(getattr(player, "guard_sketches", []))))
 
         if not items:
             msg = self.font.render("Nothing collected yet!", True, (80, 80, 90))
@@ -683,6 +702,15 @@ class CollectionsMixin:
                 label_col = mat_col
                 tier_s = self.small.render(quality_tier(it.quality), True, mat_col)
                 img.blit(tier_s, (2, 2))
+            elif cat == "guard":
+                sk = player.guard_sketches[key]
+                pygame.draw.rect(self.screen, (22, 32, 48) if selected else (14, 20, 30), rect)
+                pygame.draw.rect(self.screen, (80, 130, 185), rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                _draw_guard_sketch_icon(img, sk, ox=19, oy=4)
+                label = sk.kit.title()
+                label_col = (150, 200, 240)
             else:  # mushroom
                 count = player.mushrooms_found.get(key, 0)
                 pygame.draw.rect(self.screen, (40, 36, 20) if selected else (25, 22, 12), rect)
@@ -1147,6 +1175,24 @@ class CollectionsMixin:
                 for i, pq in enumerate(it.parts_quality):
                     pk = parts[i] if i < len(parts) else f"part {i+1}"
                     dlabel(f"  {pk.replace('_',' ').title()}: {int(pq*100)}%", mat_col)
+        elif sel_cat == "guard":
+            sk = player.guard_sketches[sel_key]
+            pygame.draw.rect(self.screen, (14, 22, 36), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, (80, 130, 185), (dx, dy2, dw, dh), 2)
+            icon2 = pygame.Surface((dw, 80), pygame.SRCALPHA)
+            icon2.fill((0, 0, 0, 0))
+            _draw_guard_sketch_icon(icon2, sk, ox=dw // 2 - 10, oy=10)
+            self.screen.blit(icon2, (dx, dy2 + 4))
+            dlabel(sk.name, (200, 225, 255))
+            dlabel(sk.kit.replace("_", " ").title(), (150, 200, 240))
+            dlabel(f"Helmet: {sk.helmet.title()}", (170, 190, 210))
+            dlabel(f"Tabard: {sk.tabard.replace('_', ' ').title()}", (160, 180, 200))
+            dlabel(f"Region: {sk.biodome.replace('_', ' ').title()}", (140, 170, 195))
+            dlabel(f"Location: {sk.location}", (130, 160, 185))
+            if sk.cape != "none":
+                dlabel(f"Cape: {sk.cape.title()}", (160, 190, 220))
+            if sk.beard != "none":
+                dlabel(f"Beard: {sk.beard.title()}", (160, 185, 205))
         else:  # mushroom
             bid = sel_key
             pygame.draw.rect(self.screen, (16, 14, 8), (dx, dy2, dw, dh))
@@ -3504,3 +3550,53 @@ class CollectionsMixin:
         disc    = len(best_by_key)
         summary = self.small.render(f"Crafted: {disc} / {total} combinations", True, DIM)
         self.screen.blit(summary, (SCREEN_W // 2 - summary.get_width() // 2, SCREEN_H - 24))
+
+    def _draw_guard_codex(self, player, gy0=58, gx_off=0):
+        sketches = getattr(player, "guard_sketches", [])
+        if not sketches:
+            msg = self.font.render("No guard sketches yet. Press I on a guard.", True, (80, 90, 110))
+            self.screen.blit(msg, (SCREEN_W // 2 - msg.get_width() // 2, SCREEN_H // 2))
+            return
+
+        CELL, GAP, COLS = 120, 10, 5
+        ROW_H = CELL + GAP
+        gx0 = gx_off + (SCREEN_W - gx_off - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        visible_h = SCREEN_H - gy0 - 8
+
+        num_rows = (len(sketches) + COLS - 1) // COLS
+        total_h = num_rows * ROW_H
+        self._max_guard_codex_scroll = max(0, total_h - visible_h)
+        self._guard_codex_scroll = max(0, min(self._max_guard_codex_scroll,
+                                               getattr(self, "_guard_codex_scroll", 0)))
+
+        if self._max_guard_codex_scroll > 0:
+            sb_x  = gx0 + COLS * (CELL + GAP) - GAP + 8
+            sb_th = max(20, visible_h * visible_h // total_h)
+            sb_top = gy0 + (visible_h - sb_th) * self._guard_codex_scroll // self._max_guard_codex_scroll
+            pygame.draw.rect(self.screen, (30, 35, 48), (sb_x, gy0, 7, visible_h))
+            pygame.draw.rect(self.screen, (80, 120, 170), (sb_x, sb_top, 7, sb_th))
+
+        self._guard_codex_rects = getattr(self, "_guard_codex_rects", {})
+        self._guard_codex_rects.clear()
+        for idx, sk in enumerate(sketches):
+            col = idx % COLS
+            row = idx // COLS
+            x = gx0 + col * (CELL + GAP)
+            y = gy0 + row * ROW_H - self._guard_codex_scroll
+            if y + CELL <= gy0 or y >= SCREEN_H - 8:
+                continue
+            rect = pygame.Rect(x, y, CELL, CELL)
+            self._guard_codex_rects[idx] = rect
+
+            pygame.draw.rect(self.screen, (16, 26, 40), rect)
+            pygame.draw.rect(self.screen, (75, 125, 175), rect, 2)
+
+            icon_surf = pygame.Surface((CELL, CELL), pygame.SRCALPHA)
+            icon_surf.fill((0, 0, 0, 0))
+            _draw_guard_sketch_icon(icon_surf, sk, ox=CELL // 2 - 10, oy=14)
+            self.screen.blit(icon_surf, (x, y))
+
+            name_s = self.small.render(self._fit_label(sk.name, CELL - 6), True, (190, 215, 245))
+            self.screen.blit(name_s, (x + CELL // 2 - name_s.get_width() // 2, y + CELL - 28))
+            kit_s = self.small.render(sk.kit.title(), True, (120, 165, 205))
+            self.screen.blit(kit_s, (x + CELL // 2 - kit_s.get_width() // 2, y + CELL - 14))

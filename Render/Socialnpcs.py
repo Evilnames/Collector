@@ -162,3 +162,193 @@ def draw_npc_scholar(screen, sx, sy, npc):
     pygame.draw.line(screen, (240, 235, 210), (qx, qy), (qx - 3, qy + 10), 2)
     pygame.draw.polygon(screen, (240, 235, 210),
                         [(qx, qy), (qx - 5, qy + 3), (qx - 2, qy + 5)])
+
+
+# ---------------------------------------------------------------------------
+# Royal family NPCs
+# ---------------------------------------------------------------------------
+
+def draw_npc_royal_spouse(screen, sx, sy, npc):
+    bob    = int(npc._bob_offset)
+    facing = getattr(npc, 'facing', 1)
+    lc     = getattr(npc, 'leader_color', (160, 40, 80))
+    ptype  = getattr(npc, 'palace_type',  'castle')
+
+    def _dim(c, f=0.72):  return tuple(int(v * f) for v in c)
+    def _lite(c, a=65):   return tuple(min(255, v + a) for v in c)
+    def _gold():          return (218, 175, 40)
+
+    _EAST_ASIAN  = {"east_asian", "chinese", "tang_imperial", "song_palace", "han_palace", "japanese"}
+    _MED         = {"mediterranean", "byzantine", "incan", "mesoamerican"}
+    _MID_EAST    = {"middle_eastern", "moorish", "persian"}
+    _SOUTH_ASIAN = {"south_asian"}
+    _AFRICAN     = {"african", "tibetan", "east_african"}
+
+    if ptype in _EAST_ASIAN:
+        # Layered hanfu — wide sleeves, high hair bun, gold hairpin, fan
+        skin  = (240, 200, 155)
+        inner = _lite(lc, 80)
+        outer = _dim(lc)
+        pygame.draw.rect(screen, outer,  (sx - 5, sy + 2 + bob,  8, 7))   # left sleeve
+        pygame.draw.rect(screen, outer,  (sx + 17, sy + 2 + bob, 8, 7))   # right sleeve
+        pygame.draw.rect(screen, inner,  (sx + 1, sy + bob, 18, 18))
+        pygame.draw.rect(screen, _gold(),(sx + 4, sy + 10 + bob, 12, 2))  # gold sash
+        pygame.draw.rect(screen, outer,  (sx, sy + 12 + bob, 20, 6))      # darker lower skirt
+        pygame.draw.rect(screen, skin,   (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(screen, (30, 20, 15), (sx + 2, sy - 12 + bob, 16, 3))  # hair
+        pygame.draw.rect(screen, (30, 20, 15), (sx + 5, sy - 18 + bob, 10, 5))  # bun
+        pygame.draw.rect(screen, (30, 20, 15), (sx + 7, sy - 20 + bob,  6, 3))  # bun top
+        pygame.draw.rect(screen, _gold(),(sx + 7,  sy - 22 + bob, 8, 2))        # hairpin bar
+        pygame.draw.rect(screen, _gold(),(sx + 10, sy - 22 + bob, 2, 10))       # hairpin shaft
+        pygame.draw.rect(screen, (35, 25, 15), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(screen, (35, 25, 15), (sx + 11, sy - 7 + bob, 3, 3))
+        fan_x = sx + 21 if facing == 1 else sx - 7
+        pygame.draw.rect(screen, inner,  (fan_x, sy + 2 + bob, 5, 7))
+        pygame.draw.rect(screen, _gold(),(fan_x, sy + 2 + bob, 1, 7))
+        pygame.draw.rect(screen, _gold(),(fan_x + 4, sy + 2 + bob, 1, 7))
+
+    elif ptype in _MED:
+        # Draped ivory stola — gold brooch, flower wreath, pearl earrings
+        skin  = (220, 180, 125)
+        ivory = (245, 240, 225)
+        pygame.draw.rect(screen, ivory,   (sx, sy + bob, 20, 18))
+        pygame.draw.rect(screen, _gold(), (sx, sy + bob, 2, 18))
+        pygame.draw.rect(screen, _gold(), (sx + 18, sy + bob, 2, 10))
+        pygame.draw.rect(screen, _dim(lc),(sx + 6, sy + 4 + bob, 8, 10))  # colored panel
+        pygame.draw.rect(screen, _gold(), (sx + 14, sy + 1 + bob, 5, 4))  # brooch
+        pygame.draw.rect(screen, lc,      (sx + 15, sy + 2 + bob, 3, 2))
+        pygame.draw.rect(screen, skin,    (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(screen, (80, 55, 35), (sx + 2, sy - 12 + bob, 16, 3))
+        pygame.draw.rect(screen, (70, 140, 55), (sx + 2, sy - 14 + bob, 16, 2))  # wreath
+        for fx in (sx + 3, sx + 7, sx + 12, sx + 15):
+            pygame.draw.rect(screen, (220, 180, 80), (fx, sy - 15 + bob, 2, 2))  # flowers
+        pygame.draw.rect(screen, (245, 240, 230), (sx + 1,  sy - 8 + bob, 2, 2))  # earring L
+        pygame.draw.rect(screen, (245, 240, 230), (sx + 17, sy - 8 + bob, 2, 2))  # earring R
+        pygame.draw.rect(screen, (35, 25, 15), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(screen, (35, 25, 15), (sx + 11, sy - 7 + bob, 3, 3))
+
+    elif ptype in _MID_EAST:
+        # Gold-bordered kaftan — fabric turban with jeweled pin, nose stud
+        skin = (190, 145, 95)
+        robe = _dim(lc, 0.7)
+        pygame.draw.rect(screen, robe,     (sx + 1, sy + bob, 18, 18))
+        pygame.draw.rect(screen, _gold(),  (sx + 1, sy + bob, 2, 18))
+        pygame.draw.rect(screen, _gold(),  (sx + 17, sy + bob, 2, 18))
+        pygame.draw.rect(screen, _gold(),  (sx + 1, sy + 8 + bob, 18, 2))
+        pygame.draw.rect(screen, _lite(lc, 50), (sx + 3, sy + 1 + bob, 14, 6))  # chest panel
+        pygame.draw.rect(screen, skin,     (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(screen, (245, 240, 230), (sx + 1, sy - 18 + bob, 18, 8))  # turban
+        pygame.draw.rect(screen, (245, 240, 230), (sx + 3, sy - 20 + bob, 14, 4))  # turban top
+        pygame.draw.rect(screen, _dim(lc, 0.8), (sx + 1, sy - 15 + bob, 18, 2))   # wrap band
+        pygame.draw.rect(screen, _gold(), (sx + 7, sy - 20 + bob, 6, 3))           # turban gem
+        pygame.draw.rect(screen, lc,      (sx + 8, sy - 20 + bob, 4, 2))
+        pygame.draw.rect(screen, (35, 25, 15), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(screen, (35, 25, 15), (sx + 11, sy - 7 + bob, 3, 3))
+        pygame.draw.rect(screen, _gold(), (sx + 9, sy - 4 + bob, 1, 1))            # nose stud
+
+    elif ptype in _SOUTH_ASIAN:
+        # Sari — blouse + draped fabric + dupatta + bindi + gold necklace
+        skin   = (175, 130, 80)
+        blouse = _dim(lc, 0.8)
+        sari   = _lite(lc, 40)
+        pygame.draw.rect(screen, _dim(lc), (sx + 1, sy + 8 + bob, 18, 10))  # underskirt
+        pygame.draw.rect(screen, sari,     (sx, sy + 4 + bob, 20, 14))
+        pygame.draw.rect(screen, blouse,   (sx + 3, sy + bob, 14, 8))
+        pygame.draw.rect(screen, _gold(),  (sx, sy + 4 + bob, 20, 2))
+        pygame.draw.rect(screen, _gold(),  (sx, sy + 16 + bob, 20, 2))
+        for i in range(5):                                                           # sari diagonal
+            pygame.draw.rect(screen, _lite(lc, 80), (sx + 1 + i*3, sy + 5 + i + bob, 2, 2))
+        pygame.draw.rect(screen, skin,     (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(screen, (25, 18, 10), (sx + 2, sy - 12 + bob, 16, 3))
+        pygame.draw.rect(screen, _lite(lc, 90), (sx + 10, sy - 14 + bob, 10, 10))  # dupatta
+        pygame.draw.rect(screen, (200, 40, 60), (sx + 8, sy - 12 + bob, 3, 2))     # bindi
+        pygame.draw.rect(screen, _gold(),  (sx + 4, sy + 1 + bob, 12, 2))          # necklace
+        pygame.draw.rect(screen, (35, 25, 15), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(screen, (35, 25, 15), (sx + 11, sy - 7 + bob, 3, 3))
+
+    elif ptype in _AFRICAN:
+        # Patterned wrap skirt, bead necklace, tall feathered headdress
+        skin  = (100, 65, 35)
+        base  = _dim(lc, 0.8)
+        pat   = _lite(lc, 60)
+        pat2  = (220, 180, 40)
+        pygame.draw.rect(screen, base, (sx - 2, sy + 6 + bob, 24, 12))    # wide wrap skirt
+        for row in range(0, 10, 3):
+            for col in range(0, 22, 4):
+                c2 = pat if (row + col) % 8 == 0 else pat2
+                pygame.draw.rect(screen, c2, (sx - 2 + col, sy + 6 + row + bob, 2, 2))
+        pygame.draw.rect(screen, base, (sx + 2, sy + bob, 16, 7))         # bodice
+        for bx2 in range(sx + 3, sx + 17, 2):                             # bead necklace
+            pygame.draw.rect(screen, _gold(), (bx2, sy + 1 + bob, 1, 2))
+        pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(screen, (20, 14, 8), (sx + 2, sy - 12 + bob, 16, 3))
+        pygame.draw.rect(screen, (240, 230, 210), (sx + 2, sy - 15 + bob, 16, 4))  # headdress base
+        pygame.draw.rect(screen, _gold(),          (sx + 2, sy - 15 + bob, 16, 1))
+        for i, fc in enumerate([lc, pat2, pat, pat2, lc]):                 # feathers
+            fx  = sx + 2 + i * 4
+            fh  = 10 if i == 2 else 8
+            pygame.draw.rect(screen, fc,           (fx, sy - 15 - fh + bob, 3, fh))
+            pygame.draw.rect(screen, _lite(fc, 40),(fx + 1, sy - 15 - fh + bob, 1, fh))
+        pygame.draw.rect(screen, (35, 25, 15), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(screen, (35, 25, 15), (sx + 11, sy - 7 + bob, 3, 3))
+
+    else:
+        # European gown — puffed sleeves, fitted bodice, flared skirt, hennin hat + veil
+        skin   = (240, 210, 165)
+        bodice = _dim(lc, 0.75)
+        skirt  = _dim(lc, 0.85)
+        pygame.draw.rect(screen, bodice,  (sx - 3, sy + 1 + bob,  6, 7))   # left puff sleeve
+        pygame.draw.rect(screen, bodice,  (sx + 17, sy + 1 + bob, 6, 7))   # right puff sleeve
+        pygame.draw.rect(screen, _gold(), (sx - 2, sy + 3 + bob,  2, 3))   # sleeve trim L
+        pygame.draw.rect(screen, _gold(), (sx + 18, sy + 3 + bob, 2, 3))   # sleeve trim R
+        pygame.draw.rect(screen, bodice,  (sx + 2, sy + bob, 16, 9))       # fitted bodice
+        pygame.draw.rect(screen, _gold(), (sx + 7, sy + bob, 6, 2))        # neckline trim
+        pygame.draw.rect(screen, _gold(), (sx + 7, sy + 3 + bob, 6, 4))    # jeweled brooch
+        pygame.draw.rect(screen, lc,      (sx + 8, sy + 4 + bob, 4, 2))
+        pygame.draw.rect(screen, skirt,   (sx + 1, sy + 9 + bob, 18, 4))   # skirt upper
+        pygame.draw.rect(screen, skirt,   (sx,     sy + 13 + bob, 20, 5))  # skirt lower (flared)
+        pygame.draw.rect(screen, _gold(), (sx + 1, sy + 9 + bob, 18, 1))   # waist trim
+        pygame.draw.rect(screen, skin,    (sx + 2, sy - 10 + bob, 16, 12))
+        pygame.draw.rect(screen, (45, 30, 18), (sx + 2, sy - 12 + bob, 16, 3))
+        pygame.draw.rect(screen, (35, 25, 15), (sx + 4,  sy - 7 + bob, 3, 3))
+        pygame.draw.rect(screen, (35, 25, 15), (sx + 11, sy - 7 + bob, 3, 3))
+        pygame.draw.rect(screen, _gold(), (sx + 3, sy - 14 + bob, 14, 2))  # gold circlet
+        pygame.draw.rect(screen, lc,      (sx + 9, sy - 15 + bob, 2, 2))   # circlet gem
+        pygame.draw.rect(screen, bodice,  (sx + 4, sy - 22 + bob, 12, 9))  # hennin base
+        pygame.draw.rect(screen, bodice,  (sx + 6, sy - 27 + bob,  8, 6))  # hennin mid
+        pygame.draw.rect(screen, bodice,  (sx + 8, sy - 30 + bob,  4, 4))  # hennin tip
+        pygame.draw.rect(screen, _gold(), (sx + 4, sy - 22 + bob, 12, 2))  # hennin base trim
+        veil_x = sx + 14 if facing == 1 else sx + 2
+        veil   = _lite(bodice, 80)
+        pygame.draw.rect(screen, veil, (veil_x, sy - 28 + bob, 4, 14))     # trailing veil
+
+
+def draw_npc_royal_child(screen, sx, sy, npc):
+    bob    = int(npc._bob_offset)
+    facing = getattr(npc, 'facing', 1)
+    lc     = getattr(npc, 'leader_color', (160, 40, 80))
+
+    def _dim(c, f=0.75):  return tuple(int(v * f) for v in c)
+    def _gold():          return (218, 175, 40)
+
+    c    = getattr(npc, 'clothing', {})
+    skin = c.get('skin', (255, 210, 160))
+    body = _dim(lc, 0.8)
+    legs = _dim(lc, 0.6)
+
+    pygame.draw.rect(screen, legs,  (sx + 3,  sy + 10 + bob, 5, 8))   # left leg
+    pygame.draw.rect(screen, legs,  (sx + 12, sy + 10 + bob, 5, 8))   # right leg
+    pygame.draw.rect(screen, body,  (sx + 2, sy + bob, 16, 11))        # tunic
+    pygame.draw.rect(screen, _gold(),(sx + 2, sy + bob, 16, 2))        # gold top band
+    pygame.draw.rect(screen, (245, 240, 225), (sx + 6, sy + 2 + bob, 8, 3))  # cream collar
+    pygame.draw.rect(screen, skin,  (sx + 3, sy - 9 + bob, 14, 10))   # head (slightly smaller)
+    pygame.draw.rect(screen, (55, 40, 25), (sx + 3, sy - 11 + bob, 14, 3))   # hair
+    pygame.draw.rect(screen, (35, 25, 15), (sx + 5,  sy - 6 + bob, 2, 2))    # eye L
+    pygame.draw.rect(screen, (35, 25, 15), (sx + 11, sy - 6 + bob, 2, 2))    # eye R
+    pygame.draw.rect(screen, (220, 150, 130), (sx + 4,  sy - 4 + bob, 2, 2)) # cheek L
+    pygame.draw.rect(screen, (220, 150, 130), (sx + 12, sy - 4 + bob, 2, 2)) # cheek R
+    pygame.draw.rect(screen, _gold(),(sx + 4, sy - 12 + bob, 12, 2))   # circlet
+    pygame.draw.rect(screen, lc,     (sx + 9, sy - 13 + bob,  2, 2))   # circlet gem
+    toy_x = sx + 19 if facing == 1 else sx - 2
+    pygame.draw.rect(screen, (160, 130, 70),   (toy_x, sy + 3 + bob, 2, 8))  # scroll stick
+    pygame.draw.rect(screen, (240, 230, 200),  (toy_x - 1, sy + 3 + bob, 4, 4))  # scroll roll

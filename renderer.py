@@ -614,6 +614,10 @@ class Renderer:
         from Render.wetlandAnimal import draw_fox
         draw_fox(self.screen, sx, sy, e)
 
+    def _draw_arctic_fox(self, sx, sy, e):
+        from Render.wetlandAnimal import draw_arctic_fox
+        draw_arctic_fox(self.screen, sx, sy, e)
+
     def _draw_moose(self, sx, sy, e):
         from Render.wetlandAnimal import draw_moose
         draw_moose(self.screen, sx, sy, e)
@@ -791,6 +795,14 @@ class Renderer:
     def _draw_npc_scholar(self, sx, sy, npc):
         from Render.Socialnpcs import draw_npc_scholar
         draw_npc_scholar(self.screen, sx, sy, npc)
+
+    def _draw_npc_royal_spouse(self, sx, sy, npc):
+        from Render.Socialnpcs import draw_npc_royal_spouse
+        draw_npc_royal_spouse(self.screen, sx, sy, npc)
+
+    def _draw_npc_royal_child(self, sx, sy, npc):
+        from Render.Socialnpcs import draw_npc_royal_child
+        draw_npc_royal_child(self.screen, sx, sy, npc)
 
     def _draw_sheep(self, sx, sy, sheep):
         from Render.farmanimal import draw_sheep
