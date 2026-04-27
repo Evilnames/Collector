@@ -591,6 +591,7 @@ SEQUENCER_BLOCK      = 1222   # 4-step round-robin; each pulse rotates active ou
 T_FLIPFLOP_BLOCK     = 1223   # toggles Q on every rising edge; right-click = manual toggle
 DEPOSIT_TRIGGER_BLOCK = 1224  # rising-edge: dumps nearby bot inventories into adjacent chest
 AUTOMATION_BENCH_BLOCK = 1225  # crafting station for logic components and fluid infrastructure
+CHICKEN_COOP_BLOCK   = 1226  # chicken coop; accumulates eggs from live female chickens
 
 
 SAFFRON_DOOR_CLOSED      = 860  # warm golden-yellow with dark carved panels
@@ -1410,7 +1411,8 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     FORGE_BLOCK, WEAPON_RACK_BLOCK,
                     SWITCH_BLOCK_OFF, LATCH_BLOCK_OFF,
                     BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK,
-                    AUTOMATION_BENCH_BLOCK}
+                    AUTOMATION_BENCH_BLOCK,
+                    CHICKEN_COOP_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT}
 
@@ -1701,6 +1703,8 @@ STAR_LAMP                    = 1111  # crystal star lamp
 GLOW_VINE                    = 1112  # bioluminescent glow vine
 TOWN_FLAG_BLOCK              = 1113  # town identity flag (non-mineable)
 OUTPOST_FLAG_BLOCK           = 1178  # outpost identity flag (non-mineable)
+ICE_SHARD                    = 1226  # ice shard
+FROZEN_BOG                   = 1227  # frozen bog
 BLOCKS = {
     AIR:              {"name": "Air",               "hardness": 0,            "color": None,            "drop": None},
     GRASS:            {"name": "Grass",             "hardness": 1,            "color": (58, 154, 58),   "drop": "dirt_clump"},
@@ -2893,6 +2897,7 @@ BLOCKS = {
     T_FLIPFLOP_BLOCK:     {"name": "T Flip-Flop",  "hardness": 2.0, "color": (140, 120,  60), "drop": "t_flipflop_item"},
     DEPOSIT_TRIGGER_BLOCK:  {"name": "Deposit Trigger",   "hardness": 2.0, "color": (200, 140,  50), "drop": "deposit_trigger_item"},
     AUTOMATION_BENCH_BLOCK: {"name": "Automation Bench",  "hardness": 2.0, "color": ( 70,  90, 110), "drop": "automation_bench_item"},
+    CHICKEN_COOP_BLOCK:    {"name": "Chicken Coop",      "hardness": 2.0, "color": (165, 125,  60), "drop": "chicken_coop_item"},
     ALPINE_BALCONY_RAIL:       {"name": "Alpine Balcony Rail", "hardness": 1, "color": (160, 110,  65), "drop": "alpine_balcony_rail"},
     DARK_TIMBER_BEAM:          {"name": "Dark Timber Beam", "hardness": 1, "color": ( 55,  40,  30), "drop": "dark_timber_beam"},
     ROUGH_STONE_WALL:          {"name": "Rough Stone Wall", "hardness": 1, "color": (130, 125, 120), "drop": "rough_stone_wall"},
@@ -2994,6 +2999,8 @@ BLOCKS = {
     BREW_KETTLE_BLOCK:         {"name": "Brew Kettle",        "hardness": 1.5, "color": (185, 130,  55), "drop": "brew_kettle_item"},
     FERM_VESSEL_BLOCK:         {"name": "Fermentation Vessel","hardness": 1.5, "color": ( 95, 130,  80), "drop": "ferm_vessel_item"},
     TAPROOM_BLOCK:             {"name": "Taproom",            "hardness": 1.5, "color": ( 95,  65,  40), "drop": "taproom_item"},
+    ICE_SHARD:                 {"name": "Ice Shard", "hardness": 1, "color": (185, 225, 248), "drop": "ice_shard"},
+    FROZEN_BOG:                {"name": "Frozen Bog", "hardness": 1, "color": ( 95, 120, 138), "drop": "frozen_bog"},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}

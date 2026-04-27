@@ -824,6 +824,10 @@ class HandlersMixin:
         if self.refinery_block_id == COMPOST_BIN_BLOCK:
             self._handle_compost_bin_click(pos, player)
             return
+        from blocks import CHICKEN_COOP_BLOCK
+        if self.refinery_block_id == CHICKEN_COOP_BLOCK:
+            self._handle_coop_click(pos, player)
+            return
         from blocks import EVAPORATION_PAN_BLOCK, SALT_GRINDER_BLOCK
         if self.refinery_block_id == EVAPORATION_PAN_BLOCK:
             self._handle_evap_pan_click(pos, player)
@@ -920,6 +924,17 @@ class HandlersMixin:
             if bin_data["output"] > 0:
                 player._add_item("compost", bin_data["output"])
                 bin_data["output"] = 0
+
+    def _handle_coop_click(self, pos, player):
+        coop_pos = self.active_coop_pos
+        if coop_pos is None:
+            return
+        coop_data = player.world.chicken_coop_data.setdefault(
+            coop_pos, {"eggs": 0, "progress": 0.0})
+        if self._coop_collect_btn and self._coop_collect_btn.collidepoint(pos):
+            if coop_data["eggs"] > 0:
+                player._add_item("egg", coop_data["eggs"])
+                coop_data["eggs"] = 0
 
     def handle_horse_breeding_click(self, pos, player, world):
         if self._hbr_close_btn and self._hbr_close_btn.collidepoint(pos):

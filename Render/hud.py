@@ -137,6 +137,120 @@ def draw_farm_sense(screen, cam_x, cam_y, player, world, font):
         screen.blit(label, (sx, sy - label.get_height() - 2))
 
 
+_LOGIC_HELP = None
+
+def _build_logic_help():
+    from blocks import (
+        SWITCH_BLOCK_OFF, SWITCH_BLOCK_ON,
+        LATCH_BLOCK_OFF, LATCH_BLOCK_ON,
+        PRESSURE_PLATE_OFF, PRESSURE_PLATE_ON,
+        DAY_SENSOR_BLOCK, NIGHT_SENSOR_BLOCK,
+        WATER_SENSOR_BLOCK, CROP_SENSOR_BLOCK,
+        AND_GATE_BLOCK, OR_GATE_BLOCK, NOT_GATE_BLOCK,
+        REPEATER_BLOCK, PULSE_GEN_BLOCK,
+        RS_LATCH_Q0, RS_LATCH_Q1,
+        T_FLIPFLOP_BLOCK, COUNTER_BLOCK,
+        COMPARATOR_BLOCK, OBSERVER_BLOCK, SEQUENCER_BLOCK,
+        DAM_BLOCK_CLOSED, DAM_BLOCK_OPEN,
+        PUMP_BLOCK_OFF, PUMP_BLOCK_ON,
+        IRON_GATE_BLOCK_CLOSED, IRON_GATE_BLOCK_OPEN,
+        POWERED_LANTERN_OFF, POWERED_LANTERN_ON,
+        ALARM_BELL_OFF, ALARM_BELL_ON,
+        DEPOSIT_TRIGGER_BLOCK,
+    )
+    return {
+        SWITCH_BLOCK_OFF:          ("Switch", "E: toggle on/off"),
+        SWITCH_BLOCK_ON:           ("Switch", "E: toggle on/off"),
+        LATCH_BLOCK_OFF:           ("Toggle Latch", "E: toggle on/off"),
+        LATCH_BLOCK_ON:            ("Toggle Latch", "E: toggle on/off"),
+        PRESSURE_PLATE_OFF:        ("Pressure Plate", "Activates when stood on"),
+        PRESSURE_PLATE_ON:         ("Pressure Plate", "Activates when stood on"),
+        DAY_SENSOR_BLOCK:          ("Day Sensor", "ON during daytime  |  Right-click: switch to Night"),
+        NIGHT_SENSOR_BLOCK:        ("Night Sensor", "ON during nighttime  |  Right-click: switch to Day"),
+        WATER_SENSOR_BLOCK:        ("Water Sensor", "ON when adjacent tile contains water"),
+        CROP_SENSOR_BLOCK:         ("Crop Sensor", "ON when crop directly below is mature"),
+        AND_GATE_BLOCK:            ("AND Gate", "ON when ALL inputs powered  |  Right-click: rotate"),
+        OR_GATE_BLOCK:             ("OR Gate", "ON when ANY input powered  |  Right-click: rotate"),
+        NOT_GATE_BLOCK:            ("NOT Gate", "ON when input is OFF  |  Right-click: rotate"),
+        REPEATER_BLOCK:            ("Repeater", "Delays signal  |  Right-click: cycle delay (0.25→0.5→1→2→4s)"),
+        PULSE_GEN_BLOCK:           ("Pulse Generator", "Toggles on a timer  |  Right-click: cycle period"),
+        RS_LATCH_Q0:               ("RS Latch (off)", "S sets ON, R resets OFF  |  Right-click: rotate"),
+        RS_LATCH_Q1:               ("RS Latch (on)",  "S sets ON, R resets OFF  |  Right-click: rotate"),
+        T_FLIPFLOP_BLOCK:          ("T-Flip-Flop", "Toggles on rising edge  |  Right-click: manual toggle"),
+        COUNTER_BLOCK:             ("Counter", "Counts pulses; outputs when count ≥ threshold  |  Right-click: cycle threshold"),
+        COMPARATOR_BLOCK:          ("Comparator", "ON when adjacent chest fill ≥ threshold  |  Right-click: cycle threshold"),
+        OBSERVER_BLOCK:            ("Observer", "Pulses when watched block changes  |  Right-click: rotate"),
+        SEQUENCER_BLOCK:           ("Sequencer", "Steps through 4 outputs on each pulse  |  Right-click: advance step"),
+        DAM_BLOCK_CLOSED:          ("Dam", "Opens when powered by wire"),
+        DAM_BLOCK_OPEN:            ("Dam (open)", "Opens when powered by wire"),
+        PUMP_BLOCK_OFF:            ("Pump", "Pumps water when powered by wire"),
+        PUMP_BLOCK_ON:             ("Pump (on)", "Pumps water when powered by wire"),
+        IRON_GATE_BLOCK_CLOSED:    ("Iron Gate", "Opens when powered by wire"),
+        IRON_GATE_BLOCK_OPEN:      ("Iron Gate (open)", "Opens when powered by wire"),
+        POWERED_LANTERN_OFF:       ("Powered Lantern", "Lights up when powered by wire"),
+        POWERED_LANTERN_ON:        ("Powered Lantern (on)", "Lights up when powered by wire"),
+        ALARM_BELL_OFF:            ("Alarm Bell", "Rings when powered by wire"),
+        ALARM_BELL_ON:             ("Alarm Bell (ringing)", "Rings when powered by wire"),
+        DEPOSIT_TRIGGER_BLOCK:     ("Deposit Trigger", "Rising edge: nearby bots dump inventory into adjacent chest"),
+    }
+
+
+def draw_logic_help(screen, cam_x, cam_y, player, world, font):
+    global _LOGIC_HELP
+    if _LOGIC_HELP is None:
+        _LOGIC_HELP = _build_logic_help()
+    tb = player.target_block
+    if tb is None:
+        return
+    bx, by = tb
+    block_id = world.get_block(bx, by)
+    entry = _LOGIC_HELP.get(block_id)
+    if entry is None:
+        return
+    name, desc = entry
+    gs = world.logic_state.get((bx, by), {})
+
+    lines = [name]
+    # Append live state detail where useful
+    if block_id in _LOGIC_HELP:
+        from blocks import (COUNTER_BLOCK, COMPARATOR_BLOCK,
+                            REPEATER_BLOCK, PULSE_GEN_BLOCK, SEQUENCER_BLOCK)
+        if block_id == COUNTER_BLOCK:
+            count = gs.get("count", 0)
+            threshold = gs.get("threshold", 4)
+            lines.append(f"Count: {count} / {threshold}")
+        elif block_id == COMPARATOR_BLOCK:
+            fill = gs.get("fill_level", 0)
+            threshold = gs.get("threshold", 4)
+            lines.append(f"Fill: {fill} / {threshold}")
+        elif block_id == REPEATER_BLOCK:
+            lines.append(f"Delay: {gs.get('delay', 0.5)}s")
+        elif block_id == PULSE_GEN_BLOCK:
+            lines.append(f"Period: {gs.get('period', 2.0)}s")
+        elif block_id == SEQUENCER_BLOCK:
+            step_names = ["Right", "Down", "Left", "Up"]
+            lines.append(f"Step: {step_names[gs.get('step', 0) % 4]}")
+    lines.append(desc)
+
+    sx = bx * BLOCK_SIZE - int(cam_x)
+    sy = by * BLOCK_SIZE - int(cam_y)
+    line_h = font.get_height() + 2
+    box_w = max(font.size(l)[0] for l in lines) + 12
+    box_h = line_h * len(lines) + 8
+    bx_screen = max(2, min(SCREEN_W - box_w - 2, sx))
+    by_screen = max(2, sy - box_h - 4)
+
+    bg = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+    bg.fill((10, 10, 18, 200))
+    screen.blit(bg, (bx_screen, by_screen))
+    pygame.draw.rect(screen, (80, 80, 120), (bx_screen, by_screen, box_w, box_h), 1)
+
+    for i, line in enumerate(lines):
+        col = (200, 200, 255) if i == 0 else ((160, 210, 180) if i < len(lines) - 1 else (130, 130, 160))
+        surf = font.render(line, True, col)
+        screen.blit(surf, (bx_screen + 6, by_screen + 4 + i * line_h))
+
+
 def draw_water_overlay(screen, water_overlay_surf, player):
     if player._head_in_water():
         screen.blit(water_overlay_surf, (0, 0))

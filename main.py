@@ -13,7 +13,7 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK, BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK, BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK, CHICKEN_COOP_BLOCK
 from elevators import ElevatorCar
 from minecarts import Minecart
 
@@ -446,6 +446,8 @@ def main():
             t0 = _t("  save_mgr.load", t0)
             w = World(seed=data["seed"], preloaded=data,
                       save_mgr=save_mgr, player_x=data["player"]["x"])
+            import npc_identity as _npc_id
+            _npc_id.assign_ruling_dynasties(w, data["seed"])
             t0 = _t("  World(preloaded)", t0)
             p = Player(w)
             t0 = _t("  Player", t0)
@@ -958,6 +960,7 @@ def main():
                     )
                     nearby_flag = player.get_nearby_town_flag()
                     nearby_outpost_flag = player.get_nearby_outpost_flag()
+                    nearby_landmark_flag = player.get_nearby_landmark_flag()
                     nearby_npc = _find_nearby_npc(world, player)
                     nearby_bed = player.get_nearby_bed()
                     nearby_elev_stop = player.get_nearby_elevator_stop()
@@ -984,15 +987,34 @@ def main():
                         else:
                             _close_all_ui()
                             ui.open_backhoe(nearby_bh)
-                    elif nearby_npc is not None:
-                        from cities import LeaderNPC, LandmarkNPC
-                        # Capital landmarks fire their effect inline — no panel needed.
-                        if isinstance(nearby_npc, LandmarkNPC):
-                            ok, title, detail = nearby_npc.trigger(player)
+                    elif nearby_outpost_flag is not None:
+                        from outposts import get_outpost_for_block
+                        op = get_outpost_for_block(*nearby_outpost_flag)
+                        if op is not None:
+                            if ui.outpost_menu_open and ui.active_outpost is op:
+                                ui.close_outpost_menu()
+                            else:
+                                _close_all_ui()
+                                ui.open_outpost_menu(op)
+                    elif nearby_landmark_flag is not None:
+                        from landmarks import apply_effect
+                        from towns import REGIONS, TOWNS
+                        lbx, _ = nearby_landmark_flag
+                        _reg = next(
+                            (REGIONS[t.region_id] for t in TOWNS.values()
+                             if abs(t.center_bx - lbx) < 30 and t.region_id in REGIONS),
+                            None)
+                        if _reg:
+                            ok, title, detail = apply_effect(player, _reg,
+                                                             getattr(world, "day_count", 0))
                             if not hasattr(world, "_town_toasts"):
                                 world._town_toasts = []
-                            msg = title if not detail else f"{title} {detail}"
+                            msg = title if not detail else f"{title} — {detail}"
                             world._town_toasts.append(msg)
+                    elif nearby_npc is not None:
+                        from cities import LeaderNPC, LandmarkNPC
+                        if isinstance(nearby_npc, LandmarkNPC):
+                            pass  # handled via nearby_landmark_flag above
                         elif ui.npc_open and ui.active_npc is nearby_npc:
                             ui.npc_open = False
                             ui.active_npc = None
@@ -1014,15 +1036,6 @@ def main():
                             else:
                                 _close_all_ui()
                                 ui.open_town_menu(town, player)
-                    elif nearby_outpost_flag is not None:
-                        from outposts import get_outpost_for_block
-                        op = get_outpost_for_block(*nearby_outpost_flag)
-                        if op is not None:
-                            if ui.outpost_menu_open and ui.active_outpost is op:
-                                ui.close_outpost_menu()
-                            else:
-                                _close_all_ui()
-                                ui.open_outpost_menu(op)
                     elif nearby_bed is not None:
                         player.set_spawn(*nearby_bed)
                         print("Spawn point set to bed.")
@@ -1180,6 +1193,8 @@ def main():
                                         kennel_pos = player.get_nearby_equipment_pos(KENNEL_BLOCK)
                                         ui.open_dog_breeding(kennel_pos, tamed_dogs[0], tamed_dogs[1])
                                         ui.refinery_open = False
+                                elif equip == CHICKEN_COOP_BLOCK:
+                                    ui.active_coop_pos = player.get_nearby_equipment_pos(CHICKEN_COOP_BLOCK)
                                 else:
                                     ui.active_compost_bin_pos = None
                             else:
@@ -1366,6 +1381,38 @@ def main():
                 elif ui.wildflower_display_open:
                     ui.handle_wildflower_display_click(event.pos, player)
                 else:
+                    # Left-click on any NPC opens inspect panel
+                    if event.button == 1 and not player.dead:
+                        mx, my = event.pos
+                        from cities import NPC as _NPC
+                        _clicked_npc = None
+                        for _ent in world.entities:
+                            if not isinstance(_ent, _NPC):
+                                continue
+                            _nsx = int(_ent.x - renderer.cam_x)
+                            _nsy = int(_ent.y - renderer.cam_y)
+                            if pygame.Rect(_nsx - 4, _nsy - 4, _ent.NPC_W + 8, _ent.NPC_H + 8).collidepoint(mx, my):
+                                _clicked_npc = _ent
+                                break
+                        if _clicked_npc is not None:
+                            if getattr(player, "inspecting_npc", None) is _clicked_npc:
+                                player.inspecting_npc = None
+                                player.gift_panel_open = False
+                                player.fulfill_request_open = False
+                            else:
+                                _close_all_ui()
+                                player.inspecting_npc = _clicked_npc
+                                player.gift_panel_open = False
+                                player.fulfill_request_open = False
+                                _uid = getattr(_clicked_npc, "npc_uid", None)
+                                if _uid and _uid not in player.npc_relationships:
+                                    _rid = getattr(_clicked_npc, "dynasty_id", None)
+                                    if _rid in getattr(player, "rival_dynasty_regions", set()):
+                                        player.npc_relationships[_uid] = -20
+                                import npc_preferences as _npc_prefs
+                                _npc_prefs.maybe_generate_request(
+                                    player, _clicked_npc, getattr(world, "day_count", 0)
+                                )
                     # Check for bird clicks before falling through to hotbar/world
                     if event.button == 1 and not ui._bird_obs_active:
                         mx, my = event.pos
@@ -1813,6 +1860,7 @@ def main():
         world.update_water(dt, player)
         world.update_soil(dt)
         world.update_compost_bins(dt)
+        world.update_chicken_coops(dt)
         world.update_trade_blocks(dt, player)
         import logic as _ltm
         _ltm.logic_tick(world, dt, player)
@@ -1845,6 +1893,7 @@ def main():
         renderer.draw_minecarts(world.minecarts, player)
         renderer.draw_dropped_items(world.dropped_items)
         renderer.draw_farm_sense(player, world)
+        renderer.draw_logic_help(player, world)
         renderer.draw_mining_indicator(player)
         renderer.draw_place_indicator(player)
         renderer.draw_water_overlay(player)

@@ -46,7 +46,7 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     GARDEN_BLOCK,
                     WILDFLOWER_DISPLAY_BLOCK,
                     STABLE_BLOCK, HORSE_TROUGH_BLOCK,
-                    KENNEL_BLOCK, DOG_BOWL_BLOCK,
+                    KENNEL_BLOCK, DOG_BOWL_BLOCK, CHICKEN_COOP_BLOCK,
                     TEA_CROP_YOUNG, WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK,
                     DRYING_RACK_BLOCK,
                     CHAMOMILE_CROP_YOUNG, LAVENDER_CROP_YOUNG, MINT_CROP_YOUNG, ROSEMARY_CROP_YOUNG,
@@ -339,7 +339,9 @@ from blocks import (DIRT, STONE, OBSIDIAN, TREE_LOG,
                     SEQUENCER_BLOCK, T_FLIPFLOP_BLOCK, DEPOSIT_TRIGGER_BLOCK, AUTOMATION_BENCH_BLOCK,
                     APPLE_SAPLING, PEAR_SAPLING, FIG_SAPLING,
                     CITRUS_SAPLING, POMEGRANATE_SAPLING,
-                    JUICER_BLOCK)
+                    JUICER_BLOCK,
+                    ICE_SHARD,
+                    FROZEN_BOG)
 
 ITEMS = {
     # --- Natural resources ---
@@ -1347,6 +1349,7 @@ ITEMS = {
     "dog_treat":        {"name": "Dog Treat",    "color": (200, 150,  70), "place_block": None, "edible": True, "hunger_restore": 1},
     "dog_whistle":      {"name": "Dog Whistle",  "color": (220, 200, 140), "place_block": None},
     "kennel_item":      {"name": "Kennel",       "color": (100,  75,  40), "place_block": KENNEL_BLOCK},
+    "chicken_coop_item":{"name": "Chicken Coop", "color": (165, 125,  60), "place_block": CHICKEN_COOP_BLOCK},
     "dog_bowl_item":    {"name": "Dog Bowl",     "color": (180, 140,  90), "place_block": DOG_BOWL_BLOCK},
     "trade_block":      {"name": "Trade Post",    "color": (120,  85,  55), "place_block": TRADE_BLOCK},
     # --- Herbalism supply chain ---
@@ -2403,4 +2406,6 @@ ITEMS = {
     "t_flipflop_item":   {"name": "T Flip-Flop", "color": (140, 120,  60), "place_block": T_FLIPFLOP_BLOCK},
     "deposit_trigger_item":  {"name": "Deposit Trigger",   "color": (200, 140,  50), "place_block": DEPOSIT_TRIGGER_BLOCK},
     "automation_bench_item": {"name": "Automation Bench",  "color": ( 70,  90, 110), "place_block": AUTOMATION_BENCH_BLOCK},
+    "ice_shard":               {"name": "Ice Shard", "color": (185, 225, 248), "place_block": ICE_SHARD},
+    "frozen_bog":              {"name": "Frozen Bog", "color": ( 95, 120, 138), "place_block": FROZEN_BOG},
 }

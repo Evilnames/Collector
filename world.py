@@ -146,6 +146,8 @@ class World:
         self._rain_gap      = 0.0  # set after soil_rng is initialized below
         # Compost bins (Phase 2): (bx,by) -> {"input": {}, "progress": float, "output": int}
         self.compost_bin_data = {}
+        # Chicken coops: (bx,by) -> {"eggs": int, "progress": float}
+        self.chicken_coop_data = {}
         # Trade blocks: (bx,by) -> {horse_uid, has_cart, linked_town_id, inventory, threshold, state, ticks_left}
         self.trade_block_data = {}
         # Sculpture data: root pos -> Sculpture obj; body pos -> {"root": (bx, root_y)}
@@ -469,6 +471,11 @@ class World:
         self.compost_bin_data = {
             tuple(int(v) for v in k.split(",")): bin_d
             for k, bin_d in raw_bins.items()
+        }
+        raw_coops = data.get("chicken_coop_data", {})
+        self.chicken_coop_data = {
+            tuple(int(v) for v in k.split(",")): coop_d
+            for k, coop_d in raw_coops.items()
         }
         raw_chests = data.get("chest_data", {})
         self.chest_data = {
@@ -838,9 +845,10 @@ class World:
                              MARSH_MARIGOLD_BLOCK, HORSETAIL_BLOCK],
             "rolling_hills": [REED_BLOCK, WATER_CRESS_BLOCK, WATER_IRIS_BLOCK,
                               MARSH_MARIGOLD_BLOCK, ARROWHEAD_BLOCK],
-            "tundra":   [SEDGE_BLOCK, SEDGE_BLOCK, REED_BLOCK, HORSETAIL_BLOCK],
+            "tundra":   [SEDGE_BLOCK, SEDGE_BLOCK, FROZEN_BOG, REED_BLOCK, HORSETAIL_BLOCK],
         }
         _EDGE_DEFAULT = [REED_BLOCK]
+        _SNOW_EDGE_BIOMES = frozenset({"tundra", "alpine_mountain"})
         water_rng = random.Random(hash((self.seed, cx, 'water_plants')) & 0x7FFFFFFF)
         chunk_x0 = cx * CHUNK_W
         for lx in range(CHUNK_W):
@@ -856,7 +864,9 @@ class World:
                         pool = _FLOAT_POOL.get(biodome, _FLOAT_DEFAULT)
                         self.set_bg_block(x, sy - 1, water_rng.choice(pool))
                 continue
-            if chunk[sy][lx] != GRASS:
+            biodome_here = self.biodome_at(x)
+            surface_ok = chunk[sy][lx] == GRASS or (biodome_here in _SNOW_EDGE_BIOMES and chunk[sy][lx] == SNOW)
+            if not surface_ok:
                 continue
             # Check for water within 3 tiles horizontally at same surface level
             water_adj = any(
@@ -865,10 +875,9 @@ class World:
             )
             if not water_adj or water_rng.random() > 0.65:
                 continue
-            biodome = self.biodome_at(x)
-            if biodome not in _WATER_EDGE_BIOMES:
+            if biodome_here not in _WATER_EDGE_BIOMES:
                 continue
-            pool = _EDGE_POOL.get(biodome, _EDGE_DEFAULT)
+            pool = _EDGE_POOL.get(biodome_here, _EDGE_DEFAULT)
             self.set_bg_block(x, sy - 1, water_rng.choice(pool))
 
         # Desert surface flora — spawns on SAND in desert/arid biomes
@@ -892,6 +901,19 @@ class World:
                     PALO_VERDE_YOUNG,
                 ])
             lx += desert_rng.randint(5, 11)
+
+        # Tundra ice formations — ice shards on snow surface in tundra
+        ice_rng = random.Random(hash((self.seed, cx, 'tundra_ice')) & 0x7FFFFFFF)
+        lx = 3
+        while lx < CHUNK_W - 3:
+            x = cx * CHUNK_W + lx
+            sy = self.surface_height(x)
+            biodome = self.biodome_at(x)
+            if biodome == "tundra" and 0 < sy < WORLD_H \
+                    and chunk[sy - 1][lx] == AIR and chunk[sy][lx] == SNOW:
+                if ice_rng.random() < 0.03:
+                    chunk[sy - 1][lx] = ICE_SHARD
+            lx += ice_rng.randint(6, 16)
 
         # Wildflowers
         flower_rng = random.Random(hash((self.seed, cx, 'flowers')) & 0x7FFFFFFF)
@@ -2542,6 +2564,28 @@ class World:
                         del bin_data["input"][item_id]
                     if remaining <= 0:
                         break
+
+    _COOP_REFILL_TIME = 30.0  # seconds per egg per hen (matches Chicken.REFILL_TIME)
+    _COOP_MAX_EGGS    = 24
+
+    def update_chicken_coops(self, dt):
+        """Accumulate eggs in all placed coops based on live female chickens."""
+        if not self.chicken_coop_data:
+            return
+        from animals import Chicken as _Chicken
+        hens = [e for e in self.entities
+                if isinstance(e, _Chicken) and not e.dead
+                and e.traits.get("sex") == "female"]
+        if not hens:
+            return
+        rate = sum(e.traits.get("lay_rate", 1.0) / self._COOP_REFILL_TIME for e in hens)
+        for coop in self.chicken_coop_data.values():
+            if coop["eggs"] >= self._COOP_MAX_EGGS:
+                continue
+            coop["progress"] += rate * dt
+            while coop["progress"] >= 1.0 and coop["eggs"] < self._COOP_MAX_EGGS:
+                coop["progress"] -= 1.0
+                coop["eggs"] += 1
 
     def update_trade_blocks(self, dt, player):
         """Tick all trade blocks: dispatch horse, track position-based travel, deliver on arrival."""

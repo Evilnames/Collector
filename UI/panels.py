@@ -3184,15 +3184,6 @@ class PanelsMixin:
             self.screen.blit(self.small.render(item.get("name", item_id), True, (215, 195, 165)), (rx + 40, ry + 8))
             self.screen.blit(self.small.render(f"x{count}", True, (150, 210, 150)), (rx + 40, ry + 26))
 
-# NPC inspect overlay (I key)
-def _draw_npc_inspect(self, player, world):
-    pass
-
-
-    # -----------------------------------------------------------------------
-    # NPC inspect overlay (I key)
-    # -----------------------------------------------------------------------
-
     def _draw_npc_inspect(self, player, world):
         import npc_preferences as npc_prefs_mod
         npc = getattr(player, "inspecting_npc", None)

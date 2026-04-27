@@ -6040,4 +6040,47 @@ def build_decor_surfs():
     pygame.draw.circle(s, (230, 200,  90), (BS // 2 - 1, 2), 2)
     surfs[bid] = s
 
+    bid = ICE_SHARD
+    # if bid == ICE_SHARD
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    snow = (220, 232, 245)
+    pygame.draw.rect(s, snow, (0, BS - 4, BS, 4))
+    c_base = (185, 225, 248)
+    c_bright = (228, 245, 255)
+    c_dark = _darken(c_base, 28)
+    for cx2, base_h, w2 in [(4, 14, 3), (10, 20, 4), (18, 16, 3), (25, 11, 2)]:
+        tip_y = BS - 4 - base_h
+        pts = [(cx2 - w2, BS - 4), (cx2 + w2, BS - 4), (cx2, tip_y)]
+        pygame.draw.polygon(s, c_base, pts)
+        pygame.draw.polygon(s, c_dark, pts, 1)
+        hi_x = cx2 - w2 // 2
+        pygame.draw.line(s, c_bright, (hi_x, BS - 5), (hi_x, tip_y + base_h // 3), 1)
+    surfs[bid] = s
+
+    bid = FROZEN_BOG
+    # if bid == FROZEN_BOG
+    rng_bog = _rnd.Random(0xB0CEFE)
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    bog_dark = (32, 48, 58)
+    bog_mid = (52, 75, 90)
+    bog_ice = (148, 185, 210)
+    bog_ice2 = (178, 210, 228)
+    pygame.draw.rect(s, bog_dark, (0, 0, BS, BS))
+    for _ in range(6):
+        rx = rng_bog.randint(1, BS - 5)
+        ry = rng_bog.randint(1, BS - 5)
+        rw = rng_bog.randint(3, 8)
+        rh = rng_bog.randint(2, 5)
+        pygame.draw.ellipse(s, bog_mid, (rx, ry, rw, rh))
+    for _ in range(4):
+        lx2 = rng_bog.randint(2, BS - 4)
+        ly2 = rng_bog.randint(2, BS - 4)
+        ex = rng_bog.randint(3, 9)
+        ey = rng_bog.randint(1, 3)
+        pygame.draw.ellipse(s, bog_ice, (lx2, ly2, ex, ey))
+        pygame.draw.ellipse(s, bog_ice2, (lx2 + 1, ly2, ex - 2, max(1, ey - 1)))
+    surfs[bid] = s
+
     return surfs

@@ -750,6 +750,10 @@ class CraftingMixin:
         if self.refinery_block_id == COMPOST_BIN_BLOCK:
             self._draw_compost_bin(player)
             return
+        from blocks import CHICKEN_COOP_BLOCK
+        if self.refinery_block_id == CHICKEN_COOP_BLOCK:
+            self._draw_chicken_coop(player)
+            return
         from blocks import FORGE_BLOCK, WEAPON_RACK_BLOCK
         if self.refinery_block_id == FORGE_BLOCK:
             self._draw_forge(player, dt)
@@ -1004,3 +1008,65 @@ class CraftingMixin:
         col_txt = self.font.render("Collect", True, (200, 240, 200) if out_count > 0 else (70, 70, 82))
         self.screen.blit(col_txt, (self._compost_collect_btn.centerx - col_txt.get_width() // 2,
                                    self._compost_collect_btn.centery - col_txt.get_height() // 2))
+
+    def _draw_chicken_coop(self, player):
+        from animals import Chicken as _Chicken
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 210))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 400, 260
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (48, 34, 18), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (165, 125, 60), (px, py, PW, PH), 2)
+
+        title = self.font.render("CHICKEN COOP", True, (220, 185, 90))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 8))
+
+        # Count contributing hens
+        hens = [e for e in player.world.entities
+                if isinstance(e, _Chicken) and not e.dead
+                and e.traits.get("sex") == "female"]
+        hen_lbl = self.small.render(
+            f"Contributing hens: {len(hens)}" if hens else "No hens found — tame female chickens to fill this coop",
+            True, (180, 160, 100) if hens else (160, 90, 60))
+        self.screen.blit(hen_lbl, (px + 16, py + 34))
+
+        coop_pos = self.active_coop_pos
+        coop_data = (player.world.chicken_coop_data.setdefault(
+            coop_pos, {"eggs": 0, "progress": 0.0})
+            if coop_pos else {"eggs": 0, "progress": 0.0})
+
+        # Progress bar (toward next egg)
+        bar_y = py + 80
+        bar_w = PW - 32
+        progress = coop_data["progress"]
+        filled = int(bar_w * min(progress, 1.0))
+        pygame.draw.rect(self.screen, (36, 24, 12), (px + 16, bar_y, bar_w, 14))
+        if filled > 0 and hens:
+            pygame.draw.rect(self.screen, (200, 170, 60), (px + 16, bar_y, filled, 14))
+        pygame.draw.rect(self.screen, (120, 90, 40), (px + 16, bar_y, bar_w, 14), 1)
+        bar_lbl = self.small.render("Next egg progress", True, (150, 130, 80))
+        self.screen.blit(bar_lbl, (px + 16, bar_y - 16))
+
+        # Egg count display
+        egg_count = coop_data["eggs"]
+        egg_color = (230, 200, 80) if egg_count > 0 else (80, 70, 50)
+        egg_lbl = self.font.render(f"Eggs ready: {egg_count} / {player.world._COOP_MAX_EGGS}", True, egg_color)
+        self.screen.blit(egg_lbl, (px + 16, bar_y + 26))
+
+        hint = self.small.render("ESC to close", True, (100, 90, 60))
+        self.screen.blit(hint, (px + PW // 2 - hint.get_width() // 2, py + PH - 22))
+
+        # Collect button
+        btn_y = py + PH - 52
+        can_collect = egg_count > 0
+        btn_col = (50, 100, 40) if can_collect else (28, 28, 36)
+        btn_bdr = (100, 200, 80) if can_collect else (55, 55, 68)
+        self._coop_collect_btn = pygame.Rect(px + PW // 2 - 70, btn_y, 140, 32)
+        pygame.draw.rect(self.screen, btn_col, self._coop_collect_btn)
+        pygame.draw.rect(self.screen, btn_bdr, self._coop_collect_btn, 2)
+        btn_txt = self.font.render("Collect Eggs", True, (200, 240, 180) if can_collect else (70, 70, 82))
+        self.screen.blit(btn_txt, (self._coop_collect_btn.centerx - btn_txt.get_width() // 2,
+                                   self._coop_collect_btn.centery - btn_txt.get_height() // 2))

@@ -3564,6 +3564,49 @@ class ElmPondButterfly(Insect):
     WING_TYPE    = "butterfly"
 
 
+# --- Arctic ---
+
+class ArcticFritillary(Insect):
+    SPECIES      = "arctic_fritillary"
+    RARITY       = "rare"
+    BIOMES       = ["tundra"]
+    W, H         = 11, 9
+    BODY_COLOR   = (210, 125, 35)
+    WING_COLOR   = (200, 110, 25)
+    ACCENT_COLOR = (245, 242, 238)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class GlacierMoth(Insect):
+    SPECIES      = "glacier_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["tundra", "alpine_mountain"]
+    W, H         = 12, 8
+    BODY_COLOR   = (195, 215, 235)
+    WING_COLOR   = (225, 238, 252)
+    ACCENT_COLOR = (158, 185, 215)
+    HOVER_RANGE  = 48
+    SPEED        = 22.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class FrostMidge(Insect):
+    SPECIES      = "frost_midge"
+    RARITY       = "common"
+    BIOMES       = ["tundra"]
+    W, H         = 7, 5
+    BODY_COLOR   = (18, 22, 28)
+    WING_COLOR   = (180, 210, 230)
+    ACCENT_COLOR = (140, 178, 205)
+    HOVER_RANGE  = 35
+    SPEED        = 38.0
+    WING_TYPE    = "other"
+    DAWN_ONLY    = True
+
+
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
@@ -3657,6 +3700,8 @@ ALL_INSECT_SPECIES = [
     PondshoreGlimmer, MarshCricket, WetlandKatydid, TidalFlatBeetle, SaltmarshWeevil,
     ReedBeetle, DuskReedmoth, FogMothlet, GoldenRushfly, CinnabarMarshfly,
     StoneflyMoss, VioletWaterfly, SpottedMayfly, MidnightMarshSkater, ElmPondButterfly,
+    # Arctic
+    ArcticFritillary, GlacierMoth, FrostMidge,
 ]
 
 INSECT_SPECIES_BY_ID = {cls.SPECIES: cls for cls in ALL_INSECT_SPECIES}

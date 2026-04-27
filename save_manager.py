@@ -757,6 +757,10 @@ class SaveManager:
         except Exception:
             pass
         try:
+            con.execute("ALTER TABLE world_meta ADD COLUMN chicken_coop_data TEXT")
+        except Exception:
+            pass
+        try:
             con.execute("ALTER TABLE regions ADD COLUMN coat_of_arms_json TEXT")
         except Exception:
             pass
@@ -1098,17 +1102,21 @@ class SaveManager:
             f"{bx},{by}": v
             for (bx, by), v in getattr(world, "logic_state", {}).items()
         }
+        coop_data_out = {
+            f"{bx},{by}": d
+            for (bx, by), d in getattr(world, "chicken_coop_data", {}).items()
+        }
         con.execute("DELETE FROM world_meta")
         con.execute(
             "INSERT INTO world_meta "
-            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, tapestry_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids, day_count, trade_block_data, logic_state) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, tapestry_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids, day_count, trade_block_data, logic_state, chicken_coop_data) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (json.dumps(water), json.dumps(moisture), json.dumps(progress),
              json.dumps(care_sum), json.dumps(fertility), json.dumps(compost_bins),
              json.dumps(garden_flowers), json.dumps(sculpture_pos), json.dumps(tapestry_pos),
              json.dumps(wf_displays), json.dumps(pottery_displays), json.dumps(unplaced_uids),
              getattr(world, 'day_count', 0), json.dumps(trade_blocks),
-             json.dumps(logic_state_out)),
+             json.dumps(logic_state_out), json.dumps(coop_data_out)),
         )
 
     def _save_player(self, con, player):
@@ -1918,6 +1926,19 @@ class SaveManager:
                 bx, by = key.split(",")
                 logic_state_loaded[(int(bx), int(by))] = val
 
+        raw_coops = None
+        try:
+            r = con.execute("SELECT chicken_coop_data FROM world_meta LIMIT 1").fetchone()
+            if r:
+                raw_coops = r[0]
+        except Exception:
+            pass
+        coop_data_loaded = {}
+        if raw_coops:
+            for key, val in json.loads(raw_coops).items():
+                bx, by = key.split(",")
+                coop_data_loaded[(int(bx), int(by))] = val
+
         return {
             "water_level":            _parse_coord_dict(row[0]),
             "soil_moisture":          _parse_coord_dict(row[1]),
@@ -1934,6 +1955,7 @@ class SaveManager:
             "day_count":              int(row[12]) if len(row) > 12 and row[12] is not None else 0,
             "trade_block_data":       json.loads(row[13]) if len(row) > 13 and row[13] else {},
             "logic_state":            logic_state_loaded,
+            "chicken_coop_data":      coop_data_loaded,
         }
 
     def _load_player(self, con, bird_obs=None, insect_obs=None):

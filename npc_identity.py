@@ -73,6 +73,30 @@ _PROFESSION_LINES = [
     "coopers",
     "blacksmiths",
     "bakers",
+    "dyers",
+    "wheelwrights",
+    "ropemakers",
+    "glassblowers",
+    "charcoal burners",
+    "drovers",
+    "ferrymen",
+    "apothecaries",
+    "saddlers",
+    "tilemakers",
+    "saltworkers",
+    "woodcutters",
+    "beekeepers",
+    "fullers",
+    "clockmakers",
+    "tax collectors",
+    "road wardens",
+    "river pilots",
+    "gravediggers",
+    "midwives",
+    "ink-makers",
+    "tollkeepers",
+    "rat-catchers",
+    "night watchmen",
 ]
 
 # Optional birthplace adjectives for variety
@@ -84,7 +108,19 @@ _BIRTHPLACE_QUALIFIERS = [
     "at the edge of",
     "in the lower district of",
     "in the hills above",
+    "along the waterfront of",
+    "in the tanner's row of",
+    "beneath the walls of",
+    "in the poorest ward of",
+    "near the guild houses of",
+    "on a small holding outside",
+    "in the merchant quarter of",
+    "within the abbey grounds of",
+    "in a farmstead two leagues from",
+    "in the milling district of",
+    "along the northern road out of",
     "",  # no qualifier — just "in {town}"
+    "",
     "",
     "",
 ]
@@ -111,6 +147,30 @@ _PERSONAL_TRAITS = [
     "prone to speaking their mind before thinking",
     "often the first to help and the last to ask for it",
     "known to hold a grudge longer than most",
+    "prone to long silences that others find unsettling",
+    "genuinely kind in a way that surprises people who first meet them",
+    "restless in a way that has never fully resolved into anything",
+    "fond of repeating the same three pieces of advice to anyone who listens",
+    "careful with coin in a way that borders on miserly",
+    "easy to underestimate until the moment it matters",
+    "given to extreme opinions on minor subjects and silence on important ones",
+    "known to remember everything and to choose carefully what they mention",
+    "respected for plain speaking even when it costs them",
+    "inclined to trust animals more readily than people",
+    "prone to nervous energy that they channel into relentless work",
+    "fond of their own company and unapologetic about it",
+    "surprisingly tender-hearted beneath a brusque manner",
+    "given to dark humour that not everyone finds amusing",
+    "known to wake before dawn and be the last to leave at night",
+    "deeply private in ways that are sometimes mistaken for coldness",
+    "possessed of a temper that emerges rarely and spectacularly",
+    "more observant than they let on, which has served them well",
+    "inclined to finish what others start and say little about it",
+    "known to take disagreements personally and disputes professionally, which is the wrong way round",
+    "cautious by nature but capable of sudden and surprising boldness",
+    "better at comforting others than at accepting comfort themselves",
+    "given to strong opinions on food and absolutely no opinions on anything else",
+    "prone to a dry wit that is either charming or insufferable depending on the recipient",
 ]
 
 # Single-sentence life events added to the bio
@@ -131,6 +191,35 @@ _LIFE_EVENTS = [
     "Trained as an apprentice under a well-regarded craftsman in another town.",
     "Narrowly avoided a serious debt years ago and has been careful with coin ever since.",
     "Crossed the region on foot as a young person on a dare and never regretted it.",
+    "Survived a harsh winter that took three neighbours and shaped the rest of their outlook considerably.",
+    "Apprenticed to the wrong master for four years and spent the next four unlearning what they were taught.",
+    "Inherited a small piece of land that turned out to carry an old dispute attached to it.",
+    "Once talked a desperate man down from a very bad decision and is not sure whether they did him a favour.",
+    "Left a secure position abruptly under circumstances they decline to detail, and seem at peace with it.",
+    "Spent two years in another town after a falling-out that has never been fully explained.",
+    "Helped deliver twins during a blizzard once, and considers it the most useful thing they've ever done.",
+    "Was wrongly accused of something minor years ago; the matter was resolved but not entirely forgotten.",
+    "Watched their family's trade collapse slowly over a decade and learned more from it than they would have liked.",
+    "Received an unexpected inheritance from a relative they barely knew, and still isn't sure what to make of it.",
+    "Once kept a man's secret for years when revealing it would have benefited them considerably.",
+    "Took in a stray dog that lived for eleven years and is quietly still not over its death.",
+    "Survived a serious illness that left them changed in ways they find difficult to put into words.",
+    "Worked two harvests for a family that wasn't theirs when their own was struggling, and never asked to be repaid.",
+    "Crossed paths with someone important once and has wondered since what they knew that they didn't share.",
+    "Paid for a young person's apprenticeship after noticing their situation and saying nothing about it afterwards.",
+    "Was offered a chance to leave and build something different, and chose to stay, and does not entirely know why.",
+    "Made a decision during a hard season that was correct and cost them a friendship they still miss.",
+    "Spent three months recovering at a farmhouse owned by strangers, who became the closest thing to family they have.",
+    "Witnessed something unsettling on the road once and has told the story carefully fewer times than they've thought about it.",
+    "Carried a letter across the region for a dying man once; it was delivered, and whatever it contained changed hands quietly.",
+    "Was offered a dishonest profit during a lean year and declined it, and has never fully stopped wondering if that was wisdom.",
+    "Once spent a season working under a different name in a different town for reasons that seemed clearer at the time.",
+    "Helped rebuild a bridge that collapsed during a storm and has taken quiet satisfaction in it every time they cross it.",
+    "Kept a shop running alone for a year when their partner fell ill, and discovered something about themselves in the process.",
+    "Fostered a child for two years while their family sorted itself out, and found the parting harder than anticipated.",
+    "Turned down a marriage arrangement their parents considered advantageous and has never been given a full accounting of what was lost.",
+    "Narrowly avoided being in the wrong place during a significant event; the margin was smaller than anyone knows.",
+    "Found an old letter once that wasn't addressed to them and contains information that would complicate at least two people's lives.",
 ]
 
 # Personal secrets revealed at Friendly tier
@@ -150,6 +239,21 @@ _PERSONAL_TENSIONS = [
     "lost something precious years ago and has never fully made peace with it.",
     "borrowed more than they let on during a lean season and is still paying it back.",
     "turned down an offer years ago that they sometimes wonder about in quiet moments.",
+    "is aware that a story about them circulating in town is not entirely false.",
+    "carries a private conviction that they were responsible for something no one else has blamed them for.",
+    "knows something about a local figure that would cause significant damage if it became known.",
+    "has been contacted recently by someone from their past who they had hoped was gone for good.",
+    "is concealing a health matter from everyone around them.",
+    "has a child somewhere they have never met, and has made no move toward changing that.",
+    "once gave false testimony in a minor matter to protect someone, and the weight of it has not diminished.",
+    "is quietly moving assets in ways that would concern their household if discovered.",
+    "suspects that a close relationship in their life was deliberately engineered for reasons they haven't worked out yet.",
+    "holds a piece of information that would resolve a local dispute but releasing it would harm someone they owe a favour.",
+    "has been shortchanging a supplier in small amounts for years and regards it as merely correcting an unfair arrangement.",
+    "recently discovered that their family name is not entirely what they understood it to be.",
+    "is carrying on a correspondence that their household would not approve of.",
+    "was present at an event that was later misreported and has chosen not to correct the record.",
+    "owes a significant favour to someone who has not yet named what they want for it.",
 ]
 
 # Dynasty founding stories (one picked per dynasty/region)
@@ -166,6 +270,14 @@ _DYNASTY_ORIGINS = [
     "Earned their position by leading the defence of the region during a period of raids.",
     "Granted authority by popular acclaim after restoring order during a famine.",
     "Grew powerful by controlling the region's main road and collecting passage agreements.",
+    "Emerged from obscurity when a timely loan to the previous ruling family was never repaid.",
+    "Built their name supplying provisions to the region's garrisons for three decades before acquiring formal authority.",
+    "Rose to prominence by controlling the only reliable bridge in the region during a period of heavy flooding.",
+    "Established through a series of carefully arranged marriages that absorbed three smaller families over two generations.",
+    "Founded by a physician whose reputation for saving lives during a plague was converted into political standing.",
+    "Grew from a minor clerical function into a governing authority when the original rulers died without heirs.",
+    "Built their influence as arbiters in the region's commercial disputes, collecting fees and obligations along the way.",
+    "Came to power by financing the rebuilding of a town after a major fire and naming the terms of reconstruction.",
 ]
 
 # Current tensions within a dynasty (one picked per dynasty/region)
@@ -182,6 +294,18 @@ _DYNASTY_TENSIONS = [
     "The region's reputation for stability is slipping, and the family is being blamed.",
     "An inheritance dispute from two generations ago has resurfaced and found new advocates.",
     "The house is divided over whether to align with a distant power or remain independent.",
+    "The head of house is ageing and has refused to name a successor, which is beginning to affect everything.",
+    "A trusted advisor has recently departed under circumstances the family describes as voluntary.",
+    "A junior member of the house has begun building independent relationships the head has not sanctioned.",
+    "The family's oldest ally in the region has signalled, without stating it plainly, that conditions have changed.",
+    "A rumour regarding the legitimacy of the current head's claim has been circulating in the region's inns.",
+    "The house controls less of the region's actual trade than its formal position would suggest.",
+    "An external power has been quietly purchasing obligations throughout the region; the family has noticed.",
+    "A document has surfaced that one branch of the family regards as binding and another regards as a forgery.",
+    "The house has committed publicly to a course of action that a significant portion of the family believes is wrong.",
+    "A member of the house has made a private enemy of someone with more reach than anyone anticipated.",
+    "The family's ceremonial seat is contested by a rival with an argument that, on paper, is more compelling than expected.",
+    "A son or daughter of the house is reportedly living under a different name elsewhere in the region.",
 ]
 
 
@@ -189,7 +313,7 @@ _DYNASTY_TENSIONS = [
 # Identity generation
 # ---------------------------------------------------------------------------
 
-def generate_identity(npc_uid: str, town_id: int, role: str, world_seed: int) -> dict:
+def generate_identity(npc_uid: str, town_id: int, _role: str, world_seed: int) -> dict:
     """Return a stable identity dict for one NPC.
 
     Keys: first_name, family_name, gender, display_name, blurb, bio, personal_tension
@@ -263,13 +387,19 @@ def assign_ruling_dynasties(world, world_seed: int) -> None:
     """
     from towns import REGIONS, TOWNS
 
-    # Group ruler entities by town_id
-    rulers_by_town: dict = {}
+    # Group ruler entities by town_id (nobles/elders) and by region_id (leaders)
+    rulers_by_town:    dict = {}
+    leaders_by_region: dict = {}
     for entity in world.entities:
-        if getattr(entity, "animal_id", "") in _RULER_TYPES:
+        aid = getattr(entity, "animal_id", "")
+        if aid in _RULER_TYPES:
             tid = getattr(entity, "town_id", None)
             if tid is not None:
                 rulers_by_town.setdefault(tid, []).append(entity)
+        elif aid == "npc_leader":
+            rid = getattr(entity, "region_id", None)
+            if rid is not None:
+                leaders_by_region.setdefault(rid, []).append(entity)
 
     # Pre-compute rival house names keyed by region_id for cross-reference
     def _rival_house_name(rid):
@@ -298,7 +428,9 @@ def assign_ruling_dynasties(world, world_seed: int) -> None:
             for npc in rulers_by_town.get(tid, []):
                 region_rulers.append((npc, tid))
 
-        if not region_rulers:
+        region_leaders = leaders_by_region.get(region_id, [])
+
+        if not region_rulers and not region_leaders:
             continue
 
         rng.shuffle(region_rulers)
@@ -316,7 +448,7 @@ def assign_ruling_dynasties(world, world_seed: int) -> None:
             town_names=town_names,
         )
 
-        # Apply dynasty data to each ruler
+        # Apply dynasty data to each noble/elder ruler
         for (npc, _tid), role in zip(region_rulers, roles):
             npc.dynasty_id              = region_id
             npc.dynasty_name            = dynasty_name
@@ -335,7 +467,7 @@ def assign_ruling_dynasties(world, world_seed: int) -> None:
                     f"{npc.identity['first_name']} {dynasty_family}"
                 )
 
-        # Build kin list for each ruler — all other dynasty members
+        # Build kin list for each noble/elder ruler
         for (npc, _tid), _role in zip(region_rulers, roles):
             kin = []
             for (other, other_tid), other_role in zip(region_rulers, roles):
@@ -350,6 +482,28 @@ def assign_ruling_dynasties(world, world_seed: int) -> None:
                     "dynasty_role": other_role,
                 })
             npc.dynasty_kin = kin
+
+        # Stamp dynasty data onto LeaderNPCs (capital city leaders) for this region
+        noble_kin = [
+            {"display_name": (n.identity.get("display_name", "?")
+                              if hasattr(n, "identity") and n.identity else "?"),
+             "town_name":    TOWNS[tid].name if tid in TOWNS else "Unknown",
+             "dynasty_role": role}
+            for (n, tid), role in zip(region_rulers, roles)
+        ]
+        for leader in region_leaders:
+            leader.dynasty_id              = region_id
+            leader.dynasty_name            = dynasty_name
+            leader.dynasty_role            = "head"
+            leader.dynasty_history         = dynasty_origin
+            leader.dynasty_tension         = dynasty_tension
+            leader.dynasty_rival           = dynasty_rival
+            leader.dynasty_rival_region_id = dynasty_rival_region_id
+            leader.dynasty_chronicle       = chronicle
+            leader.dynasty_ambition        = _dyn.generate_ruler_ambition(
+                getattr(leader, "npc_uid", str(id(leader))), world_seed
+            )
+            leader.dynasty_kin = noble_kin
 
 
 def assign_families(npcs: list, town_id: int, world_seed: int) -> None:

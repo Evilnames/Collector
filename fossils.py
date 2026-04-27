@@ -1388,6 +1388,39 @@ FOSSIL_TYPES = {
         "patterns": ["ridged", "ridged", "smooth"],
         "specials_pool": ["complete", "mineralized", "impression"],
     },
+    # --- Ice Age Arctic ---
+    "ice_age_salmon": {
+        "min_depth": 40,
+        "age": "cenozoic",
+        "rarity_pool": ["common", "common", "uncommon", "rare"],
+        "color_pool": [((228, 215, 195), (172, 158, 135)), ((242, 228, 208), (185, 170, 148))],
+        "patterns": ["ridged", "smooth", "ridged"],
+        "specials_pool": ["impression", "carbonized", "complete"],
+    },
+    "cave_bear": {
+        "min_depth": 80,
+        "age": "cenozoic",
+        "rarity_pool": ["uncommon", "rare", "rare", "epic"],
+        "color_pool": [((235, 222, 198), (178, 164, 138)), ((248, 235, 212), (192, 178, 152))],
+        "patterns": ["smooth", "fractured", "smooth"],
+        "specials_pool": ["complete", "mineralized", "impression"],
+    },
+    "saber_tooth_cat": {
+        "min_depth": 100,
+        "age": "cenozoic",
+        "rarity_pool": ["rare", "rare", "epic", "legendary"],
+        "color_pool": [((238, 225, 200), (180, 165, 138)), ((252, 238, 215), (195, 180, 152))],
+        "patterns": ["smooth", "ridged", "smooth"],
+        "specials_pool": ["complete", "mineralized", "amber_trace"],
+    },
+    "woolly_mammoth": {
+        "min_depth": 140,
+        "age": "cenozoic",
+        "rarity_pool": ["epic", "legendary", "legendary", "legendary"],
+        "color_pool": [((232, 220, 196), (175, 160, 132)), ((245, 232, 210), (188, 174, 148))],
+        "patterns": ["smooth", "fractured", "smooth"],
+        "specials_pool": ["complete", "mineralized", "impression"],
+    },
 }
 
 FOSSIL_TYPE_ORDER = sorted(FOSSIL_TYPES.keys(), key=lambda t: FOSSIL_TYPES[t]["min_depth"])
@@ -1594,6 +1627,10 @@ FOSSIL_TYPE_DESCRIPTIONS = {
     "doedicurus_scute":           "An armored scute from Doedicurus, a glyptodont that swung a spiked bony tail club in defense.",
     "zygorhiza_tooth":            "A tooth from Zygorhiza, an early Eocene whale still retaining hind limbs vestigially.",
     "elasmotherium_horn_core":    "The horn core of Elasmotherium, a giant Pleistocene rhino whose single horn may have exceeded 1.5 metres.",
+    "ice_age_salmon":             "A Pleistocene salmon preserved in silt — cold-water giants that once ran rivers from the Arctic to the coast.",
+    "cave_bear":                  "Remains of Ursus spelaeus, an Ice Age giant that denned in limestone caverns across the northern hemisphere.",
+    "saber_tooth_cat":            "The full skeleton of Smilodon, apex predator of the Pleistocene, its iconic canines preserved in pale matrix.",
+    "woolly_mammoth":             "A remarkably complete woolly mammoth — Mammuthus primigenius — its dense curved tusks still intact in the permafrost.",
 }
 
 

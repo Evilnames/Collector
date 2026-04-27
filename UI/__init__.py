@@ -59,6 +59,8 @@ class UI(
         self.active_compost_bin_pos  = None   # (bx, by) when compost bin is open
         self._compost_deposit_btn    = None
         self._compost_collect_btn    = None
+        self.active_coop_pos         = None   # (bx, by) when chicken coop is open
+        self._coop_collect_btn       = None
         self.npc_inspect_open        = False   # I: NPC inspect overlay
         self.trade_block_open        = False
         self.active_trade_pos        = None   # (bx, by) of open trade block

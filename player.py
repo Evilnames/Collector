@@ -17,7 +17,7 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     STONE_SLAB_DOOR_CLOSED, STONE_SLAB_DOOR_OPEN,
                     WOOD_FENCE, IRON_FENCE, WOOD_FENCE_OPEN, IRON_FENCE_OPEN,
                     SAPLING, GRASS, DIRT, ALL_LOGS, ALL_LEAVES,
-                    ALL_FRUIT_CLUSTERS, FRUIT_CLUSTER_LEAF_MAP,
+                    ALL_FRUIT_CLUSTERS, LEAF_FRUIT_CLUSTER_MAP,
                     YOUNG_CROP_BLOCKS, MATURE_CROP_BLOCKS, BUSH_BLOCKS,
                     STRAWBERRY_BUSH, WHEAT_BUSH,
                     CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
@@ -61,7 +61,7 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     CUSTOM_TAPESTRY_ROOT, CUSTOM_TAPESTRY_BODY,
                     POTTERY_DISPLAY_BLOCK,
                     SALT_DEPOSIT,
-                    TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK)
+                    TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK, LANDMARK_FLAG_BLOCK)
 import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
@@ -931,7 +931,7 @@ class Player:
             return
 
         # Harvest fruit cluster from bg_block layer (leaf stays, only cluster is removed).
-        if block_id in FRUIT_CLUSTER_LEAF_MAP:
+        if block_id in LEAF_FRUIT_CLUSTER_MAP:
             fc_bid = self.world.get_bg_block(bx, by)
             if fc_bid in ALL_FRUIT_CLUSTERS:
                 hardness = BLOCKS[fc_bid]["hardness"]
@@ -2411,6 +2411,16 @@ class Player:
         for dy in range(-3, 4):
             for dx in range(-3, 4):
                 if self.world.get_bg_block(cx + dx, cy + dy) == OUTPOST_FLAG_BLOCK:
+                    return (cx + dx, cy + dy)
+        return None
+
+    def get_nearby_landmark_flag(self):
+        """Return (bx, by) of a LANDMARK_FLAG_BLOCK within 3 blocks of the player, or None."""
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        for dy in range(-3, 4):
+            for dx in range(-3, 4):
+                if self.world.get_bg_block(cx + dx, cy + dy) == LANDMARK_FLAG_BLOCK:
                     return (cx + dx, cy + dy)
         return None
 

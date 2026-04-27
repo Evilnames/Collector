@@ -1021,6 +1021,14 @@ def init_towns(world) -> None:
         meta   = _city_slot_metadata(slot_x)
         biome  = world.biodome_at(center_bx)
         size   = city_sizes[town_id] if town_id < len(city_sizes) else "medium"
+        # Use actual built half_w from city_zones; CITY_CONFIGS["half_w"] is too small
+        # for the new dynamic layout and causes palaces/landmarks to land inside the city.
+        city_zones_list = getattr(world, 'city_zones', [])
+        if town_id < len(city_zones_list):
+            _lo, _hi = city_zones_list[town_id]
+            _actual_half_w = (_hi - _lo) // 2
+        else:
+            _actual_half_w = None
         base_name = _make_town_name(rng, _biome_group_for(biome))
         
         # Add size-based descriptors to the name
@@ -1038,7 +1046,7 @@ def init_towns(world) -> None:
             name = base_name
             
         used_names.add(name)
-        half_w = CITY_CONFIGS[size]["half_w"]
+        half_w = _actual_half_w if _actual_half_w is not None else CITY_CONFIGS[size]["half_w"]
 
         TOWNS[town_id] = Town(
             town_id       = town_id,
@@ -1110,7 +1118,15 @@ def register_new_town(world, city_bx: int, city_size: str,
     """Register a dynamically-generated (chunk-streamed) city as a full Town."""
     from cities import CITY_CONFIGS
     town_id = max(TOWNS.keys()) + 1 if TOWNS else 0
-    half_w  = CITY_CONFIGS[city_size]["half_w"]
+    # Use actual built zone width; the last entry in city_zones is the one just built.
+    if world.city_zones:
+        _lo, _hi = world.city_zones[-1]
+        if abs(city_bx - (_lo + _hi) // 2) < 10:
+            half_w = (_hi - _lo) // 2
+        else:
+            half_w = CITY_CONFIGS[city_size]["half_w"]
+    else:
+        half_w = CITY_CONFIGS[city_size]["half_w"]
     biome   = world.biodome_at(city_bx)
     rng     = random.Random(world.seed + city_bx * 7919)
     name    = _make_town_name(rng, _biome_group_for(biome))
@@ -1196,7 +1212,7 @@ def _restore_world_city_metadata(world) -> None:
     for town in sorted(TOWNS.values(), key=lambda t: t.town_id):
         bx     = town.center_bx
         size   = town.size
-        half_w = CITY_CONFIGS.get(size, CITY_CONFIGS["medium"])["half_w"]
+        half_w = town.half_w  # already correct for new worlds; old saves use config value
         slot_x = round((bx - half_spacing) / CITY_SPACING) * CITY_SPACING + half_spacing
         world.town_centers.append(bx)
         world.city_sizes.append(size)
@@ -1302,6 +1318,7 @@ def _place_capital_structures(town: Town, world) -> None:
     palace_left = town.center_bx + town.half_w + 4
     sy = world.surface_y_at(palace_left)
 
+    _entities_before = len(world.entities)
     ptype = _palace_type_for(palace_left, world.seed)
 
     if ptype == "mediterranean":
@@ -1365,6 +1382,17 @@ def _place_capital_structures(town: Town, world) -> None:
                   leader_name = town.leader_name or "Leader",
                   leader_color= region.leader_color,
                   palace_type = ptype)
+    )
+
+    import npc_identity
+    palace_npcs = world.entities[_entities_before:]
+    for idx, npc in enumerate(palace_npcs):
+        if hasattr(npc, "_setup_identity"):
+            npc._setup_identity(town.town_id, idx, world.seed)
+    npc_identity.assign_families(
+        [n for n in palace_npcs if hasattr(n, "family_id")],
+        town.town_id,
+        world.seed,
     )
 
     # Capital landmark (Vector D) — placed on the opposite side of town from

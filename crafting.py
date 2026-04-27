@@ -915,6 +915,8 @@ ARTISAN_RECIPES = [
     {"name": "Rapier Grip",    "ingredients": {"lumber": 1},                               "output_id": "rapier_grip",    "output_count": 1},
     {"name": "Trident Shaft",  "ingredients": {"lumber": 3},                               "output_id": "trident_shaft",  "output_count": 1},
     {"name": "Scythe Snath",   "ingredients": {"lumber": 4},                               "output_id": "scythe_snath",   "output_count": 1},
+    {"name": "Ice Shard", "ingredients": {"stone_chip": 2}, "output_id": "ice_shard", "output_count": 2},
+    {"name": "Frozen Bog", "ingredients": {"stone_chip": 2}, "output_id": "frozen_bog", "output_count": 2},
 ]
 
 # ---------------------------------------------------------------------------

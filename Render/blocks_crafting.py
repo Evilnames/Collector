@@ -537,6 +537,28 @@ def build_crafting_surfs():
     pygame.draw.rect(s, dark, s.get_rect(), 1)
     surfs[bid] = s
 
+    bid = CHICKEN_COOP_BLOCK
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    base = BLOCKS[bid]["color"]
+    dark = _darken(base, 30)
+    s.fill(dark)
+    # Small barn walls
+    pygame.draw.rect(s, base, (2, 10, 28, 20))
+    # Roof triangle
+    pygame.draw.polygon(s, _darken(base, 15), [(0, 10), (16, 2), (32, 10)])
+    # Roof ridge stripe
+    pygame.draw.line(s, _darken(base, 25), (4, 8), (28, 8), 1)
+    # Nesting box opening (dark arch)
+    pygame.draw.rect(s, dark, (8, 18, 7, 12))
+    pygame.draw.ellipse(s, dark, (8, 15, 7, 6))
+    # Second nesting box
+    pygame.draw.rect(s, dark, (17, 18, 7, 12))
+    pygame.draw.ellipse(s, dark, (17, 15, 7, 6))
+    # Egg hint (small oval) in left box
+    pygame.draw.ellipse(s, (245, 235, 195), (10, 22, 4, 5))
+    pygame.draw.rect(s, dark, s.get_rect(), 1)
+    surfs[bid] = s
+
     bid = HORSE_TROUGH_BLOCK
     # if bid == HORSE_TROUGH_BLOCK
     s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))

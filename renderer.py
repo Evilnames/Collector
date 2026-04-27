@@ -336,7 +336,8 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER, GRASS, DIRT, SA
                     WATER_CRESS_BLOCK, POND_WEED_BLOCK,
                     WATER_HYACINTH_BLOCK, DUCKWEED_BLOCK, LOTUS_BLOCK, FROGBIT_BLOCK,
                     ARROWHEAD_BLOCK, HORSETAIL_BLOCK, MARSH_MARIGOLD_BLOCK,
-                    WATER_IRIS_BLOCK, SEDGE_BLOCK, PICKERELWEED_BLOCK)
+                    WATER_IRIS_BLOCK, SEDGE_BLOCK, PICKERELWEED_BLOCK,
+                    ICE_SHARD, FROZEN_BOG)
 import math
 import soil as _soil
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE
@@ -866,6 +867,10 @@ class Renderer:
     def draw_farm_sense(self, player, world):
         from Render.hud import draw_farm_sense as _draw_farm_sense
         _draw_farm_sense(self.screen, self.cam_x, self.cam_y, player, world, self._npc_font)
+
+    def draw_logic_help(self, player, world):
+        from Render.hud import draw_logic_help as _draw_logic_help
+        _draw_logic_help(self.screen, self.cam_x, self.cam_y, player, world, self._npc_font)
 
     # ------------------------------------------------------------------
     # Water submersion overlay

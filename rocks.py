@@ -1387,6 +1387,25 @@ ROCK_TYPES = {
         "color_pool": [((230, 215, 130), (255, 240, 170)), ((215, 200, 115), (240, 225, 155))],
         "patterns": ["solid", "spotted", "veined"],
     },
+    # --- Arctic ---
+    "ice_crystal": {
+        "min_depth": 5,
+        "rarity_pool": ["rare", "rare", "uncommon", "epic"],
+        "color_pool": [((185, 225, 248), (215, 240, 255)), ((172, 210, 238), (202, 228, 250))],
+        "patterns": ["solid", "speckled", "solid"],
+    },
+    "permafrost_amber": {
+        "min_depth": 80,
+        "rarity_pool": ["rare", "epic", "epic", "legendary"],
+        "color_pool": [((195, 168, 98), (228, 205, 138)), ((182, 155, 85), (215, 192, 125))],
+        "patterns": ["solid", "speckled", "solid"],
+    },
+    "cryolite": {
+        "min_depth": 120,
+        "rarity_pool": ["epic", "epic", "rare", "legendary"],
+        "color_pool": [((235, 242, 255), (210, 225, 248)), ((225, 232, 248), (198, 215, 238))],
+        "patterns": ["solid", "solid", "speckled"],
+    },
 }
 
 ROCK_BIOME_AFFINITY = {
@@ -1404,6 +1423,8 @@ ROCK_BIOME_AFFINITY = {
     "void":        {"voidite", "void_crystal", "shadow_crystal", "serendibite", "void_amber",
                     "azurite", "iolite", "moldavite", "painite", "taaffeite", "musgravite",
                     "neptunite"},
+    "tundra":      {"ice_crystal", "cryolite", "permafrost_amber", "quartzite",
+                    "quartz", "fluorite", "calcite", "celestite", "moonstone", "topaz"},
 }
 
 ROCK_TYPE_ORDER = sorted(ROCK_TYPES.keys(), key=lambda t: ROCK_TYPES[t]["min_depth"])
@@ -1634,6 +1655,9 @@ ROCK_TYPE_DESCRIPTIONS = {
     "hessite":         "A lead-grey silver telluride from volcanic hydrothermal veins at extreme depth.",
     "krennerite":      "A gold-white gold silver telluride, twinned in complex herringbone forms.",
     "electrum":        "A natural alloy of gold and silver found in the deepest hydrothermal veins.",
+    "ice_crystal":     "A pale blue water-ice crystal that forms in permafrost cracks, preserved by perpetual cold.",
+    "permafrost_amber": "Ancient amber trapped for millennia in frozen ground, its warm tones contrasting the ice around it.",
+    "cryolite":        "A near-colourless sodium aluminium fluoride found only in the coldest deep rock — once mistaken for ice.",
 }
 
 RARITY_WEIGHTS = {

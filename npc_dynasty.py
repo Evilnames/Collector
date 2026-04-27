@@ -14,6 +14,11 @@ _FOUNDER_EPITHETS = [
     "Twice-Born", "the Schemer", "the Patient", "the Unyielding", "Stone-Face",
     "the Debtor", "the Fortunate", "the Stubborn", "Far-Sighted", "the Crooked",
     "the Unbowed", "the Quiet", "Bright-Eye", "the Steady", "the Bitter",
+    "the Lame", "the Creditor", "the Fox", "Long-Memory", "the Red",
+    "the Grey", "the Widow-Maker", "Three-Times", "the Borrower", "the Knife",
+    "the Gracious", "Soft-Spoken", "the Ledger", "Empty-Purse", "the Raven",
+    "the Unlucky", "Four-Fingers", "the Architect", "the Reluctant", "the Twice-Married",
+    "the Pale", "the Laughing", "the Slow", "Bone-Hand", "the Necessary",
 ]
 
 # {town} = first member town name; {themselves} = himself/herself
@@ -32,6 +37,16 @@ _FOUNDER_ACTS = [
     "purchased a failing minor title from an indebted predecessor and rebuilt it into something worth holding",
     "served as an intermediary in a border dispute and walked away with a seat at the table that was never explicitly offered",
     "leveraged a single act of well-timed generosity during a famine into a claim that the town recognised before it thought to question it",
+    "financed the construction of {town}'s market hall and quietly wrote the charter in a way that anchored the family's authority for generations",
+    "arrived as a refugee from a collapsed house elsewhere, rebuilt {themselves} methodically, and outlasted every person who had initially dismissed them",
+    "won a disputed inheritance case that had divided the region for a decade, then used the resulting goodwill faster than anyone could think to object",
+    "assembled a coalition of minor landholders against the previous authority, led the coalition to victory, and then declined to dissolve it",
+    "gained the seat by offering to absorb the old ruling family's considerable debts in exchange for a formal transfer of title — a transaction widely described as generous",
+    "was appointed as a temporary steward during a succession crisis and converted that appointment, by increments, into something permanent",
+    "controlled the region's water rights at a critical moment of drought and exchanged them for a formal seat rather than coin",
+    "built their claim on a single powerful relationship with an outside authority, sustained that relationship for thirty years, and never disclosed its terms",
+    "accumulated enough small obligations across the region's merchant class that refusing their claim became more expensive than granting it",
+    "came to power after the previous ruling family died in a fever outbreak, having been the only figure in {town} who had prepared for exactly that contingency",
 ]
 
 _FOUNDER_LEGACIES = [
@@ -47,6 +62,16 @@ _FOUNDER_LEGACIES = [
     "is spoken of as a founder in public and as something more complicated after the second cup at any serious gathering",
     "died with everything in order and everyone wondering what they had missed",
     "left instructions so detailed and so contested that the family has been arguing about them ever since",
+    "died in disputed circumstances at a moment that was convenient for at least two parties; no formal inquiry was ever convened",
+    "left the house with an excellent reputation and almost no actual money, which later generations have had to quietly reconcile",
+    "is buried with more ceremony than most founders receive, which the current generation regards as somewhat ironic given what they know",
+    "achieved a great deal and acknowledged none of it in writing, which has made the family's claims both unassailable and impossible to fully substantiate",
+    "left a will that named someone no one expected, and that surprise has shaped the family's internal politics ever since",
+    "is remembered as a visionary by those who benefited from the vision and as a tyrant by those who were in its way",
+    "died leaving the succession clear, the finances sound, and one secret that the house has been protecting with considerable effort ever since",
+    "established a tradition of one founding act and one founding concealment; the act is celebrated, the concealment is managed",
+    "is credited publicly with building the region's prosperity and privately with having built it on ground that several original residents were removed from",
+    "left the family a name that is genuinely respected, which is both an asset and a responsibility that some heirs have found easier to spend than maintain",
 ]
 
 _GEN2_ACTS = [
@@ -62,6 +87,18 @@ _GEN2_ACTS = [
     "died young, officially of illness, at a time that was convenient for more than one party and has never been fully explained",
     "spent their tenure repairing the relationships the founder had used up, and left the house with better allies and less momentum",
     "made a series of decisions that individually appeared reasonable and collectively produced a situation their successors are still managing",
+    "significantly expanded the family's landholdings through a sequence of purchases that were individually unremarkable and collectively alarming",
+    "produced four children, named three of them heirs at different points, and died before clarifying which designation was final",
+    "was widely regarded as less capable than the founder, spent their tenure proving otherwise in ways the public never fully credited, and died bitter",
+    "reformed the house's governance in ways that increased accountability and reduced flexibility, which the current generation cannot decide whether to resent or revere",
+    "pursued a feud with a neighbouring family for decades and prevailed, leaving the house both victorious and considerably smaller than it had been",
+    "developed a drinking problem that everyone knew about and no one in the family has discussed in thirty years",
+    "sold off a significant asset to resolve a crisis and spent the remainder of their tenure insisting it had not been necessary",
+    "allied the house with a faction that subsequently lost its position; extracting the family from those commitments occupied the following generation entirely",
+    "built a personal relationship with a distant authority that benefited the house for two generations and collapsed spectacularly in the third",
+    "governed during the most peaceful and prosperous period the house has known, and is the least-discussed member of the lineage as a result",
+    "was deposed briefly, restored after an arrangement that has never been disclosed, and ruled for another twenty years without acknowledging any of it",
+    "left the house with a grudge against a specific family that has outlasted both its cause and its original principals, and is now simply inherited",
 ]
 
 _CURRENT_ERA_SITUATIONS = [
@@ -72,6 +109,21 @@ _CURRENT_ERA_SITUATIONS = [
     "The house is owed more than it owes, which sounds advantageous until you try to collect.",
     "The family has outlasted several rivals and is now confronting the possibility that longevity may be masking a longer decline.",
     "A choice is approaching that the current generation has been circling for years; how it is made will define the house for the next two.",
+    "The house is in a period of consolidation that some members read as strength and others read as contraction.",
+    "An external pressure is being managed quietly, and the amount of effort that management requires has begun to show.",
+    "The family occupies a position of formal authority and practical uncertainty simultaneously, which is more common than it appears in the histories.",
+    "The house is more financially exposed than its public standing suggests; closing that gap has become the primary private concern.",
+    "The current head has been in place long enough to outlive the context that shaped their early decisions, and has not fully adjusted.",
+    "The family is operating on assumptions inherited from the previous generation that may no longer be accurate.",
+    "The house is at its highest point of formal influence and lowest point of internal agreement in living memory.",
+    "An alliance that sustained the family for two generations has been quietly fraying; no one has acknowledged this publicly.",
+    "The house has been governing effectively but has done so by deferring several structural problems that are now due.",
+    "The region is changing around the family faster than the family is changing to meet it.",
+    "The current generation is the most capable the house has fielded in decades and is also the most divided.",
+    "The house's public reputation significantly exceeds what an honest internal accounting would support.",
+    "The family is in a position where maintaining appearances has become nearly as expensive as the actual governance.",
+    "Everyone watching the house from outside believes it is stable; everyone watching it from inside is less certain.",
+    "The house controls the seat, manages the territory adequately, and is quietly waiting for something it cannot name to resolve itself.",
 ]
 
 # Per-ruler personal ambition (seeded per npc_uid, not per dynasty)
@@ -90,6 +142,18 @@ _PERSONAL_AMBITIONS = [
     "is quietly preparing to name an unexpected successor, and takes some satisfaction in watching the wrong people position themselves",
     "is trying to renegotiate the terms of an old agreement that the house has never publicly acknowledged making",
     "has decided that one specific rival must be permanently removed from contention and is being methodical about how",
+    "intends to reform the house's finances before anyone outside the family discovers how compromised they are",
+    "is working to identify which of the family's current allies is the informant they have long suspected exists",
+    "has a specific vision for the region that the family does not share and has been implementing it incrementally without announcement",
+    "is attempting to locate a document that, if destroyed, would resolve a problem the house has carried for forty years",
+    "wants to arrange a marriage alliance that would effectively merge two houses; has not yet decided whether to ask permission",
+    "is investigating the circumstances of a predecessor's death, not from grief but because the answer changes the balance of several current relationships",
+    "is building a case for a formal claim that the family abandoned two generations ago, slowly and without informing anyone",
+    "has concluded that one of the heirs apparent is unsuitable and is arranging circumstances accordingly rather than stating it",
+    "is negotiating, privately, with the rival house — not for peace but for a partition arrangement that would benefit both families at the region's expense",
+    "wants, above everything else, to be remembered well, and is making decisions based on how they will read in fifty years rather than how they function now",
+    "has accepted that the house is in decline and is focused entirely on ensuring the decline is managed rather than reversed",
+    "is trying to engineer a confrontation with the rival family that ends permanently, and will not specify what permanently means",
 ]
 
 # {rival_family}, {own_family}, {town} all available; not all used in every entry
@@ -107,6 +171,16 @@ _RIVALRY_CAUSES = [
     "dates to a civic appointment that one family believes was taken from them through the strategic misrepresentation of a third party",
     "started when one family provided testimony in a property dispute that the other family regarded as technically accurate and practically dishonest",
     "can be traced to a single evening of negotiation three generations ago at which something was said that was not written down but was not forgotten",
+    "began when the {own_family} publicly supported a claimant the {rival_family} opposed; the claimant lost, and the support was not forgotten",
+    "traces to a trade consortium that both families attempted to control simultaneously; the resulting dispute was never formally resolved, merely suspended",
+    "originated when a member of the {rival_family} was passed over for an appointment that went to a member of the {own_family}, in circumstances that remain disputed",
+    "stems from the {own_family} blocking a territorial expansion the {rival_family} had spent a decade preparing; the {rival_family} did not regard this as a business matter",
+    "began when a trusted employee of one house was found to have been simultaneously employed by the other, and both families claim to have been the deceived party",
+    "originated in competing claims to the same water source that both families' founders believed they had secured exclusively",
+    "started when the {rival_family} refused to support the {own_family} during a period of serious difficulty, which the {own_family} have described as a betrayal ever since",
+    "traces to a hunting incident two generations ago that one family describes as an accident and the other does not",
+    "began when one family's merchant ships undercut the other's in the region's main market by a margin that the affected family regarded as impossible without inside information",
+    "originated in a charitable endowment that both families claim credit for establishing and each believes the other has been drawing benefit from without acknowledgement",
 ]
 
 _DARK_SECRETS = [
@@ -120,6 +194,16 @@ _DARK_SECRETS = [
     "a systematic irregularity in the management of civic funds has been concealed beneath careful accounting for two generations; the accumulated sum is not trivial",
     "a member of the family provided material assistance to the rival house during a period of active conflict; this was never formally acknowledged or sanctioned",
     "the asset the house's reputation rests upon most heavily was acquired through a transaction the family would not voluntarily describe in detail",
+    "the house's founding charter contains a clause that was deliberately omitted from all subsequent copies distributed to other parties",
+    "a confession made by the second-generation head — regarding the founder's methods — was sealed and has been in the possession of a single trusted family for thirty years",
+    "an entire branch of the family was formally disinherited two generations ago; the grounds were stated as misconduct, but the actual reason was that they knew something",
+    "the family's most important current ally was, two generations ago, directly harmed by the house's actions; the current relationship is built on the assumption that this is forgotten",
+    "a significant portion of the family's early land acquisition was funded by an outside party whose identity was never disclosed and whose share of the arrangement has never been honoured",
+    "the current head's predecessor did not die of the illness recorded; the family has maintained a consistent account for decades without any member publicly deviating from it",
+    "a child born to the founding line was placed with another family under a different name; that family still lives in the region and does not know what they are carrying",
+    "the house's relationship with the regional faith is more transactional than it appears; a series of favours exchanged over two generations has never been acknowledged by either party",
+    "a private arrangement with the rival house exists — made during a period of mutual crisis — that would, if disclosed, invalidate the entire public framing of their current relationship",
+    "the house's most celebrated civic act was, in fact, remediation for a harm they caused and have never acknowledged; the story that replaced it is the one that has survived",
 ]
 
 

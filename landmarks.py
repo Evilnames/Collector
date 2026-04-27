@@ -198,8 +198,11 @@ def place_landmark(world, town, region) -> int:
     world.set_block(left_x + width - 1, sy - 2, BRAZIER if region.wealth == "rich" else TORCH)
 
     # Decorative noise so adjacent capitals don't look identical.
-    for _ in range(rng.randint(0, 2)):
-        bx = rng.randint(left_x + 1, left_x + width - 2)
+    # Exclude flag_x so the bg landmark flag is never covered.
+    deco_candidates = [bx for bx in range(left_x + 1, left_x + width - 1)
+                       if bx != flag_x and bx != flag_bx]
+    rng.shuffle(deco_candidates)
+    for bx in deco_candidates[:rng.randint(0, 2)]:
         world.set_block(bx, sy - 2, OLIVE_BRANCH)
 
     return flag_x
