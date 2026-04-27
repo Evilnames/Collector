@@ -788,31 +788,101 @@ _GUARD_SHIELD_COLORS = [(140,  35,  35), (40,  60, 130), (35, 110,  60),
                        (180, 145,  35), (45,  45,  55), (140, 100,  35)]
 _GUARD_BOOTS    = [(60, 45, 30), (80, 55, 30), (40, 35, 30), (95, 75, 50)]
 
+# Chinese / east_asian guard pools
+_CHINESE_KIT_POOL  = (["spearman"] * 3 + ["ji_bearer"] * 4
+                      + ["guandao_bearer"] * 3 + ["dao_swordsman"] * 4
+                      + ["jian_swordsman"] * 2 + ["crossbowman"] * 3
+                      + ["archer"] * 3 + ["watchman"] * 2
+                      + ["captain"] * 1)
+_CHINESE_HELMETS   = ["zhou_helm", "zhou_helm", "zan_helm", "zan_helm",
+                      "dou_mou", "dou_mou", "mianpao", "pot", "coif"]
+_CHINESE_EMBLEMS   = ["none", "none", "none", "circle", "star", "chevron"]
+_CHINESE_FINISHES  = ["steel", "steel", "bronze", "blackened", "burnished"]
+_CHINESE_TABARDS   = ["solid", "solid", "horizontal_band", "vertical_split"]
+_CHINESE_SKINS     = [(245, 215, 170), (235, 205, 160), (220, 188, 145),
+                      (200, 170, 130), (180, 150, 110)]
+_CHINESE_SHIELDS   = [(160, 30, 30), (180, 150, 40), (30, 30, 40),
+                      (140, 30, 30), (50, 80, 50)]
+_CHINESE_BOOTS     = [(35, 30, 35), (20, 20, 25), (50, 40, 35), (30, 35, 45)]
+
+# Japanese / samurai guard pools
+_JAPANESE_KIT_POOL = (["katana_samurai"] * 5 + ["naginata_bearer"] * 4
+                      + ["yumi_archer"] * 3 + ["spearman"] * 3
+                      + ["watchman"] * 2 + ["captain"] * 1)
+_JAPANESE_HELMETS  = ["kabuto", "kabuto", "kabuto", "jingasa", "jingasa", "zunari"]
+_JAPANESE_EMBLEMS  = ["none", "none", "none", "circle", "chevron", "star"]
+_JAPANESE_FINISHES = ["blackened", "blackened", "steel", "burnished", "bronze"]
+_JAPANESE_TABARDS  = ["solid", "solid", "solid", "horizontal_band"]
+_JAPANESE_SKINS    = [(245, 215, 170), (235, 205, 160), (220, 188, 145), (200, 170, 130)]
+_JAPANESE_SHIELDS  = [(160, 30, 30), (175, 145, 40), (25, 25, 30), (120, 25, 25)]
+_JAPANESE_BOOTS    = [(20, 18, 22), (30, 25, 28), (15, 15, 20), (40, 32, 35)]
+
 
 class GuardNPC(AmbientNPC):
     def __init__(self, x, y, world, patrol_half=40, biodome="temperate", kit=None):
         super().__init__(x, y, world, "npc_guard", patrol_half, biodome)
         self._walk_speed = 20.0
         self._pause_max  = 2.0
-        self.kit = kit or random.choice(_GUARD_KIT_POOL)
-        if self.kit == "captain":
-            self.helmet, self.cape = "plumed", "trim"
-        elif self.kit in ("crossbowman", "archer", "watchman"):
-            self.helmet = random.choice(["kettle", "coif", "pot"])
-            self.cape   = "none"
+        if biodome == "east_asian":
+            self.kit = kit or random.choice(_CHINESE_KIT_POOL)
+            if self.kit == "captain":
+                self.helmet, self.cape = "zhou_helm", "trim"
+            elif self.kit in ("crossbowman", "archer", "watchman"):
+                self.helmet = random.choice(["zhou_helm", "zan_helm", "pot"])
+                self.cape   = "none"
+            else:
+                self.helmet = random.choice(_CHINESE_HELMETS)
+                self.cape   = "none"
+            self.beard          = random.choice(["none", "none", "none", "mustache"])
+            self.emblem         = random.choice(_CHINESE_EMBLEMS)
+            self.tint           = random.randint(-12, 18)
+            self.weapon_variant = random.randint(0, 2)
+            self.helmet_finish  = random.choice(_CHINESE_FINISHES)
+            self.tabard         = random.choice(_CHINESE_TABARDS)
+            self.skin_tone      = random.choice(_CHINESE_SKINS)
+            self.shield_color   = random.choice(_CHINESE_SHIELDS)
+            self.boots          = random.choice(_CHINESE_BOOTS)
+            self.sash           = random.random() < 0.35
+        elif biodome == "japanese":
+            self.kit = kit or random.choice(_JAPANESE_KIT_POOL)
+            if self.kit == "captain":
+                self.helmet, self.cape = "kabuto", "trim"
+            elif self.kit in ("yumi_archer", "watchman"):
+                self.helmet = random.choice(["jingasa", "zunari", "kabuto"])
+                self.cape   = "none"
+            else:
+                self.helmet = random.choice(_JAPANESE_HELMETS)
+                self.cape   = "none"
+            self.beard          = "none"
+            self.emblem         = random.choice(_JAPANESE_EMBLEMS)
+            self.tint           = random.randint(-10, 15)
+            self.weapon_variant = random.randint(0, 2)
+            self.helmet_finish  = random.choice(_JAPANESE_FINISHES)
+            self.tabard         = random.choice(_JAPANESE_TABARDS)
+            self.skin_tone      = random.choice(_JAPANESE_SKINS)
+            self.shield_color   = random.choice(_JAPANESE_SHIELDS)
+            self.boots          = random.choice(_JAPANESE_BOOTS)
+            self.sash           = random.random() < 0.20
         else:
-            self.helmet = random.choice(_GUARD_HELMETS)
-            self.cape   = random.choice(_GUARD_CAPES)
-        self.beard          = random.choice(_GUARD_BEARDS)
-        self.emblem         = random.choice(_GUARD_EMBLEMS)
-        self.tint           = random.randint(-18, 22)
-        self.weapon_variant = random.randint(0, 2)
-        self.helmet_finish  = random.choice(_GUARD_FINISHES)
-        self.tabard         = random.choice(_GUARD_TABARDS)
-        self.skin_tone      = random.choice(_GUARD_SKINS)
-        self.shield_color   = random.choice(_GUARD_SHIELD_COLORS)
-        self.boots          = random.choice(_GUARD_BOOTS)
-        self.sash           = random.random() < 0.15
+            self.kit = kit or random.choice(_GUARD_KIT_POOL)
+            if self.kit == "captain":
+                self.helmet, self.cape = "plumed", "trim"
+            elif self.kit in ("crossbowman", "archer", "watchman"):
+                self.helmet = random.choice(["kettle", "coif", "pot"])
+                self.cape   = "none"
+            else:
+                self.helmet = random.choice(_GUARD_HELMETS)
+                self.cape   = random.choice(_GUARD_CAPES)
+            self.beard          = random.choice(_GUARD_BEARDS)
+            self.emblem         = random.choice(_GUARD_EMBLEMS)
+            self.tint           = random.randint(-18, 22)
+            self.weapon_variant = random.randint(0, 2)
+            self.helmet_finish  = random.choice(_GUARD_FINISHES)
+            self.tabard         = random.choice(_GUARD_TABARDS)
+            self.skin_tone      = random.choice(_GUARD_SKINS)
+            self.shield_color   = random.choice(_GUARD_SHIELD_COLORS)
+            self.boots          = random.choice(_GUARD_BOOTS)
+            self.sash           = random.random() < 0.15
 
 
 class ElderNPC(AmbientNPC):
@@ -2938,6 +3008,12 @@ _CLOTHING_PALETTES = {
         "trim": (210, 170, 50), "hat": (25, 20, 25),
         "armor": (40, 35, 50), "plate": (180, 145, 55),
     },
+    "japanese": {
+        # Black lacquer-and-iron o-yoroi with crimson lacing, warm-fair skin
+        "body": (25, 22, 28), "leg": (35, 28, 32), "skin": (245, 205, 165),
+        "trim": (175, 30, 30), "hat": (20, 18, 22),
+        "armor": (30, 28, 35), "plate": (195, 165, 55),
+    },
     "south_asian": {
         # Saffron and coral with warm brown skin
         "body": (215, 115, 35), "leg": (225, 215, 185), "skin": (180, 135, 85),
@@ -2981,6 +3057,7 @@ _CLOTHING_STYLE_BY_BIODOME = {
     "rolling_hills": "mediterranean", "steep_hills": "desert",
     "mediterranean": "mediterranean",
     "east_asian": "east_asian",
+    "japanese":   "japanese",
     "south_asian": "south_asian",
     "jungle": "jungle", "tropical": "jungle",
     "wetland": "boreal", "swamp": "boreal",
@@ -7447,8 +7524,8 @@ def _place_japanese_palace(world, left_x: int, sy: int):
     x = left_x
 
     # ── guards ───────────────────────────────────────────────────────────────
-    _palace_npc_at(world, left_x + 1,           sy, GuardNPC, biodome="east_asian")
-    _palace_npc_at(world, left_x + total_w - 2, sy, GuardNPC, biodome="east_asian")
+    _palace_npc_at(world, left_x + 1,           sy, GuardNPC, biodome="japanese")
+    _palace_npc_at(world, left_x + total_w - 2, sy, GuardNPC, biodome="japanese")
 
     # ── zen garden (left) ────────────────────────────────────────────────────
     _zen_garden(x, W_ZEN)
@@ -7464,7 +7541,7 @@ def _place_japanese_palace(world, left_x: int, sy: int):
                        biodome="east_asian")
     else:
         _castle_bg(world, x + W_YAG // 2, sy - 1, STONE_LANTERN)
-        _palace_npc_at(world, x + W_YAG // 2, sy, GuardNPC, biodome="east_asian")
+        _palace_npc_at(world, x + W_YAG // 2, sy, GuardNPC, biodome="japanese")
     x += W_YAG
 
     # ── left shoin hall ──────────────────────────────────────────────────────

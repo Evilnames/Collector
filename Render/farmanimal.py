@@ -602,3 +602,56 @@ def draw_chicken(screen, sx, sy, chicken):
     if chicken.health < 3:
         pygame.draw.rect(screen, (40, 40, 40), (sx, sy - 13, W, 3))
         pygame.draw.rect(screen, (220, 50, 50), (sx, sy - 13, int(W * chicken.health / 3), 3))
+
+
+def draw_capybara(screen, sx, sy, cap):
+    W, H = cap.W, cap.H
+    shift = cap.traits.get("color_shift", (0, 0, 0))
+    s     = cap.traits.get("size", 1.0)
+
+    body_color = _tinted((118, 88, 55), shift)
+    leg_color  = _tinted((90, 65, 38), shift)
+    head_color = _tinted((105, 78, 48), shift)
+    nose_color = _tinted((80, 55, 32), shift)
+    ear_color  = _tinted((148, 108, 75), shift)
+
+    body_h = H - int(5 * s)
+    leg_h  = int(5 * s)
+    leg_y  = sy + body_h
+
+    # Legs — short stubby pairs
+    for lx_off in [3, 9, 21, 27]:
+        pygame.draw.rect(screen, leg_color,
+                         (sx + int(lx_off * s), leg_y, max(1, int(3 * s)), leg_h))
+
+    # Body — barrel-shaped, slightly rounded via two rects
+    pygame.draw.rect(screen, body_color, (sx, sy, W, body_h))
+    belly = _tinted((138, 105, 68), shift)
+    pygame.draw.rect(screen, belly,
+                     (sx + int(4 * s), sy + int(4 * s), W - int(8 * s), body_h - int(6 * s)))
+
+    # Head — blunt rectangle (distinctive capybara feature)
+    head_w = int(13 * s)
+    head_h = int(11 * s)
+    hx = (sx + W - int(3 * s)) if cap.facing == 1 else (sx - head_w + int(3 * s))
+    hy = sy + int(1 * s)
+    pygame.draw.rect(screen, head_color, (hx, hy, head_w, head_h))
+
+    # Nose/muzzle — darker block at snout end
+    if cap.facing == 1:
+        pygame.draw.rect(screen, nose_color,
+                         (hx + head_w - int(4 * s), hy + int(3 * s), int(4 * s), int(5 * s)))
+    else:
+        pygame.draw.rect(screen, nose_color,
+                         (hx, hy + int(3 * s), int(4 * s), int(5 * s)))
+
+    # Ears — small round nubs on top of head
+    ear_r = max(1, int(2 * s))
+    ear_y = hy - ear_r
+    pygame.draw.circle(screen, ear_color, (hx + int(3 * s), ear_y), ear_r)
+    pygame.draw.circle(screen, ear_color, (hx + int(8 * s), ear_y), ear_r)
+
+    # Eye — tiny dark dot
+    eye_color = (25, 18, 10)
+    eye_x = (hx + int(7 * s)) if cap.facing == 1 else (hx + int(5 * s))
+    pygame.draw.rect(screen, eye_color, (eye_x, hy + int(2 * s), max(1, int(2 * s)), max(1, int(2 * s))))

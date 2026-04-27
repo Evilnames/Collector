@@ -430,5 +430,6 @@ def draw_entities(renderer, entities):
         elif aid == "crocodile":      renderer._draw_crocodile(sx, sy, e)
         elif aid == "goose":          renderer._draw_goose(sx, sy, e)
         elif aid == "hare":           renderer._draw_hare(sx, sy, e)
+        elif aid == "capybara":       renderer._draw_capybara(sx, sy, e)
         elif aid == "npc_outpost_keeper": renderer._draw_npc_outpost_keeper(sx, sy, e)
         elif aid == "npc_soldier":    renderer._draw_npc_soldier(sx, sy, e)

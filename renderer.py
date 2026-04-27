@@ -840,6 +840,10 @@ class Renderer:
         from Render.largeAnimal import draw_tiger
         draw_tiger(self.screen, sx, sy, cat)
 
+    def _draw_capybara(self, sx, sy, cap):
+        from Render.farmanimal import draw_capybara
+        draw_capybara(self.screen, sx, sy, cap)
+
     # ------------------------------------------------------------------
     # Mining highlight
     # ------------------------------------------------------------------

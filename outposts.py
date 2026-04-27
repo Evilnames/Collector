@@ -1021,7 +1021,9 @@ def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
     OUTPOSTS[outpost_id] = op
 
     from outpost_npcs import OutpostKeeperNPC, MilitarySoldierNPC, _resolve_clothing
-    world.entities.append(OutpostKeeperNPC(npc_px, npc_py, world, outpost_id, otype))
+    keeper = OutpostKeeperNPC(npc_px, npc_py, world, outpost_id, otype)
+    keeper._setup_identity(outpost_id + 50000, 0, getattr(world, "seed", 0))
+    world.entities.append(keeper)
 
     if otype in _MILITARY_OUTPOST_TYPES:
         clothing = _resolve_clothing(cfg["clothing_key"])
@@ -1153,9 +1155,9 @@ def init_outposts(world) -> None:
         npc_bx = op.center_bx - hw + 3
         npc_px = npc_bx * BLOCK_SIZE
         npc_py = (sy - 2) * BLOCK_SIZE
-        world.entities.append(
-            OutpostKeeperNPC(npc_px, npc_py, world, op.outpost_id, otype)
-        )
+        keeper = OutpostKeeperNPC(npc_px, npc_py, world, op.outpost_id, otype)
+        keeper._setup_identity(op.outpost_id + 50000, 0, getattr(world, "seed", 0))
+        world.entities.append(keeper)
 
         if otype in _MILITARY_OUTPOST_TYPES:
             cfg      = OUTPOST_TYPES[otype]

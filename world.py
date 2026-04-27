@@ -195,6 +195,7 @@ class World:
                 self.load_chunk(cx)
             self._spawn_animals()
             self._spawn_huntable_animals()
+            self._spawn_capybaras()
         # Soil moisture tick (independent of crop growth — faster so care feels responsive)
         self._soil_timer    = 0.0
         self._soil_interval = _soil.SOIL_TICK_SECS
@@ -214,6 +215,9 @@ class World:
                 generate_outpost_for_chunk(self, self.seed, cx)
         from towns import init_towns
         init_towns(self)
+        if not preloaded:
+            import npc_identity
+            npc_identity.assign_ruling_dynasties(self, self.seed)
         from outposts import init_outposts
         init_outposts(self)
         self._spawn_birds()
@@ -2847,6 +2851,24 @@ class World:
                 continue
             x += dog_rng.randint(8, 16)
 
+    def _spawn_capybaras(self):
+        from animals import Capybara, CAPYBARA_BIOMES
+        rng = random.Random(self.seed + 38471)
+        for cx in sorted(self._chunks.keys()):
+            chunk = self._chunks[cx]
+            base_x = cx * CHUNK_W
+            x = base_x + 3
+            while x < base_x + CHUNK_W - 3:
+                lx = x - base_x
+                sy = self.surface_height(x)
+                if 0 < sy < WORLD_H and chunk[sy - 1][lx] == AIR:
+                    biodome = self.biodome_at(x)
+                    if biodome in CAPYBARA_BIOMES and rng.random() < 0.05:
+                        ax = x * BLOCK_SIZE + (BLOCK_SIZE - Capybara.ANIMAL_W) // 2
+                        ay = sy * BLOCK_SIZE - Capybara.ANIMAL_H
+                        self.entities.append(Capybara(ax, ay, self))
+                x += rng.randint(18, 40)
+
     def _spawn_huntable_animals(self):
         from animals import (Deer, Boar, Rabbit, Turkey, Wolf, Bear, Duck, Elk, Bison, Fox,
                              DEER_BIOMES, BOAR_BIOMES, RABBIT_BIOMES, TURKEY_BIOMES,
@@ -3087,6 +3109,20 @@ class World:
                         self.entities.append(cls(ax, ay, self))
                         break
             x += hunt_rng.randint(12, 28)
+
+        from animals import Capybara, CAPYBARA_BIOMES
+        cap_rng = random.Random(self.seed + 38471 + cx * 5923)
+        x = base_x + 3
+        while x < base_x + CHUNK_W - 3:
+            lx = x - base_x
+            sy = self.surface_height(x)
+            if 0 < sy < WORLD_H and chunk[sy - 1][lx] == AIR:
+                biodome = self.biodome_at(x)
+                if biodome in CAPYBARA_BIOMES and cap_rng.random() < 0.05:
+                    ax = x * BLOCK_SIZE + (BLOCK_SIZE - Capybara.ANIMAL_W) // 2
+                    ay = sy * BLOCK_SIZE - Capybara.ANIMAL_H
+                    self.entities.append(Capybara(ax, ay, self))
+            x += cap_rng.randint(18, 40)
 
     def _spawn_birds_for_chunk(self, cx: int):
         from birds import ALL_SPECIES, COMMON_SPECIES, Nest

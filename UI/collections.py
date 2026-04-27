@@ -40,6 +40,25 @@ def _draw_guard_sketch_icon(surf, sk, ox=10, oy=8):
     draw_npc_guard(surf, ox, oy, _FakeNPC())
 
 
+def _render_guard_2x(sk):
+    """Render the guard sketch at 2x scale with full padding for helmets and polearms."""
+    from Render.Guardsystem import draw_npc_guard
+
+    class _FakeNPC:
+        _bob_offset = 0
+        facing = 1
+        def __getattr__(self, name):
+            return getattr(sk, name, None)
+
+    # Body placed at (10, 42): 42px above for polearms (worst-case 34px) + plumes (24px),
+    # 30px below for body (18px) and lower weapons.
+    W, H, BX, BY = 44, 76, 10, 42
+    tmp = pygame.Surface((W, H), pygame.SRCALPHA)
+    tmp.fill((0, 0, 0, 0))
+    draw_npc_guard(tmp, BX, BY, _FakeNPC())
+    return pygame.transform.scale(tmp, (W * 2, H * 2))
+
+
 class CollectionsMixin:
 
     def _draw_collection(self, player):
@@ -708,7 +727,7 @@ class CollectionsMixin:
                 pygame.draw.rect(self.screen, (80, 130, 185), rect, 3 if selected else 2)
                 img = pygame.Surface((58, 58), pygame.SRCALPHA)
                 img.fill((0, 0, 0, 0))
-                _draw_guard_sketch_icon(img, sk, ox=19, oy=4)
+                _draw_guard_sketch_icon(img, sk, ox=19, oy=32)
                 label = sk.kit.title()
                 label_col = (150, 200, 240)
             else:  # mushroom
@@ -1179,10 +1198,10 @@ class CollectionsMixin:
             sk = player.guard_sketches[sel_key]
             pygame.draw.rect(self.screen, (14, 22, 36), (dx, dy2, dw, dh))
             pygame.draw.rect(self.screen, (80, 130, 185), (dx, dy2, dw, dh), 2)
-            icon2 = pygame.Surface((dw, 80), pygame.SRCALPHA)
-            icon2.fill((0, 0, 0, 0))
-            _draw_guard_sketch_icon(icon2, sk, ox=dw // 2 - 10, oy=10)
-            self.screen.blit(icon2, (dx, dy2 + 4))
+            guard_img = _render_guard_2x(sk)
+            gw, gh = guard_img.get_size()
+            self.screen.blit(guard_img, (dx + (dw - gw) // 2, dy2 + 4))
+            iy[0] = dy2 + 4 + gh + 6
             dlabel(sk.name, (200, 225, 255))
             dlabel(sk.kit.replace("_", " ").title(), (150, 200, 240))
             dlabel(f"Helmet: {sk.helmet.title()}", (170, 190, 210))
@@ -3593,7 +3612,7 @@ class CollectionsMixin:
 
             icon_surf = pygame.Surface((CELL, CELL), pygame.SRCALPHA)
             icon_surf.fill((0, 0, 0, 0))
-            _draw_guard_sketch_icon(icon_surf, sk, ox=CELL // 2 - 10, oy=14)
+            _draw_guard_sketch_icon(icon_surf, sk, ox=CELL // 2 - 10, oy=50)
             self.screen.blit(icon_surf, (x, y))
 
             name_s = self.small.render(self._fit_label(sk.name, CELL - 6), True, (190, 215, 245))

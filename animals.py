@@ -2075,3 +2075,42 @@ MUSK_OX_BIOMES  = {"tundra", "alpine_mountain"}
 CROC_BIOMES     = {"swamp", "wetland", "jungle", "tropical"}
 GOOSE_BIOMES    = {"wetland", "temperate", "swamp"}
 HARE_BIOMES     = {"steppe", "tundra", "arid_steppe", "wasteland"}
+
+
+class Capybara(Animal):
+    """Passive, unhuntable rodent — wanders near wetlands and rivers."""
+    ANIMAL_W = 34
+    ANIMAL_H = 18
+    PREFERRED_FOODS = ()
+    MEAT_DROP = (None, 0)
+
+    def __init__(self, x, y, world):
+        super().__init__(x, y, world, "capybara")
+        self.no_breed = True
+
+    def try_harvest(self, _player, _dt):
+        self.reset_harvest()
+        return None
+
+    def _try_harvest_resource(self, _player, _dt):
+        return None
+
+    def _breed(self, other, world):
+        pass
+
+    def update(self, dt):
+        if self.dead:
+            return
+        self._wander_timer -= dt
+        if self._wander_timer <= 0:
+            self._wander_timer = random.uniform(2.0, 10.0)
+            self._wander_dir = random.choice([-1, -1, 0, 0, 0, 0, 1, 1])
+        self.vx = self._wander_dir * ANIMAL_MOVE_SPEED * 0.75
+        if self.vx != 0:
+            self.facing = 1 if self.vx > 0 else -1
+        self.vy = min(self.vy + GRAVITY, MAX_FALL)
+        self._move_x(self.vx)
+        self._move_y(self.vy)
+
+
+CAPYBARA_BIOMES = {"wetland", "swamp", "tropical", "jungle", "river"}

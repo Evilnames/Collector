@@ -39,10 +39,15 @@ def _draw_guard_back_gear(screen, sx, sy, kit, trim, plate, facing):
         pouch_x = sx + 16 if facing == 1 else sx - 2
         pygame.draw.rect(screen, (95, 70, 40), (pouch_x, sy + 8, 6, 7))
         pygame.draw.rect(screen, (60, 45, 25), (pouch_x, sy + 8, 6, 1))
-    elif kit in ('swordsman', 'captain'):
+    elif kit in ('swordsman', 'captain', 'dao_swordsman', 'jian_swordsman'):
         scab_x = sx - 3 if facing == 1 else sx + 18
         pygame.draw.rect(screen, (75, 55, 30), (scab_x, sy + 4, 2, 14))
         pygame.draw.rect(screen, plate,        (scab_x, sy + 16, 2, 2))
+    elif kit == 'katana_samurai':
+        # Katana worn at the hip, edge-up (bushi style)
+        scab_x = sx - 4 if facing == 1 else sx + 18
+        pygame.draw.rect(screen, (30, 25, 35), (scab_x, sy + 2, 2, 16))
+        pygame.draw.rect(screen, (190, 165, 55), (scab_x, sy + 16, 2, 2))
     elif kit == 'watchman':
         lan_x = sx - 4 if facing == 1 else sx + 19
         pygame.draw.rect(screen, (90, 70, 35),    (lan_x, sy + 2, 5, 7))
@@ -124,10 +129,61 @@ def _draw_guard_helmet(screen, sx, sy, helmet, finish, armor, plate, trim, c, np
                             [(sx + 19, sy - 12),
                              (sx + 23, sy - 16),
                              (sx + 18, sy - 14)])
+    elif helmet == 'zhou_helm':
+        # Rounded bowl with flared brow guard — Han/Tang style
+        pygame.draw.rect(screen, helm,         (sx + 3, sy - 12, 14, 12))
+        pygame.draw.rect(screen, helm,         (sx + 1, sy - 4,  18, 2))
+        pygame.draw.rect(screen, (20, 20, 30), (sx + 4, sy - 7,  12, 3))
+        pygame.draw.rect(screen, plate,        (sx + 3, sy - 13, 14, 1))
+    elif helmet == 'zan_helm':
+        # Conical spire helm — common from Han through Tang
+        pygame.draw.polygon(screen, helm,
+                            [(sx + 10, sy - 18),
+                             (sx + 2,  sy - 5),
+                             (sx + 18, sy - 5)])
+        pygame.draw.rect(screen, helm,         (sx,     sy - 6, 20, 2))
+        pygame.draw.rect(screen, plate,        (sx + 8, sy - 18, 4, 2))
+        pygame.draw.rect(screen, (20, 20, 30), (sx + 4, sy - 3, 12, 2))
+    elif helmet == 'dou_mou':
+        # Wide-brimmed iron hat — Song/Ming infantry staple
+        pygame.draw.rect(screen, helm,         (sx + 4, sy - 10, 12, 9))
+        pygame.draw.rect(screen, helm,         (sx - 1, sy - 4,  22, 2))
+        pygame.draw.rect(screen, plate,        (sx + 4, sy - 11, 12, 1))
+        pygame.draw.rect(screen, (20, 20, 30), (sx + 5, sy - 6,  10, 2))
+    elif helmet == 'mianpao':
+        # Lamellar curtain helm — bowl with hanging strip aventail
+        pygame.draw.rect(screen, helm,         (sx + 2, sy - 12, 16, 10))
+        pygame.draw.rect(screen, (20, 20, 30), (sx + 4, sy - 7,  12, 3))
+        lam = tuple(max(0, v - 20) for v in armor)
+        for i in range(5):
+            pygame.draw.rect(screen, lam, (sx + 2 + i * 3, sy - 3, 2, 5))
+    elif helmet == 'kabuto':
+        # Japanese kabuto — domed bowl with shikoro neck guard and maedate crest
+        shikoro = tuple(max(0, v - 30) for v in armor)
+        pygame.draw.rect(screen, shikoro,      (sx,     sy - 6,  20, 4))   # shikoro
+        pygame.draw.rect(screen, helm,         (sx + 2, sy - 14, 16, 10))  # bowl
+        pygame.draw.rect(screen, (20, 20, 30), (sx + 4, sy - 9,  12, 3))   # menpō shadow
+        pygame.draw.rect(screen, plate,        (sx + 8, sy - 16, 4,  2))   # maedate crest
+        pygame.draw.rect(screen, plate,        (sx + 9, sy - 18, 2,  2))
+    elif helmet == 'jingasa':
+        # Wide conical straw/iron field hat — common ashigaru footsoldier
+        pygame.draw.polygon(screen, helm,
+                            [(sx + 10, sy - 14),
+                             (sx + 1,  sy - 5),
+                             (sx + 19, sy - 5)])
+        pygame.draw.rect(screen, helm,         (sx - 1, sy - 6, 22, 2))
+        pygame.draw.rect(screen, (20, 20, 30), (sx + 4, sy - 3, 12, 2))
+    elif helmet == 'zunari':
+        # Zunari kabuto — simple rounded helmet with prominent peak brim
+        pygame.draw.rect(screen, helm,         (sx + 3, sy - 12, 14, 11))
+        pygame.draw.rect(screen, helm,         (sx + 1, sy - 5,  18, 2))   # peak brim
+        pygame.draw.rect(screen, helm,         (sx,     sy - 3,  6,  2))   # left cheek
+        pygame.draw.rect(screen, helm,         (sx + 14, sy - 3, 6,  2))   # right cheek
+        pygame.draw.rect(screen, (20, 20, 30), (sx + 4, sy - 8,  12, 3))
 
 
 def _draw_guard_beard(screen, sx, sy, helmet, beard):
-    if beard == 'none' or helmet in ('pot', 'plumed', 'horned'):
+    if beard == 'none' or helmet in ('pot', 'plumed', 'horned', 'mianpao'):
         return
     col = (95, 75, 55)
     if beard == 'short':
@@ -235,6 +291,97 @@ def _draw_weapon_longbow(screen, sx, sy, plate, facing):
     pygame.draw.rect(screen, (110, 80, 40), (arrow_x, sy + 1, 14, 1))
 
 
+def _draw_weapon_katana(screen, sx, sy, plate, facing):
+    # Katana — long slightly-curved blade, tsuba guard, wrapped handle
+    kat_x = sx + 19 if facing == 1 else sx - 3
+    curve = 1 if facing == 1 else -1
+    pygame.draw.rect(screen, plate,          (kat_x,          sy - 18, 2, 28))
+    pygame.draw.rect(screen, plate,          (kat_x + curve,  sy - 20, 2,  4))
+    pygame.draw.rect(screen, (190, 165, 55), (kat_x - 2,      sy + 8,  6,  1))  # tsuba
+    pygame.draw.rect(screen, (80,  55,  35), (kat_x,          sy + 9,  2,  5))  # handle
+    pygame.draw.rect(screen, (200, 170, 60), (kat_x,          sy + 11, 2,  1))  # wrap band
+
+
+def _draw_weapon_naginata(screen, sx, sy, plate, facing):
+    # Naginata — long pole with a curved blade at the top
+    shaft_x = sx + 19 if facing == 1 else sx - 1
+    pygame.draw.rect(screen, (110, 85, 50), (shaft_x, sy - 32, 2, 50))
+    curve = 1 if facing == 1 else -1
+    pygame.draw.polygon(screen, plate,
+                        [(shaft_x + 1,          sy - 32),
+                         (shaft_x + curve * 7,  sy - 44),
+                         (shaft_x + curve * 8,  sy - 38),
+                         (shaft_x + 1,          sy - 26)])
+    pygame.draw.rect(screen, (190, 165, 55), (shaft_x - 1, sy - 26, 4, 2))  # habaki collar
+
+
+def _draw_weapon_yumi(screen, sx, sy, plate, facing):
+    # Yumi — asymmetric Japanese longbow (upper limb longer)
+    bow_x = sx + 18 if facing == 1 else sx - 2
+    pygame.draw.rect(screen, (120, 88, 45), (bow_x, sy - 20, 2, 40))
+    pygame.draw.rect(screen, (120, 88, 45), (bow_x - (1 if facing == 1 else -1), sy - 22, 1, 4))
+    pygame.draw.rect(screen, (120, 88, 45), (bow_x - (1 if facing == 1 else -1), sy + 18, 1, 2))
+    pygame.draw.rect(screen, (235, 228, 215), (bow_x + (1 if facing == 1 else 0), sy - 20, 1, 40))
+    arrow_x = sx + 4
+    pygame.draw.rect(screen, (100, 75, 38), (arrow_x, sy + 1, 14, 1))
+    pygame.draw.polygon(screen, plate,
+                        [(arrow_x + 13, sy + 1),
+                         (arrow_x + 16, sy),
+                         (arrow_x + 13, sy + 2)])
+
+
+def _draw_weapon_guandao(screen, sx, sy, plate, facing):
+    # Chinese guandao — long shaft with a heavy curved blade at the top
+    shaft_x = sx + 19 if facing == 1 else sx - 1
+    pygame.draw.rect(screen, (110, 85, 50), (shaft_x, sy - 28, 2, 46))
+    blade_x = shaft_x + 2 if facing == 1 else shaft_x - 8
+    pygame.draw.polygon(screen, plate,
+                        [(shaft_x + 1, sy - 28),
+                         (blade_x + 8, sy - 38),
+                         (blade_x + 8, sy - 22),
+                         (shaft_x + 1, sy - 20)])
+    back_x = shaft_x - 2 if facing == 1 else shaft_x + 4
+    pygame.draw.polygon(screen, plate,
+                        [(back_x,     sy - 28),
+                         (back_x - 2, sy - 33),
+                         (back_x + 2, sy - 30)])
+
+
+def _draw_weapon_jian(screen, sx, sy, plate, facing):
+    # Chinese jian — straight double-edged sword, officer's weapon
+    jian_x = sx + 19 if facing == 1 else sx - 3
+    pygame.draw.rect(screen, plate,          (jian_x,     sy - 14, 2, 24))
+    pygame.draw.rect(screen, plate,          (jian_x - 1, sy - 15, 4,  1))
+    pygame.draw.rect(screen, (190, 165, 60), (jian_x - 2, sy + 8,  6,  1))
+    pygame.draw.rect(screen, (130, 95,  50), (jian_x,     sy + 9,  2,  4))
+    pygame.draw.rect(screen, plate,          (jian_x,     sy + 12, 2,  1))
+
+
+def _draw_weapon_ji(screen, sx, sy, plate, facing):
+    # Chinese ji — spear shaft with lateral hook blade partway up
+    shaft_x = sx + 19 if facing == 1 else sx - 1
+    pygame.draw.rect(screen, (110, 85, 50), (shaft_x, sy - 30, 2, 48))
+    pygame.draw.polygon(screen, plate,
+                        [(shaft_x + 1, sy - 38),
+                         (shaft_x + 4, sy - 30),
+                         (shaft_x - 2, sy - 30)])
+    hook_x = shaft_x + 2 if facing == 1 else shaft_x - 6
+    pygame.draw.polygon(screen, plate,
+                        [(hook_x,     sy - 20),
+                         (hook_x + 6, sy - 17),
+                         (hook_x + 6, sy - 23)])
+
+
+def _draw_weapon_dao(screen, sx, sy, plate, facing):
+    # Chinese dao — broad curved saber with round guard
+    dao_x = sx + 19 if facing == 1 else sx - 3
+    curve = 1 if facing == 1 else -1
+    pygame.draw.rect(screen, plate, (dao_x,          sy - 8,  2, 20))
+    pygame.draw.rect(screen, plate, (dao_x + curve,  sy - 10, 2, 4))
+    pygame.draw.rect(screen, (110, 80, 40), (dao_x - 1, sy + 10, 4, 2))
+    pygame.draw.rect(screen, (130, 90, 50), (dao_x,     sy + 12, 2, 4))
+
+
 def _draw_shield(screen, sx, sy, trim, plate, facing, shape):
     sx_off = sx - 4 if facing == 1 else sx + 18
     cx, cy = sx_off + 3, sy + 6
@@ -285,6 +432,21 @@ def _draw_guard_loadout(screen, sx, sy, npc, kit, plate, trim, facing):
         _draw_watchman_lantern(screen, sx, sy, facing)
     elif kit == 'captain':
         _draw_weapon_sword(screen, sx, sy, plate, facing, blade=24)
+    elif kit == 'ji_bearer':
+        _draw_weapon_ji(screen, sx, sy, plate, facing)
+    elif kit == 'guandao_bearer':
+        _draw_weapon_guandao(screen, sx, sy, plate, facing)
+    elif kit == 'dao_swordsman':
+        _draw_weapon_dao(screen, sx, sy, plate, facing)
+        _draw_shield(screen, sx, sy, shield_col, plate, facing, shape='round')
+    elif kit == 'jian_swordsman':
+        _draw_weapon_jian(screen, sx, sy, plate, facing)
+    elif kit == 'katana_samurai':
+        _draw_weapon_katana(screen, sx, sy, plate, facing)
+    elif kit == 'naginata_bearer':
+        _draw_weapon_naginata(screen, sx, sy, plate, facing)
+    elif kit == 'yumi_archer':
+        _draw_weapon_yumi(screen, sx, sy, plate, facing)
 
 
 def draw_npc_guard(screen, sx, sy, npc):

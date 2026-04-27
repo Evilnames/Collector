@@ -3218,7 +3218,13 @@ class PanelsMixin:
 
         is_guard = isinstance(npc, GuardNPC)
         sketch_rect = None
-        if is_guard:
+        npc_uid_val = getattr(npc, "npc_uid", None) or ""
+        already_sketched = any(
+            s.npc_uid == npc_uid_val
+            for s in getattr(player, "guard_sketches", [])
+            if npc_uid_val
+        )
+        if is_guard and not already_sketched:
             BTN_W2, BTN_H2 = 130, 24
             sketch_rect = pygame.Rect(px + PW - BTN_W2 - 8, py + 26, BTN_W2, BTN_H2)
             pygame.draw.rect(self.screen, (30, 40, 55), sketch_rect)

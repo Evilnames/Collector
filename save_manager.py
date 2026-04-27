@@ -603,7 +603,8 @@ class SaveManager:
             clothing_armor_r INT, clothing_armor_g INT, clothing_armor_b INT,
             clothing_plate_r INT, clothing_plate_g INT, clothing_plate_b INT,
             clothing_trim_r INT, clothing_trim_g INT, clothing_trim_b INT,
-            location TEXT
+            location TEXT,
+            npc_uid TEXT DEFAULT ''
         );
         CREATE TABLE IF NOT EXISTS achievements (
             id           TEXT PRIMARY KEY,
@@ -810,6 +811,10 @@ class SaveManager:
             pass
         try:
             con.execute("ALTER TABLE regions ADD COLUMN landmark_used_day INTEGER DEFAULT -1")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE guard_sketches ADD COLUMN npc_uid TEXT DEFAULT ''")
         except Exception:
             pass
         for col, default in [
@@ -1513,7 +1518,7 @@ class SaveManager:
         for s in getattr(player, "guard_sketches", []):
             con.execute(
                 "INSERT OR REPLACE INTO guard_sketches VALUES "
-                "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (s.uid, s.name, s.biodome, s.kit,
                  s.helmet, s.cape, s.beard, s.emblem,
                  s.tint, s.weapon_variant, s.helmet_finish, s.tabard,
@@ -1524,7 +1529,7 @@ class SaveManager:
                  s.clothing_armor_r, s.clothing_armor_g, s.clothing_armor_b,
                  s.clothing_plate_r, s.clothing_plate_g, s.clothing_plate_b,
                  s.clothing_trim_r, s.clothing_trim_g, s.clothing_trim_b,
-                 s.location),
+                 s.location, s.npc_uid),
             )
 
     def _load_guard_sketches(self, con):

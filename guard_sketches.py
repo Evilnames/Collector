@@ -36,6 +36,7 @@ class GuardSketch:
     clothing_trim_g: int
     clothing_trim_b: int
     location: str
+    npc_uid: str = ""
 
     @property
     def skin_tone(self):
@@ -76,6 +77,7 @@ def sketch_from_npc(npc, location="Unknown"):
     return GuardSketch(
         uid=uid,
         name=name,
+        npc_uid=getattr(npc, "npc_uid", "") or "",
         biodome=getattr(npc, "biodome", "temperate"),
         kit=getattr(npc, "kit", "spearman"),
         helmet=getattr(npc, "helmet", "pot"),
