@@ -6788,4 +6788,30 @@ def build_structure_surfs():
     pygame.draw.rect(s, dk, s.get_rect(), 1)
     surfs[bid] = s
 
+    bid = STONE_BRIDGE
+    # if bid == STONE_BRIDGE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    c = BLOCKS[bid]["color"]
+    dk = _darken(c, 25)
+    lt = _lighter(c, 12)
+    BS = BLOCK_SIZE
+    s.fill(c)
+    # stone slab courses — horizontal mortar lines across the bridge deck
+    for gy in range(5, BS, 7):
+        pygame.draw.line(s, dk, (0, gy), (BS, gy), 1)
+    # irregular stone block joints — vertical lines staggered per row
+    for row in range(BS // 7 + 1):
+        gy = row * 7
+        offset = (row % 2) * 5
+        for gx in range(offset, BS, 9):
+            pygame.draw.line(s, dk, (gx, gy), (gx, min(gy + 7, BS)), 1)
+    # subtle highlight on each stone face
+    for row in range(BS // 7 + 1):
+        gy = row * 7 + 1
+        for gx in range((row % 2) * 5, BS, 9):
+            if gx + 1 < BS and gy + 1 < BS:
+                pygame.draw.line(s, lt, (gx + 1, gy), (gx + 7, gy), 1)
+    pygame.draw.rect(s, dk, s.get_rect(), 1)
+    surfs[bid] = s
+
     return surfs

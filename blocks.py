@@ -1705,6 +1705,7 @@ TOWN_FLAG_BLOCK              = 1113  # town identity flag (non-mineable)
 OUTPOST_FLAG_BLOCK           = 1178  # outpost identity flag (non-mineable)
 ICE_SHARD                    = 1226  # ice shard
 FROZEN_BOG                   = 1227  # frozen bog
+STONE_BRIDGE                 = 1228  # stone road bridge spanning a city river
 BLOCKS = {
     AIR:              {"name": "Air",               "hardness": 0,            "color": None,            "drop": None},
     GRASS:            {"name": "Grass",             "hardness": 1,            "color": (58, 154, 58),   "drop": "dirt_clump"},
@@ -3001,6 +3002,7 @@ BLOCKS = {
     TAPROOM_BLOCK:             {"name": "Taproom",            "hardness": 1.5, "color": ( 95,  65,  40), "drop": "taproom_item"},
     ICE_SHARD:                 {"name": "Ice Shard", "hardness": 1, "color": (185, 225, 248), "drop": "ice_shard"},
     FROZEN_BOG:                {"name": "Frozen Bog", "hardness": 1, "color": ( 95, 120, 138), "drop": "frozen_bog"},
+    STONE_BRIDGE:              {"name": "Stone Bridge", "hardness": 2.5, "color": (118, 112, 102), "drop": "stone_chip"},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}

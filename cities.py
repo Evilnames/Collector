@@ -1,7 +1,7 @@
 import math
 import random
 
-from blocks import (STONE, BEDROCK, HOUSE_WALL, HOUSE_ROOF, AIR, LADDER,
+from blocks import (STONE, BEDROCK, HOUSE_WALL, HOUSE_ROOF, AIR, LADDER, WATER, STONE_BRIDGE,
                     TILLED_SOIL, WELL_BLOCK,
                     WHEAT_CROP_YOUNG, WHEAT_CROP_MATURE,
                     CARROT_CROP_YOUNG, CARROT_CROP_MATURE,
@@ -3200,6 +3200,54 @@ def _place_farm_plot(world, rng, center_bx, biodome, half_w=7):
             world.set_bg_block(bx, fence_y, WICKER_FENCE)
 
 
+_RIVER_BIOMES = frozenset({
+    "temperate", "boreal", "wetland", "swamp", "rolling_hills",
+    "birch_forest", "jungle", "steppe", "coastal", "tropical",
+})
+
+_NO_FARM_BIOMES = frozenset({
+    "desert", "mesa", "salt_flat", "savanna", "tundra", "glacier",
+})
+
+
+def _place_city_river(world, rng, city_bx, city_half_w, biodome):
+    """Carve a small river beside a city and span it with a stone bridge."""
+    if biodome not in _RIVER_BIOMES:
+        return
+
+    side = rng.choice([-1, 1])
+    gap = rng.randint(12, 28)
+    river_cx = city_bx + side * (city_half_w + gap)
+    river_hw = rng.randint(6, 10)
+    max_depth = rng.randint(3, 5)
+
+    # Ensure the river's chunks are loaded
+    river_lo_chunk = (river_cx - river_hw - 2) // CHUNK_W
+    river_hi_chunk = (river_cx + river_hw + 2) // CHUNK_W
+    for c_idx in range(river_lo_chunk, river_hi_chunk + 1):
+        world.load_chunk(c_idx)
+
+    river_top_y = world.surface_height(river_cx)
+
+    # Carve river and lay bridge
+    for x in range(river_cx - river_hw, river_cx + river_hw + 1):
+        dx = abs(x - river_cx)
+        flat_half = river_hw * 0.55
+        if dx <= flat_half:
+            depth_x = max_depth
+        else:
+            edge_t = (dx - flat_half) / (river_hw - flat_half)
+            depth_x = max(1, round(max_depth * (1.0 - edge_t)))
+
+        # Bridge deck at surface level, water below
+        if 0 <= river_top_y < world.height:
+            world.set_block(x, river_top_y, STONE_BRIDGE)
+        for y in range(river_top_y + 1, river_top_y + depth_x + 1):
+            if 0 <= y < world.height:
+                world.set_block(x, y, WATER)
+                world._water_level[(x, y)] = 8
+
+
 # ---------------------------------------------------------------------------
 # Town squares
 # ---------------------------------------------------------------------------
@@ -4976,10 +5024,14 @@ def _build_single_city(world, rng, city_bx, difficulty):
         ny = (sy - 2) * BLOCK_SIZE
         world.entities.append(cls(nx, ny, world, biodome=biodome))
 
-    # Restore old_half_w for farm offsets if needed, or just let farms be relative to new half_w
-    # To keep the "Same thing" logic, let's use the new half_w for farm gap calculation.
-    # The farm loop below already uses `half_w` (which I've updated).
+    # Farm plots flanking the city
+    if biodome not in _NO_FARM_BIOMES:
+        for offset, farm_hw in cfg.get("farms", []):
+            farm_center = city_bx + (half_w + farm_hw + 3) * (1 if offset > 0 else -1)
+            _place_farm_plot(world, rng, farm_center, biodome, farm_hw)
 
+    # River and bridge just outside one city wall
+    _place_city_river(world, rng, city_bx, half_w, biodome)
 
     # Cobbled main street + lamps + entry gateposts wrap up the city.
     _pave_main_street(world, rng, city_bx - half_w, city_bx + half_w, sy)
