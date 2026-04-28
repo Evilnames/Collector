@@ -109,7 +109,7 @@ class LandmarkMenuMixin:
                 line_y += 15
 
         # Status line
-        status, ready = preview_effect(region, day_count)
+        status, ready = preview_effect(region, day_count, debug=getattr(world, "debug", False))
         if status:
             line_y += 6
             pygame.draw.line(self.screen, _BORDER,

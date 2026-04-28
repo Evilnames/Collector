@@ -123,7 +123,8 @@ def draw_garden_blocks(screen, world, cam_xi, cam_yi):
         if sx < -BLOCK_SIZE or sx > sw or sy < -BLOCK_SIZE or sy > sh:
             continue
         count = min(len(flowers), 5)
-        for i, wf in enumerate(flowers[:count]):
+        for i, entry in enumerate(flowers[:count]):
+            wf = entry[0] if isinstance(entry, tuple) else entry
             fx = 5 + int(i * 22 / max(count - 1, 1)) if count > 1 else 16
             fy = 13 + (i % 2) * 5
             stem_top = fy - 6

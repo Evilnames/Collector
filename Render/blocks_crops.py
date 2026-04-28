@@ -2520,6 +2520,24 @@ def build_crop_surfs():
         pygame.draw.circle(s, (85, 62, 35), (cx2, cy2), 2)
     surfs[bid] = s
 
+    bid = EDELWEISS_BUSH
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    # Woolly silvery-green stem cluster
+    for stx, sth in [(6, 16), (14, 20), (22, 14)]:
+        pygame.draw.rect(s, (138, 158, 118), (stx, BLOCK_SIZE - sth, 2, sth))
+        for ny in range(BLOCK_SIZE - sth + 2, BLOCK_SIZE - 3, 5):
+            pygame.draw.rect(s, (155, 172, 135), (stx - 2, ny, 5, 1))
+    # White star flowers — 5-petal polygon approximated with a circle + petals
+    for cx2, cy2, r in [(8, BLOCK_SIZE - 18, 4), (16, BLOCK_SIZE - 22, 5), (24, BLOCK_SIZE - 16, 3)]:
+        for angle_i in range(5):
+            a = angle_i * 2 * math.pi / 5
+            px2 = int(cx2 + r * math.cos(a))
+            py2 = int(cy2 + r * math.sin(a))
+            pygame.draw.circle(s, (248, 246, 240), (px2, py2), 2)
+        pygame.draw.circle(s, (240, 228, 180), (cx2, cy2), 2)
+    surfs[bid] = s
+
     # Premium crops — same geometry as their regular counterparts, gold sparkle added
     bid = STRAWBERRY_CROP_YOUNG_P
     s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)

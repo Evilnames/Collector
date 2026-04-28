@@ -274,8 +274,9 @@ class CoffeeMixin:
                 pm = PROCESSING_METHODS.get(bean.processing_method, {})
                 rline(pm.get("label", bean.processing_method) + " Process", (170, 195, 120))
             rline(ROAST_LEVEL_DESCS.get(bean.roast_level, bean.roast_level), roast_col)
-            stars = "★" * round(bean.roast_quality * 5) + "☆" * (5 - round(bean.roast_quality * 5))
-            rline(stars, (220, 190, 60))
+            ss = self._render_stars(self.font, bean.roast_quality)
+            self.screen.blit(ss, (cx2 - ss.get_width() // 2, iy2))
+            iy2 += 26
             if bean.flavor_notes:
                 rline("Flavour Notes:", (180, 140, 70))
                 for note in bean.flavor_notes:

@@ -227,6 +227,24 @@ class ReputationScreenMixin:
                 screen.blit(rs, (rel_x, ey + 58))
                 rel_x += rs.get_width() + 14
 
+            # Supply market chips — only shows non-baseline tags
+            if region.supply:
+                chips = []
+                for tag, s in sorted(region.supply.items()):
+                    if s >= 1.20:
+                        chips.append((f"{tag}↑", (130, 175, 230)))
+                    elif s <= 0.75:
+                        chips.append((f"{tag}↓", (230, 120, 80)))
+                if chips:
+                    x_off = text_x
+                    prefix_s = self.small.render("Market: ", True, (140, 130, 100))
+                    screen.blit(prefix_s, (x_off, ey + 76))
+                    x_off += prefix_s.get_width()
+                    for chip_text, chip_col in chips[:5]:
+                        cs = self.small.render(chip_text + "  ", True, chip_col)
+                        screen.blit(cs, (x_off, ey + 76))
+                        x_off += cs.get_width()
+
             reg_rep = sum(t.reputation for t in vt)
             tier_label, tier_col = _rep_tier(reg_rep)
             badge_s = self.small.render(f"{tier_label}  {reg_rep} rep", True, tier_col)
@@ -543,6 +561,25 @@ class ReputationScreenMixin:
             ns2 = self.small.render("Not yet visited", True, _DIM_C)
             screen.blit(ns2, (px, y))
             return
+
+        # Supply market — only when there's something non-baseline to show
+        if region.supply:
+            supply_chips = []
+            for tag, s in sorted(region.supply.items()):
+                if s >= 1.20:
+                    supply_chips.append((f"{tag}↑", (130, 175, 230)))
+                elif s <= 0.75:
+                    supply_chips.append((f"{tag}↓", (230, 120, 80)))
+            if supply_chips:
+                mkt_s = self.small.render("Market", True, _DIM_C)
+                screen.blit(mkt_s, (px, y))
+                y += line_h
+                x_off = px
+                for chip_text, chip_col in supply_chips[:4]:
+                    cs = self.small.render(chip_text + "  ", True, chip_col)
+                    screen.blit(cs, (x_off, y))
+                    x_off += cs.get_width()
+                y += line_h + 4
 
         # Towns
         th = self.small.render("Towns", True, _LABEL_C)

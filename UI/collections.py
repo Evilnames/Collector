@@ -4,6 +4,9 @@ from fish import (render_fish, FISH_TYPES, FISH_TYPE_ORDER, FISH_BIOME_GROUPS,
                   FISH_RARITY_COLORS, RARITY_LABEL as FISH_RARITY_LABEL)
 from rocks import (render_rock, render_codex_preview, RARITY_COLORS,
                    ROCK_TYPE_ORDER, ROCK_TYPE_DESCRIPTIONS, ROCK_TYPES)
+from seashells import (render_seashell, render_shell_codex_preview,
+                       SHELL_TYPE_ORDER, SHELL_TYPES, SHELL_RARITY_COLORS,
+                       SHELL_RARITY_LABEL, SHELL_TYPE_DESCRIPTIONS, SHELL_PATTERN_DESCS)
 from wildflowers import (render_wildflower, get_flower_preview,
                          WILDFLOWER_TYPE_ORDER, WILDFLOWER_TYPES,
                          WILDFLOWER_BIODOME_AFFINITY)
@@ -133,8 +136,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX", "BEER CODEX", "GUARD SKETCHES", "GLADIATOR CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165), (155, 215, 90), (150, 200, 240), (215, 185, 80)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX", "BEER CODEX", "GUARD SKETCHES", "GLADIATOR CODEX", "SEASHELL CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165), (155, 215, 90), (150, 200, 240), (215, 185, 80), (210, 230, 240)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -155,6 +158,7 @@ class CollectionsMixin:
                 ("rocks",     f"ROCKS ({len(player.rocks)})",      (42, 52, 70),  (95,  138, 198), (175, 208, 248)),
                 ("flowers",   f"FLOWERS ({len(player.wildflowers)})",(32, 58, 35),(85,  178, 100), (168, 235, 178)),
                 ("fossils",   f"FOSSILS ({len(player.fossils)})",  (50, 40, 20),  (168, 140, 72),  (215, 182, 112)),
+                ("seashells", f"SEASHELLS ({len(getattr(player,'seashells',[]))})", (15, 40, 55), (60, 160, 200), (130, 220, 245)),
                 ("gems",      f"GEMS ({len(player.gems)})",        (22, 48, 45),  (72,  195, 170), (145, 235, 215)),
                 ("mushrooms", f"MUSHROOMS ({n_mush_owned})",       (40, 36, 16),  (148, 132, 56),  (198, 182, 105)),
                 ("coffee",    f"COFFEE ({n_coffee_owned})",        (40, 25, 10),  (140,  90,  35), (210, 150,  70)),
@@ -237,9 +241,10 @@ class CollectionsMixin:
                 ((18, 28, 10),  (110, 160,  55), (155, 215,  80)),   # Beer
                 ((20, 30, 45),  ( 75, 125, 180), (150, 200, 240)),   # Guards
                 ((45, 35, 10),  (185, 150,  55), (215, 185,  80)),   # Gladiators
+                ((10, 35, 52),  ( 55, 155, 195), (125, 215, 245)),   # Seashells
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
-                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER", "GUARDS", "GLADIATORS"]
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER", "GUARDS", "GLADIATORS", "SEASHELLS"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
             total_sb_h = len(enc_labels) * (SB_BTN_H + SB_GAP)
@@ -302,6 +307,7 @@ class CollectionsMixin:
                 self._draw_beer_codex,
                 self._draw_guard_codex,
                 self._draw_gladiator_codex,
+                self._draw_seashell_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)
@@ -341,6 +347,8 @@ class CollectionsMixin:
             items.extend(("flower", i) for i in range(len(player.wildflowers)))
         if flt in ("all", "fossils"):
             items.extend(("fossil", i) for i in range(len(player.fossils)))
+        if flt in ("all", "seashells"):
+            items.extend(("seashell", i) for i in range(len(getattr(player, "seashells", []))))
         if flt in ("all", "gems"):
             items.extend(("gem", i) for i in range(len(player.gems)))
         if flt in ("all", "mushrooms"):
@@ -450,6 +458,14 @@ class CollectionsMixin:
                 img = render_fossil(it, 58)
                 label = it.fossil_type.replace("_", " ")
                 label_col = (175, 155, 115)
+            elif cat == "seashell":
+                it = player.seashells[key]
+                rar_col = SHELL_RARITY_COLORS.get(it.rarity, (100, 160, 200))
+                pygame.draw.rect(self.screen, (12, 35, 50) if selected else (8, 24, 36), rect)
+                pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
+                img = render_seashell(it, 58)
+                label = it.species.replace("_", " ")
+                label_col = (120, 200, 225)
             elif cat == "gem":
                 it = player.gems[key]
                 rar_col = GEM_RARITY_COLORS.get(it.rarity, (120, 120, 120))
@@ -846,6 +862,37 @@ class CollectionsMixin:
             else:
                 dlabel("No special traits.", (90, 82, 60))
 
+        elif sel_cat == "seashell":
+            shell = player.seashells[sel_key]
+            pygame.draw.rect(self.screen, (8, 24, 38), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, SHELL_RARITY_COLORS.get(shell.rarity, (80, 160, 200)), (dx, dy2, dw, dh), 2)
+            self.screen.blit(render_seashell(shell, 80), (dx + dw // 2 - 40, dy2 + 8))
+            dlabel(shell.species.replace("_", " ").title(), (140, 215, 235))
+            dlabel(SHELL_RARITY_LABEL.get(shell.rarity, shell.rarity), SHELL_RARITY_COLORS.get(shell.rarity, (160, 200, 220)))
+            dlabel(f"Zone: {shell.depth_zone.title()}")
+            dlabel(f"Size: {shell.size_cm} cm")
+            dlabel(f"Pattern: {shell.pattern.title()}")
+            dlabel(f"Found in: {shell.biome_found.replace('_', ' ').title()}")
+            iy[0] += 4
+            pat_desc = SHELL_PATTERN_DESCS.get(shell.pattern, "")
+            if pat_desc:
+                dlabel(pat_desc, (110, 175, 190))
+            iy[0] += 4
+            desc = SHELL_TYPE_DESCRIPTIONS.get(shell.species, "")
+            if desc:
+                words = desc.split()
+                line, lines = "", []
+                for w in words:
+                    if self.small.size(line + w)[0] > dw - 16:
+                        lines.append(line.strip())
+                        line = w + " "
+                    else:
+                        line += w + " "
+                if line.strip():
+                    lines.append(line.strip())
+                for ln in lines:
+                    dlabel(ln, (155, 175, 180))
+
         elif sel_cat == "gem":
             gem = player.gems[sel_key]
             rar_col = GEM_RARITY_COLORS.get(gem.rarity, (120, 120, 120))
@@ -920,15 +967,33 @@ class CollectionsMixin:
             self.screen.blit(render_fish(fish, 80), (dx + dw // 2 - 40, dy2 + 6))
             dlabel(fdata.get("name", fish.species.replace("_", " ").title()), (200, 230, 255))
             dlabel(FISH_RARITY_LABEL.get(fish.rarity, fish.rarity.title()), rar_col)
-            dlabel(f"Weight: {fish.weight_kg:.2f} kg", (160, 200, 230))
-            dlabel(f"Length: {fish.length_cm} cm", (140, 185, 215))
-            dlabel(f"Pattern: {fish.pattern.title()}", (140, 170, 200))
-            dlabel(f"Habitat: {fish.habitat.title()}", (120, 165, 190))
-            dlabel(f"Found in: {fish.biome_found.replace('_', ' ').title()}", (120, 155, 180))
+            dlabel(f"Weight: {fish.weight_kg:.2f} kg  •  {fish.length_cm} cm", (160, 200, 230))
+            dlabel(f"Pattern: {fish.pattern.title()}  •  {fish.habitat.title()}", (140, 170, 200))
+            best = player.fish_bests.get(fish.species)
+            if best:
+                dlabel(f"Personal best: {best['weight_kg']:.2f} kg  /  {best['length_cm']} cm", (255, 210, 60))
+            n_caught = sum(1 for f in player.fish_caught if f.species == fish.species)
+            dlabel(f"Times caught: {n_caught}", (160, 220, 180))
+            wr = fdata.get("weight_range")
+            lr = fdata.get("length_range")
+            if wr and lr:
+                dlabel(f"Typical: {wr[0]}–{wr[1]} kg,  {lr[0]}–{lr[1]} cm", (140, 165, 190))
+            affinity = fdata.get("biome_affinity", [])
+            if affinity:
+                biome_str = ", ".join(b.replace("_", " ").title() for b in affinity[:3])
+                dlabel(f"Found in: {biome_str}", (120, 175, 140))
+            else:
+                dlabel("Found in: Widespread", (120, 175, 140))
+            tension = fdata.get("tension")
+            if tension is not None:
+                if tension <= 0.6:    fight = "Easy"
+                elif tension <= 1.0:  fight = "Moderate"
+                elif tension <= 1.6:  fight = "Strong"
+                else:                 fight = "Fierce"
+                dlabel(f"Fight: {fight}", (220, 140, 100))
             iy[0] += 4
             desc = fdata.get("description", "")
             if desc:
-                # Word-wrap description to panel width
                 words = desc.split()
                 line = ""
                 for w in words:
@@ -1440,6 +1505,131 @@ class CollectionsMixin:
             self.screen.blit(qs, (dx + dw // 2 - qs.get_width() // 2, dy + 8))
             dlabel("Not yet discovered.", (90, 95, 110))
             dlabel(f"Found below {tdef['min_depth']}m depth.", (120, 130, 150))
+
+    # ------------------------------------------------------------------
+    # Seashell codex
+    # ------------------------------------------------------------------
+
+    def _draw_seashell_codex(self, player, gy0=58, gx_off=0):
+        CELL, GAP, COLS = 82, 8, 6
+        gx0 = gx_off + (SCREEN_W - gx_off - (COLS * CELL + (COLS - 1) * GAP)) // 2
+
+        detail_x = None
+        if self._shell_codex_selected is not None:
+            detail_x = SCREEN_W - 340
+            COLS = max(1, (detail_x - gx0 - 10) // (CELL + GAP))
+
+        total_rows = (len(SHELL_TYPE_ORDER) + COLS - 1) // COLS
+        visible_rows = (SCREEN_H - gy0 - 8 + GAP) // (CELL + GAP)
+        self._max_shell_codex_scroll = max(0, total_rows - visible_rows)
+        self._shell_codex_scroll = max(0, min(self._max_shell_codex_scroll, self._shell_codex_scroll))
+
+        if self._max_shell_codex_scroll > 0:
+            sb_x = gx0 + COLS * (CELL + GAP) - GAP + 8
+            sb_h = SCREEN_H - gy0 - 8
+            sb_th = max(20, sb_h * visible_rows // total_rows)
+            sb_top = gy0 + (sb_h - sb_th) * self._shell_codex_scroll // self._max_shell_codex_scroll
+            pygame.draw.rect(self.screen, (20, 38, 52), (sb_x, gy0, 7, sb_h))
+            pygame.draw.rect(self.screen, (60, 155, 195), (sb_x, sb_top, 7, sb_th))
+
+        self._shell_codex_rects = {}
+        for idx, species in enumerate(SHELL_TYPE_ORDER):
+            col = idx % COLS
+            row = idx // COLS
+            display_row = row - self._shell_codex_scroll
+            if display_row < 0:
+                continue
+            x = gx0 + col * (CELL + GAP)
+            y = gy0 + display_row * (CELL + GAP)
+            if y + CELL > SCREEN_H - 8:
+                break
+            rect = pygame.Rect(x, y, CELL, CELL)
+            self._shell_codex_rects[species] = rect
+
+            discovered = species in getattr(player, "discovered_shell_types", set())
+            selected   = (species == self._shell_codex_selected)
+
+            if discovered:
+                img = render_shell_codex_preview(species, 58)
+                pygame.draw.rect(self.screen, (18, 40, 55) if selected else (10, 26, 38), rect)
+                pygame.draw.rect(self.screen, (80, 175, 210) if selected else (40, 110, 150), rect,
+                                 3 if selected else 2)
+                self.screen.blit(img, (x + (CELL - 58) // 2, y + (CELL - 58) // 2 - 6))
+                label = species
+            else:
+                sdef = SHELL_TYPES[species]
+                pygame.draw.rect(self.screen, (12, 18, 24) if selected else (8, 14, 18), rect)
+                pygame.draw.rect(self.screen, (35, 60, 80) if selected else (22, 38, 52), rect,
+                                 2 if selected else 1)
+                qs = self.font.render("?", True, (35, 65, 85))
+                self.screen.blit(qs, (x + CELL // 2 - qs.get_width() // 2,
+                                      y + CELL // 2 - qs.get_height() // 2 - 6))
+                label = sdef["depth_zone"]
+
+            ls = self.small.render(self._fit_label(label, CELL - 4), True,
+                                   (120, 200, 225) if discovered else (40, 75, 95))
+            self.screen.blit(ls, (x + CELL // 2 - ls.get_width() // 2, y + CELL - 14))
+
+            # Click registration reuses codex_rects click handler wired externally
+            if rect.collidepoint(pygame.mouse.get_pos()) and pygame.mouse.get_pressed()[0]:
+                self._shell_codex_selected = species
+
+        if detail_x is None:
+            return
+
+        species = self._shell_codex_selected
+        sdef = SHELL_TYPES.get(species, {})
+        discovered = species in getattr(player, "discovered_shell_types", set())
+
+        dx, dy = detail_x, gy0
+        dw, dh = SCREEN_W - dx - 8, SCREEN_H - gy0 - 10
+        border_col = (60, 155, 195) if discovered else (35, 60, 80)
+        pygame.draw.rect(self.screen, (8, 20, 30), (dx, dy, dw, dh))
+        pygame.draw.rect(self.screen, border_col, (dx, dy, dw, dh), 2)
+
+        iy = [dy + 8]
+
+        def dlabel(text, color=(200, 225, 235)):
+            s = self.small.render(text, True, color)
+            self.screen.blit(s, (dx + 8, iy[0]))
+            iy[0] += 15
+
+        if discovered:
+            img_big = render_shell_codex_preview(species, 80)
+            self.screen.blit(img_big, (dx + dw // 2 - 40, dy + 8))
+            iy[0] = dy + 96
+            dlabel(species.replace("_", " ").title(), (140, 215, 235))
+            dlabel(f"Zone: {sdef.get('depth_zone', '').title()}", (100, 175, 205))
+            iy[0] += 4
+            desc = SHELL_TYPE_DESCRIPTIONS.get(species, "")
+            words = desc.split()
+            line, lines = [], []
+            for w in words:
+                trial = " ".join(line + [w])
+                if self.small.size(trial)[0] > dw - 18:
+                    lines.append(" ".join(line))
+                    line = [w]
+                else:
+                    line.append(w)
+            if line:
+                lines.append(" ".join(line))
+            for ln in lines:
+                dlabel(ln, (120, 155, 170))
+            iy[0] += 6
+            owned = [s2 for s2 in getattr(player, "seashells", []) if s2.species == species]
+            dlabel(f"In collection: {len(owned)}", (140, 210, 160))
+            if owned:
+                rarity_order = ["common", "uncommon", "rare", "epic", "legendary"]
+                best = max(owned, key=lambda s2: rarity_order.index(s2.rarity))
+                dlabel(f"Best: {SHELL_RARITY_LABEL[best.rarity]}",
+                       SHELL_RARITY_COLORS.get(best.rarity, (160, 200, 220)))
+                dlabel(f"Largest: {max(s2.size_cm for s2 in owned)} cm", (155, 185, 200))
+        else:
+            iy[0] = dy + 30
+            qs = self.font.render("???", True, (35, 65, 85))
+            self.screen.blit(qs, (dx + dw // 2 - qs.get_width() // 2, dy + 8))
+            dlabel("Not yet discovered.", (60, 90, 110))
+            dlabel(f"Found in the {sdef.get('depth_zone', '?')} zone.", (80, 120, 145))
 
     # ------------------------------------------------------------------
     # Wildflower collection tabs
@@ -2524,6 +2714,7 @@ class CollectionsMixin:
             pygame.draw.rect(self.screen, (175, 105, 45), (sb_x, sb_top, 7, sb_th))
 
         y = gy0 - self._food_codex_scroll
+        _hovered_food = None  # (food_id, item_data) for nutrition panel
 
         for station_name, recipes in SECTIONS:
             # Section header
@@ -2574,11 +2765,71 @@ class CollectionsMixin:
                     if cnt > 0:
                         cs = self.small.render(f"×{cnt}", True, (155, 135, 95))
                         self.screen.blit(cs, (cx + CELL_W - cs.get_width() - 5, cy + 7))
+
+                    # Track hovered food for nutrition panel
+                    mx, my = pygame.mouse.get_pos()
+                    if rect.collidepoint(mx, my):
+                        _hovered_food = (food_id, item_data)
                 else:
                     qs = self.small.render("???", True, (58, 50, 44))
                     self.screen.blit(qs, (cx + 20, cy + CELL_H // 2 - qs.get_height() // 2))
 
             y += num_rows * (CELL_H + GAP)
+
+        # Nutrition hover panel
+        if _hovered_food is not None:
+            self._draw_food_nutrition_panel(_hovered_food[0], _hovered_food[1])
+
+    # ------------------------------------------------------------------
+    # Food nutrition hover panel
+    # ------------------------------------------------------------------
+
+    def _draw_food_nutrition_panel(self, food_id, item_data):
+        PW, PH = 700, 88
+        px = (SCREEN_W - PW) // 2
+        py = SCREEN_H - PH - 6
+
+        # Background
+        pygame.draw.rect(self.screen, (30, 20, 10), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (130, 80, 30), (px, py, PW, PH), 1)
+
+        name    = item_data.get("name", food_id)
+        hunger  = item_data.get("hunger_restore", 0)
+        protein = item_data.get("protein_factor", 0.0)
+        fiber   = item_data.get("fiber_factor",   0.0)
+        vitamins = item_data.get("vitamin_factor", 0.0)
+        sugar   = item_data.get("sugar_factor",   0.0)
+
+        # Header row: name + hunger bar
+        name_s = self.small.render(name, True, (235, 200, 145))
+        self.screen.blit(name_s, (px + 10, py + 6))
+
+        self._draw_nutrition_bar(px + 10, py + 22, 200, hunger / 100.0, (110, 195, 110),
+                                 f"Hunger  +{hunger}")
+
+        # Separator
+        pygame.draw.line(self.screen, (80, 55, 25),
+                         (px + 8, py + 40), (px + PW - 8, py + 40), 1)
+
+        # Two-column nutrition bars
+        col1x = px + 10
+        col2x = px + PW // 2 + 10
+        by = py + 47
+
+        self._draw_nutrition_bar(col1x, by,      160, protein,  (210, 120,  80), f"Protein  {protein:.2f}")
+        self._draw_nutrition_bar(col2x, by,      160, fiber,    ( 80, 175,  90), f"Fiber    {fiber:.2f}")
+        self._draw_nutrition_bar(col1x, by + 20, 160, vitamins, ( 90, 180, 220), f"Vitamins {vitamins:.2f}")
+        self._draw_nutrition_bar(col2x, by + 20, 160, sugar,    (235, 200,  60), f"Sugar    {sugar:.2f}")
+
+    def _draw_nutrition_bar(self, x, y, bar_w, value, color, label):
+        SEGS, SEG_W, SEG_H, SEG_GAP = 10, 12, 8, 2
+        filled = round(max(0.0, min(1.0, value)) * SEGS)
+        label_s = self.small.render(label, True, (185, 160, 120))
+        self.screen.blit(label_s, (x, y))
+        bx = x + label_s.get_width() + 6
+        for i in range(SEGS):
+            col = color if i < filled else (45, 35, 25)
+            pygame.draw.rect(self.screen, col, (bx + i * (SEG_W + SEG_GAP), y, SEG_W, SEG_H))
 
     # ------------------------------------------------------------------
     # Coffee codex

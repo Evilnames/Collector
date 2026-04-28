@@ -15,7 +15,8 @@
       "Edit(/.claude/skills/add-region/**)",
       "Edit(/.claude/skills/add-palace/**)",
       "Edit(/.claude/skills/add-city/**)",
-      "Edit(/.claude/skills/add-npc/**)"
+      "Edit(/.claude/skills/add-npc/**)",
+      "Edit(/.claude/skills/add-insect/**)"
     ],
     "additionalDirectories": [
       "d:\\Dev\\CollectorBlocks\\.claude\\skills"

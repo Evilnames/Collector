@@ -1406,6 +1406,25 @@ ROCK_TYPES = {
         "color_pool": [((235, 242, 255), (210, 225, 248)), ((225, 232, 248), (198, 215, 238))],
         "patterns": ["solid", "solid", "speckled"],
     },
+    # --- Alpine / Mountain rocks ---
+    "mica_schist": {
+        "min_depth": 5,
+        "rarity_pool": ["common", "common", "uncommon", "rare"],
+        "color_pool": [((158, 152, 142), (188, 180, 168)), ((145, 150, 158), (172, 175, 182))],
+        "patterns": ["banded", "banded", "speckled"],
+    },
+    "hornfels": {
+        "min_depth": 12,
+        "rarity_pool": ["uncommon", "uncommon", "rare", "rare"],
+        "color_pool": [((65, 60, 68), (88, 82, 92)), ((55, 52, 60), (78, 74, 82))],
+        "patterns": ["solid", "speckled", "solid"],
+    },
+    "gneiss": {
+        "min_depth": 18,
+        "rarity_pool": ["common", "uncommon", "uncommon", "rare"],
+        "color_pool": [((172, 162, 155), (125, 118, 112)), ((162, 152, 145), (115, 108, 102))],
+        "patterns": ["banded", "banded", "veined"],
+    },
 }
 
 ROCK_BIOME_AFFINITY = {
@@ -1425,6 +1444,10 @@ ROCK_BIOME_AFFINITY = {
                     "neptunite"},
     "tundra":      {"ice_crystal", "cryolite", "permafrost_amber", "quartzite",
                     "quartz", "fluorite", "calcite", "celestite", "moonstone", "topaz"},
+    "alpine_mountain": {"mica_schist", "hornfels", "gneiss", "quartzite", "quartz", "fluorite"},
+    "rocky_mountain":  {"mica_schist", "hornfels", "gneiss", "quartzite", "granite", "basalt"},
+    "rolling_hills":   {"limestone", "flint", "chalk", "sandstone", "conglomerate", "gneiss"},
+    "steep_hills":     {"shale", "slate", "flint", "limestone", "dolomite", "hornfels"},
 }
 
 ROCK_TYPE_ORDER = sorted(ROCK_TYPES.keys(), key=lambda t: ROCK_TYPES[t]["min_depth"])
@@ -1658,6 +1681,9 @@ ROCK_TYPE_DESCRIPTIONS = {
     "ice_crystal":     "A pale blue water-ice crystal that forms in permafrost cracks, preserved by perpetual cold.",
     "permafrost_amber": "Ancient amber trapped for millennia in frozen ground, its warm tones contrasting the ice around it.",
     "cryolite":        "A near-colourless sodium aluminium fluoride found only in the coldest deep rock — once mistaken for ice.",
+    "mica_schist":     "A glittering metamorphic rock split into silvery-grey leaves by heat and mountain pressure.",
+    "hornfels":        "A dense, dark metamorphic rock baked at the edge of igneous intrusions, hard as flint.",
+    "gneiss":          "A coarse, banded rock formed deep in mountain roots where heat and pressure reshape stone into layered ribbons.",
 }
 
 RARITY_WEIGHTS = {
@@ -1716,7 +1742,7 @@ class RockGenerator:
     def __init__(self, world_seed):
         self._world_seed = world_seed
 
-    def generate(self, bx, by, depth, biome=None):
+    def generate(self, bx, by, depth, biome=None, biodome=None):
         rock_seed = hash((self._world_seed, bx, by)) & 0xFFFFFFFF
         rng = random.Random(rock_seed)
 
@@ -1732,9 +1758,9 @@ class RockGenerator:
         preferred = [t for t in eligible if rarity in ROCK_TYPES[t]["rarity_pool"]]
         type_pool = preferred if preferred else eligible
 
-        # Biome bias — further prefer types that match the local biome
-        if biome:
-            affinity = ROCK_BIOME_AFFINITY.get(biome, set())
+        # Biome bias — prefer types matching geological biome or ecological biodome
+        affinity = ROCK_BIOME_AFFINITY.get(biome, set()) | ROCK_BIOME_AFFINITY.get(biodome, set())
+        if affinity:
             biome_preferred = [t for t in type_pool if t in affinity]
             if biome_preferred:
                 type_pool = biome_preferred

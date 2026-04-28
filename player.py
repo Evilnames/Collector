@@ -48,6 +48,7 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     THYME_BUSH, SAGE_BUSH, BASIL_BUSH, OREGANO_BUSH,
                     DILL_BUSH, FENNEL_BUSH, TARRAGON_BUSH, LEMON_BALM_BUSH,
                     ECHINACEA_BUSH, VALERIAN_BUSH, ST_JOHNS_WORT_BUSH, YARROW_BUSH,
+                    EDELWEISS_BUSH,
                     BERGAMOT_BUSH, WORMWOOD_BUSH, RUE_BUSH, LEMON_VERBENA_BUSH,
                     HYSSOP_BUSH, CATNIP_BUSH, WOOD_SORREL_BUSH, MARJORAM_BUSH,
                     SAVORY_BUSH, ANGELICA_BUSH, BORAGE_BUSH, COMFREY_BUSH, MUGWORT_BUSH,
@@ -63,10 +64,12 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     POTTERY_DISPLAY_BLOCK,
                     SALT_DEPOSIT,
                     TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK, LANDMARK_FLAG_BLOCK,
-                    CITY_BLOCK, BANNER_BLOCK, FISHING_SPOT_BLOCK, TEA_HOUSE_BLOCK)
+                    CITY_BLOCK, BANNER_BLOCK, FISHING_SPOT_BLOCK, TEA_HOUSE_BLOCK,
+                    SEASHELL_BLOCK)
 import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
+from seashells import SeashellGenerator, Seashell
 from wildflowers import WildflowerGenerator, Wildflower
 from fossils import FossilGenerator, Fossil
 from gemstones import GemGenerator, Gemstone
@@ -160,6 +163,10 @@ class Player:
         self.discovered_types = set()
         self.rock_detect_range = ROCK_DETECT_RANGE
         self._rock_gen = RockGenerator(world.seed)
+        # Seashell collection
+        self.seashells = []
+        self.discovered_shell_types = set()
+        self._shell_gen = SeashellGenerator(world.seed)
         # Wildflower collection
         self.wildflowers = []
         self.discovered_flower_types = set()
@@ -220,7 +227,9 @@ class Player:
         # Textile collection
         self.textiles = []
         self.discovered_textiles = set()         # "fiber_dye_output" strings
-        self.worn = {"head": None, "chest": None, "feet": None}  # Textile UIDs
+        self.worn = {"head": None, "chest": None, "feet": None, "hands": None, "legs": None, "back": None}  # Textile UIDs
+        self.worn_armor     = {"helmet": None, "chestplate": None, "leggings": None, "boots": None}  # armor item IDs
+        self.worn_armor_dye = {"helmet": None, "chestplate": None, "leggings": None, "boots": None}  # dye family strings
         self._textile_gen = TextileGenerator(world.seed)
         # Cheese collection
         self.cheese_wheels = []
@@ -324,6 +333,12 @@ class Player:
         self.hunger             = 100.0
         self._hunger_drain_rate = 100.0 / 600.0  # 100% over 10 minutes
         self._eat_cooldown      = 0.0
+        # Nutrition buff timers
+        self._well_fed_timer    = 0.0   # fiber: slower drain
+        self._nourished_timer   = 0.0   # vitamins: HP regen
+        self._sugar_crash_timer    = 0.0   # sugar: countdown to crash
+        self._sugar_crash_drain    = 0.0   # extra drain_mult during crash
+        self._sugar_crash_duration = 0.0   # remaining crash time
         # Spawn / death
         self.spawn_x = None
         self.spawn_y = None
@@ -347,6 +362,8 @@ class Player:
         self.riding_elevator = None
         # Minecart
         self.riding_minecart = None
+        # Boat
+        self.riding_boat = None
         # Doors the player auto-opened by walking into them
         self._auto_opened_doors = set()  # set of (bx, by)
         # Research-derived bonuses (computed by ResearchTree.apply_bonuses)
@@ -396,9 +413,10 @@ class Player:
 
         # Weapon crafting
         self.crafted_weapons        = []       # list of Weapon objects
+        self.smithed_parts          = []       # [{"weapon_type", "part_key", "material", "quality"}] — parts waiting at assembly bench
         self.guard_sketches         = []       # list of GuardSketch objects
         self.equipped_weapon_uid    = None     # str UID or None
-        self.pending_parts          = {}       # {weapon_uid: {part_key: quality_float}} — temp during smithing
+        self.pending_parts          = {}       # legacy — kept for save compat
         self._melee_cooldown        = 0.0
         self._weapon_gen            = WeaponGenerator(world.seed)
         self.smith_quality_bonus    = 0.0      # set by research "master_smithing"
@@ -422,6 +440,8 @@ class Player:
         self.known_recipes = set(d["known_recipes"])
         self.known_crops   = set(d.get("known_crops", []))
         self.rocks = [Rock(**r) for r in d["rocks"]]
+        self.seashells = [Seashell(**s) for s in d.get("seashells", [])]
+        self.discovered_shell_types = set(d.get("discovered_shell_types", []))
         self.wildflowers = [Wildflower(**wf) for wf in d["wildflowers"]]
         self.fossils = [Fossil(**f) for f in d.get("fossils", [])]
         self.gems = [Gemstone(**g) for g in d.get("gems", [])]
@@ -441,7 +461,11 @@ class Player:
         self.discovered_beers = set(d.get("discovered_beers", []))
         self.textiles = [Textile(**x) for x in d.get("textiles", [])]
         self.discovered_textiles = set(d.get("discovered_textiles", []))
-        self.worn = d.get("worn", {"head": None, "chest": None, "feet": None})
+        _worn_defaults = {"head": None, "chest": None, "feet": None, "hands": None, "legs": None, "back": None}
+        self.worn = {**_worn_defaults, **d.get("worn", {})}
+        _armor_defaults = {"helmet": None, "chestplate": None, "leggings": None, "boots": None}
+        self.worn_armor     = {**_armor_defaults, **d.get("worn_armor", {})}
+        self.worn_armor_dye = {**_armor_defaults, **d.get("worn_armor_dye", {})}
         self.cheese_wheels = [Cheese(**x) for x in d.get("cheese_wheels", [])]
         self.discovered_cheese = set(d.get("discovered_cheese", []))
         self.birds_observed = d.get("birds_observed", {})
@@ -478,6 +502,7 @@ class Player:
         self.hunt_trophies  = d.get("hunt_trophies", {})
         self.gladiator_cards     = d.get("gladiator_cards", [])
         self.crafted_weapons     = [Weapon(**x) for x in d.get("crafted_weapons", [])]
+        self.smithed_parts       = d.get("smithed_parts", [])
         self.guard_sketches      = [GuardSketch(**x) for x in d.get("guard_sketches", [])]
         self.equipped_weapon_uid = d.get("equipped_weapon_uid", None)
         self.pending_sculptures = [Sculpture.from_dict(x) for x in d.get("pending_sculptures", [])]
@@ -661,6 +686,8 @@ class Player:
             return
         if self.riding_minecart is not None:
             return
+        if self.riding_boat is not None:
+            return
         if self.mounted_horse is not None:
             self._handle_horse_input(keys, dt)
             return
@@ -681,6 +708,15 @@ class Player:
         textile_swift = self.get_textile_bonus("swiftness")
         if textile_swift > 0:
             speed *= (1.0 + textile_swift)
+        warmth = self.get_textile_bonus("warmth")
+        if warmth > 0 and self.world.time_of_day >= 480.0:  # night
+            speed *= (1.0 + warmth * 0.5)
+        wool_n = self.get_fiber_count("wool")
+        if wool_n > 0 and self.world.time_of_day >= 480.0:  # wool warmth at night
+            speed *= (1.0 + wool_n * 0.06 * 0.5)
+        linen_n = self.get_fiber_count("linen")
+        if linen_n > 0 and self.world.time_of_day < 480.0:  # linen daytime speed
+            speed *= (1.0 + linen_n * 0.04)
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
             self.vx = -speed
             self.facing = -1
@@ -702,7 +738,8 @@ class Player:
                 self.vy = -3   # swim up
             self.vx *= 0.55    # water drag on horizontal movement
         elif (keys[pygame.K_w] or keys[pygame.K_UP] or keys[pygame.K_SPACE]) and self.on_ground:
-            self.vy = JUMP_FORCE * (1.25 if "vivacity" in self.wine_buffs else 1.0) * (1.20 if "swiftness" in self.beer_buffs else 1.0)
+            cotton_jump = 1.0 + self.get_fiber_count("cotton") * 0.05
+            self.vy = JUMP_FORCE * (1.25 if "vivacity" in self.wine_buffs else 1.0) * (1.20 if "swiftness" in self.beer_buffs else 1.0) * cotton_jump
             self.on_ground = False
 
         mining = False
@@ -1035,7 +1072,7 @@ class Player:
 
         if self.mine_progress >= 1.0:
             if block_id == ROCK_DEPOSIT:
-                rock = self._rock_gen.generate(bx, by, self.get_depth(), self.world.get_biome(bx))
+                rock = self._rock_gen.generate(bx, by, self.get_depth(), self.world.get_biome(bx), self.world.get_biodome(bx))
                 self.rocks.append(rock)
                 self.discovered_types.add(rock.base_type)
                 self.pending_notifications.append(
@@ -1052,6 +1089,13 @@ class Player:
                     extra = self._flower_gen.generate(bx, by + 1, biodome)
                     self.wildflowers.append(extra)
                     self.discovered_flower_types.add(extra.flower_type)
+            elif block_id == SEASHELL_BLOCK:
+                biome = self.world.get_biome(bx)
+                shell = self._shell_gen.generate(bx, by, biome)
+                self.seashells.append(shell)
+                self.discovered_shell_types.add(shell.species)
+                self.pending_notifications.append(
+                    ("Seashell", shell.species.replace("_", " ").title(), shell.rarity))
             elif block_id == FOSSIL_DEPOSIT:
                 fossil = self._fossil_gen.generate(bx, by, self.get_depth(), self.world.get_biome(bx))
                 self.fossils.append(fossil)
@@ -1167,6 +1211,9 @@ class Player:
                                     self.pending_notifications.append(
                                         ("Mine", "Vein shattered!", "common"))
                             self._add_item(drop, count)
+                            silk_luck = self.get_fiber_count("silk") * 0.08
+                            if silk_luck > 0 and random.random() < silk_luck:
+                                self._add_item(drop, count)
                         bonus = block_data.get("bonus_drop")
                         if bonus and random.random() < block_data.get("bonus_drop_chance", 0.0):
                             self._add_item(bonus)
@@ -1387,6 +1434,8 @@ class Player:
                     self._add_item("st_johns_wort")
                 elif block_id == YARROW_BUSH and random.random() < 0.20:
                     self._add_item("yarrow")
+                elif block_id == EDELWEISS_BUSH and random.random() < 0.15:
+                    self._add_item("edelweiss")
                 elif block_id == BERGAMOT_BUSH and random.random() < 0.20:
                     self._add_item("bergamot")
                 elif block_id == WORMWOOD_BUSH and random.random() < 0.15:
@@ -1578,6 +1627,21 @@ class Player:
                         if self.hotbar[i] == item_id:
                             self.hotbar[i] = None
                             break
+                return
+            # Boat placement: use rowboat/sailboat item on a water block
+            boat_type = item_data.get("spawn_boat")
+            if boat_type:
+                from blocks import WATER as _WATER
+                from boats import Boat as _Boat
+                if self.inventory.get(item_id, 0) > 0 and self.world.get_block(bx, by) == _WATER:
+                    self.world.boats.append(_Boat(float(bx * BLOCK_SIZE), float(by * BLOCK_SIZE), boat_type))
+                    self.inventory[item_id] -= 1
+                    if self.inventory[item_id] <= 0:
+                        del self.inventory[item_id]
+                        for i in range(HOTBAR_SIZE):
+                            if self.hotbar[i] == item_id:
+                                self.hotbar[i] = None
+                                break
                 return
             # Oil barrel harvesting: use empty_barrel on an OIL block
             if item_data.get("harvest_oil") and self.world.get_block(bx, by) == OIL:
@@ -2007,15 +2071,38 @@ class Player:
         return None
 
     def get_textile_bonus(self, stat):
-        """Return passive bonus fraction (0.0–max) from the equipped garment for stat."""
+        """Return passive bonus fraction (0.0–max) from the equipped garment for stat.
+        Multiplied by 1.1 when all 6 slots are filled (full-outfit bonus)."""
         from textiles import GARMENT_BUFFS, GARMENT_MAX_BONUS
         for slot, uid in self.worn.items():
             if uid is None:
                 continue
             t = next((x for x in self.textiles if x.uid == uid), None)
             if t and GARMENT_BUFFS.get(t.output_type) == stat:
-                return t.quality * GARMENT_MAX_BONUS[stat]
+                bonus = t.quality * GARMENT_MAX_BONUS[stat]
+                if self.is_full_outfit():
+                    bonus *= 1.10
+                return bonus
         return 0.0
+
+    def get_armor_defense(self):
+        from items import ITEMS
+        return sum(ITEMS[v]["defense"] for v in self.worn_armor.values() if v and v in ITEMS)
+
+    def is_full_outfit(self):
+        """True when all 6 garment slots are occupied."""
+        return all(uid is not None for uid in self.worn.values())
+
+    def get_fiber_count(self, fiber_key):
+        """Count worn textiles whose fiber_type matches fiber_key."""
+        count = 0
+        for uid in self.worn.values():
+            if uid is None:
+                continue
+            t = next((x for x in self.textiles if x.uid == uid), None)
+            if t and t.fiber_type == fiber_key:
+                count += 1
+        return count
 
     def get_nearby_bed(self):
         from blocks import BED
@@ -2108,10 +2195,15 @@ class Player:
         bait = self.get_active_bait()
         tod = getattr(self.world, "time_of_day", 0.0)
         day = getattr(self.world, "day_count", 0)
+        ocean_zone = ""
+        if self._fishing_biome == "ocean":
+            from world import get_ocean_depth_zone
+            ocean_zone = get_ocean_depth_zone(int(self.y // BLOCK_SIZE))
         fish = self._fish_gen.generate(
             cx, cy, self._fishing_biome or "",
             bait=bait, time_of_day=tod, day_count=day,
             is_hotspot=self._fishing_is_hotspot,
+            ocean_zone=ocean_zone,
         )
         self._fishing_pending_fish = fish
         # Pull speed: heavier and rarer fish fight harder
@@ -2238,8 +2330,25 @@ class Player:
             hunger_restore = int(hunger_restore * 1.20)
         if "clarity" in self.tea_buffs:
             hunger_restore = int(hunger_restore * 1.15)
-        self.hunger = min(100.0, self.hunger + hunger_restore)
-        self.health = min(MAX_HEALTH, self.health + hunger_restore * 0.25)
+        # Sugar: instant bonus hunger now, crash timer set below
+        sugar = item_data.get("sugar_factor", 0.05)
+        sugar_bonus = round(sugar * 15)
+        self.hunger = min(100.0, self.hunger + hunger_restore + sugar_bonus)
+        # Protein: determines HP recovery (high-protein foods heal more)
+        protein = item_data.get("protein_factor", 0.25)
+        self.health = min(MAX_HEALTH, self.health + hunger_restore * protein)
+        # Fiber: well_fed buff — slows hunger drain
+        fiber = item_data.get("fiber_factor", 0.10)
+        if fiber > 0.25:
+            self._well_fed_timer = max(self._well_fed_timer, fiber * 240)
+        # Vitamins: nourished buff — passive HP regen
+        vitamins = item_data.get("vitamin_factor", 0.10)
+        if vitamins > 0.25:
+            self._nourished_timer = max(self._nourished_timer, vitamins * 180)
+        # Sugar crash: high-sugar foods cause faster drain ~3 min later
+        if sugar > 0.40:
+            self._sugar_crash_timer = 180.0
+            self._sugar_crash_drain = sugar * 0.40
         self._eat_cooldown = 0.5
         if item_data.get("coffee_buff"):
             buff = item_data["coffee_buff"]
@@ -2320,6 +2429,20 @@ class Player:
             self.vx = 0.0
             self.on_ground = True
             return  # cart.update() sets player x/y each frame
+        if self.riding_boat is not None:
+            self.vy = 0.0
+            self.vx = 0.0
+            self.on_ground = True
+            if not self.god_mode and not self.no_hunger:
+                boat = self.riding_boat
+                if boat.boat_type == "rowboat" and abs(boat.vel_x) > 10:
+                    drain_mult = 3.5
+                else:
+                    drain_mult = 0.8
+                self.hunger = max(0.0, self.hunger - self._hunger_drain_rate * drain_mult * dt)
+                if self.hunger == 0.0:
+                    self.health = max(0, self.health - 3 * dt)
+            return  # boat.update() sets player x/y each frame
         if self.mounted_horse is not None:
             h = self.mounted_horse
             h.vy = min(h.vy + GRAVITY, MAX_FALL)
@@ -2359,13 +2482,17 @@ class Player:
                 resilience = self.get_textile_bonus("resilience")
                 if resilience > 0:
                     dmg = int(dmg * (1.0 - resilience))
+                armor_def = self.get_armor_defense()
+                if armor_def > 0:
+                    dmg = max(1, int(dmg * (1.0 - min(0.70, armor_def / 100.0))))
                 self.health = max(0, self.health - dmg)
             # Drowning: after 5 s with head submerged, 5 HP/s damage
             if self._head_in_water():
                 self._drowning_timer += dt
                 if self._drowning_timer > 5.0:
                     resilience = self.get_textile_bonus("resilience")
-                    drown_dmg = 5 * dt * (1.0 - resilience)
+                    armor_def = self.get_armor_defense()
+                    drown_dmg = 5 * dt * (1.0 - resilience) * (1.0 - min(0.70, armor_def / 100.0))
                     self.health = max(0, self.health - drown_dmg)
             else:
                 self._drowning_timer = max(0.0, self._drowning_timer - dt * 2)
@@ -2430,14 +2557,46 @@ class Player:
                 drain_mult *= 0.50
             if "steadiness" in self.beer_buffs:
                 drain_mult *= 0.65
+            textile_endurance = self.get_textile_bonus("endurance")
+            if textile_endurance > 0:
+                drain_mult *= (1.0 - textile_endurance)
+            jute_n = self.get_fiber_count("jute")
+            if jute_n > 0 and self.vx != 0:  # jute reduces hunger while moving
+                drain_mult *= max(0.5, 1.0 - jute_n * 0.08)
             if self.mining_block is not None:
                 depth = self.get_depth()
                 if depth >= 160:
                     drain_mult *= 2.0
+                    textile_warmth = self.get_textile_bonus("warmth")
+                    if textile_warmth > 0:
+                        drain_mult *= (1.0 - textile_warmth * 0.5)
                 elif depth >= 100:
                     drain_mult *= 1.6
                 elif depth >= 40:
                     drain_mult *= 1.25
+            # Fiber well_fed: slower hunger drain
+            if self._well_fed_timer > 0:
+                self._well_fed_timer -= dt
+                drain_mult *= 0.70
+            # Sugar crash: temporary faster drain
+            if self._sugar_crash_timer > 0:
+                self._sugar_crash_timer -= dt
+                if self._sugar_crash_timer <= 0 and self._sugar_crash_drain > 0:
+                    self._sugar_crash_duration = 60.0
+            if self._sugar_crash_duration > 0:
+                self._sugar_crash_duration -= dt
+                drain_mult += self._sugar_crash_drain
+                if self._sugar_crash_duration <= 0:
+                    self._sugar_crash_duration = 0.0
+                    self._sugar_crash_drain = 0.0
+        # Cashmere fiber: passive HP regen when well-fed
+        cashmere_n = self.get_fiber_count("cashmere")
+        if cashmere_n > 0 and self.hunger > 30.0:
+            self.health = min(MAX_HEALTH, self.health + 0.4 * cashmere_n * dt)
+        # Vitamin nourished: passive HP regen
+        if self._nourished_timer > 0:
+            self._nourished_timer -= dt
+            self.health = min(MAX_HEALTH, self.health + 0.5 * dt)
         if "vitality" in self.cheese_buffs and self.hunger > 20.0:
             self.health = min(MAX_HEALTH, self.health + 1.0 * dt)
         if "immunity" in self.beer_buffs and self.hunger > 10.0:

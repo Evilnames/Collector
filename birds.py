@@ -931,7 +931,7 @@ class PrairieFalcon(Bird):
 class Nightjar(Bird):
     SPECIES          = "nightjar"
     RARITY           = "uncommon"
-    BIOMES           = ["savanna", "wasteland", "fungal", "desert"]
+    BIOMES           = ["savanna", "wasteland", "desert"]
     IS_FLOCK         = False
     FLOCK_SIZE_RANGE = (1, 1)
     ALTITUDE_BLOCKS  = (2, 5)
@@ -979,7 +979,7 @@ class Albatross(Bird):
 class Raven(Bird):
     SPECIES          = "raven"
     RARITY           = "uncommon"
-    BIOMES           = ["boreal", "alpine_mountain", "tundra", "redwood", "wasteland", "fungal"]
+    BIOMES           = ["boreal", "alpine_mountain", "tundra", "redwood", "wasteland"]
     IS_FLOCK         = False
     FLOCK_SIZE_RANGE = (1, 1)
     ALTITUDE_BLOCKS  = (3, 9)
@@ -4003,7 +4003,7 @@ class LeafNosedBat(Bird):
 class GhostBat(Bird):
     SPECIES          = "ghost_bat"
     RARITY           = "rare"
-    BIOMES           = ["wasteland", "fungal"]
+    BIOMES           = ["wasteland"]
     NOCTURNAL        = True
     IS_FLOCK         = False
     FLOCK_SIZE_RANGE = (1, 1)

@@ -195,7 +195,7 @@ OUTPOST_TYPES = {
 
     "fungal_grove": {
         "display_name":    "Fungal Grove",
-        "eligible_biomes": ["fungal", "swamp", "wetland"],
+        "eligible_biomes": ["swamp", "wetland"],
         "sells": [],
         "buys":  [("mushroom", 7, 20), ("rare_mushroom", 35, 8)],
         "needs": [("lumber", 10)],
@@ -205,7 +205,7 @@ OUTPOST_TYPES = {
 
     "swamp_alchemist": {
         "display_name":    "Swamp Alchemist",
-        "eligible_biomes": ["swamp", "wetland", "fungal"],
+        "eligible_biomes": ["swamp", "wetland"],
         "sells": [("philosophers_scroll", 24), ("votive_tablet", 18)],
         "buys":  [("mushroom", 7, 12), ("rare_mushroom", 36, 8)],
         "needs": [("coal", 10), ("iron_chunk", 4)],
@@ -418,7 +418,7 @@ OUTPOST_TYPES = {
 
     "bog_apothecary": {
         "display_name":    "Bog Apothecary",
-        "eligible_biomes": ["swamp", "fungal", "wetland"],
+        "eligible_biomes": ["swamp", "wetland"],
         "sells": [("green_tea", 18), ("oolong_tea", 20), ("black_tea", 22),
                   ("puerh_tea", 26)],
         "buys":  [("tea_leaf", 6, 20), ("rare_mushroom", 36, 6), ("mushroom", 7, 15),
@@ -430,7 +430,7 @@ OUTPOST_TYPES = {
 
     "pearl_diving_camp": {
         "display_name":    "Pearl Diving Camp",
-        "eligible_biomes": ["pacific_island", "ocean", "beach"],
+        "eligible_biomes": ["pacific_island", "beach"],
         "sells": [("pearl_necklace", 45), ("raw_pearl", 22), ("shell_ornament", 15)],
         "buys":  [("pearl", 38, 8), ("shell_fragment", 5, 20), ("coral", 12, 10)],
         "needs": [("lumber", 8), ("coal", 4)],
@@ -440,7 +440,7 @@ OUTPOST_TYPES = {
 
     "canoe_trading_post": {
         "display_name":    "Canoe Trading Post",
-        "eligible_biomes": ["pacific_island", "ocean", "beach"],
+        "eligible_biomes": ["pacific_island", "beach"],
         "sells": [("coconut_oil", 18), ("tapa_cloth", 22), ("tropical_spice", 30)],
         "buys":  [("iron_chunk", 20, 6), ("wheat", 5, 15), ("red_wine", 12, 8)],
         "needs": [("lumber", 10), ("coal", 5)],
@@ -456,6 +456,17 @@ OUTPOST_TYPES = {
         "needs": [("lumber", 6), ("coal", 4)],
         "base_stock": 4, "clothing_key": "polynesian",
         "building_style": "shrine", "half_w": 12, "layout": "default",
+    },
+
+    "mountain_lodge": {
+        "display_name":    "Mountain Lodge",
+        "eligible_biomes": ["alpine_mountain", "rocky_mountain", "steep_hills", "rolling_hills"],
+        "sells": [("dried_edelweiss", 22), ("dried_yarrow", 14), ("dried_lavender", 12), ("dried_chamomile", 10)],
+        "buys":  [("mica_schist", 38, 4), ("hornfels", 30, 4), ("gneiss", 25, 4),
+                  ("edelweiss", 10, 8), ("yarrow", 6, 12)],
+        "needs": [("lumber", 15), ("coal", 6)],
+        "base_stock": 4, "clothing_key": "ranger",
+        "building_style": "house", "half_w": 16, "layout": "default",
     },
 }
 
@@ -499,6 +510,7 @@ OUTPOST_FLAG_COLORS = {
     "pearl_diving_camp":      ( 70, 180, 210),
     "canoe_trading_post":     (200, 130,  50),
     "polynesian_shrine_outpost": (120, 80, 160),
+    "mountain_lodge":            (100, 120, 155),
 }
 
 _MILITARY_OUTPOST_TYPES = {
@@ -523,12 +535,14 @@ BIOME_OUTPOST_TYPES = {
                         "incense_lodge",       "reed_weaver"),
     "savanna":         ("nomad_camp",          "spirit_distillery", "desert_legion"),
     "wasteland":       ("nomad_camp",          "canyon_forge",      "steppe_warcamp"),
-    "fungal":          ("fungal_grove",        "swamp_alchemist",   "bog_apothecary"),
     "alpine_mountain": ("alpine_monastery",    "cheese_cave",       "highland_fortress",
-                        "glacier_camp"),
-    "rocky_mountain":  ("cheese_cave",         "canyon_forge",      "highland_fortress"),
-    "rolling_hills":   ("hillside_vineyard",   "pottery_workshop",  "border_garrison"),
-    "steep_hills":     ("hillside_vineyard",   "sculpture_atelier", "highland_fortress"),
+                        "glacier_camp",        "mountain_lodge"),
+    "rocky_mountain":  ("cheese_cave",         "canyon_forge",      "highland_fortress",
+                        "mountain_lodge"),
+    "rolling_hills":   ("hillside_vineyard",   "pottery_workshop",  "border_garrison",
+                        "mountain_lodge"),
+    "steep_hills":     ("hillside_vineyard",   "sculpture_atelier", "highland_fortress",
+                        "mountain_lodge"),
     "steppe":          ("nomad_camp",          "spirit_distillery", "steppe_warcamp"),
     "arid_steppe":     ("nomad_camp",          "desert_glassworks", "desert_legion"),
     "desert":          ("desert_glassworks",   "canyon_forge",      "desert_legion"),
@@ -544,7 +558,6 @@ BIOME_OUTPOST_TYPES = {
                         "incense_lodge"),
     "pacific_island":  ("pearl_diving_camp",   "canoe_trading_post",
                         "polynesian_shrine_outpost"),
-    "ocean":           ("canoe_trading_post",  "pearl_diving_camp"),
 }
 
 # ---------------------------------------------------------------------------
@@ -606,7 +619,6 @@ _NAME_ADJ = {
     "tropical":         ["Azure", "Palm", "Warm", "Bright", "Lagoon", "Coral", "Trade-Wind"],
     "wetland":          ["Marsh", "Reed", "Misty", "Damp", "Heron's", "Cattail", "Fenwater"],
     "swamp":            ["Bog", "Dark", "Hollow", "Mossy", "Cypress", "Blackwater", "Mire"],
-    "fungal":           ["Spore", "Mycel", "Deep", "Quiet", "Cap-Hollow", "Glowcap", "Veiled"],
     "boreal":           ["Pine", "Dark", "Cold", "Ancient", "Spruce", "Wolf-Track", "Black-Pine"],
     "birch_forest":     ["Silver", "Light", "White", "Birch", "Whitebark", "Aspen", "Goldleaf"],
     "redwood":          ["Tall", "Old", "Red", "Deep", "Giant", "Fern-Hollow", "Mossback"],
@@ -636,7 +648,6 @@ _NAME_PLACE = {
     "tropical":         ["Coral Lagoon", "Palm Reach", "Trade-Wind Cove"],
     "wetland":          ["Heron Marsh", "Cattail Bend", "Saltmarsh", "Fenwater"],
     "swamp":            ["Blackwater", "Cypress Bog", "Mire Hollow", "Bayou Crossing"],
-    "fungal":           ["Cap Hollow", "Glowcap Glen", "Spore Garden", "Veiled Grove"],
     "boreal":           ["Black Pine", "Wolf Track", "Spruce Hollow", "Frostpine"],
     "birch_forest":     ["Whitebark", "Aspen Vale", "Goldleaf", "Silvertree"],
     "redwood":          ["Giant's Stand", "Fern Hollow", "Mossback Glade", "Old-Growth"],
@@ -814,20 +825,45 @@ def _dispatch_piece(world, rng, piece, left_x, sy, biodome, wall, roof):
         _place_mine_shaft(world, left_x, sy, width, piece.get("depth", 12))
 
 
-def _place_outpost_pieces(world, rng, start_x, sy, biodome, wall, roof, pieces):
+def _place_outpost_pieces(world, rng, start_x, sy, biodome, wall, roof, pieces,
+                          terrain_profile=None):
     """Walk pieces left-to-right (mirrors city cursor), return NPC and flag coords."""
-    cursor  = start_x
-    npc_px  = npc_py = None
-    flag_bx = flag_by = None
+    from cities import (_level_building_footprint, _building_floor_sy,
+                        _place_terrace_stairs)
+    cursor       = start_x
+    npc_px       = npc_py = None
+    flag_bx      = flag_by = None
+    prev_right_x = None   # right edge of last non-gap piece
+    prev_sy      = None   # floor sy of last non-gap piece
+
     for piece in pieces:
-        _dispatch_piece(world, rng, piece, cursor, sy, biodome, wall, roof)
+        width = piece["width"]
+        # Level every piece (including gaps) to its terrain-profile height so
+        # raw terrain is never left exposed between buildings.
+        if terrain_profile:
+            item_sy = _building_floor_sy(terrain_profile, cursor, width)
+            _level_building_footprint(world, cursor, width, item_sy)
+        else:
+            item_sy = sy
+
+        # Bridge height difference to the previous non-gap piece with stair blocks.
+        if piece["type"] != "gap" and prev_right_x is not None and prev_sy != item_sy:
+            _place_terrace_stairs(world, prev_right_x, cursor, prev_sy, item_sy)
+
+        _dispatch_piece(world, rng, piece, cursor, item_sy, biodome, wall, roof)
+
         if piece.get("npc"):
             npc_px = (cursor + 1) * BLOCK_SIZE
-            npc_py = (sy - 2)     * BLOCK_SIZE
+            npc_py = (item_sy - 2) * BLOCK_SIZE
         if piece.get("flag"):
             flag_bx = cursor - 2
-            flag_by = sy - piece.get("flag_dy", 1)
-        cursor += piece["width"]
+            flag_by = item_sy - piece.get("flag_dy", 1)
+
+        if piece["type"] != "gap":
+            prev_right_x = cursor + width
+            prev_sy      = item_sy
+
+        cursor += width
     return npc_px, npc_py, flag_bx, flag_by
 
 
@@ -976,12 +1012,13 @@ def _place_primary(world, style: str, left_x, sy, width, height, wall, roof, bio
 
 
 def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
-    from cities import _PLANT_BLOCKS
+    from cities import (_PLANT_BLOCKS, _city_terrain_profile,
+                        _repair_city_walkability)
 
     cfg    = OUTPOST_TYPES[otype]
     half_w = cfg["half_w"]
     biodome = world.biodome_at(out_bx)
-    sy      = min(world.surface_y_at(out_bx), SURFACE_Y)
+    sy      = world.surface_y_at(out_bx)
 
     # Pre-load chunks with a wider buffer so flattening doesn't read stale terrain
     chunk_lo = (out_bx - half_w - 10) // CHUNK_W
@@ -989,29 +1026,16 @@ def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
     for ci in range(chunk_lo, chunk_hi + 1):
         world.load_chunk(ci)
 
-    # Strip plants in/just-around the footprint before flattening (mirrors cities)
+    # Build smoothed per-column elevation profile across the footprint
+    terrain_profile = _city_terrain_profile(world, out_bx - half_w, out_bx + half_w)
+    min_sy = min(terrain_profile.values())
+    max_sy = max(terrain_profile.values())
+
+    # Strip plants across the full height range of the footprint
     for bx in range(out_bx - half_w - 2, out_bx + half_w + 3):
-        for by in range(max(0, sy - 35), sy):
+        for by in range(max(0, min_sy - 35), max_sy + 1):
             if world.get_block(bx, by) in _PLANT_BLOCKS:
                 world.set_block(bx, by, AIR)
-
-    # Flatten terrain across the footprint to sy (mirrors _build_single_city)
-    for bx in range(out_bx - half_w, out_bx + half_w + 1):
-        col_sy = min(world.surface_y_at(bx), SURFACE_Y)
-        # Hill: clear solid blocks above the outpost floor
-        for by in range(col_sy, sy):
-            blk = world.get_block(bx, by)
-            if blk not in (AIR, BEDROCK):
-                world.set_block(bx, by, AIR)
-        # Valley: fill air below the outpost floor with stone
-        for by in range(sy, col_sy + 1):
-            if world.get_block(bx, by) == AIR:
-                world.set_block(bx, by, STONE)
-
-    # Stone floor across the full footprint
-    for bx in range(out_bx - half_w, out_bx + half_w + 1):
-        if world.get_block(bx, sy) != BEDROCK:
-            world.set_block(bx, sy, STONE)
 
     # Register zone so later generation won't overlap
     world.city_zones.append((out_bx - half_w, out_bx + half_w))
@@ -1022,7 +1046,12 @@ def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
     pieces    = layout_fn(half_w, wall, roof, rng, biodome, cfg)
     start_x   = out_bx - half_w + 1
     npc_px, npc_py, flag_bx, flag_by = _place_outpost_pieces(
-        world, rng, start_x, sy, biodome, wall, roof, pieces)
+        world, rng, start_x, sy, biodome, wall, roof, pieces,
+        terrain_profile=terrain_profile)
+
+    # Post-placement: smooth walkability between buildings
+    _repair_city_walkability(world, out_bx - half_w, out_bx + half_w,
+                             sy, terrain_profile)
 
     # Fallback NPC position if no piece tagged npc
     if npc_px is None:
@@ -1073,7 +1102,7 @@ def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
         patrol_half = max(12, half_w // 3)
         for pos_bx in soldier_positions:
             sol_px = pos_bx * BLOCK_SIZE
-            sol_py = (sy - 2) * BLOCK_SIZE
+            sol_py = (terrain_profile.get(pos_bx, sy) - 2) * BLOCK_SIZE
             world.entities.append(
                 MilitarySoldierNPC(sol_px, sol_py, world, otype, clothing, patrol_half)
             )
@@ -1097,7 +1126,7 @@ def generate_outpost_for_chunk(world, seed: int, cx: int) -> None:
         return
 
     biodome = world.biodome_at(slot_x)
-    if biodome == "ocean":
+    if biodome == "ocean" or world.surface_height(slot_x) > SURFACE_Y:
         return
     otype   = _type_for_slot(seed, slot_x, biodome)
     if otype is None:
@@ -1153,16 +1182,80 @@ def tick_outpost_day(world_day: int) -> None:
 # Init / restore on load
 # ---------------------------------------------------------------------------
 
+def _spawn_outpost_npcs(world, op: "Outpost") -> None:
+    """Recreate keeper (and soldiers for military types) for an already-registered outpost."""
+    from outpost_npcs import OutpostKeeperNPC, MilitarySoldierNPC, _resolve_clothing
+    otype       = op.outpost_type
+    hw          = OUTPOST_TYPES[otype]["half_w"]
+    sy          = world.surface_y_at(op.center_bx)
+    npc_px      = (op.center_bx - hw + 3) * BLOCK_SIZE
+    npc_py      = (sy - 2) * BLOCK_SIZE
+    keeper      = OutpostKeeperNPC(npc_px, npc_py, world, op.outpost_id, otype)
+    keeper._setup_identity(op.outpost_id + 50000, 0, getattr(world, "seed", 0))
+    world.entities.append(keeper)
+    if otype in _MILITARY_OUTPOST_TYPES:
+        cfg         = OUTPOST_TYPES[otype]
+        clothing    = _resolve_clothing(cfg["clothing_key"])
+        patrol_half = max(12, hw // 3)
+        for pos_bx in [op.center_bx - hw // 3, op.center_bx, op.center_bx + hw // 3]:
+            world.entities.append(
+                MilitarySoldierNPC(pos_bx * BLOCK_SIZE, npc_py, world, otype, clothing, patrol_half)
+            )
+
+
+def _reconstruct_outpost_for_slot(world, seed: int, slot_x: int) -> None:
+    """Rebuild a missing Outpost record (no block placement) for an orphaned slot.
+
+    Used when a flag block survived in a chunk but the DB row was lost
+    (e.g. game closed between chunk generation and the next autosave).
+    Uses the same RNG sequence as _build_outpost so type/name are deterministic.
+    """
+    biodome = world.biodome_at(slot_x)
+    if biodome == "ocean" or world.surface_height(slot_x) > SURFACE_Y:
+        return
+    otype = _type_for_slot(seed, slot_x, biodome)
+    if otype is None or otype not in OUTPOST_TYPES:
+        return
+
+    rng    = _slot_rng(seed, slot_x)
+    rng.random(); rng.random()  # skip spawn + type rolls (match _build_outpost)
+    jitter = rng.randint(-5, 5)
+    out_bx = slot_x + jitter
+
+    hw = OUTPOST_TYPES[otype]["half_w"]
+    op_lo, op_hi = out_bx - hw, out_bx + hw
+    if any(op_hi >= lo - 5 and op_lo <= hi + 5
+           for lo, hi in getattr(world, "city_zones", [])):
+        return
+
+    cfg   = OUTPOST_TYPES[otype]
+    op_id = (max(OUTPOSTS.keys()) + 1) if OUTPOSTS else 0
+    op    = Outpost(
+        outpost_id        = op_id,
+        outpost_type      = otype,
+        center_bx         = out_bx,
+        slot_x            = slot_x,
+        biome             = biodome,
+        name              = _make_outpost_name(_slot_rng(seed, slot_x), otype, biodome),
+        founded_day       = 0,
+        needs             = {iid: {"required": amt, "supplied": 0}
+                             for iid, amt in cfg["needs"]},
+        needs_met_days    = 0,
+        last_resupply_day = 0,
+        stock             = {iid: cfg["base_stock"] for iid, _ in cfg["sells"]},
+    )
+    OUTPOSTS[op_id] = op
+    world.city_zones.append((op_lo, op_hi))
+    _spawn_outpost_npcs(world, op)
+    print(f"[outposts] Recovered orphaned outpost '{op.name}' ({otype}) at bx={out_bx}.")
+
+
 def init_outposts(world) -> None:
     OUTPOSTS.clear()
     if not hasattr(world, '_save_mgr') or world._save_mgr is None:
         return
 
     outpost_data = world._save_mgr._load_outposts()
-    if not outpost_data:
-        return
-
-    from outpost_npcs import OutpostKeeperNPC, MilitarySoldierNPC, _resolve_clothing
 
     for d in outpost_data:
         otype = d["outpost_type"]
@@ -1183,23 +1276,19 @@ def init_outposts(world) -> None:
         )
         OUTPOSTS[op.outpost_id] = op
 
-        # Re-register zone so streaming generation won't overlap
         hw = OUTPOST_TYPES[otype]["half_w"]
         world.city_zones.append((op.center_bx - hw, op.center_bx + hw))
+        _spawn_outpost_npcs(world, op)
 
-        sy     = world.surface_y_at(op.center_bx)
-        npc_bx = op.center_bx - hw + 3
-        npc_px = npc_bx * BLOCK_SIZE
-        npc_py = (sy - 2) * BLOCK_SIZE
-        keeper = OutpostKeeperNPC(npc_px, npc_py, world, op.outpost_id, otype)
-        keeper._setup_identity(op.outpost_id + 50000, 0, getattr(world, "seed", 0))
-        world.entities.append(keeper)
-
-        if otype in _MILITARY_OUTPOST_TYPES:
-            cfg      = OUTPOST_TYPES[otype]
-            clothing = _resolve_clothing(cfg["clothing_key"])
-            patrol_half = max(12, hw // 3)
-            for pos_bx in [op.center_bx - hw // 3, op.center_bx, op.center_bx + hw // 3]:
-                world.entities.append(
-                    MilitarySoldierNPC(pos_bx * BLOCK_SIZE, npc_py, world, otype, clothing, patrol_half)
-                )
+    # Scan loaded chunks for slots whose DB record is missing (orphaned flag blocks).
+    # This recovers outposts that were generated but not yet saved when the game closed.
+    registered_slots = {op.slot_x for op in OUTPOSTS.values()}
+    seed = getattr(world, "seed", 0)
+    half = OUTPOST_SLOT_SPACING // 2
+    for cx in list(world._chunks.keys()):
+        base_x = cx * CHUNK_W
+        for bx in range(base_x, base_x + CHUNK_W):
+            if ((bx % OUTPOST_SLOT_SPACING) + OUTPOST_SLOT_SPACING) % OUTPOST_SLOT_SPACING == half:
+                if bx not in registered_slots and _should_spawn(seed, bx):
+                    _reconstruct_outpost_for_slot(world, seed, bx)
+                break

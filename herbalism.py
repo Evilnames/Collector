@@ -44,6 +44,7 @@ INGREDIENT_DISPLAY_NAMES = {
     "dried_borage":        "Dried Borage",
     "dried_comfrey":       "Dried Comfrey",
     "dried_mugwort":       "Dried Mugwort",
+    "dried_edelweiss":     "Dried Edelweiss",
     "crystal_shard":       "Crystal Shard",
     "ruby":                "Ruby",
     "cave_mushroom":       "Cave Mushroom",
@@ -87,6 +88,7 @@ DRYING_TABLE = {
     "borage":         "dried_borage",
     "comfrey":        "dried_comfrey",
     "mugwort":        "dried_mugwort",
+    "edelweiss":      "dried_edelweiss",
 }
 
 DRYABLE_ITEMS = list(DRYING_TABLE.keys())
@@ -205,6 +207,67 @@ RECIPE_ORDER = (
 
 # All potion / elixir output IDs
 ALL_POTION_IDS = list(RECIPES.keys()) + ["mystery_flask"]
+
+# ── Mortar & Pestle — no research required, fresh herbs only ─────────────────
+
+MORTAR_RECIPES = [
+    {
+        "name":        "Health Poultice",
+        "ingredients": {"yarrow": 2},
+        "output_id":   "health_poultice",
+        "output_count": 1,
+        "desc":        "Restores 10 HP instantly",
+    },
+    {
+        "name":        "Speed Paste",
+        "ingredients": {"mint": 2},
+        "output_id":   "speed_paste",
+        "output_count": 1,
+        "desc":        "Move speed +35% for 25s",
+    },
+    {
+        "name":        "Focus Rub",
+        "ingredients": {"rosemary": 2},
+        "output_id":   "focus_rub",
+        "output_count": 1,
+        "desc":        "Discovery XP +25% for 25s",
+    },
+    {
+        "name":        "Soothe Paste",
+        "ingredients": {"lavender": 2},
+        "output_id":   "soothe_paste",
+        "output_count": 1,
+        "desc":        "Hunger drain -30% for 25s",
+    },
+    {
+        "name":        "Vigor Paste",
+        "ingredients": {"chamomile_item": 2},
+        "output_id":   "vigor_paste",
+        "output_count": 1,
+        "desc":        "Max health +20 for 25s",
+    },
+]
+
+MORTAR_INGREDIENT_KEYS = {"yarrow", "mint", "rosemary", "lavender", "chamomile_item"}
+
+MORTAR_COLORS = {
+    "health_poultice": (200,  80,  80),
+    "speed_paste":     ( 70, 185, 215),
+    "focus_rub":       (130, 155,  95),
+    "soothe_paste":    (165, 130, 205),
+    "vigor_paste":     ( 50, 175, 110),
+}
+
+MORTAR_DESCS = {r["output_id"]: r["desc"] for r in MORTAR_RECIPES}
+
+
+def match_mortar_recipe(slot_items: dict) -> "str | None":
+    """Returns output_id if slot_items exactly matches a MORTAR_RECIPES entry."""
+    clean = {k: v for k, v in slot_items.items() if v > 0}
+    for recipe in MORTAR_RECIPES:
+        if recipe["ingredients"] == clean:
+            return recipe["output_id"]
+    return None
 
 # ── Potion display data ───────────────────────────────────────────────────────
 

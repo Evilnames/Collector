@@ -501,6 +501,7 @@ def main():
     t0 = _t("total after choice", t0)
 
     world._player_ref = player
+    world.debug = settings.get("debug", False)
     ui.world_ref = world
 
     renderer.cam_x = player.x - SCREEN_W // 2
@@ -647,6 +648,8 @@ def main():
     _fps_smooth = 60.0
     _fps_last = -1
     fps_surf = _fps_font.render("FPS: 60", True, (255, 255, 255))
+    _biome_surf = None
+    _biome_last = ""
 
     autosave_timer = 0.0
     AUTOSAVE_INTERVAL = 60.0
@@ -708,6 +711,19 @@ def main():
                             idx = min(range(len(stops)), key=lambda i: abs(stops[i] - car_by))
                             if idx < len(stops) - 1:
                                 car.call(stops[idx + 1], world)
+                        continue
+
+                # Boat steering controls while riding
+                if player.riding_boat is not None and not _any_ui_open():
+                    boat = player.riding_boat
+                    if event.key in (pygame.K_a, pygame.K_LEFT):
+                        boat.go(-1, world)
+                        continue
+                    elif event.key in (pygame.K_d, pygame.K_RIGHT):
+                        boat.go(1, world)
+                        continue
+                    elif event.key in (pygame.K_s, pygame.K_DOWN):
+                        boat.stop()
                         continue
 
                 # Minecart direction controls while riding
@@ -834,11 +850,16 @@ def main():
                             _ent.handle_milking_press()
                             break
 
-                # Weapon Rack: ESC to close
+                # Weapon Rack: ESC closes inspect/picker layers before closing rack
                 from blocks import WEAPON_RACK_BLOCK as _WEAPON_RACK_BLOCK
                 if ui.refinery_open and ui.refinery_block_id == _WEAPON_RACK_BLOCK:
                     if event.key == pygame.K_ESCAPE:
-                        ui.refinery_open = False
+                        if getattr(ui, "_inspect_picking_slot", None):
+                            ui._inspect_picking_slot = None
+                        elif getattr(ui, "_inspect_weapon_uid", None):
+                            ui._inspect_weapon_uid = None
+                        else:
+                            ui.refinery_open = False
 
                 # Wardrobe toggle (T = Textiles/Tailoring)
                 if event.key == pygame.K_t:
@@ -990,6 +1011,16 @@ def main():
                         player.riding_minecart = None
                         continue
 
+                    # Dismount boat if currently riding
+                    if player.riding_boat is not None:
+                        boat = player.riding_boat
+                        boat.stop()
+                        boat.rider = None
+                        player.x = boat.x + boat.W + 4
+                        player.y = boat.y
+                        player.riding_boat = None
+                        continue
+
                     # Dismount elevator if currently riding
                     if player.riding_elevator is not None:
                         car = player.riding_elevator
@@ -1019,6 +1050,9 @@ def main():
                         ui.open_backhoe(bh)
                         continue
 
+                    nearby_boat = next(
+                        (b for b in world.boats if b.in_range(player) and b.rider is None), None
+                    )
                     nearby_auto = next(
                         (a for a in world.automations if a.in_range(player)), None
                     )
@@ -1097,7 +1131,8 @@ def main():
                             if ui.landmark_menu_open and ui.active_landmark_region is _reg:
                                 # Second E: fire the effect
                                 ok, title, detail = apply_effect(
-                                    player, _reg, getattr(world, "day_count", 0))
+                                    player, _reg, getattr(world, "day_count", 0),
+                                    debug=settings.get("debug", False))
                                 if not hasattr(world, "_town_toasts"):
                                     world._town_toasts = []
                                 msg = title if not detail else f"{title} — {detail}"
@@ -1157,6 +1192,9 @@ def main():
                             else:
                                 _close_all_ui()
                                 ui.open_town_menu(town, player)
+                    elif nearby_boat is not None:
+                        nearby_boat.rider = player
+                        player.riding_boat = nearby_boat
                     elif nearby_bed is not None:
                         player.set_spawn(*nearby_bed)
                         print("Spawn point set to bed.")
@@ -1407,6 +1445,8 @@ def main():
                     ui._jw_drag_pos = event.pos
                 if ui.garden_open:
                     ui.handle_garden_mousemotion(event.pos)
+                if ui.refinery_open and ui.refinery_block_id == OXIDATION_STATION_BLOCK:
+                    ui.handle_oxidation_mouse_motion(event.pos)
 
             if event.type == pygame.MOUSEBUTTONUP:
                 if ui.inventory_open:
@@ -1415,6 +1455,8 @@ def main():
                     ui._handle_jewelry_drop(event.pos, player)
                 if ui.garden_open:
                     ui.handle_garden_mouseup(event.pos, player)
+                if ui.refinery_open and ui.refinery_block_id == OXIDATION_STATION_BLOCK:
+                    ui.handle_oxidation_mouse_up(event.pos)
                 # End sculpt drag on any mouse release
                 if getattr(ui, '_sculpt_drag_mode', None) is not None:
                     ui._sculpt_drag_mode = None
@@ -1859,6 +1901,7 @@ def main():
             renderer.draw_backhoes(world.backhoes, player)
             renderer.draw_elevator_cars(world.elevator_cars)
             renderer.draw_minecarts(world.minecarts)
+            renderer.draw_boats(world.boats, player, world)
             ui.draw(player, research, dt)
             pygame.display.flip()
             continue
@@ -2002,6 +2045,8 @@ def main():
             car.update(dt, world, player)
         for cart in world.minecarts:
             cart.update(dt, world)
+        for boat in world.boats:
+            boat.update(dt, world)
         for automation in world.automations:
             automation.update(dt, world)
         for farm_bot in world.farm_bots:
@@ -2053,9 +2098,14 @@ def main():
         renderer.draw_mining_indicator(player)
         renderer.draw_place_indicator(player)
         renderer.draw_water_overlay(player)
+        renderer.draw_heat_shimmer(world, dt)
         renderer.draw_rain(world)
+        renderer.draw_rain_particles(world, dt)
+        renderer.draw_snow_particles(world, dt)
+        renderer.draw_dust_particles(world, dt)
         renderer.draw_wind_particles(world, dt)
         renderer.draw_embers(world, dt)
+        renderer.draw_biome_overlay(world, dt)
         renderer.tick_float_texts(dt)
         renderer.draw_float_texts()
         renderer.draw_lighting(player, world, player.get_depth(), world.time_of_day)
@@ -2085,6 +2135,14 @@ def main():
             fps_surf = _fps_font.render(f"FPS: {_fps_int}", True, (255, 255, 255))
             _fps_last = _fps_int
         screen.blit(fps_surf, (8, SCREEN_H - fps_surf.get_height() - 8))
+
+        if settings.get("debug", False):
+            _cur_biome = world.biodome_at(int(player.x // BLOCK_SIZE))
+            if _cur_biome != _biome_last:
+                _biome_surf = _fps_font.render(f"Biome: {_cur_biome}", True, (255, 255, 255))
+                _biome_last = _cur_biome
+            if _biome_surf:
+                screen.blit(_biome_surf, (8, SCREEN_H - fps_surf.get_height() - _biome_surf.get_height() - 12))
 
         pygame.display.flip()
 

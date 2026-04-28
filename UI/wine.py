@@ -200,8 +200,9 @@ class WineMixin:
             rline(f"{BIOME_DISPLAY_NAMES.get(g.origin_biome, g.origin_biome)}  {VARIETY_DISPLAY_NAMES.get(g.variety, g.variety)}", (240, 180, 200))
             rline(f"Crush: {CRUSH_STYLES.get(g.crush_style, {}).get('label', '-')}", (190, 150, 170))
             rline(f"Must ready for fermentation", (170, 200, 160))
-            stars = "★" * round(g.press_quality * 5) + "☆" * (5 - round(g.press_quality * 5))
-            rline(stars, (230, 190, 90))
+            ss = self._render_stars(self.font, g.press_quality)
+            self.screen.blit(ss, (cx2 - ss.get_width() // 2, iy2))
+            iy2 += 26
 
             done_rect = pygame.Rect(cx2 - 70, iy2 + 20, 140, 34)
             pygame.draw.rect(self.screen, (50, 25, 35), done_rect)
@@ -542,8 +543,9 @@ class WineMixin:
                 iy2 += 24
             rline(WINE_STYLE_DESCS.get(g.style, g.style), col)
             rline(f"Alcohol: {g.alcohol:.0%}   Complexity: {g.complexity:.0%}", (200, 170, 120))
-            stars = "★" * round(g.ferment_quality * 5) + "☆" * (5 - round(g.ferment_quality * 5))
-            rline(stars, (230, 200, 90))
+            ss = self._render_stars(self.font, g.ferment_quality)
+            self.screen.blit(ss, (cx2 - ss.get_width() // 2, iy2))
+            iy2 += 24
             if g.flavor_notes:
                 rline("Flavour Notes:", (180, 150, 90))
                 for note in g.flavor_notes[:6]:

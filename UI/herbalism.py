@@ -6,6 +6,7 @@ from herbalism import (
     POTION_DESCS, POTION_COLORS, TIER_LABELS, BUFF_DESCS,
     INGREDIENT_DISPLAY_NAMES, ALL_POTION_IDS,
     DRYING_RACK_SLOTS, DRY_DURATION_DAYS,
+    match_mortar_recipe, MORTAR_RECIPES, MORTAR_COLORS, MORTAR_INGREDIENT_KEYS,
 )
 from world import CYCLE_DURATION
 
@@ -558,6 +559,195 @@ class HerbalismMixin:
                     # Assign to active slot
                     slots[active_idx] = {"key": ikey, "count": 1}
                     setattr(self, active_slot_attr, None)
+                    return
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # MORTAR & PESTLE
+    # ─────────────────────────────────────────────────────────────────────────
+
+    _MC = (145, 135, 120)  # mortar stone colour
+
+    def _draw_mortar(self, player, dt=0.0):
+        from items import ITEMS
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 215))
+        self.screen.blit(overlay, (0, 0))
+
+        title = self.font.render("MORTAR & PESTLE", True, (200, 190, 170))
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 6))
+        hint = self.small.render("ESC to close  |  No research required", True, (120, 110, 95))
+        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 26))
+
+        SLOT_W, SLOT_H, SLOT_GAP = 110, 90, 10
+        total_slot_w = 2 * SLOT_W + SLOT_GAP
+        sx0 = (SCREEN_W - total_slot_w) // 2
+        sy0 = 50
+
+        self._mortar_slot_rects.clear()
+        active_idx = self._mortar_active_slot
+        for i, slot in enumerate(self._mortar_slots):
+            sx = sx0 + i * (SLOT_W + SLOT_GAP)
+            rect = pygame.Rect(sx, sy0, SLOT_W, SLOT_H)
+            self._mortar_slot_rects.append(rect)
+            is_active = (active_idx == i)
+            pygame.draw.rect(self.screen, (25, 23, 20) if not is_active else (40, 35, 28), rect)
+            pygame.draw.rect(self.screen, self._MC if is_active else (60, 55, 50), rect, 3 if is_active else 1)
+            if slot:
+                item_key, count = slot.get("key"), slot.get("count", 1)
+                item_name = ITEMS.get(item_key, {}).get("name", item_key)
+                item_col  = ITEMS.get(item_key, {}).get("color", (180, 180, 180))
+                ns = self.small.render(item_name[:14], True, item_col)
+                self.screen.blit(ns, (sx + 6, sy0 + 8))
+                cnt_s = self.font.render(f"×{count}", True, (220, 210, 195))
+                self.screen.blit(cnt_s, (sx + 6, sy0 + 36))
+                minus_rect = pygame.Rect(sx + SLOT_W - 26, sy0 + 6, 20, 20)
+                plus_rect  = pygame.Rect(sx + SLOT_W - 26, sy0 + 30, 20, 20)
+                pygame.draw.rect(self.screen, (50, 30, 20), minus_rect)
+                pygame.draw.rect(self.screen, (160, 80, 40), minus_rect, 1)
+                ms = self.small.render("–", True, (220, 140, 80))
+                self.screen.blit(ms, (minus_rect.centerx - ms.get_width() // 2,
+                                      minus_rect.centery - ms.get_height() // 2))
+                pygame.draw.rect(self.screen, (20, 40, 25), plus_rect)
+                pygame.draw.rect(self.screen, (80, 160, 100), plus_rect, 1)
+                ps = self.small.render("+", True, (120, 200, 140))
+                self.screen.blit(ps, (plus_rect.centerx - ps.get_width() // 2,
+                                      plus_rect.centery - ps.get_height() // 2))
+            else:
+                empty_s = self.small.render(f"Slot {i + 1}", True, (60, 55, 50))
+                self.screen.blit(empty_s, (sx + SLOT_W // 2 - empty_s.get_width() // 2,
+                                            sy0 + SLOT_H // 2 - empty_s.get_height() // 2))
+                if is_active:
+                    pick_s = self.small.render("← pick herb below", True, (110, 100, 85))
+                    self.screen.blit(pick_s, (sx + 4, sy0 + SLOT_H - 18))
+
+        slot_dict = {s["key"]: s["count"] for s in self._mortar_slots if s and s.get("key")}
+        matched = match_mortar_recipe(slot_dict)
+        hint_y = sy0 + SLOT_H + 14
+        if matched:
+            m_name = ITEMS.get(matched, {}).get("name", matched)
+            m_col  = MORTAR_COLORS.get(matched, (200, 190, 170))
+            match_s = self.font.render(f"✓  {m_name}", True, m_col)
+            self.screen.blit(match_s, (SCREEN_W // 2 - match_s.get_width() // 2, hint_y))
+        elif slot_dict:
+            no_s = self.small.render("No matching recipe", True, (140, 100, 60))
+            self.screen.blit(no_s, (SCREEN_W // 2 - no_s.get_width() // 2, hint_y))
+
+        grind_rect = pygame.Rect(SCREEN_W // 2 - 80, hint_y + 28, 160, 36)
+        has_items = bool(slot_dict) and matched is not None
+        bc = (40, 35, 25) if has_items else (20, 18, 14)
+        pygame.draw.rect(self.screen, bc, grind_rect)
+        pygame.draw.rect(self.screen, self._MC if has_items else (55, 50, 45), grind_rect, 2)
+        gl = self.font.render("GRIND", True, (200, 190, 170) if has_items else (60, 55, 50))
+        self.screen.blit(gl, (grind_rect.centerx - gl.get_width() // 2,
+                               grind_rect.centery - gl.get_height() // 2))
+        self._mortar_grind_btn = grind_rect
+
+        inv_y0 = hint_y + 76
+        sub = self.small.render("Herbs in inventory — click to add to selected slot:", True, (90, 85, 75))
+        self.screen.blit(sub, (8, inv_y0))
+        inv_y0 += 18
+        self._mortar_inv_rects.clear()
+        CELL_W, CELL_H, GAP, COLS = 180, 44, 6, 6
+        gx0 = (SCREEN_W - (COLS * CELL_W + (COLS - 1) * GAP)) // 2
+        col_i = row_i = 0
+        for ikey in sorted(MORTAR_INGREDIENT_KEYS):
+            count = player.inventory.get(ikey, 0)
+            if count <= 0:
+                continue
+            cx = gx0 + col_i * (CELL_W + GAP)
+            cy = inv_y0 + row_i * (CELL_H + GAP)
+            if cy + CELL_H > SCREEN_H - 8:
+                break
+            rect = pygame.Rect(cx, cy, CELL_W, CELL_H)
+            self._mortar_inv_rects[ikey] = rect
+            item_col = ITEMS.get(ikey, {}).get("color", (160, 160, 160))
+            pygame.draw.rect(self.screen, (15, 14, 12), rect)
+            pygame.draw.rect(self.screen, item_col, rect, 1)
+            disp = ITEMS.get(ikey, {}).get("name", ikey)
+            ns = self.small.render(f"{disp}  ×{count}", True, item_col)
+            self.screen.blit(ns, (cx + 6, cy + (CELL_H - ns.get_height()) // 2))
+            col_i += 1
+            if col_i >= COLS:
+                col_i = 0
+                row_i += 1
+
+        # Known recipes panel (right side)
+        rx0 = SCREEN_W - 260
+        ry0 = 50
+        rh  = SCREEN_H - 70
+        pygame.draw.rect(self.screen, (12, 11, 9), (rx0, ry0, 250, rh))
+        pygame.draw.rect(self.screen, (60, 55, 50), (rx0, ry0, 250, rh), 1)
+        hdr = self.small.render("RECIPES", True, (110, 100, 85))
+        self.screen.blit(hdr, (rx0 + 8, ry0 + 4))
+        iy = ry0 + 22
+        for recipe in MORTAR_RECIPES:
+            if iy + 30 > ry0 + rh - 4:
+                break
+            out_name = ITEMS.get(recipe["output_id"], {}).get("name", recipe["output_id"])
+            col = MORTAR_COLORS.get(recipe["output_id"], (180, 170, 155))
+            ns = self.small.render(out_name, True, col)
+            self.screen.blit(ns, (rx0 + 8, iy))
+            iy += 14
+            for ing_k, ing_v in recipe["ingredients"].items():
+                ing_name = ITEMS.get(ing_k, {}).get("name", ing_k)
+                is2 = self.small.render(f"  {ing_name} ×{ing_v}", True, (80, 75, 65))
+                self.screen.blit(is2, (rx0 + 8, iy))
+                iy += 12
+            iy += 6
+
+    def _handle_mortar_click(self, pos, player):
+        # Slot selection
+        for i, rect in enumerate(self._mortar_slot_rects):
+            if rect.collidepoint(pos):
+                self._mortar_active_slot = i
+                return
+
+        # +/− count buttons inside filled slots
+        SLOT_W, SLOT_H, SLOT_GAP = 110, 90, 10
+        sx0 = (SCREEN_W - (2 * SLOT_W + SLOT_GAP)) // 2
+        sy0 = 50
+        for i, slot in enumerate(self._mortar_slots):
+            if not slot:
+                continue
+            sx = sx0 + i * (SLOT_W + SLOT_GAP)
+            minus_rect = pygame.Rect(sx + SLOT_W - 26, sy0 + 6, 20, 20)
+            plus_rect  = pygame.Rect(sx + SLOT_W - 26, sy0 + 30, 20, 20)
+            if minus_rect.collidepoint(pos):
+                slot["count"] = max(1, slot["count"] - 1)
+                return
+            if plus_rect.collidepoint(pos):
+                have = player.inventory.get(slot["key"], 0)
+                if slot["count"] < have:
+                    slot["count"] += 1
+                return
+
+        # GRIND button
+        if self._mortar_grind_btn and self._mortar_grind_btn.collidepoint(pos):
+            slot_dict = {s["key"]: s["count"] for s in self._mortar_slots if s and s.get("key")}
+            if not slot_dict:
+                return
+            matched_id = match_mortar_recipe(slot_dict)
+            if matched_id is None:
+                return
+            for ing_key, ing_cnt in slot_dict.items():
+                if player.inventory.get(ing_key, 0) < ing_cnt:
+                    return
+            for ing_key, ing_cnt in slot_dict.items():
+                player.inventory[ing_key] -= ing_cnt
+                if player.inventory[ing_key] <= 0:
+                    del player.inventory[ing_key]
+            player._add_item(matched_id)
+            for i in range(len(self._mortar_slots)):
+                self._mortar_slots[i] = {}
+            self._mortar_active_slot = None
+            return
+
+        # Inventory herb picker
+        if self._mortar_active_slot is not None:
+            for ikey, rect in self._mortar_inv_rects.items():
+                if rect.collidepoint(pos):
+                    self._mortar_slots[self._mortar_active_slot] = {"key": ikey, "count": 1}
+                    self._mortar_active_slot = None
                     return
 
     # ─────────────────────────────────────────────────────────────────────────

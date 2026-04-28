@@ -72,6 +72,7 @@ _HERBAL_NOTES = {
     "valerian":       ["earthy valerian", "woodsy root"],
     "yarrow":         ["meadow yarrow", "grassy herb"],
     "echinacea":      ["echinacea bloom", "floral prairie"],
+    "edelweiss":      ["alpine bloom", "crisp mountain air"],
 }
 
 WITHER_RACK_SLOTS = 4
@@ -234,6 +235,13 @@ HERBAL_ADDITIVES = {
         "earthiness":       +0.06,
         "sweetness":        +0.04,
         "complexity_bonus": 0.05,
+    },
+    "edelweiss": {
+        "label":            "Edelweiss",
+        "floral":           +0.18,
+        "sweetness":        +0.06,
+        "astringency":      -0.06,
+        "complexity_bonus": 0.06,
     },
 }
 

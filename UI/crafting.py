@@ -5,7 +5,6 @@ from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOO
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
                       BAIT_STATION_RECIPES, FLETCHING_RECIPES, SMELTER_RECIPES, GLASS_KILN_RECIPES,
                       GARDEN_WORKSHOP_RECIPES, JUICER_RECIPES, AUTOMATION_RECIPES,
-                      WEAPON_ASSEMBLER_RECIPES,
                       RECIPE_GROUPS, RECIPE_GROUPS_ORDER,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
@@ -372,14 +371,19 @@ class CraftingMixin:
             hunger   = out_data.get("hunger_restore", 0)
             label    = self.font.render(f"{recipe['name']}  +{hunger}%", True, name_col)
             self.screen.blit(label, (LIST_X + 4 + ICON_SZ + 6, ry + 5))
-            iy = ry + 5 + 15
-            for item_id, count in recipe["ingredients"].items():
+            ing_x = LIST_X + 4 + ICON_SZ + 6
+            ing_y = ry + 5 + 15
+            for j, (item_id, count) in enumerate(recipe["ingredients"].items()):
                 have = player.inventory.get(item_id, 0)
                 item_name = ITEMS.get(item_id, {}).get("name", item_id)
                 col = (120, 210, 100) if have >= count else (210, 80, 60)
-                txt = self.small.render(f"{item_name}: {have}/{count}", True, col)
-                self.screen.blit(txt, (LIST_X + 4 + ICON_SZ + 6, iy))
-                iy += 12
+                seg = self.small.render(f"{item_name} {have}/{count}", True, col)
+                self.screen.blit(seg, (ing_x, ing_y))
+                ing_x += seg.get_width()
+                if j < len(recipe["ingredients"]) - 1:
+                    sep = self.small.render(" | ", True, (100, 100, 110))
+                    self.screen.blit(sep, (ing_x, ing_y))
+                    ing_x += sep.get_width()
             self._bakery_recipe_rects[i] = row_rect
 
         # --- Right panel: selected recipe detail ---
@@ -487,14 +491,19 @@ class CraftingMixin:
             label_str = f"{recipe['name']}  +{hunger}%" if hunger else recipe["name"]
             label = self.font.render(label_str, True, name_col)
             self.screen.blit(label, (LIST_X + 4 + ICON_SZ + 6, ry + 5))
-            iy = ry + 5 + 15
-            for item_id, count in recipe["ingredients"].items():
+            ing_x = LIST_X + 4 + ICON_SZ + 6
+            ing_y = ry + 5 + 15
+            for j, (item_id, count) in enumerate(recipe["ingredients"].items()):
                 have = player.inventory.get(item_id, 0)
                 item_name = ITEMS.get(item_id, {}).get("name", item_id)
                 col = (100, 200, 120) if have >= count else (200, 80, 60)
-                txt = self.small.render(f"{item_name}: {have}/{count}", True, col)
-                self.screen.blit(txt, (LIST_X + 4 + ICON_SZ + 6, iy))
-                iy += 12
+                seg = self.small.render(f"{item_name} {have}/{count}", True, col)
+                self.screen.blit(seg, (ing_x, ing_y))
+                ing_x += seg.get_width()
+                if j < len(recipe["ingredients"]) - 1:
+                    sep = self.small.render(" | ", True, (80, 90, 80))
+                    self.screen.blit(sep, (ing_x, ing_y))
+                    ing_x += sep.get_width()
             recipe_rects_dict[i] = row_rect
 
         # --- Right panel: selected recipe detail ---
@@ -561,7 +570,7 @@ class CraftingMixin:
                             BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK,
                             COMPOST_BIN_BLOCK,
                             WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK, ROASTING_KILN_BLOCK,
-                            DRYING_RACK_BLOCK, KILN_BLOCK, RESONANCE_BLOCK,
+                            DRYING_RACK_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, MORTAR_BLOCK,
                             BAIT_STATION_BLOCK,
                             SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK,
                             DAIRY_VAT_BLOCK, CHEESE_PRESS_BLOCK, AGING_CAVE_BLOCK,
@@ -625,6 +634,9 @@ class CraftingMixin:
             return
         if self.refinery_block_id == DRYING_RACK_BLOCK:
             self._draw_drying_rack(player, dt)
+            return
+        if self.refinery_block_id == MORTAR_BLOCK:
+            self._draw_mortar(player, dt)
             return
         if self.refinery_block_id == KILN_BLOCK:
             self._draw_kiln(player, dt, getattr(self, "_research", None))
@@ -714,11 +726,7 @@ class CraftingMixin:
                                        action_label="CRAFT")
             return
         if self.refinery_block_id == WEAPON_ASSEMBLER_BLOCK:
-            self._draw_cooking_station(player, WEAPON_ASSEMBLER_RECIPES, "WEAPON ASSEMBLER",
-                                       (120, 90, 60), self._assembler_selected_recipe,
-                                       self._assembler_recipe_rects, "_assembler_selected_recipe",
-                                       block_id=WEAPON_ASSEMBLER_BLOCK,
-                                       action_label="CRAFT")
+            self._draw_assembly_bench(player)
             return
         if self.refinery_block_id == SMELTER_BLOCK:
             self._draw_cooking_station(player, SMELTER_RECIPES, "SMELTER",

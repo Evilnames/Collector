@@ -5,7 +5,6 @@ from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOO
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
                       BAIT_STATION_RECIPES, FLETCHING_RECIPES, SMELTER_RECIPES, GLASS_KILN_RECIPES,
                       GARDEN_WORKSHOP_RECIPES, JUICER_RECIPES, AUTOMATION_RECIPES,
-                      WEAPON_ASSEMBLER_RECIPES,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
 from rocks import get_refinery_equipment
@@ -19,7 +18,7 @@ from blocks import (BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BB
                     BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK,
                     COMPOST_BIN_BLOCK, GARDEN_BLOCK,
                     WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK, ROASTING_KILN_BLOCK, TEA_HOUSE_BLOCK,
-                    DRYING_RACK_BLOCK, KILN_BLOCK, RESONANCE_BLOCK,
+                    DRYING_RACK_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, MORTAR_BLOCK,
                     BAIT_STATION_BLOCK,
                     SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK,
                     DAIRY_VAT_BLOCK, CHEESE_PRESS_BLOCK, AGING_CAVE_BLOCK,
@@ -321,11 +320,13 @@ class HandlersMixin:
             else:
                 self._research_right_scroll = max(0, min(self._max_research_right_scroll, self._research_right_scroll - dy * 58))
         elif self.inventory_open:
-            self._inv_scroll = max(0, min(self._max_inv_scroll, self._inv_scroll - dy))
+            self._inv_scroll = max(0, min(self._max_inv_scroll, self._inv_scroll - dy * 58))
         elif self.crafting_open:
             self._recipe_scroll = max(0, min(self._max_recipe_scroll, self._recipe_scroll - dy * 58))
         elif self.refinery_open and self.refinery_block_id == BAKERY_BLOCK:
             self._bakery_scroll = max(0, min(self._max_bakery_scroll, self._bakery_scroll - dy))
+        elif self.refinery_open and self.refinery_block_id == WEAPON_ASSEMBLER_BLOCK:
+            self._bench_scroll = max(0, self._bench_scroll - dy * 20)
         elif self.refinery_open:
             bid = self.refinery_block_id
             cur = self._cook_station_scroll.get(bid, 0)
@@ -453,27 +454,31 @@ class HandlersMixin:
         if flowers is None or garden_pos is None:
             return
         CAPACITY = 12
-        # Pick up from an occupied garden slot
-        for slot_idx, rect in self._garden_slot_rects.items():
-            if rect.collidepoint(pos) and slot_idx < len(flowers):
-                self._garden_drag_flower = flowers[slot_idx]
-                self._garden_drag_source = 'slot'
-                self._garden_drag_pos    = pos
-                flowers.pop(slot_idx)
-                if not flowers:
-                    player.world.insects = [
-                        ins for ins in player.world.insects
-                        if not _is_garden_insect(ins, garden_pos)
-                    ]
-                return
+        # Pick up a placed flower from the canvas
+        for uid, rect in self._garden_flower_rects.items():
+            if rect.collidepoint(pos):
+                for i, (wf, cx, cy) in enumerate(flowers):
+                    if wf.uid == uid:
+                        self._garden_drag_flower     = wf
+                        self._garden_drag_source     = 'canvas'
+                        self._garden_drag_origin_pos = (cx, cy)
+                        self._garden_drag_pos        = pos
+                        flowers.pop(i)
+                        if not flowers:
+                            player.world.insects = [
+                                ins for ins in player.world.insects
+                                if not _is_garden_insect(ins, garden_pos)
+                            ]
+                        return
         # Pick up from the collection panel
         for uid, rect in self._garden_col_rects.items():
             if rect.collidepoint(pos):
                 for i, wf in enumerate(player.wildflowers):
                     if wf.uid == uid and len(flowers) < CAPACITY:
-                        self._garden_drag_flower = player.wildflowers.pop(i)
-                        self._garden_drag_source = 'collection'
-                        self._garden_drag_pos    = pos
+                        self._garden_drag_flower     = player.wildflowers.pop(i)
+                        self._garden_drag_source     = 'collection'
+                        self._garden_drag_origin_pos = None
+                        self._garden_drag_pos        = pos
                         return
 
     def handle_garden_mousemotion(self, pos):
@@ -489,18 +494,18 @@ class HandlersMixin:
             return
 
         CAPACITY = 12
+        FLOWER_R = 36
+        canvas   = self._garden_canvas_rect
         dropped  = False
 
-        # Drop onto a garden slot
-        for slot_idx, rect in self._garden_slot_rects.items():
-            if rect.collidepoint(pos):
-                insert_idx = min(slot_idx, len(flowers))
-                flowers.insert(insert_idx, drag_wf)
-                was_first = len(flowers) == 1
-                if was_first:
-                    player.world.spawn_insects_near_garden(*garden_pos)
-                dropped = True
-                break
+        # Drop onto the garden canvas
+        if canvas and canvas.collidepoint(pos) and (drag_src == 'canvas' or len(flowers) < CAPACITY):
+            rel_x = max(FLOWER_R, min(canvas.width  - FLOWER_R, pos[0] - canvas.x))
+            rel_y = max(FLOWER_R, min(canvas.height - FLOWER_R, pos[1] - canvas.y))
+            flowers.append((drag_wf, rel_x, rel_y))
+            if len(flowers) == 1:
+                player.world.spawn_insects_near_garden(*garden_pos)
+            dropped = True
 
         if not dropped:
             # Drop onto the collection panel → return flower to inventory
@@ -510,7 +515,7 @@ class HandlersMixin:
             col_zone_w = PW - (730 + 18 + 8 + 10)
             if pos[0] >= col_zone_x and pos[0] <= col_zone_x + col_zone_w:
                 player.wildflowers.append(drag_wf)
-                if drag_src == 'slot' and not flowers:
+                if drag_src == 'canvas' and not flowers:
                     player.world.insects = [
                         ins for ins in player.world.insects
                         if not _is_garden_insect(ins, garden_pos)
@@ -519,15 +524,17 @@ class HandlersMixin:
 
         if not dropped:
             # Dropped nowhere — return to original source
-            if drag_src == 'slot':
-                flowers.append(drag_wf)
+            if drag_src == 'canvas':
+                ox, oy = self._garden_drag_origin_pos
+                flowers.append((drag_wf, ox, oy))
                 if len(flowers) == 1:
                     player.world.spawn_insects_near_garden(*garden_pos)
             else:
                 player.wildflowers.append(drag_wf)
 
-        self._garden_drag_flower = None
-        self._garden_drag_source = None
+        self._garden_drag_flower     = None
+        self._garden_drag_source     = None
+        self._garden_drag_origin_pos = None
 
 
     def handle_npc_click(self, pos, player):
@@ -741,7 +748,7 @@ class HandlersMixin:
             self._handle_withering_rack_click(pos, player)
             return
         if self.refinery_block_id == OXIDATION_STATION_BLOCK:
-            self._handle_oxidation_station_click(pos, player)
+            self.handle_oxidation_mouse_down(pos, player)
             return
         if self.refinery_block_id == TEA_CELLAR_BLOCK:
             self._handle_tea_cellar_click(pos, player)
@@ -751,6 +758,9 @@ class HandlersMixin:
             return
         if self.refinery_block_id == DRYING_RACK_BLOCK:
             self._handle_drying_rack_click(pos, player)
+            return
+        if self.refinery_block_id == MORTAR_BLOCK:
+            self._handle_mortar_click(pos, player)
             return
         if self.refinery_block_id == KILN_BLOCK:
             self._handle_kiln_click(pos, player, getattr(self, "_research", None))
@@ -884,12 +894,7 @@ class HandlersMixin:
                 self._do_cook(player, FLETCHING_RECIPES, self._fletching_selected_recipe)
             return
         if self.refinery_block_id == WEAPON_ASSEMBLER_BLOCK:
-            for i, rect in self._assembler_recipe_rects.items():
-                if rect.collidepoint(pos):
-                    self._assembler_selected_recipe = i
-                    return
-            if self._refine_btn and self._refine_btn.collidepoint(pos):
-                self._do_cook(player, WEAPON_ASSEMBLER_RECIPES, self._assembler_selected_recipe)
+            self._handle_assembly_bench_click(pos, player)
             return
         if self.refinery_block_id == SMELTER_BLOCK:
             for i, rect in self._smelter_recipe_rects.items():

@@ -26,6 +26,8 @@ from blocks import (
     TOPIARY_PEACOCK, TOPIARY_ARCH, TOPIARY_BEAR,
     WEAPON_RACK_BLOCK, TROPHY_PANEL_REN, FORGE_BLOCK, RAIN_BARREL,
     PRAYER_FLAG_BLOCK, LANDMARK_FLAG_BLOCK,
+    STUDDED_OAK_DOOR_CLOSED, SHOJI_DOOR_CLOSED, BRONZE_DOOR_CLOSED,
+    COBALT_DOOR_CLOSED, SANDALWOOD_DOOR_CLOSED, STONE_SLAB_DOOR_CLOSED,
 )
 
 
@@ -53,19 +55,30 @@ def _lm_fill_bg(world, x0, x1, y0, y1, bid):
             if 0 <= by < world.height:
                 world.set_bg_block(bx, by, bid)
 
-def _lm_clear_terrain(world, left_bx, width, sy):
-    """Level terrain in the landmark footprint."""
+def _lm_clear_terrain(world, left_bx, width, sy) -> int:
+    """Level terrain in the landmark footprint. Returns the floor sy used."""
+    from cities import _city_terrain_profile
     for cx in range((left_bx - 2) // CHUNK_W, (left_bx + width + 4) // CHUNK_W + 1):
         world.load_chunk(cx)
+    profile = _city_terrain_profile(world, left_bx, left_bx + width)
+    vals = sorted(profile.values())
+    sy = vals[len(vals) // 2]
+    # Clear from actual column surface (+ tree canopy buffer) down to floor
     for bx in range(left_bx - 1, left_bx + width + 2):
-        for by in range(sy - 18, sy):
+        col_sy = world.surface_y_at(bx)
+        clear_from = max(0, min(col_sy, sy) - 30)
+        for by in range(clear_from, sy):
             if world.get_block(bx, by) not in (AIR, BEDROCK):
                 world.set_block(bx, by, AIR)
+    # Fill valleys up to floor level
     for bx in range(left_bx, left_bx + width + 1):
         col_sy = world.surface_y_at(bx)
-        for by in range(col_sy, sy):
+        for by in range(sy, col_sy + 1):
             if world.get_block(bx, by) == AIR:
                 world.set_block(bx, by, STONE)
+        if 0 <= sy < world.height and world.get_block(bx, sy) != BEDROCK:
+            world.set_block(bx, sy, STONE)
+    return sy
 
 def _lm_flag(world, spec, flag_bx, sy):
     """Place the visible marker block and interaction flags at the focal point."""
@@ -92,6 +105,18 @@ def _lm_tower(world, bx, bot_y, height, wall, light=None, cap=None):
     if cap:
         _lm_fill(world, bx - 1, bx + 2, bot_y - height, bot_y - height, cap)
 
+def _lm_door(world, bx, sy, door_block):
+    """Place a closed 2-tall door at bx. Bottom at sy-1, top at sy-2."""
+    _lm_set(world, bx, sy - 1, door_block)
+    _lm_set(world, bx, sy - 2, door_block)
+
+def _lm_entrance(world, bx, sy, door_block):
+    """Cut a clear opening through whatever is at bx and place a door there.
+    Use this at the outer left/right edges so the player can walk in from either side."""
+    for by in range(sy - 4, sy):
+        _lm_set(world, bx, by, AIR)
+    _lm_door(world, bx, sy, door_block)
+
 
 # ---------------------------------------------------------------------------
 # Arena  (martial, base)  — tiered colosseum with gate towers and vomitoria
@@ -101,17 +126,20 @@ def _place_arena(world, spec, biome, right_bx, sy, rng):
     W = 36
     left  = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     if biome == "mediterranean":
         wall, floor, arch, light = POLISHED_MARBLE, COMPASS_PAVING, ROMAN_ARCH_REN, BRAZIER
         panel = HERALDIC_PANEL
+        door = BRONZE_DOOR_CLOSED
     elif biome in ("east_asian", "jungle"):
         wall, floor, arch, light = PINE_PLANK_WALL, TATAMI_PAVING, PAGODA_EAVE, STONE_LANTERN
         panel = LACQUER_PANEL
+        door = SHOJI_DOOR_CLOSED
     else:
         wall, floor, arch, light = LIMESTONE_BLOCK, COBBLESTONE, ROMANESQUE_ARCH, BRAZIER
         panel = HERALDIC_PANEL
+        door = STUDDED_OAK_DOOR_CLOSED
 
     # Foundation
     _lm_fill(world, left, left + W - 1, sy, sy, wall)
@@ -147,13 +175,16 @@ def _place_arena(world, spec, biome, right_bx, sy, rng):
         _lm_bg(world, left + dx, sy - 3, TROPHY_PANEL_REN)
         _lm_bg(world, left + W - 1 - dx, sy - 3, TROPHY_PANEL_REN)
 
-    # Vomitorium passages — clear 3 rows at the base of the tiers
+    # Vomitorium passages — clear rows at the base of the tiers (interior access)
     for bx in range(left + 3, left + 11):
         for by in range(sy - 3, sy):
             _lm_set(world, bx, by, AIR)
     for bx in range(left + W - 11, left + W - 3):
         for by in range(sy - 3, sy):
             _lm_set(world, bx, by, AIR)
+    # Outer edge entrances — punch through gate tower walls so player can walk in
+    _lm_entrance(world, left,         sy, door)
+    _lm_entrance(world, left + W - 1, sy, door)
 
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx
@@ -167,7 +198,7 @@ def _place_war_camp(world, spec, biome, right_bx, sy, rng):
     W = 34
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     # Palisade outer wall — alternating tall/short posts
     for bx in range(left, left + W):
@@ -213,10 +244,13 @@ def _place_war_camp(world, spec, biome, right_bx, sy, rng):
         _lm_set(world, pole_bx, sy - 9, TROPHY_PANEL_REN)
         _lm_set(world, pole_bx, sy - 10, TROPHY_PANEL_REN)
 
-    # Palisade gate — clear a 5-block opening in the front wall
+    # Palisade gate — clear a 5-block opening in the front wall (interior feature)
     for bx in range(left + W // 2 - 2, left + W // 2 + 2):
         for by in range(sy - 5, sy):
             _lm_set(world, bx, by, AIR)
+    # Outer edge entrances — punch through palisade at left/right so player can walk in
+    _lm_entrance(world, left,         sy, STUDDED_OAK_DOOR_CLOSED)
+    _lm_entrance(world, left + W - 1, sy, STUDDED_OAK_DOOR_CLOSED)
 
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx
@@ -230,7 +264,7 @@ def _place_gladiator_pits(world, spec, biome, right_bx, sy, rng):
     W = 32
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     wall = SANDSTONE_ASHLAR
 
@@ -273,13 +307,16 @@ def _place_gladiator_pits(world, spec, biome, right_bx, sy, rng):
         _lm_bg(world, flag_bx, by, SANDSTONE_COLUMN)
     _lm_bg(world, flag_bx, sy - 8, TROPHY_PANEL_REN)
 
-    # Entrance passages through seating tiers
+    # Entrance passages through seating tiers (interior access)
     for bx in range(left + 3, left + 10):
         for by in range(sy - 3, sy):
             _lm_set(world, bx, by, AIR)
     for bx in range(left + W - 10, left + W - 3):
         for by in range(sy - 3, sy):
             _lm_set(world, bx, by, AIR)
+    # Outer edge entrances — punch through outer walls so player can walk in
+    _lm_entrance(world, left,         sy, COBALT_DOOR_CLOSED)
+    _lm_entrance(world, left + W - 1, sy, COBALT_DOOR_CLOSED)
 
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx
@@ -298,17 +335,20 @@ def _place_grand_bazaar(world, spec, biome, right_bx, sy, rng):
     W = 42
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     if biome == "mediterranean":
         wall, floor, arch = POLISHED_MARBLE, ROMAN_MOSAIC, ROMAN_ARCH_REN
         col, cap, light   = GARDEN_COLUMN, DORIC_CAPITAL, BRAZIER
+        door = BRONZE_DOOR_CLOSED
     elif biome == "east_asian":
         wall, floor, arch = PINE_PLANK_WALL, TATAMI_PAVING, PAGODA_EAVE
         col, cap, light   = PINE_PLANK_WALL, PAGODA_EAVE, STONE_LANTERN
+        door = SHOJI_DOOR_CLOSED
     else:
         wall, floor, arch = LIMESTONE_BLOCK, COMPASS_PAVING, ROMANESQUE_ARCH
         col, cap, light   = GARDEN_COLUMN, DORIC_CAPITAL, BRAZIER
+        door = STUDDED_OAK_DOOR_CLOSED
 
     # Foundation — full width
     _lm_fill(world, left, left + W - 1, sy, sy, wall)
@@ -323,7 +363,7 @@ def _place_grand_bazaar(world, spec, biome, right_bx, sy, rng):
         _lm_bg(world, side + 2, sy - 4, arch)
         _lm_set(world, side + 1, sy - 15, light)
         _lm_set(world, side + 2, sy - 15, light)
-        # Gate passage — clear at ground level
+        # Gate passage — clear inner columns for interior headroom
         for by in range(sy - 4, sy):
             _lm_set(world, side + 1, by, AIR)
             _lm_set(world, side + 2, by, AIR)
@@ -377,6 +417,10 @@ def _place_grand_bazaar(world, spec, biome, right_bx, sy, rng):
     _lm_bg(world, flag_bx - 2, sy - 3, MARBLE_PLINTH)
     _lm_bg(world, flag_bx + 2, sy - 3, MARBLE_PLINTH)
 
+    # Outer edge entrances — punch through gate tower outer faces
+    _lm_entrance(world, left,         sy, door)
+    _lm_entrance(world, left + W - 1, sy, door)
+
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx
 
@@ -389,7 +433,7 @@ def _place_harbor_exchange(world, spec, biome, right_bx, sy, rng):
     W = 36
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     # Quay approach — 6 blocks of open dock paving with bollards and barrels
     _lm_fill(world, left, left + 5, sy, sy, LIMESTONE_BLOCK)
@@ -429,10 +473,10 @@ def _place_harbor_exchange(world, spec, biome, right_bx, sy, rng):
         for bx in range(wx, wx + 4):
             _lm_bg(world, bx, by, RAIN_BARREL)
 
-    # Entrances
-    for by in range(sy - 3, sy):
-        _lm_set(world, hx, by, AIR)
-        _lm_set(world, hx + 23, by, AIR)
+    # Outer edge entrance from left (quay side) and hall walls on each side
+    _lm_entrance(world, left,     sy, STUDDED_OAK_DOOR_CLOSED)
+    _lm_entrance(world, hx,       sy, STUDDED_OAK_DOOR_CLOSED)
+    _lm_entrance(world, hx + 23,  sy, STUDDED_OAK_DOOR_CLOSED)
 
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx
@@ -446,7 +490,7 @@ def _place_caravanserai(world, spec, biome, right_bx, sy, rng):
     W = 36
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     wall = SANDSTONE_ASHLAR
 
@@ -476,11 +520,15 @@ def _place_caravanserai(world, spec, biome, right_bx, sy, rng):
             _lm_set(world, bx, by, AIR)
     _lm_bg(world, left + W - 2, sy - 7, MUGHAL_ARCH)
     _lm_bg(world, left + W - 1, sy - 7, MUGHAL_ARCH)
+    _lm_door(world, left + W - 2, sy, COBALT_DOOR_CLOSED)
+    _lm_door(world, left + W - 1, sy, COBALT_DOOR_CLOSED)
 
     # Secondary gate — left side
     for by in range(sy - 5, sy):
         for bx in (left, left + 1):
             _lm_set(world, bx, by, AIR)
+    _lm_door(world, left,     sy, COBALT_DOOR_CLOSED)
+    _lm_door(world, left + 1, sy, COBALT_DOOR_CLOSED)
 
     # Interior arcade — 3 arches per side along the inner wall (BG)
     for bx in range(left + 3, left + W // 2 - 1, 4):
@@ -511,17 +559,20 @@ def _place_archive(world, spec, biome, right_bx, sy, rng):
     W = 38
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     if biome == "mediterranean":
         wall, floor, arch = POLISHED_MARBLE, ROMAN_MOSAIC, ROMAN_ARCH_REN
         col, cap, light   = GARDEN_COLUMN, DORIC_CAPITAL, BRAZIER
+        door = BRONZE_DOOR_CLOSED
     elif biome == "east_asian":
         wall, floor, arch = PINE_PLANK_WALL, TATAMI_PAVING, PAGODA_EAVE
         col, cap, light   = PINE_PLANK_WALL, PAGODA_EAVE, STONE_LANTERN
+        door = SHOJI_DOOR_CLOSED
     else:
         wall, floor, arch = LIMESTONE_BLOCK, COMPASS_PAVING, ROMANESQUE_ARCH
         col, cap, light   = GARDEN_COLUMN, DORIC_CAPITAL, TORCH
+        door = STUDDED_OAK_DOOR_CLOSED
 
     # Foundation
     _lm_fill(world, left, left + W - 1, sy, sy, wall)
@@ -574,6 +625,7 @@ def _place_archive(world, spec, biome, right_bx, sy, rng):
     for bx in (left, left + W - 1, left + 7, left + W - 8):
         for by in range(sy - 3, sy):
             _lm_set(world, bx, by, AIR)
+        _lm_door(world, bx, sy, door)
 
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx
@@ -587,7 +639,7 @@ def _place_imperial_library(world, spec, biome, right_bx, sy, rng):
     W = 36
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     # Lower hall (full width, 7 tall)
     _lm_fill(world, left, left + W - 1, sy, sy, PINE_PLANK_WALL)
@@ -649,6 +701,8 @@ def _place_imperial_library(world, spec, biome, right_bx, sy, rng):
     for by in range(sy - 3, sy):
         _lm_set(world, left,      by, AIR)
         _lm_set(world, left + W - 1, by, AIR)
+    _lm_door(world, left,         sy, SHOJI_DOOR_CLOSED)
+    _lm_door(world, left + W - 1, sy, SHOJI_DOOR_CLOSED)
 
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx
@@ -662,7 +716,7 @@ def _place_observatory(world, spec, biome, right_bx, sy, rng):
     W = 32
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     # Flanking wings — 7 wide, 7 tall each
     for wx in (left, left + W - 7):
@@ -708,10 +762,13 @@ def _place_observatory(world, spec, biome, right_bx, sy, rng):
         for bx in range(tx + 1, tx + 9):
             _lm_set(world, bx, by, AIR)
 
-    # Tower entrances
+    # Outer edge entrances through wing walls, then inner doors into the tower
+    _lm_entrance(world, left,         sy, BRONZE_DOOR_CLOSED)
+    _lm_entrance(world, left + W - 1, sy, BRONZE_DOOR_CLOSED)
     for bx in (tx, tx + 9):
         for by in range(sy - 3, sy):
             _lm_set(world, bx, by, AIR)
+        _lm_door(world, bx, sy, BRONZE_DOOR_CLOSED)
 
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx
@@ -725,24 +782,28 @@ def _place_great_shrine(world, spec, biome, right_bx, sy, rng):
     W = 36
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     if biome == "mediterranean":
         wall, floor, arch = POLISHED_MARBLE, ROMAN_MOSAIC, ROMAN_ARCH_REN
         col, cap, light   = GARDEN_COLUMN, DORIC_CAPITAL, BRAZIER
         panel             = MARBLE_STATUE
+        door = BRONZE_DOOR_CLOSED
     elif biome == "east_asian":
         wall, floor, arch = PINE_PLANK_WALL, TATAMI_PAVING, PAGODA_EAVE
         col, cap, light   = PINE_PLANK_WALL, PAGODA_EAVE, STONE_LANTERN
         panel             = VOTIVE_TABLET
+        door = SHOJI_DOOR_CLOSED
     elif biome in ("desert", "silk_road"):
         wall, floor, arch = SANDSTONE_ASHLAR, SANDSTONE_BLOCK, MUGHAL_ARCH
         col, cap, light   = SANDSTONE_COLUMN, MUGHAL_ARCH, TRIPOD_BRAZIER
         panel             = VOTIVE_TABLET
+        door = COBALT_DOOR_CLOSED
     else:
         wall, floor, arch = LIMESTONE_BLOCK, COBBLESTONE, ROMANESQUE_ARCH
         col, cap, light   = GARDEN_COLUMN, DORIC_CAPITAL, TORCH
         panel             = VOTIVE_TABLET
+        door = STUDDED_OAK_DOOR_CLOSED
 
     # Foundation
     _lm_fill(world, left, left + W - 1, sy, sy, wall)
@@ -800,9 +861,13 @@ def _place_great_shrine(world, spec, biome, right_bx, sy, rng):
     for by in range(sy - 5, sy):
         _lm_set(world, left, by, AIR)
         _lm_set(world, left + W - 1, by, AIR)
+    _lm_door(world, left,         sy, door)
+    _lm_door(world, left + W - 1, sy, door)
     for by in range(sy - 3, sy):
         _lm_set(world, sx, by, AIR)
         _lm_set(world, sx + 17, by, AIR)
+    _lm_door(world, sx,      sy, door)
+    _lm_door(world, sx + 17, sy, door)
 
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx
@@ -816,7 +881,7 @@ def _place_sea_temple(world, spec, biome, right_bx, sy, rng):
     W = 34
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     # Wave-prow forecourt — 7 blocks, open to the sea (left side)
     # Stepped down 1 block to suggest a waterfront platform
@@ -869,9 +934,9 @@ def _place_sea_temple(world, spec, biome, right_bx, sy, rng):
         _lm_bg(world, bx, sy - 2, VOTIVE_TABLET)
         _lm_bg(world, bx, sy - 4, VOTIVE_TABLET)
 
-    # Entrance on back wall
-    for by in range(sy - 3, sy):
-        _lm_set(world, hx + 19, by, AIR)
+    # Left outer entrance punches through quay pillar; right inner door into hall
+    _lm_entrance(world, left,     sy, STONE_SLAB_DOOR_CLOSED)
+    _lm_entrance(world, hx + 19,  sy, STONE_SLAB_DOOR_CLOSED)
 
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx
@@ -885,7 +950,7 @@ def _place_canopy_sanctum(world, spec, biome, right_bx, sy, rng):
     W = 32
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     # Stone base
     _lm_fill(world, left, left + W - 1, sy, sy, LIMESTONE_BLOCK)
@@ -931,6 +996,9 @@ def _place_canopy_sanctum(world, spec, biome, right_bx, sy, rng):
     _lm_bg(world, flag_bx + 1, sy - 4, LOTUS_BLOCK)
     _lm_bg(world, flag_bx, sy - 6, LOTUS_BLOCK)
 
+    # Left entrance punches through the edge pillar; right edge (col W-1) is already open
+    _lm_entrance(world, left, sy, SANDALWOOD_DOOR_CLOSED)
+
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx
 
@@ -943,7 +1011,7 @@ def _place_stoneworks(world, spec, biome, right_bx, sy, rng):
     W = 36
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     if biome == "alpine":
         wall, floor = ROUGH_STONE_WALL, LIMESTONE_BLOCK
@@ -1006,6 +1074,8 @@ def _place_stoneworks(world, spec, biome, right_bx, sy, rng):
     for by in range(sy - 3, sy):
         _lm_set(world, left, by, AIR)
         _lm_set(world, left + W - 1, by, AIR)
+    _lm_door(world, left,         sy, STUDDED_OAK_DOOR_CLOSED)
+    _lm_door(world, left + W - 1, sy, STUDDED_OAK_DOOR_CLOSED)
 
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx
@@ -1019,7 +1089,7 @@ def _place_stonecutters_guild(world, spec, biome, right_bx, sy, rng):
     W = 32
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     # Quarry-face approach — uneven rough stone base, boulders in front
     _lm_fill(world, left, left + W - 1, sy, sy, ROUGH_STONE_WALL)
@@ -1048,11 +1118,13 @@ def _place_stonecutters_guild(world, spec, biome, right_bx, sy, rng):
     _lm_bg(world, qt + 1, sy - 12, HERALDIC_PANEL)
     _lm_bg(world, qt + 2, sy - 12, HERALDIC_PANEL)
 
-    # Romanesque arched portal — central, 5-wide, 6-tall clear entrance
+    # Romanesque arched portal — central, 5-wide, 6-tall clear entrance with double door
     for bx in range(flag_bx - 2, flag_bx + 3):
         for by in range(sy - 5, sy):
             _lm_set(world, bx, by, AIR)
     _lm_bg(world, flag_bx, sy - 6, ROMANESQUE_ARCH)
+    _lm_door(world, flag_bx - 1, sy, STUDDED_OAK_DOOR_CLOSED)
+    _lm_door(world, flag_bx,     sy, STUDDED_OAK_DOOR_CLOSED)
     # Flanking arched windows
     _lm_bg(world, flag_bx - 6, sy - 6, ROMANESQUE_ARCH)
     _lm_bg(world, flag_bx + 6, sy - 6, ROMANESQUE_ARCH)
@@ -1068,10 +1140,9 @@ def _place_stonecutters_guild(world, spec, biome, right_bx, sy, rng):
     for bx in range(left + 2, left + W - 5, 3):
         _lm_bg(world, bx, sy - 4, ROUGH_STONE_WALL)
 
-    # Side entrances (secondary)
-    for bx in (left, left + 1):
-        for by in range(sy - 3, sy):
-            _lm_set(world, bx, by, AIR)
+    # Outer edge entrances on both sides
+    _lm_entrance(world, left,         sy, STUDDED_OAK_DOOR_CLOSED)
+    _lm_entrance(world, left + W - 1, sy, STUDDED_OAK_DOOR_CLOSED)
 
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx
@@ -1085,17 +1156,20 @@ def _place_pleasure_garden(world, spec, biome, right_bx, sy, rng):
     W = 40
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
     if biome == "mediterranean":
         wall, floor = POLISHED_MARBLE, ROMAN_MOSAIC
         arch, light = TRELLIS_ARCH, BRAZIER
+        door = BRONZE_DOOR_CLOSED
     elif biome == "east_asian":
         wall, floor = PINE_PLANK_WALL, ZEN_GRAVEL
         arch, light = MOON_GATE, STONE_LANTERN
+        door = SHOJI_DOOR_CLOSED
     else:
         wall, floor = LIMESTONE_BLOCK, COMPASS_PAVING
         arch, light = TRELLIS_ARCH, TORCH
+        door = STUDDED_OAK_DOOR_CLOSED
 
     # Garden floor — the whole plot is walkable open garden
     _lm_fill(world, left, left + W - 1, sy, sy, wall)
@@ -1110,13 +1184,16 @@ def _place_pleasure_garden(world, spec, biome, right_bx, sy, rng):
     _lm_fill(world, left + W - 3, left + W - 1, sy - 5, sy, wall)
     _lm_fill_bg(world, left + W - 3, left + W - 1, sy - 5, sy, wall)
     _lm_set(world, left + W - 2, sy - 6, light)
-    # Gate arch over the opening
+    # Gate arch over the central opening
     _lm_bg(world, left + W // 2, sy - 4, arch)
     _lm_bg(world, left + W // 2 + 1, sy - 4, arch)
-    # Clear the gate passage
+    # Clear the gate passage interior
     for bx in range(left + 3, left + W - 3):
         for by in range(sy - 3, sy):
             _lm_set(world, bx, by, AIR)
+    # Outer edge entrances — punch through gate pillar walls so player can walk in
+    _lm_entrance(world, left,         sy, door)
+    _lm_entrance(world, left + W - 1, sy, door)
 
     # Low hedge walls along the garden edges (2 tall) — BG so garden is walkable
     for bx in range(left + 3, left + W - 3):
@@ -1167,15 +1244,15 @@ def _place_vineyard_hall(world, spec, biome, right_bx, sy, rng):
     W = 36
     left    = right_bx - W
     flag_bx = left + W // 2
-    _lm_clear_terrain(world, left, W, sy)
+    sy = _lm_clear_terrain(world, left, W, sy)
 
-    # Grapevine trellis approach — 6 blocks each side on tall trellised columns
+    # Grapevine trellis approach — 6 blocks each side, BG columns so the approach is walkable
     for side_bx in (range(left, left + 6), range(left + W - 6, left + W)):
         for bx in side_bx:
             _lm_set(world, bx, sy, POLISHED_MARBLE)
-            # Tall trellis columns (every 3rd block is a foreground post)
+            # Trellis columns as BG only — visible but not blocking
             if (bx - left) % 3 == 0:
-                _lm_fill(world, bx, bx, sy - 6, sy - 1, GARDEN_COLUMN)
+                _lm_fill_bg(world, bx, bx, sy - 6, sy - 1, GARDEN_COLUMN)
             # Grapevine drapes between columns (BG, multiple rows)
             for by in range(sy - 5, sy - 1):
                 _lm_bg(world, bx, by, GRAPEVINE_CROP_MATURE)
@@ -1217,10 +1294,9 @@ def _place_vineyard_hall(world, spec, biome, right_bx, sy, rng):
     _lm_bg(world, flag_bx + 1, sy - 4, OLIVE_BRANCH)
     _lm_bg(world, flag_bx,     sy - 5, GRAPEVINE_CROP_MATURE)
 
-    # Entrance passages
-    for bx in (hx, hx + 23):
-        for by in range(sy - 3, sy):
-            _lm_set(world, bx, by, AIR)
+    # Hall entrances — trellis approach is walkable, these are the actual hall doors
+    _lm_entrance(world, hx,      sy, BRONZE_DOOR_CLOSED)
+    _lm_entrance(world, hx + 23, sy, BRONZE_DOOR_CLOSED)
 
     _lm_flag(world, spec, flag_bx, sy)
     return flag_bx

@@ -116,6 +116,11 @@ class UI(
         self._max_fossil_codex_scroll      = 0
         self._my_fossils_scroll            = 0
         self._max_my_fossils_scroll        = 0
+        # Seashell collection
+        self._shell_codex_selected         = None
+        self._shell_codex_rects            = {}
+        self._shell_codex_scroll           = 0
+        self._max_shell_codex_scroll       = 0
         # Gem collection
         self._selected_gem_idx             = None
         self._gem_rects                    = {}
@@ -307,12 +312,14 @@ class UI(
         self.garden_open             = False
         self.active_garden_flowers   = None  # direct reference to world.garden_data[(bx,by)]
         self.active_garden_pos       = None  # (bx, by)
-        self._garden_slot_rects      = {}    # slot_idx -> Rect (arrangement grid)
+        self._garden_flower_rects    = {}    # uid -> Rect (flowers placed on canvas)
+        self._garden_canvas_rect     = None  # Rect of the open canvas area
         self._garden_col_rects       = {}    # uid -> Rect (collection panel)
         self._garden_col_scroll      = 0
         self._max_garden_col_scroll  = 0
         self._garden_drag_flower     = None  # Wildflower currently being dragged
-        self._garden_drag_source     = None  # 'slot' | 'collection'
+        self._garden_drag_source     = None  # 'canvas' | 'collection'
+        self._garden_drag_origin_pos = None  # (cx, cy) when dragged from canvas
         self._garden_drag_pos        = (0, 0)
         # Wildflower display UI
         self.wildflower_display_open = False
@@ -711,25 +718,62 @@ class UI(
         self._wither_leaf_rects       = {}   # leaf index -> Rect
         self._wither_method_rects     = {}   # method key -> Rect
         self._wither_pending_leaf_idx = None
-        self._oxidation_phase       = "select_leaf"
-        self._oxidation_leaf_idx    = None
-        self._oxidation_time        = 0.0
-        self._oxidation_total_time  = 30.0
-        self._oxidation_level       = 0.0
-        self._oxidation_held        = False
-        self._oxidation_locked      = False
-        self._oxidation_quality     = 0.0
-        self._oxidation_event_flash = None
-        self._surge_phase          = "idle"
-        self._surge_timer          = 0.0
-        self._surge_next_at        = 7.0
-        self._surge_duration       = 0.0
-        self._surge_intensity      = 1.0
-        self._enzymatic_velocity   = 0.0
-        self._oxidation_select_rects= {}
-        self._oxidation_result_btn  = None
-        self._oxidation_lock_btn    = None
-        self._oxidation_slow_btn    = None
+        self._oxidation_phase        = "select_leaf"  # select_leaf|select_zone|ritual|result
+        self._oxidation_leaf_idx     = None
+        self._oxidation_time         = 0.0
+        self._oxidation_total_time   = 25.0
+        self._oxidation_level        = 0.0
+        self._oxidation_quality      = 0.0
+        self._oxidation_select_rects = {}
+        self._oxidation_result_btn   = None
+        self._oxidation_lock_btn     = None
+        # ritual shared
+        self._ox_target_zone         = None   # "white"|"yellow"|"green"|"oolong"|"black"|"puerh"
+        self._ox_ritual_quality      = 0.0
+        self._ox_zone_btn_rects      = {}
+        self._ox_mouse_pos           = (0, 0)
+        self._ox_mouse_down          = False
+        # white
+        self._white_warmth_score     = 0.0
+        self._white_dew_pools        = []     # list of {pos, timer, hit}
+        self._white_pocket_angle     = 0.0
+        self._white_dew_timer        = 0.0
+        self._white_dew_next         = 3.0
+        # yellow
+        self._yellow_wrapped         = False
+        self._yellow_heat_arc        = 0.0
+        self._yellow_wrap_time       = 0.0
+        self._yellow_interval_log    = []     # last 8 interval durations
+        self._yellow_rhythm_score    = 0.5
+        self._yellow_overflow_time   = 0.0
+        # green
+        self._green_drag_last        = None
+        self._green_drag_vel         = 0.0
+        self._green_sectors          = [0.0] * 8
+        self._green_enzyme           = 1.0
+        self._green_still_timer      = 0.0
+        # oolong
+        self._oolong_sub             = "roll_1"  # roll_1|rest_1|roll_2|rest_2
+        self._oolong_sub_timer       = 0.0
+        self._oolong_angle_accum     = 0.0
+        self._oolong_prev_angle      = None
+        self._oolong_roll1_score     = 0.0
+        self._oolong_roll2_score     = 0.0
+        self._oolong_rest1_score     = 0.0
+        self._oolong_rest2_score     = 0.0
+        self._oolong_trail           = []
+        self._oolong_rest_start_pos  = None
+        # black
+        self._black_crush_phase      = True
+        self._black_crush_timer      = 0.0
+        self._black_ox_timer         = 0.0
+        self._black_cells            = [[0]*6 for _ in range(6)]
+        self._black_cell_rects       = {}
+        self._black_stop_btn         = None
+        # puerh
+        self._puerh_zone_dwell       = 0.0
+        self._puerh_mold_time        = 0.0
+        self._puerh_field_rect       = None
         self._tea_cellar_tab          = "brew"
         self._tea_cellar_leaf_idx     = None
         self._tea_cellar_select_rects = {}
@@ -751,6 +795,11 @@ class UI(
         self._drying_slot_rects  = {}   # slot index -> Rect
         self._drying_inv_rects   = {}   # src_key -> Rect
         self._dry_flower_btns    = {}
+        self._mortar_slots       = [{} for _ in range(2)]
+        self._mortar_slot_rects  = []
+        self._mortar_active_slot = None
+        self._mortar_grind_btn   = None
+        self._mortar_inv_rects   = {}
         self._kiln_slots         = [{} for _ in range(4)]
         self._kiln_slot_rects    = []
         self._kiln_active_slot   = None
@@ -1024,7 +1073,9 @@ class UI(
         self._race_inspect_uid        = None
 
         # ----- Smithing / Forge mini-game state -----
-        self._smith_phase        = "idle"   # idle|select|heating|hammering|quench|part_complete|assemble
+        self._smith_phase        = "idle"   # idle|select|heating|hammering|quench|part_complete
+        self._smith_tab          = "smith"  # "smith" | "craft"
+        self._smith_style        = "classic"  # "classic" | "ornate" | "rugged"
         self._smith_type         = None     # weapon type key
         self._smith_material     = None     # material key
         self._smith_temperature  = 0.0     # 0–100
@@ -1034,14 +1085,29 @@ class UI(
         self._smith_drag_mode    = None
         self._smith_hover_cell   = None
         self._smith_mistakes     = 0
-        self._smith_part_quality = []       # [float] completed part qualities
-        self._smith_pending_uid  = None     # UID of in-progress weapon
+        self._smith_part_quality = []       # [float] single element while smithing one part
+        self._smith_pending_uid  = None     # legacy
         self._smith_type_rects   = {}
         self._smith_mat_rects    = {}
+        self._smith_style_rects  = {}
+        self._smith_tab_btns     = {}
+        self._forge_craft_rects  = {}
         # Weapon rack panel
         self._rack_scroll        = 0
         self._rack_weapon_rects  = {}
         self._rack_equip_btn_rects = {}
+        self._rack_inspect_btns  = {}
+        # Assembly bench panel
+        self._bench_scroll       = 0
+        self._bench_assemble_btns = {}
+        # Weapon inspect panel
+        self._inspect_weapon_uid   = None
+        self._inspect_picking_slot = None
+        self._picker_type          = None
+        self._inspect_add_btns     = {}
+        self._inspect_remove_btns  = {}
+        self._picker_item_rects    = {}
+        self._picker_scroll        = 0
         # Weapon Armorer NPC panel
         self._armorer_sell_rects = {}
         self._armorer_scroll     = 0
@@ -1159,4 +1225,16 @@ class UI(
                 self._draw_npc_gift(player, player.world)
             else:
                 self._draw_npc_inspect(player, player.world)
+
+    def _render_stars(self, fnt, quality):
+        """Return a Surface with 5 stars: bright gold filled, dim for empty."""
+        n = round(max(0.0, min(1.0, quality)) * 5)
+        star_w = fnt.render("★", True, (0, 0, 0)).get_width()
+        h = fnt.get_height()
+        surf = pygame.Surface((star_w * 5, h), pygame.SRCALPHA)
+        for i in range(5):
+            col = (220, 200, 80) if i < n else (60, 50, 25)
+            s = fnt.render("★", True, col)
+            surf.blit(s, (i * star_w, 0))
+        return surf
 

@@ -55,18 +55,28 @@ class TextileMixin:
                 fibers.append(("linen", "Flax Fiber", f"x{player.inventory['flax_fiber']}"))
             if player.inventory.get("wool", 0) > 0 and player.inventory.get("flax_fiber", 0) > 0:
                 fibers.append(("blend", "Wool + Flax (Blend)", "1 of each"))
+            if player.inventory.get("silk_thread", 0) > 0:
+                fibers.append(("silk", "Silk Thread", f"x{player.inventory['silk_thread']}"))
+            if player.inventory.get("cashmere_fiber", 0) > 0:
+                fibers.append(("cashmere", "Cashmere Fiber", f"x{player.inventory['cashmere_fiber']}"))
+            if player.inventory.get("jute_fiber", 0) > 0:
+                fibers.append(("jute", "Jute Fiber", f"x{player.inventory['jute_fiber']}"))
 
             if not fibers:
-                msg = self.font.render("No fiber! Shear Sheep for wool or grow Flax.", True, _LABEL_C)
+                msg = self.font.render("No fiber! Shear Sheep for wool, grow Flax/Jute, or collect Silk.", True, _LABEL_C)
                 self.screen.blit(msg, (SCREEN_W // 2 - msg.get_width() // 2, SCREEN_H // 2))
                 return
 
-            BTN_W, BTN_H, BTN_GAP = 260, 90, 20
-            total_w = len(fibers) * BTN_W + (len(fibers) - 1) * BTN_GAP
+            BTN_W, BTN_H, BTN_GAP = 240, 90, 16
+            FIBER_COLS = 4
+            rows = (len(fibers) + FIBER_COLS - 1) // FIBER_COLS
+            total_w = min(len(fibers), FIBER_COLS) * BTN_W + (min(len(fibers), FIBER_COLS) - 1) * BTN_GAP
             gx0 = (SCREEN_W - total_w) // 2
+            gy0 = SCREEN_H // 2 - (rows * (BTN_H + BTN_GAP)) // 2
             for fi, (ftype, flabel, fcount) in enumerate(fibers):
-                px = gx0 + fi * (BTN_W + BTN_GAP)
-                py = SCREEN_H // 2 - BTN_H // 2
+                col_i, row_i = fi % FIBER_COLS, fi // FIBER_COLS
+                px = gx0 + col_i * (BTN_W + BTN_GAP)
+                py = gy0 + row_i * (BTN_H + BTN_GAP)
                 prect = pygame.Rect(px, py, BTN_W, BTN_H)
                 self._spin_fiber_rects[ftype] = prect
                 pygame.draw.rect(self.screen, _CELL_BG, prect)
@@ -168,10 +178,19 @@ class TextileMixin:
             player.inventory["flax_fiber"] = max(0, player.inventory.get("flax_fiber", 0) - 1)
         elif ftype == "linen":
             player.inventory["flax_fiber"] = max(0, player.inventory.get("flax_fiber", 0) - 1)
+        elif ftype == "silk":
+            player.inventory["silk_thread"] = max(0, player.inventory.get("silk_thread", 0) - 1)
+        elif ftype == "cashmere":
+            player.inventory["cashmere_fiber"] = max(0, player.inventory.get("cashmere_fiber", 0) - 1)
+        elif ftype == "jute":
+            player.inventory["jute_fiber"] = max(0, player.inventory.get("jute_fiber", 0) - 1)
         else:  # wool
             player.inventory["wool"] = max(0, player.inventory.get("wool", 0) - 1)
         thread = player._textile_gen.generate(ftype)
         thread.quality = self._spin_quality
+        precision_bonus = player.get_textile_bonus("precision")
+        if precision_bonus > 0:
+            thread.quality = min(1.0, thread.quality + precision_bonus * 0.5)
         player.textiles.append(thread)
         self._spin_phase = "result"
         self._spin_result_btn = None
@@ -294,7 +313,7 @@ class TextileMixin:
         # Dye extract list (right half)
         sub_d = self.small.render("Select dye extract:", True, _LABEL_C)
         self.screen.blit(sub_d, (SCREEN_W // 2 + 40, 68))
-        dye_families = ["golden", "crimson", "rose", "cobalt", "violet", "verdant", "amber", "ivory"]
+        dye_families = ["golden", "crimson", "rose", "cobalt", "violet", "verdant", "amber", "ivory", "teal", "indigo", "ochre"]
         CELL_W2, CELL_H2, GAP2 = 200, 44, 6
         rx0 = SCREEN_W // 2 + 40
         for di, fam in enumerate(dye_families):
@@ -434,7 +453,7 @@ class TextileMixin:
             self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 34))
             outputs = list(OUTPUT_DISPLAY.items())
             BTN_W, BTN_H, BTN_GAP = 200, 100, 14
-            COLS = 4
+            COLS = 3
             total_w = min(len(outputs), COLS) * BTN_W + (min(len(outputs), COLS) - 1) * BTN_GAP
             gx0 = (SCREEN_W - total_w) // 2
             for oi, (okey, olabel) in enumerate(outputs):
@@ -545,7 +564,11 @@ class TextileMixin:
     def _finish_weaving(self, player):
         bi = self._loom_thread_idx
         t = player.textiles[bi]
-        apply_weave(t, self._loom_output_type, self._loom_texture, self._loom_pattern_score)
+        score = self._loom_pattern_score
+        precision_bonus = player.get_textile_bonus("precision")
+        if precision_bonus > 0:
+            score = min(1.0, score + precision_bonus * 0.5)
+        apply_weave(t, self._loom_output_type, self._loom_texture, score)
         dk = discovery_key(t)
         player.discovered_textiles.add(dk)
         item_key = output_item_key(t)
@@ -615,41 +638,53 @@ class TextileMixin:
         self.screen.blit(hint, (SCREEN_W - hint.get_width() - 8, 6))
 
         self._wardrobe_slot_rects = {}
-        SLOT_W, SLOT_H = 280, 80
-        slots = [("head", "Head"), ("chest", "Chest"), ("feet", "Feet")]
-        gx0 = SCREEN_W // 2 - SLOT_W // 2
+        SLOT_W, SLOT_H, SLOT_GAP_X, SLOT_GAP_Y = 280, 80, 20, 10
+        slots = [
+            ("head",  "Head"),  ("hands", "Hands"),
+            ("chest", "Chest"), ("legs",  "Legs"),
+            ("feet",  "Feet"),  ("back",  "Back"),
+        ]
+        gx0 = SCREEN_W // 2 - (SLOT_W * 2 + SLOT_GAP_X) // 2
         for si, (slot, slot_label) in enumerate(slots):
-            ry = 40 + si * (SLOT_H + 10)
-            rect = pygame.Rect(gx0, ry, SLOT_W, SLOT_H)
+            col_i, row_i = si % 2, si // 2
+            rx = gx0 + col_i * (SLOT_W + SLOT_GAP_X)
+            ry = 40 + row_i * (SLOT_H + SLOT_GAP_Y)
+            rect = pygame.Rect(rx, ry, SLOT_W, SLOT_H)
             self._wardrobe_slot_rects[slot] = rect
             pygame.draw.rect(self.screen, _CELL_BG, rect)
             pygame.draw.rect(self.screen, _ACCENT, rect, 2)
             sl = self.small.render(slot_label.upper(), True, _DIM_C)
-            self.screen.blit(sl, (gx0 + 8, ry + 6))
+            self.screen.blit(sl, (rx + 8, ry + 6))
             worn_t = player.get_worn_textile(slot)
             if worn_t:
                 dye_col = tuple(DYE_FAMILY_COLORS.get(worn_t.dye_family, DYE_FAMILY_COLORS["natural"]))
                 nm = self.font.render(OUTPUT_DISPLAY.get(worn_t.output_type, worn_t.output_type), True, dye_col)
-                self.screen.blit(nm, (gx0 + 8, ry + 26))
+                self.screen.blit(nm, (rx + 8, ry + 26))
                 from textiles import GARMENT_BUFFS, GARMENT_BUFF_DESCS, get_garment_bonus
                 stat = GARMENT_BUFFS.get(worn_t.output_type, "")
                 if stat:
                     bonus = get_garment_bonus(worn_t)
                     bs = self.small.render(GARMENT_BUFF_DESCS[stat].format(bonus * 100), True, (120, 220, 140))
-                    self.screen.blit(bs, (gx0 + 8, ry + 52))
+                    self.screen.blit(bs, (rx + 8, ry + 52))
                 un_s = self.small.render("[Click to unequip]", True, _HINT_C)
-                self.screen.blit(un_s, (gx0 + SLOT_W - un_s.get_width() - 8, ry + 55))
+                self.screen.blit(un_s, (rx + SLOT_W - un_s.get_width() - 8, ry + 55))
             else:
                 emp = self.small.render("— Empty —", True, _DIM_C)
-                self.screen.blit(emp, (gx0 + SLOT_W // 2 - emp.get_width() // 2, ry + SLOT_H // 2 - 8))
+                self.screen.blit(emp, (rx + SLOT_W // 2 - emp.get_width() // 2, ry + SLOT_H // 2 - 8))
 
         # Garment items in inventory
         sub = self.small.render("Garments in inventory (click to equip):", True, _LABEL_C)
         self.screen.blit(sub, (40, 310))
         self._wardrobe_item_rects = {}
-        garment_slots = {"garment_hat": "head", "garment_vest": "chest", "garment_boots": "feet"}
+        garment_slots = {
+            "garment_hat": "head", "garment_vest": "chest", "garment_boots": "feet",
+            "garment_gloves": "hands", "garment_leggings": "legs",
+            "garment_cloak": "back", "garment_cloak_hooded": "back",
+            "garment_cloak_royal": "back", "garment_cloak_tattered": "back",
+            "garment_cloak_half": "back",
+        }
         garment_items = [(k, player.inventory.get(k, 0)) for k in garment_slots if player.inventory.get(k, 0) > 0]
-        CELL_W, CELL_H, GAP = 200, 64, 10
+        CELL_W, CELL_H, GAP = 180, 64, 8
         for gi, (gkey, gcount) in enumerate(garment_items):
             rx = 40 + gi * (CELL_W + GAP)
             ry = 330
@@ -662,6 +697,90 @@ class TextileMixin:
             self.screen.blit(nm, (rx + 6, ry + 10))
             cnt_s = self.small.render(f"x{gcount}", True, _LABEL_C)
             self.screen.blit(cnt_s, (rx + 6, ry + 36))
+
+        # ── Armor section ────────────────────────────────────────────────
+        from items import ITEMS as _ITEMS
+        arm_sub = self.small.render("Armor (click slot to equip/unequip):", True, _LABEL_C)
+        self.screen.blit(arm_sub, (40, 416))
+        ARMOR_SLOTS = [("helmet", "Helmet"), ("chestplate", "Chest"), ("leggings", "Legs"), ("boots", "Boots")]
+        self._armor_slot_rects = {}
+        ACELL_W, ACELL_H, AGAP = 170, 80, 10
+        for ai, (aslot, alabel) in enumerate(ARMOR_SLOTS):
+            rx = 40 + ai * (ACELL_W + AGAP)
+            ry = 434
+            equipped  = player.worn_armor.get(aslot)
+            dye_fam   = player.worn_armor_dye.get(aslot)
+            dye_rgb   = tuple(DYE_FAMILY_COLORS[dye_fam]) if dye_fam and dye_fam in DYE_FAMILY_COLORS else None
+            rect = pygame.Rect(rx, ry, ACELL_W, ACELL_H)
+            self._armor_slot_rects[aslot] = rect
+            pygame.draw.rect(self.screen, _CELL_BG, rect)
+            border_col = dye_rgb if (dye_rgb and equipped) else _ACCENT
+            pygame.draw.rect(self.screen, border_col, rect, 2)
+            sl = self.small.render(alabel.upper(), True, _DIM_C)
+            self.screen.blit(sl, (rx + 8, ry + 6))
+            if equipped and equipped in _ITEMS:
+                idata = _ITEMS[equipped]
+                nm = self.font.render(idata["name"], True, tuple(idata["color"]))
+                self.screen.blit(nm, (rx + 8, ry + 24))
+                def_s = self.small.render(f"DEF +{idata['defense']}", True, (120, 220, 140))
+                self.screen.blit(def_s, (rx + 8, ry + 44))
+                un_s = self.small.render("[click: unequip]", True, _HINT_C)
+                self.screen.blit(un_s, (rx + ACELL_W - un_s.get_width() - 6, ry + 64))
+                # Dye swatch in top-right corner
+                if dye_rgb:
+                    pygame.draw.rect(self.screen, dye_rgb, (rx + ACELL_W - 16, ry + 4, 12, 12))
+                    pygame.draw.rect(self.screen, (200, 200, 200), (rx + ACELL_W - 16, ry + 4, 12, 12), 1)
+                    dn = self.small.render(DYE_FAMILY_DISPLAY.get(dye_fam, dye_fam).title(), True, dye_rgb)
+                    self.screen.blit(dn, (rx + 8, ry + 62))
+            else:
+                candidates = [k for k, v in player.inventory.items()
+                              if v > 0 and k in _ITEMS and _ITEMS[k].get("armor_slot") == aslot]
+                if candidates:
+                    best = max(candidates, key=lambda k: _ITEMS[k].get("defense", 0))
+                    eq_s = self.small.render(_ITEMS[best]["name"], True, tuple(_ITEMS[best]["color"]))
+                    self.screen.blit(eq_s, (rx + 6, ry + 24))
+                    cl_s = self.small.render("[click to equip]", True, _HINT_C)
+                    self.screen.blit(cl_s, (rx + 6, ry + 54))
+                else:
+                    emp = self.small.render("— Empty —", True, _DIM_C)
+                    self.screen.blit(emp, (rx + ACELL_W // 2 - emp.get_width() // 2, ry + ACELL_H // 2 - 8))
+
+        # ── Dye palette (per slot) ─────────────────────────────────────────
+        dye_y0 = 434 + ACELL_H + 10
+        dye_sub = self.small.render("Dye armor (click swatch to apply, ✕ to remove):", True, _LABEL_C)
+        self.screen.blit(dye_sub, (40, dye_y0))
+        _DYE_ORDER = ["golden", "crimson", "rose", "cobalt", "violet",
+                      "verdant", "amber", "ivory", "teal", "indigo", "ochre"]
+        self._armor_dye_rects = {}
+        SLOT_SHORT = {"helmet": "HELM", "chestplate": "CHEST", "leggings": "LEGS", "boots": "BOOTS"}
+        for ri, (aslot, _) in enumerate(ARMOR_SLOTS):
+            ry = dye_y0 + 16 + ri * 20
+            active = bool(player.worn_armor.get(aslot))
+            lbl_col = _LABEL_C if active else _DIM_C
+            sl_s = self.small.render(SLOT_SHORT[aslot], True, lbl_col)
+            self.screen.blit(sl_s, (40, ry + 2))
+            cur_dye = player.worn_armor_dye.get(aslot)
+            sx = 100
+            for fam in _DYE_ORDER:
+                has_item = player.inventory.get(f"dye_extract_{fam}", 0) > 0
+                is_cur   = cur_dye == fam
+                if not (has_item or is_cur):
+                    continue
+                sc = tuple(DYE_FAMILY_COLORS.get(fam, [180, 180, 180]))
+                sr = pygame.Rect(sx, ry, 14, 14)
+                self._armor_dye_rects[(aslot, fam)] = sr
+                pygame.draw.rect(self.screen, sc, sr)
+                border_c = (255, 255, 255) if is_cur else ((160, 160, 160) if has_item else (80, 80, 80))
+                pygame.draw.rect(self.screen, border_c, sr, 1)
+                sx += 16
+            # Remove-dye ✕ button (only when a dye is applied and slot is equipped)
+            if cur_dye and active:
+                sr = pygame.Rect(sx, ry, 14, 14)
+                self._armor_dye_rects[(aslot, "__remove__")] = sr
+                pygame.draw.rect(self.screen, (65, 38, 38), sr)
+                pygame.draw.line(self.screen, (210, 80, 80), (sx + 2, ry + 2), (sx + 11, ry + 11))
+                pygame.draw.line(self.screen, (210, 80, 80), (sx + 11, ry + 2), (sx + 2, ry + 11))
+                pygame.draw.rect(self.screen, (120, 80, 80), sr, 1)
 
     def handle_wardrobe_click(self, pos, player):
         if hasattr(self, "_wardrobe_slot_rects"):
@@ -676,7 +795,13 @@ class TextileMixin:
                         player.worn[slot] = None
                     return
         if hasattr(self, "_wardrobe_item_rects"):
-            garment_slots = {"garment_hat": "head", "garment_vest": "chest", "garment_boots": "feet"}
+            garment_slots = {
+                "garment_hat": "head", "garment_vest": "chest", "garment_boots": "feet",
+                "garment_gloves": "hands", "garment_leggings": "legs",
+                "garment_cloak": "back", "garment_cloak_hooded": "back",
+                "garment_cloak_royal": "back", "garment_cloak_tattered": "back",
+                "garment_cloak_half": "back",
+            }
             for gkey, rect in self._wardrobe_item_rects.items():
                 if rect.collidepoint(pos):
                     slot = garment_slots[gkey]
@@ -692,4 +817,36 @@ class TextileMixin:
                                 player._add_item(old_t.output_type)
                         player.worn[slot] = match.uid
                         player.inventory[gkey] = player.inventory.get(gkey, 0) - 1
+                    return
+        if hasattr(self, "_armor_dye_rects"):
+            for (aslot, fam), rect in self._armor_dye_rects.items():
+                if rect.collidepoint(pos):
+                    if not player.worn_armor.get(aslot):
+                        return
+                    if fam == "__remove__":
+                        player.worn_armor_dye[aslot] = None
+                    elif fam and player.inventory.get(f"dye_extract_{fam}", 0) > 0:
+                        player.inventory[f"dye_extract_{fam}"] -= 1
+                        if player.inventory[f"dye_extract_{fam}"] <= 0:
+                            del player.inventory[f"dye_extract_{fam}"]
+                        player.worn_armor_dye[aslot] = fam
+                    return
+        if hasattr(self, "_armor_slot_rects"):
+            from items import ITEMS as _ITEMS
+            for aslot, rect in self._armor_slot_rects.items():
+                if rect.collidepoint(pos):
+                    equipped = player.worn_armor.get(aslot)
+                    if equipped:
+                        player._add_item(equipped)
+                        player.worn_armor[aslot] = None
+                        player.worn_armor_dye[aslot] = None
+                    else:
+                        candidates = [k for k, v in player.inventory.items()
+                                      if v > 0 and k in _ITEMS and _ITEMS[k].get("armor_slot") == aslot]
+                        if candidates:
+                            best = max(candidates, key=lambda k: _ITEMS[k].get("defense", 0))
+                            player.inventory[best] -= 1
+                            if player.inventory[best] <= 0:
+                                del player.inventory[best]
+                            player.worn_armor[aslot] = best
                     return

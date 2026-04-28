@@ -576,7 +576,18 @@ FORGE_RECIPES = [
 # ---------------------------------------------------------------------------
 
 SMITHING_FORGE_RECIPES = [
-    {"name": "Steel Ingot", "ingredients": {"iron_bar": 2, "coal": 1}, "output_id": "steel_ingot", "output_count": 1},
+    {"name": "Steel Ingot",   "ingredients": {"iron_bar": 2, "coal": 1}, "output_id": "steel_ingot",   "output_count": 1},
+    # Weapon handles & hilts
+    {"name": "Sword Hilt",    "ingredients": {"lumber": 2},              "output_id": "sword_hilt",    "output_count": 1},
+    {"name": "Dagger Handle", "ingredients": {"lumber": 1},              "output_id": "dagger_handle", "output_count": 1},
+    {"name": "Spear Shaft",   "ingredients": {"lumber": 3},              "output_id": "spear_shaft",   "output_count": 1},
+    {"name": "Axe Haft",      "ingredients": {"lumber": 2},              "output_id": "axe_haft",      "output_count": 1},
+    {"name": "Mace Haft",     "ingredients": {"lumber": 2},              "output_id": "mace_haft",     "output_count": 1},
+    {"name": "Halberd Shaft", "ingredients": {"lumber": 4},              "output_id": "halberd_shaft", "output_count": 1},
+    {"name": "Glaive Pole",   "ingredients": {"lumber": 3},              "output_id": "glaive_pole",   "output_count": 1},
+    {"name": "Rapier Grip",   "ingredients": {"lumber": 1},              "output_id": "rapier_grip",   "output_count": 1},
+    {"name": "Trident Shaft", "ingredients": {"lumber": 3},              "output_id": "trident_shaft", "output_count": 1},
+    {"name": "Scythe Snath",  "ingredients": {"lumber": 4},              "output_id": "scythe_snath",  "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -979,18 +990,7 @@ ARTISAN_RECIPES = [
     {"name": "Weapon Assembler", "ingredients": {"lumber": 4, "iron_chunk": 2}, "output_id": "weapon_assembler", "output_count": 1},
 ]
 
-WEAPON_ASSEMBLER_RECIPES = [
-    {"name": "Sword Hilt",    "ingredients": {"lumber": 2},                    "output_id": "sword_hilt",    "output_count": 1},
-    {"name": "Dagger Handle", "ingredients": {"lumber": 1},                    "output_id": "dagger_handle", "output_count": 1},
-    {"name": "Spear Shaft",   "ingredients": {"lumber": 3},                    "output_id": "spear_shaft",   "output_count": 1},
-    {"name": "Axe Haft",      "ingredients": {"lumber": 2},                    "output_id": "axe_haft",      "output_count": 1},
-    {"name": "Mace Haft",     "ingredients": {"lumber": 2},                    "output_id": "mace_haft",     "output_count": 1},
-    {"name": "Halberd Shaft", "ingredients": {"lumber": 4},                    "output_id": "halberd_shaft", "output_count": 1},
-    {"name": "Glaive Pole",   "ingredients": {"lumber": 3},                    "output_id": "glaive_pole",   "output_count": 1},
-    {"name": "Rapier Grip",   "ingredients": {"lumber": 1},                    "output_id": "rapier_grip",   "output_count": 1},
-    {"name": "Trident Shaft", "ingredients": {"lumber": 3},                    "output_id": "trident_shaft", "output_count": 1},
-    {"name": "Scythe Snath",  "ingredients": {"lumber": 4},                    "output_id": "scythe_snath",  "output_count": 1},
-]
+WEAPON_ASSEMBLER_RECIPES = []  # handles moved to SMITHING_FORGE_RECIPES; assembly bench uses its own UI
 
 # ---------------------------------------------------------------------------
 # Shaped 3x3 grid recipes
@@ -1879,6 +1879,16 @@ RECIPES = [
         "output_count": 1,
     },
     # --- Herbalism equipment ---
+    {
+        "name": "Mortar & Pestle",
+        "pattern": [
+            [None,         "stone_chip", None      ],
+            ["stone_chip", "lumber",     "stone_chip"],
+            [None,         "stone_chip", None      ],
+        ],
+        "output_id":    "mortar_item",
+        "output_count": 1,
+    },
     {
         "name": "Drying Rack",
         "pattern": [
@@ -2791,7 +2801,7 @@ RECIPE_GROUPS = {
         "withering_rack_item", "oxidation_station_item", "tea_cellar_item", "roasting_kiln_item",
     ],
     "Herbalism": [
-        "drying_rack_item",
+        "mortar_item", "drying_rack_item",
     ],
     "Textiles": [
         "spinning_wheel_item", "dye_vat_item", "loom_item",

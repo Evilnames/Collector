@@ -179,17 +179,23 @@ def place_landmark(world, town, region) -> int:
     sy       = world.surface_y_at(right_bx)
     rng      = random.Random(town.center_bx ^ (world.seed * 0x517CC1B7))
 
-    return place_landmark_building(
+    flag_x = place_landmark_building(
         world, spec, getattr(region, "biome_group", ""),
         right_bx, sy, rng, region,
     )
+    # Register footprint so city/outpost generation won't overlap it.
+    # Max landmark width is 42; use 48 as a safe buffer.
+    zones = getattr(world, "city_zones", None)
+    if zones is not None:
+        zones.append((right_bx - 48, right_bx + 2))
+    return flag_x
 
 
 # ---------------------------------------------------------------------------
 # Effects — invoked by LandmarkNPC when the player triggers the landmark
 # ---------------------------------------------------------------------------
 
-def _apply_arena(player, region):
+def _apply_arena(player, region, debug=False):
     """Martial: open the arena spectator UI if games are scheduled today."""
     from gladiators import is_games_day, days_until_games, generate_arena_week
     world      = getattr(player, "world", None)
@@ -197,7 +203,7 @@ def _apply_arena(player, region):
     rseed      = getattr(region, "region_id", 0) * 1013 + hash(getattr(region, "name", ""))
     biome      = getattr(region, "biome_group", "temperate")
 
-    if not is_games_day(rseed, day_count):
+    if not debug and not is_games_day(rseed, day_count):
         left = days_until_games(rseed, day_count)
         return ("The arena is quiet.", f"Next games in {left} day{'s' if left != 1 else ''}.")
 
@@ -256,7 +262,7 @@ def _apply_war_camp(player, region):
         player.active_buffs["war_camp_speed"] = {"duration": 300.0}
     return ("The war camp drills you hard.", "+60g, speed buff for 5 minutes")
 
-def _apply_gladiator(player, region):
+def _apply_gladiator(player, region, debug=False):
     """Martial/desert: open the arena (gladiator pit variant)."""
     from gladiators import is_games_day, days_until_games, generate_arena_week
     world      = getattr(player, "world", None)
@@ -264,7 +270,7 @@ def _apply_gladiator(player, region):
     rseed      = getattr(region, "region_id", 0) * 1013 + hash(getattr(region, "name", ""))
     biome      = "desert"
 
-    if not is_games_day(rseed, day_count):
+    if not debug and not is_games_day(rseed, day_count):
         left = days_until_games(rseed, day_count)
         return ("The sands are empty today.", f"Next fights in {left} day{'s' if left != 1 else ''}.")
 
@@ -374,7 +380,7 @@ _EFFECT_FNS = {
 }
 
 
-def preview_effect(region, day_count: int) -> tuple[str, bool]:
+def preview_effect(region, day_count: int, debug: bool = False) -> tuple[str, bool]:
     """Return (status_string, ready) without firing anything.
 
     ready=True means the player can activate the effect right now.
@@ -389,6 +395,8 @@ def preview_effect(region, day_count: int) -> tuple[str, bool]:
     effect = spec.get("effect", "")
 
     if effect in ("arena", "gladiator"):
+        if debug:
+            return ("Games are on today — enter and wager!", True)
         from gladiators import is_games_day, days_until_games
         rseed = getattr(region, "region_id", 0) * 1013 + hash(getattr(region, "name", ""))
         if is_games_day(rseed, day_count):
@@ -399,7 +407,7 @@ def preview_effect(region, day_count: int) -> tuple[str, bool]:
     return ("Ready to use.", True)
 
 
-def apply_effect(player, region, day_count: int) -> tuple[bool, str, str]:
+def apply_effect(player, region, day_count: int, debug: bool = False) -> tuple[bool, str, str]:
     """Try to fire the landmark effect for `region`. Returns (success, title, detail).
 
     On cooldown, success is False and detail explains when it'll be ready.
@@ -415,7 +423,11 @@ def apply_effect(player, region, day_count: int) -> tuple[bool, str, str]:
     if fn is None:
         return False, "Nothing happens.", ""
 
-    title, detail = fn(player, region)
+    effect = spec.get("effect", "")
+    if effect in ("arena", "gladiator"):
+        title, detail = fn(player, region, debug=debug)
+    else:
+        title, detail = fn(player, region)
     region.landmark_used_day = day_count
 
     # Reputation share — visiting a capital landmark always nudges the region

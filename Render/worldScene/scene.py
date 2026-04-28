@@ -1,3 +1,4 @@
+import math
 import pygame
 import random as _rnd
 from blocks import (AIR, WATER, FISHING_SPOT_BLOCK, TILLED_SOIL, GRASS, DIRT, SAND, SNOW,
@@ -15,8 +16,19 @@ from blocks import (AIR, WATER, FISHING_SPOT_BLOCK, TILLED_SOIL, GRASS, DIRT, SA
                     WILDFLOWER_PATCH,
                     RESOURCE_BLOCKS,
                     LIMESTONE_STONE, GRANITE_STONE, BASALT_STONE, MAGMATIC_STONE,
-                    CLOUD_CIRRUS, CLOUD_CUMULUS, CLOUD_STRATUS, CLOUD_STORM)
+                    CLOUD_CIRRUS, CLOUD_CUMULUS, CLOUD_STRATUS, CLOUD_STORM,
+                    CORAL_FRAGMENT_BLOCK, CORAL_GROWING, CORAL_FULL,
+                    KELP_BLOCK, SEASHELL_BLOCK, SEA_ANEMONE,
+                    BIOLUME_DEEP_BLOCK, OCEAN_ROCK)
+
+# Blocks that sit in place of WATER — need the water surface drawn first
+_OCEAN_DECOR_BLOCKS = frozenset((
+    CORAL_FRAGMENT_BLOCK, CORAL_GROWING, CORAL_FULL,
+    KELP_BLOCK, SEASHELL_BLOCK, SEA_ANEMONE,
+    BIOLUME_DEEP_BLOCK, OCEAN_ROCK,
+))
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE, SURFACE_Y
+from world import get_ocean_depth_zone
 from Render.worldScene.art import (draw_all_sculptures, draw_all_tapestries,
                                     draw_pottery_displays, draw_wildflower_displays,
                                     draw_garden_blocks)
@@ -39,46 +51,113 @@ _CLOUD_DRIFT_RATES = {
     CLOUD_STORM:   0.5,
 }
 
-# --- Procedural cloud surface builder (cached by (w, h, bid)) ---
+# --- Procedural cloud surface builder (cached by (w, h, bid, variant)) ---
 _cloud_surf_cache = {}
 
-def _make_cloud_surf(w, h, bid):
-    key = (w, h, bid)
+def _make_cloud_surf(w, h, bid, variant=0):
+    key = (w, h, bid, variant)
     if key in _cloud_surf_cache:
         return _cloud_surf_cache[key]
     s = pygame.Surface((w, h), pygame.SRCALPHA)
+    v = variant % 8
+    # Seeded RNG so each (w,h,bid,variant) combo is deterministic but varied
+    rng = _rnd.Random((w * 31 + h * 97 + bid * 7 + v * 13) & 0x7FFFFFFF)
+
     if bid == CLOUD_CIRRUS:
-        base = (215, 232, 255, 150)
-        bright = (230, 242, 255, 170)
-        for i in range(4):
-            ex = (i * w) // 4
-            ew = w // 2
-            pygame.draw.ellipse(s, base, (ex, h // 3, ew, h // 2))
-        pygame.draw.ellipse(s, bright, (w // 5, h // 5, w * 3 // 5, h * 3 // 5))
+        # Thin horizontal brushstrokes — fade at both ends, no central blob.
+        # h is only 16-22px so shapes must stay very thin.
+        alpha = 125 + v * 8
+        cr, cg, cb = 218, 236, 255
+        # One main sweep spanning most of the width, vertically centred
+        pygame.draw.ellipse(s, (cr, cg, cb, alpha),
+                            (w // 8, h // 4, w * 3 // 4, h // 2))
+        # Trailing wisp off one end (direction varies by variant)
+        if v < 4:
+            pygame.draw.ellipse(s, (cr, cg, cb, alpha - 55),
+                                (0, h // 2, w // 3, h // 3))
+        else:
+            pygame.draw.ellipse(s, (cr, cg, cb, alpha - 55),
+                                (w * 2 // 3, h // 4, w // 3, h // 3))
+        # A second faint streak slightly offset for depth
+        sx = rng.randint(w // 6, w // 3)
+        pygame.draw.ellipse(s, (cr, cg, cb, alpha - 70),
+                            (sx, h // 3 + rng.randint(0, h // 5),
+                             w - sx - rng.randint(0, w // 6), max(3, h // 4)))
+
     elif bid == CLOUD_CUMULUS:
-        base = (242, 242, 248, 195)
-        bright = (252, 252, 255, 215)
-        pygame.draw.ellipse(s, base, (0, h // 3, w, h * 2 // 3))
-        bumps = 3 + w // 48
-        for i in range(bumps):
-            bx = (i * w) // bumps
-            bw = w // bumps + w // 8
-            pygame.draw.ellipse(s, base, (bx, 0, bw, h * 2 // 3))
-        pygame.draw.ellipse(s, bright, (w // 4, h // 4, w // 2, h // 2))
+        # Flat bottom, rounded puffy top — the classic cumulus silhouette.
+        # Strategy: circles overlapping across the top half give the cauliflower
+        # top; a filled body underneath gives the flat-bottomed mass.
+        cr, cg, cb   = 244, 244, 250   # body
+        sr, sg, sb   = 215, 215, 228   # shadow underside
+        br, bg, bb   = 255, 255, 255   # sunlit top
+
+        # Body: wide ellipse anchored at the bottom
+        pygame.draw.ellipse(s, (cr, cg, cb, 200), (0, h // 2, w, h // 2))
+        # Fill so the very bottom edge reads flat rather than curved
+        pygame.draw.rect(s, (cr, cg, cb, 200), (w // 8, h * 3 // 5, w * 3 // 4, h // 3))
+
+        # Puffy top: overlapping circles whose centres sit at mid-height
+        bump_r = max(7, h * 2 // 5)
+        bump_n = max(2, w // bump_r + (v % 3))
+        for i in range(bump_n):
+            cx = int(w * (2 * i + 1) / (2 * bump_n))
+            cy = h // 2
+            r_i = bump_r + rng.randint(-max(1, h // 12), max(1, h // 12))
+            pygame.draw.circle(s, (cr, cg, cb, 205), (cx, cy), max(5, r_i))
+
+        # Darker underside — drawn AFTER the body so it sits on the bottom
+        pygame.draw.ellipse(s, (sr, sg, sb, 170),
+                            (w // 10, h * 3 // 5, w * 4 // 5, h * 2 // 7))
+
+        # Sunlit highlight on the topmost bubble, slightly off-centre
+        hx = rng.randint(w // 4, w // 2)
+        pygame.draw.ellipse(s, (br, bg, bb, 190),
+                            (hx, max(0, h // 2 - bump_r + 2),
+                             max(8, bump_r), max(5, bump_r // 2)))
+
     elif bid == CLOUD_STRATUS:
-        base = (188, 193, 204, 172)
-        bright = (205, 208, 218, 185)
-        pygame.draw.ellipse(s, base, (0, h // 4, w, h // 2))
-        pygame.draw.ellipse(s, base, (w // 8, 0, w * 3 // 4, h))
-        pygame.draw.ellipse(s, bright, (w // 4, h // 3, w // 2, h // 3))
+        # Featureless flat gray sheet — no interior detail, just edge-fade.
+        # Heavier and darker for variants 4-7.
+        dark = v // 4   # 0 = lighter, 1 = heavier overcast
+        cr = 192 - dark * 28
+        cg = 197 - dark * 24
+        cb = 208 - dark * 20
+        alpha = 155 + dark * 35
+
+        # Single flat body ellipse
+        pygame.draw.ellipse(s, (cr, cg, cb, alpha),
+                            (0, h // 5, w, h * 3 // 5))
+        # Rect fill so the centre reads as a flat band, not a lens shape
+        pygame.draw.rect(s, (cr, cg, cb, alpha),
+                         (w // 8, h // 3, w * 3 // 4, h // 3))
+        # Barely perceptible lighter centre (thin part lets more light through)
+        pygame.draw.ellipse(s, (min(255, cr + 12), min(255, cg + 10),
+                                min(255, cb + 8), min(255, alpha + 10)),
+                            (w // 3, h * 2 // 5, w // 3, h // 5))
+
     elif bid == CLOUD_STORM:
-        base = (88, 83, 108, 210)
-        dark = (68, 63, 88, 220)
-        bright = (110, 105, 130, 200)
-        pygame.draw.ellipse(s, base, (0, h // 5, w, h * 3 // 5))
-        pygame.draw.ellipse(s, base, (w // 8, 0, w * 3 // 4, h * 4 // 5))
-        pygame.draw.ellipse(s, dark, (w // 4, h // 3, w // 2, h // 2))
-        pygame.draw.ellipse(s, bright, (w // 3, h // 5, w // 3, h // 3))
+        # Heavy dark mass — uniformly dark, NO bright interior highlights.
+        # Slightly lighter at the very top where the cloud is thinner;
+        # darkest at the flat-ish bottom (the ominous underside).
+        cr, cg, cb   = 85, 80, 102    # main body
+        dr, dg, db   = 62, 58,  80    # dark underside
+        tr, tg, tb   = 105, 100, 122  # faint top (only slightly lighter)
+
+        # Main rounded mass
+        pygame.draw.ellipse(s, (cr, cg, cb, 218), (0, h // 5, w, h * 4 // 5))
+        pygame.draw.ellipse(s, (cr, cg, cb, 218), (w // 8, 0, w * 3 // 4, h * 3 // 4))
+
+        # Dark underside — the threatening flat belly
+        pygame.draw.ellipse(s, (dr, dg, db, 225),
+                            (w // 8, h * 3 // 5, w * 3 // 4, h * 2 // 7))
+        pygame.draw.rect(s, (dr, dg, db, 215),
+                         (w // 5, h * 2 // 3, w * 3 // 5, h // 6))
+
+        # Very subtle top brightening — ambient sky light on the crown
+        pygame.draw.ellipse(s, (tr, tg, tb, 160),
+                            (w // 4, 0, w // 2, h // 4))
+
     _cloud_surf_cache[key] = s
     return s
 
@@ -235,13 +314,16 @@ def draw_world(renderer, world, player=None):
 
     # Cloud entity pass — draw dynamic clouds with per-layer drift
     _drift_t = pygame.time.get_ticks() / 1000.0
-    for _cx, _cy, _cw, _ch, _cbid in getattr(world, '_clouds', ()):
+    _wind_vis = getattr(world, '_wind_visual_strength', 0.0)
+    for _cloud in getattr(world, '_clouds', ()):
+        _cx, _cy, _cw, _ch, _cbid = _cloud[:5]
+        _cvar = _cloud[5] if len(_cloud) > 5 else 0
         _rate = _CLOUD_DRIFT_RATES.get(_cbid, 1.0)
         _sx = _cx - cam_xi + int(_drift_t * _rate)
         if -_cw < _sx < SCREEN_W:
             _sy = _cy - cam_yi
             if -_ch < _sy < SCREEN_H:
-                screen.blit(_make_cloud_surf(_cw, _ch, _cbid), (_sx, _sy))
+                screen.blit(_make_cloud_surf(_cw, _ch, _cbid, _cvar), (_sx, _sy))
 
     for by in range(by0, by1):
         for bx in range(bx0, bx1):
@@ -276,7 +358,11 @@ def draw_world(renderer, world, player=None):
                 continue
             if bid == WATER:
                 level = world._water_level.get((bx, by), 8)
-                wsurf = renderer._water_surfs[level - 1]
+                if biomes.get(bx) in ("ocean", "coastal"):
+                    zone = get_ocean_depth_zone(by)
+                    wsurf = renderer._ocean_water_surfs[zone][level - 1]
+                else:
+                    wsurf = renderer._water_surfs[level - 1]
                 wh = wsurf.get_height()
                 screen.blit(wsurf, (bx * BLOCK_SIZE - cam_xi,
                                     by * BLOCK_SIZE - cam_yi + BLOCK_SIZE - wh))
@@ -398,6 +484,19 @@ def draw_world(renderer, world, player=None):
                 if dsurf:
                     screen.blit(dsurf, (sx, sy))
                 continue
+            # Ocean decor blocks sit where a WATER block was; draw water first
+            # so their transparent backgrounds show the correct underwater colour.
+            if bid in _OCEAN_DECOR_BLOCKS:
+                zone  = get_ocean_depth_zone(by)
+                wsurf = renderer._ocean_water_surfs[zone][7]  # full level
+                sx = bx * BLOCK_SIZE - cam_xi
+                sy = by * BLOCK_SIZE - cam_yi
+                screen.blit(wsurf, (sx, sy))
+                dsurf = renderer._block_surfs.get(bid)
+                if dsurf:
+                    screen.blit(dsurf, (sx, sy))
+                continue
+
             surf = renderer._block_surfs.get(bid)
             if bid in ALL_LOGS:
                 var = renderer._log_variants.get(bid)
@@ -479,24 +578,35 @@ def draw_world(renderer, world, player=None):
             if surf:
                 sx = bx * BLOCK_SIZE - cam_xi
                 sy = by * BLOCK_SIZE - cam_yi
-                screen.blit(surf, (sx, sy))
-                if bid in SHIMMER and ore_visible and (px_blk is None or dist <= detect):
-                    now = pygame.time.get_ticks()
-                    sc = SHIMMER[bid]
-                    h = bx * 1283 + by * 7919
-                    for i in range(4):
-                        phase = (h + i * 4999) % 65536
-                        if ((now + phase) // 350) % 5 == 0:
-                            spx = 1 + (h * (i + 3) * 43) % 28
-                            spy = 1 + (h * (i + 3) * 97) % 28
-                            pygame.draw.rect(screen, sc, (sx + spx, sy + spy, 2, 2))
-                if bid in ALL_LEAVES:
+                if bid in ALL_LEAVES and _wind_vis > 0.01:
+                    _sway_phase = bx * 0.41 + getattr(world, 'seed', 0) * 0.0001
+                    _sway_x = int(math.sin(_drift_t * 1.5 + _sway_phase) * _wind_vis * 2.5)
+                    screen.blit(surf, (sx + _sway_x, sy))
                     fc_bid = world.get_bg_block(bx, by)
                     if fc_bid in ALL_FRUIT_CLUSTERS:
-                        var = renderer._fruit_cluster_variants.get(fc_bid)
-                        if var:
-                            fc_surf = var[(bx * 97 + by * 31 + world.seed) % len(var)]
-                            screen.blit(fc_surf, (sx, sy))
+                        fc_var = renderer._fruit_cluster_variants.get(fc_bid)
+                        if fc_var:
+                            fc_surf = fc_var[(bx * 97 + by * 31 + world.seed) % len(fc_var)]
+                            screen.blit(fc_surf, (sx + _sway_x, sy))
+                else:
+                    screen.blit(surf, (sx, sy))
+                    if bid in SHIMMER and ore_visible and (px_blk is None or dist <= detect):
+                        now = pygame.time.get_ticks()
+                        sc = SHIMMER[bid]
+                        h = bx * 1283 + by * 7919
+                        for i in range(4):
+                            phase = (h + i * 4999) % 65536
+                            if ((now + phase) // 350) % 5 == 0:
+                                spx = 1 + (h * (i + 3) * 43) % 28
+                                spy = 1 + (h * (i + 3) * 97) % 28
+                                pygame.draw.rect(screen, sc, (sx + spx, sy + spy, 2, 2))
+                    if bid in ALL_LEAVES:
+                        fc_bid = world.get_bg_block(bx, by)
+                        if fc_bid in ALL_FRUIT_CLUSTERS:
+                            var = renderer._fruit_cluster_variants.get(fc_bid)
+                            if var:
+                                fc_surf = var[(bx * 97 + by * 31 + world.seed) % len(var)]
+                                screen.blit(fc_surf, (sx, sy))
 
     if getattr(world, "wire_mode", False):
         from Render.logic_blocks import draw_wire_tile
@@ -514,20 +624,526 @@ def draw_world(renderer, world, player=None):
     draw_wildflower_displays(screen, world, cam_xi, cam_yi)
     draw_garden_blocks(screen, world, cam_xi, cam_yi)
 
+    # Underwater darkness overlay — deepens proportionally below tidal zone
+    if player is not None:
+        player_by = int(player.y / BLOCK_SIZE)
+        player_biome = world.get_biome(int(player.x / BLOCK_SIZE))
+        if player_biome in ("ocean", "coastal") and player_by > SURFACE_Y + 5:
+            zone = get_ocean_depth_zone(player_by)
+            if zone != "tidal":
+                zone_start = {"reef": SURFACE_Y + 15, "twilight": SURFACE_Y + 50, "deep": SURFACE_Y + 110}
+                zone_end   = {"reef": SURFACE_Y + 50, "twilight": SURFACE_Y + 110, "deep": SURFACE_Y + 180}
+                z0 = zone_start[zone]
+                z1 = zone_end[zone]
+                t = max(0.0, min(1.0, (player_by - z0) / max(1, z1 - z0)))
+                max_alpha = {"reef": 50, "twilight": 95, "deep": 140}[zone]
+                alpha = int(t * max_alpha)
+                if alpha > 0:
+                    _uw_surf = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+                    _uw_surf.fill((0, 0, 20, alpha))
+                    screen.blit(_uw_surf, (0, 0))
+
+
+def _draw_textured_region(screen, x, y, w, h, base_col, texture):
+    """Fill a rect with base_col then overlay a pixel pattern matching texture."""
+    pygame.draw.rect(screen, base_col, (x, y, w, h))
+    if texture == "plain" or w < 4 or h < 3:
+        return
+    lum = (base_col[0] + base_col[1] + base_col[2]) // 3
+    hi = tuple(min(255, c + 65) for c in base_col) if lum < 140 else tuple(max(0, c - 55) for c in base_col)
+    dk = tuple(max(0, c - 40) for c in base_col)
+    r = pygame.draw.rect  # shorthand
+
+    if texture == "twill":
+        # Diagonal lines top-left → bottom-right, spaced 4 px
+        for offset in range(-(h - 1), w, 4):
+            for row in range(h):
+                col = offset + row
+                if 0 <= col < w:
+                    r(screen, hi, (x + col, y + row, 1, 1))
+
+    elif texture == "tartan":
+        # Crosshatch: horizontal stripe every 4 px, vertical every 4 px
+        for row in range(0, h, 4):
+            r(screen, hi, (x, y + row, w, 1))
+        for col in range(0, w, 4):
+            r(screen, hi, (x + col, y, 1, h))
+
+    elif texture == "herringbone":
+        # Diagonal alternates direction every 3 rows (/ then \)
+        for row in range(h):
+            d = 1 if (row // 3) % 2 == 0 else -1
+            start = (row * d % 4 + 4) % 4
+            col = start
+            while 0 <= col < w:
+                r(screen, hi, (x + col, y + row, 1, 1))
+                col += 4
+
+    elif texture == "damask":
+        # 2×2 highlight squares at every 4×4 grid cell
+        for row in range(0, h, 4):
+            for col in range(0, w, 4):
+                if y + row < y + h and x + col < x + w:
+                    r(screen, hi, (x + col, y + row, min(2, w - col), min(2, h - row)))
+
+    elif texture == "diamond":
+        # Small diamond outlines tiled every 6×6
+        for cy in range(0, h, 6):
+            for cx in range(0, w, 6):
+                mx, my = x + cx + 3, y + cy + 3
+                for dx, dy in [(0, -3), (3, 0), (0, 3), (-3, 0)]:
+                    if x <= mx + dx < x + w and y <= my + dy < y + h:
+                        r(screen, hi, (mx + dx, my + dy, 1, 1))
+                for dx, dy in [(-1, -2), (1, -2), (-2, -1), (2, -1),
+                                (-2,  1), (2,  1), (-1,  2), (1,  2)]:
+                    if x <= mx + dx < x + w and y <= my + dy < y + h:
+                        r(screen, dk, (mx + dx, my + dy, 1, 1))
+
+    elif texture == "brocade":
+        # Cross motif + corner dots tiled every 5×5
+        for cy in range(2, h + 2, 5):
+            for cx in range(2, w + 2, 5):
+                mx, my = x + cx, y + cy
+                for dx in range(-2, 3):
+                    if x <= mx + dx < x + w and y <= my < y + h:
+                        r(screen, hi, (mx + dx, my, 1, 1))
+                for dy in range(-2, 3):
+                    if x <= mx < x + w and y <= my + dy < y + h:
+                        r(screen, hi, (mx, my + dy, 1, 1))
+                for dx, dy in [(-2, -2), (2, -2), (-2, 2), (2, 2)]:
+                    if x <= mx + dx < x + w and y <= my + dy < y + h:
+                        r(screen, dk, (mx + dx, my + dy, 1, 1))
+
+
+_ARMOR_BASE = {
+    "leather":  ((110,  72,  42), (148,  98,  56)),
+    "bone":     ((228, 215, 190), (248, 238, 220)),
+    "iron":     ((140, 148, 158), (192, 200, 210)),
+    "steel":    ((100, 110, 125), (155, 168, 185)),
+    "gold":     ((195, 158,  38), (242, 208,  72)),
+    "obsidian": (( 22,  10,  38), ( 52,  24,  88)),
+    "crystal":  ((112, 188, 220), (188, 232, 248)),
+    "void":     (( 14,   6,  26), ( 38,  16,  72)),
+}
+_ARMOR_DEFAULT_TRIM = {
+    "leather":  (178, 132,  52),
+    "bone":     (200, 168, 118),
+    "iron":     (210, 218, 228),
+    "steel":    (165, 182, 212),
+    "gold":     (222, 188,  58),
+    "obsidian": (105,  42, 188),
+    "crystal":  (222, 248, 255),
+    "void":     (118,  55, 205),
+}
+
+def _armor_tier(item_id):
+    if not item_id:
+        return None
+    for t in ("leather", "bone", "iron", "steel", "gold", "obsidian", "crystal", "void"):
+        if t in item_id:
+            return t
+    return None
+
+def _ab(c, f):
+    return tuple(int(x * f) for x in c)
+
+def _draw_helmet(screen, x, y, w, h, tier, pc, hc, dye):
+    pygame.draw.rect(screen, pc, (x, y, w, h))
+    if tier == "leather":
+        pygame.draw.rect(screen, _ab(pc, 0.72), (x, y, w, 2))           # brow band
+        pygame.draw.rect(screen, dye, (x + 1, y + h - 1, w - 2, 1))    # chin strap
+        for rx in (x + 3, x + w - 5):                                    # rivets
+            pygame.draw.rect(screen, dye, (rx, y + 3, 2, 2))
+        pygame.draw.rect(screen, hc, (x + 2, y + 1, w - 4, 1))          # brow highlight
+    elif tier == "iron":
+        pygame.draw.rect(screen, dye, (x, y + h - 2, w, 2))             # brim
+        pygame.draw.rect(screen, _ab(pc, 0.72), (x + w//2 - 1, y + 3, 2, h - 3))  # nasal
+        pygame.draw.rect(screen, hc, (x, y, w, 1))                      # top highlight
+        pygame.draw.rect(screen, hc, (x, y + 1, 1, h - 2))             # left edge
+        pygame.draw.rect(screen, hc, (x + w - 1, y + 1, 1, h - 2))     # right edge
+    elif tier == "steel":
+        pygame.draw.rect(screen, dye, (x - 1, y + h - 2, w + 2, 2))    # wide brim
+        pygame.draw.rect(screen, (18, 18, 18), (x + 2, y + 4, w - 4, 2))   # visor slot H
+        pygame.draw.rect(screen, (18, 18, 18), (x + w//2 - 1, y + 5, 2, h - 5))  # visor slot V
+        pygame.draw.rect(screen, dye, (x, y + 2, 1, h - 2))            # left flange
+        pygame.draw.rect(screen, dye, (x + w - 1, y + 2, 1, h - 2))   # right flange
+        pygame.draw.rect(screen, hc, (x, y, w, 1))                      # top highlight
+        pygame.draw.rect(screen, hc, (x + 1, y + 1, 1, 3))             # left corner glint
+    elif tier == "bone":
+        pygame.draw.rect(screen, _ab(pc, 0.82), (x, y, w, 2))           # forehead ridge
+        pygame.draw.rect(screen, dye, (x + 1, y + h - 1, w - 2, 1))    # jaw line
+        pygame.draw.rect(screen, (95, 78, 55), (x + 2, y + h - 3, 2, 2))  # left joint
+        pygame.draw.rect(screen, (95, 78, 55), (x + w - 4, y + h - 3, 2, 2))  # right joint
+        pygame.draw.rect(screen, hc, (x + w//2 - 1, y + 1, 2, h - 3))  # brow seam
+        pygame.draw.rect(screen, hc, (x + 1, y, w - 2, 1))             # top highlight
+    elif tier == "gold":
+        pygame.draw.rect(screen, hc, (x, y, w, 2))                      # crown band
+        pygame.draw.rect(screen, dye, (x + w//2 - 1, y + 2, 3, 2))     # center gem
+        pygame.draw.rect(screen, dye, (x, y + h - 2, w, 2))            # ornate brim
+        pygame.draw.rect(screen, _ab(pc, 0.78), (x + 2, y + 4, w - 4, 1))  # visor shadow
+        pygame.draw.rect(screen, hc, (x, y + 1, 1, h - 3))             # left glint
+        pygame.draw.rect(screen, hc, (x + w - 1, y + 1, 1, h - 3))    # right glint
+    elif tier == "obsidian":
+        pygame.draw.rect(screen, dye, (x, y, w, 1))                     # top glow edge
+        pygame.draw.rect(screen, dye, (x, y, 1, h))                     # left glow edge
+        pygame.draw.rect(screen, dye, (x + w - 1, y, 1, h))            # right glow edge
+        pygame.draw.rect(screen, dye, (x, y + h - 1, w, 1))            # bottom glow edge
+        pygame.draw.rect(screen, hc, (x + w//2 - 1, y, 2, h))          # shard ridge
+        pygame.draw.rect(screen, (12, 12, 12), (x + 2, y + 3, w - 4, 3))  # eye slit
+    elif tier == "crystal":
+        pygame.draw.rect(screen, hc, (x, y, w, 1))                      # top shine
+        pygame.draw.rect(screen, hc, (x, y, 1, h))                      # left shine
+        pygame.draw.rect(screen, hc, (x + w - 1, y, 1, h))             # right shine
+        pygame.draw.rect(screen, hc, (x, y + h - 1, w, 1))             # bottom shine
+        pygame.draw.rect(screen, (205, 242, 252), (x + 2, y + h//3, w - 4, 1))  # facet line
+        pygame.draw.rect(screen, (242, 252, 255), (x + w//2 - 1, y + 1, 2, 2))  # apex gem
+        pygame.draw.rect(screen, dye, (x + 1, y + 1, w - 2, 1))        # inner edge
+    elif tier == "void":
+        pygame.draw.rect(screen, dye, (x, y, w, 1))                     # top void glow
+        pygame.draw.rect(screen, dye, (x, y, 1, h))                     # left glow
+        pygame.draw.rect(screen, dye, (x + w - 1, y, 1, h))            # right glow
+        pygame.draw.rect(screen, (6, 6, 14), (x + 2, y + 3, w - 4, 4)) # void slit
+        pygame.draw.rect(screen, _ab(dye, 0.55), (x + 2, y + 3, 1, 4)) # inner glow L
+        pygame.draw.rect(screen, _ab(dye, 0.55), (x + w - 3, y + 3, 1, 4))  # inner glow R
+
+def _draw_chestplate(screen, x, y, w, h, tier, pc, hc, dye):
+    pygame.draw.rect(screen, pc, (x, y, w, h))
+    if tier == "leather":
+        pygame.draw.rect(screen, _ab(pc, 0.76), (x + w//2, y, 1, h))   # center seam
+        pygame.draw.rect(screen, dye, (x + 2, y + h//2, w - 4, 1))     # belly strap
+        pygame.draw.rect(screen, hc, (x, y, 4, 2))                      # left shoulder
+        pygame.draw.rect(screen, hc, (x + w - 4, y, 4, 2))             # right shoulder
+        for rv in (x + 3, x + w - 5):                                   # chest rivets
+            pygame.draw.rect(screen, dye, (rv, y + 2, 2, 2))
+    elif tier == "iron":
+        pygame.draw.rect(screen, _ab(pc, 0.74), (x + w//2 - 1, y, 1, h))  # ridge
+        pygame.draw.rect(screen, dye, (x, y + h//3, w, 1))             # plate line
+        pygame.draw.rect(screen, hc, (x, y, 3, 4))                      # left pauldron
+        pygame.draw.rect(screen, hc, (x + w - 3, y, 3, 4))             # right pauldron
+        pygame.draw.rect(screen, hc, (x, y, w, 1))                      # top edge
+    elif tier == "steel":
+        pygame.draw.rect(screen, _ab(pc, 0.70), (x + w//2 - 1, y, 2, h))  # wider ridge
+        pygame.draw.rect(screen, dye, (x, y + h//3, w, 1))             # upper plate line
+        pygame.draw.rect(screen, dye, (x, y + 2*h//3, w, 1))           # lower plate line
+        pygame.draw.rect(screen, hc, (x, y, 4, 5))                      # left pauldron
+        pygame.draw.rect(screen, hc, (x + w - 4, y, 4, 5))             # right pauldron
+        pygame.draw.rect(screen, hc, (x, y, w, 1))                      # top edge
+        pygame.draw.rect(screen, hc, (x + 1, y + 1, 2, 2))             # left glint
+    elif tier == "bone":
+        pygame.draw.rect(screen, _ab(pc, 0.82), (x + w//2, y, 1, h))   # sternum line
+        pygame.draw.rect(screen, dye, (x + 2, y + h//2, w - 4, 1))     # rib strap
+        pygame.draw.rect(screen, (95, 78, 55), (x + 2, y + 2, 2, 2))   # left joint knob
+        pygame.draw.rect(screen, (95, 78, 55), (x + w - 4, y + 2, 2, 2))  # right joint knob
+        pygame.draw.rect(screen, hc, (x, y, 4, 2))                      # left shoulder
+        pygame.draw.rect(screen, hc, (x + w - 4, y, 4, 2))             # right shoulder
+        pygame.draw.rect(screen, hc, (x, y, w, 1))                      # top edge
+    elif tier == "gold":
+        pygame.draw.rect(screen, _ab(pc, 0.76), (x + w//2 - 1, y, 1, h))  # ridge
+        pygame.draw.rect(screen, dye, (x, y + h//3, w, 1))             # upper filigree line
+        pygame.draw.rect(screen, dye, (x, y + 2*h//3, w, 1))           # lower filigree line
+        pygame.draw.rect(screen, hc, (x, y, 5, 5))                      # large left pauldron
+        pygame.draw.rect(screen, hc, (x + w - 5, y, 5, 5))             # large right pauldron
+        pygame.draw.rect(screen, dye, (x + w//2 - 1, y + 2, 3, 1))    # center emblem
+        pygame.draw.rect(screen, hc, (x, y, w, 1))                      # top shine
+        pygame.draw.rect(screen, hc, (x + 1, y + 1, 2, 2))             # left corner glint
+        pygame.draw.rect(screen, hc, (x + w - 3, y + 1, 2, 2))         # right corner glint
+    elif tier == "obsidian":
+        pygame.draw.rect(screen, dye, (x, y, 1, h))                     # left glow edge
+        pygame.draw.rect(screen, dye, (x + w - 1, y, 1, h))            # right glow edge
+        pygame.draw.rect(screen, dye, (x, y, w, 1))                     # top glow edge
+        pygame.draw.rect(screen, hc, (x + w//2 - 1, y, 1, h))          # shard spine
+        pygame.draw.rect(screen, dye, (x + 2, y + h//2, w - 4, 1))     # void crack
+        pygame.draw.rect(screen, hc, (x, y, 4, 5))                      # left obsidian shard
+        pygame.draw.rect(screen, hc, (x + w - 4, y, 4, 5))             # right obsidian shard
+    elif tier == "crystal":
+        pygame.draw.rect(screen, hc, (x, y, w, 1))                      # top shine
+        pygame.draw.rect(screen, hc, (x, y, 1, h))                      # left shine
+        pygame.draw.rect(screen, hc, (x + w - 1, y, 1, h))             # right shine
+        pygame.draw.rect(screen, (205, 242, 252), (x, y + h//3, w, 1)) # upper facet
+        pygame.draw.rect(screen, (205, 242, 252), (x, y + 2*h//3, w, 1))  # lower facet
+        pygame.draw.rect(screen, hc, (x, y, 4, 5))                      # left crystal pauldron
+        pygame.draw.rect(screen, hc, (x + w - 4, y, 4, 5))             # right crystal pauldron
+        pygame.draw.rect(screen, (242, 252, 255), (x + w//2 - 1, y + 1, 2, 2))  # chest gem
+        pygame.draw.rect(screen, dye, (x + 1, y + 1, w - 2, 1))        # inner glow edge
+    elif tier == "void":
+        pygame.draw.rect(screen, dye, (x, y, 1, h))                     # left glow
+        pygame.draw.rect(screen, dye, (x + w - 1, y, 1, h))            # right glow
+        pygame.draw.rect(screen, dye, (x, y, w, 1))                     # top glow
+        pygame.draw.rect(screen, hc, (x + w//2 - 1, y, 2, h))          # void spine
+        pygame.draw.rect(screen, dye, (x + 2, y + h//3, w - 4, 1))     # upper void crack
+        pygame.draw.rect(screen, dye, (x + 2, y + 2*h//3, w - 4, 1))  # lower void crack
+        pygame.draw.rect(screen, hc, (x, y, 4, 6))                      # left void pauldron
+        pygame.draw.rect(screen, hc, (x + w - 4, y, 4, 6))             # right void pauldron
+
+def _draw_leggings(screen, x, y, w, h, tier, pc, hc, dye):
+    pygame.draw.rect(screen, pc, (x, y, w, h))
+    if tier == "leather":
+        pygame.draw.rect(screen, dye, (x, y, 2, h))                     # left stripe
+        pygame.draw.rect(screen, dye, (x + w - 2, y, 2, h))            # right stripe
+        pygame.draw.rect(screen, hc, (x + 2, y, w - 4, 1))             # top highlight
+    elif tier == "iron":
+        pygame.draw.rect(screen, hc, (x + w//2 - 2, y + 1, 4, h - 2)) # knee guard
+        pygame.draw.rect(screen, dye, (x, y, w, 1))                     # top band
+        pygame.draw.rect(screen, _ab(pc, 0.75), (x + w//2, y + 1, 1, h - 1))  # knee seam
+    elif tier == "steel":
+        pygame.draw.rect(screen, hc, (x + w//2 - 3, y, 5, h))         # knee guard wide
+        pygame.draw.rect(screen, _ab(pc, 0.70), (x + w//2 - 1, y, 2, h))  # knee crease
+        pygame.draw.rect(screen, dye, (x, y, w, 1))                     # top band
+        pygame.draw.rect(screen, dye, (x, y + h - 1, w, 1))            # bottom band
+    elif tier == "bone":
+        pygame.draw.rect(screen, hc, (x + w//2 - 2, y + 1, 5, h - 2)) # knee knob
+        pygame.draw.rect(screen, (95, 78, 55), (x + w//2 - 1, y + 2, 3, 2))  # joint mark
+        pygame.draw.rect(screen, dye, (x, y, w, 1))                     # top band
+        pygame.draw.rect(screen, hc, (x + 2, y, w - 4, 1))             # top highlight
+    elif tier == "gold":
+        pygame.draw.rect(screen, hc, (x + w//2 - 3, y, 5, h))          # knee crest
+        pygame.draw.rect(screen, dye, (x, y, w, 1))                     # top filigree band
+        pygame.draw.rect(screen, dye, (x, y + h - 1, w, 1))            # bottom filigree band
+        pygame.draw.rect(screen, dye, (x + w//2 - 1, y + h//2, 3, 1)) # center jewel
+        pygame.draw.rect(screen, hc, (x + 1, y, w - 2, 1))             # top highlight
+    elif tier == "obsidian":
+        pygame.draw.rect(screen, hc, (x + w//2 - 2, y, 4, h))          # shard kneecap
+        pygame.draw.rect(screen, dye, (x, y, 1, h))                     # left glow
+        pygame.draw.rect(screen, dye, (x + w - 1, y, 1, h))            # right glow
+        pygame.draw.rect(screen, dye, (x, y, w, 1))                     # top glow
+        pygame.draw.rect(screen, dye, (x, y + h - 1, w, 1))            # bottom glow
+    elif tier == "crystal":
+        pygame.draw.rect(screen, hc, (x + w//2 - 3, y, 6, h))          # crystal kneeguard
+        pygame.draw.rect(screen, (205, 242, 252), (x, y + h//2, w, 1)) # prismatic band
+        pygame.draw.rect(screen, hc, (x, y, w, 1))                      # top shine
+        pygame.draw.rect(screen, hc, (x, y + h - 1, w, 1))             # bottom shine
+        pygame.draw.rect(screen, dye, (x + 1, y, 1, h))                # inner glow L
+        pygame.draw.rect(screen, dye, (x + w - 2, y, 1, h))            # inner glow R
+    elif tier == "void":
+        pygame.draw.rect(screen, hc, (x + w//2 - 2, y, 5, h))          # void kneeguard
+        pygame.draw.rect(screen, _ab(pc, 0.60), (x + w//2 - 1, y, 2, h))  # crease
+        pygame.draw.rect(screen, dye, (x, y, 1, h))                     # left void glow
+        pygame.draw.rect(screen, dye, (x + w - 1, y, 1, h))            # right void glow
+        pygame.draw.rect(screen, dye, (x, y, w, 1))                     # top glow
+        pygame.draw.rect(screen, dye, (x + 2, y + h//2, w - 4, 1))    # void tendril
+
+def _draw_boots(screen, x, y, w, h, tier, pc, hc, dye):
+    pygame.draw.rect(screen, pc, (x, y, w, h))
+    if tier == "leather":
+        pygame.draw.rect(screen, hc, (x, y, w, 2))                      # toe cap
+        pygame.draw.rect(screen, dye, (x, y + h - 1, w, 1))            # ankle strap
+    elif tier == "iron":
+        pygame.draw.rect(screen, hc, (x, y, w, 2))                      # toe cap
+        pygame.draw.rect(screen, (215, 222, 232), (x, y, w, 1))         # toe shine
+        pygame.draw.rect(screen, dye, (x, y, 1, h))                     # outer ridge
+    elif tier == "steel":
+        pygame.draw.rect(screen, hc, (x, y, w, 3))                      # toe cap tall
+        pygame.draw.rect(screen, (228, 236, 248), (x, y, w, 1))         # toe shine bright
+        pygame.draw.rect(screen, dye, (x, y, 1, h))                     # outer ridge
+        pygame.draw.rect(screen, dye, (x + w - 1, y, 1, h))            # inner ridge
+    elif tier == "bone":
+        pygame.draw.rect(screen, hc, (x, y, w, 2))                      # toe cap
+        pygame.draw.rect(screen, (95, 78, 55), (x + 1, y + h - 2, 2, 2))  # ankle joint L
+        pygame.draw.rect(screen, (95, 78, 55), (x + w - 3, y + h - 2, 2, 2))  # ankle joint R
+        pygame.draw.rect(screen, dye, (x, y + h - 1, w, 1))            # ankle strap
+    elif tier == "gold":
+        pygame.draw.rect(screen, hc, (x, y, w, 3))                      # toe cap
+        pygame.draw.rect(screen, (245, 215, 80), (x, y, w, 1))          # toe shine
+        pygame.draw.rect(screen, dye, (x, y, 1, h))                     # outer ridge
+        pygame.draw.rect(screen, dye, (x, y + h - 1, w, 1))            # ankle filigree
+    elif tier == "obsidian":
+        pygame.draw.rect(screen, dye, (x, y, w, 1))                     # top glow
+        pygame.draw.rect(screen, dye, (x, y, 1, h))                     # left glow
+        pygame.draw.rect(screen, dye, (x + w - 1, y, 1, h))            # right glow
+        pygame.draw.rect(screen, hc, (x + 1, y, w - 2, 2))             # shard toe cap
+    elif tier == "crystal":
+        pygame.draw.rect(screen, hc, (x, y, w, 2))                      # crystal toe
+        pygame.draw.rect(screen, (242, 252, 255), (x, y, w, 1))         # toe sparkle
+        pygame.draw.rect(screen, dye, (x, y, 1, h))                     # left glow
+        pygame.draw.rect(screen, dye, (x + w - 1, y, 1, h))            # right glow
+    elif tier == "void":
+        pygame.draw.rect(screen, dye, (x, y, w, 1))                     # top void glow
+        pygame.draw.rect(screen, dye, (x, y, 1, h))                     # left glow
+        pygame.draw.rect(screen, dye, (x + w - 1, y, 1, h))            # right glow
+        pygame.draw.rect(screen, hc, (x + 1, y, w - 2, 2))             # void toe cap
+
+
+_CLOAK_WIDTHS = {
+    "garment_cloak":          5,
+    "garment_cloak_hooded":   6,
+    "garment_cloak_royal":    9,
+    "garment_cloak_tattered": 5,
+    "garment_cloak_half":     5,
+}
+
+def _draw_cloak(screen, cloak_t, px, py, head_h, body_h, facing):
+    """Draw the back-slot cloak, dispatching on output_type for distinct silhouettes."""
+    c    = tuple(cloak_t.dye_color)
+    hi   = tuple(min(255, x + 55) for x in c)
+    dk   = tuple(max(0,   x - 45) for x in c)
+    ts   = pygame.time.get_ticks() / 1000.0
+    ot   = cloak_t.output_type
+    w    = _CLOAK_WIDTHS.get(ot, 5)
+    sign = 1 if facing == 1 else -1
+    # Back side of the body (opposite the arm)
+    bx   = (px + PLAYER_W) if facing == 1 else (px - w)
+    by   = py + head_h - 1
+
+    if ot == "garment_cloak":
+        # Standard cape: gentle travelling wave, grows from shoulder to hem
+        for row in range(body_h):
+            env  = row / max(1, body_h - 1)
+            wave = math.sin(row * 0.9 + ts * 3.5) * env
+            sx   = bx + sign * int(round(2.0 * wave))
+            pygame.draw.rect(screen, hi if wave > 0.3 else c, (sx, by + row, w, 1))
+
+    elif ot == "garment_cloak_hooded":
+        # Hood: semicircular hump behind the head, then narrower cape with slow wave
+        hood_cx = bx + (w // 2)
+        for row in range(8):
+            hw  = max(1, int(3.5 * math.sin(row / 7.0 * math.pi)))
+            rx  = hood_cx - hw
+            pygame.draw.rect(screen, hi if row < 3 else c, (rx, py - 1 + row, hw * 2, 1))
+        for row in range(body_h):
+            env  = row / max(1, body_h - 1)
+            wave = math.sin(row * 0.7 + ts * 2.5) * env
+            sx   = bx + sign * int(round(1.5 * wave))
+            pygame.draw.rect(screen, c, (sx, by + row, w, 1))
+
+    elif ot == "garment_cloak_royal":
+        # Royal mantle: wide, long, fast dramatic wave, bright inner border
+        extra = 4
+        for row in range(body_h + extra):
+            env  = row / max(1, body_h + extra - 1)
+            wave = math.sin(row * 1.0 + ts * 4.5) * env
+            sx   = bx + sign * int(round(3.0 * wave))
+            pygame.draw.rect(screen, hi if abs(wave) > 0.5 else c, (sx, by + row, w, 1))
+            edge_x = sx + (1 if facing == 1 else w - 2)
+            pygame.draw.rect(screen, hi, (edge_x, by + row, 1, 1))
+
+    elif ot == "garment_cloak_tattered":
+        # Tattered: consistent ragged hem via seed-seeded RNG, slower wave
+        fringe = [body_h - _rnd.Random(cloak_t.seed + i).randint(0, 7) for i in range(w)]
+        for row in range(body_h):
+            env  = row / max(1, body_h - 1)
+            wave = math.sin(row * 1.1 + ts * 2.0) * env
+            sx   = bx + sign * int(round(2.0 * wave))
+            for col_off in range(w):
+                if row < fringe[col_off]:
+                    shade = dk if row >= body_h - 6 else c
+                    pygame.draw.rect(screen, shade, (sx + col_off, by + row, 1, 1))
+
+    elif ot == "garment_cloak_half":
+        # Half cape: covers shoulder to mid-torso only, decorative clasp, subtle wave
+        half_h = 9
+        pygame.draw.rect(screen, hi, (bx + 1, by, 3, 2))          # clasp
+        pygame.draw.rect(screen, dk, (bx + 2, by, 1, 1))           # clasp gem
+        for row in range(1, half_h):
+            env  = row / max(1, half_h - 1)
+            wave = math.sin(row * 0.8 + ts * 2.8) * env
+            sx   = bx + sign * int(round(1.0 * wave))
+            pygame.draw.rect(screen, c, (sx, by + row, w, 1))
+
 
 def draw_player(screen, cam_x, cam_y, player):
     px = int(player.x - cam_x)
     py = int(player.y - cam_y)
     head_h = 10
-    body_h = PLAYER_H - head_h
+    body_h = PLAYER_H - head_h  # 18
+
+    def get_t(slot):
+        return player.get_worn_textile(slot)
+
+    def col(t, default):
+        return tuple(t.dye_color) if t else default
+
+    def tex(t):
+        return t.texture if t else "plain"
+
+    vest_t  = get_t("chest")
+    glove_t = get_t("hands")
+    hat_t   = get_t("head")
+    leg_t   = get_t("legs")
+    boot_t  = get_t("feet")
+    cloak_t = get_t("back")
+
+    # Determine leg / foot colors and textures
+    if leg_t and boot_t:
+        leg_col, leg_tex   = col(leg_t,  (55, 90, 150)), tex(leg_t)
+        foot_col, foot_tex = col(boot_t, (50, 80, 140)), tex(boot_t)
+    elif boot_t:
+        leg_col = foot_col = col(boot_t, (50, 80, 140))
+        leg_tex = foot_tex = tex(boot_t)
+    elif leg_t:
+        leg_col = foot_col = col(leg_t, (55, 90, 150))
+        leg_tex = foot_tex = tex(leg_t)
+    else:
+        leg_col = foot_col = (50, 80, 140)
+        leg_tex = foot_tex = "plain"
+
+    # Cloak: dispatched to _draw_cloak for type-specific silhouette and animation
+    if cloak_t:
+        _draw_cloak(screen, cloak_t, px, py, head_h, body_h, player.facing)
+
+    # Hat: patterned crown above the head
+    if hat_t:
+        _draw_textured_region(screen, px + 2, py - 5, PLAYER_W - 4, 5,
+                              col(hat_t, (80, 80, 80)), tex(hat_t))
+
+    # Head (skin — never patterned)
     pygame.draw.rect(screen, (255, 210, 160), (px + 2, py, PLAYER_W - 4, head_h))
+
+    # Eye
     eye_x = (px + PLAYER_W - 6) if player.facing == 1 else (px + 2)
     pygame.draw.rect(screen, (30, 30, 30), (eye_x, py + 3, 3, 3))
-    pygame.draw.rect(screen, (70, 120, 190), (px, py + head_h, PLAYER_W, body_h))
+
+    # Vest: patterned torso
+    _draw_textured_region(screen, px, py + head_h, PLAYER_W, body_h,
+                          col(vest_t, (70, 120, 190)), tex(vest_t))
+
+    # Leggings strip: 4-px band drawn over the lower torso
+    if leg_t:
+        _draw_textured_region(screen, px, py + head_h + body_h - 10, PLAYER_W, 4,
+                              leg_col, leg_tex)
+
+    # Arm / gloves
     arm_x = (px + PLAYER_W) if player.facing == 1 else (px - 3)
-    pygame.draw.rect(screen, (255, 210, 160), (arm_x, py + head_h + 2, 3, 8))
-    pygame.draw.rect(screen, (50, 80, 140), (px, py + head_h + body_h - 6, 8, 6))
-    pygame.draw.rect(screen, (50, 80, 140), (px + PLAYER_W - 8, py + head_h + body_h - 6, 8, 6))
+    _draw_textured_region(screen, arm_x, py + head_h + 2, 3, 8,
+                          col(glove_t, (255, 210, 160)), tex(glove_t))
+
+    # Feet / boots
+    _draw_textured_region(screen, px,                  py + head_h + body_h - 6, 8, 6, foot_col, foot_tex)
+    _draw_textured_region(screen, px + PLAYER_W - 8,   py + head_h + body_h - 6, 8, 6, foot_col, foot_tex)
+
+    # ── Armor overlays (drawn over textiles) ─────────────────────────────
+    wa  = getattr(player, "worn_armor",     {})
+    wad = getattr(player, "worn_armor_dye", {})
+
+    def _dye_col(slot, tier):
+        fam = wad.get(slot)
+        if fam:
+            from textiles import DYE_FAMILY_COLORS
+            raw = DYE_FAMILY_COLORS.get(fam)
+            if raw:
+                return tuple(raw)
+        return _ARMOR_DEFAULT_TRIM[tier]
+
+    ht = _armor_tier(wa.get("helmet"))
+    if ht:
+        pc, hc = _ARMOR_BASE[ht]
+        _draw_helmet(screen, px + 1, py, PLAYER_W - 2, head_h, ht, pc, hc, _dye_col("helmet", ht))
+        pygame.draw.rect(screen, (30, 30, 30), (eye_x, py + 3, 3, 3))
+
+    ct = _armor_tier(wa.get("chestplate"))
+    if ct:
+        pc, hc = _ARMOR_BASE[ct]
+        _draw_chestplate(screen, px, py + head_h, PLAYER_W, body_h - 8, ct, pc, hc, _dye_col("chestplate", ct))
+
+    lt = _armor_tier(wa.get("leggings"))
+    if lt:
+        pc, hc = _ARMOR_BASE[lt]
+        _draw_leggings(screen, px, py + head_h + body_h - 10, PLAYER_W, 8, lt, pc, hc, _dye_col("leggings", lt))
+
+    bt = _armor_tier(wa.get("boots"))
+    if bt:
+        pc, hc = _ARMOR_BASE[bt]
+        _draw_boots(screen, px,                py + head_h + body_h - 6, 8, 6, bt, pc, hc, _dye_col("boots", bt))
+        _draw_boots(screen, px + PLAYER_W - 8, py + head_h + body_h - 6, 8, 6, bt, pc, hc, _dye_col("boots", bt))
 
 
 def draw_entities(renderer, entities):

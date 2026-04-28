@@ -907,6 +907,8 @@ class Region:
     wealth:          str = "modest"                          # "poor" | "modest" | "rich"
     danger:          str = "calm"                            # "calm" | "rough" | "wild"
     landmark_used_day: int = -1                              # in-game day a landmark last fired (-1 = never)
+    supply:           dict = field(default_factory=dict)     # tag → float (0.0–2.0); absent = 1.0 baseline
+    supply_last_day:  int  = -1                              # last day supply decay ran
     # reputation is computed on read: sum of member town reps
 
 
@@ -966,6 +968,90 @@ def derive_danger(biome_group: str, region_id: int, seed: int) -> str:
 
 TOWNS:   dict[int, Town]   = {}
 REGIONS: dict[int, Region] = {}
+
+# ---------------------------------------------------------------------------
+# Regional supply/demand economy
+# ---------------------------------------------------------------------------
+
+_SUPPLY_DECAY_RATE      = 0.04   # per day back toward natural baseline
+_SUPPLY_FLOOR           = 0.50   # floor: even flooded market retains some value
+_SUPPLY_CEILING         = 2.00
+_SUPPLY_LOW_K           = 0.60   # shortage price sensitivity (steeper curve)
+_SUPPLY_HIGH_K          = 0.35   # glut price sensitivity (gentler curve)
+_EXPORT_NATURAL_SUPPLY  = 1.10   # exports: region produces them, naturally well-stocked
+_IMPORT_NATURAL_SUPPLY  = 0.85   # imports: region needs them, chronically scarce
+
+
+def _natural_supply(region, tag: str) -> float:
+    """Return the resting supply level for tag given the region's biome specialties."""
+    spec = BIOME_GROUP_SPECIALTIES.get(region.biome_group,
+                                       BIOME_GROUP_SPECIALTIES.get("highland", {}))
+    if tag in spec.get("exports", ()):
+        return _EXPORT_NATURAL_SUPPLY
+    if tag in spec.get("imports", ()):
+        return _IMPORT_NATURAL_SUPPLY
+    return 1.0
+
+
+def get_region_supply(region, tag: str) -> float:
+    """Return current supply for tag; defaults to natural level (export/import/neutral)."""
+    if tag in region.supply:
+        return region.supply[tag]
+    return _natural_supply(region, tag)
+
+
+def adjust_region_supply(region, tag: str, delta: float) -> None:
+    """Shift supply level for tag by delta, clamped to [floor, ceiling]."""
+    cur = get_region_supply(region, tag)
+    region.supply[tag] = max(_SUPPLY_FLOOR, min(_SUPPLY_CEILING, cur + delta))
+
+
+def supply_price_mult(s: float) -> float:
+    """Translate supply level to a price multiplier for buying from NPC.
+
+    High supply → lower prices (glut); low supply → higher prices (scarcity).
+    Clamps to [0.65, 1.50].
+    """
+    if s >= 1.0:
+        mult = 1.0 - _SUPPLY_HIGH_K * (s - 1.0)
+    else:
+        mult = 1.0 + _SUPPLY_LOW_K * (1.0 - s)
+    return max(0.65, min(1.50, mult))
+
+
+def supply_contract_mult(s: float) -> float:
+    """Translate supply level to a contract reward multiplier.
+
+    Low supply → contracts pay more (urgency); high supply → pay less.
+    Clamps to [0.70, 1.60].
+    """
+    if s >= 1.0:
+        mult = 1.0 - _SUPPLY_HIGH_K * (s - 1.0)
+    else:
+        mult = 1.0 + _SUPPLY_LOW_K * (1.0 - s)
+    return max(0.70, min(1.60, mult))
+
+
+def _decay_region_supply(region, current_day: int) -> None:
+    """Drift all supply entries back toward their natural baseline each day."""
+    if region.supply_last_day < 0:
+        region.supply_last_day = current_day
+        return
+    days = max(0, current_day - region.supply_last_day)
+    region.supply_last_day = current_day
+    if days == 0:
+        return
+    decay = _SUPPLY_DECAY_RATE * days
+    for tag in list(region.supply):
+        s = region.supply[tag]
+        natural = _natural_supply(region, tag)
+        if abs(s - natural) < 0.02:
+            del region.supply[tag]   # prune: at natural level, default read handles it
+        elif s > natural:
+            region.supply[tag] = max(natural, s - decay)
+        else:
+            region.supply[tag] = min(natural, s + decay)
+
 
 # ---------------------------------------------------------------------------
 # Init
@@ -1223,7 +1309,7 @@ def register_new_town(world, city_bx: int, city_size: str,
 
 def _restore_world_city_metadata(world) -> None:
     """Populate world.town_centers/city_zones/etc. from loaded TOWNS after a DB load."""
-    from cities import CITY_CONFIGS, CITY_SPACING
+    from cities import CITY_CONFIGS, CITY_SPACING, PALACE_NPC_OFFSET
     half_spacing = CITY_SPACING // 2
     world.town_centers = []
     world.city_sizes   = []
@@ -1238,6 +1324,12 @@ def _restore_world_city_metadata(world) -> None:
         world.city_sizes.append(size)
         world.city_slot_xs.append(slot_x)
         world.city_zones.append((bx - half_w, bx + half_w))
+        if town.is_capital:
+            palace_left  = bx + half_w + 4
+            npc_offset   = PALACE_NPC_OFFSET[_palace_type_for(palace_left, world.seed)]
+            world.city_zones.append((palace_left, palace_left + npc_offset * 2 + 20))
+            lm_right = bx - half_w - 4
+            world.city_zones.append((lm_right - 48, lm_right + 2))
 
 
 def _palace_type_for(palace_left: int, world_seed: int) -> str:
@@ -1261,9 +1353,9 @@ def _respawn_leader_npcs(world) -> None:
         if region is None:
             continue
         palace_left = town.center_bx + town.half_w + 4
-        sy = world.surface_y_at(palace_left)
         ptype = _palace_type_for(palace_left, world.seed)
         npc_offset = PALACE_NPC_OFFSET[ptype]
+        sy = world.surface_y_at(palace_left + npc_offset)
         npc_px = (palace_left + npc_offset) * BLOCK_SIZE
         npc_py = (sy - 3) * BLOCK_SIZE
         world.entities.append(
@@ -1413,8 +1505,14 @@ def _place_capital_structures(town: Town, world) -> None:
 
     npc_offset = PALACE_NPC_OFFSET[ptype]
 
+    # Register palace footprint so city/outpost generation won't overlap it.
+    # npc_offset ≈ half the palace width; add 20 as a safety buffer.
+    world.city_zones.append((palace_left, palace_left + npc_offset * 2 + 20))
+
     if region is None:
         return
+    # Re-read sy at the NPC column now that terrain has been leveled to profile median
+    sy = world.surface_y_at(palace_left + npc_offset)
     npc_px = (palace_left + npc_offset) * BLOCK_SIZE
     npc_py = (sy - 3) * BLOCK_SIZE
     world.entities.append(
@@ -1613,6 +1711,11 @@ def advance_day(world) -> None:
                 decay = max(1, nd["required"] // 10)
                 nd["supplied"] = max(0, nd["supplied"] - decay)
 
+    # Regional supply decay — drift toward baseline each day
+    day = getattr(world, "day_count", 0)
+    for region in REGIONS.values():
+        _decay_region_supply(region, day)
+
 
 def _tier_up(town: Town, world) -> None:
     town.tier = min(town.tier + 1, 3)
@@ -1763,6 +1866,8 @@ def serialize_all() -> tuple[list[dict], list[dict]]:
             "wealth":               r.wealth,
             "danger":               r.danger,
             "landmark_used_day":    r.landmark_used_day,
+            "supply_json":          json.dumps(r.supply),
+            "supply_last_day":      r.supply_last_day,
         })
     return town_rows, region_rows
 
@@ -1828,6 +1933,8 @@ def deserialize_all(town_rows: list[dict], region_rows: list[dict]) -> None:
             wealth            = row.get("wealth") or "",
             danger            = row.get("danger") or "",
             landmark_used_day = row.get("landmark_used_day") if row.get("landmark_used_day") is not None else -1,
+            supply          = json.loads(row.get("supply_json") or "{}"),
+            supply_last_day = row.get("supply_last_day", -1) if row.get("supply_last_day") is not None else -1,
         )
         REGIONS[r.region_id] = r
 

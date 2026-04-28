@@ -345,30 +345,6 @@ def build_terrain_surfs():
     pygame.draw.circle(s, (70, 190, 70), (20, 12), 4)
     surfs[bid] = s
 
-    bid = MUSHROOM_STEM
-    # if bid == MUSHROOM_STEM
-    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
-    base = (228, 218, 198)
-    dark = _darken(base, 20)
-    s.fill(base)
-    pygame.draw.rect(s, dark, (0, 0, 4, 32))
-    pygame.draw.rect(s, dark, (28, 0, 4, 32))
-    pygame.draw.rect(s, tuple(min(255, c + 15) for c in base), (4, 0, 24, 32))
-    pygame.draw.rect(s, dark, s.get_rect(), 1)
-    surfs[bid] = s
-
-    bid = MUSHROOM_CAP
-    # if bid == MUSHROOM_CAP
-    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
-    s.fill((0, 0, 0, 0))
-    base = (175, 38, 38)
-    dark = _darken(base, 30)
-    pygame.draw.ellipse(s, base, (0, 8, 32, 24))
-    pygame.draw.ellipse(s, dark, (0, 8, 32, 24), 1)
-    for sx, sy in [(7, 14), (16, 11), (23, 15)]:
-        pygame.draw.circle(s, (240, 235, 220), (sx, sy), 3)
-    surfs[bid] = s
-
     return surfs
 
 

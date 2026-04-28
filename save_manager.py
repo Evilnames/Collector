@@ -40,7 +40,7 @@ class SaveManager:
                             "tea_leaves", "textiles", "cheese_wheels", "jewelry", "sculptures", "custom_tapestries", "pottery_pieces", "salt_crystals",
                             "research", "automations",
                             "towns", "regions", "outposts", "player_cities",
-                            "farm_bots", "backhoes", "elevator_cars", "minecarts", "entities", "dropped_items", "chests", "banners"):
+                            "farm_bots", "backhoes", "elevator_cars", "minecarts", "boats", "entities", "dropped_items", "chests", "banners"):
                     # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
                 con.commit()
@@ -76,6 +76,7 @@ class SaveManager:
             self._save_player(con, player)
             self._save_npc_relationships(con, player)
             self._save_rocks(con, player)
+            self._save_seashells(con, player)
             self._save_wildflowers(con, player)
             self._save_fossils(con, player)
             self._save_gems(con, player)
@@ -102,6 +103,7 @@ class SaveManager:
             self._save_backhoes(con, world)
             self._save_elevator_cars(con, world)
             self._save_minecarts(con, world)
+            self._save_boats(con, world)
             self._save_entities(con, world)
             self._save_dropped_items(con, world)
             self._save_chests(con, world)
@@ -126,6 +128,7 @@ class SaveManager:
             backhoes = self._load_backhoes(con)
             elevator_cars = self._load_elevator_cars(con)
             minecarts = self._load_minecarts(con)
+            boats = self._load_boats(con)
             entities = self._load_entities(con)
             research = self._load_research(con)
             dropped_items = self._load_dropped_items(con)
@@ -152,6 +155,7 @@ class SaveManager:
             "backhoes": backhoes,
             "elevator_cars": elevator_cars,
             "minecarts": minecarts,
+            "boats": boats,
             "entities": entities,
             "research": research,
             "dropped_items": dropped_items,
@@ -371,6 +375,10 @@ class SaveManager:
             luster REAL, purity REAL, specials TEXT,
             depth_found INTEGER, seed INTEGER, upgrades TEXT
         );
+        CREATE TABLE IF NOT EXISTS seashells (
+            uid TEXT PRIMARY KEY, species TEXT, rarity TEXT, depth_zone TEXT,
+            color TEXT, pattern TEXT, size_cm REAL, biome_found TEXT, seed INTEGER
+        );
         CREATE TABLE IF NOT EXISTS wildflowers (
             uid TEXT PRIMARY KEY, flower_type TEXT, rarity TEXT, bloom_stage TEXT,
             primary_color TEXT, secondary_color TEXT, center_color TEXT,
@@ -403,7 +411,8 @@ class SaveManager:
             uid TEXT PRIMARY KEY, species TEXT, rarity TEXT,
             weight_kg REAL, length_cm INTEGER, pattern TEXT,
             primary_color TEXT, secondary_color TEXT,
-            habitat TEXT, biome_found TEXT, seed INTEGER
+            habitat TEXT, biome_found TEXT, seed INTEGER,
+            ocean_zone TEXT DEFAULT ''
         );
         CREATE TABLE IF NOT EXISTS research (
             node_id TEXT PRIMARY KEY, unlocked INTEGER
@@ -433,6 +442,10 @@ class SaveManager:
         CREATE TABLE IF NOT EXISTS minecarts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             track_by INTEGER, stop_bx INTEGER, cart_bx INTEGER
+        );
+        CREATE TABLE IF NOT EXISTS boats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            x REAL, y REAL, boat_type TEXT
         );
         CREATE TABLE IF NOT EXISTS entities (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -711,7 +724,9 @@ class SaveManager:
             relations_json       TEXT DEFAULT '{}',
             wealth               TEXT DEFAULT '',
             danger               TEXT DEFAULT '',
-            landmark_used_day    INTEGER DEFAULT -1
+            landmark_used_day    INTEGER DEFAULT -1,
+            supply_json          TEXT DEFAULT '{}',
+            supply_last_day      INTEGER DEFAULT -1
         );
         CREATE TABLE IF NOT EXISTS npc_relationships (
             npc_uid  TEXT PRIMARY KEY,
@@ -763,6 +778,14 @@ class SaveManager:
             pass
         try:
             con.execute("ALTER TABLE player ADD COLUMN worn TEXT DEFAULT '{}'")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN worn_armor TEXT DEFAULT '{}'")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN worn_armor_dye TEXT DEFAULT '{}'")
         except Exception:
             pass
         for col in ("water_reservoir", "compost_slot"):
@@ -828,6 +851,14 @@ class SaveManager:
             pass
         try:
             con.execute("ALTER TABLE regions ADD COLUMN landmark_used_day INTEGER DEFAULT -1")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE regions ADD COLUMN supply_json TEXT DEFAULT '{}'")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE regions ADD COLUMN supply_last_day INTEGER DEFAULT -1")
         except Exception:
             pass
         try:
@@ -1115,7 +1146,7 @@ class SaveManager:
         care_sum     = {f"{x},{y}": [s, c] for (x, y), (s, c) in world._crop_care_sum.items()}
         compost_bins = {f"{x},{y}": d      for (x, y), d     in world.compost_bin_data.items()}
         garden_flowers = {
-            f"{x},{y}": [_wf_to_dict(wf) for wf in flowers]
+            f"{x},{y}": [{**_wf_to_dict(wf), "cx": cx, "cy": cy} for (wf, cx, cy) in flowers]
             for (x, y), flowers in world.garden_data.items()
             if flowers
         }
@@ -1283,6 +1314,12 @@ class SaveManager:
             pass
         con.execute("UPDATE player SET withering_rack_slots=?",
                     (json.dumps(getattr(player, "withering_rack_slots", [])),))
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN smithed_parts TEXT DEFAULT '[]'")
+        except Exception:
+            pass
+        con.execute("UPDATE player SET smithed_parts=?",
+                    (json.dumps(getattr(player, "smithed_parts", [])),))
 
     def _save_npc_relationships(self, con, player):
         con.execute("DELETE FROM npc_relationships")
@@ -1306,6 +1343,18 @@ class SaveManager:
                     json.dumps(r.specials),
                     r.depth_found, r.seed,
                     json.dumps(r.upgrades),
+                )
+            )
+
+    def _save_seashells(self, con, player):
+        con.execute("DELETE FROM seashells")
+        for s in getattr(player, "seashells", []):
+            con.execute(
+                "INSERT OR REPLACE INTO seashells VALUES (?,?,?,?,?,?,?,?,?)",
+                (
+                    s.uid, s.species, s.rarity, s.depth_zone,
+                    json.dumps(list(s.color)),
+                    s.pattern, s.size_cm, s.biome_found, s.seed,
                 )
             )
 
@@ -1364,16 +1413,21 @@ class SaveManager:
             )
 
     def _save_fish(self, con, player):
+        try:
+            con.execute("ALTER TABLE fish ADD COLUMN ocean_zone TEXT DEFAULT ''")
+        except Exception:
+            pass
         con.execute("DELETE FROM fish")
         for f in player.fish_caught:
             con.execute(
-                "INSERT OR REPLACE INTO fish VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT OR REPLACE INTO fish VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     f.uid, f.species, f.rarity,
                     f.weight_kg, f.length_cm, f.pattern,
                     json.dumps(list(f.primary_color)),
                     json.dumps(list(f.secondary_color)),
                     f.habitat, f.biome_found, f.seed,
+                    getattr(f, "ocean_zone", ""),
                 )
             )
 
@@ -1487,6 +1541,14 @@ class SaveManager:
             "UPDATE player SET worn = ?",
             (json.dumps(player.worn),)
         )
+        con.execute(
+            "UPDATE player SET worn_armor = ?",
+            (json.dumps(player.worn_armor),)
+        )
+        con.execute(
+            "UPDATE player SET worn_armor_dye = ?",
+            (json.dumps(player.worn_armor_dye),)
+        )
 
     def _save_cheese_wheels(self, con, player):
         con.execute("DELETE FROM cheese_wheels")
@@ -1568,14 +1630,21 @@ class SaveManager:
             )
 
     def _save_crafted_weapons(self, con, player):
+        for col, default in (("style", "'classic'"), ("decorations", "'[]'")):
+            try:
+                con.execute(f"ALTER TABLE crafted_weapons ADD COLUMN {col} TEXT DEFAULT {default}")
+            except Exception:
+                pass
         con.execute("DELETE FROM crafted_weapons")
         for w in player.crafted_weapons:
             con.execute(
-                "INSERT OR REPLACE INTO crafted_weapons VALUES (?,?,?,?,?,?,?)",
+                "INSERT OR REPLACE INTO crafted_weapons VALUES (?,?,?,?,?,?,?,?,?)",
                 (
                     w.uid, w.weapon_type, w.material, w.quality,
                     json.dumps(w.parts_quality),
                     w.custom_name, w.seed,
+                    getattr(w, "style", "classic"),
+                    json.dumps(getattr(w, "decorations", [])),
                 ),
             )
 
@@ -1678,8 +1747,9 @@ class SaveManager:
                 "INSERT INTO regions "
                 "(region_id, name, capital_town_id, member_town_ids_json, "
                 " leader_color_json, coat_of_arms_json, biome_group, tagline, "
-                " leader_title, agenda, relations_json, wealth, danger, landmark_used_day) "
-                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                " leader_title, agenda, relations_json, wealth, danger, landmark_used_day, "
+                " supply_json, supply_last_day) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (r["region_id"], r["name"], r["capital_town_id"],
                  r["member_town_ids_json"], r["leader_color_json"],
                  r.get("coat_of_arms_json", "null"),
@@ -1690,12 +1760,16 @@ class SaveManager:
                  r.get("relations_json", "{}"),
                  r.get("wealth", ""),
                  r.get("danger", ""),
-                 r.get("landmark_used_day", -1)),
+                 r.get("landmark_used_day", -1),
+                 r.get("supply_json", "{}"),
+                 r.get("supply_last_day", -1)),
             )
 
     def _save_outposts(self, con):
         from outposts import OUTPOSTS
         import json as _json
+        if not OUTPOSTS:
+            return  # Never wipe existing records if nothing loaded — would lose unsaved outposts
         con.execute("DELETE FROM outposts")
         for op in OUTPOSTS.values():
             con.execute(
@@ -1847,6 +1921,21 @@ class SaveManager:
         except Exception:
             return []
         return [{"track_by": r[0], "stop_bx": r[2], "cart_bx": r[2]} for r in rows]
+
+    def _save_boats(self, con, world):
+        con.execute("DELETE FROM boats")
+        for boat in world.boats:
+            con.execute(
+                "INSERT INTO boats (x, y, boat_type) VALUES (?,?,?)",
+                (boat.x, boat.y, boat.boat_type)
+            )
+
+    def _load_boats(self, con):
+        try:
+            rows = con.execute("SELECT x, y, boat_type FROM boats").fetchall()
+        except Exception:
+            return []
+        return [{"x": r[0], "y": r[1], "boat_type": r[2]} for r in rows]
 
     def _save_entities(self, con, world):
         from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion, Tiger
@@ -2038,8 +2127,9 @@ class SaveManager:
             result = {}
             for key, flowers in json.loads(raw).items():
                 xs, ys = key.split(",")
-                result[(int(xs), int(ys))] = [
-                    Wildflower(
+                parsed = []
+                for i, f in enumerate(flowers):
+                    wf = Wildflower(
                         uid=f["uid"], flower_type=f["flower_type"], rarity=f["rarity"],
                         bloom_stage=f["bloom_stage"],
                         primary_color=tuple(f["primary_color"]),
@@ -2049,8 +2139,10 @@ class SaveManager:
                         fragrance=f["fragrance"], vibrancy=f["vibrancy"],
                         specials=f["specials"], biodome_found=f["biodome_found"], seed=f["seed"],
                     )
-                    for f in flowers
-                ]
+                    cx = f.get("cx", 50 + (i % 4) * 160)
+                    cy = f.get("cy", 50 + (i // 4) * 140)
+                    parsed.append((wf, cx, cy))
+                result[(int(xs), int(ys))] = parsed
             return result
 
         raw_sculpt = row[7] if len(row) > 7 else None
@@ -2158,6 +2250,7 @@ class SaveManager:
         for col, default in (
             ("drying_rack_slots",    "[]"),
             ("withering_rack_slots", "[]"),
+            ("smithed_parts",        "[]"),
         ):
             try:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT '{default}'")
@@ -2210,7 +2303,10 @@ class SaveManager:
                    COALESCE(fish_bests, '{}'),
                    COALESCE(tea_house_pos, 'null'),
                    COALESCE(drying_rack_slots, '[]'),
-                   COALESCE(withering_rack_slots, '[]')
+                   COALESCE(withering_rack_slots, '[]'),
+                   COALESCE(worn_armor, '{}'),
+                   COALESCE(worn_armor_dye, '{}'),
+                   COALESCE(smithed_parts, '[]')
             FROM player LIMIT 1
         """).fetchone()
 
@@ -2237,7 +2333,8 @@ class SaveManager:
          races_entered_raw, races_won_raw, gold_won_racing_raw,
          racing_prestige_raw, horse_pbs_raw,
          gladiator_cards_raw, fish_bests_raw, tea_house_pos_raw,
-         drying_rack_slots_raw, withering_rack_slots_raw) = row
+         drying_rack_slots_raw, withering_rack_slots_raw,
+         worn_armor_raw, worn_armor_dye_raw, smithed_parts_raw) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -2257,6 +2354,18 @@ class SaveManager:
                 "depth_found": r[12], "seed": r[13],
                 "upgrades": json.loads(r[14]),
             })
+
+        shell_rows = con.execute(
+            "SELECT uid, species, rarity, depth_zone, color, pattern, size_cm, biome_found, seed FROM seashells"
+        ).fetchall()
+        seashells_data = [
+            {
+                "uid": s[0], "species": s[1], "rarity": s[2], "depth_zone": s[3],
+                "color": tuple(json.loads(s[4])),
+                "pattern": s[5], "size_cm": s[6], "biome_found": s[7], "seed": s[8],
+            }
+            for s in shell_rows
+        ]
 
         wf_rows = con.execute("""
             SELECT uid, flower_type, rarity, bloom_stage, primary_color,
@@ -2327,7 +2436,8 @@ class SaveManager:
 
         fish_rows = con.execute("""
             SELECT uid, species, rarity, weight_kg, length_cm, pattern,
-                   primary_color, secondary_color, habitat, biome_found, seed
+                   primary_color, secondary_color, habitat, biome_found, seed,
+                   COALESCE(ocean_zone, '')
             FROM fish
         """).fetchall()
         fish_data = []
@@ -2338,6 +2448,7 @@ class SaveManager:
                 "primary_color": tuple(json.loads(f[6])),
                 "secondary_color": tuple(json.loads(f[7])),
                 "habitat": f[8], "biome_found": f[9] or "", "seed": f[10],
+                "ocean_zone": f[11] or "",
             })
 
         try:
@@ -2607,12 +2718,17 @@ class SaveManager:
             ).fetchall()
         except Exception:
             salt_rows = []
-        weapons_rows = con.execute("SELECT uid, weapon_type, material, quality, parts_quality, custom_name, seed FROM crafted_weapons").fetchall()
+        weapons_rows = con.execute(
+            "SELECT uid, weapon_type, material, quality, parts_quality, custom_name, seed, "
+            "COALESCE(style, 'classic'), COALESCE(decorations, '[]') FROM crafted_weapons"
+        ).fetchall()
         weapons_data = [
             {
                 "uid": r[0], "weapon_type": r[1], "material": r[2],
                 "quality": float(r[3]), "parts_quality": json.loads(r[4] or "[]"),
                 "custom_name": r[5] or "", "seed": int(r[6]),
+                "style": r[7] or "classic",
+                "decorations": json.loads(r[8] or "[]"),
             }
             for r in weapons_rows
         ]
@@ -2643,6 +2759,8 @@ class SaveManager:
             "discovered_mushroom_types": json.loads(discovered_mushroom_types),
             "mushrooms_found": json.loads(mushrooms_found),
             "rocks": rocks_data,
+            "seashells": seashells_data,
+            "discovered_shell_types": list({s["species"] for s in seashells_data}),
             "wildflowers": wf_data,
             "fossils": fossils_data,
             "gems": gems_data,
@@ -2696,7 +2814,9 @@ class SaveManager:
             }),
             "jewelry": _jewelry_data,
             "discovered_jewelry": list({j["jewelry_type"] for j in _jewelry_data}),
-            "worn": json.loads(worn_raw or "{}") or {"head": None, "chest": None, "feet": None},
+            "worn": {k: json.loads(worn_raw or "{}").get(k) for k in ("head", "chest", "feet", "hands", "legs", "back")},
+            "worn_armor":     {k: json.loads(worn_armor_raw     or "{}").get(k) for k in ("helmet", "chestplate", "leggings", "boots")},
+            "worn_armor_dye": {k: json.loads(worn_armor_dye_raw or "{}").get(k) for k in ("helmet", "chestplate", "leggings", "boots")},
             "spawn_x": spawn_x,
             "spawn_y": spawn_y,
             "known_crops": json.loads(known_crops or "[]"),
@@ -2745,7 +2865,8 @@ class SaveManager:
             "racing_prestige":  json.loads(racing_prestige_raw or "{}"),
             "horse_pbs":        json.loads(horse_pbs_raw or "{}"),
             "gladiator_cards":  json.loads(gladiator_cards_raw or "[]"),
-            "crafted_weapons": weapons_data,
+            "crafted_weapons":    weapons_data,
+            "smithed_parts":      json.loads(smithed_parts_raw or "[]"),
             "equipped_weapon_uid": equipped_weapon_uid,
             "sculptures_created": _sculpture_created,
             "pending_sculptures": _sculpture_pending,

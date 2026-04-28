@@ -1141,7 +1141,7 @@ class PanelsMixin:
 
     def _draw_leader_panel(self, player, npc):
         from towns import TOWNS, REGIONS
-        from cities import rep_rank
+        from cities import rep_rank, supply_status_label
 
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 215))
@@ -1205,6 +1205,20 @@ class PanelsMixin:
                 f"Wealth: {region.wealth.title()}   |   Danger: {region.danger.title()}",
                 True, dcol if region.danger == "wild" else wcol)
             self.screen.blit(wd_s, (px + 16, py + 132))
+            # Supply chips — inline after wealth/danger, shows scarce↓ or glut↑ tags only
+            if region.supply:
+                chips = []
+                for tag, s in sorted(region.supply.items()):
+                    if s >= 1.20:
+                        chips.append((f"{tag}↑", (130, 175, 230)))
+                    elif s <= 0.75:
+                        chips.append((f"{tag}↓", (230, 120, 80)))
+                if chips:
+                    x_off = px + 16 + wd_s.get_width() + 12
+                    for chip_text, chip_col in chips[:4]:
+                        cs = self.small.render(chip_text + "  ", True, chip_col)
+                        self.screen.blit(cs, (x_off, py + 132))
+                        x_off += cs.get_width()
 
         pygame.draw.line(self.screen, border_col, (px + 10, py + 152), (px + PW - 10, py + 152))
 
@@ -1277,6 +1291,12 @@ class PanelsMixin:
                     True, detail_col)
                 self.screen.blit(name_s, (px + 52, cy + 8))
                 self.screen.blit(inv_s,  (px + 52, cy + 30))
+                # Supply chip — signals why this contract's reward may be elevated or reduced
+                sup = supply_status_label(npc, item_id)
+                if sup:
+                    sup_label, sup_col = sup
+                    sup_s = self.small.render(f"[{sup_label}]", True, sup_col)
+                    self.screen.blit(sup_s, (px + 52 + inv_s.get_width() + 6, cy + 30))
                 if can:
                     btn_text, b_bg, b_bdr, b_tc = "FULFILL", (20, 70, 15), (60, 200, 50), (180, 255, 160)
                 else:
@@ -1404,77 +1424,59 @@ class PanelsMixin:
 
         title_s = self.font.render("FLOWER ARRANGEMENT", True, (170, 235, 120))
         self.screen.blit(title_s, (SCREEN_W // 2 - title_s.get_width() // 2, py + 7))
-        hint_s = self.small.render("Drag flowers into garden slots  |  E or ESC: close", True, (80, 140, 80))
+        hint_s = self.small.render("Drag flowers from your collection into the garden  |  E or ESC: close", True, (80, 140, 80))
         self.screen.blit(hint_s, (SCREEN_W // 2 - hint_s.get_width() // 2, py + 27))
 
-        flowers      = self.active_garden_flowers   # dense list, no Nones
-        drag_wf      = self._garden_drag_flower
-        CAPACITY     = 12                           # 4 × 3 grid
+        flowers  = self.active_garden_flowers   # list of (Wildflower, cx, cy)
+        drag_wf  = self._garden_drag_flower
+        CAPACITY = 12
+        FLOWER_R = 36
 
-        # ── Left: arrangement canvas ──────────────────────────────────────
+        # ── Left: free-form garden canvas ─────────────────────────────────
         CANVAS_W = 730
-        COLS, ROWS   = 4, 3
-        SLOT_W, SLOT_H, SLOT_GAP = 148, 126, 10
-        grid_w = COLS * SLOT_W + (COLS - 1) * SLOT_GAP  # 622
-        grid_h = ROWS * SLOT_H + (ROWS - 1) * SLOT_GAP  # 398
-        grid_x = px + 10 + (CANVAS_W - grid_w) // 2
-        grid_y = py + 48 + (PH - 48 - 100 - grid_h) // 2
+        canvas = pygame.Rect(px + 10, py + 48, CANVAS_W - 20, PH - 48 - 90)
+        self._garden_canvas_rect = canvas
 
-        self._garden_slot_rects.clear()
+        pygame.draw.rect(self.screen, (20, 13, 7), canvas)
+        pygame.draw.rect(self.screen, (52, 35, 18), canvas, 2)
+        for i in range(35):
+            dx = (i * 137 + 43) % (canvas.width - 16) + 8
+            dy = (i * 89  + 17) % (canvas.height - 16) + 8
+            pygame.draw.circle(self.screen, (38, 26, 12), (canvas.x + dx, canvas.y + dy), 2)
 
-        for slot_idx in range(CAPACITY):
-            col = slot_idx % COLS
-            row = slot_idx // COLS
-            sx = grid_x + col * (SLOT_W + SLOT_GAP)
-            sy = grid_y + row * (SLOT_H + SLOT_GAP)
-            slot_rect = pygame.Rect(sx, sy, SLOT_W, SLOT_H)
-            self._garden_slot_rects[slot_idx] = slot_rect
+        self._garden_flower_rects.clear()
 
-            # Soil background
-            pygame.draw.rect(self.screen, (22, 14, 8), slot_rect)
-            pygame.draw.rect(self.screen, (48, 32, 16), slot_rect, 1)
-            for di in range(4):
-                pygame.draw.circle(self.screen, (36, 24, 10),
-                                   (sx + 10 + di * 18, sy + SLOT_H - 10), 2)
+        for wf, cx, cy in flowers:
+            draw_x = canvas.x + cx
+            draw_y = canvas.y + cy
+            surf = render_wildflower(wf, FLOWER_R * 2)
+            self.screen.blit(surf, (draw_x - surf.get_width() // 2, draw_y - surf.get_height() // 2))
+            name_s = self.small.render(wf.flower_type.replace("_", " ").title(), True, (200, 240, 175))
+            self.screen.blit(name_s, (draw_x - name_s.get_width() // 2, draw_y + FLOWER_R - 2))
+            hit_rect = pygame.Rect(draw_x - FLOWER_R, draw_y - FLOWER_R, FLOWER_R * 2, FLOWER_R * 2)
+            self._garden_flower_rects[wf.uid] = hit_rect
 
-            # Which flower occupies this slot?
-            wf = flowers[slot_idx] if slot_idx < len(flowers) else None
-            if self._garden_drag_source == 'slot' and drag_wf and slot_idx < len(flowers) and flowers[slot_idx] is drag_wf:
-                wf = None  # visually empty while being dragged
-
-            if wf is not None:
-                surf = render_wildflower(wf, 88)
-                blit_x = sx + (SLOT_W - surf.get_width()) // 2
-                blit_y = sy + (SLOT_H - surf.get_height()) // 2 - 8
-                self.screen.blit(surf, (blit_x, blit_y))
-                rar_col = self._RARITY_COLOR.get(wf.rarity, (100, 100, 100))
-                pygame.draw.rect(self.screen, rar_col, slot_rect, 2)
-                name_s = self.small.render(wf.flower_type.replace("_", " ").title(), True, (200, 240, 175))
-                self.screen.blit(name_s, (sx + SLOT_W // 2 - name_s.get_width() // 2, sy + SLOT_H - 18))
-                if wf.specials:
-                    sp_s = self.small.render(wf.specials[0], True, (180, 220, 120))
-                    self.screen.blit(sp_s, (sx + SLOT_W // 2 - sp_s.get_width() // 2, sy + 4))
-            elif drag_wf is not None:
-                # Empty slot: highlight as valid drop target
-                hover = pygame.mouse.get_pos()
-                if slot_rect.collidepoint(hover):
-                    pygame.draw.rect(self.screen, (70, 120, 70), slot_rect, 2)
-                else:
-                    pygame.draw.rect(self.screen, (40, 70, 40), slot_rect, 1)
-            else:
-                num_s = self.small.render(str(slot_idx + 1), True, (36, 26, 14))
-                self.screen.blit(num_s, (sx + 4, sy + 4))
+        if drag_wf is not None:
+            mx, my = pygame.mouse.get_pos()
+            if canvas.collidepoint(mx, my):
+                tx = max(FLOWER_R, min(canvas.width  - FLOWER_R, mx - canvas.x))
+                ty = max(FLOWER_R, min(canvas.height - FLOWER_R, my - canvas.y))
+                ind = pygame.Surface((FLOWER_R * 2, FLOWER_R * 2), pygame.SRCALPHA)
+                ind.fill((100, 200, 100, 55))
+                self.screen.blit(ind, (canvas.x + tx - FLOWER_R, canvas.y + ty - FLOWER_R))
+                pygame.draw.rect(self.screen, (80, 180, 80),
+                                 (canvas.x + tx - FLOWER_R, canvas.y + ty - FLOWER_R, FLOWER_R * 2, FLOWER_R * 2), 1)
 
         # ── Stats bar ─────────────────────────────────────────────────────
-        stats_y = grid_y + grid_h + 14
-        placed  = list(flowers)
+        stats_y = canvas.bottom + 8
+        placed  = [wf for wf, cx, cy in flowers]
 
         if placed:
-            avg_frag = sum(f.fragrance for f in placed) / len(placed)
-            avg_vibr = sum(f.vibrancy  for f in placed) / len(placed)
-            unique_sp  = len(set(f.flower_type   for f in placed))
-            variety    = unique_sp / max(1, len(placed))
-            biodomes   = len(set(f.biodome_found for f in placed))
+            avg_frag     = sum(f.fragrance for f in placed) / len(placed)
+            avg_vibr     = sum(f.vibrancy  for f in placed) / len(placed)
+            unique_sp    = len(set(f.flower_type   for f in placed))
+            variety      = unique_sp / max(1, len(placed))
+            biodomes     = len(set(f.biodome_found for f in placed))
             all_specials = sorted({s for f in placed for s in f.specials})
 
             def _bar(label, val, col, bx):
@@ -1496,18 +1498,16 @@ class PanelsMixin:
             _bar("Variety",   variety,  ( 80, 185, 120), sx0 + 492)
 
             info_y = stats_y + 20
-            bio_s = self.small.render(f"{biodomes} biodome{'s' if biodomes != 1 else ''} · {unique_sp} species · {len(placed)}/{CAPACITY} slots", True, (120, 185, 140))
+            bio_s = self.small.render(f"{biodomes} biodome{'s' if biodomes != 1 else ''} · {unique_sp} species · {len(placed)}/{CAPACITY} placed", True, (120, 185, 140))
             self.screen.blit(bio_s, (sx0, info_y))
             if all_specials:
                 sp_s = self.small.render("Traits: " + ", ".join(all_specials), True, (175, 210, 120))
                 self.screen.blit(sp_s, (sx0 + 370, info_y))
-            ins_col  = (80, 200, 80)
-            ins_text = "Attracting insects!"
-            ins_s = self.small.render(ins_text, True, ins_col)
+            ins_s = self.small.render("Attracting insects!", True, (80, 200, 80))
             self.screen.blit(ins_s, (sx0 + CANVAS_W - ins_s.get_width() - 16, info_y))
         else:
-            es = self.small.render("Arrange wildflowers to attract insects and boost your garden", True, (60, 100, 60))
-            self.screen.blit(es, (px + CANVAS_W // 2 - es.get_width() // 2 + 10, stats_y + 12))
+            es = self.small.render("Drag wildflowers from your collection into the garden", True, (60, 100, 60))
+            self.screen.blit(es, (px + CANVAS_W // 2 - es.get_width() // 2, stats_y + 12))
 
         # ── Divider ───────────────────────────────────────────────────────
         div_x = px + CANVAS_W + 18
@@ -1519,7 +1519,7 @@ class PanelsMixin:
         title2 = self.font.render("YOUR WILDFLOWERS", True, (140, 215, 100))
         self.screen.blit(title2, (rx + RW // 2 - title2.get_width() // 2, py + 30))
 
-        placed_uids = {f.uid for f in flowers}
+        placed_uids = {wf.uid for wf, cx, cy in flowers}
         if drag_wf and self._garden_drag_source == 'collection':
             placed_uids.add(drag_wf.uid)
         available = [f for f in player.wildflowers if f.uid not in placed_uids]
@@ -1568,7 +1568,7 @@ class PanelsMixin:
             self.screen.blit(full_s, (rx + RW // 2 - full_s.get_width() // 2, py + 510))
 
         # Collection drop-zone highlight when dragging from garden
-        if drag_wf and self._garden_drag_source == 'slot':
+        if drag_wf and self._garden_drag_source == 'canvas':
             col_zone = pygame.Rect(rx, py + 44, RW, PH - 60)
             hover = pygame.mouse.get_pos()
             if col_zone.collidepoint(hover):
@@ -2599,7 +2599,7 @@ class PanelsMixin:
         self._trade_rects.clear()
         y = py + 56
 
-        from cities import specialty_price_label
+        from cities import specialty_price_label, supply_status_label
         for i, (item_id, _, display, barter_item, barter_qty) in enumerate(npc.shop):
             cost      = npc.discounted_cost(i)
             can_buy   = npc.can_buy(i, player)
@@ -2626,10 +2626,18 @@ class PanelsMixin:
             self.screen.blit(gold_lbl, (px + 66, y + 30))
             # Specialty tag — green for region exports, amber for imports
             spec_tag = specialty_price_label(npc, item_id)
+            tag_x = px + 66 + gold_lbl.get_width() + 6
             if spec_tag:
                 tag_col = (130, 200, 130) if spec_tag == "export" else (220, 170, 90)
                 tag_s = self.small.render(f"({spec_tag})", True, tag_col)
-                self.screen.blit(tag_s, (px + 66 + gold_lbl.get_width() + 6, y + 34))
+                self.screen.blit(tag_s, (tag_x, y + 34))
+                tag_x += tag_s.get_width() + 4
+            # Supply chip — shows regional scarcity or glut
+            sup = supply_status_label(npc, item_id)
+            if sup:
+                sup_label, sup_col = sup
+                sup_s = self.small.render(f"[{sup_label}]", True, sup_col)
+                self.screen.blit(sup_s, (tag_x, y + 34))
             buy_rect = pygame.Rect(row_rect.right - 70, y + 26, 58, 20)
             buy_bg   = (80, 60, 10) if can_buy else (35, 35, 45)
             pygame.draw.rect(self.screen, buy_bg, buy_rect)

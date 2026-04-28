@@ -662,6 +662,26 @@ def build_crafting_surfs():
     pygame.draw.rect(s, dark, s.get_rect(), 1)
     surfs[bid] = s
 
+    bid = MORTAR_BLOCK
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    base = BLOCKS[bid]["color"]
+    dark = _darken(base, 35)
+    s.fill(dark)
+    # Bowl rim (wide ellipse, bottom half of block)
+    pygame.draw.ellipse(s, base, (3, 16, 26, 13))
+    # Bowl interior (darker hollow)
+    pygame.draw.ellipse(s, _darken(base, 50), (6, 18, 20, 9))
+    # Pestle shaft
+    pygame.draw.rect(s, base, (13, 3, 5, 16))
+    # Pestle rounded cap
+    pygame.draw.circle(s, _lighter(base, 20), (15, 4), 4)
+    # Herb specks inside bowl
+    pygame.draw.circle(s, (80, 130, 70), (10, 21), 2)
+    pygame.draw.circle(s, (90, 145, 65), (16, 23), 1)
+    pygame.draw.circle(s, (75, 125, 65), (20, 20), 2)
+    pygame.draw.rect(s, dark, s.get_rect(), 1)
+    surfs[bid] = s
+
     bid = BAIT_STATION_BLOCK
     # if bid == BAIT_STATION_BLOCK
     s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))

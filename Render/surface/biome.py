@@ -8,6 +8,36 @@ def _darken(color, amount=25):
     return tuple(max(0, c - amount) for c in color)
 
 
+_OCEAN_ZONE_COLORS = {
+    "tidal":    (40, 120, 200),
+    "reef":     (25,  90, 170),
+    "twilight": (15,  55, 120),
+    "deep":     ( 8,  20,  70),
+}
+
+_OCEAN_ZONE_SHIMMER = {
+    "tidal":    (100, 185, 255, 55),
+    "reef":     ( 60, 150, 230, 45),
+    "twilight": ( 20,  90, 180, 30),
+    "deep":     ( 10,  60, 130, 20),
+}
+
+
+def _build_zone_water_surfs(base_color, shimmer_color):
+    surfs = []
+    for level in range(1, 9):
+        h = max(4, level * BLOCK_SIZE // 8)
+        s = pygame.Surface((BLOCK_SIZE, h), pygame.SRCALPHA)
+        alpha = 130 + level * 8
+        s.fill((*base_color, alpha))
+        shimmer = pygame.Surface((BLOCK_SIZE, 2), pygame.SRCALPHA)
+        shimmer.fill(shimmer_color)
+        for ry in range(3, h - 1, 9):
+            s.blit(shimmer, (0, ry))
+        surfs.append(s)
+    return surfs
+
+
 def build_water_surfs():
     surfs = []
     for level in range(1, 9):
@@ -21,6 +51,14 @@ def build_water_surfs():
             s.blit(shimmer, (0, ry))
         surfs.append(s)
     return surfs
+
+
+def build_ocean_water_surfs():
+    """Return {zone: [8 surfs]} for ocean depth-zone water tinting."""
+    return {
+        zone: _build_zone_water_surfs(_OCEAN_ZONE_COLORS[zone], _OCEAN_ZONE_SHIMMER[zone])
+        for zone in _OCEAN_ZONE_COLORS
+    }
 
 
 def build_resource_hint_surfs():

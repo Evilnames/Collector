@@ -42,7 +42,7 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER, GRASS, DIRT, SA
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN,
                     IRON_DOOR_CLOSED, IRON_DOOR_OPEN,
                     CHEST_BLOCK, SNOW, SAND,
-                    SAPLING, MUSHROOM_STEM, MUSHROOM_CAP,
+                    SAPLING,
                     BEET_BUSH, BEET_CROP_YOUNG, BEET_CROP_MATURE,
                     TURNIP_BUSH, TURNIP_CROP_YOUNG, TURNIP_CROP_MATURE,
                     LEEK_BUSH, LEEK_CROP_YOUNG, LEEK_CROP_MATURE,
@@ -393,7 +393,8 @@ class Renderer:
         self._block_surfs = self._build_block_surfs()
         self._ore_richness_surfs = self._build_ore_richness_surfs()
         self._tilled_soil_surfs = self._build_tilled_soil_surfs()
-        self._water_surfs = self._build_water_surfs()   # indexed by level-1 (0..7)
+        self._water_surfs = self._build_water_surfs()         # indexed by level-1 (0..7)
+        self._ocean_water_surfs = self._build_ocean_water_surfs()  # {zone: [8 surfs]}
         self._resource_hint_surfs = self._build_resource_hint_surfs()
         self._biome_stone_surfs = self._build_biome_stone_surfs()
         self._biome_resource_hint_surfs = self._build_biome_resource_hint_surfs()
@@ -430,6 +431,15 @@ class Renderer:
         self._floating_texts = []  # list of {x, y, text, color, life, vy}
         self._wind_particles  = []
         self._wind_rng        = __import__("random").Random()
+        self._rain_particles  = []
+        self._rain_rng        = __import__("random").Random()
+        self._snow_particles  = []
+        self._snow_rng        = __import__("random").Random()
+        self._dust_particles  = []
+        self._dust_rng        = __import__("random").Random()
+        # Biome color grading — lerped RGBA floats and a reusable surface
+        self._grade_rgba = (0.0, 0.0, 0.0, 0.0)
+        self._grade_surf = pygame.Surface((SCREEN_W, SCREEN_H))
         self._ember_particles = []
         self._ember_rng       = __import__("random").Random()
         self._light_grad_cache = {}  # (radius, pattern, flicker_frame) -> Surface
@@ -464,6 +474,10 @@ class Renderer:
     def _build_water_surfs(self):
         from Render.surface.biome import build_water_surfs
         return build_water_surfs()
+
+    def _build_ocean_water_surfs(self):
+        from Render.surface.biome import build_ocean_water_surfs
+        return build_ocean_water_surfs()
 
     def _build_resource_hint_surfs(self):
         from Render.surface.biome import build_resource_hint_surfs
@@ -738,6 +752,10 @@ class Renderer:
         from Render.vehicles import draw_minecarts
         draw_minecarts(self.screen, minecarts, self.cam_x, self.cam_y, self._npc_font, player)
 
+    def draw_boats(self, boats, player=None, world=None):
+        from Render.boats import draw_boats
+        draw_boats(self.screen, boats, self.cam_x, self.cam_y, self._npc_font, player, world)
+
     def _draw_backhoe(self, bh, is_mounted=False):
         from Render.vehicles import _draw_backhoe
         _draw_backhoe(self.screen, bh, self.cam_x, self.cam_y, self._npc_font, is_mounted)
@@ -977,6 +995,38 @@ class Renderer:
                 self._wind_rng, dt,
             )
         draw_wind_particles(self.screen, self.cam_x, self.cam_y, self._wind_particles)
+
+    def draw_rain_particles(self, world, dt):
+        from Render.rain import (spawn_rain_particles, tick_rain_particles,
+                                  draw_rain_particles)
+        tick_rain_particles(self._rain_particles, self.cam_y, dt)
+        spawn_rain_particles(
+            self._rain_particles, world,
+            self.cam_x, self.cam_y,
+            self._rain_rng, dt,
+        )
+        draw_rain_particles(self.screen, self.cam_x, self.cam_y, self._rain_particles)
+
+    def draw_snow_particles(self, world, dt):
+        from Render.snow import spawn_snow_particles, tick_snow_particles, draw_snow_particles
+        tick_snow_particles(self._snow_particles, self.cam_y, dt)
+        spawn_snow_particles(self._snow_particles, world, self.cam_x, self.cam_y, self._snow_rng, dt)
+        draw_snow_particles(self.screen, self.cam_x, self.cam_y, self._snow_particles)
+
+    def draw_dust_particles(self, world, dt):
+        from Render.dust import spawn_dust_particles, tick_dust_particles, draw_dust_particles
+        tick_dust_particles(self._dust_particles, dt)
+        spawn_dust_particles(self._dust_particles, world, self.cam_x, self.cam_y, self._dust_rng, dt)
+        draw_dust_particles(self.screen, self.cam_x, self.cam_y, self._dust_particles)
+
+    def draw_heat_shimmer(self, world, dt):
+        from Render.biome_fx import draw_shimmer
+        draw_shimmer(self, world, dt)
+
+    def draw_biome_overlay(self, world, dt):
+        from Render.biome_fx import update_grade, draw_grade
+        update_grade(self, world, dt)
+        draw_grade(self)
 
     def draw_embers(self, world, dt):
         from Render.embers import spawn_embers, tick_embers, draw_embers

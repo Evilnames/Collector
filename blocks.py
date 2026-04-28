@@ -66,8 +66,6 @@ PALM_LEAVES    = 62
 ACACIA_LOG     = 63
 ACACIA_LEAVES  = 64
 DEAD_LOG       = 65   # skeletal wasteland tree — no leaves
-MUSHROOM_STEM  = 66
-MUSHROOM_CAP   = 67
 NPC_QUEST_BLOCK = 68  # Rock Quest NPC marker (impassable, visual anchor)
 NPC_TRADE_BLOCK = 69  # Trade NPC marker (impassable, visual anchor)
 # --- Chinese cuisine crops ---
@@ -381,6 +379,7 @@ COMFREY_CROP_MATURE     = 385
 MUGWORT_BUSH            = 386
 MUGWORT_CROP_YOUNG      = 387
 MUGWORT_CROP_MATURE     = 388
+EDELWEISS_BUSH          = 389  # alpine surface bush; harvest → edelweiss
 BAIT_STATION_BLOCK      = 1181  # placed Bait Station; crafts fishing bait
 CHICKPEA_CROP_YOUNG     = 911
 
@@ -1355,12 +1354,12 @@ CAVE_MUSHROOMS = {
 }
 
 ALL_LOGS   = {TREE_LOG, PINE_LOG, BIRCH_LOG, JUNGLE_LOG, WILLOW_LOG,
-              REDWOOD_LOG, PALM_LOG, ACACIA_LOG, DEAD_LOG, MUSHROOM_STEM,
+              REDWOOD_LOG, PALM_LOG, ACACIA_LOG, DEAD_LOG,
               MAPLE_LOG, CHERRY_LOG, CYPRESS_LOG, BAOBAB_LOG,
               MANGROVE_LOG, SPRUCE_LOG, GINKGO_LOG, BANYAN_LOG,
               PEAR_LOG, FIG_LOG, CITRUS_LOG, APPLE_LOG, POMEGRANATE_LOG}
 ALL_LEAVES = {TREE_LEAVES, PINE_LEAVES, BIRCH_LEAVES, JUNGLE_LEAVES, WILLOW_LEAVES,
-              REDWOOD_LEAVES, PALM_LEAVES, ACACIA_LEAVES, MUSHROOM_CAP,
+              REDWOOD_LEAVES, PALM_LEAVES, ACACIA_LEAVES,
               MAPLE_LEAVES, CHERRY_LEAVES, CYPRESS_LEAVES, BAOBAB_LEAVES,
               MANGROVE_LEAVES, SPRUCE_LEAVES, GINKGO_LEAVES, BANYAN_LEAVES,
               PEAR_LEAVES, FIG_LEAVES, CITRUS_LEAVES, APPLE_LEAVES, POMEGRANATE_LEAVES}
@@ -1374,7 +1373,6 @@ LEAF_LOG_MAP = {
     REDWOOD_LEAVES: REDWOOD_LOG,
     PALM_LEAVES:    PALM_LOG,
     ACACIA_LEAVES:  ACACIA_LOG,
-    MUSHROOM_CAP:   MUSHROOM_STEM,
     MAPLE_LEAVES:   MAPLE_LOG,
     CHERRY_LEAVES:  CHERRY_LOG,
     CYPRESS_LEAVES: CYPRESS_LOG,
@@ -1409,6 +1407,7 @@ COCONUT_CROP_MATURE   = 1242
 
 WEAPON_ASSEMBLER_BLOCK       = 1256  # weapon assembler
 TEA_HOUSE_BLOCK              = 1257  # placed Tea House serving counter
+MORTAR_BLOCK                 = 1270  # placed Mortar & Pestle; grinds fresh herbs
 
 EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, BAKERY_BLOCK,
                     WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
@@ -1442,7 +1441,8 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     GAMBLING_TABLE,
                     BET_COUNTER,
                     WEAPON_ASSEMBLER_BLOCK,
-                    TEA_HOUSE_BLOCK}
+                    TEA_HOUSE_BLOCK,
+                    MORTAR_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT}
 
@@ -1483,7 +1483,8 @@ BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN
                      HYSSOP_BUSH, CATNIP_BUSH, WOOD_SORREL_BUSH, MARJORAM_BUSH,
                      SAVORY_BUSH, ANGELICA_BUSH, BORAGE_BUSH, COMFREY_BUSH, MUGWORT_BUSH,
                      FLAX_BUSH, COTTON_BUSH,
-                     TARO_BUSH, BREADFRUIT_BUSH, COCONUT_BUSH}
+                     TARO_BUSH, BREADFRUIT_BUSH, COCONUT_BUSH,
+                     EDELWEISS_BUSH}
 YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG, TOMATO_CROP_YOUNG, CORN_CROP_YOUNG, PUMPKIN_CROP_YOUNG, APPLE_CROP_YOUNG,
                      RICE_CROP_YOUNG, GINGER_CROP_YOUNG, BOK_CHOY_CROP_YOUNG, GARLIC_CROP_YOUNG,
                      SCALLION_CROP_YOUNG, CHILI_CROP_YOUNG,
@@ -1762,6 +1763,16 @@ CLOUD_CUMULUS                = 1259  # mid sky layer,  y 16–26, fluffy white
 CLOUD_STRATUS                = 1260  # low sky layer,  y 30–38, flat gray
 CLOUD_STORM                  = 1261  # near-surface,   y 37–43, dark charcoal
 
+# --- Ocean blocks (Phase 2) ---
+CORAL_FRAGMENT_BLOCK         = 1262  # player-placed seed for coral gardening
+CORAL_GROWING                = 1263  # stage 1 growth (intermediate)
+CORAL_FULL                   = 1264  # mature coral, harvestable
+KELP_BLOCK                   = 1265  # tall underwater plant (tidal/reef)
+SEASHELL_BLOCK               = 1266  # collectible shell node on ocean floor
+SEA_ANEMONE                  = 1267  # decorative reef block
+BIOLUME_DEEP_BLOCK           = 1268  # deep-zone glowing organism
+OCEAN_ROCK                   = 1269  # encrusted rock for twilight/deep floors
+
 CLOUD_BLOCKS = {CLOUD_CIRRUS, CLOUD_CUMULUS, CLOUD_STRATUS, CLOUD_STORM}
 
 BLOCKS = {
@@ -1800,7 +1811,7 @@ BLOCKS = {
     STRAWBERRY_CROP_MATURE: {"name": "Strawberry Crop (Ripe)","hardness": 0.5, "color": (220, 50, 80),  "drop": "strawberry",      "drop_chance": 1.0},
     WHEAT_CROP_YOUNG:       {"name": "Wheat Crop",            "hardness": 0.5, "color": (200, 190, 80), "drop": "wheat_seed",      "drop_chance": 1.0},
     WHEAT_CROP_MATURE:      {"name": "Wheat Crop (Ripe)",     "hardness": 0.5, "color": (230, 210, 60), "drop": "wheat",           "drop_chance": 1.0},
-    BAKERY_BLOCK:           {"name": "Bakery",                "hardness": 1,   "color": (180, 100, 50), "drop": "bakery_item"},
+    BAKERY_BLOCK:           {"name": "Bakery",                "hardness": 1,   "color": (180, 100, 50), "drop": "bakery_item",     "cooking_mult": 1.10},
     CARROT_BUSH:            {"name": "Carrot Bush",           "hardness": 0.5, "color": (255, 140, 0),  "drop": "carrot_seed",   "drop_chance": 1.0},
     TOMATO_BUSH:            {"name": "Tomato Bush",           "hardness": 0.5, "color": (160, 50,  50), "drop": "tomato_seed",   "drop_chance": 1.0},
     CORN_BUSH:              {"name": "Corn Bush",             "hardness": 0.5, "color": (200, 180, 50), "drop": "corn_seed",     "drop_chance": 1.0},
@@ -1832,8 +1843,6 @@ BLOCKS = {
     ACACIA_LOG:    {"name": "Acacia Log",        "hardness": 2, "color": (148, 108, 58),  "drop": "lumber"},
     ACACIA_LEAVES: {"name": "Acacia Leaves",     "hardness": 1, "color": (108, 138, 48),  "drop": "sapling", "drop_chance": 0.10},
     DEAD_LOG:      {"name": "Dead Wood",         "hardness": 2, "color": (88,  82,  78),  "drop": "lumber"},
-    MUSHROOM_STEM: {"name": "Mushroom Stem",     "hardness": 1, "color": (228, 218, 198), "drop": "mushroom", "drop_chance": 1.0},
-    MUSHROOM_CAP:  {"name": "Mushroom Cap",      "hardness": 1, "color": (175, 38,  38),  "drop": "mushroom", "drop_chance": 0.5},
     MAPLE_LOG:     {"name": "Maple Log",         "hardness": 2, "color": (118, 72,  38),  "drop": "lumber"},
     MAPLE_LEAVES:  {"name": "Maple Leaves",      "hardness": 1, "color": (185, 108, 35),  "drop": "sapling", "drop_chance": 0.10},
     CHERRY_LOG:    {"name": "Cherry Log",        "hardness": 2, "color": (72,  52,  60),  "drop": "lumber"},
@@ -1888,9 +1897,9 @@ BLOCKS = {
     GARLIC_CROP_YOUNG:   {"name": "Garlic Crop",        "hardness": 0.5, "color": (180, 210, 150), "drop": "garlic_seed",   "drop_chance": 1.0},
     GARLIC_CROP_MATURE:  {"name": "Garlic Crop (Ripe)", "hardness": 0.5, "color": (230, 225, 200), "drop": "garlic",        "drop_chance": 1.0},
     # --- Chinese cooking equipment ---
-    WOK_BLOCK:           {"name": "Wok",                "hardness": 1,   "color": (70, 55, 45),   "drop": "wok_item"},
-    STEAMER_BLOCK:       {"name": "Steamer",             "hardness": 1,   "color": (175, 150, 105),"drop": "steamer_item"},
-    NOODLE_POT_BLOCK:    {"name": "Noodle Pot",          "hardness": 1,   "color": (85, 70, 55),   "drop": "noodle_pot_item"},
+    WOK_BLOCK:           {"name": "Wok",                "hardness": 1,   "color": (70, 55, 45),   "drop": "wok_item",        "cooking_mult": 1.20},
+    STEAMER_BLOCK:       {"name": "Steamer",             "hardness": 1,   "color": (175, 150, 105),"drop": "steamer_item",    "cooking_mult": 1.18},
+    NOODLE_POT_BLOCK:    {"name": "Noodle Pot",          "hardness": 1,   "color": (85, 70, 55),   "drop": "noodle_pot_item", "cooking_mult": 1.22},
     # --- Extended crops ---
     SCALLION_BUSH:         {"name": "Scallion Bush",           "hardness": 0.5, "color": (60, 190, 80),  "drop": "scallion_seed", "drop_chance": 1.0},
     CHILI_BUSH:            {"name": "Chili Bush",              "hardness": 0.5, "color": (210, 55, 35),  "drop": "chili_seed",    "drop_chance": 1.0},
@@ -1899,8 +1908,8 @@ BLOCKS = {
     CHILI_CROP_YOUNG:      {"name": "Chili Crop",              "hardness": 0.5, "color": (80, 175, 75),  "drop": "chili_seed",    "drop_chance": 1.0},
     CHILI_CROP_MATURE:     {"name": "Chili Crop (Ripe)",       "hardness": 0.5, "color": (215, 50, 35),  "drop": "chili",         "drop_chance": 1.0},
     # --- New cooking equipment ---
-    BBQ_GRILL_BLOCK:       {"name": "BBQ Grill",               "hardness": 1,   "color": (55, 45, 35),   "drop": "bbq_grill_item"},
-    CLAY_POT_BLOCK:        {"name": "Clay Pot",                "hardness": 1,   "color": (170, 100, 65), "drop": "clay_pot_item"},
+    BBQ_GRILL_BLOCK:       {"name": "BBQ Grill",               "hardness": 1,   "color": (55, 45, 35),   "drop": "bbq_grill_item",  "cooking_mult": 1.15},
+    CLAY_POT_BLOCK:        {"name": "Clay Pot",                "hardness": 1,   "color": (170, 100, 65), "drop": "clay_pot_item",   "cooking_mult": 1.30},
     # --- New crops ---
     PEPPER_BUSH:           {"name": "Pepper Bush",             "hardness": 0.5, "color": (220, 80, 40),  "drop": "pepper_seed",   "drop_chance": 1.0},
     ONION_BUSH:            {"name": "Onion Bush",              "hardness": 0.5, "color": (180, 155, 90), "drop": "onion_seed",    "drop_chance": 1.0},
@@ -2128,6 +2137,7 @@ BLOCKS = {
     PICKERELWEED_BLOCK:   {"name": "Pickerelweed",   "hardness": 0.3, "color": ( 90,  80, 200), "drop": "pickerelweed"},
     # --- Herbalism supply chain ---
     DRYING_RACK_BLOCK:         {"name": "Drying Rack",            "hardness": 1.5, "color": (175, 145,  85), "drop": "drying_rack_item"},
+    MORTAR_BLOCK:              {"name": "Mortar & Pestle",        "hardness": 1.5, "color": (145, 135, 120), "drop": "mortar_item"},
     # --- Fishing supply chain ---
     BAIT_STATION_BLOCK:        {"name": "Bait Station",           "hardness": 1.5, "color": (100,  70,  40), "drop": "bait_station_item"},
     # --- Tea supply chain ---
@@ -3089,12 +3099,39 @@ BLOCKS = {
     BANNER_BLOCK:              {"name": "Banner",           "hardness": 1.0,          "color": (160,  80,  40), "drop": "banner_item"},
     FISHING_SPOT_BLOCK:        {"name": "Fishing Spot",     "hardness": -1,           "color": ( 50, 140, 235), "drop": None},
     FISH_TROPHY_BLOCK:         {"name": "Fish Trophy",      "hardness": 0.5,          "color": (160, 110,  60), "drop": "fish_trophy_item"},
-    WEAPON_ASSEMBLER_BLOCK:    {"name": "Weapon Assembler", "hardness": 1,  "color": (120,  90,  60), "drop": "weapon_assembler"},
+    WEAPON_ASSEMBLER_BLOCK:    {"name": "Assembly Bench",   "hardness": 1,  "color": (120,  90,  60), "drop": "weapon_assembler"},
     TEA_HOUSE_BLOCK:           {"name": "Tea House",        "hardness": 1,  "color": (122,  92,  58), "drop": "tea_house_item"},
     CLOUD_CIRRUS:              {"name": "Cirrus Cloud",     "hardness": -1, "color": (220, 235, 255), "drop": None},
     CLOUD_CUMULUS:             {"name": "Cumulus Cloud",    "hardness": -1, "color": (240, 240, 245), "drop": None},
     CLOUD_STRATUS:             {"name": "Stratus Cloud",    "hardness": -1, "color": (190, 195, 205), "drop": None},
     CLOUD_STORM:               {"name": "Storm Cloud",      "hardness": -1, "color": (100,  95, 120), "drop": None},
+    # Ocean blocks
+    # Coral stages — gardening cycle: fragment → growing → full (Phase 7)
+    CORAL_FRAGMENT_BLOCK: {"name": "Coral Fragment",  "hardness": 0.5, "color": (230, 100, 140),
+                           "drop": "coral_fragment",  "drop_chance": 1.0},
+    CORAL_GROWING:        {"name": "Growing Coral",   "hardness": 0.5, "color": (210,  80, 120),
+                           "drop": "coral_fragment",  "drop_chance": 0.5},
+    CORAL_FULL:           {"name": "Coral",           "hardness": 0.8, "color": (240,  60, 100),
+                           "drop": "coral_fragment",  "drop_chance": 1.0,
+                           "bonus_drop": "raw_pearl", "bonus_drop_chance": 0.05},
+    # Underwater flora
+    KELP_BLOCK:           {"name": "Kelp",            "hardness": 0.3, "color": ( 30, 110,  50),
+                           "drop": "kelp",            "drop_chance": 1.0},
+    # Collectible node — drop is None; player.py triggers the SeashellGenerator instead
+    SEASHELL_BLOCK:       {"name": "Seashell",        "hardness": 0.5, "color": (230, 210, 170),
+                           "drop": None},
+    # Decorative reef — no drops
+    SEA_ANEMONE:          {"name": "Sea Anemone",     "hardness": 0.3, "color": (255, 140,  60),
+                           "drop": None},
+    # Deep zone — fragile; doesn't always survive being mined
+    BIOLUME_DEEP_BLOCK:   {"name": "Bioluminescent",  "hardness": 0.5, "color": ( 30, 210, 195),
+                           "drop": "glowing_spore",   "drop_chance": 0.70},
+    # Encrusted rock — stone chip drop plus chance of a shell fragment
+    OCEAN_ROCK:           {"name": "Ocean Rock",      "hardness": 2.0, "color": ( 90,  95, 105),
+                           "drop": "stone_chip",      "drop_chance": 1.0,
+                           "bonus_drop": "shell_fragment", "bonus_drop_chance": 0.20},
+    EDELWEISS_BUSH:       {"name": "Edelweiss",       "hardness": 0.5, "color": (248, 246, 242),
+                           "drop": "edelweiss",       "drop_chance": 0.30},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}
@@ -3127,6 +3164,8 @@ LIGHT_EMITTERS = {
     POWERED_LANTERN_ON: (80, "circle"),
     # Farming
     GROW_LAMP:          (170, "wide_flat"),
+    # Ocean
+    BIOLUME_DEEP_BLOCK: ( 60, "soft"),
     # Fireplaces & hearths
     HEARTH_STONE:        (110, "flicker"),
     ALPINE_HEARTH:       (120, "flicker"),

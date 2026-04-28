@@ -5,6 +5,10 @@ from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H
 from blocks import LIGHT_EMITTERS, WARM_EMITTERS
 from Render.surface.flags import golden_hour_alphas
 
+# Must match the RGB used in _light_surf.fill() so BLEND_RGBA_MIN doesn't
+# create a pure-black square patch around each light (only alpha should vary).
+_DR, _DG, _DB = 5, 8, 20
+
 
 def build_block_gradient(pattern, radius, flicker_frame=0):
     r = radius
@@ -15,26 +19,26 @@ def build_block_gradient(pattern, radius, flicker_frame=0):
 
     if pattern == "circle":
         surf = pygame.Surface((size, size), pygame.SRCALPHA)
-        surf.fill((0, 0, 0, 255))
+        surf.fill((_DR, _DG, _DB, 255))
         for ir in range(r, 0, -4):
             alpha = int(255 * (ir / r) ** 0.55)
-            pygame.draw.circle(surf, (0, 0, 0, alpha), (r, r), ir)
+            pygame.draw.circle(surf, (_DR, _DG, _DB, alpha), (r, r), ir)
         return surf
 
     if pattern == "soft":
         surf = pygame.Surface((size, size), pygame.SRCALPHA)
-        surf.fill((0, 0, 0, 255))
+        surf.fill((_DR, _DG, _DB, 255))
         for ir in range(r, 0, -4):
             alpha = int(255 * (ir / r) ** 0.28)
-            pygame.draw.circle(surf, (0, 0, 0, alpha), (r, r), ir)
+            pygame.draw.circle(surf, (_DR, _DG, _DB, alpha), (r, r), ir)
         return surf
 
     if pattern == "dim":
         surf = pygame.Surface((size, size), pygame.SRCALPHA)
-        surf.fill((0, 0, 0, 255))
+        surf.fill((_DR, _DG, _DB, 255))
         for ir in range(r, 0, -3):
             alpha = int(255 * (ir / r) ** 0.72)
-            pygame.draw.circle(surf, (0, 0, 0, alpha), (r, r), ir)
+            pygame.draw.circle(surf, (_DR, _DG, _DB, alpha), (r, r), ir)
         return surf
 
     if pattern == "wide_oval":
@@ -68,27 +72,27 @@ def build_block_gradient(pattern, radius, flicker_frame=0):
 
     if pattern == "cross":
         surf = pygame.Surface((size, size), pygame.SRCALPHA)
-        surf.fill((0, 0, 0, 255))
+        surf.fill((_DR, _DG, _DB, 255))
         cx = cy = r
         for arm in range(r, 0, -2):
             ratio = arm / r
             alpha = int(255 * ratio ** 0.45)
             bw = max(5, int(12 * (1 - ratio * 0.5)))
-            pygame.draw.line(surf, (0, 0, 0, alpha), (cx - arm, cy), (cx + arm, cy), bw)
-            pygame.draw.line(surf, (0, 0, 0, alpha), (cx, cy - arm), (cx, cy + arm), bw)
+            pygame.draw.line(surf, (_DR, _DG, _DB, alpha), (cx - arm, cy), (cx + arm, cy), bw)
+            pygame.draw.line(surf, (_DR, _DG, _DB, alpha), (cx, cy - arm), (cx, cy + arm), bw)
         base_r = r // 3
         for ir in range(base_r, 0, -2):
             alpha = int(255 * (ir / base_r) ** 0.6)
-            pygame.draw.circle(surf, (0, 0, 0, alpha), (cx, cy), ir)
+            pygame.draw.circle(surf, (_DR, _DG, _DB, alpha), (cx, cy), ir)
         return surf
 
     if pattern == "star":
         surf = pygame.Surface((size, size), pygame.SRCALPHA)
-        surf.fill((0, 0, 0, 255))
+        surf.fill((_DR, _DG, _DB, 255))
         cx = cy = r
         for ir in range(r, 0, -4):
             alpha = int(255 * (ir / r) ** 0.3)
-            pygame.draw.circle(surf, (0, 0, 0, alpha), (cx, cy), ir)
+            pygame.draw.circle(surf, (_DR, _DG, _DB, alpha), (cx, cy), ir)
         for angle_deg in range(0, 360, 45):
             angle = _m.radians(angle_deg)
             dx = _m.cos(angle); dy = _m.sin(angle)
@@ -97,7 +101,7 @@ def build_block_gradient(pattern, radius, flicker_frame=0):
                 alpha = int(255 * ratio ** 0.4)
                 width = max(2, int(5 * (1 - ratio * 0.7)))
                 ex = int(cx + dx * arm); ey = int(cy + dy * arm)
-                pygame.draw.line(surf, (0, 0, 0, alpha), (cx, cy), (ex, ey), width)
+                pygame.draw.line(surf, (_DR, _DG, _DB, alpha), (cx, cy), (ex, ey), width)
         return surf
 
     return build_block_gradient("circle", r)
@@ -154,12 +158,12 @@ def draw_lighting(renderer, player, world, depth, time_of_day=0.0):
             renderer._light_cache_key = (ambient, radius)
             size = radius * 2 + 1
             grad = pygame.Surface((size, size), pygame.SRCALPHA)
-            grad.fill((0, 0, 0, darkness))
+            grad.fill((_DR, _DG, _DB, darkness))
             for r in range(radius, 0, -5):
                 ratio = r / radius
                 brightness = int(ambient + (255 - ambient) * (1 - ratio ** 0.6))
                 alpha = 255 - min(255, brightness)
-                pygame.draw.circle(grad, (0, 0, 0, alpha), (radius, radius), r)
+                pygame.draw.circle(grad, (_DR, _DG, _DB, alpha), (radius, radius), r)
             renderer._light_gradient = grad
         px = int(player.x - renderer.cam_x) + PLAYER_W // 2
         py = int(player.y - renderer.cam_y) + PLAYER_H // 2

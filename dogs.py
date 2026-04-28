@@ -400,7 +400,7 @@ BREED_PROFILES = {
         "coat_type_weights": [20, 80, 0, 0],
     },
     "Dachshund": {
-        "biomes": {"boreal", "birch_forest", "fungal", "swamp"},
+        "biomes": {"boreal", "birch_forest", "swamp"},
         "size_class": "small",
         "genes": {
             "speed_gene":       (0.7, 0.9),
@@ -515,7 +515,7 @@ BREED_PROFILES = {
         "coat_type_weights": [40, 60, 0, 0],
     },
     "Shiba Inu": {
-        "biomes": {"boreal", "birch_forest", "temperate", "fungal"},
+        "biomes": {"boreal", "birch_forest", "temperate"},
         "size_class": "small",
         "genes": {
             "speed_gene":        (0.9, 1.2),
@@ -607,7 +607,7 @@ BREED_PROFILES = {
         "coat_type_weights": [100, 0, 0, 0],
     },
     "Chow Chow": {
-        "biomes": {"boreal", "alpine_mountain", "fungal"},
+        "biomes": {"boreal", "alpine_mountain"},
         "size_class": "medium",
         "genes": {
             "speed_gene":        (0.8, 1.0),

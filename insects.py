@@ -1138,7 +1138,7 @@ class TundraGroundBeetle(Insect):
 class FungalBeetle(Insect):
     SPECIES      = "fungal_beetle"
     RARITY       = "uncommon"
-    BIOMES       = ["fungal", "boreal"]
+    BIOMES       = ["boreal", "swamp"]
     W, H         = 8, 6
     BODY_COLOR   = (100, 55, 25)
     WING_COLOR   = (145, 80, 38)
@@ -2588,7 +2588,7 @@ class MadagascarHissingCockroach(Insect):
 class TropicalCockroach(Insect):
     SPECIES      = "tropical_cockroach"
     RARITY       = "uncommon"
-    BIOMES       = ["tropical", "fungal"]
+    BIOMES       = ["tropical", "swamp"]
     W, H         = 11, 6
     BODY_COLOR   = (115, 55, 25)
     WING_COLOR   = (138, 72, 35)
@@ -2866,7 +2866,7 @@ class NightMantis(Insect):
 class GlowingMillipede(Insect):
     SPECIES      = "glowing_millipede"
     RARITY       = "rare"
-    BIOMES       = ["jungle", "fungal"]
+    BIOMES       = ["jungle", "swamp"]
     W, H         = 12, 5
     BODY_COLOR   = (28, 35, 20)
     WING_COLOR   = (38, 48, 28)

@@ -67,7 +67,7 @@ Draw logic for each wing type lives in [Render/insects.py](../../../Render/insec
 
 ### Biomes (from [biomes.py](../../../biomes.py))
 
-`temperate`, `boreal`, `birch_forest`, `jungle`, `wetland`, `redwood`, `tropical`, `savanna`, `wasteland`, `fungal`, `alpine_mountain`, `rocky_mountain`, `rolling_hills`, `steep_hills`, `steppe`, `arid_steppe`, `desert`, `tundra`, `swamp`, `beach`, `canyon`
+`temperate`, `boreal`, `birch_forest`, `jungle`, `wetland`, `redwood`, `tropical`, `savanna`, `wasteland`, `alpine_mountain`, `rocky_mountain`, `rolling_hills`, `steep_hills`, `steppe`, `arid_steppe`, `desert`, `tundra`, `swamp`, `beach`, `canyon`
 
 ### Attribute ranges
 

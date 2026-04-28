@@ -2,7 +2,7 @@ BIOMES = ["igneous", "sedimentary", "crystal", "ferrous", "void"]
 
 BIODOME_TYPES = [
     "temperate", "boreal", "birch_forest", "jungle", "wetland",
-    "redwood", "tropical", "savanna", "wasteland", "fungal",
+    "redwood", "tropical", "savanna", "wasteland",
     "alpine_mountain", "rocky_mountain",
     "rolling_hills", "steep_hills",
     "steppe", "arid_steppe",

@@ -225,7 +225,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(255, 255, 145), (250, 255, 130)],
         "patterns": ["cluster"],
         "petal_counts": [6, 8],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
     "mycelium_lily": {
         "rarity_pool": ["rare", "epic", "legendary"],
@@ -233,7 +233,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(255, 195, 95), (250, 185, 80)],
         "patterns": ["trumpet", "cluster"],
         "petal_counts": [4, 6],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
 
     # ---- 25 new types ----
@@ -471,7 +471,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(200, 160, 255), (185, 145, 245)],
         "patterns": ["simple", "trumpet"],
         "petal_counts": [5, 6],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
     "twilight_bell": {
         "rarity_pool": ["rare", "epic", "legendary"],
@@ -479,7 +479,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(220, 200, 255), (210, 190, 250)],
         "patterns": ["trumpet", "cluster"],
         "petal_counts": [4, 5],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
 
     # ---- 25 more types ----
@@ -685,7 +685,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(220, 255, 252), (210, 248, 245)],
         "patterns": ["simple", "trumpet"],
         "petal_counts": [6],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
     "nether_belle": {
         "rarity_pool": ["epic", "legendary"],
@@ -693,7 +693,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(255, 40, 55), (248, 30, 45)],
         "patterns": ["trumpet"],
         "petal_counts": [4, 5],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
     "cave_daisy": {
         "rarity_pool": ["uncommon", "rare"],
@@ -701,7 +701,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(180, 185, 195), (172, 178, 188)],
         "patterns": ["daisy", "simple"],
         "petal_counts": [10, 12],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
 
     # ---- 25 more types ----
@@ -907,7 +907,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(255, 255, 255), (248, 250, 255)],
         "patterns": ["simple", "daisy"],
         "petal_counts": [8, 10],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
     "void_petal": {
         "rarity_pool": ["rare", "epic"],
@@ -915,7 +915,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(185, 100, 255), (172, 88, 245)],
         "patterns": ["daisy", "simple"],
         "petal_counts": [6, 8],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
     "crystal_bloom": {
         "rarity_pool": ["rare", "epic", "legendary"],
@@ -923,7 +923,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(255, 255, 255), (245, 250, 255)],
         "patterns": ["simple", "daisy", "trumpet"],
         "petal_counts": [6, 8, 12],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
 
     # ---- 25 more types ----
@@ -1137,7 +1137,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(255, 252, 255), (248, 245, 252)],
         "patterns": ["simple", "daisy"],
         "petal_counts": [8, 10, 12],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
     "deep_lung_bloom": {
         "rarity_pool": ["rare", "epic"],
@@ -1145,7 +1145,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(255, 215, 195), (248, 202, 182)],
         "patterns": ["cluster", "trumpet"],
         "petal_counts": [4, 5],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
 
     # ---- 25 more types ----
@@ -1359,7 +1359,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(255, 252, 195), (248, 245, 182)],
         "patterns": ["daisy"],
         "petal_counts": [6, 8],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
     "biolume_bell": {
         "rarity_pool": ["epic", "legendary"],
@@ -1367,7 +1367,7 @@ WILDFLOWER_TYPES = {
         "center_colors": [(215, 252, 255), (200, 242, 248)],
         "patterns": ["trumpet"],
         "petal_counts": [4, 5],
-        "preferred_biodomes": ["fungal"],
+        "preferred_biodomes": ["swamp"],
     },
 
     # ---- New biome flowers (desert, tundra, swamp, beach, canyon + all new biomes) ----
@@ -1577,7 +1577,7 @@ WILDFLOWER_BIODOME_AFFINITY = {
                      "brittlebush_bloom", "sagebrush_flower",
                      "night_blooming_cereus", "sand_verbena", "sacred_datura",
                      "ocotillo_bloom", "globe_mallow", "desert_chicory"},
-    "fungal":       {"glowcap_bloom", "mycelium_lily",
+    "swamp":       {"glowcap_bloom", "mycelium_lily",
                      "inkwell_cap", "twilight_bell",
                      "spore_lily", "nether_belle", "cave_daisy",
                      "phantom_bloom", "void_petal", "crystal_bloom",
@@ -1628,7 +1628,7 @@ BIODOME_RARITY_WEIGHTS = {
     "jungle":       {"common": 40, "uncommon": 35, "rare": 18, "epic": 6,  "legendary": 1},
     "tropical":     {"common": 35, "uncommon": 35, "rare": 20, "epic": 8,  "legendary": 2},
     "wasteland":    {"common": 30, "uncommon": 25, "rare": 25, "epic": 15, "legendary": 5},
-    "fungal":       {"common": 45, "uncommon": 30, "rare": 18, "epic": 5,  "legendary": 2},
+    "swamp":       {"common": 45, "uncommon": 30, "rare": 18, "epic": 5,  "legendary": 2},
     "alpine_mountain": {"common": 20, "uncommon": 35, "rare": 30, "epic": 12, "legendary": 3},
     "rocky_mountain":  {"common": 30, "uncommon": 35, "rare": 25, "epic": 8,  "legendary": 2},
     "rolling_hills":   {"common": 65, "uncommon": 28, "rare": 7,  "epic": 0,  "legendary": 0},

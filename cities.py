@@ -21,6 +21,16 @@ from blocks import (STONE, BEDROCK, DIRT, HOUSE_WALL, HOUSE_ROOF, AIR, LADDER, W
                     BOK_CHOY_CROP_YOUNG, BOK_CHOY_CROP_MATURE,
                     SWEET_POTATO_CROP_YOUNG, SWEET_POTATO_CROP_MATURE,
                     CELERY_CROP_YOUNG, CELERY_CROP_MATURE,
+                    GRAPEVINE_CROP_YOUNG, GRAPEVINE_CROP_MATURE,
+                    TEA_CROP_YOUNG, TEA_CROP_MATURE,
+                    COFFEE_CROP_YOUNG, COFFEE_CROP_MATURE,
+                    GRAIN_CROP_YOUNG, GRAIN_CROP_MATURE,
+                    HOP_VINE_YOUNG, HOP_VINE_MATURE,
+                    CHAMOMILE_CROP_YOUNG, CHAMOMILE_CROP_MATURE,
+                    LAVENDER_CROP_YOUNG, LAVENDER_CROP_MATURE,
+                    MINT_CROP_YOUNG, MINT_CROP_MATURE,
+                    FLAX_CROP_YOUNG, FLAX_CROP_MATURE,
+                    COTTON_CROP_YOUNG, COTTON_CROP_MATURE,
                     HOUSE_WALL_STONE, HOUSE_ROOF_STONE,
                     HOUSE_WALL_BRICK, HOUSE_ROOF_BRICK,
                     HOUSE_WALL_DARK,  HOUSE_ROOF_DARK,
@@ -28,7 +38,7 @@ from blocks import (STONE, BEDROCK, DIRT, HOUSE_WALL, HOUSE_ROOF, AIR, LADDER, W
                     SANDSTONE_BLOCK, POLISHED_MARBLE,
                     WHITEWASHED_WALL, MONASTERY_ROOF, MANI_STONE, PRAYER_FLAG_BLOCK,
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, ALL_LOGS, ALL_LEAVES, BUSH_BLOCKS, SAPLING,
-                    BAMBOO_GROVE, WILDFLOWER_PATCH, REED_BLOCK, MUSHROOM_STEM, MUSHROOM_CAP,
+                    BAMBOO_GROVE, WILDFLOWER_PATCH, REED_BLOCK,
                     PINE_PLANK_WALL, SLATE_SHINGLE,
                     GRANITE_ASHLAR, ROUGH_STONE_WALL, ALPINE_PLASTER,
                     WHITE_PLASTER_WALL, ADOBE_BRICK, SPANISH_ROOF_TILE,
@@ -1322,6 +1332,9 @@ class TradeNPC(NPC):
                 if player.hotbar[i] == item_id:
                     player.hotbar[i] = None
         player.money += self.boosted_gold(trade_idx)
+        region = _region_for_npc(self)
+        if region:
+            _record_supply(region, item_id, _SUPPLY_SELL_DELTA * give_count)
         return True
 
 
@@ -1515,6 +1528,46 @@ BLACKSMITH_SHOP_TABLE = [
     ("tempered_iron",     55, "Tempered Iron",    "iron_chunk",  10),
     ("tempered_pickaxe",  90, "Tempered Pickaxe", "tempered_iron", 4),
     ("tempered_axe",      95, "Tempered Axe",     "tempered_iron", 4),
+    # Leather armor
+    ("armor_leather_helmet",      18, "Leather Helmet",     "deer_hide",     2),
+    ("armor_leather_chestplate",  30, "Leather Chestplate", "deer_hide",     4),
+    ("armor_leather_leggings",    24, "Leather Leggings",   "deer_hide",     3),
+    ("armor_leather_boots",       18, "Leather Boots",      "deer_hide",     2),
+    # Iron armor
+    ("armor_iron_helmet",         55, "Iron Helmet",        "iron_chunk",    8),
+    ("armor_iron_chestplate",     95, "Iron Chestplate",    "iron_chunk",   14),
+    ("armor_iron_leggings",       78, "Iron Leggings",      "iron_chunk",   11),
+    ("armor_iron_boots",          50, "Iron Boots",         "iron_chunk",    7),
+    # Steel armor
+    ("armor_steel_helmet",       110, "Steel Helmet",       "tempered_iron", 3),
+    ("armor_steel_chestplate",   190, "Steel Chestplate",   "tempered_iron", 5),
+    ("armor_steel_leggings",     155, "Steel Leggings",     "tempered_iron", 4),
+    ("armor_steel_boots",        100, "Steel Boots",        "tempered_iron", 3),
+    # Bone armor
+    ("armor_bone_helmet",         40, "Bone Helmet",        "bone",          5),
+    ("armor_bone_chestplate",     70, "Bone Chestplate",    "bone",          8),
+    ("armor_bone_leggings",       55, "Bone Leggings",      "bone",          6),
+    ("armor_bone_boots",          38, "Bone Boots",         "bone",          4),
+    # Gold armor
+    ("armor_gold_helmet",        160, "Gold Helmet",        "gold_nugget",   4),
+    ("armor_gold_chestplate",    270, "Gold Chestplate",    "gold_nugget",   7),
+    ("armor_gold_leggings",      220, "Gold Leggings",      "gold_nugget",   5),
+    ("armor_gold_boots",         140, "Gold Boots",         "gold_nugget",   3),
+    # Obsidian armor
+    ("armor_obsidian_helmet",    280, "Obsidian Helmet",    "obsidian_slab", 3),
+    ("armor_obsidian_chestplate",460, "Obsidian Chestplate","obsidian_slab", 5),
+    ("armor_obsidian_leggings",  370, "Obsidian Leggings",  "obsidian_slab", 4),
+    ("armor_obsidian_boots",     230, "Obsidian Boots",     "obsidian_slab", 2),
+    # Crystal armor
+    ("armor_crystal_helmet",     420, "Crystal Helmet",     "cut_crystal",   2),
+    ("armor_crystal_chestplate", 680, "Crystal Chestplate", "cut_crystal",   4),
+    ("armor_crystal_leggings",   550, "Crystal Leggings",   "cut_crystal",   3),
+    ("armor_crystal_boots",      340, "Crystal Boots",      "cut_crystal",   2),
+    # Void armor
+    ("armor_void_helmet",        600, "Void Helmet",        "void_essence",  2),
+    ("armor_void_chestplate",    980, "Void Chestplate",    "void_essence",  3),
+    ("armor_void_leggings",      780, "Void Leggings",      "void_essence",  2),
+    ("armor_void_boots",         480, "Void Boots",         "void_essence",  1),
 ]
 
 INN_MENU = [
@@ -1806,6 +1859,46 @@ def specialty_price_label(npc, item_id) -> str:
     return ""
 
 
+_SUPPLY_SELL_DELTA     = 0.06   # supply shift per unit sold to an NPC
+_SUPPLY_CONTRACT_DELTA = 0.20   # supply shift per contract fulfilled
+
+
+def _supply_price_mult(npc, item_id) -> float:
+    """Supply-driven price modifier: high regional supply → cheaper, low → pricier."""
+    region = _region_for_npc(npc)
+    if region is None:
+        return 1.0
+    from towns import get_region_supply, supply_price_mult
+    tags = _item_price_tags(item_id)
+    if not tags:
+        return 1.0
+    s = min(get_region_supply(region, t) for t in tags)
+    return supply_price_mult(s)
+
+
+def _record_supply(region, item_id: str, delta: float) -> None:
+    """Record a player trade: shift regional supply for all tags of item_id."""
+    from towns import adjust_region_supply
+    for tag in _item_price_tags(item_id):
+        adjust_region_supply(region, tag, delta)
+
+
+def supply_status_label(npc, item_id: str):
+    """Return (label, color) for a supply status chip, or None if near baseline."""
+    region = _region_for_npc(npc)
+    if region is None:
+        return None
+    from towns import get_region_supply
+    tags = _item_price_tags(item_id)
+    if not tags:
+        return None
+    s = min(get_region_supply(region, t) for t in tags)
+    if s >= 1.25:  return "oversupplied", (130, 175, 230)
+    if s <= 0.65:  return "scarce",       (230, 120,  80)
+    if s <= 0.80:  return "low stock",    (210, 175,  90)
+    return None
+
+
 def _shop_size_bonus(npc, agenda_match: str) -> int:
     """+1 to a shop's sample size when the npc's region matches `agenda_match`.
 
@@ -1875,6 +1968,7 @@ class MerchantNPC(NPC):
         return max(1, round(cost
                             * _rep_discount(self._town_rep(), self)
                             * _specialty_price_mult(self, item_id)
+                            * _supply_price_mult(self, item_id)
                             * self._beloved_price_mult(player)
                             * self._dynasty_price_mult(player)
                             * _wealth_price_mult(self)))
@@ -1957,6 +2051,9 @@ class BeerMerchantNPC(MerchantNPC):
                 if player.hotbar[i] == item_id:
                     player.hotbar[i] = None
         player.money += price
+        region = _region_for_npc(self)
+        if region:
+            _record_supply(region, item_id, _SUPPLY_SELL_DELTA)
         return price
 
 
@@ -2038,6 +2135,7 @@ class RestaurantNPC(NPC):
         return max(1, round(cost
                             * _rep_discount(self._town_rep(), self)
                             * _specialty_price_mult(self, item_id)
+                            * _supply_price_mult(self, item_id)
                             * self._beloved_price_mult(player)
                             * self._dynasty_price_mult(player)
                             * _wealth_price_mult(self)))
@@ -2137,6 +2235,7 @@ class BlacksmithNPC(NPC):
         return max(1, round(cost
                             * _rep_discount(self._town_rep(), self)
                             * _specialty_price_mult(self, item_id)
+                            * _supply_price_mult(self, item_id)
                             * self._beloved_price_mult(player)
                             * self._dynasty_price_mult(player)
                             * _wealth_price_mult(self)))
@@ -2191,6 +2290,7 @@ class InnkeeperNPC(NPC):
         return max(1, round(cost
                             * _rep_discount(self._town_rep(), self)
                             * _specialty_price_mult(self, item_id)
+                            * _supply_price_mult(self, item_id)
                             * self._beloved_price_mult(player)
                             * self._dynasty_price_mult(player)
                             * _wealth_price_mult(self)))
@@ -2252,6 +2352,9 @@ class TavernkeeperNPC(InnkeeperNPC):
                 if player.hotbar[i] == item_id:
                     player.hotbar[i] = None
         player.money += price
+        region = _region_for_npc(self)
+        if region:
+            _record_supply(region, item_id, _SUPPLY_SELL_DELTA)
         return price
 
 
@@ -2377,6 +2480,7 @@ class ScholarNPC(NPC):
         return max(1, round(cost
                             * _rep_discount(self._town_rep(), self)
                             * _specialty_price_mult(self, item_id)
+                            * _supply_price_mult(self, item_id)
                             * self._beloved_price_mult(player)
                             * self._dynasty_price_mult(player)
                             * _wealth_price_mult(self)))
@@ -2492,6 +2596,16 @@ def _pick_contract_for_region(rng, region):
         contract[2] = int(contract[2] * 1.20)
         contract[3] = f"☠ {contract[3]}"   # ☠ marks wild-region hazard pay
 
+    # Supply-driven contract reward: scarce imports pay more, flooded imports pay less.
+    if region is not None:
+        from towns import get_region_supply, supply_contract_mult, BIOME_GROUP_SPECIALTIES
+        item_tags = set(_CONTRACT_TAGS.get(contract[0], ()))
+        import_tags = set(BIOME_GROUP_SPECIALTIES.get(region.biome_group, {}).get("imports", ()))
+        check_tags = item_tags & import_tags if item_tags & import_tags else item_tags
+        if check_tags:
+            min_s = min(get_region_supply(region, t) for t in check_tags)
+            contract[2] = int(contract[2] * supply_contract_mult(min_s))
+
     # Rival-export smuggling premium: if the contract item is an export of any
     # region this leader rivals, the reward gets +50% and the name is marked.
     if region is not None and region.relations:
@@ -2552,6 +2666,8 @@ class LeaderNPC(NPC):
         player.money += reward_gold
         from towns import TOWNS, REGIONS, _cascade_rep
         region = REGIONS.get(self.region_id)
+        if region:
+            _record_supply(region, item_id, _SUPPLY_CONTRACT_DELTA)
         if region:
             for tid in region.member_town_ids:
                 town = TOWNS.get(tid)
@@ -2845,6 +2961,9 @@ class QuartermasterNPC(NPC):
                 if player.hotbar[i] == item_id:
                     player.hotbar[i] = None
         player.money += self.boosted_gold(idx)
+        region = _region_for_npc(self)
+        if region:
+            _record_supply(region, item_id, _SUPPLY_SELL_DELTA * give_count)
         return True
 
 
@@ -3283,8 +3402,7 @@ _SIZE_BY_BIOME = {
 }
 
 _PLANT_BLOCKS = (ALL_LOGS | ALL_LEAVES | BUSH_BLOCKS |
-                 {SAPLING, BAMBOO_GROVE, WILDFLOWER_PATCH, REED_BLOCK,
-                  MUSHROOM_STEM, MUSHROOM_CAP})
+                 {SAPLING, BAMBOO_GROVE, WILDFLOWER_PATCH, REED_BLOCK})
 
 
 # ---------------------------------------------------------------------------
@@ -3514,6 +3632,29 @@ FARM_CROPS_BY_BIOME = {
 }
 _FARM_CROPS_DEFAULT = [WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG, POTATO_CROP_YOUNG]
 
+# Export-specific crops: region biome_group exports map to these crop blocks.
+# Used to blend specialty crops into farm fields alongside the base food crops.
+_EXPORT_CROPS_BY_TAG: dict[str, list] = {
+    "wine":     [GRAPEVINE_CROP_YOUNG],
+    "tea":      [TEA_CROP_YOUNG],
+    "coffee":   [COFFEE_CROP_YOUNG],
+    "beer":     [GRAIN_CROP_YOUNG, HOP_VINE_YOUNG],
+    "spirits":  [GRAIN_CROP_YOUNG],
+    "herbs":    [CHAMOMILE_CROP_YOUNG, LAVENDER_CROP_YOUNG, MINT_CROP_YOUNG],
+    "textiles": [FLAX_CROP_YOUNG, COTTON_CROP_YOUNG],
+}
+
+# NPC types that reflect a region's primary export. Used to replace a generic
+# merchant slot so towns feel like they trade in what they produce.
+_EXPORT_NPC_MAP: dict[str, str] = {
+    "wine":    "wine_merchant",
+    "coffee":  "coffee_merchant",
+    "beer":    "beer_merchant",
+    "herbs":   "doctor",
+    "food":    "restaurant_npc",
+    "tea":     "tavern",
+}
+
 # Maps young crop block → its mature variant for visual variety in pre-grown fields.
 _YOUNG_TO_MATURE = {
     WHEAT_CROP_YOUNG:        WHEAT_CROP_MATURE,
@@ -3531,6 +3672,16 @@ _YOUNG_TO_MATURE = {
     BOK_CHOY_CROP_YOUNG:     BOK_CHOY_CROP_MATURE,
     SWEET_POTATO_CROP_YOUNG: SWEET_POTATO_CROP_MATURE,
     CELERY_CROP_YOUNG:       CELERY_CROP_MATURE,
+    GRAPEVINE_CROP_YOUNG:    GRAPEVINE_CROP_MATURE,
+    TEA_CROP_YOUNG:          TEA_CROP_MATURE,
+    COFFEE_CROP_YOUNG:       COFFEE_CROP_MATURE,
+    GRAIN_CROP_YOUNG:        GRAIN_CROP_MATURE,
+    HOP_VINE_YOUNG:          HOP_VINE_MATURE,
+    CHAMOMILE_CROP_YOUNG:    CHAMOMILE_CROP_MATURE,
+    LAVENDER_CROP_YOUNG:     LAVENDER_CROP_MATURE,
+    MINT_CROP_YOUNG:         MINT_CROP_MATURE,
+    FLAX_CROP_YOUNG:         FLAX_CROP_MATURE,
+    COTTON_CROP_YOUNG:       COTTON_CROP_MATURE,
 }
 
 
@@ -3570,7 +3721,7 @@ def _place_garden_plot(world, rng, center_bx, sy, biodome, half_w=3):
                 world.set_bg_block(wx, fence_y, WICKER_FENCE)
 
 
-def _place_farm_plot(world, rng, center_bx, biodome, half_w=7):
+def _place_farm_plot(world, rng, center_bx, biodome, half_w=7, biome_group=None):
     """Place a strip of tilled soil with crops outside the city footprint.
 
     Each column uses its own terrain surface so the farm follows the landscape
@@ -3579,9 +3730,24 @@ def _place_farm_plot(world, rng, center_bx, biodome, half_w=7):
     A well is placed as a background block at the centre column.
     Wicker fence posts frame the outer edges.
     Crops are chosen by biome group so farm contents match the landscape.
+    When biome_group is supplied, export-specific crops (grapevines, tea, hops,
+    etc.) are blended in so farm fields reflect what the region trades.
     """
-    biome_group = _BIOME_GROUP_SIMPLE.get(biodome, "temperate")
-    crops = FARM_CROPS_BY_BIOME.get(biome_group, _FARM_CROPS_DEFAULT)
+    simple = _BIOME_GROUP_SIMPLE.get(biodome, "temperate")
+    base_crops = FARM_CROPS_BY_BIOME.get(simple, _FARM_CROPS_DEFAULT)
+
+    # Build export crop pool from region specialty exports (if known)
+    export_crops: list = []
+    if biome_group:
+        from towns import BIOME_GROUP_SPECIALTIES
+        for tag in BIOME_GROUP_SPECIALTIES.get(biome_group, {}).get("exports", ()):
+            export_crops.extend(_EXPORT_CROPS_BY_TAG.get(tag, []))
+
+    # Weight: ~40% export crops when available, rest base food crops
+    if export_crops:
+        crop_pool = export_crops * 2 + base_crops * 3
+    else:
+        crop_pool = base_crops
 
     for bx in range(center_bx - half_w, center_bx + half_w + 1):
         col_sy = world.surface_y_at(bx)
@@ -3593,7 +3759,7 @@ def _place_farm_plot(world, rng, center_bx, biodome, half_w=7):
             continue
         world.set_block(bx, soil_y, TILLED_SOIL)
         if 0 <= crop_y < world.height and world.get_block(bx, crop_y) == AIR:
-            chosen = rng.choice(crops)
+            chosen = rng.choice(crop_pool)
             if rng.random() < 0.5:
                 chosen = _YOUNG_TO_MATURE.get(chosen, chosen)
             world.set_block(bx, crop_y, chosen)
@@ -5197,7 +5363,7 @@ def _city_terrain_profile(world, lo_x, hi_x, max_step=2):
     terraces that building floors can snap to cleanly.
     """
     xs = list(range(lo_x, hi_x + 1))
-    raw = [min(world.surface_y_at(x), SURFACE_Y) for x in xs]
+    raw = [world.surface_y_at(x) for x in xs]
     n = len(raw)
 
     # 5-column box blur
@@ -5236,7 +5402,7 @@ def _level_building_footprint(world, left_x, width, sy):
     Also clears tree canopy above the surface (trees extend above surface_y).
     """
     for bx in range(left_x, left_x + width):
-        col_sy = min(world.surface_y_at(bx), SURFACE_Y)
+        col_sy = world.surface_y_at(bx)
         # Clear from 30 blocks above surface through to building floor, catching
         # tree trunks and canopy that sit above the terrain surface.
         clear_top = max(0, min(col_sy, sy) - 30)
@@ -5358,7 +5524,7 @@ def _repair_city_walkability(world, lo_x, hi_x, sy, terrain_profile):
 
 
 def _build_single_city(world, rng, city_bx, difficulty):
-    sy = min(world.surface_y_at(city_bx), SURFACE_Y)
+    sy = world.surface_y_at(city_bx)
     biodome = world.biodome_at(city_bx)
     # town_id is the index this city will occupy in world.town_centers (appended after return)
     _current_town_id = len(getattr(world, "town_centers", []))
@@ -5386,6 +5552,26 @@ def _build_single_city(world, rng, city_bx, difficulty):
     # Ensure npc_types_list is at least as long as buildings_list
     while len(npc_types_list) < len(buildings_list):
         npc_types_list.append("villager")
+
+    # Bias NPC slots toward what this region exports.
+    # Replace the first generic "merchant" slot with an export-specific merchant,
+    # or if no such slot exists, prepend the export NPC to the first list slot.
+    from towns import _BIOME_GROUP, BIOME_GROUP_SPECIALTIES
+    biome_group = _BIOME_GROUP.get(biodome, "highland")
+    exports = BIOME_GROUP_SPECIALTIES.get(biome_group, {}).get("exports", ())
+    export_npc = next((_EXPORT_NPC_MAP[t] for t in exports if t in _EXPORT_NPC_MAP), None)
+    if export_npc:
+        replaced = False
+        for i, slot in enumerate(npc_types_list):
+            if slot == "merchant":
+                npc_types_list[i] = export_npc
+                replaced = True
+                break
+        if not replaced:
+            for i, slot in enumerate(npc_types_list):
+                if isinstance(slot, list):
+                    npc_types_list[i] = [export_npc, export_npc] + list(slot)
+                    break
 
     # Separate slots into buildings and outdoor NPCs
     b_indices = [i for i, b in enumerate(buildings_list) if b[1] is not None]
@@ -5695,7 +5881,7 @@ def _build_single_city(world, rng, city_bx, difficulty):
         for offset, farm_hw in cfg.get("farms", []):
             outer_side = 1 if offset > 0 else -1
             farm_center = city_bx + (half_w + farm_hw + 3) * outer_side
-            _place_farm_plot(world, rng, farm_center, biodome, farm_hw)
+            _place_farm_plot(world, rng, farm_center, biodome, farm_hw, biome_group)
             _place_animal_pen(world, rng, farm_center, farm_hw, biodome, outer_side)
 
             farm_px = farm_center * BLOCK_SIZE + (BLOCK_SIZE - NPC.NPC_W) // 2
@@ -6220,6 +6406,9 @@ def _place_castle(world, left_x: int, sy: int):
                     (left_x + total_w + 4) // CHUNK_W + 1):
         world.load_chunk(cx)
     max_h = _CH_PAL_KEEP + 6
+    profile = _city_terrain_profile(world, left_x, left_x + total_w)
+    vals = sorted(profile.values())
+    sy = vals[len(vals) // 2]
     for bx in range(left_x - 2, left_x + total_w + 3):
         for by in range(sy - max_h, sy):
             if world.get_block(bx, by) not in (AIR, BEDROCK):
@@ -6289,10 +6478,13 @@ def _place_castle_garden(world, left_x: int, sy: int, rng: random.Random, biodom
         _castle_bg(world, bx, sy - 1, blocks[i % len(blocks)])
 
 
-def _palace_clear_terrain(world, left_x: int, sy: int, total_w: int, max_h: int):
-    """Shared terrain prep for all cultural palaces."""
+def _palace_clear_terrain(world, left_x: int, sy: int, total_w: int, max_h: int) -> int:
+    """Shared terrain prep for all cultural palaces. Returns the floor sy used."""
     for cx in range((left_x - 2) // CHUNK_W, (left_x + total_w + 4) // CHUNK_W + 1):
         world.load_chunk(cx)
+    profile = _city_terrain_profile(world, left_x, left_x + total_w)
+    vals = sorted(profile.values())
+    sy = vals[len(vals) // 2]
     for bx in range(left_x - 1, left_x + total_w + 2):
         for by in range(sy - max_h, sy):
             if world.get_block(bx, by) not in (AIR, BEDROCK):
@@ -6305,6 +6497,7 @@ def _palace_clear_terrain(world, left_x: int, sy: int, total_w: int, max_h: int)
         for by in range(sy, col_sy + 1):
             if world.get_block(bx, by) == AIR:
                 world.set_block(bx, by, STONE)
+    return sy
 
 
 def _palace_npc_at(world, bx, sy, npc_cls, *args, **kwargs):
@@ -6375,7 +6568,7 @@ def _place_mediterranean_palace(world, left_x: int, sy: int):
     W_WING = 14;                 H_WING = 7 + variant
     W_HALL = 22;                 H_HALL = 9 + variant
     total_w = W_GARD + W_STOA + W_WING + W_HALL + W_WING + W_STOA + W_GARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_HALL + 14)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_HALL + 14)
 
     # --- shared room builder ---
     def _med_room(lx, w, h):
@@ -6574,7 +6767,7 @@ def _place_east_asian_palace(world, left_x: int, sy: int):
     W_PAV  = 12;  H_PAV  = 7    # inner pavilion
     W_KEEP = 20;  H_KEEP = 9    # central pagoda keep
     total_w = W_GARD + W_RCRT + W_PAV + W_KEEP + W_PAV + W_RCRT + W_GARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_KEEP + 16)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_KEEP + 16)
 
     # --- shared builders ---
     def _ea_room(lx, w, h, tiers=2):
@@ -6743,7 +6936,7 @@ def _place_south_asian_palace(world, left_x: int, sy: int):
     W_CORT = 14;  H_CORT = 7
     W_DIWAN= 24;  H_DIWAN= 10
     total_w = W_GARD + W_GATE + W_CORT + W_DIWAN + W_CORT + W_GATE + W_GARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_DIWAN + 16)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_DIWAN + 16)
 
     # --- shared builders ---
     def _sa_room(lx, w, h, fountain=False):
@@ -6910,7 +7103,7 @@ def _place_italian_palazzo(world, left_x: int, sy: int):
     W_CORT = 16;  H_CORT = 7
     W_SALA = 20;  H_SALA = 9
     total_w = W_GARD + W_LOG + W_CORT + W_SALA + W_CORT + W_LOG + W_GARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_SALA + 14)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_SALA + 14)
 
     def _pal_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, LIMESTONE_BLOCK)
@@ -7089,7 +7282,7 @@ def _place_moorish_palace(world, left_x: int, sy: int):
     W_PATIO = 14;  H_PATIO = 7
     W_THRONE= 18;  H_THRONE= 8
     total_w = W_GARD + W_TOWER + W_GAL + W_PATIO + W_THRONE + W_PATIO + W_GAL + W_TOWER + W_GARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
 
     def _moor_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, WHITEWASHED_WALL)
@@ -7277,7 +7470,7 @@ def _place_middle_eastern_palace(world, left_x: int, sy: int):
     W_HALL = 14;  H_HALL = 7
     W_IWAN = 22;  H_IWAN = 9
     total_w = W_GARD + W_GATE + W_HALL + W_IWAN + W_HALL + W_GATE + W_GARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_IWAN + 14)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_IWAN + 14)
 
     def _me_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, SANDSTONE_BLOCK)
@@ -7432,7 +7625,7 @@ def _place_norse_hall(world, left_x: int, sy: int):
     W_LODGE = 12;  H_LODGE = 7
     W_HALL  = 22;  H_HALL  = 8
     total_w = W_YARD + W_LODGE + W_HALL + W_LODGE + W_YARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_HALL + 12)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_HALL + 12)
 
     def _longhouse(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, HOUSE_WALL_DARK)
@@ -7549,7 +7742,7 @@ def _place_gothic_palace(world, left_x: int, sy: int):
     W_NAVE  = 12;  H_NAVE  = 7
     W_CHOIR = 20;  H_CHOIR = 9
     total_w = W_GARD + W_TOWER + W_NAVE + W_CHOIR + W_NAVE + W_TOWER + W_GARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_CHOIR + 14)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_CHOIR + 14)
 
     def _gothic_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, CHAPEL_STONE)
@@ -7707,7 +7900,7 @@ def _place_african_palace(world, left_x: int, sy: int):
     W_COURT  = 14;  H_COURT  = 7
     W_THRONE = 18;  H_THRONE = 8
     total_w = W_GARD + W_ENCL + W_COURT + W_THRONE + W_COURT + W_ENCL + W_GARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 12)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 12)
 
     def _enclosure(ex, w, h):
         _castle_fill_bg(world, ex, ex + w, sy - h, sy - 1, AFRICAN_MUD_BRICK)
@@ -7863,7 +8056,7 @@ def _place_byzantine_palace(world, left_x: int, sy: int):
     W_NAOS   = 14;  H_NAOS   = 7
     W_THRONE = 22;  H_THRONE = 9
     total_w = W_GARD + W_PORT + W_NAOS + W_THRONE + W_NAOS + W_PORT + W_GARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
 
     def _byz_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, LIMESTONE_BLOCK)
@@ -8021,7 +8214,7 @@ def _place_tibetan_palace(world, left_x: int, sy: int):
     W_COURT = 14;  H_COURT = 7
     W_TOWER = 20;  H_TOWER = 11
     total_w = W_YARD + W_WING + W_COURT + W_TOWER + W_COURT + W_WING + W_YARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_TOWER + 14)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_TOWER + 14)
 
     def _tibet_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, WHITEWASHED_WALL)
@@ -8214,7 +8407,7 @@ def _place_japanese_palace(world, left_x: int, sy: int):
     W_SHOIN = 14;  H_SHOIN = 7        # shoin reception hall
     W_KEEP  = 16;  H_KEEP  = 10       # central tenshu keep
     total_w = W_ZEN + W_YAG + W_SHOIN + W_KEEP + W_SHOIN + W_YAG + W_ZEN
-    _palace_clear_terrain(world, left_x, sy, total_w, H_KEEP + 14)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_KEEP + 14)
 
     def _shoin_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, PINE_PLANK_WALL)
@@ -8376,7 +8569,7 @@ def _place_chinese_palace(world, left_x: int, sy: int):
     W_WING   = 12;  H_WING   = 7        # side gallery wing
     W_THRONE = 22;  H_THRONE = 8        # central Taihe throne hall
     total_w  = W_GATE + W_OUTER + W_WING + W_THRONE + W_WING + W_OUTER + W_GATE
-    _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
 
     def _chin_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, CRIMSON_BRICK)
@@ -8534,7 +8727,7 @@ def _place_tang_palace(world, left_x: int, sy: int):
     W_COL  = 14;  H_COL  = 7         # open colonnade court
     W_HANY = 24;  H_HANY = 7         # Hanyuan Hall
     total_w = W_TERR + W_DRUM + W_COL + W_HANY + W_COL + W_DRUM + W_TERR
-    _palace_clear_terrain(world, left_x, sy, total_w, H_DRUM + 12)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_DRUM + 12)
 
     def _terrace(lx, w):
         for bx in range(lx, lx + w):
@@ -8687,7 +8880,7 @@ def _place_song_palace(world, left_x: int, sy: int):
     W_PAV    = 14;  H_PAV   = 7       # scholar pavilion
     W_HALL   = 18;  H_HALL  = 7       # main Chuigong reception hall
     total_w  = W_GARDEN + W_MOON + W_PAV + W_HALL + W_PAV + W_MOON + W_GARDEN
-    _palace_clear_terrain(world, left_x, sy, total_w, H_HALL + 12)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_HALL + 12)
 
     def _water_garden(lx, w):
         for bx in range(lx, lx + w):
@@ -8848,7 +9041,7 @@ def _place_han_palace(world, left_x: int, sy: int):
     W_ANTE   = 12;  H_ANTE   = 7       # ante-hall
     W_THRONE = 20;  H_THRONE = 7       # central Jiaofang throne platform
     total_w  = W_PLAT + W_WATCH + W_ANTE + W_THRONE + W_ANTE + W_WATCH + W_PLAT
-    _palace_clear_terrain(world, left_x, sy, total_w, H_WATCH + 12)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_WATCH + 12)
 
     def _platform(lx, w):
         for bx in range(lx, lx + w):
@@ -8994,7 +9187,7 @@ def _place_east_african_palace(world, left_x: int, sy: int):
     W_COURT  = 12;  H_COURT  = 7
     W_THRONE = 22;  H_THRONE = 8
     total_w = W_GARD + W_GATE + W_COURT + W_THRONE + W_COURT + W_GATE + W_GARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 12)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 12)
 
     def _stone_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, GRANITE_ASHLAR)
@@ -9136,7 +9329,7 @@ def _place_mesoamerican_palace(world, left_x: int, sy: int):
     W_COURT  = 14;  H_COURT  = 7
     W_PYRAM  = 20;  H_PYRAM  = 8
     total_w = W_PLAZA + W_GATE + W_COURT + W_PYRAM + W_COURT + W_GATE + W_PLAZA
-    _palace_clear_terrain(world, left_x, sy, total_w, H_PYRAM + 14)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_PYRAM + 14)
 
     def _temple_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, SANDSTONE_BLOCK)
@@ -9272,7 +9465,7 @@ def _place_french_baroque_palace(world, left_x: int, sy: int):
     W_SALON  = 12;  H_SALON  = 7
     W_THRONE = 22;  H_THRONE = 9
     total_w = W_GARD + W_WING + W_SALON + W_THRONE + W_SALON + W_WING + W_GARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
 
     def _baroque_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, LIMESTONE_BLOCK)
@@ -9416,7 +9609,7 @@ def _place_incan_palace(world, left_x: int, sy: int):
     W_HALL   = 12;  H_HALL   = 7
     W_THRONE = 20;  H_THRONE = 8
     total_w = W_TERR + W_GATE + W_HALL + W_THRONE + W_HALL + W_GATE + W_TERR
-    _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 12)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 12)
 
     def _inca_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, ROUGH_STONE_WALL)
@@ -9556,7 +9749,7 @@ def _place_persian_palace(world, left_x: int, sy: int):
     W_APAD   = 14;  H_APAD   = 7
     W_THRONE = 22;  H_THRONE = 8
     total_w = W_GARD + W_PORT + W_APAD + W_THRONE + W_APAD + W_PORT + W_GARD
-    _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_THRONE + 14)
 
     def _persian_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, SANDSTONE_BLOCK)
@@ -9701,7 +9894,7 @@ def _place_polynesian_palace(world, left_x: int, sy: int):
     W_HALL   = 14;  H_HALL   = 7
     W_MARAE  = 22;  H_MARAE  = 9
     total_w = W_PLAZA + W_GATE + W_HALL + W_MARAE + W_HALL + W_GATE + W_PLAZA
-    _palace_clear_terrain(world, left_x, sy, total_w, H_MARAE + 14)
+    sy = _palace_clear_terrain(world, left_x, sy, total_w, H_MARAE + 14)
 
     def _coral_room(lx, w, h):
         _castle_fill_bg(world, lx, lx + w, sy - h, sy - 1, SANDSTONE_BLOCK)
@@ -9857,13 +10050,19 @@ def generate_cities(world, seed):
         slot_x = x
         jitter = rng.randint(-6, 6)
         city_bx = slot_x + jitter
+        x += CITY_SPACING
+        placed += 1
+        if world.biodome_at(city_bx) == "ocean" or world.surface_height(city_bx) > SURFACE_Y:
+            continue
+        zone_idx = city_bx // world._SURF_WATER_ZONE_W
+        wb = world._get_surf_water_body(zone_idx)
+        if wb is not None and abs(city_bx - wb["cx_abs"]) <= wb["half_w"]:
+            continue
         difficulty = min(placed // 2, 2)
         city_size = _build_single_city(world, rng, city_bx, difficulty)
         world.town_centers.append(city_bx)
         world.city_sizes.append(city_size)
         world.city_slot_xs.append(slot_x)
-        placed += 1
-        x += CITY_SPACING
 
     import npc_identity
     npc_identity.assign_ruling_dynasties(world, seed)
@@ -9887,7 +10086,7 @@ def generate_city_for_chunk(world, seed, cx):
     city_bx = slot_x + jitter
     if any(lo - 10 <= city_bx <= hi + 10 for lo, hi in world.city_zones):
         return
-    if world.biodome_at(city_bx) == "ocean":
+    if world.biodome_at(city_bx) == "ocean" or world.surface_height(city_bx) > SURFACE_Y:
         return
     city_size = _build_single_city(world, rng, city_bx, 2)
     world.town_centers.append(city_bx)
