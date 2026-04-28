@@ -805,4 +805,87 @@ def build_wood_surfs():
     pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
     surfs[bid] = s
 
+    # Tree logs — bark with vertical grain lines and ring cross-section hint
+    _ALL_TREE_LOGS = [
+        TREE_LOG, PINE_LOG, BIRCH_LOG, JUNGLE_LOG, WILLOW_LOG, REDWOOD_LOG,
+        PALM_LOG, ACACIA_LOG, DEAD_LOG, MAPLE_LOG, CHERRY_LOG, CYPRESS_LOG,
+        BAOBAB_LOG, MANGROVE_LOG, SPRUCE_LOG, GINKGO_LOG, BANYAN_LOG,
+        PEAR_LOG, FIG_LOG, CITRUS_LOG, APPLE_LOG, POMEGRANATE_LOG,
+    ]
+    for bid in _ALL_TREE_LOGS:
+        c = BLOCKS[bid]["color"]
+        s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+        s.fill(c)
+        dk = _darken(c, 38)
+        lt = _lighter(c, 22)
+        for lx2 in range(3, BLOCK_SIZE, 5):
+            pygame.draw.line(s, dk, (lx2, 0), (lx2, BLOCK_SIZE), 1)
+            pygame.draw.line(s, lt, (lx2 + 1, 0), (lx2 + 1, BLOCK_SIZE), 1)
+        cx2, cy2 = BLOCK_SIZE // 2, BLOCK_SIZE // 2
+        pygame.draw.ellipse(s, dk, (cx2 - 9, cy2 - 9, 18, 18), 2)
+        pygame.draw.ellipse(s, _darken(c, 22), (cx2 - 5, cy2 - 5, 10, 10), 1)
+        pygame.draw.rect(s, _darken(c, 28), s.get_rect(), 1)
+        surfs[bid] = s
+
+    # Tree leaves — overlapping circles in each species' leaf color
+    _ALL_TREE_LEAVES = [
+        TREE_LEAVES, PINE_LEAVES, BIRCH_LEAVES, JUNGLE_LEAVES, WILLOW_LEAVES,
+        REDWOOD_LEAVES, PALM_LEAVES, ACACIA_LEAVES, MAPLE_LEAVES, CHERRY_LEAVES,
+        CYPRESS_LEAVES, BAOBAB_LEAVES, MANGROVE_LEAVES, SPRUCE_LEAVES,
+        GINKGO_LEAVES, BANYAN_LEAVES, PEAR_LEAVES, FIG_LEAVES,
+        CITRUS_LEAVES, APPLE_LEAVES, POMEGRANATE_LEAVES,
+    ]
+    _leaf_blob_pos = [(4, 4, 9), (17, 2, 10), (27, 10, 8), (2, 18, 9),
+                      (14, 16, 11), (25, 20, 8), (8, 25, 8), (20, 26, 7)]
+    for bid in _ALL_TREE_LEAVES:
+        c = BLOCKS[bid]["color"]
+        s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+        s.fill((0, 0, 0, 0))
+        dk = _darken(c, 20)
+        lt = _lighter(c, 18)
+        for lx2, ly2, lr2 in _leaf_blob_pos:
+            pygame.draw.circle(s, c, (lx2, ly2), lr2)
+        pygame.draw.circle(s, lt, (10, 8), 5)
+        pygame.draw.circle(s, dk, (22, 22), 4)
+        surfs[bid] = s
+
+    # Fruit tree saplings — thin trunk + small leaf cluster
+    _SAPLING_PAIRS = [
+        (APPLE_SAPLING,       APPLE_LEAVES),
+        (PEAR_SAPLING,        PEAR_LEAVES),
+        (FIG_SAPLING,         FIG_LEAVES),
+        (CITRUS_SAPLING,      CITRUS_LEAVES),
+        (POMEGRANATE_SAPLING, POMEGRANATE_LEAVES),
+    ]
+    for sap_bid, leaf_bid in _SAPLING_PAIRS:
+        trunk_c = _darken(BLOCKS[sap_bid]["color"], 30)
+        leaf_c  = BLOCKS[leaf_bid]["color"]
+        s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+        s.fill((0, 0, 0, 0))
+        pygame.draw.rect(s, trunk_c, (14, 18, 3, 14))
+        pygame.draw.circle(s, leaf_c, (16, 14), 9)
+        pygame.draw.circle(s, _lighter(leaf_c, 20), (13, 11), 5)
+        pygame.draw.circle(s, _darken(leaf_c, 15), (20, 15), 5)
+        surfs[sap_bid] = s
+
+    # Fruit clusters — fruit shapes over a leaf-colored background
+    _CLUSTER_DATA = [
+        (APPLE_FRUIT_CLUSTER,       (175, 38, 38),  (205, 70, 70)),
+        (PEAR_FRUIT_CLUSTER,        (168, 188, 60),  (195, 212, 85)),
+        (FIG_FRUIT_CLUSTER,         (108, 52, 98),  (138, 78, 128)),
+        (CITRUS_FRUIT_CLUSTER,      (225, 175, 28),  (250, 202, 58)),
+        (POMEGRANATE_FRUIT_CLUSTER, (172, 28, 52),  (202, 58, 72)),
+    ]
+    _cluster_fruit_pos = [(5, 8), (14, 5), (22, 9), (8, 18), (20, 17), (16, 24)]
+    for cl_bid, fruit_col, fruit_lt in _CLUSTER_DATA:
+        base_leaf = BLOCKS[cl_bid]["color"]
+        s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+        s.fill((0, 0, 0, 0))
+        for lx2, ly2, lr2 in _leaf_blob_pos:
+            pygame.draw.circle(s, base_leaf, (lx2, ly2), lr2)
+        for fx2, fy2 in _cluster_fruit_pos:
+            pygame.draw.circle(s, fruit_col, (fx2, fy2), 4)
+            pygame.draw.circle(s, fruit_lt, (fx2 - 1, fy2 - 1), 2)
+        surfs[cl_bid] = s
+
     return surfs

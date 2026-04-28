@@ -682,6 +682,48 @@ class World:
                 entity._synthesize_genotype_from_traits()
             self.entities.append(entity)
 
+        # Reconstruct saved NPCs (all types except LeaderNPC/LandmarkNPC/RoyalSpouseNPC/RoyalChildNPC,
+        # which are handled by _respawn_leader_npcs in init_towns).
+        import cities as _cities
+        import random as _rnd
+        _NPC_NO_RNG = {
+            "FarmerNPC", "VillagerNPC", "ChildNPC", "GuardNPC", "ElderNPC",
+            "BeggarNPC", "NobleNPC", "PilgrimNPC", "DrunkardNPC",
+            "DoctorNPC", "MusicianNPC", "TownCrierNPC",
+        }
+        _dummy_rng = _rnd.Random(0)
+        for e_data in data["entities"]:
+            etype = e_data["entity_type"]
+            cls = getattr(_cities, etype, None)
+            if cls is None or not (isinstance(cls, type) and issubclass(cls, _cities.NPC)):
+                continue
+            x, y  = e_data["x"], e_data["y"]
+            extra  = e_data.get("extra", {})
+            biodome = extra.get("biodome", "temperate")
+            if etype in _NPC_NO_RNG:
+                entity = cls(x, y, self, biodome=biodome)
+            else:
+                entity = cls(x, y, self, _dummy_rng, biodome=biodome)
+            entity.facing      = e_data["facing"]
+            entity.npc_uid     = extra.get("npc_uid")
+            entity.town_id     = extra.get("town_id")
+            entity.identity    = extra.get("identity")
+            entity.preferences = extra.get("preferences")
+            if "shop"          in extra: entity.shop          = [tuple(i) for i in extra["shop"]]
+            if "quests"        in extra: entity.quests        = extra["quests"]
+            if "trades"        in extra: entity.trades        = [tuple(t) for t in extra["trades"]]
+            if "streak"        in extra: entity._streak       = extra["streak"]
+            if "difficulty"    in extra: entity.difficulty    = extra["difficulty"]
+            if "npc_horses"    in extra: entity._npc_horses   = extra["npc_horses"]
+            if "rest_cost"     in extra: entity.rest_cost     = extra["rest_cost"]
+            if "blessing_cost" in extra: entity.blessing_cost = extra["blessing_cost"]
+            if "religion_name" in extra: entity.religion_name = extra["religion_name"]
+            if "religion_style"in extra: entity.religion_style= extra["religion_style"]
+            if "cuisine" in extra:
+                entity.cuisine = extra["cuisine"]
+                entity.menu    = _cities.CUISINE_MENUS.get(extra["cuisine"], entity.menu)
+            self.entities.append(entity)
+
         from dropped_item import DroppedItem
         for d in data.get("dropped_items", []):
             self.dropped_items.append(
@@ -794,45 +836,53 @@ class World:
                                COTTON_BUSH,
                                DILL_BUSH, TARRAGON_BUSH, LEMON_BALM_BUSH, CATNIP_BUSH,
                                ST_JOHNS_WORT_BUSH, YARROW_BUSH, BERGAMOT_BUSH, WOOD_SORREL_BUSH,
-                               COMFREY_BUSH],
+                               COMFREY_BUSH, HOP_VINE_BUSH, LENTIL_CROP_YOUNG, TEA_BUSH],
             "boreal":         [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
                                TURNIP_BUSH, CABBAGE_BUSH, LEEK_BUSH, APPLE_BUSH,
                                RADISH_BUSH, PEA_BUSH, BROCCOLI_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
-                               CHAMOMILE_BUSH, LAVENDER_BUSH, YARROW_BUSH, VALERIAN_BUSH],
+                               CHAMOMILE_BUSH, LAVENDER_BUSH, YARROW_BUSH, VALERIAN_BUSH,
+                               HOP_VINE_BUSH, TEA_BUSH],
             "birch_forest":   [STRAWBERRY_BUSH, CARROT_BUSH, APPLE_BUSH, POTATO_BUSH,
                                BEET_BUSH, PUMPKIN_BUSH, PEA_BUSH, BROCCOLI_BUSH,
                                COFFEE_BUSH, GRAPEVINE_BUSH,
                                CHAMOMILE_BUSH, LAVENDER_BUSH, LEMON_BALM_BUSH, BERGAMOT_BUSH,
-                               WOOD_SORREL_BUSH],
+                               WOOD_SORREL_BUSH, HOP_VINE_BUSH, TEA_BUSH],
             "jungle":         [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
                                PEPPER_BUSH, EGGPLANT_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH,
                                CHILI_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
-                               TEA_BUSH, TEA_BUSH, MINT_BUSH, BASIL_BUSH, BASIL_BUSH],
+                               TEA_BUSH, TEA_BUSH, MINT_BUSH, BASIL_BUSH, BASIL_BUSH,
+                               SESAME_CROP_YOUNG],
             "wetland":        [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, LEEK_BUSH,
                                CELERY_BUSH, SCALLION_BUSH, PUMPKIN_BUSH, TOMATO_BUSH,
                                WATERMELON_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
-                               MINT_BUSH, MINT_BUSH, ANGELICA_BUSH, COMFREY_BUSH, WOOD_SORREL_BUSH],
+                               MINT_BUSH, MINT_BUSH, ANGELICA_BUSH, COMFREY_BUSH, WOOD_SORREL_BUSH,
+                               TEA_BUSH, TEA_BUSH],
             "redwood":        [STRAWBERRY_BUSH, APPLE_BUSH, POTATO_BUSH, CARROT_BUSH,
-                               BEET_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH, WOOD_SORREL_BUSH],
+                               BEET_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH, WOOD_SORREL_BUSH,
+                               TEA_BUSH],
             "tropical":       [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, TOMATO_BUSH,
                                CORN_BUSH, PEPPER_BUSH, CHILI_BUSH, EGGPLANT_BUSH,
                                WATERMELON_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH, ZUCCHINI_BUSH,
                                COFFEE_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
                                TEA_BUSH, TEA_BUSH, TEA_BUSH, MINT_BUSH,
                                COTTON_BUSH, COTTON_BUSH,
-                               BASIL_BUSH, BASIL_BUSH, LEMON_VERBENA_BUSH],
+                               BASIL_BUSH, BASIL_BUSH, LEMON_VERBENA_BUSH,
+                               SESAME_CROP_YOUNG, SESAME_CROP_YOUNG],
             "savanna":        [CORN_BUSH, CHILI_BUSH, PEPPER_BUSH, EGGPLANT_BUSH,
                                SWEET_POTATO_BUSH, WATERMELON_BUSH, ONION_BUSH, PUMPKIN_BUSH,
                                COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
                                COTTON_BUSH, COTTON_BUSH, COTTON_BUSH,
-                               MARJORAM_BUSH, LEMON_VERBENA_BUSH],
+                               MARJORAM_BUSH, LEMON_VERBENA_BUSH,
+                               SESAME_CROP_YOUNG, SESAME_CROP_YOUNG],
             "wasteland":      [BEET_BUSH, TURNIP_BUSH, RADISH_BUSH, ONION_BUSH, ROSEMARY_BUSH,
                                WORMWOOD_BUSH, WORMWOOD_BUSH, MUGWORT_BUSH],
             "fungal":         [],
             "alpine_mountain":[BEET_BUSH, TURNIP_BUSH, BROCCOLI_BUSH, CABBAGE_BUSH, POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
-                               TEA_BUSH, TEA_BUSH, CHAMOMILE_BUSH, LAVENDER_BUSH, YARROW_BUSH, VALERIAN_BUSH],
+                               TEA_BUSH, TEA_BUSH, CHAMOMILE_BUSH, LAVENDER_BUSH, YARROW_BUSH, VALERIAN_BUSH,
+                               SAFFRON_CROP_YOUNG],
             "rocky_mountain": [BEET_BUSH, TURNIP_BUSH, POTATO_BUSH, CARROT_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
-                               SAVORY_BUSH, RUE_BUSH, HYSSOP_BUSH],
+                               SAVORY_BUSH, RUE_BUSH, HYSSOP_BUSH,
+                               SAFFRON_CROP_YOUNG, CHICKPEA_CROP_YOUNG],
             "rolling_hills":  [STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, CORN_BUSH,
                                POTATO_BUSH, APPLE_BUSH, PUMPKIN_BUSH, GARLIC_BUSH,
                                RADISH_BUSH, PEA_BUSH, ZUCCHINI_BUSH, CABBAGE_BUSH, ONION_BUSH,
@@ -840,38 +890,48 @@ class World:
                                TEA_BUSH, CHAMOMILE_BUSH, LAVENDER_BUSH, ROSEMARY_BUSH,
                                FLAX_BUSH, FLAX_BUSH, COTTON_BUSH,
                                THYME_BUSH, THYME_BUSH, OREGANO_BUSH, SAGE_BUSH, MARJORAM_BUSH,
-                               YARROW_BUSH, ECHINACEA_BUSH, HYSSOP_BUSH, MUGWORT_BUSH],
+                               YARROW_BUSH, ECHINACEA_BUSH, HYSSOP_BUSH, MUGWORT_BUSH,
+                               LENTIL_CROP_YOUNG, HOP_VINE_BUSH],
             "steep_hills":    [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
                                APPLE_BUSH, CABBAGE_BUSH, BROCCOLI_BUSH, GRAPEVINE_BUSH,
-                               LAVENDER_BUSH, ROSEMARY_BUSH, THYME_BUSH, SAVORY_BUSH, RUE_BUSH],
+                               LAVENDER_BUSH, ROSEMARY_BUSH, THYME_BUSH, SAVORY_BUSH, RUE_BUSH,
+                               TEA_BUSH, TEA_BUSH],
             "steppe":         [WHEAT_BUSH, CORN_BUSH, RADISH_BUSH, ONION_BUSH,
                                GARLIC_BUSH, TURNIP_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
                                FLAX_BUSH, COTTON_BUSH, COTTON_BUSH,
                                THYME_BUSH, SAGE_BUSH, OREGANO_BUSH, WORMWOOD_BUSH,
-                               YARROW_BUSH, MUGWORT_BUSH],
+                               YARROW_BUSH, MUGWORT_BUSH,
+                               CHICKPEA_CROP_YOUNG, LENTIL_CROP_YOUNG, LENTIL_CROP_YOUNG],
             "arid_steppe":    [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, RADISH_BUSH,
                                SWEET_POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
                                COTTON_BUSH, COTTON_BUSH,
-                               THYME_BUSH, SAGE_BUSH, WORMWOOD_BUSH, RUE_BUSH],
+                               THYME_BUSH, SAGE_BUSH, WORMWOOD_BUSH, RUE_BUSH,
+                               CHICKPEA_CROP_YOUNG, CHICKPEA_CROP_YOUNG, SESAME_CROP_YOUNG],
             "tundra":         [BEET_BUSH, TURNIP_BUSH, CABBAGE_BUSH, RADISH_BUSH, COFFEE_BUSH, TEA_BUSH, CHAMOMILE_BUSH,
                                YARROW_BUSH, ANGELICA_BUSH],
             "coastal":        [WATERMELON_BUSH, SWEET_POTATO_BUSH, CORN_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
-                               TEA_BUSH, TEA_BUSH, MINT_BUSH, LAVENDER_BUSH, FENNEL_BUSH, LEMON_VERBENA_BUSH],
+                               TEA_BUSH, TEA_BUSH, MINT_BUSH, LAVENDER_BUSH, FENNEL_BUSH, LEMON_VERBENA_BUSH,
+                               OLIVE_TREE_YOUNG],
             "mediterranean":  [TOMATO_BUSH, ONION_BUSH, GARLIC_BUSH, PEPPER_BUSH, CORN_BUSH,
                                COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH,
                                TEA_BUSH, TEA_BUSH, LAVENDER_BUSH, ROSEMARY_BUSH, THYME_BUSH,
-                               SAGE_BUSH, FENNEL_BUSH, OREGANO_BUSH, MARJORAM_BUSH],
+                               SAGE_BUSH, FENNEL_BUSH, OREGANO_BUSH, MARJORAM_BUSH,
+                               CHICKPEA_CROP_YOUNG, LENTIL_CROP_YOUNG, SAFFRON_CROP_YOUNG,
+                               POMEGRANATE_TREE_YOUNG, POMEGRANATE_TREE_YOUNG, OLIVE_TREE_YOUNG, OLIVE_TREE_YOUNG],
             "bamboo_forest":  [RICE_BUSH, BOK_CHOY_BUSH, SCALLION_BUSH, GINGER_BUSH,
                                TEA_BUSH, TEA_BUSH, TEA_BUSH, MINT_BUSH, BASIL_BUSH,
                                CHAMOMILE_BUSH, LEMON_VERBENA_BUSH],
             "swamp":          [RICE_BUSH, CELERY_BUSH, LEEK_BUSH, SCALLION_BUSH, COFFEE_BUSH, MINT_BUSH, MINT_BUSH,
-                               VALERIAN_BUSH, ANGELICA_BUSH, COMFREY_BUSH, CATNIP_BUSH],
+                               VALERIAN_BUSH, ANGELICA_BUSH, COMFREY_BUSH, CATNIP_BUSH,
+                               TEA_BUSH, TEA_BUSH],
             "beach":          [WATERMELON_BUSH, SWEET_POTATO_BUSH, CORN_BUSH, COFFEE_BUSH],
             "pacific_island": [SWEET_POTATO_BUSH, CORN_BUSH, WATERMELON_BUSH, GINGER_BUSH,
                                RICE_BUSH, COFFEE_BUSH, COFFEE_BUSH,
-                               TARO_BUSH, BREADFRUIT_BUSH, COCONUT_BUSH],
+                               TARO_BUSH, TARO_BUSH, BREADFRUIT_BUSH, COCONUT_BUSH, COCONUT_BUSH,
+                               TEA_BUSH, TEA_BUSH],
             "canyon":         [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, TOMATO_BUSH, CORN_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
-                               OREGANO_BUSH, FENNEL_BUSH, LEMON_VERBENA_BUSH, WORMWOOD_BUSH],
+                               OREGANO_BUSH, FENNEL_BUSH, LEMON_VERBENA_BUSH, WORMWOOD_BUSH,
+                               CHICKPEA_CROP_YOUNG, SESAME_CROP_YOUNG, POMEGRANATE_TREE_YOUNG, OLIVE_TREE_YOUNG],
         }
         bush_rng = random.Random(hash((self.seed, cx, 'bushes')) & 0x7FFFFFFF)
         lx = 5
@@ -880,9 +940,10 @@ class World:
             sy = self.surface_height(x)
             biodome = self.biodome_at(x)
             pool = _BIOME_BUSHES.get(biodome, [])
-            if pool and 0 < sy < WORLD_H and chunk[sy - 1][lx] == AIR and chunk[sy][lx] == GRASS:
+            surf = chunk[sy][lx]
+            if pool and 0 < sy < WORLD_H and chunk[sy - 1][lx] == AIR and surf in (GRASS, SNOW, SAND):
                 chunk[sy - 1][lx] = bush_rng.choice(pool)
-            lx += bush_rng.randint(7, 15)
+            lx += bush_rng.randint(4, 9)
 
         # Water-edge plants — spawn on grass tiles adjacent to surface water,
         # and floating plants on open water surface tiles.

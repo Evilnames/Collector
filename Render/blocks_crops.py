@@ -2194,4 +2194,431 @@ def build_crop_surfs():
         pygame.draw.circle(s, (225, 195, 75), (fx, fy), 1)
     surfs[bid] = s
 
+    bid = GRAIN_CROP_BUSH
+    # if bid == GRAIN_CROP_BUSH
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    stalk_col = (145, 125, 55)
+    head_col  = (195, 168, 50)
+    for stx, sth in [(3, 20), (9, 16), (15, 24), (20, 18), (25, 14)]:
+        pygame.draw.rect(s, stalk_col, (stx, BLOCK_SIZE - sth, 2, sth))
+        pygame.draw.rect(s, head_col,  (stx - 1, BLOCK_SIZE - sth - 6, 4, 7))
+    surfs[bid] = s
+
+    bid = GRAIN_CROP_YOUNG
+    # if bid == GRAIN_CROP_YOUNG
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx, sth in [(7, 14), (15, 18), (23, 12)]:
+        pygame.draw.rect(s, (120, 155, 50), (stx, BLOCK_SIZE - sth, 2, sth))
+        pygame.draw.rect(s, (140, 175, 60), (stx - 3, BLOCK_SIZE - sth - 2, 5, 2))
+    surfs[bid] = s
+
+    bid = GRAIN_CROP_MATURE
+    # if bid == GRAIN_CROP_MATURE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx, sth in [(3, 22), (9, 18), (15, 26), (21, 20), (26, 16)]:
+        pygame.draw.rect(s, (175, 150, 50), (stx, BLOCK_SIZE - sth, 2, sth - 8))
+        for gy in range(BLOCK_SIZE - sth - 1, BLOCK_SIZE - sth + 6):
+            pygame.draw.rect(s, (205, 180, 55), (stx - 2, gy, 2, 1))
+            pygame.draw.rect(s, (205, 180, 55), (stx + 2, gy + 1, 2, 1))
+    surfs[bid] = s
+
+    bid = CHICKPEA_CROP_YOUNG
+    # if bid == CHICKPEA_CROP_YOUNG
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx, sth in [(5, 18), (14, 22), (22, 16)]:
+        pygame.draw.rect(s, (80, 160, 75), (stx, BLOCK_SIZE - sth, 2, sth - 6))
+    for lx, ly in [(2, 12), (6, 8), (11, 6), (16, 8), (20, 11), (24, 14), (8, 16)]:
+        pygame.draw.ellipse(s, (90, 170, 80), (lx, ly, 8, 5))
+    surfs[bid] = s
+
+    bid = CHICKPEA_CROP_MATURE
+    # if bid == CHICKPEA_CROP_MATURE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx, sth in [(4, 20), (13, 24), (22, 18)]:
+        pygame.draw.rect(s, (165, 145, 90), (stx, BLOCK_SIZE - sth, 2, sth - 6))
+    for px, py in [(2, 10), (7, 6), (14, 8), (20, 10), (25, 14), (10, 16), (17, 17)]:
+        pygame.draw.ellipse(s, (210, 188, 140), (px, py, 9, 5))
+        pygame.draw.ellipse(s, (230, 210, 165), (px + 1, py + 1, 6, 3))
+    surfs[bid] = s
+
+    bid = LENTIL_CROP_YOUNG
+    # if bid == LENTIL_CROP_YOUNG
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx in [4, 12, 20]:
+        pygame.draw.line(s, (80, 150, 70), (stx, 28), (stx + 6, 10), 1)
+        for t in [0.3, 0.6, 0.85]:
+            lx2 = int(stx + 6 * t)
+            ly2 = int(28 - 18 * t)
+            pygame.draw.ellipse(s, (100, 165, 85), (lx2 - 3, ly2 - 2, 6, 4))
+    surfs[bid] = s
+
+    bid = LENTIL_CROP_MATURE
+    # if bid == LENTIL_CROP_MATURE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx in [3, 11, 20]:
+        pygame.draw.line(s, (160, 95, 60), (stx, 28), (stx + 5, 8), 1)
+        for t in [0.25, 0.55, 0.8]:
+            lx2 = int(stx + 5 * t)
+            ly2 = int(28 - 20 * t)
+            pygame.draw.ellipse(s, (182, 105, 65), (lx2 - 4, ly2 - 2, 8, 4))
+            pygame.draw.ellipse(s, (200, 125, 80), (lx2 - 3, ly2 - 1, 5, 3))
+    surfs[bid] = s
+
+    bid = SESAME_CROP_YOUNG
+    # if bid == SESAME_CROP_YOUNG
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx, sth in [(7, 18), (15, 22), (23, 16)]:
+        pygame.draw.rect(s, (75, 155, 80), (stx, BLOCK_SIZE - sth, 2, sth))
+        pygame.draw.ellipse(s, (90, 170, 90), (stx - 4, BLOCK_SIZE - sth + 2, 5, 3))
+        pygame.draw.ellipse(s, (90, 170, 90), (stx + 3, BLOCK_SIZE - sth + 5, 5, 3))
+    surfs[bid] = s
+
+    bid = SESAME_CROP_MATURE
+    # if bid == SESAME_CROP_MATURE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pod_col = (235, 220, 175)
+    for stx, sth in [(5, 24), (14, 28), (22, 22)]:
+        pygame.draw.rect(s, (180, 165, 100), (stx, BLOCK_SIZE - sth, 2, sth - 6))
+        for py2 in range(BLOCK_SIZE - sth + 1, BLOCK_SIZE - 6, 5):
+            pygame.draw.rect(s, pod_col, (stx - 3, py2, 3, 4))
+            pygame.draw.rect(s, pod_col, (stx + 3, py2 + 2, 3, 4))
+    surfs[bid] = s
+
+    bid = SAFFRON_CROP_YOUNG
+    # if bid == SAFFRON_CROP_YOUNG
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for bx2, sth in [(5, 20), (10, 24), (16, 18), (21, 22), (26, 16)]:
+        pygame.draw.rect(s, (80, 155, 85), (bx2, BLOCK_SIZE - sth, 2, sth))
+    surfs[bid] = s
+
+    bid = SAFFRON_CROP_MATURE
+    # if bid == SAFFRON_CROP_MATURE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    petal = (145, 80, 185)
+    petal_lt = (175, 110, 210)
+    stamen = (210, 120, 25)
+    for cx2, cy2 in [(7, 14), (17, 10), (25, 16)]:
+        for ang in range(0, 360, 60):
+            rad = math.radians(ang)
+            px2 = int(cx2 + 5 * math.cos(rad))
+            py2 = int(cy2 + 5 * math.sin(rad))
+            pygame.draw.ellipse(s, petal, (px2 - 2, py2 - 3, 5, 6))
+        pygame.draw.circle(s, petal_lt, (cx2, cy2), 3)
+        pygame.draw.line(s, stamen, (cx2, cy2), (cx2, cy2 - 5), 1)
+        pygame.draw.circle(s, stamen, (cx2, cy2 - 5), 1)
+    for bx2, sth in [(5, 18), (15, 22), (24, 16)]:
+        pygame.draw.rect(s, (75, 145, 80), (bx2, BLOCK_SIZE - sth, 1, sth - 8))
+    surfs[bid] = s
+
+    bid = HOP_VINE_BUSH
+    # if bid == HOP_VINE_BUSH
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    vine_col = (85, 138, 52)
+    cone_col = (145, 175, 60)
+    pygame.draw.line(s, vine_col, (6, 30), (10, 10), 2)
+    pygame.draw.line(s, vine_col, (14, 30), (20, 8), 2)
+    pygame.draw.line(s, vine_col, (22, 30), (28, 14), 2)
+    for cx2, cy2 in [(10, 10), (20, 8), (27, 14)]:
+        pygame.draw.ellipse(s, cone_col, (cx2 - 3, cy2, 6, 10))
+        pygame.draw.ellipse(s, (165, 195, 70), (cx2 - 2, cy2 + 1, 4, 7))
+    surfs[bid] = s
+
+    bid = HOP_VINE_YOUNG
+    # if bid == HOP_VINE_YOUNG
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    vine_col = (95, 150, 58)
+    pygame.draw.line(s, vine_col, (8, 30), (12, 10), 2)
+    pygame.draw.line(s, vine_col, (16, 30), (22, 6), 2)
+    pygame.draw.line(s, vine_col, (24, 30), (30, 14), 2)
+    for lx2, ly2 in [(8, 14), (17, 9), (25, 16), (5, 22), (20, 20)]:
+        pygame.draw.ellipse(s, (110, 168, 70), (lx2 - 3, ly2 - 2, 7, 5))
+    surfs[bid] = s
+
+    bid = HOP_VINE_MATURE
+    # if bid == HOP_VINE_MATURE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    vine_col = (130, 165, 52)
+    cone_col = (155, 190, 52)
+    pygame.draw.line(s, vine_col, (5, 30), (9, 6), 2)
+    pygame.draw.line(s, vine_col, (14, 30), (20, 4), 2)
+    pygame.draw.line(s, vine_col, (23, 30), (29, 10), 2)
+    for cx2, cy2 in [(9, 6), (20, 4), (28, 10), (6, 16), (21, 18)]:
+        pygame.draw.ellipse(s, cone_col, (cx2 - 3, cy2, 6, 12))
+        for gy2 in range(cy2 + 1, cy2 + 12, 3):
+            pygame.draw.line(s, (175, 210, 68), (cx2 - 2, gy2), (cx2 + 2, gy2), 1)
+    surfs[bid] = s
+
+    bid = POMEGRANATE_TREE_YOUNG
+    # if bid == POMEGRANATE_TREE_YOUNG
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.rect(s, (90, 60, 35), (13, 16, 5, 16))
+    pygame.draw.circle(s, (50, 125, 50), (16, 12), 11)
+    pygame.draw.circle(s, (65, 145, 60), (13, 10), 7)
+    pygame.draw.circle(s, (45, 115, 45), (20, 11), 7)
+    surfs[bid] = s
+
+    bid = POMEGRANATE_TREE_MATURE
+    # if bid == POMEGRANATE_TREE_MATURE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.rect(s, (85, 55, 30), (13, 16, 5, 16))
+    pygame.draw.circle(s, (45, 118, 45), (16, 12), 12)
+    for fx2, fy2 in [(8, 8), (18, 6), (24, 12), (10, 16)]:
+        pygame.draw.circle(s, (175, 30, 50), (fx2, fy2), 4)
+        pygame.draw.circle(s, (200, 55, 65), (fx2, fy2), 2)
+    surfs[bid] = s
+
+    bid = OLIVE_TREE_YOUNG
+    # if bid == OLIVE_TREE_YOUNG
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.rect(s, (105, 85, 55), (13, 20, 4, 12))
+    pygame.draw.line(s, (105, 85, 55), (9, 24), (13, 20), 2)
+    for lx2, ly2 in [(5, 14), (10, 8), (16, 6), (22, 10), (25, 16), (8, 18), (20, 18)]:
+        pygame.draw.ellipse(s, (88, 138, 68), (lx2 - 2, ly2 - 4, 5, 8))
+        pygame.draw.ellipse(s, (110, 155, 85), (lx2 - 1, ly2 - 3, 3, 6))
+    surfs[bid] = s
+
+    bid = OLIVE_TREE_MATURE
+    # if bid == OLIVE_TREE_MATURE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.rect(s, (95, 75, 45), (12, 18, 5, 14))
+    pygame.draw.line(s, (95, 75, 45), (7, 22), (12, 18), 2)
+    pygame.draw.line(s, (95, 75, 45), (18, 22), (17, 18), 2)
+    for lx2, ly2 in [(4, 12), (9, 6), (16, 4), (22, 8), (26, 14), (7, 18), (21, 17)]:
+        pygame.draw.ellipse(s, (85, 132, 65), (lx2 - 2, ly2 - 4, 5, 8))
+    for ox2, oy2 in [(6, 10), (15, 7), (23, 12), (11, 16)]:
+        pygame.draw.ellipse(s, (50, 75, 42), (ox2 - 2, oy2 - 3, 4, 6))
+    surfs[bid] = s
+
+    bid = TARO_BUSH
+    # if bid == TARO_BUSH
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx, sty, pts in [
+        (8,  28, [(8, 28),(4, 14),(15, 5),(22, 14),(16, 28)]),
+        (22, 28, [(22, 28),(19, 14),(28, 6),(32, 14),(26, 28)]),
+    ]:
+        pygame.draw.polygon(s, (115, 88, 138), pts)
+        pygame.draw.polygon(s, (135, 105, 158), [(pts[0][0], pts[0][1]), (pts[2][0], pts[2][1]), (pts[4][0], pts[4][1])])
+        pygame.draw.line(s, (155, 125, 175), pts[0], pts[2], 1)
+    surfs[bid] = s
+
+    bid = TARO_CROP_YOUNG
+    # if bid == TARO_CROP_YOUNG
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.line(s, (90, 148, 112), (15, 30), (15, 12), 2)
+    pygame.draw.polygon(s, (95, 145, 115), [(15, 12), (4, 5), (10, 18), (20, 18), (26, 5)])
+    pygame.draw.line(s, (115, 168, 132), (15, 12), (15, 5), 1)
+    surfs[bid] = s
+
+    bid = TARO_CROP_MATURE
+    # if bid == TARO_CROP_MATURE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx, sty, pts in [
+        (10, 30, [(10, 30),(5, 14),(16, 4),(22, 14),(18, 30)]),
+        (20, 30, [(20, 30),(16, 14),(26, 5),(32, 14),(28, 30)]),
+        (4,  30, [(4,  30),(0,  16),(10, 8),(15, 16),(12, 30)]),
+    ]:
+        pygame.draw.polygon(s, (140, 112, 162), pts)
+        pygame.draw.line(s, (165, 138, 185), pts[0], pts[2], 1)
+    surfs[bid] = s
+
+    bid = BREADFRUIT_BUSH
+    # if bid == BREADFRUIT_BUSH
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.rect(s, (88, 62, 32), (14, 22, 4, 10))
+    pygame.draw.circle(s, (95, 145, 65), (16, 16), 11)
+    for lx2, ly2 in [(6, 10), (14, 5), (22, 9), (26, 16), (8, 18)]:
+        pygame.draw.line(s, (75, 120, 50), (lx2, ly2 + 5), (lx2 + 4, ly2), 1)
+        pygame.draw.line(s, (75, 120, 50), (lx2, ly2 + 5), (lx2 - 4, ly2 + 3), 1)
+    surfs[bid] = s
+
+    bid = BREADFRUIT_CROP_YOUNG
+    # if bid == BREADFRUIT_CROP_YOUNG
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.rect(s, (78, 55, 28), (14, 22, 3, 10))
+    for lx2, ly2, lw2, lh2 in [(4, 14, 12, 7), (17, 10, 13, 8), (2, 20, 10, 6)]:
+        pygame.draw.ellipse(s, (75, 138, 58), (lx2, ly2, lw2, lh2))
+        pygame.draw.line(s, (55, 115, 40), (lx2 + lw2//2, ly2), (lx2 + lw2//2, ly2 + lh2), 1)
+    surfs[bid] = s
+
+    bid = BREADFRUIT_CROP_MATURE
+    # if bid == BREADFRUIT_CROP_MATURE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.rect(s, (80, 58, 30), (14, 18, 4, 14))
+    pygame.draw.circle(s, (128, 158, 80), (16, 14), 13)
+    for lx2, ly2 in [(6, 8), (14, 3), (22, 7), (27, 14), (7, 18)]:
+        pygame.draw.line(s, (95, 125, 55), (lx2, ly2 + 5), (lx2 + 5, ly2), 1)
+    for fx2, fy2 in [(10, 12), (20, 10)]:
+        pygame.draw.circle(s, (130, 158, 82), (fx2, fy2), 5)
+        _rng_bf = _rnd.Random(fx2 * 31 + fy2)
+        for _ in range(8):
+            bx2 = fx2 + _rng_bf.randint(-4, 4)
+            by2 = fy2 + _rng_bf.randint(-4, 4)
+            pygame.draw.circle(s, (100, 130, 62), (bx2, by2), 1)
+    surfs[bid] = s
+
+    bid = COCONUT_BUSH
+    # if bid == COCONUT_BUSH
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    frond_col = (88, 122, 60)
+    for fx2, fy2, tx2, ty2 in [(16, 20, 4, 8), (16, 20, 28, 6), (16, 20, 10, 28), (16, 20, 22, 28)]:
+        pygame.draw.line(s, frond_col, (fx2, fy2), (tx2, ty2), 2)
+        mx2, my2 = (fx2 + tx2) // 2, (fy2 + ty2) // 2
+        pygame.draw.ellipse(s, (105, 145, 72), (mx2 - 3, my2 - 2, 6, 3))
+    surfs[bid] = s
+
+    bid = COCONUT_CROP_YOUNG
+    # if bid == COCONUT_CROP_YOUNG
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.rect(s, (148, 118, 62), (13, 14, 5, 18))
+    for ry2 in range(16, 30, 4):
+        pygame.draw.rect(s, (168, 138, 78), (13, ry2, 5, 2))
+    frond_col = (72, 115, 50)
+    for fx2, fy2, tx2, ty2 in [(16, 14, 2, 4), (16, 14, 30, 4), (16, 14, 6, 26), (16, 14, 26, 26), (16, 14, 16, 2)]:
+        pygame.draw.line(s, frond_col, (fx2, fy2), (tx2, ty2), 2)
+    surfs[bid] = s
+
+    bid = COCONUT_CROP_MATURE
+    # if bid == COCONUT_CROP_MATURE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.rect(s, (115, 88, 52), (13, 10, 5, 22))
+    for ry2 in range(12, 30, 4):
+        pygame.draw.rect(s, (135, 105, 65), (13, ry2, 5, 2))
+    frond_col = (65, 108, 45)
+    for tx2, ty2 in [(0, 2), (32, 2), (4, 22), (28, 22), (16, 0)]:
+        pygame.draw.line(s, frond_col, (16, 10), (tx2, ty2), 2)
+        mx2, my2 = (16 + tx2) // 2, (10 + ty2) // 2
+        pygame.draw.ellipse(s, (80, 128, 56), (mx2 - 4, my2 - 2, 8, 4))
+    for cx2, cy2 in [(11, 8), (17, 6), (21, 9)]:
+        pygame.draw.circle(s, (110, 82, 48), (cx2, cy2), 4)
+        pygame.draw.circle(s, (85, 62, 35), (cx2, cy2), 2)
+    surfs[bid] = s
+
+    # Premium crops — same geometry as their regular counterparts, gold sparkle added
+    bid = STRAWBERRY_CROP_YOUNG_P
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.rect(s, (60, 170, 60), (15, 20, 3, 12))
+    pygame.draw.rect(s, (80, 200, 80), (9, 22, 8, 4))
+    pygame.draw.rect(s, (80, 200, 80), (16, 19, 8, 4))
+    for sx2, sy2 in [(5, 18), (24, 15), (12, 28)]:
+        pygame.draw.circle(s, (240, 215, 55), (sx2, sy2), 2)
+    surfs[bid] = s
+
+    bid = STRAWBERRY_CROP_MATURE_P
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.rect(s, (55, 162, 55), (14, 10, 4, 20))
+    pygame.draw.rect(s, (75, 195, 75), (5, 14, 12, 5))
+    pygame.draw.rect(s, (75, 195, 75), (16, 10, 12, 5))
+    for bx2, by2 in [(6, 8), (18, 6), (10, 18), (22, 14)]:
+        pygame.draw.rect(s, (255, 60, 90), (bx2, by2, 5, 5))
+    for sx2, sy2 in [(3, 5), (27, 8), (14, 26)]:
+        pygame.draw.circle(s, (240, 215, 55), (sx2, sy2), 2)
+    surfs[bid] = s
+
+    bid = TOMATO_CROP_YOUNG_P
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx in [10, 16, 22]:
+        pygame.draw.rect(s, (80, 190, 80), (stx, 18, 2, 14))
+    for sx2, sy2 in [(5, 16), (26, 20), (14, 30)]:
+        pygame.draw.circle(s, (240, 215, 55), (sx2, sy2), 2)
+    surfs[bid] = s
+
+    bid = TOMATO_CROP_MATURE_P
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.rect(s, (65, 178, 65), (12, 8, 4, 18))
+    for bx2, by2 in [(5, 12), (19, 10), (8, 20), (21, 18)]:
+        pygame.draw.circle(s, (235, 65, 65), (bx2, by2), 4)
+    for sx2, sy2 in [(2, 8), (28, 14), (15, 28)]:
+        pygame.draw.circle(s, (240, 215, 55), (sx2, sy2), 2)
+    surfs[bid] = s
+
+    bid = WATERMELON_CROP_YOUNG_P
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx in [6, 14, 22]:
+        pygame.draw.rect(s, (75, 168, 68), (stx, 14, 4, 18))
+        pygame.draw.ellipse(s, (95, 185, 82), (stx - 2, 10, 8, 7))
+    for sx2, sy2 in [(2, 10), (28, 12), (14, 30)]:
+        pygame.draw.circle(s, (240, 215, 55), (sx2, sy2), 2)
+    surfs[bid] = s
+
+    bid = WATERMELON_CROP_MATURE_P
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    pygame.draw.ellipse(s, (55, 138, 48), (4, 6, 24, 20))
+    for sx2 in [8, 13, 18, 23]:
+        pygame.draw.line(s, (38, 108, 34), (sx2, 6), (sx2 - 1, 26), 1)
+    pygame.draw.rect(s, (60, 145, 52), (2, 20, 28, 6))
+    for sx2, sy2 in [(2, 4), (28, 8), (15, 28)]:
+        pygame.draw.circle(s, (240, 215, 55), (sx2, sy2), 2)
+    surfs[bid] = s
+
+    bid = CORN_CROP_YOUNG_P
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx in [10, 16, 22]:
+        pygame.draw.rect(s, (130, 180, 60), (stx, 14, 3, 18))
+    for sx2, sy2 in [(5, 12), (27, 16), (14, 30)]:
+        pygame.draw.circle(s, (240, 215, 55), (sx2, sy2), 2)
+    surfs[bid] = s
+
+    bid = CORN_CROP_MATURE_P
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx in [6, 14, 22]:
+        pygame.draw.rect(s, (138, 182, 58), (stx, 4, 4, 26))
+        pygame.draw.rect(s, (240, 218, 62), (stx - 1, 8, 6, 12))
+    for sx2, sy2 in [(2, 4), (28, 6), (16, 28)]:
+        pygame.draw.circle(s, (255, 240, 80), (sx2, sy2), 2)
+    surfs[bid] = s
+
+    bid = RICE_CROP_YOUNG_P
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx in [9, 15, 21]:
+        pygame.draw.rect(s, (140, 185, 72), (stx, 16, 2, 16))
+    for sx2, sy2 in [(4, 14), (26, 18), (15, 30)]:
+        pygame.draw.circle(s, (240, 215, 55), (sx2, sy2), 2)
+    surfs[bid] = s
+
+    bid = RICE_CROP_MATURE_P
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 0))
+    for stx in [6, 12, 18, 24]:
+        pygame.draw.rect(s, (158, 178, 70), (stx, 6, 3, 20))
+        pygame.draw.rect(s, (228, 212, 142), (stx - 1, 1, 5, 7))
+    for sx2, sy2 in [(2, 4), (28, 2), (15, 28)]:
+        pygame.draw.circle(s, (240, 215, 55), (sx2, sy2), 2)
+    surfs[bid] = s
+
     return surfs

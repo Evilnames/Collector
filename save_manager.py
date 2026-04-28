@@ -1585,7 +1585,7 @@ class SaveManager:
             rows = con.execute("SELECT * FROM guard_sketches").fetchall()
         except Exception:
             return []
-        cols = [d[0] for d in con.execute("PRAGMA table_info(guard_sketches)").fetchall()]
+        cols = [d[1] for d in con.execute("PRAGMA table_info(guard_sketches)").fetchall()]
         return [dict(zip(cols, row)) for row in rows]
 
     def _save_bird_observations(self, con, player):
@@ -1834,10 +1834,34 @@ class SaveManager:
         from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion, Tiger
         from horses import Horse
         from dogs import Dog
-        from cities import NPC
+        from cities import (NPC, LeaderNPC, LandmarkNPC, RoyalSpouseNPC, RoyalChildNPC)
         con.execute("DELETE FROM entities")
         for e in world.entities:
+            if isinstance(e, (LeaderNPC, LandmarkNPC, RoyalSpouseNPC, RoyalChildNPC)):
+                continue  # Respawned by _respawn_leader_npcs on load
             if isinstance(e, NPC):
+                extra = {
+                    "biodome":     getattr(e, "biodome", "temperate"),
+                    "npc_uid":     e.npc_uid,
+                    "town_id":     e.town_id,
+                    "identity":    e.identity,
+                    "preferences": e.preferences,
+                }
+                for attr in ("shop", "quests", "cuisine", "difficulty",
+                             "rest_cost", "blessing_cost", "religion_name", "religion_style"):
+                    val = getattr(e, attr, None)
+                    if val is not None:
+                        extra[attr] = val
+                if hasattr(e, "_streak"):
+                    extra["streak"] = e._streak
+                if hasattr(e, "trades"):
+                    extra["trades"] = [list(t) for t in e.trades]
+                if hasattr(e, "_npc_horses"):
+                    extra["npc_horses"] = e._npc_horses
+                con.execute(
+                    "INSERT INTO entities (entity_type, x, y, facing, animal_id, extra) VALUES (?,?,?,?,?,?)",
+                    (type(e).__name__, e.x, e.y, e.facing, e.animal_id, json.dumps(extra))
+                )
                 continue
             traits_dict = {}
             if hasattr(e, 'traits'):

@@ -542,6 +542,7 @@ class NPC:
     def __init__(self, x, y, world, npc_id):
         self.x = float(x)
         self.y = float(y)
+        self.facing = 1
         self.vy = 0.0
         self.on_ground = False
         self.world = world
