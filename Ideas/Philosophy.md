@@ -1,0 +1,7 @@
+The core of game depth lies in meaningful friction rather than systemic volume. In a well-designed loop, a single input—like steering a truck—is pressured by overlapping constraints: momentum, fuel, traffic laws, and delivery deadlines. This creates "density" because the player isn't just performing a repetitive task; they are constantly triaging a series of micro-decisions. Depth is achieved when these layers of stakes force the player to engage with the world more intensely, whereas adding more menus or isolated systems often just creates "breadth," which can lead to fatigue rather than engagement.
+
+To avoid the "system load" trap, focus on functional constraints that modify the core loop rather than adding chores that sit on top of it. Instead of building a new subsystem to break up monotony, look for ways to make the primary action more expressive or risky. If a new mechanic doesn't fundamentally change how the player interacts with their primary tool, it is likely just complexity. Real density occurs when the player feels they are "mastering" a simple action that the game world is constantly trying to disrupt.
+
+Are you finding that your current "Collector" project feels too automated, or are you struggling to find the right friction for the player's primary interaction?
+
+Our games core loop is collect, mine and learn more. How do we keep adding this tension?

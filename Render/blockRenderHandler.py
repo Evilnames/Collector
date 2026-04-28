@@ -2,7 +2,7 @@ import pygame
 from blocks import BLOCKS
 from constants import BLOCK_SIZE
 from Render.block_helpers import _darken
-from Render.blocks_terrain import build_terrain_surfs
+from Render.blocks_terrain import build_terrain_surfs, build_ore_richness_surfs
 from Render.blocks_wood import build_wood_surfs
 from Render.blocks_crops import build_crop_surfs
 from Render.blocks_crafting import build_crafting_surfs

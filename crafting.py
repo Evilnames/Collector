@@ -1930,6 +1930,16 @@ RECIPES = [
         "output_id":    "roasting_kiln_item",
         "output_count": 1,
     },
+    {
+        "name": "Tea House",
+        "pattern": [
+            ["lumber",     "iron_chunk", "lumber"],
+            ["lumber",     "stone_chip", "lumber"],
+            ["stone_chip", "stone_chip", "stone_chip"],
+        ],
+        "output_id":    "tea_house_item",
+        "output_count": 1,
+    },
     # --- Textile equipment ---
     {
         "name": "Spinning Wheel",

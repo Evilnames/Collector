@@ -11,6 +11,22 @@ from cities import GuardNPC
 from guard_sketches import sketch_from_npc
 
 
+_SEED_IDS = {"cactus_spine", "prickly_pear_pad", "cholla_segment"}
+_TOOL_PROPS = {"pick_power", "axe_power", "till_tool", "water_tool",
+               "harvest_tool", "fertilize_tool", "fishing_tool",
+               "weapon_part", "wire_layer"}
+
+
+def _inv_tab_match(item_id, item, tab):
+    if tab == 0:
+        return True
+    is_seed = item_id.endswith("_seed") or "sapling" in item_id or item_id in _SEED_IDS
+    is_tool = any(item.get(k) for k in _TOOL_PROPS) or (
+              item.get("max_uses") and not item.get("edible"))
+    is_food = item.get("edible") and not is_seed
+    return (tab == 1 and is_seed) or (tab == 2 and is_food) or (tab == 3 and is_tool)
+
+
 def _item_matches_system(item, system_id: str) -> bool:
     """Return True if item belongs to the given preference system."""
     try:
@@ -431,6 +447,33 @@ class PanelsMixin:
             self.screen.blit(lbl, (rect.right - lbl.get_width() - 10,
                                     y + row_h // 2 - lbl.get_height() // 2))
             y += row_h + 8
+
+        if hasattr(npc, "ore_commission"):
+            day_count = getattr(getattr(player, "world", None), "day_count", 0)
+            npc.refresh_commission(day_count)
+            c = npc.ore_commission
+            if c:
+                y += 10
+                can = npc.can_complete_commission(player)
+                have = player.inventory.get(c["ore_id"], 0)
+                rect = pygame.Rect(px + 20, y, PW - 40, 68)
+                self._trade_rects["commission"] = rect
+                pygame.draw.rect(self.screen, (20, 36, 52) if can else (26, 26, 34), rect)
+                pygame.draw.rect(self.screen, (60, 140, 200) if can else (50, 60, 75), rect, 2)
+                hdr = self.small.render("TOWN COMMISSION", True, (100, 180, 240))
+                self.screen.blit(hdr, (px + 28, y + 6))
+                give_col = (80, 200, 255) if can else (160, 80, 80)
+                self.screen.blit(
+                    self.font.render(
+                        f"Deliver: {c['amount']}x {c['ore_name']}  (have: {have})",
+                        True, give_col),
+                    (px + 28, y + 24))
+                self.screen.blit(
+                    self.font.render(f"Reward: {c['reward']} gold", True, (240, 210, 50)),
+                    (px + 28, y + 44))
+                lbl = self.font.render("DELIVER", True, (160, 220, 255) if can else (70, 70, 82))
+                self.screen.blit(lbl, (rect.right - lbl.get_width() - 10,
+                                       y + 34 - lbl.get_height() // 2))
 
     def _draw_wf_quest_content(self, player, npc, px, py, PW, PH):
         from cities import wf_quest_display, wf_quest_hint, RARITY_ORDER, RoyalFloristNPC, ROYAL_QUEST_REP
@@ -957,29 +1000,90 @@ class PanelsMixin:
 
         title = self.font.render("INVENTORY", True, (220, 220, 100))
         self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 8))
-        hint = self.small.render("I to close  |  Drag item to a hotbar slot  |  Scroll to navigate",
-                                 True, (130, 130, 130))
-        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 30))
 
-        items_held = sorted(
-            [(iid, cnt) for iid, cnt in player.inventory.items() if cnt > 0],
-            key=lambda t: ITEMS.get(t[0], {}).get("name", t[0])
-        )
-        self._inv_rects.clear()
+        # --- Search bar ---
+        sb_w, sb_h = 320, 24
+        sb_x = SCREEN_W // 2 - sb_w // 2
+        sb_y = 30
+        self._inv_search_rect = pygame.Rect(sb_x, sb_y, sb_w, sb_h)
+        sb_bg = (45, 45, 58) if self._inv_search_active else (28, 28, 36)
+        pygame.draw.rect(self.screen, sb_bg, self._inv_search_rect)
+        pygame.draw.rect(self.screen, (90, 90, 110), self._inv_search_rect, 1)
+        if self._inv_search:
+            sb_text = self._inv_search + ("|" if self._inv_search_active else "")
+            sb_surf = self.small.render(sb_text, True, (220, 220, 220))
+        elif self._inv_search_active:
+            sb_surf = self.small.render("|", True, (160, 160, 180))
+        else:
+            sb_surf = self.small.render("Search…", True, (80, 80, 100))
+        self.screen.blit(sb_surf, (sb_x + 6, sb_y + (sb_h - sb_surf.get_height()) // 2))
 
-        if not items_held:
-            empty = self.font.render("Your inventory is empty.", True, (90, 90, 90))
-            self.screen.blit(empty, (SCREEN_W // 2 - empty.get_width() // 2, SCREEN_H // 2 - 10))
-            return
-
+        # --- Tab row ---
+        TAB_LABELS = ["All", "Seeds", "Food", "Tools"]
+        tab_y = 58
+        tab_h = 22
         COLS, CELL_W, CELL_H, GAP = 4, 210, 74, 8
         total_w = COLS * CELL_W + (COLS - 1) * GAP
         start_x = (SCREEN_W - total_w) // 2
-        hotbar_map = {iid: i for i, iid in enumerate(player.hotbar) if iid}
+        tab_total_w = total_w - 70  # leave room for sort button on right
+        tab_w = tab_total_w // len(TAB_LABELS)
+        self._inv_tab_rects.clear()
+        for i, label in enumerate(TAB_LABELS):
+            tx = start_x + i * (tab_w + 4)
+            tab_rect = pygame.Rect(tx, tab_y, tab_w, tab_h)
+            self._inv_tab_rects[i] = tab_rect
+            if i == self._inv_tab:
+                pygame.draw.rect(self.screen, (50, 50, 65), tab_rect)
+                pygame.draw.rect(self.screen, (160, 155, 80), tab_rect, 1)
+                tab_surf = self.small.render(label, True, (220, 210, 100))
+            else:
+                pygame.draw.rect(self.screen, (28, 28, 36), tab_rect)
+                pygame.draw.rect(self.screen, (65, 65, 78), tab_rect, 1)
+                tab_surf = self.small.render(label, True, (140, 140, 155))
+            self.screen.blit(tab_surf, (tx + (tab_w - tab_surf.get_width()) // 2,
+                                        tab_y + (tab_h - tab_surf.get_height()) // 2))
 
-        AREA_TOP = 50
-        AREA_BOT = SCREEN_H - 68  # leave room above hotbar (48px slot + 10px gap + 10px margin)
+        sort_label = "#→1" if self._inv_sort_count else "A→Z"
+        sort_w = 58
+        sort_x = start_x + total_w - sort_w
+        self._inv_sort_btn_rect = pygame.Rect(sort_x, tab_y, sort_w, tab_h)
+        sort_bg = (40, 55, 40) if self._inv_sort_count else (28, 28, 36)
+        pygame.draw.rect(self.screen, sort_bg, self._inv_sort_btn_rect)
+        pygame.draw.rect(self.screen, (65, 90, 65), self._inv_sort_btn_rect, 1)
+        sort_surf = self.small.render(sort_label, True, (150, 210, 150))
+        self.screen.blit(sort_surf, (sort_x + (sort_w - sort_surf.get_width()) // 2,
+                                     tab_y + (tab_h - sort_surf.get_height()) // 2))
+
+        hint = self.small.render(
+            "I to close  |  Right-click item → hotbar slot  |  Drag to move  |  Scroll to navigate",
+            True, (80, 80, 95))
+        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 84))
+
+        # --- Filter + sort items ---
+        search_lc = self._inv_search.lower()
+        items_held = [
+            (iid, cnt) for iid, cnt in player.inventory.items()
+            if cnt > 0
+            and _inv_tab_match(iid, ITEMS.get(iid, {}), self._inv_tab)
+            and (not search_lc or search_lc in ITEMS.get(iid, {}).get("name", iid).lower())
+        ]
+        if self._inv_sort_count:
+            items_held.sort(key=lambda t: -t[1])
+        else:
+            items_held.sort(key=lambda t: ITEMS.get(t[0], {}).get("name", t[0]))
+
+        self._inv_rects.clear()
+
+        AREA_TOP = 100
+        AREA_BOT = SCREEN_H - 68
         area_h = AREA_BOT - AREA_TOP
+
+        if not items_held:
+            empty = self.font.render("Nothing here.", True, (90, 90, 90))
+            self.screen.blit(empty, (SCREEN_W // 2 - empty.get_width() // 2, AREA_TOP + area_h // 2 - 10))
+            return
+
+        hotbar_map = {iid: i for i, iid in enumerate(player.hotbar) if iid}
 
         num_rows = (len(items_held) + COLS - 1) // COLS
         total_content_h = num_rows * (CELL_H + GAP) - GAP

@@ -391,6 +391,7 @@ class Renderer:
         self.cam_x = 0.0
         self.cam_y = 0.0
         self._block_surfs = self._build_block_surfs()
+        self._ore_richness_surfs = self._build_ore_richness_surfs()
         self._tilled_soil_surfs = self._build_tilled_soil_surfs()
         self._water_surfs = self._build_water_surfs()   # indexed by level-1 (0..7)
         self._resource_hint_surfs = self._build_resource_hint_surfs()
@@ -407,10 +408,14 @@ class Renderer:
         self._bg_block_surfs = self._build_bg_block_surfs()
         self._cave_wall_surf = self._build_cave_wall_surf()
         self._light_surf = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        self._warm_surf  = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        self._atmos_surf = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         self._light_gradient = None
         self._light_cache_key = None
         self._sky_surf = self._build_sky_surf()
         self._sky_night_surf = self._build_night_sky_surf()
+        self._dawn_sky_surf  = self._build_dawn_sky_surf()
+        self._dusk_sky_surf  = self._build_dusk_sky_surf()
         self.show_all_resources = True
         self._water_overlay_surf = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         self._water_overlay_surf.fill((30, 80, 180, 70))
@@ -423,6 +428,10 @@ class Renderer:
         self.minimap_visible = False
         self._mm_ctable     = self._build_mm_color_table()
         self._floating_texts = []  # list of {x, y, text, color, life, vy}
+        self._wind_particles  = []
+        self._wind_rng        = __import__("random").Random()
+        self._ember_particles = []
+        self._ember_rng       = __import__("random").Random()
         self._light_grad_cache = {}  # (radius, pattern, flicker_frame) -> Surface
         self._town_flag_surfs   = {}  # region_id -> Surface (colored pennant, built lazily)
         self._outpost_flag_surfs = {}  # outpost_type -> Surface (colored pennant, built lazily)
@@ -447,6 +456,10 @@ class Renderer:
     def _build_block_surfs(self):
         from Render.blockRenderHandler import build_all_block_surfs
         return build_all_block_surfs()
+
+    def _build_ore_richness_surfs(self):
+        from Render.blockRenderHandler import build_ore_richness_surfs
+        return build_ore_richness_surfs()
 
     def _build_water_surfs(self):
         from Render.surface.biome import build_water_surfs
@@ -547,6 +560,14 @@ class Renderer:
     def _build_night_sky_surf(self):
         from Render.surface.flags import build_night_sky_surf
         return build_night_sky_surf()
+
+    def _build_dawn_sky_surf(self):
+        from Render.surface.flags import build_dawn_sky_surf
+        return build_dawn_sky_surf()
+
+    def _build_dusk_sky_surf(self):
+        from Render.surface.flags import build_dusk_sky_surf
+        return build_dusk_sky_surf()
 
     def _sky_night_alpha(self, time_of_day):
         from Render.surface.flags import sky_night_alpha
@@ -938,6 +959,31 @@ class Renderer:
         from Render.hud import draw_rain as _draw_rain
         _draw_rain(self.screen, self.cam_x, world)
 
+    def draw_wind_particles(self, world, dt):
+        from Render.wind import (spawn_wind_particles, spawn_passive_leaves,
+                                  tick_wind_particles, draw_wind_particles)
+        tick_wind_particles(self._wind_particles, dt)
+        if world._wind_active:
+            spawn_wind_particles(
+                self._wind_particles, world,
+                self.cam_x, self.cam_y,
+                self._wind_rng,
+                world._wind_dir, world._wind_strength,
+            )
+        else:
+            spawn_passive_leaves(
+                self._wind_particles, world,
+                self.cam_x, self.cam_y,
+                self._wind_rng, dt,
+            )
+        draw_wind_particles(self.screen, self.cam_x, self.cam_y, self._wind_particles)
+
+    def draw_embers(self, world, dt):
+        from Render.embers import spawn_embers, tick_embers, draw_embers
+        tick_embers(self._ember_particles, dt)
+        spawn_embers(self._ember_particles, world, self.cam_x, self.cam_y, self._ember_rng)
+        draw_embers(self.screen, self.cam_x, self.cam_y, self._ember_particles)
+
     # ------------------------------------------------------------------
     # Lighting
     # ------------------------------------------------------------------
@@ -973,6 +1019,13 @@ class Renderer:
     # ------------------------------------------------------------------
     # Birds
     # ------------------------------------------------------------------
+
+    def draw_tea_house_visitors(self, visitors):
+        from Render.Workernpcs import draw_tea_house_visitor
+        for v in visitors:
+            sx = int(v.x - self.cam_x)
+            sy = int(v.y - self.cam_y)
+            draw_tea_house_visitor(self.screen, sx, sy, v)
 
     def draw_birds(self, birds):
         from Render.birds import draw_birds as _draw_birds

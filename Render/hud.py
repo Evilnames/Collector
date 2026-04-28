@@ -259,14 +259,17 @@ def draw_water_overlay(screen, water_overlay_surf, player):
 def draw_rain(screen, cam_x, world):
     if not world._rain_active:
         return
-    streak_color = (160, 190, 230, 90)
     surf = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-    cx_off = int(cam_x) % 18
-    time_off = (pygame.time.get_ticks() // 25) % SCREEN_H
-    for sx in range(-cx_off, SCREEN_W, 18):
-        seed_val = (sx + int(cam_x) // 18) & 0xFFFF
+    # Grey atmospheric wash — desaturates the sky slightly
+    surf.fill((72, 82, 100, 28))
+    # Denser, more visible streaks
+    streak_color = (160, 190, 230, 145)
+    cx_off   = int(cam_x) % 12
+    time_off = (pygame.time.get_ticks() // 22) % SCREEN_H
+    for sx in range(-cx_off, SCREEN_W, 12):
+        seed_val = (sx + int(cam_x) // 12) & 0xFFFF
         start_y  = (seed_val * 137 % SCREEN_H + time_off) % SCREEN_H
-        length   = 8 + (seed_val * 53 % 12)
+        length   = 10 + (seed_val * 53 % 14)
         pygame.draw.line(surf, streak_color, (sx, start_y), (sx - 2, start_y + length), 1)
     screen.blit(surf, (0, 0))
 

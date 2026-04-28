@@ -63,14 +63,14 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     POTTERY_DISPLAY_BLOCK,
                     SALT_DEPOSIT,
                     TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK, LANDMARK_FLAG_BLOCK,
-                    CITY_BLOCK, BANNER_BLOCK, FISHING_SPOT_BLOCK)
+                    CITY_BLOCK, BANNER_BLOCK, FISHING_SPOT_BLOCK, TEA_HOUSE_BLOCK)
 import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
 from wildflowers import WildflowerGenerator, Wildflower
 from fossils import FossilGenerator, Fossil
 from gemstones import GemGenerator, Gemstone
-from fish import FishGenerator, Fish
+from fish import FishGenerator, Fish, FISH_TYPES
 from coffee import CoffeeGenerator, CoffeeBean
 from wine import WineGenerator, Grape
 from sculpture import SculptureGenerator, Sculpture
@@ -199,6 +199,9 @@ class Player:
         self._tea_gen = TeaGenerator(world.seed)
         # Active buffs from drinking tea (separate pool, stacks with coffee/wine)
         self.tea_buffs = {}   # buff_name -> {"duration": float}
+        # Tea house
+        self.tea_house_pos        = None  # (bx, by) of placed Tea House block
+        self.tea_house_last_spawn = 0.0   # world time of last visitor spawn attempt
         # Herbalism
         self.discovered_recipes = set()  # output_id strings of discovered recipes
         self.herb_buffs         = {}     # buff_name -> {"duration": float}
@@ -268,6 +271,10 @@ class Player:
         self._fishing_pending_fish = None  # Fish generated at bite time, resolved on reel success
         self._reel_pos = 0.0               # 0.0 = snap/lost, 1.0 = caught
         self._reel_pull_speed = 0.0        # fish-driven pull speed (reel_pos per second)
+        self._fish_tension = 1.0           # per-species tension multiplier
+        self._fish_surge_active = False    # fish currently lunging
+        self._fish_surge_remaining = 0.0
+        self._fish_surge_timer = 0.0       # countdown to next surge
         # Bird observations
         self.birds_observed = {}           # species_id -> {"count": int, "biome": str}
         self.discovered_bird_types = set()
@@ -479,6 +486,8 @@ class Player:
         self.salt_buffs             = d.get("salt_buffs", {})
         self.discovered_pairings    = set(d.get("discovered_pairings", []))
         self.aging_vessels          = d.get("aging_vessels", [])
+        self.tea_house_pos          = d.get("tea_house_pos", None)
+        self.tea_house_last_spawn   = 0.0
         self.visited_town_ids       = set(d.get("visited_town_ids", []))
         self.npc_relationships      = d.get("npc_relationships", {})
         self.npc_requests           = d.get("npc_requests", {})
@@ -897,10 +906,10 @@ class Player:
                     _logic.evaluate_full_network(self.world)
                     self._reset_mine()
                 return
-            if not self._shift_held:
+            bg_bid = self.world.get_bg_block(bx, by)
+            if not self._shift_held and bg_bid != WILDFLOWER_PATCH:
                 self._reset_mine()
                 return
-            bg_bid = self.world.get_bg_block(bx, by)
             if bg_bid == SKY_OPENING:
                 self._reset_mine()
                 return
@@ -931,6 +940,21 @@ class Player:
             self._mine_time += dt
             self.mine_progress = min(1.0, self._mine_time / self._mine_total)
             if self.mine_progress >= 1.0:
+                if bg_bid == WILDFLOWER_PATCH:
+                    biodome = self.world.get_biodome(bx)
+                    flower = self._flower_gen.generate(bx, by, biodome)
+                    self.wildflowers.append(flower)
+                    self.discovered_flower_types.add(flower.flower_type)
+                    self.pending_notifications.append(
+                        ("Wildflower", flower.flower_type.replace("_", " ").title(), flower.rarity))
+                    bonus = get_pollination_bonus(self, biodome, WILDFLOWER_PATCH)
+                    if random.random() < bonus["yield"]:
+                        extra = self._flower_gen.generate(bx, by + 1, biodome)
+                        self.wildflowers.append(extra)
+                        self.discovered_flower_types.add(extra.flower_type)
+                    self.world.set_bg_block(bx, by, AIR)
+                    self._reset_mine()
+                    return
                 if bg_bid == SCULPTURE_BLOCK_BODY:
                     ptr = self.world.sculpture_data.get((bx, by))
                     if ptr and "root" in ptr:
@@ -996,7 +1020,7 @@ class Player:
         if self.mining_block != (bx, by):
             self.mining_block = (bx, by)
             self._mine_time = 0.0
-            self._mine_total = hardness / self._mining_power_for(block_id)
+            self._mine_total = (hardness / self._mining_power_for(block_id)) * self.depth_fatigue_mult
 
         self._mine_time += dt
         self.mine_progress = min(1.0, self._mine_time / self._mine_total)
@@ -1127,6 +1151,13 @@ class Player:
                             count = 1
                             if block_id in (COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE):
                                 count = self.world._ore_richness.get((bx, by), 1)
+                                ore_hardness = BLOCKS[block_id]["hardness"]
+                                power_ratio = self.effective_pick_power / ore_hardness
+                                shatter_chance = max(0.0, min(0.6, (power_ratio - 1.5) * 0.25))
+                                if shatter_chance > 0 and random.random() < shatter_chance:
+                                    count = max(0, count - 1)
+                                    self.pending_notifications.append(
+                                        ("Mine", "Vein shattered!", "common"))
                             self._add_item(drop, count)
                         bonus = block_data.get("bonus_drop")
                         if bonus and random.random() < block_data.get("bonus_drop_chance", 0.0):
@@ -1630,6 +1661,8 @@ class Player:
                     return
                 from minecarts import Minecart
                 nbx, nby = nearby
+                if any(c.track_by == nby for c in self.world.minecarts):
+                    return  # one cart per track
                 self.world.minecarts.append(Minecart(nby, nbx))
                 self.inventory[item_id] -= 1
                 if self.inventory[item_id] <= 0:
@@ -1675,7 +1708,7 @@ class Player:
                             break
             return
         if item_data.get("wire_layer"):
-            if not bg:
+            if not bg and getattr(self.world, 'wire_mode', False):
                 import logic as _logic
                 drag = getattr(self, '_wire_drag_placed', set())
                 if (bx, by) not in drag:
@@ -1690,9 +1723,7 @@ class Player:
                                 if self.hotbar[i] == item_id:
                                     self.hotbar[i] = None
                                     break
-                    else:
-                        self.world.set_wire(bx, by, 0)
-                    _logic.evaluate_full_network(self.world)
+                        _logic.evaluate_full_network(self.world)
             return
         block_id = item_data.get("place_block")
         if block_id is None:
@@ -1715,12 +1746,15 @@ class Player:
                 if self.world.get_block(bx, by + 1) != TILLED_SOIL:
                     return
             # Don't place inside the player (passable blocks are exempt)
-            passable = {LADDER, SAPLING} | BUSH_BLOCKS | YOUNG_CROP_BLOCKS | EQUIPMENT_BLOCKS
+            passable = {LADDER, SAPLING, CITY_BLOCK} | BUSH_BLOCKS | YOUNG_CROP_BLOCKS | EQUIPMENT_BLOCKS
             if block_id not in passable:
                 block_px = pygame.Rect(bx * BLOCK_SIZE, by * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
                 if block_px.colliderect(self.rect):
                     return
-            self.world.set_block(bx, by, block_id)
+            if block_id == CITY_BLOCK:
+                self.world.set_bg_block(bx, by, block_id)
+            else:
+                self.world.set_block(bx, by, block_id)
             from blocks import (LOGIC_GATE_BLOCKS as _LGB, SWITCH_BLOCK_OFF, LATCH_BLOCK_OFF,
                                 LOGIC_OUTPUT_BLOCKS as _LOB, LOGIC_SENSOR_BLOCKS as _LSB,
                                 REPEATER_BLOCK as _RPT, PULSE_GEN_BLOCK as _PGN,
@@ -1765,16 +1799,15 @@ class Player:
                 from player_cities import register_city
                 register_city(bx, by)
             if block_id == BANNER_BLOCK:
-                from player_cities import PLAYER_CITIES, CITY_REGION_HALF
+                from player_cities import PLAYER_CITIES
                 best = min(
                     PLAYER_CITIES.values(),
                     key=lambda c: abs(c.bx - bx),
                     default=None,
                 )
-                if best and abs(best.bx - bx) <= CITY_REGION_HALF:
-                    self.world.banner_data[(bx, by)] = dict(best.coat_of_arms)
-                else:
-                    self.world.banner_data[(bx, by)] = {}
+                self.world.banner_data[(bx, by)] = dict(best.coat_of_arms) if best else {}
+            if block_id == TEA_HOUSE_BLOCK:
+                self.tea_house_pos = (bx, by)
         self.inventory[item_id] -= 1
         if self.inventory[item_id] <= 0:
             del self.inventory[item_id]
@@ -2038,7 +2071,14 @@ class Player:
         if biome is None:
             return False
         self.fishing_state = "casting"
-        self._fishing_timer = random.uniform(3.0, 8.0)
+        from world import sky_phase
+        _phase = sky_phase(getattr(self.world, 'time_of_day', 0.0))
+        if _phase in ('morning', 'dusk'):
+            self._fishing_timer = random.uniform(1.5, 4.0)
+        elif _phase == 'night':
+            self._fishing_timer = random.uniform(6.0, 14.0)
+        else:
+            self._fishing_timer = random.uniform(3.0, 8.0)
         self._fishing_biome = biome
         self._fishing_is_hotspot = is_hotspot
         return True
@@ -2060,6 +2100,14 @@ class Player:
         _PULL_BASE = {"common": 0.14, "uncommon": 0.19, "rare": 0.25, "epic": 0.31, "legendary": 0.40}
         pull_base = _PULL_BASE.get(fish.rarity, 0.20)
         self._reel_pull_speed = pull_base * (1.0 + fish.weight_kg / 60.0)
+        # Tension: per-species value, or rarity default
+        _TENSION_DEFAULT = {"common": 0.8, "uncommon": 1.0, "rare": 1.3, "epic": 1.7, "legendary": 2.1}
+        fdata = FISH_TYPES.get(fish.species, {})
+        self._fish_tension = fdata.get("tension", _TENSION_DEFAULT.get(fish.rarity, 1.0))
+        # Surge: fish lunges and pulls hard for a burst
+        self._fish_surge_active = False
+        self._fish_surge_remaining = 0.0
+        self._fish_surge_timer = random.uniform(1.2, 3.0) / max(0.5, self._fish_tension)
         self._reel_pos = 0.40   # start with some slack
         self.fishing_state = "reeling"
         self._fishing_timer = 35.0  # failsafe max duration
@@ -2121,10 +2169,23 @@ class Player:
             item_id = self.hotbar[self.selected_slot]
             reel_bonus = ITEMS.get(item_id, {}).get("reel_bonus", 0.0) if item_id else 0.0
             reel_speed = 0.25 + reel_bonus
+            # Surge: fish randomly lunges, multiplying pull
+            if self._fish_surge_active:
+                self._fish_surge_remaining -= dt
+                if self._fish_surge_remaining <= 0:
+                    self._fish_surge_active = False
+                    self._fish_surge_timer = random.uniform(1.0, 2.5) / max(0.5, self._fish_tension)
+                pull_mult = 1.8 + self._fish_tension * 0.6
+            else:
+                self._fish_surge_timer -= dt
+                if self._fish_surge_timer <= 0:
+                    self._fish_surge_active = True
+                    self._fish_surge_remaining = random.uniform(0.4, 0.9) * min(2.0, self._fish_tension)
+                pull_mult = self._fish_tension * 0.5
             if holding_f:
                 self._reel_pos += reel_speed * dt
             else:
-                self._reel_pos -= self._reel_pull_speed * dt
+                self._reel_pos -= self._reel_pull_speed * pull_mult * dt
             self._reel_pos = max(0.0, min(1.0, self._reel_pos))
             if self._reel_pos >= 1.0:
                 self._resolve_reel_catch()
@@ -2349,6 +2410,14 @@ class Player:
                 drain_mult *= 0.50
             if "steadiness" in self.beer_buffs:
                 drain_mult *= 0.65
+            if self.mining_block is not None:
+                depth = self.get_depth()
+                if depth >= 160:
+                    drain_mult *= 2.0
+                elif depth >= 100:
+                    drain_mult *= 1.6
+                elif depth >= 40:
+                    drain_mult *= 1.25
         if "vitality" in self.cheese_buffs and self.hunger > 20.0:
             self.health = min(MAX_HEALTH, self.health + 1.0 * dt)
         if "immunity" in self.beer_buffs and self.hunger > 10.0:
@@ -2565,7 +2634,8 @@ class Player:
         cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
         for dy in range(-3, 4):
             for dx in range(-3, 4):
-                if self.world.get_block(cx + dx, cy + dy) == CITY_BLOCK:
+                if (self.world.get_block(cx + dx, cy + dy) == CITY_BLOCK or
+                        self.world.get_bg_block(cx + dx, cy + dy) == CITY_BLOCK):
                     return (cx + dx, cy + dy)
         return None
 
@@ -2693,6 +2763,24 @@ class Player:
         item_id = self.hotbar[self.selected_slot]
         tool_power = ITEMS.get(item_id, {}).get("axe_power", 0) if item_id else 0
         return max(self.pick_power, tool_power)
+
+    @property
+    def depth_fatigue_mult(self):
+        depth = self.get_depth()
+        if depth < 40:
+            return 1.0
+        elif depth < 100:
+            base = 1.25
+        elif depth < 160:
+            base = 1.6
+        else:
+            base = 2.1
+        resist = 1.0
+        if "endurance" in self.active_buffs or "endurance" in self.beer_buffs or "endurance" in self.spirit_buffs:
+            resist *= 0.70
+        if "vitality" in self.cheese_buffs:
+            resist *= 0.85
+        return max(1.0, base * resist)
 
     def _mining_power_for(self, block_id):
         if block_id in ALL_LOGS or block_id in ALL_LEAVES:

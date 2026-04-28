@@ -554,3 +554,31 @@ def draw_npc_child(screen, sx, sy, npc):
     pygame.draw.rect(screen, (40, 30, 20), (sx + 8, sy - 9 + bob, 3, 4))
     pygame.draw.circle(screen, (230, 150, 140), (sx + 3,  sy - 4 + bob), 2)
     pygame.draw.circle(screen, (230, 150, 140), (sx + 10, sy - 4 + bob), 2)
+
+
+def draw_tea_house_visitor(screen, sx, sy, visitor):
+    """Generic visitor NPC drawn from the visitor's palette list [skin, shirt, pants, boot]."""
+    bob = int(getattr(visitor, '_bob_offset', 0))
+    palette = getattr(visitor, 'palette', [(220, 185, 145), (160, 115, 55), (100, 75, 40), (80, 60, 35)])
+    skin  = palette[0] if len(palette) > 0 else (220, 185, 145)
+    shirt = palette[1] if len(palette) > 1 else (160, 115,  55)
+    pants = palette[2] if len(palette) > 2 else (100,  75,  40)
+    boot  = palette[3] if len(palette) > 3 else ( 80,  60,  35)
+    W = visitor.NPC_W
+    # Body (shirt)
+    pygame.draw.rect(screen, shirt, (sx + 1, sy + bob, W - 2, 14))
+    # Pants
+    pygame.draw.rect(screen, pants, (sx + 1, sy + 14 + bob, W - 2, 8))
+    # Boots
+    pygame.draw.rect(screen, boot,  (sx + 2, sy + 22 + bob, 6, 5))
+    pygame.draw.rect(screen, boot,  (sx + 12, sy + 22 + bob, 6, 5))
+    # Head
+    pygame.draw.rect(screen, skin,  (sx + 2, sy - 10 + bob, 16, 12))
+    # Eyes
+    pygame.draw.rect(screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
+    pygame.draw.rect(screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+    # Small tea cup in hand (waiting state)
+    if getattr(visitor, 'state', '') == 'waiting':
+        cup_x = sx + W + 2 if getattr(visitor, 'facing', 1) == 1 else sx - 8
+        pygame.draw.rect(screen, (200, 190, 175), (cup_x, sy + 8 + bob, 7, 6))
+        pygame.draw.line(screen, (160, 148, 130), (cup_x, sy + 14 + bob), (cup_x + 6, sy + 14 + bob), 1)

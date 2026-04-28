@@ -39,13 +39,14 @@ from .weapons import SmithingMixin
 from .gambling import GamblingMixin
 from .racing import RacingMixin
 from .arena import ArenaUIMixin
+from .tea_house import TeaHouseMixin
 
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
     CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, BeerMixin, MinigamesMixin, CollectionsMixin,
     HelpMixin, HorseMixin, DogsMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin,
-    TownMenuMixin, OutpostMenuMixin, LandmarkMenuMixin, CityBlockMenuMixin, CoatOfArmsDesignerMixin, HirePanelMixin, JobPanelMixin, ReputationScreenMixin, SmithingMixin, GamblingMixin, RacingMixin, ArenaUIMixin,
+    TownMenuMixin, OutpostMenuMixin, LandmarkMenuMixin, CityBlockMenuMixin, CoatOfArmsDesignerMixin, HirePanelMixin, JobPanelMixin, ReputationScreenMixin, SmithingMixin, GamblingMixin, RacingMixin, ArenaUIMixin, TeaHouseMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -64,6 +65,7 @@ class UI(
         self.collection_open         = False   # G: rock collection
         self.refinery_open           = False   # E near equipment block
         self.refinery_block_id       = None
+        self.tea_house_open          = False   # E near TEA_HOUSE_BLOCK
         self.active_compost_bin_pos  = None   # (bx, by) when compost bin is open
         self._compost_deposit_btn    = None
         self._compost_collect_btn    = None
@@ -263,6 +265,11 @@ class UI(
         self.reputation_screen_open = False
         self._rep_scroll     = 0
         self._rep_max_scroll = 0
+        self._rep_view          = "list"
+        self._map_selected_rid  = None
+        self._map_scroll        = 0
+        self._map_node_rects    = {}
+        self._rep_tab_rects     = {}
         self.automation_open   = False
         self.active_automation = None
         self._auto_deposit1_btn    = None
@@ -639,6 +646,13 @@ class UI(
         self._drag_pos     = (0, 0)
         self._inv_scroll     = 0
         self._max_inv_scroll = 0
+        self._inv_tab           = 0      # 0=All 1=Seeds 2=Food 3=Tools
+        self._inv_tab_rects     = {}
+        self._inv_sort_count    = False  # False=alpha  True=by-count desc
+        self._inv_sort_btn_rect = None
+        self._inv_search        = ""
+        self._inv_search_active = False
+        self._inv_search_rect   = None
         # Achievements (populated by main.py after save_mgr.load_achievements())
         self.achievements_data: dict  = {}   # {achievement_id: bool}
         self.global_collection: dict  = {}   # {category: set(item_id_str)}
@@ -707,6 +721,12 @@ class UI(
         self._oxidation_locked      = False
         self._oxidation_quality     = 0.0
         self._oxidation_event_flash = None
+        self._surge_phase          = "idle"
+        self._surge_timer          = 0.0
+        self._surge_next_at        = 7.0
+        self._surge_duration       = 0.0
+        self._surge_intensity      = 1.0
+        self._enzymatic_velocity   = 0.0
         self._oxidation_select_rects= {}
         self._oxidation_result_btn  = None
         self._oxidation_lock_btn    = None
@@ -1116,6 +1136,8 @@ class UI(
             self._draw_dog_view_panel(player)
         if self.dog_breeding_open:
             self._draw_dog_breeding_panel(player)
+        if self.tea_house_open:
+            self._draw_tea_house(player, player.world, dt)
         if self.gambling_open:
             self._draw_gambling(player, dt)
         if self.arena_open:

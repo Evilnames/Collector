@@ -55,7 +55,7 @@ class PlayerCity:
         y1 = min(world.height - 1, self.by + _SCAN_V_HALF)
         for bx in range(self.bx - CITY_REGION_HALF, self.bx + CITY_REGION_HALF + 1):
             for by in range(y0, y1 + 1):
-                if world.get_block(bx, by) == BED:
+                if world.get_block(bx, by) == BED or world.get_bg_block(bx, by) == BED:
                     total += 1
         return total
 

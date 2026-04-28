@@ -1116,4 +1116,35 @@ def build_crafting_surfs():
     pygame.draw.rect(s, _darken(post_gold, 20), (0, 0, BLOCK_SIZE, BLOCK_SIZE), 1)
     surfs[bid] = s
 
+    # Tea House — warm wooden serving counter with a paper lantern
+    bid = TEA_HOUSE_BLOCK
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    wood     = BLOCKS[bid]["color"]       # (122, 92, 58) warm brown
+    dark     = _darken(wood, 30)
+    countertop = _darken(wood, 45)
+    plank    = _darken(wood, 15)
+    lantern_amber = (232, 185, 75)
+    lantern_glow  = (255, 225, 120)
+    s.fill(dark)
+    # Counter body
+    pygame.draw.rect(s, wood, (2, 14, 28, 16))
+    # Plank lines on counter face
+    for fy in [18, 22, 26]:
+        pygame.draw.line(s, plank, (2, fy), (30, fy), 1)
+    # Countertop edge
+    pygame.draw.rect(s, countertop, (1, 12, 30, 3))
+    # Thin cord from ceiling to lantern
+    pygame.draw.line(s, _darken(wood, 20), (7, 1), (7, 8), 1)
+    # Paper lantern body (small oval)
+    pygame.draw.ellipse(s, lantern_amber, (3, 8, 9, 7))
+    pygame.draw.ellipse(s, lantern_glow,  (5, 9, 5, 5))
+    # Lantern cap/base lines
+    pygame.draw.line(s, _darken(lantern_amber, 20), (3, 9), (12, 9), 1)
+    pygame.draw.line(s, _darken(lantern_amber, 20), (3, 14), (12, 14), 1)
+    # Counter legs
+    pygame.draw.rect(s, _darken(wood, 20), (3, 30, 3, 2))
+    pygame.draw.rect(s, _darken(wood, 20), (26, 30, 3, 2))
+    pygame.draw.rect(s, dark, s.get_rect(), 1)
+    surfs[bid] = s
+
     return surfs

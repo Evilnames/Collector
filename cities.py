@@ -28,6 +28,7 @@ from blocks import (STONE, BEDROCK, DIRT, HOUSE_WALL, HOUSE_ROOF, AIR, LADDER, W
                     SANDSTONE_BLOCK, POLISHED_MARBLE,
                     WHITEWASHED_WALL, MONASTERY_ROOF, MANI_STONE, PRAYER_FLAG_BLOCK,
                     WOOD_DOOR_CLOSED, WOOD_DOOR_OPEN, ALL_LOGS, ALL_LEAVES, BUSH_BLOCKS, SAPLING,
+                    BAMBOO_GROVE, WILDFLOWER_PATCH, REED_BLOCK, MUSHROOM_STEM, MUSHROOM_CAP,
                     PINE_PLANK_WALL, SLATE_SHINGLE,
                     GRANITE_ASHLAR, ROUGH_STONE_WALL, ALPINE_PLASTER,
                     WHITE_PLASTER_WALL, ADOBE_BRICK, SPANISH_ROOF_TILE,
@@ -101,7 +102,7 @@ from blocks import (STONE, BEDROCK, DIRT, HOUSE_WALL, HOUSE_ROOF, AIR, LADDER, W
                     COBALT_DOOR_CLOSED, CRIMSON_CEDAR_DOOR_CLOSED, SAFFRON_DOOR_CLOSED,
                     STUDDED_OAK_DOOR_CLOSED, VERMILION_DOOR_CLOSED, SHOJI_DOOR_CLOSED,
                     GILDED_DOOR_CLOSED, BRONZE_DOOR_CLOSED, SWAHILI_DOOR_CLOSED,
-                    SANDALWOOD_DOOR_CLOSED, STONE_SLAB_DOOR_CLOSED,
+                    SANDALWOOD_DOOR_CLOSED, STONE_SLAB_DOOR_CLOSED, ALL_DOORS,
                     BED, CHEST_BLOCK, BAKERY_BLOCK, STABLE_BLOCK, STORAGE_PITHOS,
                     TAPESTRY_BLOCK, WOVEN_TEXTILE, OAK_PANEL, TEAK_PLANK,
                     GAMBLING_TABLE,
@@ -154,6 +155,15 @@ TRADE_TABLE = [
     ("dirt_clump",   15,  1),
     ("milk",          2,  4),
 ]
+
+_ORE_COMMISSIONS = [
+    ("coal",          "Coal",    (12, 20),  20),
+    ("iron_chunk",    "Iron",    ( 8, 14),  35),
+    ("gold_nugget",   "Gold",    ( 5,  9),  55),
+    ("crystal_shard", "Crystal", ( 3,  6),  80),
+    ("ruby",          "Ruby",    ( 2,  4), 110),
+]
+_COMMISSION_DAYS = 7
 
 # ---------------------------------------------------------------------------
 # Wildflower quest data
@@ -572,6 +582,14 @@ class NPC:
             world_seed,
         )
         self.preferences = npc_preferences.derive_preferences(self.npc_uid, world_seed)
+
+    SHOP_HOURS = False  # subclasses set True to close at night
+
+    def is_open(self, time_of_day):
+        if not self.SHOP_HOURS:
+            return True
+        from world import DAY_DURATION
+        return time_of_day < DAY_DURATION
 
     def _beloved_price_mult(self, player) -> float:
         """Return 0.90 if player has a beloved discount in this NPC's town, else 1.0."""
@@ -1246,6 +1264,41 @@ class TradeNPC(NPC):
         self.clothing = _npc_clothing(biodome)
         n = rng.randint(3, 4)
         self.trades = rng.sample(TRADE_TABLE, n)
+        self.ore_commission = None
+
+    def refresh_commission(self, day_count):
+        period = day_count // _COMMISSION_DAYS
+        if self.ore_commission and self.ore_commission["expires_day"] > day_count:
+            return
+        import random as _rnd
+        seed = hash((str(getattr(self, "npc_uid", "") or ""), period))
+        rng = _rnd.Random(seed)
+        ore_id, ore_name, amount_range, reward = rng.choice(_ORE_COMMISSIONS)
+        amount = rng.randint(*amount_range)
+        self.ore_commission = {
+            "ore_id": ore_id, "ore_name": ore_name,
+            "amount": amount, "reward": reward,
+            "expires_day": (period + 1) * _COMMISSION_DAYS,
+        }
+
+    def can_complete_commission(self, player):
+        if not self.ore_commission:
+            return False
+        return player.inventory.get(self.ore_commission["ore_id"], 0) >= self.ore_commission["amount"]
+
+    def complete_commission(self, player):
+        if not self.can_complete_commission(player):
+            return False
+        c = self.ore_commission
+        player.inventory[c["ore_id"]] -= c["amount"]
+        if player.inventory[c["ore_id"]] <= 0:
+            del player.inventory[c["ore_id"]]
+        gold = round(c["reward"] * _rep_buy_bonus(self._town_rep()))
+        player.money += gold
+        player.pending_notifications.append(
+            ("Commission", f"Commission complete! +{gold} gold", "uncommon"))
+        self.ore_commission = None
+        return True
 
     def boosted_gold(self, trade_idx):
         _, _, receive_gold = self.trades[trade_idx]
@@ -1796,6 +1849,7 @@ def _rep_buy_bonus(rep):
 
 
 class MerchantNPC(NPC):
+    SHOP_HOURS = True
     def __init__(self, x, y, world, rng, biodome="temperate"):
         super().__init__(x, y, world, "npc_merchant")
         self.clothing = _npc_clothing(biodome)
@@ -1931,6 +1985,7 @@ class SweetShopNPC(MerchantNPC):
 
 
 class DoctorNPC(NPC):
+    SHOP_HOURS = True
     def __init__(self, x, y, world, biodome="temperate"):
         super().__init__(x, y, world, "npc_doctor")
         self.clothing = _npc_clothing(biodome)
@@ -1969,6 +2024,7 @@ class TownCrierNPC(NPC):
 
 
 class RestaurantNPC(NPC):
+    SHOP_HOURS = True
 
     def __init__(self, x, y, world, rng, biodome="temperate"):
         super().__init__(x, y, world, "npc_chef")
@@ -2046,6 +2102,7 @@ class ShrineKeeperNPC(NPC):
 
 class JewelryMerchantNPC(NPC):
     """Buys custom jewelry pieces from the player."""
+    SHOP_HOURS = True
     def __init__(self, x, y, world, rng, biodome="temperate"):
         super().__init__(x, y, world, "npc_merchant")
         self.clothing = _npc_clothing(biodome)
@@ -2066,6 +2123,7 @@ class JewelryMerchantNPC(NPC):
 
 
 class BlacksmithNPC(NPC):
+    SHOP_HOURS = True
     def __init__(self, x, y, world, rng, biodome="temperate"):
         super().__init__(x, y, world, "npc_blacksmith")
         self.clothing = _npc_clothing(biodome)
@@ -2227,6 +2285,17 @@ class RacingBookkeeperNPC(NPC):
         _STYLES = ["frontrunner", "pacer", "closer", "wild"]
         _STYLE_WEIGHTS = [2, 3, 2, 1]   # pacers most common
 
+        _COAT_PATTERNS   = ["solid", "dappled", "spotted", "blanket"]
+        _COAT_WEIGHTS    = [55, 25, 15, 5]
+        _LEG_MARKINGS    = ["none", "socks", "stockings"]
+        _LEG_WEIGHTS     = [60, 25, 15]
+        _MANE_COLORS     = ["match", "flaxen", "silver", "dark"]
+        _MANE_WEIGHTS    = [55, 25, 12, 8]
+        _FACE_MARKINGS   = ["none", "star", "blaze", "stripe"]
+        _FACE_WEIGHTS    = [50, 25, 15, 10]
+        _TEMPERAMENTS    = ["calm", "spirited", "wild"]
+        _TEMP_WEIGHTS    = [30, 50, 20]
+
         count = rng.randint(3, 5)
         names = rng.sample(_HORSE_NAMES, count)
         lo = max(0.60, 0.70 + difficulty * 0.08)
@@ -2253,6 +2322,11 @@ class RacingBookkeeperNPC(NPC):
                 "agility":      agi,
                 "heart":        ht,
                 "coat_color":   coat,
+                "coat_pattern": rng.choices(_COAT_PATTERNS, weights=_COAT_WEIGHTS)[0],
+                "leg_marking":  rng.choices(_LEG_MARKINGS,  weights=_LEG_WEIGHTS)[0],
+                "mane_color":   rng.choices(_MANE_COLORS,   weights=_MANE_WEIGHTS)[0],
+                "face_marking": rng.choices(_FACE_MARKINGS, weights=_FACE_WEIGHTS)[0],
+                "temperament":  rng.choices(_TEMPERAMENTS,  weights=_TEMP_WEIGHTS)[0],
                 "style":        style,
                 "wins":         prior_wins,
                 "races":        prior_races,
@@ -3208,7 +3282,9 @@ _SIZE_BY_BIOME = {
     "pacific_island": ["atoll_village", "atoll_village", "island_town", "island_chiefdom"],
 }
 
-_PLANT_BLOCKS = ALL_LOGS | ALL_LEAVES | BUSH_BLOCKS | {SAPLING}
+_PLANT_BLOCKS = (ALL_LOGS | ALL_LEAVES | BUSH_BLOCKS |
+                 {SAPLING, BAMBOO_GROVE, WILDFLOWER_PATCH, REED_BLOCK,
+                  MUSHROOM_STEM, MUSHROOM_CAP})
 
 
 # ---------------------------------------------------------------------------
@@ -3854,21 +3930,22 @@ _STREETLAMP_BLOCKS = (GARDEN_LANTERN, TORCH, WALL_SCONCE,
                       LANTERN_ORB, STAR_LAMP, BRAZIER)
 
 
-def _pave_main_street(world, rng, lo_x, hi_x, sy):
+def _pave_main_street(world, rng, lo_x, hi_x, sy, terrain_profile=None):
     """Replace the bare-stone city floor with a chosen paving block.
 
     Skips bedrock and any non-stone block, so building floors, rugs, and
     square paving aren't overwritten.
     """
     paving = rng.choice(_STREET_PAVINGS)
-    if not (0 <= sy < world.height):
-        return
     for bx in range(lo_x, hi_x + 1):
-        if world.get_block(bx, sy) == STONE:
-            world.set_block(bx, sy, paving)
+        col_sy = terrain_profile.get(bx, sy) if terrain_profile else sy
+        if not (0 <= col_sy < world.height):
+            continue
+        if world.get_block(bx, col_sy) == STONE:
+            world.set_block(bx, col_sy, paving)
 
 
-def _place_streetlamps(world, rng, lo_x, hi_x, sy, spacing=6):
+def _place_streetlamps(world, rng, lo_x, hi_x, sy, spacing=6, terrain_profile=None):
     """Sprinkle bg-block streetlamps along the city street.
 
     Each lamp sits above the floor as a background block so it renders
@@ -3877,13 +3954,14 @@ def _place_streetlamps(world, rng, lo_x, hi_x, sy, spacing=6):
     headroom to distinguish open street from interior.
     """
     lamp = rng.choice(_STREETLAMP_BLOCKS)
-    lamp_y = sy - 2
-    if not (0 <= lamp_y < world.height):
-        return
     for bx in range(lo_x, hi_x + 1, spacing):
+        col_sy = terrain_profile.get(bx, sy) if terrain_profile else sy
+        lamp_y = col_sy - 2
+        if not (0 <= lamp_y < world.height):
+            continue
         # All four rows above the floor must be open air — guarantees we're
         # outdoors and not standing under a building roof.
-        if all(world.get_block(bx, sy - dy) == AIR for dy in (1, 2, 3, 4, 5)):
+        if all(world.get_block(bx, col_sy - dy) == AIR for dy in (1, 2, 3, 4, 5)):
             world.set_bg_block(bx, lamp_y, lamp)
 
 
@@ -3917,43 +3995,48 @@ def _pick_wall_style(rng, biodome, city_size):
     return rng.choice(pool)
 
 
-def _place_city_walls(world, rng, lo_x, hi_x, sy, biodome, city_size):
+def _place_city_walls(world, rng, lo_x, hi_x, sy, biodome, city_size,
+                      left_edge_sy=None, right_edge_sy=None):
     """Build foreground gate towers with optional crenellations and a bg
     wall section flanking each gate so the city reads as enclosed.
 
     Open cities (style is None) fall back to the simpler bg gateposts.
-    The 2-tall gate gap (sy-1, sy-2) at each gate column is left clear so
-    the player can walk through; the wall starts at sy-3 and rises to sy-h.
+    The 2-tall gate gap at each gate column is left clear so the player can
+    walk through; the wall starts at floor-3 and rises to floor-h.
     """
     style = _pick_wall_style(rng, biodome, city_size)
+    gate_sy = {lo_x: left_edge_sy or sy, hi_x: right_edge_sy or sy}
+
     if style is None:
-        _place_gateposts(world, rng, lo_x, hi_x, sy)
+        for gate_x in (lo_x, hi_x):
+            _place_gateposts(world, rng, gate_x, gate_x, gate_sy[gate_x])
         return
 
     base, cap, height, has_crenel = style
 
     # Foreground gate columns at the city edges.
     for gate_x in (lo_x, hi_x):
+        gsy = gate_sy[gate_x]
         for dy in range(3, height + 1):
-            wy = sy - dy
+            wy = gsy - dy
             if 0 <= wy < world.height and world.get_block(gate_x, wy) == AIR:
                 world.set_block(gate_x, wy, base)
         if has_crenel:
-            crenel_y = sy - height - 1
+            crenel_y = gsy - height - 1
             if 0 <= crenel_y < world.height and world.get_block(gate_x, crenel_y) == AIR:
                 world.set_block(gate_x, crenel_y, cap)
 
-    # Background wall continuation: 2 columns flanking each gate outward,
-    # giving the impression the wall extends beyond the gate towers.
+    # Background wall continuation: 2 columns flanking each gate outward.
     for outward, gate_x in ((-1, lo_x), (+1, hi_x)):
+        gsy = gate_sy[gate_x]
         for step in range(1, 3):
             bx = gate_x + outward * step
             for dy in range(3, height + 1):
-                wy = sy - dy
+                wy = gsy - dy
                 if 0 <= wy < world.height and world.get_block(bx, wy) == AIR:
                     world.set_bg_block(bx, wy, base)
             if has_crenel:
-                top_y = sy - height - 1
+                top_y = gsy - height - 1
                 if 0 <= top_y < world.height and world.get_block(bx, top_y) == AIR:
                     world.set_bg_block(bx, top_y, cap)
 
@@ -4265,31 +4348,44 @@ def _place_inn(world, left_x, sy, width, wall_height, rng):
 
 def _place_smithy(world, left_x, sy, width, wall_height,
                   wall_block=ROUGH_STONE_WALL):
-    """Open-front stone forge: solid back wall, stub side walls, brazier and iron racks."""
-    rx = left_x + width - 1
-    for wy in range(sy - wall_height, sy):
-        if 0 <= wy < world.height:
-            world.set_block(rx, wy, wall_block)
-            world.set_bg_block(rx, wy, wall_block)
-    stub_h = max(2, wall_height // 2)
-    for wy in range(sy - stub_h, sy):
-        if not (0 <= wy < world.height):
-            continue
-        world.set_block(left_x, wy, WOOD_DOOR_OPEN if wy >= sy - 2 else wall_block)
+    """Enclosed stone forge with door entry, brazier and iron racks inside."""
     for wy in range(sy - wall_height, sy):
         for wx in range(left_x, left_x + width):
-            if 0 <= wy < world.height and world.get_block(wx, wy) == AIR:
+            if not (0 <= wy < world.height):
+                continue
+            is_ceiling    = (wy == sy - wall_height)
+            is_left_wall  = (wx == left_x)
+            is_right_wall = (wx == left_x + width - 1)
+            is_door_row   = (wy >= sy - 2)
+            if is_door_row and (is_left_wall or is_right_wall):
+                world.set_block(wx, wy, WOOD_DOOR_OPEN)
+            elif is_ceiling or is_left_wall or is_right_wall:
+                world.set_block(wx, wy, wall_block)
                 world.set_bg_block(wx, wy, wall_block)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, wall_block)
+    # Cobblestone floor
     for wx in range(left_x, left_x + width):
         if 0 <= sy < world.height and world.get_block(wx, sy) not in (AIR, BEDROCK):
             world.set_block(wx, sy, COBBLESTONE)
+    # Forge interior
     mid = left_x + width // 2
     if 0 <= sy - 1 < world.height:
-        world.set_bg_block(mid,                     sy - 1, BRAZIER)
-        world.set_bg_block(left_x + 1,              sy - 1, WROUGHT_IRON_GRILLE)
-        world.set_bg_block(left_x + width - 2,      sy - 1, WROUGHT_IRON_GRILLE)
+        world.set_bg_block(mid,                 sy - 1, BRAZIER)
+        world.set_bg_block(left_x + 1,          sy - 1, WROUGHT_IRON_GRILLE)
+        world.set_bg_block(left_x + width - 2,  sy - 1, WROUGHT_IRON_GRILLE)
     if 0 <= sy - 3 < world.height:
         world.set_bg_block(mid, sy - 3, WALL_SCONCE)
+    # Roof
+    roof_y = sy - wall_height - 1
+    for rx in range(left_x - 1, left_x + width + 1):
+        if 0 <= roof_y < world.height:
+            world.set_block(rx, roof_y, HOUSE_ROOF_STONE)
+    peak_y = roof_y - 1
+    for rx in range(left_x, left_x + width):
+        if 0 <= peak_y < world.height:
+            world.set_block(rx, peak_y, HOUSE_ROOF_STONE)
 
 
 def _place_apothecary(world, left_x, sy, width, wall_height, rng):
@@ -5034,7 +5130,8 @@ _TRAVERSAL_THRESHOLD = 3   # height diff (blocks) below which no stairs are need
 _TRAVERSAL_MAX_STEPS = 25  # cap so extreme terrain doesn't create absurd staircases
 
 
-def _ensure_city_traversal(world, city_bx, half_w, sy):
+def _ensure_city_traversal(world, city_bx, half_w, sy,
+                           left_edge_sy=None, right_edge_sy=None):
     """Guarantee the player can enter and exit the city on each side.
 
     Per-side logic:
@@ -5042,10 +5139,10 @@ def _ensure_city_traversal(world, city_bx, half_w, sy):
       - City below terrain (mountain wall) → carve a descending ramp through the hillside.
     Stair block direction is chosen so the ascending direction always uses a stair trigger.
     """
-    def _side(edge_x, outward):
+    def _side(edge_x, outward, edge_sy):
         # Sample the first terrain column outside the city edge.
         terrain_sy = world.surface_y_at(edge_x + outward)
-        diff = terrain_sy - sy      # positive = terrain lower; negative = terrain higher
+        diff = terrain_sy - edge_sy  # positive = terrain lower; negative = terrain higher
         if abs(diff) <= _TRAVERSAL_THRESHOLD:
             return
         steps = min(abs(diff), _TRAVERSAL_MAX_STEPS)
@@ -5064,7 +5161,7 @@ def _ensure_city_traversal(world, city_bx, half_w, sy):
             stair_block = STAIRS_RIGHT if outward == -1 else STAIRS_LEFT
             for i in range(steps):
                 sx      = edge_x + outward * (1 + i)
-                stair_y = sy + i        # descends (y grows) as we step away from city
+                stair_y = edge_sy + i   # descends (y grows) as we step away from city
                 world.set_block(sx, stair_y, stair_block)
                 for h in range(1, 3):
                     if world.get_block(sx, stair_y - h) not in (AIR, BEDROCK):
@@ -5080,17 +5177,184 @@ def _ensure_city_traversal(world, city_bx, half_w, sy):
             stair_block = STAIRS_LEFT if outward == -1 else STAIRS_RIGHT
             for i in range(steps):
                 sx      = edge_x + outward * (1 + i)
-                # Start at sy-1 (player row when at city floor) so the first stair fires.
-                # Ascending outward; i=steps-1 lands at terrain_sy (mountain surface, cleared below).
-                stair_y = sy - 1 - i
+                # Start at edge_sy-1 (player row at city edge floor) so the first stair fires.
+                stair_y = edge_sy - 1 - i
                 world.set_block(sx, stair_y, stair_block)
                 for h in range(1, 3):
                     if world.get_block(sx, stair_y - h) not in (AIR, BEDROCK):
                         world.set_block(sx, stair_y - h, AIR)
                 # No fill needed — mountain stone below is already solid.
 
-    _side(city_bx - half_w, -1)   # left exit
-    _side(city_bx + half_w, +1)   # right exit
+    _side(city_bx - half_w, -1, left_edge_sy  or sy)   # left exit
+    _side(city_bx + half_w, +1, right_edge_sy or sy)   # right exit
+
+
+def _city_terrain_profile(world, lo_x, hi_x, max_step=2):
+    """Smoothed, slope-limited elevation profile across the city footprint.
+
+    Returns dict {x: sy} where adjacent values differ by at most max_step.
+    The blur rounds off sharp spikes; the slope-limit turns gradual hills into
+    terraces that building floors can snap to cleanly.
+    """
+    xs = list(range(lo_x, hi_x + 1))
+    raw = [min(world.surface_y_at(x), SURFACE_Y) for x in xs]
+    n = len(raw)
+
+    # 5-column box blur
+    blurred = [
+        round(sum(raw[max(0, i - 2):min(n, i + 3)]) / len(raw[max(0, i - 2):min(n, i + 3)]))
+        for i in range(n)
+    ]
+
+    # Slope-limit left→right then right→left
+    for i in range(1, n):
+        if blurred[i] > blurred[i - 1] + max_step:
+            blurred[i] = blurred[i - 1] + max_step
+        elif blurred[i] < blurred[i - 1] - max_step:
+            blurred[i] = blurred[i - 1] - max_step
+    for i in range(n - 2, -1, -1):
+        if blurred[i] > blurred[i + 1] + max_step:
+            blurred[i] = blurred[i + 1] + max_step
+        elif blurred[i] < blurred[i + 1] - max_step:
+            blurred[i] = blurred[i + 1] - max_step
+
+    return {x: blurred[i] for i, x in enumerate(xs)}
+
+
+def _building_floor_sy(profile, left_x, width):
+    """Median profile elevation across a building's footprint width."""
+    vals = sorted(profile[x] for x in range(left_x, left_x + width) if x in profile)
+    if not vals:
+        return SURFACE_Y
+    return vals[len(vals) // 2]
+
+
+def _level_building_footprint(world, left_x, width, sy):
+    """Flatten only the columns under a single building to sy.
+
+    Hill columns are carved; valley columns are stone-filled.
+    Also clears tree canopy above the surface (trees extend above surface_y).
+    """
+    for bx in range(left_x, left_x + width):
+        col_sy = min(world.surface_y_at(bx), SURFACE_Y)
+        # Clear from 30 blocks above surface through to building floor, catching
+        # tree trunks and canopy that sit above the terrain surface.
+        clear_top = max(0, min(col_sy, sy) - 30)
+        for by in range(clear_top, sy):
+            blk = world.get_block(bx, by)
+            if blk not in (AIR, BEDROCK):
+                world.set_block(bx, by, AIR)
+        for by in range(sy, col_sy + 1):
+            if world.get_block(bx, by) in (AIR, WATER):
+                world.set_block(bx, by, STONE)
+        if world.get_block(bx, sy) != BEDROCK:
+            world.set_block(bx, sy, STONE)
+
+
+def _place_terrace_stairs(world, right_x, left_x, sy_left, sy_right):
+    """Stair blocks in the gap between two buildings at different heights.
+
+    right_x: right edge (exclusive) of the left building.
+    left_x:  left edge of the right building.
+    sy_left / sy_right: floor y of each building (higher y = lower elevation).
+    """
+    diff = sy_right - sy_left  # positive = right building is lower
+    if diff == 0 or abs(diff) > _TRAVERSAL_MAX_STEPS:
+        return
+    gap = left_x - right_x
+    steps = min(abs(diff), gap)
+
+    if diff > 0:
+        # Right building lower; STAIRS_LEFT so player going left steps up
+        stair_block = STAIRS_LEFT
+        for i in range(steps):
+            gx = right_x + i
+            stair_y = sy_left + i
+            if not (0 <= stair_y < world.height):
+                continue
+            world.set_block(gx, stair_y, stair_block)
+            for hy in range(1, 3):
+                wy = stair_y - hy
+                if 0 <= wy < world.height and world.get_block(gx, wy) not in (AIR, BEDROCK):
+                    world.set_block(gx, wy, AIR)
+            for fy in range(stair_y + 1, sy_right + 1):
+                if 0 <= fy < world.height and world.get_block(gx, fy) == AIR:
+                    world.set_block(gx, fy, STONE)
+    else:
+        # Right building higher; STAIRS_RIGHT so player going right steps up
+        stair_block = STAIRS_RIGHT
+        for i in range(steps):
+            gx = left_x - 1 - i
+            stair_y = sy_right + i
+            if not (0 <= stair_y < world.height):
+                continue
+            world.set_block(gx, stair_y, stair_block)
+            for hy in range(1, 3):
+                wy = stair_y - hy
+                if 0 <= wy < world.height and world.get_block(gx, wy) not in (AIR, BEDROCK):
+                    world.set_block(gx, wy, AIR)
+            for fy in range(stair_y + 1, sy_left + 1):
+                if 0 <= fy < world.height and world.get_block(gx, fy) == AIR:
+                    world.set_block(gx, fy, STONE)
+
+
+_FLOOR_PASSABLE = {AIR, WATER} | ALL_DOORS
+
+def _get_floor_y(world, bx, expected_y, radius=6):
+    """Street-level floor near expected_y in column bx.
+
+    Only searches from expected_y - 2 downward (higher y = lower elevation) so
+    it never reaches upper-story interiors, which sit well above terrain level.
+    Only foreground blocks impede — exterior wall columns have solid foreground
+    at y-2 but passable y-1 (air or door), so only y-1 is checked.
+    """
+    lo = max(2, expected_y - 2)   # 2-block upward tolerance for smoothing offset
+    hi = min(world.height - 1, expected_y + radius)
+    for y in range(lo, hi + 1):
+        if world.get_block(bx, y) not in _FLOOR_PASSABLE:
+            if world.get_block(bx, y - 1) in _FLOOR_PASSABLE:
+                return y
+    return expected_y
+
+
+def _repair_city_walkability(world, lo_x, hi_x, sy, terrain_profile):
+    """Post-placement pass: ensure a player can walk the full city without jumping.
+
+    Repeatedly scans adjacent column pairs and fills the lower side up by one
+    block when a height difference exists. Iterates until all adjacent columns
+    are within one block of each other (single-block drops are always walkable).
+    Uses only stone fill — no stair blocks.
+    """
+    for _pass in range(20):
+        floors = [_get_floor_y(world, bx, terrain_profile.get(bx, sy))
+                  for bx in range(lo_x, hi_x + 1)]
+        n = len(floors)
+        changed = False
+
+        for i in range(n):
+            bx = lo_x + i
+            fy = floors[i]
+
+            # Check both neighbors; if this column is lower, fill it up by one block
+            left_fy  = floors[i - 1] if i > 0     else fy
+            right_fy = floors[i + 1] if i < n - 1 else fy
+            target = min(left_fy, right_fy)  # fill up to the lower neighbor
+
+            if fy - target > 1:
+                fill_y = fy - 1  # fill one block per pass to spread slope evenly
+                blk = world.get_block(bx, fill_y)
+                if 0 <= fill_y < world.height and blk in (AIR, WATER):
+                    # Don't fill into a doorway — check if this or an adjacent
+                    # column has a door at this height (entrance opening).
+                    is_doorway = (world.get_block(bx - 1, fill_y) in ALL_DOORS or
+                                  world.get_block(bx + 1, fill_y) in ALL_DOORS or
+                                  world.get_block(bx,     fill_y - 1) in ALL_DOORS)
+                    if not is_doorway:
+                        world.set_block(bx, fill_y, STONE)
+                        changed = True
+
+        if not changed:
+            break
 
 
 def _build_single_city(world, rng, city_bx, difficulty):
@@ -5186,37 +5450,28 @@ def _build_single_city(world, rng, city_bx, difficulty):
     for c_idx in range(chunk_lo, chunk_hi + 1):
         world.load_chunk(c_idx)
 
+    terrain_profile = _city_terrain_profile(world, city_bx - half_w, city_bx + half_w)
+    min_sy = min(terrain_profile.values())  # highest physical point (lowest y)
+    max_sy = max(terrain_profile.values())  # lowest physical point (highest y)
+
+    # Scan from 35 above the city's highest terrain point down to its lowest,
+    # covering full tree canopy height regardless of which side of the slope it's on.
     for bx in range(city_bx - half_w - 2, city_bx + half_w + 3):
-        for by in range(max(0, sy - 35), sy):
+        for by in range(max(0, min_sy - 35), max_sy + 1):
             if world.get_block(bx, by) in _PLANT_BLOCKS:
                 world.set_block(bx, by, AIR)
-
-    # Flatten terrain across the city footprint to sy
-    for bx in range(city_bx - half_w, city_bx + half_w + 1):
-        col_sy = min(world.surface_y_at(bx), SURFACE_Y)
-        # Hill: remove blocks above city floor
-        for by in range(col_sy, sy):
-            blk = world.get_block(bx, by)
-            if blk not in (AIR, BEDROCK):
-                world.set_block(bx, by, AIR)
-        # Valley: fill gaps below city floor with stone
-        for by in range(sy, col_sy + 1):
-            if world.get_block(bx, by) == AIR:
-                world.set_block(bx, by, STONE)
-
-    for bx in range(city_bx - half_w, city_bx + half_w + 1):
-        if world.get_block(bx, sy) != BEDROCK:
-            world.set_block(bx, sy, STONE)
 
     # 3. Place items sequentially
     current_x = city_bx - half_w + 1
     prev_right_x = None
     prev_height = None
+    prev_sy = None
 
     for i, item in enumerate(layout_items):
         left_x = current_x
         width  = item["width"]
-        
+        item_sy = _building_floor_sy(terrain_profile, left_x, width)
+
         if item["type"] == "building":
             height  = rng.randint(*item["h_range"])
             variants = item["variants"]
@@ -5244,90 +5499,97 @@ def _build_single_city(world, rng, city_bx, difficulty):
 
             variant = rng.choice(variants) if variants else "house"
 
+            _level_building_footprint(world, left_x, width, item_sy)
+
             if variant == "tent":
-                _place_bedouin_tent(world, left_x, sy, width, height, rng)
+                _place_bedouin_tent(world, left_x, item_sy, width, height, rng)
             elif variant == "caravanserai":
-                _place_caravanserai(world, left_x, sy, width, height)
+                _place_caravanserai(world, left_x, item_sy, width, height)
             elif variant == "dome":
-                _place_dome_house(world, left_x, sy, width, height, wall_block)
+                _place_dome_house(world, left_x, item_sy, width, height, wall_block)
             elif variant == "himalayan":
-                _place_himalayan_house(world, left_x, sy, width, height)
+                _place_himalayan_house(world, left_x, item_sy, width, height)
             elif variant == "two_story":
                 floor2_h = rng.randint(2, 3)
-                _place_house_two_story(world, left_x, sy, width, height, floor2_h,
+                _place_house_two_story(world, left_x, item_sy, width, height, floor2_h,
                                        wall_block, roof_block, rng)
             elif variant == "three_story":
                 floor2_h = rng.randint(2, 3)
                 floor3_h = rng.randint(2, 3)
-                _place_house_three_story(world, rng, left_x, sy, width, height,
+                _place_house_three_story(world, rng, left_x, item_sy, width, height,
                                          floor2_h, floor3_h, wall_block, roof_block)
             elif variant == "restaurant":
-                _place_restaurant(world, left_x, sy, width, height, restaurant_style)
+                _place_restaurant(world, left_x, item_sy, width, height, restaurant_style)
             elif variant == "shrine":
-                _place_shrine_for_biome(world, left_x, sy, width, height, biodome)
+                _place_shrine_for_biome(world, left_x, item_sy, width, height, biodome)
             elif variant == "tower":
-                _place_tower(world, left_x, sy, width, height, wall_block, roof_block)
+                _place_tower(world, left_x, item_sy, width, height, wall_block, roof_block)
             elif variant == "longhouse":
-                _place_longhouse(world, left_x, sy, width, height, wall_block, roof_block, rng)
+                _place_longhouse(world, left_x, item_sy, width, height, wall_block, roof_block, rng)
             elif variant == "ruin":
-                _place_ruin(world, left_x, sy, width, height)
+                _place_ruin(world, left_x, item_sy, width, height)
             elif variant == "market_stall":
-                _place_market_stall(world, rng, left_x, sy, width, height)
+                _place_market_stall(world, rng, left_x, item_sy, width, height)
             elif variant == "pavilion":
-                _place_pavilion(world, left_x, sy, width, height, GARDEN_COLUMN, roof_block)
+                _place_pavilion(world, left_x, item_sy, width, height, GARDEN_COLUMN, roof_block)
             elif variant == "well":
-                _place_well(world, left_x, sy, width, height)
+                _place_well(world, left_x, item_sy, width, height)
             elif variant == "inn":
-                _place_inn(world, left_x, sy, width, height, rng)
+                _place_inn(world, left_x, item_sy, width, height, rng)
             elif variant == "smithy":
-                _place_smithy(world, left_x, sy, width, height, wall_block)
+                _place_smithy(world, left_x, item_sy, width, height, wall_block)
             elif variant == "apothecary":
-                _place_apothecary(world, left_x, sy, width, height, rng)
+                _place_apothecary(world, left_x, item_sy, width, height, rng)
             elif variant == "library":
-                _place_library(world, left_x, sy, width, height, rng, wall_block, roof_block)
+                _place_library(world, left_x, item_sy, width, height, rng, wall_block, roof_block)
             elif variant == "barn":
-                _place_barn(world, left_x, sy, width, height, rng)
+                _place_barn(world, left_x, item_sy, width, height, rng)
             elif variant == "vignette":
-                _place_vignette(world, rng, left_x, sy, width, height)
+                _place_vignette(world, rng, left_x, item_sy, width, height)
             elif variant == "hospital":
-                _place_hospital(world, left_x, sy, width, height, rng)
+                _place_hospital(world, left_x, item_sy, width, height, rng)
             elif variant == "coffee_shop":
-                _place_coffee_shop(world, left_x, sy, width, height, rng)
+                _place_coffee_shop(world, left_x, item_sy, width, height, rng)
             elif variant == "wine_shop":
-                _place_wine_shop(world, left_x, sy, width, height, rng)
+                _place_wine_shop(world, left_x, item_sy, width, height, rng)
             elif variant == "racing_ring":
-                _place_racing_ring(world, left_x, sy, width, height, rng)
+                _place_racing_ring(world, left_x, item_sy, width, height, rng)
             else:
-                _place_house(world, left_x, sy, width, height, wall_block, roof_block, rng)
+                _place_house(world, left_x, item_sy, width, height, wall_block, roof_block, rng)
 
-            # Bridge logic: occasionally connect buildings with roof bridges or clotheslines
-            if prev_right_x is not None and prev_height is not None:
+            # Connectors between adjacent buildings
+            if prev_right_x is not None and prev_height is not None and prev_sy is not None:
                 gap = left_x - prev_right_x
-                if 1 <= gap <= 3 and rng.random() < 0.5:
-                    # Determine bridge height
-                    low_h = min(height, prev_height)
-                    if low_h >= 4:
-                        bridge_y = sy - low_h + 1
-                        _place_bridge(world, prev_right_x, left_x, bridge_y)
-                    elif gap <= 2:
-                        # Low-level clothesline
-                        for bx in range(prev_right_x, left_x):
-                            if 0 <= sy - 3 < world.height:
-                                world.set_bg_block(bx, sy - 3, rng.choice([TAPESTRY_BLOCK, WOVEN_TEXTILE]))
+                height_diff = item_sy - prev_sy
+                if height_diff == 0:
+                    # Same level — bridge or clothesline
+                    if 1 <= gap <= 3 and rng.random() < 0.5:
+                        low_h = min(height, prev_height)
+                        if low_h >= 4:
+                            bridge_y = item_sy - low_h + 1
+                            _place_bridge(world, prev_right_x, left_x, bridge_y)
+                        elif gap <= 2:
+                            for bx in range(prev_right_x, left_x):
+                                if 0 <= item_sy - 3 < world.height:
+                                    world.set_bg_block(bx, item_sy - 3, rng.choice([TAPESTRY_BLOCK, WOVEN_TEXTILE]))
+                # height differences are handled by _repair_city_walkability after placement
 
             prev_right_x = left_x + width
             prev_height = height
+            prev_sy = item_sy
 
             npc_bx = left_x + 1
             if variant in ("house", "two_story", "three_story", "longhouse", "tower"):
-                _decorate_interior(world, rng, left_x, sy, width, npc_bx)
-                _decorate_facade(world, rng, left_x, sy, width, height, wall_block)
+                _decorate_interior(world, rng, left_x, item_sy, width, npc_bx)
+                _decorate_facade(world, rng, left_x, item_sy, width, height, wall_block)
 
         elif item["type"] == "square":
-            _place_town_square(world, rng, left_x + item["half"], sy, biodome, item["half"])
+            _level_building_footprint(world, left_x, width, item_sy)
+            _place_town_square(world, rng, left_x + item["half"], item_sy, biodome, item["half"])
             npc_bx, npc_type = left_x + item["half"], "none"
         elif item["type"] == "garden":
-            _place_garden_plot(world, rng, left_x + item["half"], sy, biodome, item["half"])
+            _level_building_footprint(world, left_x, width, item_sy)
+            _place_garden_plot(world, rng, left_x + item["half"], item_sy, biodome, item["half"])
             npc_bx, npc_type = left_x + item["half"], "none"
         else: # Outdoor
             npc_bx, npc_type = left_x, item["npc_type"]
@@ -5338,7 +5600,7 @@ def _build_single_city(world, rng, city_bx, difficulty):
 
         if npc_type not in (None, "none"):
             npc_px = npc_bx * BLOCK_SIZE + (BLOCK_SIZE - NPC.NPC_W) // 2
-            npc_py = (sy - 2) * BLOCK_SIZE
+            npc_py = (item_sy - 2) * BLOCK_SIZE
             if npc_type == "villager":
                 world.entities.append(VillagerNPC(npc_px, npc_py, world, biodome=biodome))
             elif npc_type == "child":
@@ -5447,13 +5709,22 @@ def _build_single_city(world, rng, city_bx, difficulty):
     # River and bridge just outside one city wall
     _place_city_river(world, rng, city_bx, half_w, biodome)
 
+    # Repair traversal gaps before paving so new fill blocks get paved.
+    _repair_city_walkability(world, city_bx - half_w, city_bx + half_w, sy, terrain_profile)
+
     # Cobbled main street + lamps + entry gateposts wrap up the city.
-    _pave_main_street(world, rng, city_bx - half_w, city_bx + half_w, sy)
+    left_edge_sy  = terrain_profile.get(city_bx - half_w, sy)
+    right_edge_sy = terrain_profile.get(city_bx + half_w, sy)
+    _pave_main_street(world, rng, city_bx - half_w, city_bx + half_w, sy,
+                      terrain_profile=terrain_profile)
     _place_streetlamps(world, rng, city_bx - half_w + 2,
-                       city_bx + half_w - 2, sy)
+                       city_bx + half_w - 2, sy,
+                       terrain_profile=terrain_profile)
     _place_city_walls(world, rng, city_bx - half_w, city_bx + half_w, sy,
-                      biodome, city_size)
-    _ensure_city_traversal(world, city_bx, half_w, sy)
+                      biodome, city_size,
+                      left_edge_sy=left_edge_sy, right_edge_sy=right_edge_sy)
+    _ensure_city_traversal(world, city_bx, half_w, sy,
+                           left_edge_sy=left_edge_sy, right_edge_sy=right_edge_sy)
 
     # Assign identity, preferences, and family links to all NPCs spawned for this city
     import npc_identity

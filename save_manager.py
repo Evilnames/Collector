@@ -1265,6 +1265,12 @@ class SaveManager:
             pass
         con.execute("UPDATE player SET fish_bests=?",
                     (json.dumps(getattr(player, "fish_bests", {})),))
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN tea_house_pos TEXT DEFAULT 'null'")
+        except Exception:
+            pass
+        con.execute("UPDATE player SET tea_house_pos=?",
+                    (json.dumps(getattr(player, "tea_house_pos", None)),))
 
     def _save_npc_relationships(self, con, player):
         con.execute("DELETE FROM npc_relationships")
@@ -1856,6 +1862,8 @@ class SaveManager:
                     extra["streak"] = e._streak
                 if hasattr(e, "trades"):
                     extra["trades"] = [list(t) for t in e.trades]
+                if hasattr(e, "ore_commission") and e.ore_commission is not None:
+                    extra["ore_commission"] = e.ore_commission
                 if hasattr(e, "_npc_horses"):
                     extra["npc_horses"] = e._npc_horses
                 con.execute(
@@ -2178,7 +2186,8 @@ class SaveManager:
                    COALESCE(racing_prestige, '{}'),
                    COALESCE(horse_pbs, '{}'),
                    COALESCE(gladiator_cards, '[]'),
-                   COALESCE(fish_bests, '{}')
+                   COALESCE(fish_bests, '{}'),
+                   COALESCE(tea_house_pos, 'null')
             FROM player LIMIT 1
         """).fetchone()
 
@@ -2204,7 +2213,7 @@ class SaveManager:
          incident_quests_active_raw, rivalry_dormant_until_raw,
          races_entered_raw, races_won_raw, gold_won_racing_raw,
          racing_prestige_raw, horse_pbs_raw,
-         gladiator_cards_raw, fish_bests_raw) = row
+         gladiator_cards_raw, fish_bests_raw, tea_house_pos_raw) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -2622,6 +2631,7 @@ class SaveManager:
             "discovered_insect_types": list((insect_obs or {}).keys()),
             "fish": fish_data,
             "fish_bests": json.loads(fish_bests_raw or "{}"),
+            "tea_house_pos": tuple(json.loads(tea_house_pos_raw)) if tea_house_pos_raw and tea_house_pos_raw != "null" else None,
             "discovered_fish_species": list({f["species"] for f in fish_data}),
             "coffee_beans": coffee_data,
             "discovered_coffee_origins": list({

@@ -1339,6 +1339,11 @@ OPEN_DOORS   = {WOOD_DOOR_OPEN, IRON_DOOR_OPEN, WOOD_FENCE_OPEN, IRON_FENCE_OPEN
                 COBALT_DOOR_OPEN, CRIMSON_CEDAR_DOOR_OPEN, TEAL_DOOR_OPEN, SAFFRON_DOOR_OPEN,
                 STUDDED_OAK_DOOR_OPEN, VERMILION_DOOR_OPEN, SHOJI_DOOR_OPEN, GILDED_DOOR_OPEN,
                 BRONZE_DOOR_OPEN, SWAHILI_DOOR_OPEN, SANDALWOOD_DOOR_OPEN, STONE_SLAB_DOOR_OPEN}
+CLOSED_DOORS = {WOOD_DOOR_CLOSED, IRON_DOOR_CLOSED,
+                COBALT_DOOR_CLOSED, CRIMSON_CEDAR_DOOR_CLOSED, TEAL_DOOR_CLOSED, SAFFRON_DOOR_CLOSED,
+                STUDDED_OAK_DOOR_CLOSED, VERMILION_DOOR_CLOSED, SHOJI_DOOR_CLOSED, GILDED_DOOR_CLOSED,
+                BRONZE_DOOR_CLOSED, SWAHILI_DOOR_CLOSED, SANDALWOOD_DOOR_CLOSED, STONE_SLAB_DOOR_CLOSED}
+ALL_DOORS    = OPEN_DOORS | CLOSED_DOORS
 STAIR_BLOCKS = {STAIRS_RIGHT, STAIRS_LEFT}
 
 CAVE_MUSHROOMS = {
@@ -1403,6 +1408,7 @@ COCONUT_CROP_YOUNG    = 1241
 COCONUT_CROP_MATURE   = 1242
 
 WEAPON_ASSEMBLER_BLOCK       = 1256  # weapon assembler
+TEA_HOUSE_BLOCK              = 1257  # placed Tea House serving counter
 
 EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, BAKERY_BLOCK,
                     WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
@@ -1435,7 +1441,8 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     CHICKEN_COOP_BLOCK,
                     GAMBLING_TABLE,
                     BET_COUNTER,
-                    WEAPON_ASSEMBLER_BLOCK}
+                    WEAPON_ASSEMBLER_BLOCK,
+                    TEA_HOUSE_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT}
 
@@ -3076,6 +3083,7 @@ BLOCKS = {
     FISHING_SPOT_BLOCK:        {"name": "Fishing Spot",     "hardness": -1,           "color": ( 50, 140, 235), "drop": None},
     FISH_TROPHY_BLOCK:         {"name": "Fish Trophy",      "hardness": 0.5,          "color": (160, 110,  60), "drop": "fish_trophy_item"},
     WEAPON_ASSEMBLER_BLOCK:    {"name": "Weapon Assembler", "hardness": 1, "color": (120,  90,  60), "drop": "weapon_assembler"},
+    TEA_HOUSE_BLOCK:           {"name": "Tea House",        "hardness": 1, "color": (122,  92,  58), "drop": "tea_house_item"},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}
@@ -3108,4 +3116,56 @@ LIGHT_EMITTERS = {
     POWERED_LANTERN_ON: (80, "circle"),
     # Farming
     GROW_LAMP:          (170, "wide_flat"),
+    # Fireplaces & hearths
+    HEARTH_STONE:        (110, "flicker"),
+    ALPINE_HEARTH:       (120, "flicker"),
+    CASTLE_FIREPLACE:    (115, "flicker"),
+    RENAISSANCE_MANTEL:  (100, "flicker"),
+    TALLOW_CANDLE:       ( 55, "soft"),
+    # Windows — soft glow from warm interiors
+    LEADLIGHT_WINDOW:    ( 70, "soft"),
+    ROSE_WINDOW:         ( 75, "soft"),
+    PALLADIAN_WINDOW:    ( 75, "soft"),
+    CATHEDRAL_WINDOW:    ( 80, "soft"),
+    OCULUS_WINDOW:       ( 70, "soft"),
+    LANCET_WINDOW:       ( 65, "soft"),
+    ORANGERY_WINDOW:     ( 80, "soft"),
+    THERMAL_WINDOW:      ( 70, "soft"),
+    BIFORA_WINDOW:       ( 70, "soft"),
+    SERLIANA_WINDOW:     ( 75, "soft"),
+    DORMER_WINDOW:       ( 65, "soft"),
+}
+
+# Blocks that cast warm amber light (additive color pass on top of darkness).
+# Separate from LIGHT_EMITTERS so the two passes can be tuned independently.
+WARM_EMITTERS = {
+    # Fire sources — intense, flickering
+    HEARTH_STONE:        (100, "flicker"),
+    ALPINE_HEARTH:       (110, "flicker"),
+    CASTLE_FIREPLACE:    (105, "flicker"),
+    RENAISSANCE_MANTEL:  ( 90, "flicker"),
+    TALLOW_CANDLE:       ( 45, "flicker"),
+    FIRE_BOWL:           ( 85, "flicker"),
+    BRAZIER:             ( 95, "flicker"),
+    TRIPOD_BRAZIER:      ( 90, "flicker"),
+    TORCH:               ( 80, "flicker"),
+    WALL_SCONCE:         ( 75, "flicker"),
+    CANDELABRA:          ( 70, "flicker"),
+    # Windows — softer spill, no flicker
+    LEADLIGHT_WINDOW:    ( 65, "soft"),
+    ROSE_WINDOW:         ( 70, "soft"),
+    PALLADIAN_WINDOW:    ( 70, "soft"),
+    CATHEDRAL_WINDOW:    ( 75, "soft"),
+    OCULUS_WINDOW:       ( 65, "soft"),
+    LANCET_WINDOW:       ( 60, "soft"),
+    ORANGERY_WINDOW:     ( 75, "soft"),
+    THERMAL_WINDOW:      ( 65, "soft"),
+    BIFORA_WINDOW:       ( 65, "soft"),
+    SERLIANA_WINDOW:     ( 70, "soft"),
+    DORMER_WINDOW:       ( 60, "soft"),
+    PAPER_LANTERN:       ( 75, "soft"),
+    IRON_LANTERN:        ( 70, "soft"),
+    GARDEN_LANTERN:      ( 72, "soft"),
+    ALPINE_LANTERN:      ( 70, "soft"),
+    LANTERN_FESTIVAL:    ( 85, "soft"),
 }

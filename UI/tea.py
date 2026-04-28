@@ -1,3 +1,5 @@
+import math
+import random
 import pygame
 from constants import SCREEN_W, SCREEN_H
 from tea import (
@@ -170,16 +172,46 @@ class TeaMixin:
 
         elif self._oxidation_phase == "oxidizing":
             if not self._oxidation_locked:
-                # Oxidation rises automatically; holding SPACE slows it
-                speed = 0.008 if not self._oxidation_held else 0.002
-                self._oxidation_level = min(1.0, self._oxidation_level + speed * dt * 60)
+                # Surge state machine: idle → warning → active → idle
+                self._surge_timer += dt
+                if self._surge_phase == "idle":
+                    if self._oxidation_time >= self._surge_next_at:
+                        self._surge_phase     = "warning"
+                        self._surge_timer     = 0.0
+                        self._surge_intensity = random.uniform(0.85, 1.20)
+                        self._surge_duration  = random.uniform(2.0, 3.5)
+                elif self._surge_phase == "warning":
+                    if self._surge_timer >= 1.5:
+                        self._surge_phase = "active"
+                        self._surge_timer = 0.0
+                elif self._surge_phase == "active":
+                    self._enzymatic_velocity = min(
+                        self._enzymatic_velocity + self._surge_intensity * 0.012 * dt * 60,
+                        0.025)
+                    if self._surge_timer >= self._surge_duration:
+                        self._surge_phase   = "idle"
+                        self._surge_timer   = 0.0
+                        self._surge_next_at = self._oxidation_time + random.uniform(6.0, 11.0)
+
+                # Decay momentum when not in active surge
+                if self._surge_phase != "active":
+                    self._enzymatic_velocity = max(
+                        0.0, self._enzymatic_velocity - 0.006 * dt * 60)
+
+                # Speed: sin-wave base + enzymatic momentum; SPACE halves surge component
+                base      = 0.006 + 0.003 * math.sin(self._oxidation_time * 1.8)
+                effective = base + self._enzymatic_velocity
+                if self._oxidation_held:
+                    effective = base * 0.25 + self._enzymatic_velocity * 0.50
+                self._oxidation_level = min(1.0, self._oxidation_level + effective * dt * 60)
                 self._oxidation_time  = min(self._oxidation_total_time,
                                             self._oxidation_time + dt)
 
             # Zone colors and labels (bottom to top: green 0–20%, oolong 20–75%, black 75–95%, puerh 95–100%)
             BAR_X, BAR_Y, BAR_W, BAR_H = 80, 60, 40, SCREEN_H - 180
+            _bar_border = (200, 160, 40) if self._surge_phase in ("warning", "active") else _DIM_C
             pygame.draw.rect(self.screen, (15, 25, 12), (BAR_X, BAR_Y, BAR_W, BAR_H))
-            pygame.draw.rect(self.screen, _DIM_C, (BAR_X, BAR_Y, BAR_W, BAR_H), 2)
+            pygame.draw.rect(self.screen, _bar_border, (BAR_X, BAR_Y, BAR_W, BAR_H), 2)
 
             def _zone_y(v): return BAR_Y + BAR_H - int(BAR_H * v)
 
@@ -204,9 +236,18 @@ class TeaMixin:
                 yl = _zone_y(v)
                 pygame.draw.line(self.screen, (180, 180, 160), (BAR_X, yl), (BAR_X + BAR_W, yl), 1)
 
-            # Oxidation level marker
+            # Oxidation level marker — color reflects surge state
             marker_y = _zone_y(self._oxidation_level)
-            marker_col = (120, 210, 100) if not self._oxidation_locked else (255, 230, 80)
+            if self._oxidation_locked:
+                marker_col = (255, 230, 80)
+            elif self._surge_phase == "active":
+                marker_col = (255, 140, 30) if int(self._oxidation_time * 4) % 2 else (120, 210, 100)
+            elif self._surge_phase == "warning":
+                marker_col = (255, 190, 60)
+            elif self._enzymatic_velocity > 0.004:
+                marker_col = (200, 170, 60)
+            else:
+                marker_col = (120, 210, 100)
             pygame.draw.rect(self.screen, marker_col, (BAR_X - 8, marker_y - 4, BAR_W + 16, 8))
             pct_lbl = self.small.render(f"{self._oxidation_level:.0%}", True, marker_col)
             self.screen.blit(pct_lbl, (BAR_X + BAR_W + 6, marker_y - 6))
@@ -230,8 +271,18 @@ class TeaMixin:
 
             # Instructions
             inst = self.small.render(
-                "Hold SPACE to slow oxidation.  Press ENTER or click LOCK to set the level.", True, _HINT_C)
-            self.screen.blit(inst, (SCREEN_W // 2 - inst.get_width() // 2, TIME_Y - 34))
+                "Hold SPACE to resist.  ENTER or click LOCK to set the level.", True, _HINT_C)
+            self.screen.blit(inst, (SCREEN_W // 2 - inst.get_width() // 2, TIME_Y - 50))
+            _surge_active = self._surge_phase in ("warning", "active")
+            hint2_col = (255, 190, 60) if _surge_active else _DIM_C
+            hint2 = self.small.render(
+                "Enzyme surges push the bar — SPACE won't fully stop them.", True, hint2_col)
+            self.screen.blit(hint2, (SCREEN_W // 2 - hint2.get_width() // 2, TIME_Y - 34))
+
+            # Surge warning label (blinks during warning/active)
+            if _surge_active and int(self._oxidation_time * 6) % 2 == 0:
+                surge_lbl = self.font.render("ENZYME SURGE!", True, (255, 190, 60))
+                self.screen.blit(surge_lbl, (SCREEN_W // 2 - surge_lbl.get_width() // 2, TIME_Y - 80))
 
             # LOCK button
             lock_rect = pygame.Rect(SCREEN_W - 150, SCREEN_H - 110, 130, 32)
@@ -248,7 +299,7 @@ class TeaMixin:
             slow_col  = (40, 100, 45) if self._oxidation_held else (25, 60, 30)
             pygame.draw.rect(self.screen, slow_col, slow_rect)
             pygame.draw.rect(self.screen, _ACCENT, slow_rect, 2)
-            sl = self.font.render("SLOW", True, _TITLE_C)
+            sl = self.font.render("RESIST" if self._surge_phase == "active" else "SLOW", True, _TITLE_C)
             self.screen.blit(sl, (slow_rect.centerx - sl.get_width() // 2,
                                   slow_rect.centery - sl.get_height() // 2))
             self._oxidation_slow_btn = slow_rect
@@ -300,6 +351,12 @@ class TeaMixin:
                         self._oxidation_locked    = False
                         self._oxidation_quality   = 0.0
                         self._oxidation_phase     = "oxidizing"
+                        self._surge_phase        = "idle"
+                        self._surge_timer        = 0.0
+                        self._surge_next_at      = random.uniform(5.0, 9.0)
+                        self._surge_duration     = 0.0
+                        self._surge_intensity    = 1.0
+                        self._enzymatic_velocity = 0.0
                     return
         elif self._oxidation_phase == "oxidizing":
             if hasattr(self, "_oxidation_slow_btn") and self._oxidation_slow_btn and \

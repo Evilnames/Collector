@@ -15,12 +15,11 @@ def _get_trade_warn_font():
     return _trade_warn_font
 
 
-def draw_horse(screen, sx, sy, horse):
-    W, H = horse.W, horse.H
-    traits    = getattr(horse, 'traits', {})
-    s         = traits.get("size", 1.0)
-    shift     = traits.get("color_shift", (0, 0, 0))
-    coat      = traits.get("coat_color", (160, 115, 65))
+def draw_horse_traits(screen, sx, sy, traits, W=40, H=26, facing=1):
+    """Draw a horse sprite from a traits dict. Used by both the world renderer and the race UI."""
+    s          = traits.get("size", 1.0)
+    shift      = traits.get("color_shift", (0, 0, 0))
+    coat       = traits.get("coat_color", (160, 115, 65))
     body_color = _tinted(coat, shift)
     dark_coat  = tuple(max(0, c - 40) for c in body_color)
     _MANE_COLORS = {
@@ -77,13 +76,13 @@ def draw_horse(screen, sx, sy, horse):
         blanket_w = W - int(W * 0.55)
         pygame.draw.rect(screen, blanket_c, (blanket_x, sy, blanket_w, body_h))
 
-    tail_x = sx if horse.facing == 1 else sx + W - int(5 * s)
+    tail_x = sx if facing == 1 else sx + W - int(5 * s)
     pygame.draw.rect(screen, mane_color,
                      (tail_x, sy + int(4 * s), max(2, int(4 * s)), int(body_h * 0.6)))
 
     head_w = int(12 * s)
     head_h = int(12 * s)
-    hx = (sx + W - int(2 * s)) if horse.facing == 1 else (sx - head_w + int(2 * s))
+    hx = (sx + W - int(2 * s)) if facing == 1 else (sx - head_w + int(2 * s))
     hy = sy - int(4 * s)
     pygame.draw.rect(screen, body_color, (hx, hy, head_w, head_h))
 
@@ -103,17 +102,29 @@ def draw_horse(screen, sx, sy, horse):
         pygame.draw.rect(screen, mark_c, (stripe_x, hy, stripe_w, head_h))
 
     muzzle_w = int(5 * s)
-    muzzle_x = (hx + head_w - muzzle_w) if horse.facing == 1 else hx
+    muzzle_x = (hx + head_w - muzzle_w) if facing == 1 else hx
     pygame.draw.rect(screen, _tinted((200, 175, 145), shift),
                      (muzzle_x, hy + int(6 * s), muzzle_w, int(5 * s)))
 
-    eye_x = (hx + head_w - int(5 * s)) if horse.facing == 1 else (hx + max(1, int(2 * s)))
+    eye_x = (hx + head_w - int(5 * s)) if facing == 1 else (hx + max(1, int(2 * s)))
     pygame.draw.rect(screen, (15, 10, 5), (eye_x, hy + int(3 * s), 2, 2))
 
-    ear_x = (hx + int(2 * s)) if horse.facing == 1 else (hx + head_w - int(4 * s))
+    ear_x = (hx + int(2 * s)) if facing == 1 else (hx + head_w - int(4 * s))
     pygame.draw.rect(screen, dark_coat, (ear_x, hy - int(4 * s), max(2, int(3 * s)), int(4 * s)))
 
+    temp = traits.get("temperament", "spirited")
+    temp_colors = {"calm": (80, 200, 80), "spirited": (220, 180, 40), "wild": (220, 60, 60)}
+    pygame.draw.circle(screen, temp_colors.get(temp, (180, 180, 180)),
+                       (sx + 4, sy - 6), 3)
+
+
+def draw_horse(screen, sx, sy, horse):
+    W, H   = horse.W, horse.H
+    traits = getattr(horse, 'traits', {})
+    draw_horse_traits(screen, sx, sy, traits, W=W, H=H, facing=getattr(horse, 'facing', 1))
+
     if getattr(horse, 'tamed', False) and getattr(horse, '_broken', False):
+        s = traits.get("size", 1.0)
         saddle_x = sx + int(W * 0.3)
         saddle_w = int(W * 0.4)
         pygame.draw.rect(screen, (110, 65, 25),
@@ -130,11 +141,6 @@ def draw_horse(screen, sx, sy, horse):
         cx = sx + W // 2
         pygame.draw.circle(screen, (255, 160, 0), (cx, sy - 22), 7, 2)
         screen.blit(warn, (cx - warn.get_width() // 2, sy - 29))
-
-    temp = traits.get("temperament", "spirited")
-    temp_colors = {"calm": (80, 200, 80), "spirited": (220, 180, 40), "wild": (220, 60, 60)}
-    pygame.draw.circle(screen, temp_colors.get(temp, (180, 180, 180)),
-                       (sx + 4, sy - 6), 3)
 
 
 def draw_dog(screen, sx, sy, dog, font):

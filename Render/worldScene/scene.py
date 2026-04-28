@@ -11,6 +11,7 @@ from blocks import (AIR, WATER, FISHING_SPOT_BLOCK, TILLED_SOIL, GRASS, DIRT, SA
                     BRONZE_DOOR_OPEN, SWAHILI_DOOR_OPEN,
                     SANDALWOOD_DOOR_OPEN, STONE_SLAB_DOOR_OPEN,
                     TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK, BANNER_BLOCK,
+                    WILDFLOWER_PATCH,
                     RESOURCE_BLOCKS,
                     LIMESTONE_STONE, GRANITE_STONE, BASALT_STONE, MAGMATIC_STONE)
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE
@@ -30,6 +31,7 @@ _SHIMMER_BLOCKS = None
 
 _wire_hud_font = None
 _wire_hud_surf = None
+_wire_hint_surf = None
 
 
 def _draw_wire_mode_hud(screen):
@@ -43,6 +45,19 @@ def _draw_wire_mode_hud(screen):
         bg.blit(lbl, (3, 2))
         _wire_hud_surf = bg
     screen.blit(_wire_hud_surf, (8, 8))
+
+
+def _draw_wire_hint(screen):
+    global _wire_hint_surf
+    if _wire_hint_surf is None:
+        font = pygame.font.SysFont(None, 20)
+        lbl = font.render(" [\\] Wire Mode ", True, (160, 200, 220))
+        bg = pygame.Surface((lbl.get_width() + 6, lbl.get_height() + 4))
+        bg.fill((8, 8, 24))
+        pygame.draw.rect(bg, (60, 100, 130), bg.get_rect(), 1)
+        bg.blit(lbl, (3, 2))
+        _wire_hint_surf = bg
+    screen.blit(_wire_hint_surf, (8, 8))
 
 def _get_shimmer_blocks():
     global _SHIMMER_BLOCKS
@@ -83,12 +98,21 @@ def _los_clear(world, px, py, tx, ty):
 
 
 def draw_world(renderer, world, player=None):
+    from Render.surface.flags import golden_hour_alphas
     screen = renderer.screen
     screen.blit(renderer._sky_surf, (0, 0))
-    night_alpha = renderer._sky_night_alpha(getattr(world, 'time_of_day', 0.0))
+    time_of_day = getattr(world, 'time_of_day', 0.0)
+    night_alpha = renderer._sky_night_alpha(time_of_day)
     if night_alpha > 0:
         renderer._sky_night_surf.set_alpha(night_alpha)
         screen.blit(renderer._sky_night_surf, (0, 0))
+    dawn_a, dusk_a = golden_hour_alphas(time_of_day)
+    if dawn_a > 0:
+        renderer._dawn_sky_surf.set_alpha(dawn_a)
+        screen.blit(renderer._dawn_sky_surf, (0, 0))
+    if dusk_a > 0:
+        renderer._dusk_sky_surf.set_alpha(dusk_a)
+        screen.blit(renderer._dusk_sky_surf, (0, 0))
 
     cam_xi = int(renderer.cam_x)
     cam_yi = int(renderer.cam_y)
@@ -133,7 +157,10 @@ def draw_world(renderer, world, player=None):
                         except Exception:
                             pass
                     if bg_surf is None:
-                        bg_surf = renderer._bg_block_surfs.get(bg_bid)
+                        if bg_bid == WILDFLOWER_PATCH:
+                            bg_surf = renderer._block_surfs.get(bg_bid)
+                        else:
+                            bg_surf = renderer._bg_block_surfs.get(bg_bid)
                     if bg_surf:
                         screen.blit(bg_surf, (sx, sy))
                 elif by > surface_ys.get(bx, 100):
@@ -306,6 +333,12 @@ def draw_world(renderer, world, player=None):
                 elif dist > detect:
                     biome_hints = renderer._biome_resource_hint_surfs.get(biome, renderer._resource_hint_surfs)
                     surf = biome_hints.get(bid, renderer._resource_hint_surfs[bid])
+                elif bid in renderer._ore_richness_surfs:
+                    richness = world._ore_richness.get((bx, by), 2)
+                    surf = renderer._ore_richness_surfs[bid][richness]
+            elif bid in renderer._ore_richness_surfs:
+                richness = world._ore_richness.get((bx, by), 2)
+                surf = renderer._ore_richness_surfs[bid][richness]
             if bid == TOWN_FLAG_BLOCK:
                 try:
                     from towns import REGIONS, get_town_for_block
@@ -364,6 +397,8 @@ def draw_world(renderer, world, player=None):
                 if world.get_wire(bx, by):
                     draw_wire_tile(screen, bx, by, world, cam_xi, cam_yi)
         _draw_wire_mode_hud(screen)
+    elif player is not None and player.hotbar[player.selected_slot] == "wire":
+        _draw_wire_hint(screen)
 
     draw_all_sculptures(screen, renderer.cam_x, renderer.cam_y, world)
     draw_all_tapestries(screen, renderer.cam_x, renderer.cam_y, world)

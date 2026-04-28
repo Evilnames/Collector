@@ -1,6 +1,7 @@
 import math
 import random
 import pygame
+from Render.largeAnimal import draw_horse_traits
 
 _BET_OPTIONS = [10, 25, 50, 100, 250]
 
@@ -142,26 +143,34 @@ class RacingMixin:
 
         ph = self._race_player_horse
         if ph is not None:
+            pt = ph.traits
             horses.append({
-                "uid":         getattr(ph, "uid", "player"),
-                "name":        getattr(ph, "name", "Your Horse"),
-                "owner":       "You",
-                "race_rating": ph.race_rating,
-                "stamina":     100.0,
-                "stamina_max": ph.traits.get("stamina_max", 1.0),
-                "endurance":   ph.traits.get("endurance", 1.0),
-                "reaction":    ph.traits.get("reaction", 1.0),
-                "agility":     ph.traits.get("agility", 1.0),
-                "heart":       ph.traits.get("heart", 1.0),
-                "coat_color":  ph.traits.get("coat_color", (160, 120, 60)),
-                "style":       "pacer",   # player's horse has no preset style
-                "wins":        getattr(player, "races_won", 0),
-                "races":       getattr(player, "races_entered", 0),
-                "is_player":   True,
-                "position":    0.0,
-                "place":       0,
-                "surge_timer": 0.0,
-                "finished":    False,
+                "uid":          getattr(ph, "uid", "player"),
+                "name":         getattr(ph, "name", "Your Horse"),
+                "owner":        "You",
+                "race_rating":  ph.race_rating,
+                "stamina":      100.0,
+                "stamina_max":  pt.get("stamina_max", 1.0),
+                "endurance":    pt.get("endurance", 1.0),
+                "reaction":     pt.get("reaction", 1.0),
+                "agility":      pt.get("agility", 1.0),
+                "heart":        pt.get("heart", 1.0),
+                "coat_color":   pt.get("coat_color", (160, 120, 60)),
+                "coat_pattern": pt.get("coat_pattern", "solid"),
+                "leg_marking":  pt.get("leg_marking", "none"),
+                "mane_color":   pt.get("mane_color", "match"),
+                "face_marking": pt.get("face_marking", "none"),
+                "temperament":  pt.get("temperament", "spirited"),
+                "color_shift":  pt.get("color_shift", (0, 0, 0)),
+                "size":         pt.get("size", 1.0),
+                "style":        "pacer",   # player's horse has no preset style
+                "wins":         getattr(player, "races_won", 0),
+                "races":        getattr(player, "races_entered", 0),
+                "is_player":    True,
+                "position":     0.0,
+                "place":        0,
+                "surge_timer":  0.0,
+                "finished":     False,
             })
 
         npc_horse_defs = npc._npc_horses if npc else []
@@ -169,25 +178,32 @@ class RacingMixin:
 
         for h in npc_horse_defs:
             horses.append({
-                "uid":         h["name"],
-                "name":        h["name"],
-                "owner":       h.get("owner", "Local"),
-                "race_rating": h["race_rating"],
-                "stamina":     100.0,
-                "stamina_max": h.get("stamina_max", 1.0),
-                "endurance":   h.get("endurance", 1.0),
-                "reaction":    h.get("reaction", 1.0),
-                "agility":     h.get("agility", 1.0),
-                "heart":       h.get("heart", 1.0),
-                "coat_color":  h.get("coat_color", (140, 100, 60)),
-                "style":       h.get("style", "pacer"),
-                "wins":        h.get("wins", 0),
-                "races":       h.get("races", 0),
-                "is_player":   False,
-                "position":    0.0,
-                "place":       0,
-                "surge_timer": 0.0,
-                "finished":    False,
+                "uid":          h["name"],
+                "name":         h["name"],
+                "owner":        h.get("owner", "Local"),
+                "race_rating":  h["race_rating"],
+                "stamina":      100.0,
+                "stamina_max":  h.get("stamina_max", 1.0),
+                "endurance":    h.get("endurance", 1.0),
+                "reaction":     h.get("reaction", 1.0),
+                "agility":      h.get("agility", 1.0),
+                "heart":        h.get("heart", 1.0),
+                "coat_color":   h.get("coat_color", (140, 100, 60)),
+                "coat_pattern": h.get("coat_pattern", "solid"),
+                "leg_marking":  h.get("leg_marking", "none"),
+                "mane_color":   h.get("mane_color", "match"),
+                "face_marking": h.get("face_marking", "none"),
+                "temperament":  h.get("temperament", "spirited"),
+                "color_shift":  (0, 0, 0),
+                "size":         1.0,
+                "style":        h.get("style", "pacer"),
+                "wins":         h.get("wins", 0),
+                "races":        h.get("races", 0),
+                "is_player":    False,
+                "position":     0.0,
+                "place":        0,
+                "surge_timer":  0.0,
+                "finished":     False,
             })
 
         ratings = [h["race_rating"] for h in horses]
@@ -632,7 +648,7 @@ class RacingMixin:
         # Track area (left 3/4 of panel)
         track_x = px + 20
         track_w = pw - 190   # leave right column for standings
-        track_h = len(self._race_horses) * 44 + 20
+        track_h = len(self._race_horses) * 52 + 20
         track_y = py + 50
         pygame.draw.rect(self.screen, (38, 28, 15), (track_x, track_y, track_w, track_h), border_radius=4)
         pygame.draw.rect(self.screen, (130, 100, 50), (track_x, track_y, track_w, track_h), 1, border_radius=4)
@@ -646,9 +662,10 @@ class RacingMixin:
         # Sort horses by current position for standings
         sorted_h = sorted(self._race_horses, key=lambda x: x["position"], reverse=True)
 
+        _HORSE_W, _HORSE_H = 40, 26
         for i, h in enumerate(self._race_horses):
-            hy  = track_y + 10 + i * 44
-            hx  = track_x + 10 + int(h["position"] * (track_w - 55))
+            hy  = track_y + 14 + i * 52
+            hx  = track_x + 10 + int(h["position"] * (track_w - 80))
 
             is_leading = (h is sorted_h[0])
 
@@ -660,32 +677,35 @@ class RacingMixin:
                 gc       = h["coat_color"]
                 pygame.draw.circle(glow_s, (gc[0], gc[1], gc[2], 55),
                                    (glow_r * 2, glow_r * 2), glow_r * 2)
-                self.screen.blit(glow_s, (hx - glow_r * 2 + 8, hy - glow_r * 2 + 8))
+                self.screen.blit(glow_s, (hx + 20 - glow_r * 2, hy + 13 - glow_r * 2))
 
-            # Horse oval
-            horse_rect = pygame.Rect(hx, hy, 28, 18)
-            pygame.draw.ellipse(self.screen, h["coat_color"], horse_rect)
-            border_col = (255, 230, 80) if h.get("is_player") else (195, 175, 135)
-            pygame.draw.ellipse(self.screen, border_col, horse_rect,
-                                2 if h.get("is_player") else 1)
+            # Player horse highlight border
+            if h.get("is_player"):
+                pygame.draw.rect(self.screen, (255, 230, 80),
+                                 (hx - 2, hy - 6, _HORSE_W + 4, _HORSE_H + 10), 1,
+                                 border_radius=2)
 
-            # Surge spark
+            # Actual horse sprite
+            draw_horse_traits(self.screen, hx, hy, h, W=_HORSE_W, H=_HORSE_H, facing=1)
+
+            # Surge spark (in front of horse nose)
             if h["surge_timer"] > 0:
-                pygame.draw.circle(self.screen, (255, 240, 100), (hx + 28, hy + 9), 4)
-                pygame.draw.circle(self.screen, (255, 190, 50),  (hx + 28, hy + 9), 2)
+                nose_x = hx + _HORSE_W + 10
+                pygame.draw.circle(self.screen, (255, 240, 100), (nose_x, hy + 9), 4)
+                pygame.draw.circle(self.screen, (255, 190, 50),  (nose_x, hy + 9), 2)
 
             # Name label (horse + owner condensed)
             label = h["name"] if h.get("is_player") else f"{h['name']} ({h['owner']})"
             nc    = (255, 235, 130) if h.get("is_player") else (185, 170, 135)
             nl    = self.small.render(label, True, nc)
-            self.screen.blit(nl, (hx, hy - 13))
+            self.screen.blit(nl, (hx, hy - 14))
 
             # Stamina bar
             sm_frac = max(0.0, h["stamina"] / 100.0)
             sm_col  = (90, 220, 90) if sm_frac > 0.5 else \
                       ((220, 200, 55) if sm_frac > 0.25 else (215, 75, 75))
-            pygame.draw.rect(self.screen, (35, 28, 18), (hx, hy + 22, 60, 6), border_radius=2)
-            pygame.draw.rect(self.screen, sm_col, (hx, hy + 22, int(sm_frac * 60), 6), border_radius=2)
+            pygame.draw.rect(self.screen, (35, 28, 18), (hx, hy + 28, 60, 5), border_radius=2)
+            pygame.draw.rect(self.screen, sm_col, (hx, hy + 28, int(sm_frac * 60), 5), border_radius=2)
 
         # ---- Standings sidebar (right column) ----
         sb_x  = px + pw - 165

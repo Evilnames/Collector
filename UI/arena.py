@@ -1,4 +1,5 @@
 """Arena UI — gladiator spectator experience, betting, and card collecting."""
+import math
 import pygame
 import random
 
@@ -53,6 +54,10 @@ class ArenaUIMixin:
         self._arena_gold_delta  = 0
         self._arena_rects       = {}
         self._arena_log_lines   = []    # recent event strings for watch phase
+        self._arena_f1_pos      = None  # fighter pixel positions on arena floor
+        self._arena_f2_pos      = None
+        self._arena_attack_anim = None  # {"who":1/2,"phase":"lunge"/"return","t":float,"lunge_target":[x,y]}
+        self._arena_bob_t       = 0.0
 
     # -----------------------------------------------------------------------
     # Top-level dispatcher
@@ -256,108 +261,189 @@ class ArenaUIMixin:
         self._arena_rects = {}
         font, small = self.font, self.small
 
-        bout     = self._arena_bouts[self._arena_current_bout]
-        g1, g2   = bout.g1, bout.g2
+        bout   = self._arena_bouts[self._arena_current_bout]
+        g1, g2 = bout.g1, bout.g2
 
-        # Simulate on first entry if not yet done
         if not bout.round_log:
             rng = random.Random()
             bout.round_log  = simulate_fight(g1, g2, rng)
             bout.winner_uid = g1.uid if bout.round_log and bout.round_log[-1]["hp1_after"] > 0 else g2.uid
 
         rounds = bout.round_log
-        content_y = py + 50
 
-        # ---- Crowd favor bar ----
+        # ── Layout ──────────────────────────────────────────────────────────
+        AX, AW, AH = px + 40, pw - 80, 172
+        AY          = py + 138      # arena floor top
+        STANDS_Y    = AY - 38       # crowd rows above floor
+        STANDS_H    = 36
+        SPRITE_W, SPRITE_H = 48, 76  # scale-2 sprite dims
+
+        f1_home = [float(AX + AW * 0.18 - SPRITE_W // 2), float(AY + AH // 2 - SPRITE_H // 2)]
+        f2_home = [float(AX + AW * 0.82 - SPRITE_W // 2), float(AY + AH // 2 - SPRITE_H // 2)]
+
+        # ── Initialise positions on first frame ──────────────────────────────
+        if self._arena_f1_pos is None:
+            self._arena_f1_pos = list(f1_home)
+            self._arena_f2_pos = list(f2_home)
+
+        # ── Update attack animation ──────────────────────────────────────────
+        self._arena_bob_t += dt
+        anim = self._arena_attack_anim
+        if anim:
+            anim["t"] += dt / (0.14 if anim["phase"] == "lunge" else 0.26)
+            if anim["t"] >= 1.0:
+                if anim["phase"] == "lunge":
+                    anim["phase"] = "return"
+                    anim["t"]     = 0.0
+                else:
+                    if anim["who"] == 1:
+                        self._arena_f1_pos = list(f1_home)
+                    else:
+                        self._arena_f2_pos = list(f2_home)
+                    self._arena_attack_anim = None
+                    anim = None
+
+        if anim:
+            t    = min(1.0, anim["t"])
+            ease = t * t if anim["phase"] == "lunge" else 1.0 - (1.0 - t) ** 2
+            home = f1_home if anim["who"] == 1 else f2_home
+            tgt  = anim["lunge_target"]
+            if anim["phase"] == "lunge":
+                pos = [home[i] + (tgt[i] - home[i]) * ease for i in range(2)]
+            else:
+                pos = [tgt[i]  + (home[i] - tgt[i]) * ease for i in range(2)]
+            if anim["who"] == 1:
+                self._arena_f1_pos = pos
+            else:
+                self._arena_f2_pos = pos
+
+        bob1 = math.sin(self._arena_bob_t * 3.0) * 2.0 if not anim or anim["who"] != 1 else 0.0
+        bob2 = math.sin(self._arena_bob_t * 3.0 + math.pi) * 2.0 if not anim or anim["who"] != 2 else 0.0
+
+        # ── Crowd favor ─────────────────────────────────────────────────────
         if rounds and self._arena_round_idx < len(rounds):
             ev = rounds[self._arena_round_idx]
-            target_favor = ev["hp1_after"] / (g1.max_hp) if (g1.max_hp + g2.max_hp) > 0 else 0.5
-            self._arena_crowd_favor += (target_favor - self._arena_crowd_favor) * 0.15
-        favor = self._arena_crowd_favor
-        fbar_x, fbar_y, fbar_w, fbar_h = px + 120, content_y, pw - 240, 14
-        pygame.draw.rect(self.screen, (120, 30, 30), (fbar_x, fbar_y, int(fbar_w * (1 - favor)), fbar_h))
-        pygame.draw.rect(self.screen, (30, 80, 30),  (fbar_x + int(fbar_w * (1 - favor)), fbar_y, int(fbar_w * favor), fbar_h))
-        pygame.draw.rect(self.screen, (120, 100, 60), (fbar_x, fbar_y, fbar_w, fbar_h), 1)
-        crowd_lbl = small.render("CROWD FAVOR", True, (160, 140, 90))
-        self.screen.blit(crowd_lbl, (fbar_x + fbar_w // 2 - crowd_lbl.get_width() // 2, fbar_y + 18))
+            self._arena_crowd_favor += (ev["hp1_after"] / max(1, g1.max_hp) - self._arena_crowd_favor) * 0.12
 
-        # ---- HP bars ----
+        # ── Stands (crowd) ──────────────────────────────────────────────────
+        pygame.draw.rect(self.screen, (58, 48, 30), (AX, STANDS_Y, AW, STANDS_H))
+        seed_rng    = random.Random(42)
+        crowd_cols  = [(188,72,52),(68,152,188),(188,168,52),(172,112,72),(128,172,92),(188,148,188)]
+        hw, hh, hgap = 6, 5, 3
+        for row in range(4):
+            ry = STANDS_Y + 3 + row * (hh + hgap)
+            cx = AX + 5
+            while cx + hw < AX + AW - 5:
+                col = seed_rng.choice(crowd_cols)
+                b   = seed_rng.randint(-28, 22)
+                col = tuple(max(0, min(255, c + b)) for c in col)
+                pygame.draw.rect(self.screen, col, (cx, ry, hw, hh), border_radius=1)
+                cx += hw + hgap + seed_rng.randint(0, 2)
+
+        # Stone pillars along the top of the north wall
+        for ci in range(8, AW - 8, 62):
+            pygame.draw.rect(self.screen, (88, 75, 52), (AX + ci, STANDS_Y + STANDS_H - 8, 11, 16))
+            pygame.draw.rect(self.screen, (55, 44, 27), (AX + ci, STANDS_Y + STANDS_H - 8, 11, 16), 1)
+
+        # ── Arena floor ─────────────────────────────────────────────────────
+        pygame.draw.rect(self.screen, (190, 162, 104), (AX, AY, AW, AH))
+        for gx in range(0, AW, 32):
+            pygame.draw.line(self.screen, (178, 150, 94), (AX + gx, AY), (AX + gx, AY + AH))
+        for gy in range(0, AH, 22):
+            pygame.draw.line(self.screen, (178, 150, 94), (AX, AY + gy), (AX + AW, AY + gy))
+        spot_rng = random.Random(77)
+        for _ in range(28):
+            sx = AX + spot_rng.randint(4, AW - 4)
+            sy = AY + spot_rng.randint(4, AH - 4)
+            pygame.draw.circle(self.screen, (164, 136, 83), (sx, sy), spot_rng.randint(3, 8))
+        pygame.draw.rect(self.screen, (95, 78, 48), (AX, AY, AW, AH), 2)
+
+        # ── HP bars & names (top strip) ──────────────────────────────────────
+        cy = py + 50
         if rounds and self._arena_round_idx < len(rounds):
-            ev   = rounds[self._arena_round_idx]
-            hp1  = ev["hp1_after"]
-            hp2  = ev["hp2_after"]
+            ev_cur     = rounds[self._arena_round_idx]
+            hp1, hp2   = ev_cur["hp1_after"], ev_cur["hp2_after"]
         else:
             hp1 = g1.max_hp if not rounds else rounds[-1]["hp1_after"]
             hp2 = g2.max_hp if not rounds else rounds[-1]["hp2_after"]
 
-        bar_y   = content_y + 38
-        bar_h_s = 12
-        _draw_hp_bar(self.screen, px + 14,       bar_y, 200, bar_h_s, hp1, g1.max_hp, (80, 180, 80))
-        _draw_hp_bar(self.screen, px + pw - 214, bar_y, 200, bar_h_s, hp2, g2.max_hp, (80, 180, 80))
-
         g1_name = small.render(g1.name, True, (220, 200, 150))
         g2_name = small.render(g2.name, True, (220, 200, 150))
-        self.screen.blit(g1_name, (px + 14, bar_y - 16))
-        self.screen.blit(g2_name, (px + pw - 14 - g2_name.get_width(), bar_y - 16))
+        self.screen.blit(g1_name, (px + 14, cy))
+        self.screen.blit(g2_name, (px + pw - 14 - g2_name.get_width(), cy))
+
+        btype_lbl = font.render(_BOUT_TYPE_LABEL.get(bout.bout_type, ""), True,
+                                _BOUT_TYPE_COLOR.get(bout.bout_type, _PANEL_GOLD))
+        self.screen.blit(btype_lbl, (px + pw // 2 - btype_lbl.get_width() // 2, cy))
+
+        bar_y = cy + 14
+        _draw_hp_bar(self.screen, px + 14,       bar_y, 170, 10, hp1, g1.max_hp, (80, 180, 80))
+        _draw_hp_bar(self.screen, px + pw - 184, bar_y, 170, 10, hp2, g2.max_hp, (80, 180, 80))
+
+        favor    = self._arena_crowd_favor
+        fbar_x   = px + 200
+        fbar_w   = pw - 400
+        pygame.draw.rect(self.screen, (120, 30, 30), (fbar_x, bar_y, int(fbar_w * (1 - favor)), 10))
+        pygame.draw.rect(self.screen, (30, 80, 30),  (fbar_x + int(fbar_w * (1 - favor)), bar_y,
+                                                       fbar_w - int(fbar_w * (1 - favor)), 10))
+        pygame.draw.rect(self.screen, (120, 100, 60), (fbar_x, bar_y, fbar_w, 10), 1)
 
         hp1_txt = small.render(f"{hp1}/{g1.max_hp}", True, (130, 200, 130))
         hp2_txt = small.render(f"{hp2}/{g2.max_hp}", True, (130, 200, 130))
-        self.screen.blit(hp1_txt, (px + 14, bar_y + 14))
-        self.screen.blit(hp2_txt, (px + pw - 14 - hp2_txt.get_width(), bar_y + 14))
+        self.screen.blit(hp1_txt, (px + 14, bar_y + 12))
+        self.screen.blit(hp2_txt, (px + pw - 14 - hp2_txt.get_width(), bar_y + 12))
 
-        # ---- Gladiator sprites / beast portraits ----
-        sprite_y = bar_y + 32
-        scale = 2
-        g1_sx = px + 80
-        g2_sx = px + pw - 80 - 20 * scale
-
-        self._draw_gladiator_mini(self.screen, g1, g1_sx, sprite_y, 1, scale=scale)
-
-        g2_is_animal = getattr(g2, "is_animal", False)
-        if g2_is_animal:
-            self._draw_beast_portrait(self.screen, g2, g2_sx, sprite_y, scale=scale)
-        else:
-            self._draw_gladiator_mini(self.screen, g2, g2_sx, sprite_y, -1, scale=scale)
-
-        # Bout type label between fighters
-        btype_lbl = font.render(_BOUT_TYPE_LABEL.get(bout.bout_type, ""), True,
-                                _BOUT_TYPE_COLOR.get(bout.bout_type, _PANEL_GOLD))
-        self.screen.blit(btype_lbl, (px + pw // 2 - btype_lbl.get_width() // 2, sprite_y - 2))
-
-        # Round label below bout type
         rnd_num = rounds[min(self._arena_round_idx, len(rounds) - 1)]["round"] if rounds else 1
         rnd_lbl = small.render(f"Round {rnd_num}", True, (170, 155, 110))
-        self.screen.blit(rnd_lbl, (px + pw // 2 - rnd_lbl.get_width() // 2, sprite_y + 18))
+        self.screen.blit(rnd_lbl, (px + pw // 2 - rnd_lbl.get_width() // 2, bar_y + 12))
 
-        # ---- Event log (last 4 lines) ----
-        log_y = sprite_y + 80
-        log_box = pygame.Rect(px + 14, log_y, pw - 28, 96)
+        # ── Fighters on arena floor ──────────────────────────────────────────
+        f1x = int(self._arena_f1_pos[0])
+        f1y = int(self._arena_f1_pos[1] + bob1)
+        f2x = int(self._arena_f2_pos[0])
+        f2y = int(self._arena_f2_pos[1] + bob2)
+
+        pygame.draw.ellipse(self.screen, (160, 133, 78), (f1x + 4, f1y + SPRITE_H - 14, SPRITE_W - 8, 10))
+        pygame.draw.ellipse(self.screen, (160, 133, 78), (f2x + 4, f2y + SPRITE_H - 14, SPRITE_W - 8, 10))
+
+        g2_is_animal = getattr(g2, "is_animal", False)
+        self._draw_gladiator_mini(self.screen, g1, f1x, f1y, 1, scale=2)
+        if g2_is_animal:
+            self._draw_beast_portrait(self.screen, g2, f2x, f2y, scale=2)
+        else:
+            self._draw_gladiator_mini(self.screen, g2, f2x, f2y, -1, scale=2)
+
+        for label, fx, fy in [(g1.name.split()[0], f1x, f1y), (g2.name.split()[0], f2x, f2y)]:
+            ns  = small.render(label, True, (255, 245, 210))
+            nbx = fx + SPRITE_W // 2 - ns.get_width() // 2
+            nby = fy - 14
+            pygame.draw.rect(self.screen, (20, 15, 8), (nbx - 2, nby - 1, ns.get_width() + 4, 12), border_radius=2)
+            self.screen.blit(ns, (nbx, nby))
+
+        # ── Event log ───────────────────────────────────────────────────────
+        log_y   = AY + AH + 8
+        log_box = pygame.Rect(px + 14, log_y, pw - 28, 80)
         pygame.draw.rect(self.screen, (28, 22, 12), log_box, border_radius=4)
         pygame.draw.rect(self.screen, (80, 65, 40), log_box, 1, border_radius=4)
-        lines_to_show = self._arena_log_lines[-4:]
-        for li, line in enumerate(lines_to_show):
-            age   = len(lines_to_show) - 1 - li
-            alpha = max(160, 255 - age * 28)
-            col   = (alpha, int(alpha * 0.9), int(alpha * 0.6))
-            ls    = small.render(line, True, col)
-            self.screen.blit(ls, (log_box.x + 8, log_box.y + 8 + li * 20))
+        for li, line in enumerate(self._arena_log_lines[-4:]):
+            age     = len(self._arena_log_lines[-4:]) - 1 - li
+            alpha_v = max(160, 255 - age * 26)
+            col     = (alpha_v, int(alpha_v * 0.9), int(alpha_v * 0.6))
+            self.screen.blit(small.render(line, True, col), (log_box.x + 8, log_box.y + 6 + li * 17))
 
-        # ---- Advance animation ----
+        # ── Advance rounds ───────────────────────────────────────────────────
         self._arena_round_timer += dt
-        round_speed = 0.7
+        round_speed = 0.85
         if self._arena_round_timer >= round_speed and self._arena_round_idx < len(rounds) - 1:
             self._arena_round_timer = 0.0
             self._arena_round_idx  += 1
             ev = rounds[self._arena_round_idx]
-            line = self._format_round_line(ev, g1, g2)
-            self._arena_log_lines.append(line)
-        elif self._arena_round_idx == 0 and rounds:
-            ev   = rounds[0]
-            line = self._format_round_line(ev, g1, g2)
-            if not self._arena_log_lines:
-                self._arena_log_lines.append(line)
+            self._arena_log_lines.append(self._format_round_line(ev, g1, g2))
+            self._trigger_attack_anim(ev, f1_home, f2_home)
+        elif self._arena_round_idx == 0 and rounds and not self._arena_log_lines:
+            self._arena_log_lines.append(self._format_round_line(rounds[0], g1, g2))
         elif self._arena_round_timer >= round_speed and self._arena_round_idx >= len(rounds) - 1:
-            self._arena_phase = "result"
+            self._arena_phase       = "result"
             self._arena_round_timer = 0.0
             self._resolve_arena_result(player)
 
@@ -368,6 +454,21 @@ class ArenaUIMixin:
         sk = small.render("SKIP", True, (190, 165, 100))
         self.screen.blit(sk, (skip_rect.centerx - sk.get_width() // 2, skip_rect.centery - sk.get_height() // 2))
         self._arena_rects["skip"] = skip_rect
+
+    def _trigger_attack_anim(self, ev, f1_home, f2_home):
+        is_g1 = ev.get("is_g1_attacking", True)
+        who        = 1 if is_g1 else 2
+        atk_home   = f1_home if is_g1 else f2_home
+        def_home   = f2_home if is_g1 else f1_home
+        lunge_tgt  = [atk_home[i] + (def_home[i] - atk_home[i]) * 0.54 for i in range(2)]
+        # Snap any in-progress animation back to home before starting a new one
+        if self._arena_attack_anim:
+            prev = self._arena_attack_anim
+            if prev["who"] == 1:
+                self._arena_f1_pos = list(f1_home)
+            else:
+                self._arena_f2_pos = list(f2_home)
+        self._arena_attack_anim = {"who": who, "phase": "lunge", "t": 0.0, "lunge_target": lunge_tgt}
 
     def _format_round_line(self, ev, g1, g2):
         label = ev["label"]
@@ -406,6 +507,8 @@ class ArenaUIMixin:
                 gold_delta = -self._arena_bet_amount
                 player.money = max(0, player.money + gold_delta)
         self._arena_gold_delta = gold_delta
+        cheer_pool = _CROWD_BEAST if bout.bout_type == "beast_hunt" else _CROWD_CHEER
+        self._arena_result_cheer = random.choice(cheer_pool)
 
         # Card drop logic:
         # - Beast hunt won by gladiator → 50% chance of gladiator card
@@ -449,10 +552,9 @@ class ArenaUIMixin:
         else:
             self._draw_gladiator_mini(self.screen, winner, px + pw // 2 - 24, sprite_y, 1, scale=2)
 
-        # Crowd cheer — beast fights use wilder lines
-        cheer_pool = _CROWD_BEAST if bout.bout_type == "beast_hunt" else _CROWD_CHEER
-        cheer_col  = (220, 150, 70) if bout.bout_type == "beast_hunt" else _PANEL_SAND
-        cheer = random.choice(cheer_pool)
+        # Crowd cheer — picked once in _resolve_arena_result, not every frame
+        cheer_col = (220, 150, 70) if bout.bout_type == "beast_hunt" else _PANEL_SAND
+        cheer = getattr(self, "_arena_result_cheer", "")
         cheer_s = small.render(cheer, True, cheer_col)
         self.screen.blit(cheer_s, (px + pw // 2 - cheer_s.get_width() // 2, sprite_y + 56))
 
@@ -681,6 +783,10 @@ class ArenaUIMixin:
         self._arena_crowd_favor = 0.5
         self._arena_gold_delta  = 0
         self._arena_result_card = None
+        self._arena_f1_pos      = None
+        self._arena_f2_pos      = None
+        self._arena_attack_anim = None
+        self._arena_bob_t       = 0.0
         self._arena_phase       = "watch"
 
     def _skip_to_result(self, player):

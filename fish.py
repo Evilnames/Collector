@@ -45,6 +45,7 @@ FISH_TYPES = {
             ((175, 205, 185), (130, 160, 140)),
         ],
         "description": "A tiny freshwater fish. Found almost everywhere there is clean water.",
+        "tension": 0.4,
     },
 
     # ------------------------------------------------------------------
@@ -77,6 +78,7 @@ FISH_TYPES = {
             ((110, 155, 90), (65, 105, 55)),
         ],
         "description": "A bold and scrappy lake predator. Puts up a strong fight.",
+        "tension": 1.8,
     },
     "carp": {
         "name": "Carp",
@@ -91,6 +93,7 @@ FISH_TYPES = {
             ((195, 155, 90), (145, 112, 65)),
         ],
         "description": "A large, hardy lake fish. Wary and difficult to fool.",
+        "tension": 1.4,
     },
     "bluegill": {
         "name": "Bluegill",
@@ -277,6 +280,7 @@ FISH_TYPES = {
             ((140, 90, 70), (200, 165, 90)),
         ],
         "description": "An agile river fish prized for its spotted markings and flavor.",
+        "tension": 1.2,
     },
     "salmon": {
         "name": "Salmon",
@@ -291,6 +295,7 @@ FISH_TYPES = {
             ((220, 110, 70), (150, 90, 60)),
         ],
         "description": "A powerful migratory river fish with striking pink flesh.",
+        "tension": 1.6,
     },
     "pike": {
         "name": "Pike",
@@ -305,6 +310,7 @@ FISH_TYPES = {
             ((65, 115, 55), (170, 155, 75)),
         ],
         "description": "A fierce lake ambush predator with excellent camouflage.",
+        "tension": 2.2,
     },
     "sturgeon": {
         "name": "Sturgeon",
@@ -389,6 +395,7 @@ FISH_TYPES = {
             ((175, 185, 200), (200, 110, 100)),
         ],
         "description": "The sea-run rainbow trout. Chrome bright and ferociously strong.",
+        "tension": 2.0,
     },
 
     # ------------------------------------------------------------------
@@ -551,6 +558,7 @@ FISH_TYPES = {
             ((52, 62, 48), (100, 106, 78)),
         ],
         "description": "A fierce air-breathing predator. Can survive out of water for days.",
+        "tension": 2.1,
     },
     "alligator_gar": {
         "name": "Alligator Gar",
@@ -777,6 +785,7 @@ FISH_TYPES = {
             ((52, 128, 62), (200, 128, 35)),
         ],
         "description": "A fierce tropical predator bearing a vivid eyespot on its tail.",
+        "tension": 1.9,
     },
     "payara": {
         "name": "Payara",
@@ -791,6 +800,7 @@ FISH_TYPES = {
             ((178, 184, 195), (38, 42, 48)),
         ],
         "description": "The 'Vampire Fish' — silver and fierce, with two enormous downward-pointing fangs.",
+        "tension": 2.4,
     },
     "redtail_catfish": {
         "name": "Redtail Catfish",
@@ -1079,6 +1089,7 @@ FISH_TYPES = {
             ((188, 194, 200), (34, 36, 40)),
         ],
         "description": "A powerhouse reservoir predator. Landlocked stripers run in massive schools and hit hard.",
+        "tension": 1.8,
     },
     "yellow_bass": {
         "name": "Yellow Bass",
@@ -1996,6 +2007,7 @@ FISH_TYPES = {
             ((118, 138, 98), (168, 90, 72)),
         ],
         "description": "A powerful ocean salmon with bold calico markings in its spawning colors. Also called the dog salmon.",
+        "tension": 1.7,
     },
     "lake_sculpin": {
         "name": "Lake Sculpin",
@@ -2177,6 +2189,7 @@ FISH_TYPES = {
             ((22, 45, 88), (210, 178, 25)),
         ],
         "description": "The ahi of Hawaiian fishermen. A powerful open-water predator whose brilliant yellow fins and blazing speed made it a prized catch for outrigger canoe crews.",
+        "tension": 2.3,
     },
 
     # ------------------------------------------------------------------

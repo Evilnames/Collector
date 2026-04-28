@@ -14,6 +14,20 @@ DAY_DURATION   = 480.0   # 8 minutes of daylight
 NIGHT_DURATION = 300.0   # 5 minutes of night
 CYCLE_DURATION = DAY_DURATION + NIGHT_DURATION
 
+MORNING_END = 90.0                    # golden hour after dawn
+DUSK_START  = DAY_DURATION - 90.0    # golden hour before night
+
+
+def sky_phase(time_of_day):
+    """Return 'morning', 'day', 'dusk', or 'night' for the given time_of_day."""
+    if time_of_day < MORNING_END:
+        return 'morning'
+    if time_of_day < DUSK_START:
+        return 'day'
+    if time_of_day < DAY_DURATION:
+        return 'dusk'
+    return 'night'
+
 _CROP_MATURE_MAP = {
     STRAWBERRY_CROP_YOUNG:   STRAWBERRY_CROP_MATURE,
     WHEAT_CROP_YOUNG:        WHEAT_CROP_MATURE,
@@ -129,6 +143,7 @@ class World:
         self.automations = []
         self.farm_bots = []
         self.backhoes = []
+        self.tea_house_visitors = []
         self.elevator_cars = []
         self.minecarts = []
         self.birds = []
@@ -154,6 +169,13 @@ class World:
         self._rain_timer    = 0.0
         self._rain_duration = 0.0
         self._rain_gap      = 0.0  # set after soil_rng is initialized below
+        # Wind state
+        self._wind_active   = False
+        self._wind_timer    = 0.0
+        self._wind_duration = 0.0
+        self._wind_gap      = 0.0  # set after soil_rng is initialized below
+        self._wind_dir      = 1    # +1 = right, -1 = left
+        self._wind_strength = 1.0  # multiplier for particle speed
         # Compost bins (Phase 2): (bx,by) -> {"input": {}, "progress": float, "output": int}
         self.compost_bin_data = {}
         # Chicken coops: (bx,by) -> {"eggs": int, "progress": float}
@@ -196,7 +218,7 @@ class World:
         self._grow_lamps    = set()   # (x, y) of all placed GROW_LAMP bg blocks
         # Fruit tree regrowth — tracks leaf positions that may regrow a fruit cluster
         self._fruit_timer    = 0.0
-        self._fruit_interval = 30.0
+        self._fruit_interval = 120.0
         self._fruit_rng      = random.Random(seed + 33333)
         self.pending_fruit_leaves = set()
         if preloaded:
@@ -212,6 +234,10 @@ class World:
         self._soil_interval = _soil.SOIL_TICK_SECS
         self._soil_rng      = random.Random(seed + 22222)
         self._rain_gap      = self._soil_rng.uniform(_soil.RAIN_MIN_GAP_SECS, _soil.RAIN_MAX_GAP_SECS)
+        self._wind_gap      = self._soil_rng.uniform(5.0, 15.0)  # first gust is quick; later gaps are longer
+        # Cache leaf block set for the wind particle spawner
+        from blocks import ALL_LEAVES
+        self._all_leaves_set = ALL_LEAVES
         # Day/night cycle
         self.time_of_day = 0.0   # seconds, 0 = start of day, wraps at CYCLE_DURATION
         self.day_count = 0
@@ -712,6 +738,7 @@ class World:
             if "shop"          in extra: entity.shop          = [tuple(i) for i in extra["shop"]]
             if "quests"        in extra: entity.quests        = extra["quests"]
             if "trades"        in extra: entity.trades        = [tuple(t) for t in extra["trades"]]
+            if "ore_commission" in extra: entity.ore_commission = extra["ore_commission"]
             if "streak"        in extra: entity._streak       = extra["streak"]
             if "difficulty"    in extra: entity.difficulty    = extra["difficulty"]
             if "npc_horses"    in extra: entity._npc_horses   = extra["npc_horses"]
@@ -1055,7 +1082,7 @@ class World:
             biodome = self.biodome_at(x)
             if 0 < sy < WORLD_H and chunk[sy - 1][lx] == AIR and chunk[sy][lx] == GRASS:
                 if flower_rng.random() < 0.25:
-                    chunk[sy - 1][lx] = WILDFLOWER_PATCH
+                    self.set_bg_block(x, sy - 1, WILDFLOWER_PATCH)
             lo, hi = {
                 "jungle": (5, 10), "tropical": (5, 10), "wetland": (6, 12),
                 "temperate": (8, 16), "boreal": (9, 18), "birch_forest": (8, 16),
@@ -1878,6 +1905,7 @@ class World:
         self.time_of_day = (self.time_of_day + dt) % CYCLE_DURATION
         if self.time_of_day < prev:
             self.day_count += 1
+            self._apply_morning_dew()
             from towns import advance_day
             advance_day(self)
             from outposts import tick_outpost_day
@@ -1885,6 +1913,15 @@ class World:
             from player_cities import tick_city_day
             tick_city_day(self)
         self._tick_light_traps(dt)
+
+    def _apply_morning_dew(self):
+        """Give every sky-exposed tilled tile a small free moisture boost at dawn."""
+        import soil as _soil
+        dew = max(1, round(_soil.MAX_MOISTURE * 0.15))
+        for (x, y) in self._soil_moisture:
+            if self._has_sky_view(x, y):
+                cur = self._soil_moisture[(x, y)]
+                self._soil_moisture[(x, y)] = min(_soil.MAX_MOISTURE, cur + dew)
 
     def _tick_light_traps(self, dt):
         if not self.light_traps:
@@ -2637,13 +2674,14 @@ class World:
             if self.get_bg_block(x, y) in ALL_FRUIT_CLUSTERS:
                 self.pending_fruit_leaves.discard((x, y))
                 continue
-            if self._fruit_rng.random() < 0.15:
+            if self._fruit_rng.random() < 0.06:
                 self.set_bg_block(x, y, LEAF_FRUIT_CLUSTER_MAP[bid])
                 self.pending_fruit_leaves.discard((x, y))
 
     def update_soil(self, dt):
-        """Per-tick moisture decay, water-adjacency top-up, rain events, and fallow cleanup."""
+        """Per-tick moisture decay, water-adjacency top-up, rain/wind events, and fallow cleanup."""
         self._update_rain(dt)
+        self._update_wind(dt)
 
         self._soil_timer += dt
         if self._soil_timer < self._soil_interval:
@@ -2710,6 +2748,21 @@ class World:
                 self._rain_timer    = 0.0
                 self._rain_duration = self._soil_rng.uniform(
                     _soil.RAIN_DURATION_MIN_SECS, _soil.RAIN_DURATION_MAX_SECS)
+
+    def _update_wind(self, dt):
+        self._wind_timer += dt
+        if self._wind_active:
+            if self._wind_timer >= self._wind_duration:
+                self._wind_active = False
+                self._wind_timer  = 0.0
+                self._wind_gap    = self._soil_rng.uniform(60.0, 240.0)
+        else:
+            if self._wind_timer >= self._wind_gap:
+                self._wind_active    = True
+                self._wind_timer     = 0.0
+                self._wind_duration  = self._soil_rng.uniform(20.0, 70.0)
+                self._wind_dir       = self._soil_rng.choice([-1, 1])
+                self._wind_strength  = self._soil_rng.uniform(0.6, 2.2)
 
     def update_compost_bins(self, dt):
         """Advance composting progress; produce compost items when threshold reached."""
@@ -3369,7 +3422,7 @@ class World:
                 x += rng.randint(spacing, spacing * 2)
                 continue
             near_feature = (
-                self.get_block(x, sy - 1) == WILDFLOWER_PATCH
+                self.get_bg_block(x, sy - 1) == WILDFLOWER_PATCH
                 or self.get_block(x, sy) == WATER
                 or self.get_block(x - 1, sy) == WATER
                 or self.get_block(x + 1, sy) == WATER
@@ -3425,6 +3478,49 @@ class World:
             dx = _rnd.uniform(-2.5, 2.5) * BLOCK_SIZE
             dy = _rnd.uniform(-1.5, 0) * BLOCK_SIZE
             self.dropped_items.append(DroppedItem(x + dx, y + dy, item_id, count))
+
+    # ------------------------------------------------------------------
+    # Tea house visitor spawning and updates
+    # ------------------------------------------------------------------
+    _TEA_HOUSE_SPAWN_INTERVAL = 45.0   # seconds between spawn attempts
+
+    def update_tea_house_visitors(self, dt, player):
+        if getattr(player, "tea_house_pos", None) is None:
+            return
+
+        tea_pos = player.tea_house_pos
+
+        # Update existing visitors
+        for v in self.tea_house_visitors:
+            v.update(dt, tea_pos)
+
+        # Remove finished visitors
+        self.tea_house_visitors = [v for v in self.tea_house_visitors if not v.done]
+
+        # Attempt to spawn a new visitor
+        player.tea_house_last_spawn = getattr(player, "tea_house_last_spawn", 0.0) + dt
+        if player.tea_house_last_spawn < self._TEA_HOUSE_SPAWN_INTERVAL:
+            return
+        player.tea_house_last_spawn = 0.0
+
+        from tea_house import spawn_visitor, visitors_for_rep
+        from towns import TOWNS
+        centers = getattr(self, "town_centers", [])
+        if not centers:
+            return
+        ref_bx = tea_pos[0]
+        tid = min(range(len(centers)), key=lambda i: abs(centers[i] - ref_bx))
+        town = TOWNS.get(tid)
+        rep = town.reputation if town else 0
+
+        waiting = [v for v in self.tea_house_visitors if v.state in ("walking", "waiting")]
+        max_visitors = visitors_for_rep(rep)
+        if len(waiting) >= max_visitors:
+            return
+
+        visitor = spawn_visitor(self, tea_pos)
+        if visitor is not None:
+            self.tea_house_visitors.append(visitor)
 
     def update_dropped_items(self, dt, player):
         to_remove = []

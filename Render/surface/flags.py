@@ -1,3 +1,4 @@
+import math as _m
 import pygame
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H
 
@@ -35,8 +36,8 @@ def get_outpost_flag_surf(cache, outpost_type, flag_col):
 
 
 def build_sky_surf():
-    sky_top    = (55,  110, 210)
-    sky_bottom = (130, 190, 250)
+    sky_top    = (85,  145, 230)
+    sky_bottom = (155, 210, 255)
     surf = pygame.Surface((SCREEN_W, SCREEN_H)).convert()
     for y in range(SCREEN_H):
         t = y / (SCREEN_H - 1)
@@ -60,6 +61,34 @@ def build_night_sky_surf():
     return surf
 
 
+def build_dawn_sky_surf():
+    """Warm amber-rose sky for the morning golden hour."""
+    top    = (215, 105, 45)
+    bottom = (255, 180, 95)
+    surf = pygame.Surface((SCREEN_W, SCREEN_H)).convert()
+    for y in range(SCREEN_H):
+        t = y / (SCREEN_H - 1)
+        r = int(top[0] + (bottom[0] - top[0]) * t)
+        g = int(top[1] + (bottom[1] - top[1]) * t)
+        b = int(top[2] + (bottom[2] - top[2]) * t)
+        pygame.draw.line(surf, (r, g, b), (0, y), (SCREEN_W - 1, y))
+    return surf
+
+
+def build_dusk_sky_surf():
+    """Deep orange-red sky for the evening golden hour."""
+    top    = (165, 60, 20)
+    bottom = (245, 135, 55)
+    surf = pygame.Surface((SCREEN_W, SCREEN_H)).convert()
+    for y in range(SCREEN_H):
+        t = y / (SCREEN_H - 1)
+        r = int(top[0] + (bottom[0] - top[0]) * t)
+        g = int(top[1] + (bottom[1] - top[1]) * t)
+        b = int(top[2] + (bottom[2] - top[2]) * t)
+        pygame.draw.line(surf, (r, g, b), (0, y), (SCREEN_W - 1, y))
+    return surf
+
+
 def sky_night_alpha(time_of_day):
     from world import DAY_DURATION
     DAWN = 60.0
@@ -73,3 +102,16 @@ def sky_night_alpha(time_of_day):
         return int(255 * ((t - (DAY_DURATION - DUSK)) / DUSK))
     else:
         return 255
+
+
+def golden_hour_alphas(time_of_day):
+    """Returns (dawn_alpha, dusk_alpha) each 0-255, peaking mid-transition."""
+    from world import MORNING_END, DUSK_START, DAY_DURATION
+    t = time_of_day
+    if t < MORNING_END:
+        p = t / MORNING_END
+        return int(210 * _m.sin(p * _m.pi)), 0
+    if t >= DUSK_START:
+        p = (t - DUSK_START) / (DAY_DURATION - DUSK_START)
+        return 0, int(230 * _m.sin(p * _m.pi))
+    return 0, 0

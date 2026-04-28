@@ -370,3 +370,44 @@ def build_terrain_surfs():
     surfs[bid] = s
 
     return surfs
+
+
+# Chunk layouts: 10 positions, sliced by richness tier
+_ORE_CHUNKS = [
+    (3, 4, 7, 5), (14, 2, 6, 8), (22, 8, 7, 4),
+    (5, 15, 8, 6), (17, 18, 9, 7), (6, 25, 5, 4),
+    (21, 25, 7, 5), (11, 9, 5, 4), (26, 14, 4, 6), (2, 21, 6, 4),
+]
+_RICHNESS_COUNTS = {1: 4, 2: 7, 3: 10}
+
+
+def _ore_chunk_surf(stone_base, ore_col, ore_hi, chunks):
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    s.fill(stone_base)
+    for rx, ry, rw, rh in chunks:
+        pygame.draw.rect(s, ore_col, (rx, ry, rw, rh))
+        pygame.draw.rect(s, ore_hi,  (rx, ry, rw, rh), 1)
+    pygame.draw.rect(s, _darken(stone_base, 20), s.get_rect(), 1)
+    return s
+
+
+def build_ore_richness_surfs():
+    stone = (118, 112, 108)
+
+    def make_3(stone_base, ore_col):
+        poor   = _darken(ore_col, 18)
+        rich   = _lighter(ore_col, 18)
+        return {
+            1: _ore_chunk_surf(stone_base, poor,    ore_col,           _ORE_CHUNKS[:4]),
+            2: _ore_chunk_surf(stone_base, ore_col, _lighter(ore_col, 10), _ORE_CHUNKS[:7]),
+            3: _ore_chunk_surf(stone_base, rich,    _lighter(ore_col, 25), _ORE_CHUNKS),
+        }
+
+    return {
+        COAL_ORE:    make_3(stone, (22, 20, 18)),
+        IRON_ORE:    make_3(stone, (185, 140, 110)),
+        GOLD_ORE:    make_3(stone, (218, 182, 55)),
+        CRYSTAL_ORE: make_3(stone, (90, 220, 220)),
+        RUBY_ORE:    make_3(stone, (210, 35, 35)),
+        OBSIDIAN:    make_3((28, 14, 42), (85, 55, 115)),
+    }

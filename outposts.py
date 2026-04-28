@@ -1119,14 +1119,10 @@ def generate_outpost_for_chunk(world, seed: int, cx: int) -> None:
 
 
 def get_outpost_for_block(bx: int, by: int) -> Outpost | None:
-    """Return the Outpost whose footprint contains (bx, by), or None."""
-    for op in OUTPOSTS.values():
-        hw = OUTPOST_TYPES[op.outpost_type]["half_w"]
-        # Include a wider buffer (+5) to ensure the flag (at left_x - 2) is caught.
-        # op.center_bx is left_x + hw + 2, so center - hw - 5 = left_x - 3.
-        if op.center_bx - hw - 5 <= bx <= op.center_bx + hw + 5:
-            return op
-    return None
+    """Return the nearest Outpost to (bx, by), or None if OUTPOSTS is empty."""
+    if not OUTPOSTS:
+        return None
+    return min(OUTPOSTS.values(), key=lambda op: abs(op.center_bx - bx))
 
 # ---------------------------------------------------------------------------
 # Day tick (called from world.py alongside advance_day)

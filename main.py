@@ -13,7 +13,7 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK, BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK, CHICKEN_COOP_BLOCK, GAMBLING_TABLE, BET_COUNTER
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK, BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK, CHICKEN_COOP_BLOCK, GAMBLING_TABLE, BET_COUNTER, TEA_HOUSE_BLOCK
 from elevators import ElevatorCar
 from minecarts import Minecart
 
@@ -510,6 +510,8 @@ def main():
         ui.pause_open = False
         ui.help_open = False
         ui.research_open = ui.inventory_open = ui.crafting_open = False
+        ui._inv_search = ""
+        ui._inv_search_active = False
         ui.collection_open = ui.refinery_open = ui.npc_open = False
         ui.breeding_open = False
         ui.reputation_screen_open = False
@@ -561,6 +563,7 @@ def main():
         ui.gambling_open = False
         ui.racing_open = False
         ui.arena_open = False
+        ui.tea_house_open = False
 
     def _any_ui_open():
         return any([ui.pause_open, ui.help_open, ui.research_open, ui.inventory_open, ui.crafting_open,
@@ -569,7 +572,7 @@ def main():
                     ui.backhoe_open, ui.breeding_open, ui.garden_open, ui.wildflower_display_open,
                     ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open,
                     ui.town_menu_open, ui.outpost_menu_open, ui.landmark_menu_open, ui.city_block_menu_open, ui.coa_designer_open, ui.hire_panel_open, ui.job_panel_open, ui.reputation_screen_open, ui.trade_block_open,
-                    ui.dog_view_open, ui.dog_breeding_open, ui.gambling_open, ui.racing_open, ui.arena_open,
+                    ui.dog_view_open, ui.dog_breeding_open, ui.gambling_open, ui.racing_open, ui.arena_open, ui.tea_house_open,
                     getattr(player, "inspecting_npc", None) is not None])
 
     def _find_nearby_npc(world, player):
@@ -674,6 +677,11 @@ def main():
                         if ch and ch.isprintable():
                             ui.cheat_text += ch
                     continue  # don't process other keys while console open
+
+                # Inventory search bar intercepts all keys while active
+                if ui.inventory_open and ui._inv_search_active:
+                    ui.handle_inventory_search_key(event)
+                    continue
 
                 # Death screen: only SPACE/ENTER to respawn
                 if player.dead:
@@ -900,38 +908,47 @@ def main():
                     ui.research_open = not ui.research_open
                     ui.inventory_open = ui.crafting_open = False
                     ui.equipment_crafting_open = ui.collection_open = ui.refinery_open = False
+                    ui._inv_search = ""; ui._inv_search_active = False
 
                 if event.key == pygame.K_i:
                     ui.inventory_open = not ui.inventory_open
                     ui.research_open = ui.crafting_open = False
                     ui.equipment_crafting_open = ui.collection_open = ui.refinery_open = False
+                    if not ui.inventory_open:
+                        ui._inv_search = ""
+                        ui._inv_search_active = False
 
                 if event.key == pygame.K_c:
                     ui.crafting_open = not ui.crafting_open
                     ui.research_open = ui.inventory_open = False
                     ui.equipment_crafting_open = ui.collection_open = ui.refinery_open = False
+                    ui._inv_search = ""; ui._inv_search_active = False
 
                 if event.key == pygame.K_g:
                     ui.collection_open = not ui.collection_open
                     ui.research_open = ui.inventory_open = ui.crafting_open = False
                     ui.equipment_crafting_open = ui.refinery_open = ui.breeding_open = False
+                    ui._inv_search = ""; ui._inv_search_active = False
 
                 if event.key == pygame.K_b:
                     ui.breeding_open = not ui.breeding_open
                     ui.research_open = ui.inventory_open = ui.crafting_open = False
                     ui.equipment_crafting_open = ui.collection_open = ui.refinery_open = False
+                    ui._inv_search = ""; ui._inv_search_active = False
 
                 if event.key == pygame.K_k:
                     ui.reputation_screen_open = not ui.reputation_screen_open
                     if ui.reputation_screen_open:
                         ui.research_open = ui.inventory_open = ui.crafting_open = False
                         ui.collection_open = ui.refinery_open = ui.breeding_open = False
+                        ui._inv_search = ""; ui._inv_search_active = False
 
                 if event.key == pygame.K_h:
                     ui.help_open = not ui.help_open
                     if ui.help_open:
                         ui.research_open = ui.inventory_open = ui.crafting_open = False
                         ui.collection_open = ui.refinery_open = ui.breeding_open = False
+                        ui._inv_search = ""; ui._inv_search_active = False
 
                 if event.key == pygame.K_i:
                     nearby_any = _find_any_nearby_npc(world, player)
@@ -1054,9 +1071,8 @@ def main():
                         from outposts import get_outpost_for_block
                         op = get_outpost_for_block(*nearby_outpost_flag)
                         if op is None:
-                            print(f"[WARNING] Outpost flag at {nearby_outpost_flag} "
-                                  f"has no matching Outpost record. "
-                                  f"E-key will not work.")
+                            print(f"[WARNING] Outpost flag at {nearby_outpost_flag}: "
+                                  f"OUTPOSTS registry is empty — something broke during load.")
                         elif ui.outpost_menu_open and ui.active_outpost is op:
                             ui.close_outpost_menu()
                         else:
@@ -1121,8 +1137,12 @@ def main():
                             ui.active_npc = None
                         else:
                             _close_all_ui()
-                            ui.npc_open = True
-                            ui.active_npc = nearby_npc
+                            if not nearby_npc.is_open(world.time_of_day):
+                                player.pending_notifications.append(
+                                    ("Shop", "Closed — come back at dawn", None))
+                            else:
+                                ui.npc_open = True
+                                ui.active_npc = nearby_npc
                             if isinstance(nearby_npc, LeaderNPC):
                                 from towns import REGIONS
                                 region = REGIONS.get(nearby_npc.region_id)
@@ -1152,7 +1172,8 @@ def main():
                                 car.call(by, world)
                     elif nearby_track_stop is not None:
                         bx, by = nearby_track_stop
-                        cart = next((c for c in world.minecarts if c.track_by == by), None)
+                        _track_carts = [c for c in world.minecarts if c.track_by == by]
+                        cart = min(_track_carts, key=lambda c: abs(c.cart_x - bx * BLOCK_SIZE), default=None)
                         if cart is not None:
                             cart_bx = int(round(cart.cart_x / BLOCK_SIZE))
                             if cart.state == "idle" and cart_bx == bx and cart.rider is None:
@@ -1257,6 +1278,7 @@ def main():
                                 ui.refinery_open = True
                                 ui.refinery_block_id = equip
                                 ui.research_open = ui.inventory_open = ui.crafting_open = False
+                                ui._inv_search = ""; ui._inv_search_active = False
                                 ui.equipment_crafting_open = ui.collection_open = False
                                 if equip == TRADE_BLOCK:
                                     trade_pos = player.get_nearby_equipment_pos(TRADE_BLOCK)
@@ -1296,6 +1318,9 @@ def main():
                                     ui.refinery_open = False
                                 elif equip == CHICKEN_COOP_BLOCK:
                                     ui.active_coop_pos = player.get_nearby_equipment_pos(CHICKEN_COOP_BLOCK)
+                                elif equip == TEA_HOUSE_BLOCK:
+                                    _close_all_ui()
+                                    ui.open_tea_house()
                                 elif equip == GAMBLING_TABLE:
                                     _close_all_ui()
                                     ui.open_gambling_table(3)
@@ -1352,7 +1377,10 @@ def main():
                     if ui.coa_designer_open:
                         ui.handle_coa_scroll(event.y)
                     elif ui.reputation_screen_open:
-                        ui.handle_reputation_screen_scroll(-event.y * 20)
+                        if getattr(ui, '_rep_view', 'list') == 'map':
+                            ui._map_scroll = max(0, getattr(ui, '_map_scroll', 0) - event.y * 20)
+                        else:
+                            ui.handle_reputation_screen_scroll(-event.y * 20)
                     elif ui.help_open:
                         ui._help_scroll = max(0, min(ui._help_max_scroll, ui._help_scroll - event.y * 20))
                     elif ui.wildflower_display_open:
@@ -1469,6 +1497,8 @@ def main():
                     ui.handle_job_panel_click(event.pos, player)
                 elif ui.hire_panel_open:
                     ui.handle_hire_panel_click(event.pos, player)
+                elif ui.reputation_screen_open:
+                    ui.handle_reputation_screen_click(event.pos)
                 elif ui.outpost_menu_open:
                     pass  # diplomatic-only — clicks consumed but do nothing
                 elif getattr(player, "inspecting_npc", None) is not None:
@@ -1478,7 +1508,7 @@ def main():
                 elif ui.research_open:
                     ui.handle_research_click(event.pos, player, world, research)
                 elif ui.inventory_open:
-                    ui.handle_inventory_click(event.pos, player)
+                    ui.handle_inventory_click(event.pos, player, event.button)
                 elif ui.crafting_open:
                     ui.handle_crafting_click(event.pos, player, event.button, research,
                                              debug=settings.get("debug", False))
@@ -1509,6 +1539,8 @@ def main():
                     ui.handle_kennel_breeding_click(event.pos, player, world)
                 elif ui.dog_view_open:
                     ui.handle_dog_view_click(event.pos, player)
+                elif ui.tea_house_open:
+                    ui.handle_tea_house_click(event.pos, player, world)
                 elif ui.gambling_open:
                     ui.handle_gambling_click(event.pos, player)
                 elif ui.racing_open:
@@ -1817,6 +1849,7 @@ def main():
             renderer.draw_player(player)
             renderer.draw_dropped_items(world.dropped_items)
             renderer.draw_entities(world.entities)
+            renderer.draw_tea_house_visitors(world.tea_house_visitors)
             renderer.draw_arrows(world.arrows)
             renderer.draw_nests(world.nests)
             renderer.draw_birds(world.birds)
@@ -1982,6 +2015,7 @@ def main():
         world.update_compost_bins(dt)
         world.update_chicken_coops(dt)
         world.update_trade_blocks(dt, player)
+        world.update_tea_house_visitors(dt, player)
         import logic as _ltm
         _ltm.logic_tick(world, dt, player)
         world.update_irrigation(dt)
@@ -2002,6 +2036,7 @@ def main():
         renderer.draw_world(world, player)
         renderer.draw_player(player)
         renderer.draw_entities(world.entities)
+        renderer.draw_tea_house_visitors(world.tea_house_visitors)
         renderer.draw_arrows(world.arrows)
         renderer.draw_nests(world.nests)
         renderer.draw_birds(world.birds)
@@ -2018,6 +2053,8 @@ def main():
         renderer.draw_place_indicator(player)
         renderer.draw_water_overlay(player)
         renderer.draw_rain(world)
+        renderer.draw_wind_particles(world, dt)
+        renderer.draw_embers(world, dt)
         renderer.tick_float_texts(dt)
         renderer.draw_float_texts()
         renderer.draw_lighting(player, world, player.get_depth(), world.time_of_day)

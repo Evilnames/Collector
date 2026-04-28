@@ -840,21 +840,29 @@ class MinigamesMixin:
 
         fish = getattr(player, "_fishing_pending_fish", None)
         reel_pos = getattr(player, "_reel_pos", 0.5)
+        surging = getattr(player, "_fish_surge_active", False)
 
-        # Background panel
+        # Background panel — red tint during surge
         BAR_W = 420
         BOX_H = 100
         bx = cx - BAR_W // 2 - 16
         by = H - 155
-        box = pygame.Surface((BAR_W + 32, BOX_H), pygame.SRCALPHA)
-        box.fill((12, 22, 35, 220))
-        self.screen.blit(box, (bx, by))
-        pygame.draw.rect(self.screen, (60, 140, 200), (bx, by, BAR_W + 32, BOX_H), 2)
-
-        # Title
         pulse = (math.sin(pygame.time.get_ticks() * 0.008) + 1) * 0.5
-        tc = (int(140 + 80 * pulse), int(200 + 55 * pulse), 255)
-        title_s = self.font.render("REELING!", True, tc)
+        box_col = (35, 10, 10, 230) if surging else (12, 22, 35, 220)
+        box = pygame.Surface((BAR_W + 32, BOX_H), pygame.SRCALPHA)
+        box.fill(box_col)
+        self.screen.blit(box, (bx, by))
+        border_col = (220, 60, 40) if surging else (60, 140, 200)
+        pygame.draw.rect(self.screen, border_col, (bx, by, BAR_W + 32, BOX_H), 2)
+
+        # Title / surge flash
+        if surging:
+            surge_pulse = (math.sin(pygame.time.get_ticks() * 0.025) + 1) * 0.5
+            tc = (255, int(80 + 80 * surge_pulse), 20)
+            title_s = self.font.render("FIGHTING!", True, tc)
+        else:
+            tc = (int(140 + 80 * pulse), int(200 + 55 * pulse), 255)
+            title_s = self.font.render("REELING!", True, tc)
         self.screen.blit(title_s, (cx - title_s.get_width() // 2, by + 6))
 
         # Fish hint
@@ -874,9 +882,10 @@ class MinigamesMixin:
         snap_w  = int(bar_w * 0.25)
         tense_w = int(bar_w * 0.45)
         safe_w  = bar_w - snap_w - tense_w
-        pygame.draw.rect(self.screen, (100, 30, 25), (bar_x,             bar_y, snap_w,  bar_h))
-        pygame.draw.rect(self.screen, ( 90, 80, 20), (bar_x + snap_w,   bar_y, tense_w, bar_h))
-        pygame.draw.rect(self.screen, ( 25, 90, 40), (bar_x + snap_w + tense_w, bar_y, safe_w, bar_h))
+        snap_bg  = (160, 40, 30) if surging else (100, 30, 25)
+        pygame.draw.rect(self.screen, snap_bg,      (bar_x,                       bar_y, snap_w,  bar_h))
+        pygame.draw.rect(self.screen, ( 90, 80, 20),(bar_x + snap_w,              bar_y, tense_w, bar_h))
+        pygame.draw.rect(self.screen, ( 25, 90, 40),(bar_x + snap_w + tense_w,   bar_y, safe_w,  bar_h))
 
         # Zone labels
         snap_lbl  = self.small.render("SNAP", True, (200, 80, 70))
@@ -884,13 +893,16 @@ class MinigamesMixin:
         self.screen.blit(snap_lbl, (bar_x + snap_w // 2 - snap_lbl.get_width() // 2, bar_y + 2))
         self.screen.blit(safe_lbl, (bar_x + snap_w + tense_w + safe_w // 2 - safe_lbl.get_width() // 2, bar_y + 2))
 
-        # Marker (white triangle / vertical bar at reel_pos)
+        # Marker — white normally, orange/red during surge
         marker_x = bar_x + int(bar_w * reel_pos)
-        pygame.draw.rect(self.screen, (255, 255, 255), (marker_x - 3, bar_y - 4, 6, bar_h + 8))
-        pygame.draw.rect(self.screen, (40, 40, 40),    (marker_x - 2, bar_y - 3, 4, bar_h + 6))
+        marker_col = (255, 120, 20) if surging else (255, 255, 255)
+        pygame.draw.rect(self.screen, marker_col,  (marker_x - 3, bar_y - 4, 6, bar_h + 8))
+        pygame.draw.rect(self.screen, (40, 40, 40),(marker_x - 2, bar_y - 3, 4, bar_h + 6))
 
         pygame.draw.rect(self.screen, (120, 160, 200), (bar_x, bar_y, bar_w, bar_h), 1)
 
         # Hint text
-        hint_s = self.small.render("Hold  F  to reel in  |  Release to ease tension", True, (140, 190, 220))
+        hint_txt = "Release  F  — fish is surging!" if surging else "Hold  F  to reel in  |  Release to ease tension"
+        hint_col = (255, 160, 80) if surging else (140, 190, 220)
+        hint_s = self.small.render(hint_txt, True, hint_col)
         self.screen.blit(hint_s, (cx - hint_s.get_width() // 2, bar_y - 16))

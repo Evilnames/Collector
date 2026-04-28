@@ -2,7 +2,8 @@ import math as _m
 import pygame
 
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H
-from blocks import LIGHT_EMITTERS
+from blocks import LIGHT_EMITTERS, WARM_EMITTERS
+from Render.surface.flags import golden_hour_alphas
 
 
 def build_block_gradient(pattern, radius, flicker_frame=0):
@@ -102,21 +103,49 @@ def build_block_gradient(pattern, radius, flicker_frame=0):
     return build_block_gradient("circle", r)
 
 
+def build_warm_gradient(radius, pattern, flicker_frame=0):
+    """Amber-tinted gradient for the warm light pass (normal-blend, not additive)."""
+    r = radius + int(_m.sin(flicker_frame * 0.524) * 6) if pattern == "flicker" else radius
+    size = r * 2 + 1
+    surf = pygame.Surface((size, size), pygame.SRCALPHA)
+    surf.fill((0, 0, 0, 0))
+    max_alpha = 45 if pattern == "flicker" else 30
+    for ir in range(r, 0, -3):
+        t = 1.0 - (ir / r) ** 0.55
+        alpha = int(max_alpha * t)
+        pygame.draw.circle(surf, (255, 155, 55, alpha), (r, r), ir)
+    return surf
+
+
 def draw_lighting(renderer, player, world, depth, time_of_day=0.0):
     night_alpha = renderer._sky_night_alpha(time_of_day)
+    dawn_a, dusk_a = golden_hour_alphas(time_of_day)
 
     night_factor = 1.0 - (night_alpha / 255.0) * 0.45
     surface_ambient = int(230 * night_factor)
 
     if depth <= 0:
-        if night_alpha <= 0:
+        if night_alpha <= 0 and dawn_a == 0 and dusk_a == 0:
             return
-        darkness = int(night_alpha * 0.59)
+        darkness = int(night_alpha * 0.72)
     else:
         ambient  = max(10, surface_ambient - depth * 2)
         darkness = 255 - ambient
 
-    renderer._light_surf.fill((0, 0, 0, darkness))
+    # Atmospheric world tint: warm additive wash during golden hour, before darkness
+    golden_a = max(dawn_a, dusk_a)
+    if golden_a > 0:
+        tint_strength = int(golden_a * 8 // 230)
+        if dusk_a > 0:
+            tint_col = (80, 35, 0, tint_strength)
+        else:
+            tint_col = (70, 40, 5, tint_strength)
+        renderer._atmos_surf.fill(tint_col)
+        renderer.screen.blit(renderer._atmos_surf, (0, 0),
+                             special_flags=pygame.BLEND_RGBA_ADD)
+
+    # Cool moonlit darkness (blue-tinted, not pure black)
+    renderer._light_surf.fill((5, 8, 20, darkness))
 
     if depth > 0:
         ambient = max(10, surface_ambient - depth * 2)
@@ -163,6 +192,30 @@ def draw_lighting(renderer, player, world, depth, time_of_day=0.0):
                     sy = by * BLOCK_SIZE + BLOCK_SIZE // 2 - cam_yi
                     renderer._light_surf.blit(grad, (sx - gw // 2, sy - gh // 2),
                                               special_flags=pygame.BLEND_RGBA_MIN)
+
+    # Warm amber pass — only meaningful when there is some darkness to contrast against
+    if world is not None and darkness > 10:
+        renderer._warm_surf.fill((0, 0, 0, 0))
+        warm_drawn = False
+        for by in range(by0, by1):
+            for bx in range(bx0, bx1):
+                for bid in (world.get_block(bx, by), world.get_bg_block(bx, by)):
+                    if bid not in WARM_EMITTERS:
+                        continue
+                    warm_drawn = True
+                    light_r, pattern = WARM_EMITTERS[bid]
+                    ff = flicker_frame if pattern == "flicker" else 0
+                    key = ("warm", light_r, pattern, ff)
+                    if key not in renderer._light_grad_cache:
+                        renderer._light_grad_cache[key] = build_warm_gradient(light_r, pattern, ff)
+                    grad = renderer._light_grad_cache[key]
+                    gw, gh = grad.get_size()
+                    sx = bx * BLOCK_SIZE + BLOCK_SIZE // 2 - cam_xi
+                    sy = by * BLOCK_SIZE + BLOCK_SIZE // 2 - cam_yi
+                    renderer._warm_surf.blit(grad, (sx - gw // 2, sy - gh // 2),
+                                             special_flags=pygame.BLEND_RGBA_MAX)
+        if warm_drawn:
+            renderer.screen.blit(renderer._warm_surf, (0, 0))
 
     # Firefly glow — punch soft holes in the darkness overlay
     if night_alpha > 30 and world is not None and hasattr(world, 'insects'):

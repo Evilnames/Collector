@@ -1757,6 +1757,25 @@ def build_structure_surfs():
     pygame.draw.arc(s, lt, (2, 2, BS-4, BS//2), 0, math.pi, 2)
     surfs[bid] = s
 
+    bid = BED
+    # if bid == BED — sleeping bed: frame + pillow + blanket
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    BS = BLOCK_SIZE
+    frame   = (120,  70,  40)   # wooden frame
+    blanket = (180,  60,  90)   # pink/red blanket
+    pillow  = (240, 220, 210)   # off-white pillow
+    s.fill(frame)
+    # blanket fills most of the block
+    pygame.draw.rect(s, blanket, (2, BS//3, BS-4, BS*2//3 - 2))
+    # pillow at the top
+    pygame.draw.rect(s, pillow,  (3, 2, BS-6, BS//3 - 2))
+    pygame.draw.rect(s, _darken(pillow, 20), (3, 2, BS-6, BS//3 - 2), 1)
+    # blanket fold line
+    pygame.draw.line(s, _darken(blanket, 20), (2, BS//3 + 4), (BS-3, BS//3 + 4), 1)
+    # outer frame border
+    pygame.draw.rect(s, _darken(frame, 20), s.get_rect(), 2)
+    surfs[bid] = s
+
     bid = CARPET_BED
     # if bid == CARPET_BED
     s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))

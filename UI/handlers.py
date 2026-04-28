@@ -18,7 +18,7 @@ from blocks import (BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BB
                     STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK,
                     BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK,
                     COMPOST_BIN_BLOCK, GARDEN_BLOCK,
-                    WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK, ROASTING_KILN_BLOCK,
+                    WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK, ROASTING_KILN_BLOCK, TEA_HOUSE_BLOCK,
                     DRYING_RACK_BLOCK, KILN_BLOCK, RESONANCE_BLOCK,
                     BAIT_STATION_BLOCK,
                     SPINNING_WHEEL_BLOCK, DYE_VAT_BLOCK, LOOM_BLOCK,
@@ -50,12 +50,46 @@ class HandlersMixin:
                 research.unlock(node_id, player, world)
                 break
 
-    def handle_inventory_click(self, pos, player):
+    def handle_inventory_click(self, pos, player, button=1):
+        # Tab clicks
+        for tab_idx, rect in self._inv_tab_rects.items():
+            if rect.collidepoint(pos):
+                self._inv_tab = tab_idx
+                self._inv_scroll = 0
+                return
+        # Sort toggle
+        if self._inv_sort_btn_rect and self._inv_sort_btn_rect.collidepoint(pos):
+            self._inv_sort_count = not self._inv_sort_count
+            return
+        # Search bar
+        if self._inv_search_rect and self._inv_search_rect.collidepoint(pos):
+            self._inv_search_active = True
+            return
+        # Clicking outside search bar deactivates it
+        self._inv_search_active = False
+        # Right-click: quick-assign to currently selected hotbar slot
+        if button == 3:
+            for item_id, rect in self._inv_rects.items():
+                if rect.collidepoint(pos):
+                    player.hotbar[player.selected_slot] = item_id
+                    player.hotbar_uses[player.selected_slot] = ITEMS.get(item_id, {}).get("max_uses")
+                    return
+            return
+        # Left-click: start drag
         for item_id, rect in self._inv_rects.items():
             if rect.collidepoint(pos):
                 self._drag_item_id = item_id
                 self._drag_pos = pos
                 break
+
+    def handle_inventory_search_key(self, event):
+        if event.key == pygame.K_ESCAPE:
+            self._inv_search = ""
+            self._inv_search_active = False
+        elif event.key == pygame.K_BACKSPACE:
+            self._inv_search = self._inv_search[:-1]
+        elif event.unicode and event.unicode.isprintable():
+            self._inv_search += event.unicode
 
     def handle_inventory_drag(self, pos):
         if self._drag_item_id is not None:
@@ -513,7 +547,10 @@ class HandlersMixin:
         elif isinstance(npc, TradeNPC):
             for i, rect in self._trade_rects.items():
                 if rect.collidepoint(pos):
-                    npc.execute_trade(i, player)
+                    if i == "commission":
+                        npc.complete_commission(player)
+                    else:
+                        npc.execute_trade(i, player)
                     break
         elif isinstance(npc, WildflowerQuestNPC):
             for quest_idx, rect in self._trade_rects.items():
