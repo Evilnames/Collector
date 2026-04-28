@@ -5,10 +5,13 @@ from constants import SCREEN_W, SCREEN_H
 from tea import (
     apply_wither, apply_oxidation, apply_aging, apply_herbal_blend, apply_roasting,
     get_brew_item_id, make_blend,
-    WITHER_METHODS, TEA_TYPE_DESCS, TEA_TYPE_COLORS, TEA_TYPE_BUFFS,
+    WITHER_METHODS, WITHER_RACK_SLOTS,
+    TEA_TYPE_DESCS, TEA_TYPE_COLORS, TEA_TYPE_BUFFS,
     BUFF_DESCS, BIOME_DISPLAY_NAMES, VARIETY_DISPLAY_NAMES,
     HERBAL_ADDITIVES, AGE_DURATIONS, ROASTING_LEVELS, _CODEX_BIOMES, _CODEX_TEA_TYPES,
 )
+from world import CYCLE_DURATION
+from dataclasses import asdict
 
 
 _ACCENT   = ( 65, 160,  75)
@@ -36,99 +39,183 @@ class TeaMixin:
         hint = self.small.render("ESC to close", True, _HINT_C)
         self.screen.blit(hint, (SCREEN_W - hint.get_width() - 8, 6))
 
-        if self._wither_phase == "select_leaf":
-            self._wither_select_rects.clear()
-            raw = [(i, x) for i, x in enumerate(player.tea_leaves) if x.state == "raw"]
-            if not raw:
-                msg = self.font.render("No raw tea leaves! Harvest ripe Tea Plants.", True, _LABEL_C)
-                self.screen.blit(msg, (SCREEN_W // 2 - msg.get_width() // 2, SCREEN_H // 2))
-                return
-            sub = self.small.render("Select a raw leaf to wither:", True, _LABEL_C)
-            self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 32))
-            CELL_W, CELL_H, GAP, COLS = 200, 56, 8, 5
-            gx0 = (SCREEN_W - (COLS * CELL_W + (COLS - 1) * GAP)) // 2
-            for li, (bi, leaf) in enumerate(raw[:20]):
-                col_i, row_i = li % COLS, li // COLS
-                rx = gx0 + col_i * (CELL_W + GAP)
-                ry = 55 + row_i * (CELL_H + GAP)
-                rect = pygame.Rect(rx, ry, CELL_W, CELL_H)
-                self._wither_select_rects[bi] = rect
-                pygame.draw.rect(self.screen, _CELL_BG, rect)
-                pygame.draw.rect(self.screen, _ACCENT, rect, 2)
-                nm = BIOME_DISPLAY_NAMES.get(leaf.origin_biome, leaf.origin_biome)
-                ns = self.small.render(nm + " " + VARIETY_DISPLAY_NAMES.get(leaf.variety, leaf.variety), True, _TITLE_C)
-                self.screen.blit(ns, (rx + 6, ry + 8))
-                hint2 = self.small.render("Click to wither", True, _HINT_C)
-                self.screen.blit(hint2, (rx + 6, ry + 26))
+        slots = player.withering_rack_slots
+        SLOT_W, SLOT_H = 160, 76
+        GAP = 12
+        total_w = WITHER_RACK_SLOTS * SLOT_W + (WITHER_RACK_SLOTS - 1) * GAP
+        sx0 = (SCREEN_W - total_w) // 2
+        sy0 = 34
 
-        elif self._wither_phase == "select_method":
+        # ── Withering slots row ───────────────────────────────────────────
+        self._wither_rack_slot_rects.clear()
+        for i in range(WITHER_RACK_SLOTS):
+            sx = sx0 + i * (SLOT_W + GAP)
+            rect = pygame.Rect(sx, sy0, SLOT_W, SLOT_H)
+            self._wither_rack_slot_rects[i] = rect
+
+            slot = slots[i] if i < len(slots) else None
+            if slot is None:
+                pygame.draw.rect(self.screen, _DARK_BG, rect)
+                pygame.draw.rect(self.screen, _DIM_C, rect, 1)
+                es = self.small.render("Empty", True, _DIM_C)
+                self.screen.blit(es, (rect.centerx - es.get_width() // 2,
+                                      rect.centery - es.get_height() // 2))
+            else:
+                done = slot["elapsed"] >= slot["duration"]
+                bg   = (14, 44, 18) if not done else (10, 52, 16)
+                brd  = (100, 220, 80) if done else _ACCENT
+                pygame.draw.rect(self.screen, bg, rect)
+                pygame.draw.rect(self.screen, brd, rect, 2 if done else 1)
+
+                ld   = slot["leaf_data"]
+                biome_name = BIOME_DISPLAY_NAMES.get(ld["origin_biome"], ld["origin_biome"])
+                var_name   = VARIETY_DISPLAY_NAMES.get(ld["variety"], ld["variety"])
+                nm_s = self.small.render((biome_name + " " + var_name)[:22], True, _TITLE_C)
+                self.screen.blit(nm_s, (rect.x + 5, rect.y + 4))
+                wm_s = self.small.render(WITHER_METHODS[slot["method"]]["label"], True, _LABEL_C)
+                self.screen.blit(wm_s, (rect.x + 5, rect.y + 20))
+
+                if done:
+                    ready_s = self.font.render("READY", True, (100, 255, 80))
+                    self.screen.blit(ready_s, (rect.centerx - ready_s.get_width() // 2,
+                                               rect.y + 46))
+                else:
+                    frac = slot["elapsed"] / slot["duration"]
+                    bar_x, bar_y = rect.x + 5, rect.y + 56
+                    bar_w = SLOT_W - 10
+                    pygame.draw.rect(self.screen, (18, 42, 18), (bar_x, bar_y, bar_w, 8))
+                    pygame.draw.rect(self.screen, _ACCENT, (bar_x, bar_y, int(bar_w * frac), 8))
+                    days_left = (slot["duration"] - slot["elapsed"]) / CYCLE_DURATION
+                    ts = self.small.render(f"{days_left:.1f}d", True, _HINT_C)
+                    self.screen.blit(ts, (rect.x + 5, rect.y + 42))
+
+        bottom_y  = sy0 + SLOT_H + 14
+        leaf_col_w = (SCREEN_W - 20) * 2 // 3
+        meth_col_x = leaf_col_w + 20
+        meth_col_w = SCREEN_W - meth_col_x - 10
+
+        # ── Bottom-left: raw leaves to place ─────────────────────────────
+        pygame.draw.rect(self.screen, _DARK_BG, (8, bottom_y, leaf_col_w, SCREEN_H - bottom_y - 8))
+        pygame.draw.rect(self.screen, _DIM_C,   (8, bottom_y, leaf_col_w, SCREEN_H - bottom_y - 8), 1)
+        free_slots = sum(1 for i in range(WITHER_RACK_SLOTS)
+                         if i >= len(slots) or slots[i] is None)
+        hdr = self.small.render(
+            f"RAW LEAVES — click to select  (free slots: {free_slots}/{WITHER_RACK_SLOTS})",
+            True, _LABEL_C)
+        self.screen.blit(hdr, (16, bottom_y + 5))
+
+        self._wither_leaf_rects.clear()
+        raw = [(i, x) for i, x in enumerate(player.tea_leaves) if x.state == "raw"]
+        CELL_W, CELL_H, GAP2, COLS = 200, 52, 6, max(1, leaf_col_w // 207)
+        gx0 = 16
+        for li, (bi, leaf) in enumerate(raw[:20]):
+            col_i = li % COLS
+            row_i = li // COLS
+            rx = gx0 + col_i * (CELL_W + GAP2)
+            ry = bottom_y + 24 + row_i * (CELL_H + GAP2)
+            if ry + CELL_H > SCREEN_H - 10:
+                break
+            rect = pygame.Rect(rx, ry, CELL_W, CELL_H)
+            self._wither_leaf_rects[bi] = rect
+            sel = (self._wither_pending_leaf_idx == bi)
+            nm = BIOME_DISPLAY_NAMES.get(leaf.origin_biome, leaf.origin_biome)
+            vr = VARIETY_DISPLAY_NAMES.get(leaf.variety, leaf.variety)
+            pygame.draw.rect(self.screen, (30, 60, 30) if sel else _CELL_BG, rect)
+            pygame.draw.rect(self.screen, (120, 220, 100) if sel else _ACCENT, rect,
+                             2 if sel else 1)
+            ns = self.small.render((nm + " " + vr)[:24], True, _TITLE_C)
+            self.screen.blit(ns, (rx + 5, ry + 6))
+            rs = self.small.render("Raw — click to select", True, _HINT_C)
+            self.screen.blit(rs, (rx + 5, ry + 24))
+
+        if not raw:
+            msg = self.font.render("No raw tea leaves! Harvest ripe Tea Plants.", True, _DIM_C)
+            self.screen.blit(msg, (16, bottom_y + 30))
+
+        # ── Bottom-right: method picker (shown when leaf is selected) ─────
+        pygame.draw.rect(self.screen, _DARK_BG, (meth_col_x, bottom_y, meth_col_w, SCREEN_H - bottom_y - 8))
+        pygame.draw.rect(self.screen, _DIM_C,   (meth_col_x, bottom_y, meth_col_w, SCREEN_H - bottom_y - 8), 1)
+
+        if self._wither_pending_leaf_idx is not None and free_slots > 0:
+            mhdr = self.small.render("Choose method:", True, _LABEL_C)
+            self.screen.blit(mhdr, (meth_col_x + 8, bottom_y + 5))
             self._wither_method_rects.clear()
-            sub = self.small.render("Choose a withering method:", True, _LABEL_C)
-            self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 32))
-            BTN_W, BTN_H, BTN_GAP = 300, 100, 18
-            total_w = len(WITHER_METHODS) * BTN_W + (len(WITHER_METHODS) - 1) * BTN_GAP
-            gx0 = (SCREEN_W - total_w) // 2
-            for pi, (wkey, wdata) in enumerate(WITHER_METHODS.items()):
-                px = gx0 + pi * (BTN_W + BTN_GAP)
-                py = SCREEN_H // 2 - BTN_H // 2
-                prect = pygame.Rect(px, py, BTN_W, BTN_H)
-                self._wither_method_rects[wkey] = prect
-                pygame.draw.rect(self.screen, _CELL_BG, prect)
-                pygame.draw.rect(self.screen, _ACCENT, prect, 2)
+            for mi, (wkey, wdata) in enumerate(WITHER_METHODS.items()):
+                mrect = pygame.Rect(meth_col_x + 8, bottom_y + 24 + mi * 68,
+                                    meth_col_w - 16, 60)
+                self._wither_method_rects[wkey] = mrect
+                pygame.draw.rect(self.screen, _CELL_BG, mrect)
+                pygame.draw.rect(self.screen, _ACCENT, mrect, 2)
                 lbl = self.font.render(wdata["label"], True, _TITLE_C)
-                self.screen.blit(lbl, (px + BTN_W // 2 - lbl.get_width() // 2, py + 10))
-                desc_lines = wdata["desc"].split(". ")
-                for di, dl in enumerate(desc_lines[:2]):
-                    ds = self.small.render(dl, True, _LABEL_C)
-                    self.screen.blit(ds, (px + 8, py + 40 + di * 16))
-
-        elif self._wither_phase == "result":
-            leaf = player.tea_leaves[self._wither_leaf_idx]
-            cx, cy = SCREEN_W // 2, 80
-            circle_col = (100, 160, 80)
-            pygame.draw.circle(self.screen, circle_col, (cx, cy + 40), 36)
-            pygame.draw.circle(self.screen, (60, 110, 50), (cx, cy + 40), 36, 3)
-
-            iy = cy + 95
-            def rline(txt, col=_TITLE_C):
-                nonlocal iy
-                s = self.font.render(txt, True, col)
-                self.screen.blit(s, (cx - s.get_width() // 2, iy))
-                iy += 28
-
-            rline(BIOME_DISPLAY_NAMES.get(leaf.origin_biome, leaf.origin_biome) + " " +
-                  VARIETY_DISPLAY_NAMES.get(leaf.variety, leaf.variety))
-            wm = WITHER_METHODS.get(leaf.wither_method, {})
-            rline(wm.get("label", leaf.wither_method) + " Wither", (170, 210, 140))
-            rline(f"Floral {leaf.floral:.0%}  Vegetal {leaf.vegetal:.0%}  Astringency {leaf.astringency:.0%}", _LABEL_C)
-
-            done_rect = pygame.Rect(cx - 70, iy + 20, 140, 34)
-            pygame.draw.rect(self.screen, _DARK_BG, done_rect)
-            pygame.draw.rect(self.screen, _ACCENT, done_rect, 2)
-            dl = self.font.render("DONE", True, _TITLE_C)
-            self.screen.blit(dl, (done_rect.centerx - dl.get_width() // 2,
-                                  done_rect.centery - dl.get_height() // 2))
-            self._wither_result_btn = done_rect
+                self.screen.blit(lbl, (mrect.x + 8, mrect.y + 4))
+                desc = wdata["desc"].split(".")[0]
+                ds   = self.small.render(desc[:36], True, _LABEL_C)
+                self.screen.blit(ds, (mrect.x + 8, mrect.y + 24))
+                dur_s = self.small.render(f"{wdata['days']}d", True, _HINT_C)
+                self.screen.blit(dur_s, (mrect.x + 8, mrect.y + 42))
+        elif free_slots == 0:
+            full_s = self.small.render("All slots in use.", True, _DIM_C)
+            self.screen.blit(full_s, (meth_col_x + 8, bottom_y + 30))
+        else:
+            sel_s = self.small.render("Select a leaf first.", True, _DIM_C)
+            self.screen.blit(sel_s, (meth_col_x + 8, bottom_y + 30))
 
     def _handle_withering_rack_click(self, pos, player):
-        if self._wither_phase == "select_leaf":
-            for bi, rect in self._wither_select_rects.items():
-                if rect.collidepoint(pos):
-                    if player.tea_leaves[bi].state == "raw":
-                        self._wither_leaf_idx = bi
-                        self._wither_phase = "select_method"
-                    return
-        elif self._wither_phase == "select_method":
+        from tea import TeaLeaf, WITHER_RACK_SLOTS
+        slots = player.withering_rack_slots
+
+        # Collect from ready slots
+        for i, rect in self._wither_rack_slot_rects.items():
+            if rect.collidepoint(pos):
+                if i < len(slots) and slots[i] is not None:
+                    slot = slots[i]
+                    if slot["elapsed"] >= slot["duration"]:
+                        leaf = TeaLeaf(**slot["leaf_data"])
+                        apply_wither(leaf, slot["method"])
+                        player.tea_leaves.append(leaf)
+                        slots[i] = None
+                        while slots and slots[-1] is None:
+                            slots.pop()
+                return
+
+        # Select a raw leaf
+        for bi, rect in self._wither_leaf_rects.items():
+            if rect.collidepoint(pos):
+                self._wither_pending_leaf_idx = bi
+                self._wither_method_rects.clear()
+                return
+
+        # Choose method for selected leaf
+        if self._wither_pending_leaf_idx is not None:
+            free_slots = sum(1 for i in range(WITHER_RACK_SLOTS)
+                             if i >= len(slots) or slots[i] is None)
+            if free_slots == 0:
+                return
             for wkey, rect in self._wither_method_rects.items():
                 if rect.collidepoint(pos):
-                    leaf = player.tea_leaves[self._wither_leaf_idx]
-                    apply_wither(leaf, wkey)
-                    self._wither_phase = "result"
+                    bi = self._wither_pending_leaf_idx
+                    if bi >= len(player.tea_leaves) or player.tea_leaves[bi].state != "raw":
+                        self._wither_pending_leaf_idx = None
+                        return
+                    leaf = player.tea_leaves.pop(bi)
+                    # Find first free slot
+                    free_idx = next(
+                        (i for i in range(WITHER_RACK_SLOTS)
+                         if i >= len(slots) or slots[i] is None),
+                        None)
+                    if free_idx is None:
+                        player.tea_leaves.insert(bi, leaf)
+                        return
+                    while len(slots) <= free_idx:
+                        slots.append(None)
+                    slots[free_idx] = {
+                        "leaf_data": asdict(leaf),
+                        "method":   wkey,
+                        "elapsed":  0.0,
+                        "duration": WITHER_METHODS[wkey]["days"] * CYCLE_DURATION,
+                    }
+                    self._wither_pending_leaf_idx = None
                     return
-        elif self._wither_phase == "result":
-            if self._wither_result_btn and self._wither_result_btn.collidepoint(pos):
-                self._wither_phase = "select_leaf"
-                self._wither_leaf_idx = None
 
     # ─────────────────────────────────────────────────────────────────────────
     # OXIDATION STATION

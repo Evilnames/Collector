@@ -21,7 +21,7 @@ def _wf_to_dict(wf):
         "fragrance": wf.fragrance, "vibrancy": wf.vibrancy,
         "specials": wf.specials, "biodome_found": wf.biodome_found, "seed": wf.seed,
     }
-SAVE_VERSION = 3
+SAVE_VERSION = 4
 
 
 class SaveManager:
@@ -1271,6 +1271,18 @@ class SaveManager:
             pass
         con.execute("UPDATE player SET tea_house_pos=?",
                     (json.dumps(getattr(player, "tea_house_pos", None)),))
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN drying_rack_slots TEXT DEFAULT '[]'")
+        except Exception:
+            pass
+        con.execute("UPDATE player SET drying_rack_slots=?",
+                    (json.dumps(getattr(player, "drying_rack_slots", [])),))
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN withering_rack_slots TEXT DEFAULT '[]'")
+        except Exception:
+            pass
+        con.execute("UPDATE player SET withering_rack_slots=?",
+                    (json.dumps(getattr(player, "withering_rack_slots", [])),))
 
     def _save_npc_relationships(self, con, player):
         con.execute("DELETE FROM npc_relationships")
@@ -2143,6 +2155,15 @@ class SaveManager:
         }
 
     def _load_player(self, con, bird_obs=None, insect_obs=None, guard_sketches=None):
+        for col, default in (
+            ("drying_rack_slots",    "[]"),
+            ("withering_rack_slots", "[]"),
+        ):
+            try:
+                con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT '{default}'")
+            except Exception:
+                pass
+
         row = con.execute("""
             SELECT x, y, vx, vy, facing, health, hunger, pick_power, money,
                    selected_slot, inventory, hotbar, hotbar_uses, known_recipes,
@@ -2187,7 +2208,9 @@ class SaveManager:
                    COALESCE(horse_pbs, '{}'),
                    COALESCE(gladiator_cards, '[]'),
                    COALESCE(fish_bests, '{}'),
-                   COALESCE(tea_house_pos, 'null')
+                   COALESCE(tea_house_pos, 'null'),
+                   COALESCE(drying_rack_slots, '[]'),
+                   COALESCE(withering_rack_slots, '[]')
             FROM player LIMIT 1
         """).fetchone()
 
@@ -2213,7 +2236,8 @@ class SaveManager:
          incident_quests_active_raw, rivalry_dormant_until_raw,
          races_entered_raw, races_won_raw, gold_won_racing_raw,
          racing_prestige_raw, horse_pbs_raw,
-         gladiator_cards_raw, fish_bests_raw, tea_house_pos_raw) = row
+         gladiator_cards_raw, fish_bests_raw, tea_house_pos_raw,
+         drying_rack_slots_raw, withering_rack_slots_raw) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -2632,6 +2656,8 @@ class SaveManager:
             "fish": fish_data,
             "fish_bests": json.loads(fish_bests_raw or "{}"),
             "tea_house_pos": tuple(json.loads(tea_house_pos_raw)) if tea_house_pos_raw and tea_house_pos_raw != "null" else None,
+            "drying_rack_slots": json.loads(drying_rack_slots_raw or "[]"),
+            "withering_rack_slots": json.loads(withering_rack_slots_raw or "[]"),
             "discovered_fish_species": list({f["species"] for f in fish_data}),
             "coffee_beans": coffee_data,
             "discovered_coffee_origins": list({

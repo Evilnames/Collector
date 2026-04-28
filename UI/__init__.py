@@ -707,11 +707,10 @@ class UI(
         self._hunting_codex_scroll     = 0
         self._max_hunting_codex_scroll = 0
         # ----- Tea UI state -----
-        self._wither_phase        = "select_leaf"
-        self._wither_leaf_idx     = None
-        self._wither_select_rects = {}
-        self._wither_method_rects = {}
-        self._wither_result_btn   = None
+        self._wither_rack_slot_rects  = {}   # slot index -> Rect
+        self._wither_leaf_rects       = {}   # leaf index -> Rect
+        self._wither_method_rects     = {}   # method key -> Rect
+        self._wither_pending_leaf_idx = None
         self._oxidation_phase       = "select_leaf"
         self._oxidation_leaf_idx    = None
         self._oxidation_time        = 0.0
@@ -749,7 +748,8 @@ class UI(
         self._roasting_result_btn   = None
         # ----- Herbalism UI state -----
         self._research           = None   # set each frame in draw(); used by kiln/resonance
-        self._dry_select_rects   = {}
+        self._drying_slot_rects  = {}   # slot index -> Rect
+        self._drying_inv_rects   = {}   # src_key -> Rect
         self._dry_flower_btns    = {}
         self._kiln_slots         = [{} for _ in range(4)]
         self._kiln_slot_rects    = []

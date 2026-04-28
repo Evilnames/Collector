@@ -5,7 +5,9 @@ from herbalism import (
     DRYING_TABLE, DRYABLE_ITEMS, RECIPES, RECIPE_ORDER,
     POTION_DESCS, POTION_COLORS, TIER_LABELS, BUFF_DESCS,
     INGREDIENT_DISPLAY_NAMES, ALL_POTION_IDS,
+    DRYING_RACK_SLOTS, DRY_DURATION_DAYS,
 )
+from world import CYCLE_DURATION
 
 _ACCENT   = ( 70, 175, 140)
 _DARK_BG  = ( 10,  28,  24)
@@ -29,6 +31,7 @@ class HerbalismMixin:
     # ─────────────────────────────────────────────────────────────────────────
 
     def _draw_drying_rack(self, player, dt=0.0):
+        from items import ITEMS
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 215))
         self.screen.blit(overlay, (0, 0))
@@ -38,83 +41,175 @@ class HerbalismMixin:
         hint = self.small.render("ESC to close", True, _HINT_C)
         self.screen.blit(hint, (SCREEN_W - hint.get_width() - 8, 6))
 
-        half_w = SCREEN_W // 2 - 10
+        slots = player.drying_rack_slots
+        SLOT_W, SLOT_H = 130, 72
+        GAP = 10
+        total_w = DRYING_RACK_SLOTS * SLOT_W + (DRYING_RACK_SLOTS - 1) * GAP
+        sx0 = (SCREEN_W - total_w) // 2
+        sy0 = 34
 
-        # ── Left: dry inventory items ─────────────────────────────────────
-        pygame.draw.rect(self.screen, _DARK_BG, (8, 36, half_w, SCREEN_H - 48))
-        pygame.draw.rect(self.screen, _DIM_C,   (8, 36, half_w, SCREEN_H - 48), 1)
-        hdr = self.small.render("DRY FROM INVENTORY", True, _LABEL_C)
-        self.screen.blit(hdr, (8 + 8, 42))
+        # ── Drying slots row ──────────────────────────────────────────────
+        self._drying_slot_rects.clear()
+        for i in range(DRYING_RACK_SLOTS):
+            sx = sx0 + i * (SLOT_W + GAP)
+            rect = pygame.Rect(sx, sy0, SLOT_W, SLOT_H)
+            self._drying_slot_rects[i] = rect
 
-        self._dry_select_rects.clear()
-        ry = 64
+            slot = slots[i] if i < len(slots) else None
+            if slot is None:
+                pygame.draw.rect(self.screen, _DARK_BG, rect)
+                pygame.draw.rect(self.screen, _DIM_C, rect, 1)
+                empty_s = self.small.render("Empty", True, _DIM_C)
+                self.screen.blit(empty_s, (rect.centerx - empty_s.get_width() // 2,
+                                           rect.centery - empty_s.get_height() // 2))
+            else:
+                done = slot["elapsed"] >= slot["duration"]
+                bg   = (15, 50, 35) if not done else (10, 55, 20)
+                brd  = (120, 220, 80) if done else _ACCENT
+                pygame.draw.rect(self.screen, bg, rect)
+                pygame.draw.rect(self.screen, brd, rect, 2 if done else 1)
+
+                src_name = ITEMS.get(slot["src_key"], {}).get("name", slot["src_key"])
+                out_name = ITEMS.get(slot["out_key"], {}).get("name", slot["out_key"])
+                ns = self.small.render(src_name[:16], True, _TITLE_C)
+                self.screen.blit(ns, (rect.x + 5, rect.y + 5))
+                os2 = self.small.render(f"→ {out_name[:14]}", True, _LABEL_C)
+                self.screen.blit(os2, (rect.x + 5, rect.y + 20))
+
+                if done:
+                    ready_s = self.font.render("READY", True, (120, 255, 90))
+                    self.screen.blit(ready_s, (rect.centerx - ready_s.get_width() // 2,
+                                               rect.y + 42))
+                else:
+                    # progress bar
+                    frac = slot["elapsed"] / slot["duration"]
+                    bar_x, bar_y = rect.x + 5, rect.y + 52
+                    bar_w = SLOT_W - 10
+                    pygame.draw.rect(self.screen, (20, 50, 35), (bar_x, bar_y, bar_w, 8))
+                    pygame.draw.rect(self.screen, _ACCENT, (bar_x, bar_y, int(bar_w * frac), 8))
+                    days_left = (slot["duration"] - slot["elapsed"]) / CYCLE_DURATION
+                    time_s = self.small.render(f"{days_left:.1f}d", True, _HINT_C)
+                    self.screen.blit(time_s, (rect.x + 5, rect.y + 42))
+
+        bottom_y = sy0 + SLOT_H + 14
+        split_x  = SCREEN_W // 2 - 10
+        inv_w    = split_x - 8
+        fl_w     = SCREEN_W - split_x - 18
+
+        # ── Left bottom: inventory herbs to place ─────────────────────────
+        pygame.draw.rect(self.screen, _DARK_BG, (8, bottom_y, inv_w, SCREEN_H - bottom_y - 8))
+        pygame.draw.rect(self.screen, _DIM_C,   (8, bottom_y, inv_w, SCREEN_H - bottom_y - 8), 1)
+        hdr = self.small.render("PLACE TO DRY  (click herb → fills next empty slot)", True, _LABEL_C)
+        self.screen.blit(hdr, (16, bottom_y + 5))
+
+        free_slots = sum(1 for i in range(DRYING_RACK_SLOTS)
+                         if i >= len(slots) or slots[i] is None)
+        avail_s = self.small.render(f"Free slots: {free_slots}/{DRYING_RACK_SLOTS}", True, _HINT_C)
+        self.screen.blit(avail_s, (inv_w - avail_s.get_width() + 8, bottom_y + 5))
+
+        self._drying_inv_rects.clear()
+        ry = bottom_y + 24
         for src_key in DRYABLE_ITEMS:
             count = player.inventory.get(src_key, 0)
             if count <= 0:
                 continue
-            out_key = DRYING_TABLE[src_key]
-            from items import ITEMS
+            out_key  = DRYING_TABLE[src_key]
             src_name = ITEMS.get(src_key, {}).get("name", src_key)
             out_name = ITEMS.get(out_key, {}).get("name", out_key)
-            btn_rect = pygame.Rect(16, ry, half_w - 16, 44)
-            self._dry_select_rects[src_key] = btn_rect
-            pygame.draw.rect(self.screen, _CELL_BG, btn_rect)
-            pygame.draw.rect(self.screen, _ACCENT, btn_rect, 2)
-            top_s = self.font.render(f"{src_name}  ×{count}", True, _TITLE_C)
-            self.screen.blit(top_s, (btn_rect.x + 8, btn_rect.y + 4))
-            bot_s = self.small.render(f"→  {out_name}", True, _LABEL_C)
-            self.screen.blit(bot_s, (btn_rect.x + 8, btn_rect.y + 24))
-            ry += 52
+            btn = pygame.Rect(16, ry, inv_w - 16, 38)
+            if ry + 38 > SCREEN_H - 10:
+                break
+            active = free_slots > 0
+            self._drying_inv_rects[src_key] = btn
+            pygame.draw.rect(self.screen, _CELL_BG if active else (10, 22, 18), btn)
+            pygame.draw.rect(self.screen, _ACCENT if active else _DIM_C, btn, 1)
+            top_s = self.small.render(f"{src_name}  ×{count}", True, _TITLE_C if active else _DIM_C)
+            self.screen.blit(top_s, (btn.x + 6, btn.y + 3))
+            bot_s = self.small.render(f"→ {out_name}", True, _LABEL_C if active else _DIM_C)
+            self.screen.blit(bot_s, (btn.x + 6, btn.y + 19))
+            ry += 44
 
-        if ry == 64:
-            msg = self.font.render("No dryable items in inventory.", True, _LABEL_C)
-            self.screen.blit(msg, (16, SCREEN_H // 2 - 10))
+        if not self._drying_inv_rects:
+            msg = self.small.render("No dryable herbs in inventory.", True, _DIM_C)
+            self.screen.blit(msg, (16, bottom_y + 30))
 
-        # ── Right: press wildflowers ──────────────────────────────────────
-        rx0 = SCREEN_W // 2 + 10
-        pygame.draw.rect(self.screen, _DARK_BG, (rx0, 36, half_w - 10, SCREEN_H - 48))
-        pygame.draw.rect(self.screen, _DIM_C,   (rx0, 36, half_w - 10, SCREEN_H - 48), 1)
+        # ── Right bottom: press wildflowers ──────────────────────────────
+        rx0 = split_x + 10
+        pygame.draw.rect(self.screen, _DARK_BG, (rx0, bottom_y, fl_w, SCREEN_H - bottom_y - 8))
+        pygame.draw.rect(self.screen, _DIM_C,   (rx0, bottom_y, fl_w, SCREEN_H - bottom_y - 8), 1)
         hdr2 = self.small.render("PRESS WILDFLOWERS", True, _LABEL_C)
-        self.screen.blit(hdr2, (rx0 + 8, 42))
+        self.screen.blit(hdr2, (rx0 + 8, bottom_y + 5))
 
-        common_fl  = [wf for wf in player.wildflowers if wf.rarity in ("common", "uncommon")]
-        rare_fl    = [wf for wf in player.wildflowers if wf.rarity in ("rare", "epic", "legendary")]
+        common_fl = [wf for wf in player.wildflowers if wf.rarity in ("common", "uncommon")]
+        rare_fl   = [wf for wf in player.wildflowers if wf.rarity in ("rare", "epic", "legendary")]
 
         self._dry_flower_btns.clear()
-        btn_y = 64
+        btn_y = bottom_y + 24
         for label, pool, out_key in [
-            ("Press Common Flowers", common_fl, "pressed_flower"),
-            ("Press Rare Flowers",   rare_fl,   "pressed_rare_flower"),
+            ("Press Common  ×" + str(len(common_fl)), common_fl, "pressed_flower"),
+            ("Press Rare    ×" + str(len(rare_fl)),   rare_fl,   "pressed_rare_flower"),
         ]:
-            count = len(pool)
-            btn_rect = pygame.Rect(rx0 + 8, btn_y, half_w - 26, 54)
-            active   = count > 0
+            btn_rect = pygame.Rect(rx0 + 8, btn_y, fl_w - 16, 46)
+            active   = len(pool) > 0
             self._dry_flower_btns[out_key] = (btn_rect, pool)
-            bg_col = _CELL_BG if active else (12, 22, 18)
-            brd    = _ACCENT if active else _DIM_C
-            pygame.draw.rect(self.screen, bg_col, btn_rect)
-            pygame.draw.rect(self.screen, brd, btn_rect, 2)
-            top_s = self.font.render(f"{label}  ×{count}", True, _TITLE_C if active else _DIM_C)
-            self.screen.blit(top_s, (btn_rect.x + 8, btn_rect.y + 6))
-            from items import ITEMS
+            pygame.draw.rect(self.screen, _CELL_BG if active else (10, 22, 18), btn_rect)
+            pygame.draw.rect(self.screen, _ACCENT if active else _DIM_C, btn_rect, 2 if active else 1)
             out_name = ITEMS.get(out_key, {}).get("name", out_key)
-            bot_s = self.small.render(f"→  {out_name}", True, _LABEL_C if active else _DIM_C)
-            self.screen.blit(bot_s, (btn_rect.x + 8, btn_rect.y + 30))
-            btn_y += 64
+            ts = self.small.render(label, True, _TITLE_C if active else _DIM_C)
+            self.screen.blit(ts, (btn_rect.x + 6, btn_rect.y + 5))
+            bs = self.small.render(f"→ {out_name}", True, _LABEL_C if active else _DIM_C)
+            self.screen.blit(bs, (btn_rect.x + 6, btn_rect.y + 24))
+            btn_y += 56
 
-        note = self.small.render("Pressing consumes 1 wildflower from your collection.", True, _HINT_C)
-        self.screen.blit(note, (rx0 + 8, btn_y + 12))
+        note = self.small.render("Pressing is instant. Consumes 1 wildflower.", True, _HINT_C)
+        self.screen.blit(note, (rx0 + 8, btn_y + 6))
 
     def _handle_drying_rack_click(self, pos, player):
-        for src_key, rect in self._dry_select_rects.items():
+        from herbalism import DRYING_RACK_SLOTS, DRY_DURATION_DAYS
+        slots = player.drying_rack_slots
+
+        # Collect from ready slots
+        for i, rect in self._drying_slot_rects.items():
             if rect.collidepoint(pos):
-                if player.inventory.get(src_key, 0) > 0:
-                    out_key = DRYING_TABLE[src_key]
-                    player.inventory[src_key] -= 1
-                    if player.inventory[src_key] <= 0:
-                        del player.inventory[src_key]
-                    player._add_item(out_key)
+                if i < len(slots) and slots[i] is not None:
+                    slot = slots[i]
+                    if slot["elapsed"] >= slot["duration"]:
+                        player._add_item(slot["out_key"])
+                        slots[i] = None
+                        # Trim trailing Nones
+                        while slots and slots[-1] is None:
+                            slots.pop()
                 return
+
+        # Place herb in next free slot
+        for src_key, rect in self._drying_inv_rects.items():
+            if rect.collidepoint(pos):
+                if player.inventory.get(src_key, 0) <= 0:
+                    return
+                # Find first free slot index
+                free_idx = None
+                for i in range(DRYING_RACK_SLOTS):
+                    val = slots[i] if i < len(slots) else None
+                    if val is None:
+                        free_idx = i
+                        break
+                if free_idx is None:
+                    return  # all slots full
+                # Extend list if needed
+                while len(slots) <= free_idx:
+                    slots.append(None)
+                player.inventory[src_key] -= 1
+                if player.inventory[src_key] <= 0:
+                    del player.inventory[src_key]
+                slots[free_idx] = {
+                    "src_key":  src_key,
+                    "out_key":  DRYING_TABLE[src_key],
+                    "elapsed":  0.0,
+                    "duration": DRY_DURATION_DAYS * CYCLE_DURATION,
+                }
+                return
+
+        # Press wildflowers (instant)
         for out_key, (btn_rect, pool) in self._dry_flower_btns.items():
             if btn_rect.collidepoint(pos) and pool:
                 player.wildflowers.remove(pool[0])

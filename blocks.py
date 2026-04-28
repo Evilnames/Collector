@@ -1757,6 +1757,13 @@ MINING_POST_BLOCK            = 1252  # placed by player to assign a miner's work
 BANNER_BLOCK                 = 1253  # decorative banner displaying a city's coat of arms
 FISHING_SPOT_BLOCK           = 1254  # shimmering surface water; boosts rare fish chance
 FISH_TROPHY_BLOCK            = 1255  # bg-layer wall-mounted decorative fish trophy
+CLOUD_CIRRUS                 = 1258  # high sky layer, y 4–12, ice-blue wispy
+CLOUD_CUMULUS                = 1259  # mid sky layer,  y 16–26, fluffy white
+CLOUD_STRATUS                = 1260  # low sky layer,  y 30–38, flat gray
+CLOUD_STORM                  = 1261  # near-surface,   y 37–43, dark charcoal
+
+CLOUD_BLOCKS = {CLOUD_CIRRUS, CLOUD_CUMULUS, CLOUD_STRATUS, CLOUD_STORM}
+
 BLOCKS = {
     AIR:              {"name": "Air",               "hardness": 0,            "color": None,            "drop": None},
     GRASS:            {"name": "Grass",             "hardness": 1,            "color": (58, 154, 58),   "drop": "dirt_clump"},
@@ -3082,8 +3089,12 @@ BLOCKS = {
     BANNER_BLOCK:              {"name": "Banner",           "hardness": 1.0,          "color": (160,  80,  40), "drop": "banner_item"},
     FISHING_SPOT_BLOCK:        {"name": "Fishing Spot",     "hardness": -1,           "color": ( 50, 140, 235), "drop": None},
     FISH_TROPHY_BLOCK:         {"name": "Fish Trophy",      "hardness": 0.5,          "color": (160, 110,  60), "drop": "fish_trophy_item"},
-    WEAPON_ASSEMBLER_BLOCK:    {"name": "Weapon Assembler", "hardness": 1, "color": (120,  90,  60), "drop": "weapon_assembler"},
-    TEA_HOUSE_BLOCK:           {"name": "Tea House",        "hardness": 1, "color": (122,  92,  58), "drop": "tea_house_item"},
+    WEAPON_ASSEMBLER_BLOCK:    {"name": "Weapon Assembler", "hardness": 1,  "color": (120,  90,  60), "drop": "weapon_assembler"},
+    TEA_HOUSE_BLOCK:           {"name": "Tea House",        "hardness": 1,  "color": (122,  92,  58), "drop": "tea_house_item"},
+    CLOUD_CIRRUS:              {"name": "Cirrus Cloud",     "hardness": -1, "color": (220, 235, 255), "drop": None},
+    CLOUD_CUMULUS:             {"name": "Cumulus Cloud",    "hardness": -1, "color": (240, 240, 245), "drop": None},
+    CLOUD_STRATUS:             {"name": "Stratus Cloud",    "hardness": -1, "color": (190, 195, 205), "drop": None},
+    CLOUD_STORM:               {"name": "Storm Cloud",      "hardness": -1, "color": (100,  95, 120), "drop": None},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}

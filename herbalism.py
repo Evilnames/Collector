@@ -3,6 +3,9 @@ Herbalism & Alchemy — recipe discovery, ingredient processing, potion crafting
 No dataclass: potions are inventory items; the "collection" is discovered_recipes.
 """
 
+DRYING_RACK_SLOTS = 6  # number of concurrent drying slots
+DRY_DURATION_DAYS = 1  # game days to dry one herb
+
 # ── Ingredient display names ─────────────────────────────────────────────────
 
 INGREDIENT_DISPLAY_NAMES = {

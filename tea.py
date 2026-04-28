@@ -74,20 +74,25 @@ _HERBAL_NOTES = {
     "echinacea":      ["echinacea bloom", "floral prairie"],
 }
 
+WITHER_RACK_SLOTS = 4
+
 WITHER_METHODS = {
     "sun": {
-        "label": "Sun Withered",
-        "desc":  "Spread under open sun. Boosts sweetness, reduces vegetal notes.",
+        "label":      "Sun Withered",
+        "desc":       "Spread under open sun. Boosts sweetness, reduces vegetal notes.",
+        "days":       1,
         "astringency": +0.08, "floral": -0.05, "vegetal": -0.10, "earthiness": +0.00, "sweetness": +0.05,
     },
     "shade": {
-        "label": "Shade Withered",
-        "desc":  "Slow wither under cloth. Lifts floral character.",
+        "label":      "Shade Withered",
+        "desc":       "Slow wither under cloth. Lifts floral character.",
+        "days":       3,
         "astringency": -0.05, "floral": +0.10, "vegetal": +0.05, "earthiness": -0.03, "sweetness": +0.02,
     },
     "indoor": {
-        "label": "Indoor Withered",
-        "desc":  "Controlled environment. Reduces vegetal sharpness, builds complexity.",
+        "label":      "Indoor Withered",
+        "desc":       "Controlled environment. Reduces vegetal sharpness, builds complexity.",
+        "days":       2,
         "astringency": -0.03, "floral": +0.02, "vegetal": -0.15, "earthiness": +0.05, "sweetness": +0.10,
         "complexity_bonus": 0.05,
     },

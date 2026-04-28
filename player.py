@@ -257,6 +257,12 @@ class Player:
         #    "kind": "wine"|"spirit"|"tea",
         #    "beverage_uid", "elapsed_seconds": float}
         self.aging_vessels        = []
+        # Drying rack: list of up to DRYING_RACK_SLOTS dicts, each
+        #   {"src_key": str, "out_key": str, "elapsed": float} or None
+        self.drying_rack_slots    = []
+        # Withering rack: list of up to WITHER_RACK_SLOTS dicts, each
+        #   {"leaf_data": dict, "method": str, "elapsed": float, "duration": float} or None
+        self.withering_rack_slots = []
         # Hunting
         self.animals_hunted  = {}   # animal_id -> count killed
         self.hunt_trophies   = {}   # animal_id -> {stat_key: best_value}
@@ -486,6 +492,8 @@ class Player:
         self.salt_buffs             = d.get("salt_buffs", {})
         self.discovered_pairings    = set(d.get("discovered_pairings", []))
         self.aging_vessels          = d.get("aging_vessels", [])
+        self.drying_rack_slots      = d.get("drying_rack_slots", [])
+        self.withering_rack_slots   = d.get("withering_rack_slots", [])
         self.tea_house_pos          = d.get("tea_house_pos", None)
         self.tea_house_last_spawn   = 0.0
         self.visited_town_ids       = set(d.get("visited_town_ids", []))
@@ -1944,6 +1952,16 @@ class Player:
         for av in self.aging_vessels:
             av["elapsed_seconds"] += dt
 
+    def tick_drying_rack(self, dt):
+        for slot in self.drying_rack_slots:
+            if slot is not None:
+                slot["elapsed"] = min(slot["elapsed"] + dt, slot["duration"])
+
+    def tick_withering_rack(self, dt):
+        for slot in self.withering_rack_slots:
+            if slot is not None:
+                slot["elapsed"] = min(slot["elapsed"] + dt, slot["duration"])
+
     def retrieve_from_aging_vessel(self, idx):
         """
         Apply aging modifier and reattach the beverage to its collection list.
@@ -2392,6 +2410,8 @@ class Player:
             if self.beer_buffs[buff]["duration"] <= 0:
                 del self.beer_buffs[buff]
         self.tick_aging_vessels(dt)
+        self.tick_drying_rack(dt)
+        self.tick_withering_rack(dt)
         if self._bow_cooldown > 0:
             self._bow_cooldown -= dt
         if self._melee_cooldown > 0:

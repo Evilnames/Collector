@@ -1,4 +1,5 @@
 import pygame
+import random as _rnd
 from blocks import (AIR, WATER, FISHING_SPOT_BLOCK, TILLED_SOIL, GRASS, DIRT, SAND, SNOW,
                     ALL_LOGS, ALL_LEAVES, ALL_FRUIT_CLUSTERS, STONE,
                     ELEVATOR_CABLE_BLOCK, LADDER, ELEVATOR_STOP_BLOCK,
@@ -13,8 +14,9 @@ from blocks import (AIR, WATER, FISHING_SPOT_BLOCK, TILLED_SOIL, GRASS, DIRT, SA
                     TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK, BANNER_BLOCK,
                     WILDFLOWER_PATCH,
                     RESOURCE_BLOCKS,
-                    LIMESTONE_STONE, GRANITE_STONE, BASALT_STONE, MAGMATIC_STONE)
-from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE
+                    LIMESTONE_STONE, GRANITE_STONE, BASALT_STONE, MAGMATIC_STONE,
+                    CLOUD_CIRRUS, CLOUD_CUMULUS, CLOUD_STRATUS, CLOUD_STORM)
+from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE, SURFACE_Y
 from Render.worldScene.art import (draw_all_sculptures, draw_all_tapestries,
                                     draw_pottery_displays, draw_wildflower_displays,
                                     draw_garden_blocks)
@@ -29,6 +31,100 @@ _OPEN_DOORS = (WOOD_DOOR_OPEN, IRON_DOOR_OPEN,
 
 _SHIMMER_BLOCKS = None
 
+# --- Cloud drift rates (pixels per second per layer) ---
+_CLOUD_DRIFT_RATES = {
+    CLOUD_CIRRUS:  3.0,
+    CLOUD_CUMULUS: 1.8,
+    CLOUD_STRATUS: 0.9,
+    CLOUD_STORM:   0.5,
+}
+
+# --- Procedural cloud surface builder (cached by (w, h, bid)) ---
+_cloud_surf_cache = {}
+
+def _make_cloud_surf(w, h, bid):
+    key = (w, h, bid)
+    if key in _cloud_surf_cache:
+        return _cloud_surf_cache[key]
+    s = pygame.Surface((w, h), pygame.SRCALPHA)
+    if bid == CLOUD_CIRRUS:
+        base = (215, 232, 255, 150)
+        bright = (230, 242, 255, 170)
+        for i in range(4):
+            ex = (i * w) // 4
+            ew = w // 2
+            pygame.draw.ellipse(s, base, (ex, h // 3, ew, h // 2))
+        pygame.draw.ellipse(s, bright, (w // 5, h // 5, w * 3 // 5, h * 3 // 5))
+    elif bid == CLOUD_CUMULUS:
+        base = (242, 242, 248, 195)
+        bright = (252, 252, 255, 215)
+        pygame.draw.ellipse(s, base, (0, h // 3, w, h * 2 // 3))
+        bumps = 3 + w // 48
+        for i in range(bumps):
+            bx = (i * w) // bumps
+            bw = w // bumps + w // 8
+            pygame.draw.ellipse(s, base, (bx, 0, bw, h * 2 // 3))
+        pygame.draw.ellipse(s, bright, (w // 4, h // 4, w // 2, h // 2))
+    elif bid == CLOUD_STRATUS:
+        base = (188, 193, 204, 172)
+        bright = (205, 208, 218, 185)
+        pygame.draw.ellipse(s, base, (0, h // 4, w, h // 2))
+        pygame.draw.ellipse(s, base, (w // 8, 0, w * 3 // 4, h))
+        pygame.draw.ellipse(s, bright, (w // 4, h // 3, w // 2, h // 3))
+    elif bid == CLOUD_STORM:
+        base = (88, 83, 108, 210)
+        dark = (68, 63, 88, 220)
+        bright = (110, 105, 130, 200)
+        pygame.draw.ellipse(s, base, (0, h // 5, w, h * 3 // 5))
+        pygame.draw.ellipse(s, base, (w // 8, 0, w * 3 // 4, h * 4 // 5))
+        pygame.draw.ellipse(s, dark, (w // 4, h // 3, w // 2, h // 2))
+        pygame.draw.ellipse(s, bright, (w // 3, h // 5, w // 3, h // 3))
+    _cloud_surf_cache[key] = s
+    return s
+
+# --- Horizon parallax cloud helpers ---
+def _ensure_horizon_clouds(renderer, world_seed):
+    if getattr(renderer, '_h_cloud_seed', None) == world_seed:
+        return
+    renderer._h_cloud_seed = world_seed
+    rng = _rnd.Random(world_seed ^ 0xB0BAFAD)
+    shapes = []
+    for _ in range(60):
+        w = rng.randint(55, 260)
+        h = rng.randint(12, 52)
+        base = rng.choice([(210, 220, 235), (195, 205, 220),
+                           (230, 230, 235), (180, 188, 200), (215, 215, 225)])
+        alpha = rng.randint(50, 105)
+        s = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.ellipse(s, (*base, alpha), (0, 0, w, h))
+        iw, ih = max(4, w - 18), max(2, h - 8)
+        pygame.draw.ellipse(s, (*base, min(255, alpha + 28)),
+                            ((w - iw) // 2, (h - ih) // 2, iw, ih))
+        shapes.append(s)
+    renderer._h_cloud_shapes = shapes
+
+
+def _draw_horizon_clouds(screen, renderer, cam_xi, cam_yi, world_seed):
+    _ensure_horizon_clouds(renderer, world_seed)
+    shapes = renderer._h_cloud_shapes
+    n = len(shapes)
+    horizon_base_sy = SURFACE_Y * BLOCK_SIZE - cam_yi - 5
+    _PARALLAX = 0.22
+    _GRID = 130  # cloud columns every 130px in parallax space
+    eff_x = int(cam_xi * _PARALLAX)
+    col_start = eff_x // _GRID
+    for col in range(col_start - 2, col_start + (SCREEN_W // _GRID) + 4):
+        wx = col * _GRID
+        key = (world_seed ^ wx ^ 0xC10AD) & 0xFFFF
+        if key > 0x7FFF:
+            shape_idx = key % n
+            surf = shapes[shape_idx]
+            dy = (key * 17 & 0xFF) % 70 - 20
+            sx = wx - eff_x
+            screen.blit(surf, (sx, horizon_base_sy + dy))
+
+
+# -----------------------------------------------
 _wire_hud_font = None
 _wire_hud_surf = None
 _wire_hint_surf = None
@@ -117,6 +213,8 @@ def draw_world(renderer, world, player=None):
     cam_xi = int(renderer.cam_x)
     cam_yi = int(renderer.cam_y)
 
+    _draw_horizon_clouds(screen, renderer, cam_xi, cam_yi, world.seed)
+
     bx0 = cam_xi // BLOCK_SIZE
     bx1 = (cam_xi + SCREEN_W) // BLOCK_SIZE + 2
     by0 = max(0, cam_yi // BLOCK_SIZE)
@@ -134,6 +232,16 @@ def draw_world(renderer, world, player=None):
     biomes     = {bx: world.get_biome(bx) for bx in range(bx0, bx1)}
 
     SHIMMER = _get_shimmer_blocks()
+
+    # Cloud entity pass — draw dynamic clouds with per-layer drift
+    _drift_t = pygame.time.get_ticks() / 1000.0
+    for _cx, _cy, _cw, _ch, _cbid in getattr(world, '_clouds', ()):
+        _rate = _CLOUD_DRIFT_RATES.get(_cbid, 1.0)
+        _sx = _cx - cam_xi + int(_drift_t * _rate)
+        if -_cw < _sx < SCREEN_W:
+            _sy = _cy - cam_yi
+            if -_ch < _sy < SCREEN_H:
+                screen.blit(_make_cloud_surf(_cw, _ch, _cbid), (_sx, _sy))
 
     for by in range(by0, by1):
         for bx in range(bx0, bx1):

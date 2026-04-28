@@ -2024,6 +2024,7 @@ def main():
         world.update_fruit_trees(dt)
         world.update_leaves(dt, player)
         world.update_dropped_items(dt, player)
+        world.update_clouds(player.x, dt)
 
         autosave_timer += dt
         if autosave_timer >= AUTOSAVE_INTERVAL:

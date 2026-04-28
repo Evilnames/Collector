@@ -140,6 +140,8 @@ class World:
         self.wire_mode = False      # True = wire layer visible
         self.entities = []
         self.arrows   = []
+        self._clouds  = []          # list of (world_px_x, world_px_y, w_px, h_px, bid)
+        self._cloud_spawn_timer = 0.0
         self.automations = []
         self.farm_bots = []
         self.backhoes = []
@@ -3522,6 +3524,76 @@ class World:
         if visitor is not None:
             self.tea_house_visitors.append(visitor)
 
+    # ------------------------------------------------------------------
+    # Cloud entity management
+    # ------------------------------------------------------------------
+    _CLOUD_LAYER_SPECS = None  # lazy-init class-level constant
+
+    @staticmethod
+    def _cloud_layer_specs():
+        from blocks import CLOUD_CIRRUS, CLOUD_CUMULUS, CLOUD_STRATUS, CLOUD_STORM
+        from constants import BLOCK_SIZE
+        if World._CLOUD_LAYER_SPECS is None:
+            BS = BLOCK_SIZE
+            World._CLOUD_LAYER_SPECS = [
+                # (bid, y_lo_px, y_hi_px, target_per_side, size_options_wh)
+                (CLOUD_CIRRUS,   4*BS, 12*BS, 6,
+                 [(96, 18), (128, 20), (160, 22), (192, 18), (80, 16)]),
+                (CLOUD_CUMULUS, 16*BS, 26*BS, 8,
+                 [(80, 40), (112, 48), (96, 44), (64, 36), (128, 52)]),
+                (CLOUD_STRATUS, 30*BS, 38*BS, 5,
+                 [(160, 28), (192, 24), (128, 30), (224, 26)]),
+                (CLOUD_STORM,   37*BS, 43*BS, 4,
+                 [(96, 52), (128, 56), (80, 48), (112, 60)]),
+            ]
+        return World._CLOUD_LAYER_SPECS
+
+    def _initial_cloud_fill(self, player_x):
+        import random
+        from constants import SCREEN_W
+        rng = random.Random(self.seed ^ 0xC10D)
+        ZONE = SCREEN_W * 4
+        for bid, y_lo, y_hi, target, sizes in self._cloud_layer_specs():
+            for side in (-1, 1):
+                for _ in range(target):
+                    x = player_x + side * rng.randint(SCREEN_W // 2, ZONE)
+                    w, h = rng.choice(sizes)
+                    y = rng.randint(y_lo, max(y_lo + 1, y_hi - h))
+                    self._clouds.append((x, y, w, h, bid))
+
+    def update_clouds(self, player_x, dt):
+        from constants import SCREEN_W
+        if not self._clouds:
+            self._initial_cloud_fill(player_x)
+            return
+
+        DESPAWN = SCREEN_W * 5
+        ZONE    = SCREEN_W * 4
+        SPAWN_MIN = SCREEN_W // 2
+
+        # Despawn clouds whose centre is more than 5 screens away
+        self._clouds = [c for c in self._clouds
+                        if abs(c[0] + c[2] // 2 - player_x) < DESPAWN]
+
+        # Rate-limit new spawns to a trickle so clouds fade in off-screen
+        self._cloud_spawn_timer += dt
+        if self._cloud_spawn_timer < 0.8:
+            return
+        self._cloud_spawn_timer -= 0.8
+
+        import random
+        rng = random.Random()
+        for bid, y_lo, y_hi, target, sizes in self._cloud_layer_specs():
+            left  = sum(1 for c in self._clouds if c[4] == bid and c[0] + c[2]//2 < player_x)
+            right = sum(1 for c in self._clouds if c[4] == bid and c[0] + c[2]//2 >= player_x)
+            for side, count in ((-1, left), (1, right)):
+                if count < target:
+                    x = player_x + side * rng.randint(SPAWN_MIN, ZONE)
+                    w, h = rng.choice(sizes)
+                    y = rng.randint(y_lo, max(y_lo + 1, y_hi - h))
+                    self._clouds.append((x, y, w, h, bid))
+
+    # ------------------------------------------------------------------
     def update_dropped_items(self, dt, player):
         to_remove = []
         for item in self.dropped_items:
