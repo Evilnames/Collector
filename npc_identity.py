@@ -718,6 +718,63 @@ _RULER_TYPES = {"npc_noble", "npc_elder"}
 _DYNASTY_ROLES = ["head", "heir", "heir", "cousin", "cousin", "cousin"]
 
 
+def _inject_plan_dynasty_chronicle(chronicle: dict, world, region_id: int) -> None:
+    """Layer the simulated 500-year chronicle onto the dynasty chronicle dict.
+
+    Adds (or replaces):
+        kingdom_summary  — one-line "founded in year N; fallen in year M".
+        dynasty_arc      — counts of births/deaths/marriages/successions.
+        kingdom_events   — list of "Yr N — text" lines for the kingdom.
+        dynasty_events   — list of "Yr N — text" lines for the dynasty.
+        current_era      — derived from latest significant event.
+    """
+    plan = world.plan
+    kingdom = plan.kingdoms.get(region_id)
+    if kingdom is None:
+        return
+    dyn = plan.dynasties.get(kingdom.dynasty_id)
+    if dyn is None:
+        return
+
+    if kingdom.fallen_year != -1:
+        chronicle["kingdom_summary"] = (
+            f"{kingdom.name} stood for {kingdom.fallen_year - kingdom.founded_year} years "
+            f"before falling in year {kingdom.fallen_year}."
+        )
+    else:
+        chronicle["kingdom_summary"] = (
+            f"{kingdom.name} has endured {plan.history_years - kingdom.founded_year} years."
+        )
+
+    k_events = plan.chronicle_for_kingdom(region_id)
+    d_events = plan.chronicle_for_dynasty(kingdom.dynasty_id)
+
+    chronicle["kingdom_events"] = [f"Yr {e.year} — {e.text}" for e in k_events]
+    chronicle["dynasty_events"] = [f"Yr {e.year} — {e.text}" for e in d_events]
+
+    births = sum(1 for e in d_events if e.kind == "birth")
+    deaths = sum(1 for e in d_events if e.kind == "death")
+    marriages = sum(1 for e in d_events if e.kind == "marriage")
+    successions = sum(1 for e in d_events if e.kind in ("succession", "succession_crisis"))
+    crises = sum(1 for e in d_events if e.kind == "succession_crisis")
+    extinct = " The line ended in turmoil." if dyn.extinct_year != -1 else ""
+    chronicle["dynasty_arc"] = (
+        f"Across {plan.history_years} years: {births} births, {marriages} unions, "
+        f"{deaths} deaths, {successions} successions ({crises} contested).{extinct}"
+    )
+
+    significant = [e for e in k_events
+                   if e.kind in ("sack", "annex", "merge", "kingdom_collapse",
+                                 "defeat_kingdom", "earthquake", "plague",
+                                 "famine", "found_settlement", "extinction",
+                                 "succession_crisis")]
+    if significant:
+        latest = significant[-1]
+        chronicle["current_era"] = (
+            f"In recent memory: {latest.text} (year {latest.year})."
+        )
+
+
 def assign_ruling_dynasties(world, world_seed: int) -> None:
     """Link nobles and elders across each region into a shared ruling dynasty.
 
@@ -790,7 +847,11 @@ def assign_ruling_dynasties(world, world_seed: int) -> None:
             region_id, world_seed, dynasty_family,
             rival_family=dynasty_rival,
             town_names=town_names,
+            world=world,
         )
+        # Inject the actual 500-year sim chronicle for this kingdom + dynasty.
+        if getattr(world, "plan", None) is not None:
+            _inject_plan_dynasty_chronicle(chronicle, world, region_id)
 
         # Compute court visual attributes for this region
         from cities import PALACE_TYPES

@@ -480,16 +480,20 @@ def main():
         t0 = _t("research.apply_save", t0)
     else:
         seed = random.randint(0, 2**31 - 1)
+        # Animated worldgen: shows phases 1-4 (geography → kingdoms → 500-year
+        # history → finalize) and returns the baked WorldPlan for the new World.
+        from UI.worldgen_screen import show_worldgen
+        save_mgr.new_game()
+        plan = show_worldgen(screen, seed)
         def _do_gen():
             global t0
             t0 = time.perf_counter()
-            save_mgr.new_game()
-            w = World(seed=seed, save_mgr=save_mgr)
+            w = World(seed=seed, save_mgr=save_mgr, world_plan=plan)
             t0 = _t("  World(new)", t0)
             p = Player(w)
             t0 = _t("  Player", t0)
             return w, p
-        world, player = _run_with_loading_screen(screen, "Generating World", _do_gen)
+        world, player = _run_with_loading_screen(screen, "Building World", _do_gen)
         if settings.get("debug", False):
             for node in research.nodes.values():
                 node.apply(player, world)
@@ -561,10 +565,13 @@ def main():
         player.gift_panel_open = False
         player.fulfill_request_open = False
         player.dynasty_panel_open = False
+        player.dynasty_tree_open = False
         ui.gambling_open = False
         ui.racing_open = False
         ui.arena_open = False
         ui.tea_house_open = False
+        ui.ruin_plaque_open = False
+        ui.ruin_plaque_info = None
 
     def _any_ui_open():
         return any([ui.pause_open, ui.help_open, ui.research_open, ui.inventory_open, ui.crafting_open,
@@ -574,6 +581,7 @@ def main():
                     ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open,
                     ui.town_menu_open, ui.outpost_menu_open, ui.landmark_menu_open, ui.city_block_menu_open, ui.coa_designer_open, ui.hire_panel_open, ui.job_panel_open, ui.reputation_screen_open, ui.trade_block_open,
                     ui.dog_view_open, ui.dog_breeding_open, ui.gambling_open, ui.racing_open, ui.arena_open, ui.tea_house_open,
+                    getattr(ui, "ruin_plaque_open", False),
                     getattr(player, "inspecting_npc", None) is not None])
 
     def _find_nearby_npc(world, player):
@@ -876,6 +884,11 @@ def main():
                 if event.key == pygame.K_ESCAPE:
                     if ui.coa_designer_open:
                         ui.close_coat_of_arms_designer()
+                    elif getattr(ui, "ruin_plaque_open", False):
+                        ui.ruin_plaque_open = False
+                        ui.ruin_plaque_info = None
+                    elif getattr(player, "dynasty_tree_open", False):
+                        player.dynasty_tree_open = False
                     elif ui.town_chronicle_open:
                         ui.town_chronicle_open = False
                     elif ui.job_panel_open:
@@ -1226,7 +1239,19 @@ def main():
                         nearby_garden = player.get_nearby_garden()
                         nearby_wf_display = player.get_nearby_wildflower_display()
                         nearby_pottery_display = player.get_nearby_pottery_display()
-                        if nearby_chest is not None:
+                        nearby_ruin_marker = player.get_nearby_ruin_marker()
+                        if nearby_ruin_marker is not None:
+                            from ruins import lookup_marker_info
+                            info = lookup_marker_info(world, *nearby_ruin_marker)
+                            if info is not None:
+                                if ui.ruin_plaque_open:
+                                    ui.ruin_plaque_open = False
+                                    ui.ruin_plaque_info = None
+                                else:
+                                    _close_all_ui()
+                                    ui.ruin_plaque_open = True
+                                    ui.ruin_plaque_info = info
+                        elif nearby_chest is not None:
                             if ui.chest_open and ui.active_chest_pos == nearby_chest:
                                 ui.chest_open = False
                                 ui.active_chest_inv = None
@@ -1426,6 +1451,10 @@ def main():
                         ui._display_scroll = max(0, min(max_s, getattr(ui, '_display_scroll', 0) - event.y))
                     elif ui.research_open or ui.inventory_open or ui.crafting_open or ui.collection_open or ui.refinery_open or ui.chest_open or ui.breeding_open or ui.garden_open or ui.horse_breeding_open or ui.dog_breeding_open or ui.dog_view_open:
                         ui.handle_scroll(event.y)
+                    elif getattr(player, 'dynasty_tree_open', False):
+                        _max = getattr(ui, '_tree_max_scroll', 0)
+                        ui._tree_scroll = max(0, min(_max,
+                            getattr(ui, '_tree_scroll', 0) - event.y * 30))
                     elif getattr(player, 'dynasty_panel_open', False):
                         _max = getattr(ui, '_chronicle_max_scroll', 0)
                         ui._chronicle_scroll = max(0, min(_max,
@@ -1697,8 +1726,9 @@ def main():
                     # Melee attack — left-click with weapon equipped (no UI open)
                     if event.button == 1 and not player.dead and player.equipped_weapon_uid and not _any_ui_open():
                         from animals import HuntableAnimal
-                        px_c = int(player.x + player.W / 2)
-                        py_c = int(player.y + player.H / 2)
+                        from constants import PLAYER_H
+                        px_c = int(player.x + PLAYER_W / 2)
+                        py_c = int(player.y + PLAYER_H / 2)
                         melee_rect = pygame.Rect(px_c - 48, py_c - 32, 96, 64)
                         for entity in world.entities:
                             if isinstance(entity, HuntableAnimal) and not entity.dead:

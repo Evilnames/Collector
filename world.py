@@ -14,8 +14,8 @@ DAY_DURATION   = 480.0   # 8 minutes of daylight
 NIGHT_DURATION = 300.0   # 5 minutes of night
 CYCLE_DURATION = DAY_DURATION + NIGHT_DURATION
 
-MORNING_END = 90.0                    # golden hour after dawn
-DUSK_START  = DAY_DURATION - 90.0    # golden hour before night
+MORNING_END = 160.0                   # golden hour after dawn
+DUSK_START  = DAY_DURATION - 160.0   # golden hour before night
 
 
 def sky_phase(time_of_day):
@@ -187,10 +187,34 @@ _COASTAL_BUFFER  = 1     # zones just outside ocean spread that become coastal (
 
 
 class World:
-    def __init__(self, seed=42, preloaded=None, save_mgr=None, player_x=0.0):
+    def __init__(self, seed=42, preloaded=None, save_mgr=None, player_x=0.0,
+                 world_plan=None, world_span=None):
         self.seed = seed
         self.height = WORLD_H
         self._save_mgr = save_mgr
+        # World plan: source of truth for biomes, kingdoms, settlements.
+        # New game: generate fresh; existing save: passed in via preloaded["world_plan"].
+        if world_plan is None and preloaded is not None:
+            world_plan = preloaded.get("world_plan")
+        if world_plan is None:
+            from worldgen import generate_world
+            world_plan = generate_world(seed=seed, span=world_span)
+        self.plan = world_plan
+        # World horizontal bounds (block coords) — outside is impassable bedrock wall.
+        self._world_min_x = self.plan.world_min_x
+        self._world_max_x = self.plan.world_max_x
+        # Spawn near the alive capital closest to world center so the player
+        # lands inside a kingdom instead of on a barren edge.
+        chosen = getattr(self.plan, "spawn_world_x", None)
+        if chosen is not None:
+            self.spawn_x = int(chosen)
+        else:
+            capitals = [s for s in self.plan.settlements.values()
+                        if s.state == "alive" and s.is_capital]
+            if capitals:
+                self.spawn_x = min(capitals, key=lambda s: abs(s.world_x)).world_x
+            else:
+                self.spawn_x = 0
         self._chunks = {}           # chunk_x -> [[block_id]*CHUNK_W]*WORLD_H
         self._dirty_chunks = set()
         self._bg_chunks = {}        # background layer: chunk_x -> [[block_id]*CHUNK_W]*WORLD_H
@@ -217,6 +241,7 @@ class World:
         self.insects = []
         self.dropped_items = []
         self.chest_data = {}     # (bx, by) -> {item_id: count}
+        self.ruin_markers = {}   # (bx, by) -> dict (settlement lore for plaque UI)
         self.banner_data = {}    # (bx, by) -> coat_of_arms dict
         self.light_traps = {}    # (bx, by) -> {"accumulated": [species_id, ...]}
         self.garden_data = {}    # (bx, by) -> [(Wildflower, cx, cy), ...]
@@ -295,11 +320,15 @@ class World:
         if preloaded:
             self._load_from(preloaded, player_x)
         else:
-            for cx in range(-CHUNK_LOAD_RADIUS, CHUNK_LOAD_RADIUS + 1):
+            spawn_cx = int(self.spawn_x // CHUNK_W)
+            for cx in range(spawn_cx - CHUNK_LOAD_RADIUS, spawn_cx + CHUNK_LOAD_RADIUS + 1):
                 self.load_chunk(cx)
             self._spawn_animals()
             self._spawn_huntable_animals()
             self._spawn_capybaras()
+            from ruins import spawn_ruins_for_chunk
+            for cx in list(self._chunks.keys()):
+                spawn_ruins_for_chunk(self, cx)
         # Soil moisture tick (independent of crop growth — faster so care feels responsive)
         self._soil_timer    = 0.0
         self._soil_interval = _soil.SOIL_TICK_SECS
@@ -328,8 +357,9 @@ class World:
         if not preloaded:
             import npc_identity
             npc_identity.assign_ruling_dynasties(self, self.seed)
-        from outposts import init_outposts
-        init_outposts(self)
+        if preloaded:
+            from outposts import init_outposts
+            init_outposts(self)
         from player_cities import init_player_cities
         init_player_cities(self)
         self._spawn_birds()
@@ -388,73 +418,91 @@ class World:
         brng = random.Random(self._zone_seed(self.seed, z, 3))
         return brng.choice(BIODOME_TYPES)
 
+    # Biodomes that have a strongly-deformed surface — only blend with each
+    # other (so ocean's +22 bias doesn't drown adjacent grasslands).
+    _OCEANIC = ("ocean", "coastal", "beach", "pacific_island")
+
     def _biodome_terrain_mod(self, x: int):
-        """Return (height_bias, amplitude_scale) blended from the two nearest biodome zones."""
-        zone = x // 200
-        data = []
-        for z in range(zone - 1, zone + 2):
-            rng_c = random.Random(self._zone_seed(self.seed, z, 2))
-            cx = z * 200 + rng_c.randint(-40, 40)
-            biodome = self._zone_biodome(z)
-            bias, scale = BIODOME_TERRAIN_MODS.get(biodome, (0, 1.0))
-            data.append((abs(x - cx), bias, scale))
-        data.sort()
-        d0, b0, s0 = data[0]
-        d1, b1, s1 = data[1]
-        if d0 == 0:
-            return b0, s0
-        w0, w1 = 1.0 / d0, 1.0 / d1
-        total = w0 + w1
-        return (w0 * b0 + w1 * b1) / total, (w0 * s0 + w1 * s1) / total
+        """Return (height_bias, amplitude_scale) blended from the two nearest plan cells.
+
+        Land/ocean blending is one-way: oceanic bias never bleeds into land
+        cells (would push them below sea level). Land bias still smooths
+        adjacent oceanic cells (gentler shore transitions).
+        """
+        plan = self.plan
+        cell_w = plan.cell_width
+        idx = (x - plan.world_min_x) // cell_w
+        if idx < 0:
+            idx = 0
+        elif idx >= plan.span:
+            idx = plan.span - 1
+        cell = plan.cells[idx]
+        bias_a, scale_a = BIODOME_TERRAIN_MODS.get(cell.biodome, (0, 1.0))
+        center = cell.world_x
+        if x >= center and idx + 1 < plan.span:
+            other = plan.cells[idx + 1]
+        elif x < center and idx - 1 >= 0:
+            other = plan.cells[idx - 1]
+        else:
+            return bias_a, scale_a
+
+        # If we're a land cell and the neighbor is oceanic, don't blend ocean
+        # bias in — keep our own bias so the surface stays above sea level.
+        cell_oceanic = cell.biodome in self._OCEANIC
+        other_oceanic = other.biodome in self._OCEANIC
+        if not cell_oceanic and other_oceanic:
+            return bias_a, scale_a
+
+        bias_b, scale_b = BIODOME_TERRAIN_MODS.get(other.biodome, (0, 1.0))
+        d_a = abs(x - cell.world_x)
+        d_b = abs(x - other.world_x)
+        if d_a + d_b == 0:
+            return bias_a, scale_a
+        w_a = d_b / (d_a + d_b)
+        w_b = 1.0 - w_a
+        return (bias_a * w_a + bias_b * w_b,
+                scale_a * w_a + scale_b * w_b)
 
     def surface_height(self, x: int) -> int:
         cached = self._surface_height_cache.get(x)
         if cached is not None:
             return cached
         bias, scale = self._biodome_terrain_mod(x)
+        # Per-region drama: flat plains (0.3) vs dramatic peaks (1.0).
+        cell = self._plan_cell(x)
+        drama = cell.drama
+        # Drama also amplifies the bias for high-altitude biomes (alpine,
+        # rocky_mountain) so a "dramatic" mountain stretch towers higher
+        # than a "flat" one with the same biome.
+        if bias < 0:
+            bias *= (0.5 + drama * 0.8)
         h = SURFACE_Y + bias
         for (freq, amp), phase in zip(self._surf_octaves, self._surf_phases):
-            h += amp * scale * math.sin(x * freq + phase)
+            h += amp * scale * drama * math.sin(x * freq + phase)
         result = max(30, round(h))
         self._surface_height_cache[x] = result
         return result
 
+    def _plan_cell(self, x: int):
+        """Return the BiomeCell containing block x (clamped to plan bounds)."""
+        plan = self.plan
+        cell_w = plan.cell_width
+        idx = (x - plan.world_min_x) // cell_w
+        if idx < 0:
+            idx = 0
+        elif idx >= plan.span:
+            idx = plan.span - 1
+        return plan.cells[idx]
+
     def biome_at(self, x: int) -> str:
-        zone = x // 150
-        nearest_biome, nearest_dist = BIOMES[0], float('inf')
-        for z in (zone - 1, zone, zone + 1):
-            rng = random.Random(self._zone_seed(self.seed, z, 0))
-            cx = z * 150 + rng.randint(-25, 25)
-            dist = abs(x - cx)
-            if dist < nearest_dist:
-                nearest_dist = dist
-                brng = random.Random(self._zone_seed(self.seed, z, 1))
-                nearest_biome = brng.choice(BIOMES)
-        return nearest_biome
+        return self._plan_cell(x).biome
 
     def biodome_at(self, x: int) -> str:
-        zone = x // 200
-        nearest, nearest_dist = BIODOME_TYPES[0], float('inf')
-        for z in (zone - 1, zone, zone + 1):
-            rng = random.Random(self._zone_seed(self.seed, z, 2))
-            cxz = z * 200 + rng.randint(-40, 40)
-            dist = abs(x - cxz)
-            if dist < nearest_dist:
-                nearest_dist = dist
-                nearest = self._zone_biodome(z)
-        return nearest
+        return self._plan_cell(x).biodome
 
     def _biodome_owning_zone(self, x: int) -> int:
-        zone = x // 200
-        owner, best = zone, float('inf')
-        for z in (zone - 1, zone, zone + 1):
-            rng = random.Random(self._zone_seed(self.seed, z, 2))
-            cxz = z * 200 + rng.randint(-40, 40)
-            dist = abs(x - cxz)
-            if dist < best:
-                best = dist
-                owner = z
-        return owner
+        # Plan cell index doubles as the "zone" id used by tree-density caching.
+        return self._plan_cell(x).index
 
     def biodome_tree_density(self, x: int) -> float:
         """Per-biodome-instance spacing multiplier: <1 = dense forest, >1 = sparse."""
@@ -601,6 +649,8 @@ class World:
                 generate_city_for_chunk(self, self.seed, cx)
                 from outposts import generate_outpost_for_chunk
                 generate_outpost_for_chunk(self, self.seed, cx)
+                from ruins import spawn_ruins_for_chunk
+                spawn_ruins_for_chunk(self, cx)
 
     def _chunk_get(self, x: int, y: int) -> int:
         """Raw chunk read — no side effects. Returns BEDROCK for unloaded/OOB."""
@@ -639,6 +689,11 @@ class World:
         self.chest_data = {
             tuple(int(v) for v in k.split(",")): inv
             for k, inv in raw_chests.items()
+        }
+        raw_markers = data.get("ruin_markers", {})
+        self.ruin_markers = {
+            tuple(int(v) for v in k.split(",")): info
+            for k, info in raw_markers.items()
         }
         raw_banners = data.get("banner_data", {})
         self.banner_data = {
@@ -863,8 +918,22 @@ class World:
         chunk = self._chunks[cx]
         ore_rng = random.Random(hash((self.seed, cx, 'ore')) & 0x7FFFFFFF)
 
+        # World-edge wall: chunks fully outside plan bounds get a solid bedrock fill.
+        chunk_min_x = cx * CHUNK_W
+        chunk_max_x = chunk_min_x + CHUNK_W - 1
+        if chunk_max_x < self._world_min_x or chunk_min_x >= self._world_max_x:
+            for y in range(WORLD_H):
+                for lx in range(CHUNK_W):
+                    chunk[y][lx] = BEDROCK
+            return
+
         for lx in range(CHUNK_W):
             x = cx * CHUNK_W + lx
+            # Per-column edge wall when only part of the chunk is out of bounds.
+            if x < self._world_min_x or x >= self._world_max_x:
+                for y in range(WORLD_H):
+                    chunk[y][lx] = BEDROCK
+                continue
             sy = self.surface_height(x)
             biome = self.biome_at(x)
             biodome = self.biodome_at(x)

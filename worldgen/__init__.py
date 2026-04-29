@@ -1,0 +1,38 @@
+"""Multi-pass world generator.
+
+Public entry: ``generate_world(seed, span=None, year_callback=None)`` returns
+a fully-baked ``WorldPlan`` ready for runtime consumption.
+
+Phase order:
+    1. Geography  — biome strip with streaking and coast logic.
+    2. Kingdoms   — seed starting capitals + dynasties at attractive cells.
+    3. History    — 500-year tick simulation; mutates kingdoms / settlements.
+    4. Materialize— freeze state into the final WorldPlan artifact.
+"""
+
+from worldgen.config import WORLDGEN_CONFIG, resolve_span
+from worldgen.geography import build_geography
+from worldgen.kingdoms import seed_kingdoms
+from worldgen.history.sim import simulate_history
+from worldgen.materialize import build_plan
+from worldgen.plan import WorldPlan
+
+
+def generate_world(seed: int, span=None, year_callback=None) -> WorldPlan:
+    """Run the full pipeline and return a WorldPlan.
+
+    ``year_callback(year, kingdoms, settlements, dynasties, chronicle)`` is
+    called once per simulated year (used by the worldgen viz screen).
+    """
+    if span is None:
+        span = WORLDGEN_CONFIG["world_span"]
+    span = resolve_span(span)
+
+    cells = build_geography(seed, span)
+    kingdoms, settlements, dynasties, next_ids = seed_kingdoms(cells, seed)
+    chronicle = simulate_history(seed, cells, kingdoms, settlements, dynasties,
+                                 next_ids, year_callback=year_callback)
+    return build_plan(seed, cells, kingdoms, settlements, dynasties, chronicle)
+
+
+__all__ = ["generate_world", "WorldPlan", "WORLDGEN_CONFIG"]

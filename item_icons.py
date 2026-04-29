@@ -925,6 +925,48 @@ def _icon_coffee_cup(surf, color, s):
 
 
 # ---------------------------------------------------------------------------
+# Weapon parts — render the actual smithed shape from PART_TEMPLATES
+# ---------------------------------------------------------------------------
+
+def _draw_weapon_part(surf, color, s, template):
+    rows = len(template)
+    cols = len(template[0]) if rows else 0
+    if not rows or not cols:
+        return
+    pad = max(2, s // 12)
+    avail_w = s - pad * 2
+    avail_h = s - pad * 2
+    cell = max(1, min(avail_w // cols, avail_h // rows))
+    grid_w = cell * cols
+    grid_h = cell * rows
+    ox = (s - grid_w) // 2
+    oy = (s - grid_h) // 2
+    edge = _darker(color, 50)
+    hi = _lighter(color, 50)
+    for r, row in enumerate(template):
+        for c, on in enumerate(row):
+            if not on:
+                continue
+            x = ox + c * cell
+            y = oy + r * cell
+            pygame.draw.rect(surf, color, (x, y, cell, cell))
+            if c == 0 or not row[c - 1]:
+                pygame.draw.line(surf, edge, (x, y), (x, y + cell - 1), 1)
+            if c == cols - 1 or not row[c + 1]:
+                pygame.draw.line(surf, edge, (x + cell - 1, y), (x + cell - 1, y + cell - 1), 1)
+            if r == 0 or not template[r - 1][c]:
+                pygame.draw.line(surf, hi, (x, y), (x + cell - 1, y), 1)
+            if r == rows - 1 or not template[r + 1][c]:
+                pygame.draw.line(surf, edge, (x, y + cell - 1), (x + cell - 1, y + cell - 1), 1)
+
+
+def _make_weapon_part_icon(template):
+    def _fn(surf, color, s):
+        _draw_weapon_part(surf, color, s, template)
+    return _fn
+
+
+# ---------------------------------------------------------------------------
 # Dispatch table
 # ---------------------------------------------------------------------------
 
@@ -1229,6 +1271,21 @@ _ICONS = {
     "quartz_pillar":         _slab,
     "onyx_inlay":            _slab,
 }
+
+
+# Register weapon part icons for every (material × part) combination.
+def _register_weapon_part_icons():
+    from weapons import WEAPON_TYPES, MATERIAL_PROFILES, PART_TEMPLATES
+    for wtype in WEAPON_TYPES.values():
+        for part_key in wtype["parts"]:
+            template = PART_TEMPLATES.get(part_key)
+            if not template:
+                continue
+            icon_fn = _make_weapon_part_icon(template)
+            for mat in MATERIAL_PROFILES:
+                _ICONS[f"{mat}_{part_key}"] = icon_fn
+
+_register_weapon_part_icons()
 
 
 def render_item_icon(item_id: str, color: tuple, size: int = 46) -> pygame.Surface:

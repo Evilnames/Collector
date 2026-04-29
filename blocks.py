@@ -1408,6 +1408,7 @@ COCONUT_CROP_MATURE   = 1242
 WEAPON_ASSEMBLER_BLOCK       = 1256  # weapon assembler
 TEA_HOUSE_BLOCK              = 1257  # placed Tea House serving counter
 MORTAR_BLOCK                 = 1270  # placed Mortar & Pestle; grinds fresh herbs
+RUIN_MARKER_BLOCK            = 1271  # weathered stone marker at ruined settlement; reads its history
 
 EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, BAKERY_BLOCK,
                     WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
@@ -3077,6 +3078,7 @@ BLOCKS = {
     TOWN_FLAG_BLOCK:           {"name": "Town Flag",          "hardness": float('inf'), "color": (200, 80, 40), "drop": None},
     OUTPOST_FLAG_BLOCK:        {"name": "Outpost Flag",       "hardness": float('inf'), "color": (180, 140, 60), "drop": None},
     LANDMARK_FLAG_BLOCK:       {"name": "Landmark Flag",      "hardness": float('inf'), "color": (190, 150,  60), "drop": None},
+    RUIN_MARKER_BLOCK:         {"name": "Ruin Marker",        "hardness": float('inf'), "color": (155, 145, 130), "drop": None},
     # --- Brewery supply chain ---
     HOP_VINE_BUSH:             {"name": "Hop Vine Bush",      "hardness": 0.5, "color": ( 90, 145,  55), "drop": "hop_seed",          "drop_chance": 1.0},
     HOP_VINE_YOUNG:            {"name": "Hop Vine",           "hardness": 0.5, "color": (100, 160,  60), "drop": "hop_seed",          "drop_chance": 1.0},

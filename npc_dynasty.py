@@ -407,12 +407,137 @@ _DARK_SECRETS = [
 
 
 # ---------------------------------------------------------------------------
+# History-aware selection — bias prose pools toward themes that actually
+# happened in this dynasty's simulated 500-year history.
+# ---------------------------------------------------------------------------
+
+# Tag → keyword phrases. A pool entry containing any phrase picks up that tag.
+_TAG_KEYWORDS = {
+    "war":        ("war", "battle", "siege", "raid", "armed", "victory",
+                   "soldier", "campaign", "conflict", "convoy", "ambush",
+                   "border dispute", "violence"),
+    "plague":     ("plague", "fever", "wasting", "illness", "outbreak",
+                   "sick", "disease"),
+    "famine":     ("famine", "drought", "starv", "hunger", "granary"),
+    "disaster":   ("fire", "earthquake", "flood", "collapse", "ruin",
+                   "destroyed"),
+    "trade":      ("trade", "merchant", "coin", "monopoly", "salt road",
+                   "broker", "commerce", "market", "caravan", "ledger",
+                   "shipment"),
+    "debt":       ("debt", "creditor", "borrow", "loan", "owed", "interest",
+                   "ledger", "purse", "indebted"),
+    "marriage":   ("marriage", "married", "wed", "betroth", "alliance",
+                   "marry", "spouse"),
+    "founding":   ("granary", "library", "market hall", "charter",
+                   "founded", "built", "construction", "endowment",
+                   "council", "civic"),
+    "violence":   ("killed", "struck", "assassin", "ambush", "knife",
+                   "blood", "removed", "dispatched", "deposed"),
+    "revolt":     ("revolt", "uprising", "civil unrest", "deposed",
+                   "rebellion", "civil war"),
+    "succession": ("succession", "claimant", "heir", "disinherit", "seat",
+                   "succeeded", "successor"),
+    "secret":     ("secret", "concealed", "private", "undisclosed", "hidden",
+                   "never disclosed", "never acknowledged", "off the record"),
+    "rival":      ("rival", "feud", "rivalry", "opposed", "opponent"),
+    "diplomacy":  ("treaty", "council", "diplomat", "negotiat", "envoy",
+                   "broker", "intermediary"),
+    "decline":    ("decline", "fell", "collapsed", "ruin", "exhausted",
+                   "diminished", "dwindled"),
+    "scandal":    ("scandal", "humiliat", "embarrass", "disgrace",
+                   "compromised"),
+}
+
+
+def _tags_for(text: str) -> set:
+    t = text.lower()
+    return {tag for tag, kws in _TAG_KEYWORDS.items() if any(k in t for k in kws)}
+
+
+# Pre-compute tags once at module import. List of sets aligned with each pool.
+_FOUNDER_ACT_TAGS    = [_tags_for(t) for t in _FOUNDER_ACTS]
+_FOUNDER_LEGACY_TAGS = [_tags_for(t) for t in _FOUNDER_LEGACIES]
+_GEN2_ACT_TAGS       = [_tags_for(t) for t in _GEN2_ACTS]
+_GEN3_ACT_TAGS       = [_tags_for(t) for t in _GEN3_ACTS]
+_HOUSE_TRAIT_TAGS    = [_tags_for(t) for t in _HOUSE_TRAITS]
+_RIVALRY_CAUSE_TAGS  = [_tags_for(t) for t in _RIVALRY_CAUSES]
+_DARK_SECRET_TAGS    = [_tags_for(t) for t in _DARK_SECRETS]
+
+
+# Sim event kind → tag set. Multiple tags allowed.
+_EVENT_KIND_TAGS = {
+    "war_declare":        {"war", "rival"},
+    "civil_war":          {"war", "revolt", "violence"},
+    "sack":               {"war", "violence", "disaster"},
+    "annex":              {"war", "rival"},
+    "defeat_kingdom":     {"war", "decline"},
+    "kingdom_collapse":   {"decline", "disaster"},
+    "succession_war":     {"war", "succession", "violence"},
+    "plague":             {"plague"},
+    "famine":             {"famine"},
+    "earthquake":         {"disaster"},
+    "found_settlement":   {"founding"},
+    "rebirth":            {"founding"},
+    "alliance_form":      {"diplomacy", "marriage"},
+    "alliance_break":     {"diplomacy", "scandal", "rival"},
+    "revolt":             {"revolt", "violence"},
+    "kingdom_split":      {"revolt", "decline"},
+    "assassination":      {"violence", "secret", "succession"},
+    "marriage":           {"marriage", "diplomacy"},
+    "succession":         {"succession"},
+    "succession_crisis":  {"succession", "violence", "scandal"},
+    "extinction":         {"decline", "violence"},
+    "birth":              set(),
+    "death":              set(),
+    "city_shrink":        {"decline"},
+    "abandon_decline":    {"decline"},
+    "merge":              {"founding"},
+    "decline":            {"decline"},
+}
+
+
+def _gather_history_tags(world, region_id: int) -> dict:
+    """Return tag → count derived from the kingdom + dynasty's real event log."""
+    counts = {}
+    plan = getattr(world, "plan", None) if world is not None else None
+    if plan is None:
+        return counts
+    kingdom = plan.kingdoms.get(region_id)
+    if kingdom is None:
+        return counts
+    events = list(plan.chronicle_for_kingdom(region_id))
+    events += list(plan.chronicle_for_dynasty(kingdom.dynasty_id))
+    for e in events:
+        for tag in _EVENT_KIND_TAGS.get(e.kind, ()):
+            counts[tag] = counts.get(tag, 0) + 1
+    return counts
+
+
+def _weighted_pick(rng: random.Random, pool: list, pool_tags: list,
+                    history_tags: dict):
+    """Pick a pool entry, biased toward entries whose tags match history."""
+    if not history_tags:
+        return rng.choice(pool)
+    weights = []
+    for tags in pool_tags:
+        if not tags:
+            weights.append(1.0)
+            continue
+        bias = sum(history_tags.get(t, 0) for t in tags)
+        # Base 1.0 keeps untagged-but-relevant items reachable; bias multiplier
+        # of 3 makes a single matching event triple the line's odds.
+        weights.append(1.0 + 3.0 * bias)
+    return rng.choices(pool, weights=weights, k=1)[0]
+
+
+# ---------------------------------------------------------------------------
 # Generation functions
 # ---------------------------------------------------------------------------
 
 def generate_chronicle(region_id: int, world_seed: int, dynasty_family: str,
                        rival_family: str | None = None,
-                       town_names: list | None = None) -> dict:
+                       town_names: list | None = None,
+                       world=None) -> dict:
     """Return a full dynasty chronicle dict for one region's ruling house."""
     from npc_identity import _FIRST_NAMES_M, _FIRST_NAMES_F
 
@@ -420,26 +545,31 @@ def generate_chronicle(region_id: int, world_seed: int, dynasty_family: str,
 
     town = town_names[0] if town_names else "the region"
 
+    # Tag counts derived from this dynasty's real simulated history. Empty
+    # dict if no plan available — selection then falls back to uniform.
+    history_tags = _gather_history_tags(world, region_id)
+
     founder_first   = rng.choice(_FIRST_NAMES_M + _FIRST_NAMES_F)
     founder_epithet = rng.choice(_FOUNDER_EPITHETS)
     founder_full    = f"{founder_first} {dynasty_family}, called \"{founder_epithet}\""
 
-    act_template  = rng.choice(_FOUNDER_ACTS)
+    act_template  = _weighted_pick(rng, _FOUNDER_ACTS, _FOUNDER_ACT_TAGS, history_tags)
     gender_word   = rng.choice(("himself", "herself"))
+    founder_gender = "m" if gender_word == "himself" else "f"
     founder_act   = act_template.format(town=town, themselves=gender_word)
-    founder_legacy = rng.choice(_FOUNDER_LEGACIES)
+    founder_legacy = _weighted_pick(rng, _FOUNDER_LEGACIES, _FOUNDER_LEGACY_TAGS, history_tags)
 
-    gen2         = rng.choice(_GEN2_ACTS)
-    gen3         = rng.choice(_GEN3_ACTS)
+    gen2         = _weighted_pick(rng, _GEN2_ACTS, _GEN2_ACT_TAGS, history_tags)
+    gen3         = _weighted_pick(rng, _GEN3_ACTS, _GEN3_ACT_TAGS, history_tags)
     current_era  = rng.choice(_CURRENT_ERA_SITUATIONS)
-    house_trait  = rng.choice(_HOUSE_TRAITS)
+    house_trait  = _weighted_pick(rng, _HOUSE_TRAITS, _HOUSE_TRAIT_TAGS, history_tags)
     house_saying = rng.choice(_DYNASTY_SAYINGS)
-    dark_secret  = rng.choice(_DARK_SECRETS)
+    dark_secret  = _weighted_pick(rng, _DARK_SECRETS, _DARK_SECRET_TAGS, history_tags)
 
     rivalry_text = None
     if rival_family:
         rival_fam = rival_family.replace("House ", "")
-        template     = rng.choice(_RIVALRY_CAUSES)
+        template     = _weighted_pick(rng, _RIVALRY_CAUSES, _RIVALRY_CAUSE_TAGS, history_tags)
         rivalry_text = template.format(
             rival_family=rival_fam,
             own_family=dynasty_family,
@@ -457,12 +587,455 @@ def generate_chronicle(region_id: int, world_seed: int, dynasty_family: str,
         "current_era":    current_era,
         "rivalry_text":   rivalry_text,
         "dark_secret":    dark_secret,
+        # Raw fields used by the family tree generator:
+        "_founder_first":   founder_first,
+        "_founder_epithet": founder_epithet,
+        "_founder_gender":  founder_gender,
     }
 
 
 def generate_ruler_ambition(npc_uid: str, world_seed: int) -> str:
     rng = random.Random(hash((npc_uid, world_seed, "ambition")) & 0xFFFFFFFF)
     return rng.choice(_PERSONAL_AMBITIONS)
+
+
+# ---------------------------------------------------------------------------
+# Family tree (500 years, deterministic, not saved)
+# ---------------------------------------------------------------------------
+
+_SIBLING_FATES = [
+    "married into a merchant house in a neighbouring region and was rarely seen at home thereafter",
+    "took holy orders and is mentioned in family records only at funerals",
+    "managed the family's western estates competently and without notice",
+    "died in a hunting accident at thirty-one — formally an accident",
+    "served as the house's diplomatic envoy for nearly two decades",
+    "married the rival house and the family did not discuss them again",
+    "fell into a debt scandal that the family quietly absorbed",
+    "lived in {town} all their life and was, by all accounts, content",
+    "vanished from records after thirty; rumours about where vary",
+    "served as steward to two consecutive heads and was widely trusted",
+    "drowned in the spring floods at twenty-six",
+    "was a noted patron of regional craftsmanship in their later years",
+    "made one disastrous investment and was managed carefully ever after",
+    "left for distant campaigns and returned briefly twice in forty years",
+    "took the family's seat on the regional council without ambition",
+    "married well and had the good sense to keep their opinions short",
+    "was the family's most respected face in {town}'s civic life",
+    "developed a reputation for plain speaking the head of house found useful",
+    "died young of a fever — the family record gives no further detail",
+    "was set up with a modest estate and never asked for more",
+    "spent their life in correspondence with scholars across the region",
+    "was widely loved and held no formal position by their own choice",
+    "managed the family's accounts for thirty-eight years without an error",
+    "fought a duel of consequence and was kept indoors for a year afterward",
+    "established the family's library, which is still consulted",
+    "married three times and outlived all three spouses",
+    "left a will that surprised the family and changed nothing legally",
+    "ran the household for an aging head and quietly governed for years",
+    "departed for the capital at twenty and returned only to be buried",
+    "was the head's most reliable confidant and the only one trusted with the ledger",
+]
+
+_DEATH_CAUSES = [
+    "a fever in late winter",
+    "old age, peacefully",
+    "a fall from horseback",
+    "complications from a long illness",
+    "a hunting accident",
+    "the wasting illness that took several of their generation",
+    "circumstances the family declined to specify",
+    "drowning during the spring floods",
+    "a heart attack at table",
+    "wounds taken in a border skirmish",
+    "old age, surrounded by the household",
+    "an illness contracted on a journey",
+    "complications following a routine procedure",
+    "a stroke in their sixty-third year",
+    "an accident the family chose not to investigate further",
+]
+
+
+def _extract_real_lineage(world, region_id: int) -> dict | None:
+    """Walk the real Dynasty.members chain and return the chronological
+    succession line: founder → each successive head, plus siblings and
+    spouses keyed by person_id. Returns None when no plan is available.
+    """
+    plan = getattr(world, "plan", None) if world is not None else None
+    if plan is None:
+        return None
+    kingdom = plan.kingdoms.get(region_id)
+    if kingdom is None:
+        return None
+    dyn = plan.dynasties.get(kingdom.dynasty_id)
+    if dyn is None or not dyn.members:
+        return None
+
+    members = dyn.members  # person_id -> Person
+    # The reigning succession: walk parent_ids. Founder has role="founder".
+    founder = next((p for p in members.values() if p.role == "founder"), None)
+    if founder is None:
+        founder = min(members.values(), key=lambda p: p.born_year)
+
+    # Build a parent → children index for quick walking and sibling lookup
+    children_of = {}
+    for p in members.values():
+        for par_id in p.parent_ids:
+            children_of.setdefault(par_id, []).append(p)
+
+    # Walk forward through the line: at each step pick the child of the
+    # current head who themselves became a head (role in {head}). If there's
+    # a tie, pick the eldest by born_year for stability.
+    chain  = [founder]
+    cur    = founder
+    safety = 0
+    while safety < 40:
+        safety += 1
+        candidates = [c for c in children_of.get(cur.person_id, [])
+                      if c.role in ("head", "heir")]
+        # 'heir' may flag the next ruler before they took the seat. Prefer 'head'.
+        next_heads = [c for c in candidates if c.role == "head"]
+        pick_pool = next_heads or candidates
+        if not pick_pool:
+            break
+        nxt = min(pick_pool, key=lambda p: p.born_year)
+        chain.append(nxt)
+        cur = nxt
+
+    spouse_of = {}
+    siblings_of_head = {}
+    for h in chain:
+        if h.spouse_id != -1 and h.spouse_id in members:
+            spouse_of[h.person_id] = members[h.spouse_id]
+        # Siblings = children of h's parent who aren't h and aren't a spouse role
+        if h.parent_ids:
+            par_id = h.parent_ids[0]
+            sibs = [c for c in children_of.get(par_id, [])
+                    if c.person_id != h.person_id and c.role != "spouse"]
+            siblings_of_head[h.person_id] = sibs
+
+    return {
+        "history_years": plan.history_years,
+        "chain":         chain,
+        "spouse_of":     spouse_of,
+        "siblings_of":   siblings_of_head,
+        "extinct_year":  dyn.extinct_year,
+    }
+
+
+def _gather_other_houses(world, own_region_id: int, world_seed: int) -> list:
+    """Return [(family_name, region_id), ...] for every other ruling house.
+
+    Falls back to a synthetic pool if no plan is available so spouses still
+    get a family name in standalone tests.
+    """
+    from npc_identity import _FAMILY_NAMES
+    out = []
+    plan = getattr(world, "plan", None) if world is not None else None
+    if plan is not None:
+        for rid in plan.kingdoms.keys():
+            if rid == own_region_id:
+                continue
+            fam = _dynasty_name_for_region(rid, world_seed).replace("House ", "")
+            out.append((fam, rid))
+    if not out:
+        # Fallback: synthesize a handful of houses so the tree still has
+        # cross-house marriages (used by isolated tests / pre-plan worlds).
+        rng = random.Random(hash((own_region_id, world_seed, "fallback")) & 0xFFFFFFFF)
+        pool = [f for f in _FAMILY_NAMES if f != ""]
+        rng.shuffle(pool)
+        out = [(f, -1) for f in pool[:8]]
+    return out
+
+
+def _kingdom_relations_for_region(world, region_id: int) -> dict:
+    """Return {other_rid: 'ally'|'rival'|'neutral'} for this kingdom, if available."""
+    plan = getattr(world, "plan", None) if world is not None else None
+    if plan is None:
+        return {}
+    k = plan.kingdoms.get(region_id)
+    if k is None:
+        return {}
+    return dict(getattr(k, "relations", {}))
+
+
+def generate_family_tree(region_id: int, world_seed: int, chronicle: dict,
+                          dynasty_family: str, town_names: list | None = None,
+                          rival_family: str | None = None,
+                          rival_region_id: int | None = None,
+                          world=None) -> dict:
+    """Build a 500-year deterministic family tree for the dynasty.
+
+    Spouses are drawn from other ruling houses across the world's kingdoms,
+    so each generation shows real cross-house marriages — sometimes with the
+    rival house (an attempt at peace), sometimes with allies, sometimes with
+    distant neutrals. Years are negative integers counting back from the
+    present (year 0 = current head's lifetime). Nothing is saved.
+    """
+    from npc_identity import _FIRST_NAMES_M, _FIRST_NAMES_F
+
+    rng  = random.Random(hash((region_id, world_seed, "tree")) & 0xFFFFFFFF)
+    town = town_names[0] if town_names else "the region"
+
+    other_houses = _gather_other_houses(world, region_id, world_seed)
+    relations    = _kingdom_relations_for_region(world, region_id)
+    rival_clean  = rival_family.replace("House ", "") if rival_family else None
+
+    # Pull the real simulated head chain — these become the actual rulers
+    # in the tree (real names, epithets, birth/death years), so the chronicle
+    # events and the family tree reference the same people.
+    real_lin = _extract_real_lineage(world, region_id)
+
+    def _pick_spouse_house():
+        """Return (family_name, kind) where kind ∈ {'rival','ally','foreign','common'}."""
+        r = rng.random()
+        if rival_clean and r < 0.18:
+            return (rival_clean, "rival")
+        if other_houses and r < 0.88:
+            fam, rid = rng.choice(other_houses)
+            kind = "foreign"
+            if rid in relations:
+                rel = relations[rid]
+                if rel == "ally":
+                    kind = "ally"
+                elif rel == "rival":
+                    kind = "rival"
+            return (fam, kind)
+        return (None, "common")
+
+    GEN_COUNT      = 20
+    YEARS_SPAN     = 500
+    YEARS_PER_GEN  = YEARS_SPAN // GEN_COUNT  # 25
+    BASE_YEAR      = -YEARS_SPAN              # founder reign starts here
+
+    people  = []
+    next_id = [0]
+
+    def _new(**fields):
+        p = {
+            "id":           next_id[0],
+            "gen":          0,
+            "parent_id":    None,
+            "spouse_id":    None,
+            "gender":       "m",
+            "first":        "?",
+            "epithet":      None,
+            "born":         None,
+            "died":         None,
+            "ruled_from":   None,
+            "ruled_to":     None,
+            "is_ruler":     False,
+            "is_main_line": False,
+            "deed":         None,
+            "death_cause":  None,
+            "house":        None,   # surname; None = born to this dynasty (uses dynasty_family)
+            "match_kind":   None,   # for married-in spouses: rival/ally/foreign/common
+        }
+        p.update(fields)
+        next_id[0] += 1
+        people.append(p)
+        return p
+
+    def _name_for(gender):
+        pool = _FIRST_NAMES_M if gender == "m" else _FIRST_NAMES_F
+        return rng.choice(pool)
+
+    # Convert a simulated year (0 = founding, history_years = present) into
+    # the tree's year coord (0 = present, negative = past). When no real
+    # lineage is available, the procedural BASE_YEAR scheme is used instead.
+    def _sim_to_tree(sim_year):
+        if real_lin is None or sim_year < 0:
+            return None
+        return sim_year - real_lin["history_years"]
+
+    real_chain = real_lin["chain"] if real_lin else []
+    real_chain = real_chain[:GEN_COUNT]
+
+    def _real_head(gen_idx):
+        return real_chain[gen_idx] if gen_idx < len(real_chain) else None
+
+    def _apply_real_to_ruler(person_dict, real_person):
+        """Overwrite procedural fields with the real Person's identity + dates."""
+        if real_person is None:
+            return
+        person_dict["first"] = real_person.name or person_dict["first"]
+        if real_person.epithet:
+            person_dict["epithet"] = real_person.epithet
+        b = _sim_to_tree(real_person.born_year)
+        d = _sim_to_tree(real_person.died_year) if real_person.died_year != -1 else None
+        if b is not None: person_dict["born"] = b
+        person_dict["died"] = d  # None means still living
+        # Reign window: from coming-of-age to death (or present)
+        if person_dict.get("born") is not None:
+            person_dict["ruled_from"] = max(person_dict["born"] + 18,
+                                             person_dict.get("ruled_from") or person_dict["born"] + 18)
+        person_dict["ruled_to"] = d
+
+    # ---- Founder + spouse ----
+    f_first   = chronicle.get("_founder_first") or _name_for("m")
+    f_gender  = chronicle.get("_founder_gender", "m")
+    f_epithet = chronicle.get("_founder_epithet")
+
+    f_born = BASE_YEAR - rng.randint(28, 38)
+    f_died = BASE_YEAR + rng.randint(20, 35)
+    founder = _new(
+        gen=0, gender=f_gender, first=f_first, epithet=f_epithet,
+        born=f_born, died=f_died,
+        ruled_from=BASE_YEAR, ruled_to=f_died,
+        is_ruler=True, is_main_line=True,
+        deed=(chronicle.get("founder_act", "").strip().capitalize() + ". "
+              + chronicle.get("founder_legacy", "").strip().capitalize() + "."),
+        death_cause=rng.choice(_DEATH_CAUSES),
+    )
+    real_founder = _real_head(0)
+    _apply_real_to_ruler(founder, real_founder)
+
+    sp_g  = "f" if f_gender == "m" else "m"
+    sp_house, sp_kind = _pick_spouse_house()
+    sp_first = _name_for(sp_g)
+    sp_born  = (founder["born"] or f_born) + rng.randint(-3, 5)
+    sp_died  = (founder["died"] + rng.randint(-15, 20)) if founder["died"] is not None else None
+    # Use the real spouse's first name + dates if the sim recorded one.
+    if real_founder is not None and real_lin:
+        rsp = real_lin["spouse_of"].get(real_founder.person_id)
+        if rsp is not None:
+            sp_first = rsp.name or sp_first
+            b = _sim_to_tree(rsp.born_year)
+            d = _sim_to_tree(rsp.died_year) if rsp.died_year != -1 else None
+            if b is not None: sp_born = b
+            sp_died = d
+    f_sp  = _new(
+        gen=0, gender=sp_g, first=sp_first,
+        born=sp_born, died=sp_died,
+        spouse_id=founder["id"],
+        house=sp_house,
+        match_kind=sp_kind,
+    )
+    founder["spouse_id"] = f_sp["id"]
+    if sp_died is not None:
+        f_sp["death_cause"] = rng.choice(_DEATH_CAUSES)
+
+    prev_ruler = founder
+
+    # ---- Subsequent generations ----
+    # If real heads end before GEN_COUNT, keep generating procedural ones so
+    # the tree always reaches the present. If the last real head is still
+    # alive, the chain *is* the present — stop there.
+    real_ends_alive = bool(real_chain and real_chain[-1].died_year == -1)
+    if real_ends_alive:
+        GEN_LIMIT = len(real_chain)
+    else:
+        GEN_LIMIT = max(GEN_COUNT, len(real_chain))
+    last_gen = GEN_LIMIT - 1
+    for gen in range(1, GEN_LIMIT):
+        rhead = _real_head(gen)
+        n_children = rng.randint(2, 4)
+        children   = []
+        target_b   = prev_ruler["born"] + YEARS_PER_GEN
+        for ci in range(n_children):
+            c_g = "m" if rng.random() < 0.55 else "f"
+            children.append(_new(
+                gen=gen, parent_id=prev_ruler["id"], gender=c_g,
+                first=_name_for(c_g),
+                born=target_b + rng.randint(-4, 4) + ci * 2,
+            ))
+
+        # Choose heir — eldest by default, occasionally a younger sibling
+        heir_idx = 0
+        if n_children >= 2 and rng.random() < 0.18:
+            heir_idx = rng.randint(1, n_children - 1)
+        heir = children[heir_idx]
+        heir["is_ruler"]     = True
+        heir["is_main_line"] = True
+
+        reign_start = max(prev_ruler["ruled_to"] + rng.randint(-2, 2),
+                          heir["born"] + 18)
+
+        is_current = (gen == last_gen)
+        if is_current:
+            heir["died"]       = None
+            heir["ruled_to"]   = None
+            heir["ruled_from"] = reign_start
+        else:
+            age_at_death = rng.randint(50, 82)
+            heir["died"]       = heir["born"] + age_at_death
+            heir["ruled_from"] = reign_start
+            heir["ruled_to"]   = heir["died"]
+            heir["death_cause"] = rng.choice(_DEATH_CAUSES)
+
+        if rng.random() < 0.45:
+            heir["epithet"] = rng.choice(_FOUNDER_EPITHETS)
+
+        # Splice real ruler identity + dates onto this heir, if available
+        _apply_real_to_ruler(heir, rhead)
+
+        # Weave in chronicle prose at the right generations
+        if gen == 1:
+            heir["deed"] = chronicle.get("gen2", "").strip().capitalize() + "."
+        elif gen == 2:
+            heir["deed"] = chronicle.get("gen3", "").strip().capitalize() + "."
+        elif is_current:
+            parts = []
+            if chronicle.get("current_era"): parts.append(chronicle["current_era"].strip())
+            if chronicle.get("house_saying"): parts.append(chronicle["house_saying"].strip())
+            heir["deed"] = " ".join(parts) if parts else rng.choice(_GEN3_ACTS)
+        else:
+            pool = _GEN2_ACTS + _GEN3_ACTS
+            heir["deed"] = rng.choice(pool).capitalize() + "."
+
+        # Heir's spouse — drawn from another house when possible. If the sim
+        # recorded a real spouse for this head, use their name and dates.
+        h_sp_g     = "f" if heir["gender"] == "m" else "m"
+        h_sp_first = _name_for(h_sp_g)
+        h_sp_born  = heir["born"] + rng.randint(-3, 5)
+        h_sp_died  = None if (is_current or heir["died"] is None) \
+                          else (heir["died"] + rng.randint(-15, 20))
+        if rhead is not None and real_lin:
+            rsp = real_lin["spouse_of"].get(rhead.person_id)
+            if rsp is not None:
+                h_sp_first = rsp.name or h_sp_first
+                b = _sim_to_tree(rsp.born_year)
+                d = _sim_to_tree(rsp.died_year) if rsp.died_year != -1 else None
+                if b is not None: h_sp_born = b
+                h_sp_died = d
+        h_sp_house, h_sp_kind = _pick_spouse_house()
+        h_sp = _new(
+            gen=gen, gender=h_sp_g, first=h_sp_first,
+            born=h_sp_born, died=h_sp_died,
+            spouse_id=heir["id"],
+            house=h_sp_house,
+            match_kind=h_sp_kind,
+        )
+        if h_sp_died is not None:
+            h_sp["death_cause"] = rng.choice(_DEATH_CAUSES)
+        heir["spouse_id"] = h_sp["id"]
+
+        # Sibling fates
+        for sib in children:
+            if sib is heir:
+                continue
+            sib_age = rng.randint(20, 80)
+            still_alive = is_current and rng.random() < 0.4
+            if not still_alive:
+                sib["died"]        = sib["born"] + sib_age
+                sib["death_cause"] = rng.choice(_DEATH_CAUSES)
+            sib["deed"] = rng.choice(_SIBLING_FATES).format(town=town)
+            # If the fate involves marriage, attach a real house — siblings
+            # who marry out adopt that house's name.
+            if "married" in sib["deed"]:
+                sib_h, sib_k = _pick_spouse_house()
+                if sib_h:
+                    sib["house"]      = sib_h
+                    sib["match_kind"] = sib_k
+                    sib["deed"]       = f"{sib['deed']} (House {sib_h})."
+
+        prev_ruler = heir
+
+    return {
+        "people":          people,
+        "founder_id":      founder["id"],
+        "current_head_id": prev_ruler["id"],
+        "house_name":      f"House {dynasty_family}",
+    }
 
 
 # ---------------------------------------------------------------------------

@@ -21,7 +21,7 @@ def _wf_to_dict(wf):
         "fragrance": wf.fragrance, "vibrancy": wf.vibrancy,
         "specials": wf.specials, "biodome_found": wf.biodome_found, "seed": wf.seed,
     }
-SAVE_VERSION = 4
+SAVE_VERSION = 5
 
 
 class SaveManager:
@@ -39,7 +39,7 @@ class SaveManager:
                             "fish", "coffee_beans", "wine_grapes", "spirits",
                             "tea_leaves", "textiles", "cheese_wheels", "jewelry", "sculptures", "custom_tapestries", "pottery_pieces", "salt_crystals",
                             "research", "automations",
-                            "towns", "regions", "outposts", "player_cities",
+                            "towns", "regions", "outposts", "player_cities", "world_plan",
                             "farm_bots", "backhoes", "elevator_cars", "minecarts", "boats", "entities", "dropped_items", "chests", "banners"):
                     # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
@@ -67,6 +67,7 @@ class SaveManager:
         with sqlite3.connect(self.db_path) as con:
             self._create_tables(con)
             self._save_meta(con, world.seed)
+            self._save_world_plan(con, world)
             self._save_dirty_chunks(con, world)
             self._save_world_meta(con, world, player)
             self._save_towns(con)
@@ -118,6 +119,7 @@ class SaveManager:
             self._create_tables(con)
             self._maybe_migrate(con)
             seed = con.execute("SELECT seed FROM save_meta LIMIT 1").fetchone()[0]
+            world_plan = self._load_world_plan(con)
             world_meta  = self._load_world_meta(con)
             bird_obs    = self._load_bird_observations(con)
             insect_obs  = self._load_insect_observations(con)
@@ -136,6 +138,7 @@ class SaveManager:
             banner_data = self._load_banners(con)
         return {
             "seed": seed,
+            "world_plan": world_plan,
             "water_level":     world_meta["water_level"],
             "soil_moisture":   world_meta["soil_moisture"],
             "soil_fertility":  world_meta["soil_fertility"],
@@ -461,6 +464,10 @@ class SaveManager:
         );
         CREATE TABLE IF NOT EXISTS banners (
             x INTEGER, y INTEGER, coat_of_arms_json TEXT
+        );
+        CREATE TABLE IF NOT EXISTS world_plan (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            blob BLOB NOT NULL
         );
         CREATE TABLE IF NOT EXISTS coffee_beans (
             uid                TEXT PRIMARY KEY,
@@ -1102,6 +1109,26 @@ class SaveManager:
         con.execute("DELETE FROM save_meta")
         con.execute("INSERT INTO save_meta VALUES (?, ?, ?)",
                     (seed, SAVE_VERSION, datetime.now().isoformat()))
+
+    def _save_world_plan(self, con, world):
+        plan = getattr(world, "plan", None)
+        if plan is None:
+            return
+        con.execute("INSERT OR REPLACE INTO world_plan (id, blob) VALUES (1, ?)",
+                    (plan.to_blob(),))
+
+    def _load_world_plan(self, con):
+        try:
+            row = con.execute("SELECT blob FROM world_plan WHERE id = 1").fetchone()
+        except Exception:
+            return None
+        if row is None:
+            return None
+        from worldgen.plan import WorldPlan
+        try:
+            return WorldPlan.from_blob(row[0])
+        except Exception:
+            return None
 
     def _save_dirty_chunks(self, con, world):
         for cx in list(world._dirty_chunks):

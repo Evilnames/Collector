@@ -63,7 +63,7 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     CUSTOM_TAPESTRY_ROOT, CUSTOM_TAPESTRY_BODY,
                     POTTERY_DISPLAY_BLOCK,
                     SALT_DEPOSIT,
-                    TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK, LANDMARK_FLAG_BLOCK,
+                    TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK, LANDMARK_FLAG_BLOCK, RUIN_MARKER_BLOCK,
                     CITY_BLOCK, BANNER_BLOCK, FISHING_SPOT_BLOCK, TEA_HOUSE_BLOCK,
                     SEASHELL_BLOCK)
 import soil as _soil
@@ -140,7 +140,7 @@ _OPEN_TO_CLOSED = {v: k for k, v in _DOOR_PAIRS.items()}
 class Player:
     def __init__(self, world):
         self.world = world
-        sx = 0
+        sx = int(getattr(world, "spawn_x", 0))
         sy = world.surface_y_at(sx)
         self.x = float(sx * BLOCK_SIZE + (BLOCK_SIZE - PLAYER_W) // 2)
         self.y = float((sy - 2) * BLOCK_SIZE)
@@ -2762,6 +2762,16 @@ class Player:
                 if dx * self.facing < 0:
                     continue
                 if self.world.get_block(cx + dx, cy + dy) == target_bid:
+                    return (cx + dx, cy + dy)
+        return None
+
+    def get_nearby_ruin_marker(self):
+        """Return (bx, by) of a RUIN_MARKER_BLOCK within 3 blocks of the player, or None."""
+        cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+        cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+        for dy in range(-3, 4):
+            for dx in range(-3, 4):
+                if self.world.get_block(cx + dx, cy + dy) == RUIN_MARKER_BLOCK:
                     return (cx + dx, cy + dy)
         return None
 

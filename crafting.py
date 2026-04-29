@@ -588,6 +588,46 @@ SMITHING_FORGE_RECIPES = [
     {"name": "Rapier Grip",   "ingredients": {"lumber": 1},              "output_id": "rapier_grip",   "output_count": 1},
     {"name": "Trident Shaft", "ingredients": {"lumber": 3},              "output_id": "trident_shaft", "output_count": 1},
     {"name": "Scythe Snath",  "ingredients": {"lumber": 4},              "output_id": "scythe_snath",  "output_count": 1},
+    # Armor — leather
+    {"name": "Leather Helmet",     "ingredients": {"deer_hide": 2},       "output_id": "armor_leather_helmet",     "output_count": 1},
+    {"name": "Leather Chestplate", "ingredients": {"deer_hide": 4},       "output_id": "armor_leather_chestplate", "output_count": 1},
+    {"name": "Leather Leggings",   "ingredients": {"deer_hide": 3},       "output_id": "armor_leather_leggings",   "output_count": 1},
+    {"name": "Leather Boots",      "ingredients": {"deer_hide": 2},       "output_id": "armor_leather_boots",      "output_count": 1},
+    # Armor — bone
+    {"name": "Bone Helmet",        "ingredients": {"bone": 5},            "output_id": "armor_bone_helmet",        "output_count": 1},
+    {"name": "Bone Chestplate",    "ingredients": {"bone": 8},            "output_id": "armor_bone_chestplate",    "output_count": 1},
+    {"name": "Bone Leggings",      "ingredients": {"bone": 6},            "output_id": "armor_bone_leggings",      "output_count": 1},
+    {"name": "Bone Boots",         "ingredients": {"bone": 4},            "output_id": "armor_bone_boots",         "output_count": 1},
+    # Armor — iron
+    {"name": "Iron Helmet",        "ingredients": {"iron_chunk": 8,  "coal": 2}, "output_id": "armor_iron_helmet",        "output_count": 1},
+    {"name": "Iron Chestplate",    "ingredients": {"iron_chunk": 14, "coal": 3}, "output_id": "armor_iron_chestplate",    "output_count": 1},
+    {"name": "Iron Leggings",      "ingredients": {"iron_chunk": 11, "coal": 3}, "output_id": "armor_iron_leggings",      "output_count": 1},
+    {"name": "Iron Boots",         "ingredients": {"iron_chunk": 7,  "coal": 2}, "output_id": "armor_iron_boots",         "output_count": 1},
+    # Armor — steel
+    {"name": "Steel Helmet",       "ingredients": {"tempered_iron": 3, "coal": 2}, "output_id": "armor_steel_helmet",       "output_count": 1},
+    {"name": "Steel Chestplate",   "ingredients": {"tempered_iron": 5, "coal": 3}, "output_id": "armor_steel_chestplate",   "output_count": 1},
+    {"name": "Steel Leggings",     "ingredients": {"tempered_iron": 4, "coal": 2}, "output_id": "armor_steel_leggings",     "output_count": 1},
+    {"name": "Steel Boots",        "ingredients": {"tempered_iron": 3, "coal": 2}, "output_id": "armor_steel_boots",        "output_count": 1},
+    # Armor — gold
+    {"name": "Gold Helmet",        "ingredients": {"gold_nugget": 4, "coal": 2}, "output_id": "armor_gold_helmet",        "output_count": 1},
+    {"name": "Gold Chestplate",    "ingredients": {"gold_nugget": 7, "coal": 3}, "output_id": "armor_gold_chestplate",    "output_count": 1},
+    {"name": "Gold Leggings",      "ingredients": {"gold_nugget": 5, "coal": 3}, "output_id": "armor_gold_leggings",      "output_count": 1},
+    {"name": "Gold Boots",         "ingredients": {"gold_nugget": 3, "coal": 2}, "output_id": "armor_gold_boots",         "output_count": 1},
+    # Armor — obsidian
+    {"name": "Obsidian Helmet",     "ingredients": {"obsidian_slab": 3, "coal": 3}, "output_id": "armor_obsidian_helmet",     "output_count": 1},
+    {"name": "Obsidian Chestplate", "ingredients": {"obsidian_slab": 5, "coal": 4}, "output_id": "armor_obsidian_chestplate", "output_count": 1},
+    {"name": "Obsidian Leggings",   "ingredients": {"obsidian_slab": 4, "coal": 4}, "output_id": "armor_obsidian_leggings",   "output_count": 1},
+    {"name": "Obsidian Boots",      "ingredients": {"obsidian_slab": 2, "coal": 3}, "output_id": "armor_obsidian_boots",      "output_count": 1},
+    # Armor — crystal
+    {"name": "Crystal Helmet",     "ingredients": {"cut_crystal": 2, "gold_nugget": 1}, "output_id": "armor_crystal_helmet",     "output_count": 1},
+    {"name": "Crystal Chestplate", "ingredients": {"cut_crystal": 4, "gold_nugget": 2}, "output_id": "armor_crystal_chestplate", "output_count": 1},
+    {"name": "Crystal Leggings",   "ingredients": {"cut_crystal": 3, "gold_nugget": 2}, "output_id": "armor_crystal_leggings",   "output_count": 1},
+    {"name": "Crystal Boots",      "ingredients": {"cut_crystal": 2, "gold_nugget": 1}, "output_id": "armor_crystal_boots",      "output_count": 1},
+    # Armor — void
+    {"name": "Void Helmet",        "ingredients": {"void_essence": 2, "obsidian_slab": 2}, "output_id": "armor_void_helmet",        "output_count": 1},
+    {"name": "Void Chestplate",    "ingredients": {"void_essence": 3, "obsidian_slab": 3}, "output_id": "armor_void_chestplate",    "output_count": 1},
+    {"name": "Void Leggings",      "ingredients": {"void_essence": 2, "obsidian_slab": 3}, "output_id": "armor_void_leggings",      "output_count": 1},
+    {"name": "Void Boots",         "ingredients": {"void_essence": 1, "obsidian_slab": 2}, "output_id": "armor_void_boots",         "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -987,7 +1027,6 @@ ARTISAN_RECIPES = [
     {"name": "Glow Vine",     "ingredients": {"lumber": 1, "crystal_shard": 1},           "output_id": "glow_vine",     "output_count": 4},
     {"name": "Ice Shard", "ingredients": {"stone_chip": 2}, "output_id": "ice_shard", "output_count": 2},
     {"name": "Frozen Bog", "ingredients": {"stone_chip": 2}, "output_id": "frozen_bog", "output_count": 2},
-    {"name": "Weapon Assembler", "ingredients": {"lumber": 4, "iron_chunk": 2}, "output_id": "weapon_assembler", "output_count": 1},
 ]
 
 WEAPON_ASSEMBLER_RECIPES = []  # handles moved to SMITHING_FORGE_RECIPES; assembly bench uses its own UI
@@ -1302,6 +1341,16 @@ RECIPES = [
             ["lumber",  None,     "lumber" ],
         ],
         "output_id":    "weapon_rack_item",
+        "output_count": 1,
+    },
+    {
+        "name": "Weapon Assembler",
+        "pattern": [
+            ["lumber",     "iron_chunk", "lumber"     ],
+            [None,         "lumber",     None         ],
+            ["lumber",     "iron_chunk", None         ],
+        ],
+        "output_id":    "weapon_assembler",
         "output_count": 1,
     },
     # --- Tempered tools ---

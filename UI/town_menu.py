@@ -92,6 +92,15 @@ class TownMenuMixin:
             True, _DIM_C)
         self.screen.blit(rg_s, (px + 16, py + 40))
 
+        # Annexed-from indicator — only present when the town's current
+        # kingdom differs from its founding one.
+        chronicle_pre = getattr(town, "chronicle", None) or {}
+        orig_k = chronicle_pre.get("original_kingdom_name")
+        if orig_k:
+            ann_s = self.small.render(
+                f"Annexed from {orig_k}", True, (210, 165, 100))
+            self.screen.blit(ann_s, (px + _PW - ann_s.get_width() - 14, py + 40))
+
         # Reputation
         rep_label = self.small.render(f"Reputation: {town.reputation}", True, _LABEL_C)
         self.screen.blit(rep_label, (px + 16, py + 60))
@@ -360,9 +369,20 @@ class TownMenuMixin:
 
         # THE FOUNDING
         _section("THE FOUNDING")
+        # Plan-derived founding summary if available, else seeded flavor.
+        founding_summary = chronicle.get("founding_summary")
+        if founding_summary:
+            _body(founding_summary, col=(200, 190, 165), indent=20)
         _body(f"It began as {chronicle['founding_type']}.", indent=20)
         _body(chronicle["founding_act"].capitalize() + ".", col=(180, 175, 158), indent=20)
         _body(chronicle["founding_legacy"].capitalize() + ".", col=(155, 148, 130), indent=20)
+
+        # CHANGE OF BANNER (annexation) — only shown if the town's current
+        # kingdom differs from its founding one.
+        annex_summary = chronicle.get("annexation_summary")
+        if annex_summary:
+            _section("A CHANGE OF BANNER")
+            _body(annex_summary, col=(210, 165, 110), indent=20)
 
         # A NOTABLE FIGURE
         _section("A NOTABLE FIGURE")
@@ -376,6 +396,17 @@ class TownMenuMixin:
         _section("A TURNING POINT")
         _body(chronicle["notable_event"].capitalize() + ".", indent=20)
 
+        # FIVE CENTURIES OF HISTORY (real sim chronicle for this settlement)
+        events = chronicle.get("historical_events") or []
+        if events:
+            _section("FIVE CENTURIES OF HISTORY")
+            tier_arc = chronicle.get("tier_arc")
+            if tier_arc:
+                _body(tier_arc, col=(165, 175, 160), indent=20)
+            # Show up to 12 most recent, oldest first
+            for line in events[-12:]:
+                _body(line, col=(180, 175, 165), indent=20)
+
         # TODAY
         _section("TODAY")
         _body(chronicle["current_era"].capitalize() + ".", indent=20)
@@ -387,6 +418,99 @@ class TownMenuMixin:
         # Close hint
         hint = self.small.render("[H] or [ESC] to close", True, (90, 80, 55))
         self.screen.blit(hint, (px + PW - hint.get_width() - 14, py + PH - 18))
+
+    def _draw_ruin_plaque(self):
+        info = getattr(self, "ruin_plaque_info", None)
+        if not info:
+            return
+
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 200))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 640, 520
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+
+        pygame.draw.rect(self.screen, (18, 16, 12), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (140, 125,  90), (px, py, PW, PH), 2)
+
+        cy = [py + 14]
+
+        def _section(label):
+            pygame.draw.line(self.screen, (90, 75, 40),
+                             (px + 10, cy[0]), (px + PW - 10, cy[0]))
+            cy[0] += 8
+            self.screen.blit(self.small.render(label, True, (200, 175, 100)),
+                             (px + 14, cy[0]))
+            cy[0] += 20
+
+        def _body(text, col=(195, 185, 165), indent=14):
+            max_w = PW - indent - 28
+            words = text.split()
+            line, lines = [], []
+            for w in words:
+                test = " ".join(line + [w])
+                if self.small.size(test)[0] > max_w:
+                    if line:
+                        lines.append(" ".join(line))
+                    line = [w]
+                else:
+                    line.append(w)
+            if line:
+                lines.append(" ".join(line))
+            for ln in lines:
+                self.screen.blit(self.small.render(ln, True, col),
+                                 (px + indent, cy[0]))
+                cy[0] += 15
+            cy[0] += 4
+
+        # Title
+        title_s = self.font.render(f"HERE LIES {info['name'].upper()}",
+                                    True, (235, 215, 145))
+        self.screen.blit(title_s, (px + 14, cy[0]))
+        cy[0] += 28
+
+        tier_s = self.small.render(
+            f"Once a {info['tier']} of {info['original_kingdom']}",
+            True, (150, 140, 110))
+        self.screen.blit(tier_s, (px + 14, cy[0]))
+        cy[0] += 22
+
+        _section("THE FOUNDING")
+        founder_dyn = info.get("founder_dynasty")
+        if founder_dyn:
+            _body(f"Raised in year {info['founded_year']} under {founder_dyn}.",
+                  indent=20)
+        else:
+            _body(f"Raised in year {info['founded_year']}.", indent=20)
+
+        _section("THE FALL")
+        ruined_year = info.get("ruined_year", -1)
+        years_ago = info["history_years"] - ruined_year if ruined_year > 0 else None
+        if ruined_year > 0:
+            ago_str = f" — {years_ago} years ago" if years_ago is not None else ""
+            _body(f"Ruined in year {ruined_year}{ago_str}. {info['cause_phrase']}",
+                  indent=20)
+        else:
+            _body(info["cause_phrase"], indent=20)
+
+        cur = info.get("current_kingdom")
+        if cur and cur != info["original_kingdom"]:
+            _body(f"The land now lies under {cur}.",
+                  col=(180, 170, 150), indent=20)
+        elif cur is None:
+            _body("The land has lain masterless ever since.",
+                  col=(165, 155, 130), indent=20)
+
+        events = info.get("events") or []
+        if events:
+            _section("WHAT THE STONES REMEMBER")
+            for line in events:
+                _body(line, col=(180, 175, 160), indent=20)
+
+        hint = self.small.render("[E] or [ESC] to leave", True, (90, 80, 55))
+        self.screen.blit(hint, (px + PW - hint.get_width() - 14, py + PH - 22))
 
     def handle_town_menu_click(self, pos, player):
         if self.town_chronicle_open:

@@ -3772,6 +3772,16 @@ class PanelsMixin:
                                 back_rect.y + (BTN_H - b_s.get_height()) // 2))
         self._chronicle_back_btn = back_rect
 
+        # ---- Family Tree button (left of Back) ----
+        TREE_W = 130
+        tree_rect = pygame.Rect(back_rect.x - TREE_W - 8, back_rect.y, TREE_W, BTN_H)
+        pygame.draw.rect(self.screen, (35, 50, 35), tree_rect)
+        pygame.draw.rect(self.screen, (130, 180, 130), tree_rect, 1)
+        t_s = self.small.render("View Family Tree", True, (180, 220, 180))
+        self.screen.blit(t_s, (tree_rect.x + (TREE_W - t_s.get_width()) // 2,
+                                tree_rect.y + (BTN_H - t_s.get_height()) // 2))
+        self._chronicle_tree_btn = tree_rect
+
         SB_W = 8
         SCROLL_AREA_H = (py + PH - BTN_H - 20) - content_top
         CONTENT_W = PW - SB_W - 6
@@ -3813,6 +3823,35 @@ class PanelsMixin:
         if gen3:
             _section("THE THIRD GENERATION")
             _body(gen3, indent=20)
+
+        # ---- FIVE CENTURIES OF HISTORY (real sim chronicle) ----
+        kingdom_summary = chronicle.get("kingdom_summary", "")
+        kingdom_events = chronicle.get("kingdom_events", []) or []
+        dynasty_events = chronicle.get("dynasty_events", []) or []
+        dynasty_arc = chronicle.get("dynasty_arc", "")
+        if kingdom_summary or kingdom_events or dynasty_events:
+            _section("FIVE CENTURIES OF HISTORY")
+            if kingdom_summary:
+                _body(kingdom_summary, col=(200, 190, 165), indent=20)
+            if dynasty_arc:
+                _body(dynasty_arc, col=(165, 175, 160), indent=20)
+            # Show interleaved kingdom + dynasty events, ordered by year, last 14
+            combined = []
+            for line in kingdom_events:
+                combined.append(("k", line))
+            for line in dynasty_events:
+                combined.append(("d", line))
+            # naive sort by leading "Yr N" prefix
+            def _yr(t):
+                try:
+                    return int(t[1].split()[1])
+                except Exception:
+                    return 0
+            combined.sort(key=_yr)
+            shown = combined[-14:]
+            for tag, line in shown:
+                col = (180, 175, 165) if tag == "k" else (170, 180, 195)
+                _body(line, col=col, indent=20)
 
         # ---- TODAY ----
         _section("TODAY")
@@ -4156,6 +4195,11 @@ class PanelsMixin:
             player.gift_panel_open = False
             return
 
+        # ---- Dynasty family tree panel ----
+        if getattr(player, "dynasty_tree_open", False):
+            self.handle_dynasty_tree_click(pos, player)
+            return
+
         # ---- Dynasty chronicle panel ----
         if getattr(player, "dynasty_panel_open", False):
             import npc_dynasty as _dyn
@@ -4193,6 +4237,11 @@ class PanelsMixin:
                         f"Dynasty Quest complete! {dynasty_name} grants you {quest_data['gold']} gold.",
                         "epic",
                     ))
+                return
+            tree_btn = getattr(self, "_chronicle_tree_btn", None)
+            if tree_btn and tree_btn.collidepoint(pos):
+                player.dynasty_tree_open = True
+                self.open_dynasty_tree(player.inspecting_npc)
                 return
             back_btn = getattr(self, "_chronicle_back_btn", None)
             if back_btn is None or back_btn.collidepoint(pos):
@@ -4235,6 +4284,7 @@ class PanelsMixin:
             player.gift_panel_open = False
             player.fulfill_request_open = False
             player.dynasty_panel_open = False
+            player.dynasty_tree_open = False
             return
 
         sketch_btn = getattr(self, "_inspect_sketch_btn", None)

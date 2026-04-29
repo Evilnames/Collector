@@ -1070,17 +1070,102 @@ def _scan_bg_for_flags(world) -> list:
     return sorted(bxs)
 
 
-def _stamp_city_chronicles(world_seed: int) -> None:
+def _stamp_city_chronicles(world_seed: int, world=None) -> None:
     import city_history as _ch
     for town in TOWNS.values():
         if town.chronicle is None:
             town.chronicle = _ch.generate_city_chronicle(
                 town.town_id, town.name, town.biome, world_seed
             )
+        # Pipe in real sim events for this settlement (overrides flavor text
+        # for current_era + adds a historical_events list of chronicle lines).
+        if world is not None and getattr(world, "plan", None) is not None:
+            sid = getattr(town, "plan_settlement_id", None)
+            if sid is not None:
+                _inject_plan_chronicle(town, world, sid)
+
+
+def _inject_plan_chronicle(town, world, settlement_id: int) -> None:
+    plan = world.plan
+    settlement = plan.settlements.get(settlement_id)
+    if settlement is None:
+        return
+    events = plan.chronicle_for_settlement(settlement_id)
+    # Render a list of "Year N — text" strings, ordered chronologically.
+    history_lines = []
+    for ev in events:
+        history_lines.append(f"Yr {ev.year} — {ev.text}")
+    town.chronicle["historical_events"] = history_lines
+    # Founding line based on real founded_year + kingdom. Also expose
+    # whether this town was founded under a different kingdom — i.e. annexed
+    # — so the UI can surface that history.
+    kingdom      = plan.kingdoms.get(settlement.kingdom_id)
+    orig_kingdom = plan.kingdoms.get(settlement.original_kingdom_id)
+    annexed      = (kingdom is not None and orig_kingdom is not None
+                    and kingdom.kingdom_id != orig_kingdom.kingdom_id)
+
+    if kingdom is not None:
+        founded = settlement.founded_year
+        if annexed:
+            town.chronicle["founding_summary"] = (
+                f"{town.name} was raised in year {founded} under {orig_kingdom.name}."
+            )
+        elif founded == 0:
+            town.chronicle["founding_summary"] = (
+                f"{town.name} stood here when {kingdom.name} was first raised, "
+                f"under the founding house of its dynasty."
+            )
+        else:
+            town.chronicle["founding_summary"] = (
+                f"{town.name} was founded in year {founded} of {kingdom.name}."
+            )
+
+    # Annexation line — pull the actual annex event year if available.
+    if annexed:
+        annex_evt = next((e for e in events if e.kind == "annex"), None)
+        if annex_evt is not None:
+            town.chronicle["annexation_summary"] = (
+                f"Banner changed in year {annex_evt.year}: "
+                f"{kingdom.name} took the town from {orig_kingdom.name}."
+            )
+        else:
+            town.chronicle["annexation_summary"] = (
+                f"The town now flies the banner of {kingdom.name}, "
+                f"having once belonged to {orig_kingdom.name}."
+            )
+        town.chronicle["original_kingdom_name"] = orig_kingdom.name
+        town.chronicle["current_kingdom_name"]  = kingdom.name
+    # Current era: derived from the most recent significant event.
+    significant = [e for e in events
+                   if e.kind in ("sack", "annex", "merge", "shrink",
+                                 "kingdom_collapse", "earthquake",
+                                 "plague", "famine", "found_settlement")]
+    if significant:
+        latest = significant[-1]
+        town.chronicle["current_era"] = (
+            f"In recent memory: {latest.text} (year {latest.year})."
+        )
+    # Tier history: number of times this town shrank vs grew.
+    grew = sum(1 for e in events if e.kind == "grow_to_tier")
+    shrank = sum(1 for e in events if e.kind == "shrink")
+    if grew or shrank:
+        town.chronicle["tier_arc"] = (
+            f"Across the centuries this place rose {grew} times and fell back {shrank}."
+        )
 
 
 def init_towns(world) -> None:
     """Populate TOWNS and REGIONS from world.town_centers (set by generate_cities)."""
+    # Plan-driven flow (Phase 5): register_town_from_plan has already populated
+    # TOWNS/REGIONS during city build. Don't wipe them — just stamp chronicles.
+    # (Must check BEFORE TOWNS.clear() since the plan-registered towns live there.)
+    if TOWNS and getattr(world, "plan", None) is not None:
+        for town in TOWNS.values():
+            if town.is_capital:
+                _place_capital_structures(town, world)
+        _stamp_city_chronicles(world.seed, world)
+        return
+
     TOWNS.clear()
     REGIONS.clear()
 
@@ -1091,7 +1176,7 @@ def init_towns(world) -> None:
             _fill_missing_coat_of_arms(world.seed)
             _restore_world_city_metadata(world)
             _respawn_leader_npcs(world)
-            _stamp_city_chronicles(world.seed)
+            _stamp_city_chronicles(world.seed, world)
             return
 
     centers = world.town_centers
@@ -1211,7 +1296,113 @@ def init_towns(world) -> None:
         if town.is_capital:
             _place_capital_structures(town, world)
 
-    _stamp_city_chronicles(world.seed)
+    _stamp_city_chronicles(world.seed, world)
+
+
+def register_town_from_plan(world, settlement, city_bx: int, city_size: str) -> None:
+    """Register a Town/Region pair from a WorldPlan settlement.
+
+    Pulls name / kingdom / dynasty / heraldry / agenda directly from
+    ``world.plan`` instead of generating them on the fly. Idempotent: skips
+    if the settlement is already registered.
+    """
+    from cities import CITY_CONFIGS
+    plan = world.plan
+    sid = settlement.settlement_id
+    # Skip if already registered (idempotent for chunk re-streaming).
+    for t in TOWNS.values():
+        if getattr(t, 'plan_settlement_id', None) == sid:
+            return
+    town_id = max(TOWNS.keys()) + 1 if TOWNS else 0
+
+    # Resolve actual built half_w from world.city_zones.
+    if world.city_zones:
+        _lo, _hi = world.city_zones[-1]
+        if abs(city_bx - (_lo + _hi) // 2) < 10:
+            half_w = (_hi - _lo) // 2
+        else:
+            half_w = CITY_CONFIGS[city_size]["half_w"]
+    else:
+        half_w = CITY_CONFIGS[city_size]["half_w"]
+
+    biome = world.biodome_at(city_bx)
+    region_id = settlement.kingdom_id
+
+    TOWNS[town_id] = Town(
+        town_id         = town_id,
+        region_id       = region_id,
+        is_capital      = settlement.is_capital,
+        center_bx       = city_bx,
+        half_w          = half_w,
+        biome           = biome,
+        name            = settlement.name,
+        leader_name     = None,
+        tier            = _starting_tier(city_size, settlement.is_capital),
+        reputation      = 0,
+        needs           = {},
+        growth_progress = 0.0,
+        grown_buildings = [],
+        founded_day     = 0,
+        size            = city_size,
+    )
+    # Tag the Town with its plan settlement id for idempotent lookups + lore.
+    TOWNS[town_id].plan_settlement_id = sid
+    _assign_initial_needs(TOWNS[town_id])
+
+    # Region: ensure the Region for this kingdom exists.
+    if region_id not in REGIONS:
+        kingdom = plan.kingdoms.get(region_id)
+        if kingdom is None:
+            return
+        bg = _biome_group_for(biome)
+        coa = heraldry.CoatOfArms(
+            primary   = tuple(kingdom.heraldry["primary"]),
+            secondary = tuple(kingdom.heraldry["secondary"]),
+            metal     = tuple(kingdom.heraldry["metal"]),
+            division  = kingdom.heraldry["division"],
+            ordinary  = kingdom.heraldry["ordinary"],
+            charge    = kingdom.heraldry["charge"],
+            motto     = kingdom.heraldry["motto"],
+        )
+        rng_r = random.Random(world.seed + region_id * 31337 + 88888)
+        title = leader_title_for(bg, rng_r)
+        tagline = _make_tagline(rng_r, bg)
+        leader_name = _make_leader_name(rng_r)
+        REGIONS[region_id] = Region(
+            region_id       = region_id,
+            name            = kingdom.name,
+            capital_town_id = town_id if settlement.is_capital else -1,
+            member_town_ids = [],
+            leader_color    = tuple(kingdom.color),
+            coat_of_arms    = coa,
+            biome_group     = bg,
+            tagline         = tagline,
+            leader_title    = title,
+            agenda          = kingdom.agenda,
+            wealth          = derive_wealth(kingdom.agenda, region_id, world.seed),
+            danger          = derive_danger(bg, region_id, world.seed),
+        )
+        if settlement.is_capital:
+            TOWNS[town_id].leader_name = leader_name
+        compute_relations(world.seed)
+
+    region = REGIONS[region_id]
+    if town_id not in region.member_town_ids:
+        region.member_town_ids.append(town_id)
+    if settlement.is_capital and region.capital_town_id == -1:
+        region.capital_town_id = town_id
+        if TOWNS[town_id].leader_name is None:
+            rng_r = random.Random(world.seed + region_id * 31337 + 88888)
+            # advance rng past title/tagline so leader name is stable
+            leader_title_for(region.biome_group, rng_r)
+            _make_tagline(rng_r, region.biome_group)
+            TOWNS[town_id].leader_name = _make_leader_name(rng_r)
+
+    import city_history as _ch
+    TOWNS[town_id].chronicle = _ch.generate_city_chronicle(
+        town_id, TOWNS[town_id].name, biome, world.seed
+    )
+    _inject_plan_chronicle(TOWNS[town_id], world, sid)
 
 
 def register_new_town(world, city_bx: int, city_size: str,
@@ -1305,6 +1496,10 @@ def register_new_town(world, city_bx: int, city_size: str,
     TOWNS[town_id].chronicle = _ch.generate_city_chronicle(
         town_id, TOWNS[town_id].name, biome, world.seed
     )
+    if getattr(world, "plan", None) is not None:
+        sid = getattr(TOWNS[town_id], "plan_settlement_id", None)
+        if sid is not None:
+            _inject_plan_chronicle(TOWNS[town_id], world, sid)
 
 
 def _restore_world_city_metadata(world) -> None:

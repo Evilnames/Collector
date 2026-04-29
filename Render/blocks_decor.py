@@ -6040,6 +6040,34 @@ def build_decor_surfs():
     pygame.draw.circle(s, (230, 200,  90), (BS // 2 - 1, 2), 2)
     surfs[bid] = s
 
+    bid = RUIN_MARKER_BLOCK
+    # if bid == RUIN_MARKER_BLOCK — weathered stone obelisk; tilts slightly,
+    # mossy at the base, hint of carved face on the front
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    stone     = (155, 145, 130)
+    stone_lt  = _lighter(stone, 18)
+    stone_dk  = _darken(stone, 30)
+    moss      = (100, 130,  70)
+    # Tapered upright: wider at the base, narrower at the top, leaning right
+    pts = [(BS // 2 - 5, BS - 1),
+           (BS // 2 + 5, BS - 1),
+           (BS // 2 + 4, 4),
+           (BS // 2 - 2, 2)]
+    pygame.draw.polygon(s, stone, pts)
+    pygame.draw.polygon(s, stone_dk, pts, 1)
+    # Highlight on left edge
+    pygame.draw.line(s, stone_lt, (BS // 2 - 4, BS - 3), (BS // 2 - 1, 4), 1)
+    # Carved horizontal grooves
+    for ly in (10, 16, 22):
+        pygame.draw.line(s, stone_dk, (BS // 2 - 3, ly), (BS // 2 + 3, ly), 1)
+    # Mossy patches at base
+    pygame.draw.rect(s, moss, (BS // 2 - 5, BS - 3, 4, 2))
+    pygame.draw.rect(s, _darken(moss, 12), (BS // 2 + 1, BS - 2, 4, 2))
+    # Crack near the top
+    pygame.draw.line(s, stone_dk, (BS // 2 + 1, 6), (BS // 2 + 3, 9), 1)
+    surfs[bid] = s
+
     bid = ICE_SHARD
     # if bid == ICE_SHARD
     s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)

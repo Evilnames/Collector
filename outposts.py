@@ -1126,7 +1126,9 @@ def generate_outpost_for_chunk(world, seed: int, cx: int) -> None:
         return
 
     biodome = world.biodome_at(slot_x)
-    if biodome == "ocean" or world.surface_height(slot_x) > SURFACE_Y:
+    if biodome == "ocean":
+        return
+    if biodome in ("coastal", "beach", "pacific_island") and world.surface_height(slot_x) > SURFACE_Y:
         return
     otype   = _type_for_slot(seed, slot_x, biodome)
     if otype is None:
@@ -1211,7 +1213,9 @@ def _reconstruct_outpost_for_slot(world, seed: int, slot_x: int) -> None:
     Uses the same RNG sequence as _build_outpost so type/name are deterministic.
     """
     biodome = world.biodome_at(slot_x)
-    if biodome == "ocean" or world.surface_height(slot_x) > SURFACE_Y:
+    if biodome == "ocean":
+        return
+    if biodome in ("coastal", "beach", "pacific_island") and world.surface_height(slot_x) > SURFACE_Y:
         return
     otype = _type_for_slot(seed, slot_x, biodome)
     if otype is None or otype not in OUTPOST_TYPES:

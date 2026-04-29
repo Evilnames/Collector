@@ -10037,64 +10037,116 @@ def _city_slot_metadata(slot_x: int) -> dict:
     return {"slot_index": slot_index, "region_id": region_id, "is_capital": is_capital}
 
 
+# ---------------------------------------------------------------------------
+# Plan-driven city placement (Phase 5 of the worldgen overhaul)
+#
+# Cities are no longer slotted on the CITY_SPACING grid. Their positions,
+# sizes, kingdoms, and dynasties come from world.plan (a WorldPlan built by
+# the worldgen package). _build_single_city is still the geometry workhorse;
+# this layer just decides where and what tier.
+# ---------------------------------------------------------------------------
+
+# Settlement-tier (from history sim) → CITY_CONFIGS size key.
+_TIER_TO_SIZE = {
+    "hamlet":      "small",
+    "village":     "small",
+    "town":        "medium",
+    "city":        "large",
+    "metropolis":  "large",
+    "megalopolis": "large",
+}
+
+
+def _settlement_size(settlement) -> str:
+    return _TIER_TO_SIZE.get(settlement.tier, "medium")
+
+
+def _city_already_built(world, world_x: int) -> bool:
+    return any(lo - 10 <= world_x <= hi + 10
+               for lo, hi in getattr(world, "city_zones", []))
+
+
+def _build_settlement(world, settlement, rng):
+    """Materialize one alive plan settlement into world geometry, if conditions allow.
+
+    Returns True if a city was actually built.
+    """
+    city_bx = settlement.world_x
+    if _city_already_built(world, city_bx):
+        return False
+    biodome = world.biodome_at(city_bx)
+    if biodome == "ocean":
+        return False
+    # Only reject "underwater" surfaces for biomes that actually flood. A
+    # low-elevation grassland with surface_height > SURFACE_Y is still dry.
+    if biodome in ("coastal", "beach", "pacific_island") and world.surface_height(city_bx) > SURFACE_Y:
+        return False
+    zone_idx = city_bx // world._SURF_WATER_ZONE_W
+    wb = world._get_surf_water_body(zone_idx)
+    if wb is not None and abs(city_bx - wb["cx_abs"]) <= wb["half_w"]:
+        return False
+
+    desired_size = _settlement_size(settlement)
+    actual_size = _build_single_city(world, rng, city_bx, difficulty=2)
+    # _build_single_city may pick a biome-flavored variant (e.g. military,
+    # arabia). If it picked a different bucket, prefer the plan-derived tier
+    # for downstream town tier math, but keep the actual variant string so
+    # CITY_CONFIGS lookups remain valid.
+    final_size = actual_size if actual_size else desired_size
+    world.town_centers.append(city_bx)
+    world.city_sizes.append(final_size)
+    world.city_slot_xs.append(city_bx)
+
+    from towns import register_town_from_plan
+    register_town_from_plan(world, settlement, city_bx, final_size)
+    return True
+
+
 def generate_cities(world, seed):
-    rng = random.Random(seed + 77777)
-    placed = 0
-    x = -(CITY_COUNT // 2) * CITY_SPACING + CITY_SPACING // 2
+    """Build all alive plan settlements that fall inside currently-loaded chunks.
+
+    Distant settlements are built lazily as the player walks into them via
+    ``generate_city_for_chunk``.
+    """
     world.city_zones = []
     world.town_centers = []
     world.city_sizes = []
     world.city_slot_xs = []
 
-    while placed < CITY_COUNT:
-        slot_x = x
-        jitter = rng.randint(-6, 6)
-        city_bx = slot_x + jitter
-        x += CITY_SPACING
-        placed += 1
-        if world.biodome_at(city_bx) == "ocean" or world.surface_height(city_bx) > SURFACE_Y:
+    if not getattr(world, "plan", None):
+        return
+
+    loaded_min = (min(world._chunks) * CHUNK_W) if world._chunks else 0
+    loaded_max = ((max(world._chunks) + 1) * CHUNK_W) if world._chunks else 0
+    rng = random.Random(seed + 77777)
+
+    for s in sorted(world.plan.settlements.values(), key=lambda x: x.world_x):
+        if s.state != "alive":
             continue
-        zone_idx = city_bx // world._SURF_WATER_ZONE_W
-        wb = world._get_surf_water_body(zone_idx)
-        if wb is not None and abs(city_bx - wb["cx_abs"]) <= wb["half_w"]:
+        if not (loaded_min <= s.world_x < loaded_max):
             continue
-        difficulty = min(placed // 2, 2)
-        city_size = _build_single_city(world, rng, city_bx, difficulty)
-        world.town_centers.append(city_bx)
-        world.city_sizes.append(city_size)
-        world.city_slot_xs.append(slot_x)
+        _build_settlement(world, s, rng)
 
     import npc_identity
     npc_identity.assign_ruling_dynasties(world, seed)
 
 
 def generate_city_for_chunk(world, seed, cx):
-    """Build a city in newly-generated chunk cx if a city slot falls there."""
-    from constants import CHUNK_W
+    """Build any alive plan settlements whose world_x falls inside chunk cx."""
+    plan = getattr(world, "plan", None)
+    if plan is None:
+        return
     base_x = cx * CHUNK_W
-    half = CITY_SPACING // 2
-    slot_x = None
-    for bx in range(base_x, base_x + CHUNK_W):
-        if ((bx % CITY_SPACING) + CITY_SPACING) % CITY_SPACING == half:
-            slot_x = bx
-            break
-    if slot_x is None:
-        return
-    meta = _city_slot_metadata(slot_x)
-    rng = random.Random(seed + slot_x * 9001 + 33333)
-    jitter = rng.randint(-6, 6)
-    city_bx = slot_x + jitter
-    if any(lo - 10 <= city_bx <= hi + 10 for lo, hi in world.city_zones):
-        return
-    if world.biodome_at(city_bx) == "ocean" or world.surface_height(city_bx) > SURFACE_Y:
-        return
-    city_size = _build_single_city(world, rng, city_bx, 2)
-    world.town_centers.append(city_bx)
-    world.city_sizes.append(city_size)
-    world.city_slot_xs.append(slot_x)
-    from towns import register_new_town
-    import npc_identity
-    register_new_town(world, city_bx, city_size,
-                      region_id=meta["region_id"],
-                      is_capital=meta["is_capital"])
-    npc_identity.assign_ruling_dynasties(world, seed)
+    end_x = base_x + CHUNK_W
+    built_any = False
+    for s in plan.settlements.values():
+        if s.state != "alive":
+            continue
+        if not (base_x <= s.world_x < end_x):
+            continue
+        rng = random.Random(seed + s.settlement_id * 9001 + 33333)
+        if _build_settlement(world, s, rng):
+            built_any = True
+    if built_any:
+        import npc_identity
+        npc_identity.assign_ruling_dynasties(world, seed)

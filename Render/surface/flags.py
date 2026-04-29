@@ -91,27 +91,39 @@ def build_dusk_sky_surf():
 
 def sky_night_alpha(time_of_day):
     from world import DAY_DURATION
-    DAWN = 60.0
-    DUSK = 60.0
+    DAWN = 130.0
+    DUSK = 130.0
     t = time_of_day
     if t < DAWN:
-        return int(255 * (1.0 - t / DAWN))
+        # Smoothstep ease so darkness lingers, then fades gently into morning.
+        p = 1.0 - t / DAWN
+        s = p * p * (3 - 2 * p)
+        return int(255 * s)
     elif t < DAY_DURATION - DUSK:
         return 0
     elif t < DAY_DURATION:
-        return int(255 * ((t - (DAY_DURATION - DUSK)) / DUSK))
+        p = (t - (DAY_DURATION - DUSK)) / DUSK
+        s = p * p * (3 - 2 * p)
+        return int(255 * s)
     else:
         return 255
 
 
 def golden_hour_alphas(time_of_day):
-    """Returns (dawn_alpha, dusk_alpha) each 0-255, peaking mid-transition."""
+    """Returns (dawn_alpha, dusk_alpha) each 0-255, peaking mid-transition.
+
+    Uses a sin^1.5 envelope so the overlay holds near peak longer and tails off
+    gently toward day, instead of the symmetric sin curve which falls just as
+    fast as it rose and produces a perceived 'flash' to blue.
+    """
     from world import MORNING_END, DUSK_START, DAY_DURATION
     t = time_of_day
     if t < MORNING_END:
         p = t / MORNING_END
-        return int(210 * _m.sin(p * _m.pi)), 0
+        env = max(0.0, _m.sin(p * _m.pi)) ** 1.5
+        return int(210 * env), 0
     if t >= DUSK_START:
         p = (t - DUSK_START) / (DAY_DURATION - DUSK_START)
-        return 0, int(230 * _m.sin(p * _m.pi))
+        env = max(0.0, _m.sin(p * _m.pi)) ** 1.5
+        return 0, int(230 * env)
     return 0, 0

@@ -40,6 +40,7 @@ from .gambling import GamblingMixin
 from .racing import RacingMixin
 from .arena import ArenaUIMixin
 from .tea_house import TeaHouseMixin
+from .dynasty_tree import DynastyTreeMixin
 
 
 class UI(
@@ -47,6 +48,7 @@ class UI(
     CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, BeerMixin, MinigamesMixin, CollectionsMixin,
     HelpMixin, HorseMixin, DogsMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin,
     TownMenuMixin, OutpostMenuMixin, LandmarkMenuMixin, CityBlockMenuMixin, CoatOfArmsDesignerMixin, HirePanelMixin, JobPanelMixin, ReputationScreenMixin, SmithingMixin, GamblingMixin, RacingMixin, ArenaUIMixin, TeaHouseMixin,
+    DynastyTreeMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -1147,6 +1149,8 @@ class UI(
             self._draw_town_menu(player)
             if self.town_chronicle_open:
                 self._draw_city_chronicle(self.active_town)
+        if getattr(self, "ruin_plaque_open", False):
+            self._draw_ruin_plaque()
         if self.outpost_menu_open and self.active_outpost is not None:
             self._draw_outpost_menu(player)
         if self.landmark_menu_open and self.active_landmark_region is not None:
@@ -1217,7 +1221,9 @@ class UI(
         self.draw_smith_hud(player)
         # NPC inspect overlay — drawn on top of everything else
         if getattr(player, "inspecting_npc", None) is not None:
-            if getattr(player, "dynasty_panel_open", False):
+            if getattr(player, "dynasty_tree_open", False):
+                self._draw_dynasty_tree(player, player.world)
+            elif getattr(player, "dynasty_panel_open", False):
                 self._draw_dynasty_chronicle(player, player.world)
             elif getattr(player, "fulfill_request_open", False):
                 self._draw_npc_fulfill_request(player, player.world)
