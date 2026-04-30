@@ -3952,6 +3952,138 @@ def build_structure_surfs():
     pygame.draw.line(s, wood, (13, 0), (18, 0), 2)
     surfs[bid] = s
 
+    bid = ANIMAL_TRAP_BLOCK
+    # if bid == ANIMAL_TRAP_BLOCK
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    wood = (110, 78, 38)
+    metal = (130, 115, 95)
+    # Ground platform
+    pygame.draw.rect(s, wood, (2, 22, 28, 5))
+    # Side posts
+    pygame.draw.rect(s, wood, (2, 8, 3, 16))
+    pygame.draw.rect(s, wood, (27, 8, 3, 16))
+    # Top bar
+    pygame.draw.rect(s, wood, (2, 8, 28, 3))
+    # Trigger plate (metal)
+    pygame.draw.rect(s, metal, (9, 20, 14, 3))
+    pygame.draw.line(s, _darken(metal, 20), (9, 21), (22, 21), 1)
+    # Chain links (vertical)
+    for cy in (11, 15, 19):
+        pygame.draw.rect(s, metal, (13, cy, 6, 2))
+    surfs[bid] = s
+
+    bid = TANNING_RACK_BLOCK
+    # if bid == TANNING_RACK_BLOCK
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    wood = (130, 95, 50)
+    hide = (180, 140, 90)
+    dk   = _darken(hide, 25)
+    # Two diagonal support posts
+    pygame.draw.line(s, wood, (4, 28), (14, 2), 3)
+    pygame.draw.line(s, wood, (28, 28), (18, 2), 3)
+    # Cross-brace
+    pygame.draw.line(s, wood, (6, 20), (26, 20), 2)
+    # Stretched hide (trapezoid)
+    hide_pts = [(10, 3), (22, 3), (27, 19), (5, 19)]
+    pygame.draw.polygon(s, hide, hide_pts)
+    pygame.draw.polygon(s, dk, hide_pts, 1)
+    # Hide texture lines
+    pygame.draw.line(s, dk, (12, 6), (24, 10), 1)
+    pygame.draw.line(s, dk, (10, 11), (26, 14), 1)
+    surfs[bid] = s
+
+    bid = WICKER_FISH_TRAP_BLOCK
+    # if bid == WICKER_FISH_TRAP_BLOCK  (tier 1)
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    wicker = (155, 115, 55)
+    net    = ( 60, 110, 145)
+    dk_net = _darken(net, 30)
+    # Basket body (rounded rectangle)
+    pygame.draw.rect(s, wicker, (4, 12, 24, 14), border_radius=3)
+    pygame.draw.rect(s, _darken(wicker, 25), (4, 12, 24, 14), 1, border_radius=3)
+    # Funnel opening on left side
+    pygame.draw.polygon(s, wicker, [(4, 14), (4, 23), (1, 20), (1, 17)])
+    # Net lines across body
+    for nx in (9, 14, 19, 24):
+        pygame.draw.line(s, dk_net, (nx, 12), (nx, 26), 1)
+    pygame.draw.line(s, dk_net, (4, 19), (28, 19), 1)
+    # Water ripple below
+    pygame.draw.arc(s, net, (5, 25, 8, 5), 3.14, 0, 1)
+    pygame.draw.arc(s, net, (14, 25, 8, 5), 3.14, 0, 1)
+    surfs[bid] = s
+
+    bid = IRON_FISH_TRAP_BLOCK
+    # if bid == IRON_FISH_TRAP_BLOCK  (tier 2)
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    iron  = ( 90, 115, 135)
+    dk_i  = _darken(iron, 30)
+    light = _lighter(iron, 25)
+    # Cage body
+    pygame.draw.rect(s, iron, (3, 10, 26, 17), border_radius=2)
+    pygame.draw.rect(s, dk_i, (3, 10, 26, 17), 1, border_radius=2)
+    # Vertical bars
+    for bx2 in (8, 13, 18, 23):
+        pygame.draw.line(s, dk_i, (bx2, 10), (bx2, 27), 1)
+    # Horizontal bars
+    for by2 in (14, 19, 24):
+        pygame.draw.line(s, dk_i, (3, by2), (29, by2), 1)
+    # Highlight sheen
+    pygame.draw.line(s, light, (4, 11), (28, 11), 1)
+    # Funnel opening on left
+    pygame.draw.polygon(s, iron, [(3, 12), (3, 25), (0, 22), (0, 15)])
+    pygame.draw.line(s, dk_i, (0, 15), (3, 12), 1)
+    pygame.draw.line(s, dk_i, (0, 22), (3, 25), 1)
+    surfs[bid] = s
+
+    bid = REINFORCED_FISH_TRAP_BLOCK
+    # if bid == REINFORCED_FISH_TRAP_BLOCK  (tier 3 — iron_bar, warm bronze tint)
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    warm  = (165, 130,  80)
+    dk_w  = _darken(warm, 30)
+    lt_w  = _lighter(warm, 20)
+    # Larger cage body — wider mesh
+    pygame.draw.rect(s, warm, (2, 8, 28, 20), border_radius=3)
+    pygame.draw.rect(s, dk_w, (2, 8, 28, 20), 1, border_radius=3)
+    # Dense vertical bars
+    for bx2 in (6, 10, 14, 18, 22, 26):
+        pygame.draw.line(s, dk_w, (bx2, 8), (bx2, 28), 1)
+    # Horizontal bars
+    for by2 in (12, 16, 20, 24):
+        pygame.draw.line(s, dk_w, (2, by2), (30, by2), 1)
+    pygame.draw.line(s, lt_w, (3, 9), (29, 9), 1)
+    # Wider funnel opening on left
+    pygame.draw.polygon(s, warm, [(2, 10), (2, 26), (0, 24), (0, 12)])
+    pygame.draw.line(s, dk_w, (0, 12), (2, 10), 1)
+    pygame.draw.line(s, dk_w, (0, 24), (2, 26), 1)
+    surfs[bid] = s
+
+    bid = STEEL_CAGE_TRAP_BLOCK
+    # if bid == STEEL_CAGE_TRAP_BLOCK  (tier 4 — steel, blue-grey with rivets)
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    steel = (100, 120, 130)
+    dk_s  = _darken(steel, 35)
+    lt_s  = _lighter(steel, 30)
+    rivet = _lighter(steel, 15)
+    # Full cage body
+    pygame.draw.rect(s, steel, (1, 7, 30, 22), border_radius=2)
+    pygame.draw.rect(s, dk_s,  (1, 7, 30, 22), 2, border_radius=2)
+    # Tight vertical bars
+    for bx2 in (5, 9, 13, 17, 21, 25):
+        pygame.draw.line(s, dk_s, (bx2, 7), (bx2, 29), 1)
+    # Horizontal bars
+    for by2 in (11, 15, 19, 23):
+        pygame.draw.line(s, dk_s, (1, by2), (31, by2), 1)
+    # Top sheen
+    pygame.draw.line(s, lt_s, (2, 8), (30, 8), 1)
+    # Corner rivets
+    for rx, ry in ((3, 9), (28, 9), (3, 27), (28, 27)):
+        pygame.draw.circle(s, rivet, (rx, ry), 2)
+    # Funnel opening on left — steel lip
+    pygame.draw.polygon(s, steel, [(1, 9), (1, 27), (0, 25), (0, 11)])
+    pygame.draw.line(s, dk_s, (0, 11), (1, 9), 1)
+    pygame.draw.line(s, dk_s, (0, 25), (1, 27), 1)
+    surfs[bid] = s
+
     bid = SANDSTONE_ASHLAR
     # if bid == SANDSTONE_ASHLAR
     s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))

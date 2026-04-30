@@ -65,7 +65,8 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     SALT_DEPOSIT,
                     TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK, LANDMARK_FLAG_BLOCK, RUIN_MARKER_BLOCK,
                     CITY_BLOCK, BANNER_BLOCK, FISHING_SPOT_BLOCK, TEA_HOUSE_BLOCK,
-                    SEASHELL_BLOCK)
+                    SEASHELL_BLOCK, OYSTER_BLOCK,
+                    WIRE_RELATED_BLOCKS)
 import soil as _soil
 from items import ITEMS
 from rocks import RockGenerator, Rock
@@ -91,7 +92,7 @@ from crossover import apply_pairing_to_buff, get_pollination_bonus, apply_aging_
 from constants import (
     BLOCK_SIZE, PLAYER_W, PLAYER_H,
     GRAVITY, JUMP_FORCE, MOVE_SPEED, MAX_FALL,
-    MINE_REACH, MAX_HEALTH, HOTBAR_SIZE,
+    MINE_REACH, MAX_HEALTH, MAX_BREATH, HOTBAR_SIZE,
     ROCK_DETECT_RANGE,
 )
 
@@ -155,6 +156,7 @@ class Player:
         self.hotbar = [None] * HOTBAR_SIZE
         self.hotbar_uses = [None] * HOTBAR_SIZE
         self.selected_slot = 0
+        self.shape_idx = 0          # index into block_shapes.SHAPE_VARIANTS
         self.money = 0
         self.blessing_timer = 0.0
         self.blessing_mult  = 1.0
@@ -167,6 +169,11 @@ class Player:
         self.seashells = []
         self.discovered_shell_types = set()
         self._shell_gen = SeashellGenerator(world.seed)
+        # Pearl collection (from oysters)
+        from pearls import PearlGenerator
+        self.pearls = []
+        self.discovered_pearl_colors = set()
+        self._pearl_gen = PearlGenerator(world.seed)
         # Wildflower collection
         self.wildflowers = []
         self.discovered_flower_types = set()
@@ -276,6 +283,7 @@ class Player:
         self.animals_hunted  = {}   # animal_id -> count killed
         self.hunt_trophies   = {}   # animal_id -> {stat_key: best_value}
         self._bow_cooldown   = 0.0
+        self._spear_cooldown = 0.0
         self.master_hunter   = False  # set True by research bonus
         # Fishing mini-game state
         self.fishing_state = None       # None | "casting" | "biting" | "reeling" | "result"
@@ -328,7 +336,7 @@ class Player:
         self.fulfill_request_open = False   # True when fulfill-request sub-panel is visible
         self.dynasty_panel_open   = False
         # Water state
-        self._drowning_timer = 0.0
+        self.breath = MAX_BREATH
         # Hunger
         self.hunger             = 100.0
         self._hunger_drain_rate = 100.0 / 600.0  # 100% over 10 minutes
@@ -407,6 +415,17 @@ class Player:
         self.dogs_bred              = 0
         self.dog_records            = {"best_speed": 0.0, "best_nose": 0.0}
         self.discovered_dog_breeds  = set()
+        # Dog racing tracking
+        self.dog_races_entered      = 0
+        self.dog_races_won          = 0
+        self.gold_won_dog_racing    = 0
+        self.dog_race_pbs           = {}   # {dog_uid: best_place (1-8)}
+        # Circuit / tournament tracking
+        self.active_circuit              = None  # dict or None
+        self.completed_circuits          = []    # list of summary dicts
+        self.circuits_completed_by_tier  = {1: 0, 2: 0, 3: 0, 4: 0}
+        # Training paddock sessions
+        self.training_sessions           = []  # [{uid, animal_type, stat, days_remaining, boost_per_day}]
         # Gladiator cards
         self.gladiator_cards        = []       # list of GladiatorProfile dicts
         self.sponsored_gladiator_uid = None    # reserved for future sponsor/train feature
@@ -442,6 +461,9 @@ class Player:
         self.rocks = [Rock(**r) for r in d["rocks"]]
         self.seashells = [Seashell(**s) for s in d.get("seashells", [])]
         self.discovered_shell_types = set(d.get("discovered_shell_types", []))
+        from pearls import Pearl
+        self.pearls = [Pearl(**p) for p in d.get("pearls", [])]
+        self.discovered_pearl_colors = set(d.get("discovered_pearl_colors", []))
         self.wildflowers = [Wildflower(**wf) for wf in d["wildflowers"]]
         self.fossils = [Fossil(**f) for f in d.get("fossils", [])]
         self.gems = [Gemstone(**g) for g in d.get("gems", [])]
@@ -498,6 +520,14 @@ class Player:
         self.dogs_bred              = d.get("dogs_bred", 0)
         self.dog_records            = d.get("dog_records", {"best_speed": 0.0, "best_nose": 0.0})
         self.discovered_dog_breeds  = set(d.get("discovered_dog_breeds", []))
+        self.dog_races_entered      = d.get("dog_races_entered", 0)
+        self.dog_races_won          = d.get("dog_races_won", 0)
+        self.gold_won_dog_racing    = d.get("gold_won_dog_racing", 0)
+        self.dog_race_pbs                = d.get("dog_race_pbs", {})
+        self.active_circuit              = d.get("active_circuit", None)
+        self.completed_circuits          = d.get("completed_circuits", [])
+        self.circuits_completed_by_tier  = d.get("circuits_completed_by_tier", {1:0, 2:0, 3:0, 4:0})
+        self.training_sessions           = d.get("training_sessions", [])
         self.animals_hunted = d.get("animals_hunted", {})
         self.hunt_trophies  = d.get("hunt_trophies", {})
         self.gladiator_cards     = d.get("gladiator_cards", [])
@@ -658,6 +688,48 @@ class Player:
         return True
 
     # ------------------------------------------------------------------
+    # Spear gun firing
+    # ------------------------------------------------------------------
+
+    def fire_spear(self):
+        """Fire a spear from an equipped spear gun. Returns True on success."""
+        tool = self.hotbar[self.selected_slot]
+        if not tool or not ITEMS.get(tool, {}).get("speargun"):
+            return False
+        if getattr(self, "_spear_cooldown", 0.0) > 0:
+            return False
+        if not self._head_in_water():
+            return False
+        spear_id = None
+        for sid in ("barbed_spear", "iron_spear", "bone_spear"):
+            if self.inventory.get(sid, 0) > 0:
+                spear_id = sid
+                break
+        if not spear_id:
+            return False
+        self.inventory[spear_id] -= 1
+        if self.inventory[spear_id] <= 0:
+            del self.inventory[spear_id]
+        from hunting import Spear
+        from constants import BLOCK_SIZE as _BS
+        cx = self.x + PLAYER_W / 2
+        cy = self.y + PLAYER_H / 2 - 4
+        spear_data = ITEMS.get(spear_id, {})
+        gun_data   = ITEMS.get(tool, {})
+        damage     = spear_data.get("spear_damage", 2) + gun_data.get("spear_damage_bonus", 0)
+        barb       = spear_data.get("spear_barb", False)
+        color      = spear_data.get("color", (200, 200, 215))
+        speed      = gun_data.get("spear_speed", None)
+        gun_range  = gun_data.get("spear_range", None)
+        max_range  = gun_range * _BS if gun_range else None
+        cooldown   = gun_data.get("spear_cooldown", 0.9)
+        self.world.spears.append(Spear(cx, cy, self.facing, self.world, damage,
+                                       speed=speed, max_range=max_range,
+                                       barb=barb, color=color))
+        self._spear_cooldown = cooldown
+        return True
+
+    # ------------------------------------------------------------------
     # Melee attack
 
     def try_melee_attack(self, target_entity) -> bool:
@@ -736,6 +808,8 @@ class Player:
         elif self._in_water():
             if keys[pygame.K_w] or keys[pygame.K_UP] or keys[pygame.K_SPACE]:
                 self.vy = -3   # swim up
+            elif pressing_down and self.has_diving_helmet():
+                self.vy = 3    # diving helmet lets you swim down actively
             self.vx *= 0.55    # water drag on horizontal movement
         elif (keys[pygame.K_w] or keys[pygame.K_UP] or keys[pygame.K_SPACE]) and self.on_ground:
             cotton_jump = 1.0 + self.get_fiber_count("cotton") * 0.05
@@ -869,6 +943,7 @@ class Player:
         else:
             self.place_target = None
             self._wire_drag_placed = set()
+            self._pipe_drag_placed = set()
 
     def _handle_horse_input(self, keys, dt):
         horse = self.mounted_horse
@@ -949,6 +1024,20 @@ class Player:
                     self._add_item('wire')
                     import logic as _logic
                     _logic.evaluate_full_network(self.world)
+                    self._reset_mine()
+                return
+            if getattr(self.world, 'pipe_mode', False) and self.world.get_pipe(bx, by) > 0:
+                if self.mining_block != (bx, by):
+                    self.mining_block = (bx, by)
+                    self._mine_time = 0.0
+                    self._mine_total = 0.3
+                self._mine_time += dt
+                self.mine_progress = min(1.0, self._mine_time / self._mine_total)
+                if self.mine_progress >= 1.0:
+                    from pipes import PIPE_TIER_ITEM as _PTI
+                    tier = self.world.get_pipe(bx, by)
+                    self.world.set_pipe(bx, by, 0)
+                    self._add_item(_PTI.get(tier, 'pipe'))
                     self._reset_mine()
                 return
             bg_bid = self.world.get_bg_block(bx, by)
@@ -1034,6 +1123,14 @@ class Player:
                 self.world.set_bg_block(bx, by, AIR)
                 self._reset_mine()
             return
+        if getattr(self.world, 'wire_mode', False) and block_id not in WIRE_RELATED_BLOCKS:
+            self._reset_mine()
+            return
+        from blocks import PIPE_DEVICE_BLOCKS as _PIPE_DEV
+        if getattr(self.world, 'pipe_mode', False) and block_id not in _PIPE_DEV:
+            self._reset_mine()
+            return
+
         if block_id in YOUNG_CROP_BLOCKS:
             self._reset_mine()
             return
@@ -1096,6 +1193,21 @@ class Player:
                 self.discovered_shell_types.add(shell.species)
                 self.pending_notifications.append(
                     ("Seashell", shell.species.replace("_", " ").title(), shell.rarity))
+            elif block_id == OYSTER_BLOCK:
+                biome = self.world.get_biome(bx)
+                shell = self._shell_gen.generate(bx, by, biome)
+                # Force oyster species when harvesting an oyster cluster
+                shell.species = "oyster"
+                self.seashells.append(shell)
+                self.discovered_shell_types.add("oyster")
+                self.pending_notifications.append(
+                    ("Oyster", "Oyster Shell", shell.rarity))
+                if random.random() < 0.20:
+                    pearl = self._pearl_gen.generate(bx, by, biome)
+                    self.pearls.append(pearl)
+                    self.discovered_pearl_colors.add(pearl.color_name)
+                    self.pending_notifications.append(
+                        ("Pearl", f"{pearl.color_name.title()} Pearl", pearl.rarity))
             elif block_id == FOSSIL_DEPOSIT:
                 fossil = self._fossil_gen.generate(bx, by, self.get_depth(), self.world.get_biome(bx))
                 self.fossils.append(fossil)
@@ -1479,6 +1591,12 @@ class Player:
                 self.world.logic_state.pop((bx, by), None)
                 import logic as _logicm
                 _logicm.evaluate_full_network(self.world)
+            from blocks import PIPE_DEVICE_BLOCKS as _PDEVm, FACTORY_BLOCK as _FACm
+            if block_id in _PDEVm:
+                self.world.pipe_state.pop((bx, by), None)
+                self.world.pipe_buffers.pop((bx, by), None)
+            if block_id == _FACm:
+                self.world.factory_data.pop((bx, by), None)
             if block_id in PERENNIAL_CROP_MATURE and random.random() > 0.33:
                 self.world.set_block(bx, by, MATURE_TO_YOUNG_CROP[block_id])
             else:
@@ -1575,6 +1693,7 @@ class Player:
             if self.world.get_block(bx, by) in (AIR, WATER):
                 self.world.set_block(bx, by, WATER)
                 self.world._water_level[(bx, by)] = 8
+                self.world._water_sources.add((bx, by))
                 self.world._pending_water.add((bx, by))
                 self.inventory[item_id] = self.inventory.get(item_id, 1) - 1
                 if self.inventory[item_id] <= 0:
@@ -1797,6 +1916,24 @@ class Player:
                                     break
                         _logic.evaluate_full_network(self.world)
             return
+        if item_data.get("pipe_layer"):
+            if not bg and getattr(self.world, 'pipe_mode', False):
+                from pipes import PIPE_ITEM_TIER as _PIT
+                tier = _PIT.get(item_id, 1)
+                drag = getattr(self, '_pipe_drag_placed', set())
+                if (bx, by) not in drag:
+                    drag.add((bx, by))
+                    self._pipe_drag_placed = drag
+                    if not self.world.get_pipe(bx, by):
+                        self.world.set_pipe(bx, by, tier)
+                        self.inventory[item_id] -= 1
+                        if self.inventory[item_id] <= 0:
+                            del self.inventory[item_id]
+                            for i in range(HOTBAR_SIZE):
+                                if self.hotbar[i] == item_id:
+                                    self.hotbar[i] = None
+                                    break
+            return
         block_id = item_data.get("place_block")
         if block_id is None:
             return
@@ -1813,6 +1950,11 @@ class Player:
         else:
             if self.world.get_block(bx, by) not in (AIR, WATER):
                 return
+            # Fish traps must be placed directly in a water tile.
+            from blocks import FISH_TRAP_BLOCKS as _FTB
+            if block_id in _FTB and self.world.get_block(bx, by) != WATER:
+                self.pending_notifications.append(("Fish Trap", "Must be placed in water", None))
+                return
             # Seeds must be planted on tilled soil (prep with a hoe first).
             if block_id in YOUNG_CROP_BLOCKS:
                 if self.world.get_block(bx, by + 1) != TILLED_SOIL:
@@ -1827,6 +1969,9 @@ class Player:
                 self.world.set_bg_block(bx, by, block_id)
             else:
                 self.world.set_block(bx, by, block_id)
+                from block_shapes import SHAPE_VARIANTS as _SV
+                _shape, _rot, _ = _SV[self.shape_idx]
+                self.world.set_block_shape(bx, by, _shape, _rot)
             from blocks import (LOGIC_GATE_BLOCKS as _LGB, SWITCH_BLOCK_OFF, LATCH_BLOCK_OFF,
                                 LOGIC_OUTPUT_BLOCKS as _LOB, LOGIC_SENSOR_BLOCKS as _LSB,
                                 REPEATER_BLOCK as _RPT, PULSE_GEN_BLOCK as _PGN,
@@ -1867,6 +2012,22 @@ class Player:
                     from blocks import DEPOSIT_TRIGGER_BLOCK as _DTR
                     if block_id == _DTR:
                         _logic.register_deposit_trigger(self.world, bx, by)
+            import pipes as _pipes
+            _pfacing = "right" if self.facing == 1 else "left"
+            from blocks import (HOPPER_BLOCK as _HOP, PIPE_OUTPUT_BLOCK as _PO,
+                                PIPE_FILTER_BLOCK as _PF, PIPE_SORTER_BLOCK as _PS,
+                                FACTORY_BLOCK as _FAC)
+            if block_id == _HOP:
+                _pipes.register_hopper(self.world, bx, by)
+            elif block_id == _PO:
+                _pipes.register_pipe_output(self.world, bx, by, _pfacing)
+            elif block_id == _PF:
+                _pipes.register_pipe_filter(self.world, bx, by)
+            elif block_id == _PS:
+                _pipes.register_pipe_sorter(self.world, bx, by)
+            elif block_id == _FAC:
+                import factory as _factory_reg
+                _factory_reg.register_factory(self.world, bx, by)
             if block_id == CITY_BLOCK:
                 from player_cities import register_city
                 register_city(bx, by)
@@ -2062,7 +2223,7 @@ class Player:
         self.health = MAX_HEALTH
         self.hunger = 100.0
         self.dead = False
-        self._drowning_timer = 0.0
+        self.breath = MAX_BREATH
 
     def get_worn_textile(self, slot):
         uid = self.worn.get(slot)
@@ -2088,6 +2249,9 @@ class Player:
     def get_armor_defense(self):
         from items import ITEMS
         return sum(ITEMS[v]["defense"] for v in self.worn_armor.values() if v and v in ITEMS)
+
+    def has_diving_helmet(self):
+        return self.worn_armor.get("helmet") == "armor_diving_helmet"
 
     def is_full_outfit(self):
         """True when all 6 garment slots are occupied."""
@@ -2466,6 +2630,23 @@ class Player:
             self.vy = min(self.vy + GRAVITY * 0.25, 2.5)
         else:
             self.vy = min(self.vy + GRAVITY, MAX_FALL)
+
+        # Water current: level gradient pushes the player sideways; waterfalls pull down.
+        if in_water and not self._on_ladder:
+            cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
+            cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
+            _wl = self.world._water_level
+            _gb = self.world.get_block
+            lv_l = _wl.get((cx - 1, cy), 0) if _gb(cx - 1, cy) == WATER else 0
+            lv_r = _wl.get((cx + 1, cy), 0) if _gb(cx + 1, cy) == WATER else 0
+            lv_above = _wl.get((cx, cy - 1), 0) if _gb(cx, cy - 1) == WATER else 0
+            grad = lv_l - lv_r          # positive = water flowing rightward
+            if abs(grad) >= 2:
+                self.vx += grad * 0.06
+                self.vx = max(-5.0, min(5.0, self.vx))
+            if lv_above >= 7:           # strong waterfall above — pull down
+                self.vy = min(self.vy + 0.4, 5.0)
+
         self._move_x(self.vx)
         prev_vy = self.vy
         landed = self._move_y(self.vy)
@@ -2486,18 +2667,20 @@ class Player:
                 if armor_def > 0:
                     dmg = max(1, int(dmg * (1.0 - min(0.70, armor_def / 100.0))))
                 self.health = max(0, self.health - dmg)
-            # Drowning: after 5 s with head submerged, 5 HP/s damage
+            # Breath: drains while head submerged; diving helmet slows drain ~5x.
+            # When breath hits 0, drowning damage of 5 HP/s applies.
             if self._head_in_water():
-                self._drowning_timer += dt
-                if self._drowning_timer > 5.0:
+                drain = 2.0 if self.has_diving_helmet() else 10.0
+                self.breath = max(0.0, self.breath - drain * dt)
+                if self.breath <= 0.0:
                     resilience = self.get_textile_bonus("resilience")
                     armor_def = self.get_armor_defense()
                     drown_dmg = 5 * dt * (1.0 - resilience) * (1.0 - min(0.70, armor_def / 100.0))
                     self.health = max(0, self.health - drown_dmg)
             else:
-                self._drowning_timer = max(0.0, self._drowning_timer - dt * 2)
+                self.breath = min(MAX_BREATH, self.breath + 25.0 * dt)
         else:
-            self._drowning_timer = 0.0
+            self.breath = MAX_BREATH
             self.health = MAX_HEALTH
             self.hunger = 100.0
         # Hunger drain and starvation damage
@@ -2541,6 +2724,8 @@ class Player:
         self.tick_withering_rack(dt)
         if self._bow_cooldown > 0:
             self._bow_cooldown -= dt
+        if self._spear_cooldown > 0:
+            self._spear_cooldown -= dt
         if self._melee_cooldown > 0:
             self._melee_cooldown = max(0.0, self._melee_cooldown - dt)
         if not self.god_mode and not self.no_hunger:

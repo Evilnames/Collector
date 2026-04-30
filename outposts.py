@@ -430,9 +430,9 @@ OUTPOST_TYPES = {
 
     "pearl_diving_camp": {
         "display_name":    "Pearl Diving Camp",
-        "eligible_biomes": ["pacific_island", "beach"],
+        "eligible_biomes": ["pacific_island", "beach", "ocean"],
         "sells": [("pearl_necklace", 45), ("raw_pearl", 22), ("shell_ornament", 15)],
-        "buys":  [("pearl", 38, 8), ("shell_fragment", 5, 20), ("coral", 12, 10)],
+        "buys":  [("raw_pearl", 35, 8), ("shell_fragment", 5, 20), ("coral", 12, 10)],
         "needs": [("lumber", 8), ("coal", 4)],
         "base_stock": 5, "clothing_key": "polynesian",
         "building_style": "house", "half_w": 14, "layout": "market",

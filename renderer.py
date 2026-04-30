@@ -465,6 +465,9 @@ class Renderer:
 
     def _build_block_surfs(self):
         from Render.blockRenderHandler import build_all_block_surfs
+        from block_shapes import build_shape_masks
+        from constants import BLOCK_SIZE
+        build_shape_masks(BLOCK_SIZE)
         return build_all_block_surfs()
 
     def _build_ore_richness_surfs(self):
@@ -594,6 +597,14 @@ class Renderer:
     def draw_world(self, world, player=None):
         from Render.worldScene.scene import draw_world
         draw_world(self, world, player)
+
+    def draw_wire_hud(self, world):
+        from Render.worldScene.scene import draw_wire_hud
+        draw_wire_hud(self.screen, world)
+
+    def draw_pipe_hud(self, world):
+        from Render.worldScene.scene import draw_pipe_hud
+        draw_pipe_hud(self.screen, world)
 
     def _draw_pottery_displays(self, world, cam_xi, cam_yi):
         from Render.worldScene.art import draw_pottery_displays
@@ -1097,4 +1108,12 @@ class Renderer:
         from Render.insects import draw_insects as _draw_insects
         night_alpha = self._sky_night_alpha(time_of_day)
         _draw_insects(self.screen, self.cam_x, self.cam_y, insects, night_alpha, time_of_day)
+
+    def draw_live_fish(self, fish_list):
+        from Render.live_fish import draw_live_fish as _draw_live_fish
+        _draw_live_fish(self.screen, self.cam_x, self.cam_y, fish_list)
+
+    def draw_spears(self, spears):
+        from Render.live_fish import draw_spears as _draw_spears
+        _draw_spears(self.screen, self.cam_x, self.cam_y, spears)
 

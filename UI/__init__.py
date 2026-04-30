@@ -187,6 +187,15 @@ class UI(
         self._desert_forge_recipe_rects    = {}
         self._artisan_selected_recipe      = 0
         self._artisan_recipe_rects         = {}
+        self._artisan_tab                  = 0
+        self._artisan_search               = ""
+        self._artisan_search_active        = False
+        self._artisan_tab_rects            = []
+        self._artisan_search_rect          = None
+        self._artisan_view_all             = False
+        self._artisan_view_all_btn         = None
+        self._artisan_grid_rects           = {}
+        self._artisan_grid_scroll          = 0
         self._bait_station_selected_recipe  = 0
         self._bait_station_recipe_rects     = {}
         self._fletching_selected_recipe     = 0
@@ -197,10 +206,16 @@ class UI(
         self._glass_kiln_recipe_rects       = {}
         self._garden_workshop_selected_recipe = 0
         self._garden_workshop_recipe_rects    = {}
+        self._gw_view_all                     = False
+        self._gw_view_all_btn                 = None
+        self._gw_grid_rects                   = {}
+        self._gw_grid_scroll                  = 0
         self._juicer_selected_recipe          = 0
         self._juicer_recipe_rects             = {}
         self._automation_selected_recipe      = 0
         self._automation_recipe_rects         = {}
+        self._tanning_rack_selected_recipe    = 0
+        self._tanning_rack_recipe_rects       = {}
         self._assembler_selected_recipe       = 0
         self._assembler_recipe_rects          = {}
         self._cook_station_scroll        = {}
@@ -323,6 +338,10 @@ class UI(
         self._garden_drag_source     = None  # 'canvas' | 'collection'
         self._garden_drag_origin_pos = None  # (cx, cy) when dragged from canvas
         self._garden_drag_pos        = (0, 0)
+        self._garden_view_all        = False
+        self._garden_view_all_btn    = None
+        self._garden_view_all_rects  = {}
+        self._garden_view_all_scroll = 0
         # Wildflower display UI
         self.wildflower_display_open = False
         self.active_display_pos      = None  # (bx, by)
@@ -335,9 +354,12 @@ class UI(
         # Help screen
         self.help_open          = False
         self._help_topic        = "Distilling"
-        self._help_scroll       = 0
-        self._help_max_scroll   = 0
-        self._help_topic_rects  = {}
+        self._help_scroll         = 0
+        self._help_max_scroll     = 0
+        self._help_topic_rects    = {}
+        self._help_topic_scroll   = 0
+        self._help_topic_max_scroll = 0
+        self._help_left_rect      = None
         # Guard sketches codex UI state
         self._guard_codex_scroll      = 0
         self._max_guard_codex_scroll  = 0
@@ -1056,6 +1078,12 @@ class UI(
 
         # ----- Horse Racing state -----
         self.racing_open              = False
+        self.training_paddock_open    = False
+        self._paddock_world           = None
+        self._paddock_sel_animal      = "horse"
+        self._paddock_sel_stat        = "speed"
+        self._paddock_sel_duration    = 3
+        self._paddock_rects           = {}
         self._race_phase              = "roster"
         self._race_bookkeeper         = None
         self._race_player_horse       = None
@@ -1116,6 +1144,71 @@ class UI(
         # Garrison Commander NPC panel
         self._garrison_quest_rects = {}
 
+        # ----- Pipe layer UI state -----
+        self.hopper_open            = False
+        self.active_hopper_pos      = None
+        self._hopper_rate_minus     = None
+        self._hopper_rate_plus      = None
+        self._hopper_close_btn      = None
+
+        self.pipe_output_open       = False
+        self.active_pipe_output_pos = None
+        self._po_facing_btns        = {}
+        self._po_close_btn          = None
+
+        self.pipe_filter_open       = False
+        self.active_pipe_filter_pos = None
+        self._pf_item_rects         = {}
+        self._pf_add_rects          = {}
+        self._pf_scroll             = 0
+        self._pf_close_btn          = None
+
+        self.pipe_sorter_open       = False
+        self.active_pipe_sorter_pos = None
+        self._ps_item_rects         = {}
+        self._ps_dir_rects          = {}
+        self._ps_scroll             = 0
+        self._ps_close_btn          = None
+
+        # ----- Factory UI state -----
+        self.factory_open           = False
+        self.active_factory_pos     = None
+        self._fac_input_rects       = {}   # slot_idx -> Rect
+        self._fac_output_rects      = {}   # slot_idx -> Rect
+        self._fac_count_btns        = {}   # (side, idx, sign) -> Rect
+        self._fac_time_btns         = {}   # '+'/'-' -> Rect
+        self._fac_pick_rects        = {}   # item_id -> Rect  (item picker)
+        self._fac_picking           = None # (side, idx) or None
+        self._fac_clear_rects       = {}   # slot_idx -> Rect per side
+        self._fac_inv_scroll        = 0
+        self._fac_cap_btns          = {}
+        self._fac_close_btn         = None
+
+
+    def open_hopper(self, world, pos):
+        self.hopper_open       = True
+        self.active_hopper_pos = pos
+
+    def open_pipe_output(self, world, pos):
+        self.pipe_output_open       = True
+        self.active_pipe_output_pos = pos
+
+    def open_pipe_filter(self, world, pos):
+        self.pipe_filter_open       = True
+        self.active_pipe_filter_pos = pos
+        self._pf_scroll             = 0
+
+    def open_pipe_sorter(self, world, pos):
+        self.pipe_sorter_open       = True
+        self.active_pipe_sorter_pos = pos
+        self._ps_scroll             = 0
+
+    def open_factory(self, world, pos):
+        self.factory_open       = True
+        self.active_factory_pos = pos
+        self._fac_picking       = None
+        self._fac_inv_scroll    = 0
+
 
     def draw(self, player, research=None, dt=0.0):
         self._research = research   # store so click handlers can access it
@@ -1126,6 +1219,7 @@ class UI(
             return
         self._draw_health(player)
         self._draw_hunger(player)
+        self._draw_breath(player)
         self._draw_depth(player)
         self._draw_pick_level(player)
         self._draw_money(player)
@@ -1188,6 +1282,7 @@ class UI(
             self._draw_help()
         if getattr(player, 'bg_place_mode', False):
             self._draw_bg_mode_indicator()
+        self._draw_shape_brush(player)
         self._draw_coffee_buffs(player)
         self._draw_wine_buffs(player)
         self._draw_tea_buffs(player)
@@ -1214,8 +1309,20 @@ class UI(
             self._draw_arena(player, dt)
         if self.racing_open:
             self._draw_racing(player, dt)
+        if getattr(self, "training_paddock_open", False):
+            self._draw_training_paddock(player, dt)
         if self.wardrobe_open:
             self._draw_wardrobe(player)
+        if self.hopper_open and self.active_hopper_pos is not None:
+            self._draw_hopper(player, player.world)
+        if self.pipe_output_open and self.active_pipe_output_pos is not None:
+            self._draw_pipe_output(player, player.world)
+        if self.pipe_filter_open and self.active_pipe_filter_pos is not None:
+            self._draw_pipe_filter(player, player.world)
+        if self.pipe_sorter_open and self.active_pipe_sorter_pos is not None:
+            self._draw_pipe_sorter(player, player.world)
+        if self.factory_open and self.active_factory_pos is not None:
+            self._draw_factory(player, player.world)
         if self._jw_detail_jewelry is not None:
             self._draw_jewelry_detail(player)
         self.draw_smith_hud(player)

@@ -224,6 +224,15 @@ class World:
         self.logic_state = {}       # (bx,by) -> {"facing": str, "latch_state": bool, "prev_input": bool}
         self.powered_wires = set()  # (bx,by) of currently-powered wire/gate tiles
         self.wire_mode = False      # True = wire layer visible
+        self._pipe_chunks = {}      # chunk_x -> [[uint8]*CHUNK_W]*WORLD_H (0=none 1=wood 2=iron 3=crystal)
+        self._dirty_pipe_chunks = set()
+        self.pipe_state = {}        # (bx,by) -> device config dict
+        self.block_shapes = {}      # (bx,by) -> (shape_type: str, rotation: int)
+        self.pipe_buffers = {}      # (bx,by) -> {item_id: count}  (hopper staging + stranded items)
+        self.pipe_in_transit = []   # list of {item_id, count, path, progress}
+        self.pipe_mode = False      # True = pipe layer visible
+        self.factory_data = {}      # (bx,by) -> {recipe, inventory, progress, inv_cap}
+        self.factory_flash = {}     # (bx,by) -> float countdown for completion flash
         self.entities = []
         self.arrows   = []
         World._CLOUD_LAYER_SPECS = None   # reset so new height values take effect
@@ -239,11 +248,15 @@ class World:
         self.birds = []
         self.nests = []
         self.insects = []
+        self.live_fish = []
+        self.spears = []
         self.dropped_items = []
         self.chest_data = {}     # (bx, by) -> {item_id: count}
         self.ruin_markers = {}   # (bx, by) -> dict (settlement lore for plaque UI)
         self.banner_data = {}    # (bx, by) -> coat_of_arms dict
         self.light_traps = {}    # (bx, by) -> {"accumulated": [species_id, ...]}
+        self.animal_traps = {}   # (bx, by) -> {"accumulated": [(item_id, count), ...]}
+        self.fish_traps = {}     # (bx, by) -> {"type": str, "bait": int, "fish": int}
         self.garden_data = {}    # (bx, by) -> [(Wildflower, cx, cy), ...]
         self.wildflower_display_data = {}  # (bx, by) -> Wildflower | None
         self._surface_height_cache = {}
@@ -297,6 +310,7 @@ class World:
         self._water_timer = 0.0
         self._water_interval = 0.12
         self._pending_water = set()
+        self._water_sources = set()  # (x,y) of infinite source blocks (bucket-placed or world-gen)
         # Sapling growth
         self._sapling_timer = 0.0
         self._sapling_interval = 30.0
@@ -364,6 +378,7 @@ class World:
         init_player_cities(self)
         self._spawn_birds()
         self._spawn_insects()
+        self._spawn_live_fish()
 
     # ------------------------------------------------------------------
     # Backward-compat properties
@@ -574,6 +589,9 @@ class World:
         wire_data = self._save_mgr.load_wire_chunk(cx) if self._save_mgr else None
         if wire_data is not None:
             self._wire_chunks[cx] = wire_data
+        pipe_data = self._save_mgr.load_pipe_chunk(cx) if self._save_mgr else None
+        if pipe_data is not None:
+            self._pipe_chunks[cx] = pipe_data
 
     def unload_chunk(self, cx: int):
         """Save dirty chunk to DB and evict from memory."""
@@ -610,17 +628,25 @@ class World:
             if dirty_bg:
                 self._save_mgr.save_bg_chunks_batch(dirty_bg)
                 self._dirty_bg_chunks -= set(dirty_bg.keys())
+            dirty_pipe = {cx: self._pipe_chunks[cx] for cx in to_unload
+                          if cx in self._dirty_pipe_chunks and cx in self._pipe_chunks}
+            if dirty_pipe:
+                self._save_mgr.save_pipe_chunks_batch(dirty_pipe)
+                self._dirty_pipe_chunks -= set(dirty_pipe.keys())
         if to_unload:
             unload_ranges = [(cx * CHUNK_W * BLOCK_SIZE, (cx + 1) * CHUNK_W * BLOCK_SIZE)
                              for cx in to_unload]
             self.insects = [i for i in self.insects
                             if not any(x0 <= i.x < x1 for x0, x1 in unload_ranges)]
+            self.live_fish = [f for f in self.live_fish
+                              if not any(x0 <= f.x < x1 for x0, x1 in unload_ranges)]
             unload_x_ranges = [(cx * CHUNK_W, (cx + 1) * CHUNK_W) for cx in to_unload]
             self._grow_lamps = {(lx, ly) for lx, ly in self._grow_lamps
                                 if not any(x0 <= lx < x1 for x0, x1 in unload_x_ranges)}
         for cx in to_unload:
             del self._chunks[cx]
             self._bg_chunks.pop(cx, None)
+            self._pipe_chunks.pop(cx, None)
 
         # Load all needed chunks from DB in one query, generate any that are new
         if to_load:
@@ -628,6 +654,7 @@ class World:
             db_data = self._save_mgr.load_chunks_batch(to_load) if self._save_mgr else {}
             bg_db_data = self._save_mgr.load_bg_chunks_batch(to_load) if self._save_mgr else {}
             wire_db_data = self._save_mgr.load_wire_chunks_batch(to_load) if self._save_mgr else {}
+            pipe_db_data = self._save_mgr.load_pipe_chunks_batch(to_load) if self._save_mgr else {}
             newly_generated = []
             for cx in to_load:
                 if cx in db_data:
@@ -641,8 +668,11 @@ class World:
                     self._bg_chunks[cx] = bg_db_data[cx]
                 if cx in wire_db_data:
                     self._wire_chunks[cx] = wire_db_data[cx]
+                if cx in pipe_db_data:
+                    self._pipe_chunks[cx] = pipe_db_data[cx]
                 self._spawn_insects_for_chunk(cx)
                 self._spawn_garden_insects_in_chunk(cx)
+                self._spawn_live_fish_for_chunk(cx)
             for cx in newly_generated:
                 self._spawn_animals_for_chunk(cx)
                 self._spawn_birds_for_chunk(cx)
@@ -671,6 +701,7 @@ class World:
 
     def _load_from(self, data, player_x: float = 0.0):
         self._water_level    = data.get("water_level", {})
+        self._water_sources  = set(map(tuple, data.get("water_sources", [])))
         self._soil_moisture  = data.get("soil_moisture", {})
         self._soil_fertility = data.get("soil_fertility", {})
         self._crop_progress  = data.get("crop_progress", {})
@@ -700,6 +731,20 @@ class World:
             tuple(int(v) for v in k.split(",")): coa
             for k, coa in raw_banners.items()
         }
+        raw_animal_traps = data.get("animal_trap_data", {})
+        self.animal_traps = {
+            tuple(int(v) for v in k.split(",")): trap
+            for k, trap in raw_animal_traps.items()
+        }
+        raw_fish_traps = data.get("fish_trap_data", {})
+        self.fish_traps = {
+            tuple(int(v) for v in k.split(",")): {
+                "type":        t.get("type", "wicker"),
+                "bait":        t.get("bait", 0),
+                "accumulated": [tuple(e) for e in t.get("accumulated", [])],
+            }
+            for k, t in raw_fish_traps.items()
+        }
         self.garden_data = data.get("garden_data", {})
         self.wildflower_display_data = data.get("wildflower_display_data", {})
         # sculpture_positions loaded here as uid strings; resolved in main.py
@@ -710,10 +755,40 @@ class World:
         self._pending_unplaced_vase_uids  = data.get("unplaced_vase_uids", [])
         self.day_count = data.get("day_count", 0)
         self.logic_state = data.get("logic_state", {})
+        raw_pipe_state = data.get("pipe_state", {})
+        self.pipe_state = {
+            tuple(int(c) for c in k.split(",")): cfg
+            for k, cfg in raw_pipe_state.items()
+        }
+        raw_pipe_buffers = data.get("pipe_buffers", {})
+        self.pipe_buffers = {
+            tuple(int(c) for c in k.split(",")): buf
+            for k, buf in raw_pipe_buffers.items()
+        }
+        raw_transit = data.get("pipe_in_transit", [])
+        self.pipe_in_transit = [
+            {
+                "item_id":  p["item_id"],
+                "count":    p["count"],
+                "path":     [tuple(t) for t in p["path"]],
+                "progress": p["progress"],
+            }
+            for p in raw_transit
+        ]
+        raw_factory = data.get("factory_data", {})
+        self.factory_data = {
+            tuple(int(c) for c in k.split(",")): v
+            for k, v in raw_factory.items()
+        }
         raw_trade = data.get("trade_block_data", {})
         self.trade_block_data = {
             tuple(int(v) for v in k.split(",")): td
             for k, td in raw_trade.items()
+        }
+        raw_block_shapes = data.get("block_shapes", {})
+        self.block_shapes = {
+            k if isinstance(k, tuple) else tuple(int(c) for c in k.split(",")): tuple(v)
+            for k, v in raw_block_shapes.items()
         }
         # Load chunks around the player's saved position
         player_cx = int(player_x // BLOCK_SIZE) // CHUNK_W
@@ -800,10 +875,13 @@ class World:
                     entity.traits["horseshoe_applied"]  = raw.get("horseshoe_applied", False)
                     entity.traits["endurance"]          = raw.get("endurance", 1.0)
                     entity.traits["gait"]               = raw.get("gait", 1.0)
-                    entity.traits["coat_pattern"]  = raw.get("coat_pattern", "solid")
-                    entity.traits["leg_marking"]   = raw.get("leg_marking", "none")
-                    entity.traits["mane_color"]    = raw.get("mane_color", "match")
-                    entity.traits["face_marking"]  = raw.get("face_marking", "none")
+                    entity.traits["coat_pattern"]       = raw.get("coat_pattern", "solid")
+                    entity.traits["leg_marking"]        = raw.get("leg_marking", "none")
+                    entity.traits["mane_color"]         = raw.get("mane_color", "match")
+                    entity.traits["face_marking"]       = raw.get("face_marking", "none")
+                    entity.traits["equipped_saddle"]    = raw.get("equipped_saddle")
+                    entity.traits["equipped_horseshoe"] = raw.get("equipped_horseshoe")
+                    entity.traits["training_bonuses"]   = raw.get("training_bonuses", {})
                 elif isinstance(entity, Sheep):
                     entity.traits["wool_color"] = raw.get("wool_color", "white")
                     entity.traits["fleece"]     = raw.get("fleece", raw.get("productivity", 1.0))
@@ -835,10 +913,16 @@ class World:
                         entity.traits[tk] = raw.get(tk, 1.0)
                     for ability in ("tracking","herding","guard","retrieve"):
                         entity.traits[f"has_{ability}"] = raw.get(f"has_{ability}", False)
-                    entity.traits["base_color"]      = raw.get("base_color", "yellow")
-                    entity.traits["dilute_expressed"]= raw.get("dilute_expressed", False)
-                    entity.traits["dilute_carrier"]  = raw.get("dilute_carrier", False)
-                    entity.traits["white_spotting"]  = raw.get("white_spotting", "solid")
+                    entity.traits["base_color"]        = raw.get("base_color", "yellow")
+                    entity.traits["dilute_expressed"]  = raw.get("dilute_expressed", False)
+                    entity.traits["dilute_carrier"]    = raw.get("dilute_carrier", False)
+                    entity.traits["white_spotting"]    = raw.get("white_spotting", "solid")
+                    entity.traits["sprint"]            = raw.get("sprint", 1.0)
+                    entity.traits["focus"]             = raw.get("focus", 1.0)
+                    entity.traits["race_style"]        = raw.get("race_style", "pacer")
+                    entity.traits["equipped_collar"]   = raw.get("equipped_collar")
+                    entity.traits["equipped_blinkers"] = raw.get("equipped_blinkers")
+                    entity.traits["training_bonuses"]  = raw.get("training_bonuses", {})
             entity.no_breed        = extra.get("no_breed", False)
             entity.health          = extra.get("health", 3)
             entity.dead            = extra.get("dead", False)
@@ -945,6 +1029,7 @@ class World:
                     if submerged and y >= SURFACE_Y:
                         chunk[y][lx] = WATER
                         self._water_level[(x, y)] = 8
+                        self._water_sources.add((x, y))
                         self._lake_cells.append((y, x))
                     else:
                         chunk[y][lx] = AIR
@@ -1305,6 +1390,7 @@ class World:
                         chunk[ly][lx] = WATER
                         world_x = cx * CHUNK_W + lx
                         self._water_level[(world_x, ly)] = 8
+                        self._water_sources.add((world_x, ly))
                         self._lake_cells.append((ly, world_x))
 
     def _gen_chunk_oil_pockets(self, cx: int, chunk: list):
@@ -1435,6 +1521,7 @@ class World:
                         use_spot = is_surface_row and spot_rng.random() < 0.08
                         chunk[y][lx] = FISHING_SPOT_BLOCK if use_spot else WATER
                         self._water_level[(x, y)] = 8
+                        self._water_sources.add((x, y))
                         self._lake_cells.append((y, x))
 
             # Bank fill: where terrain dips below the water surface level on
@@ -1471,6 +1558,7 @@ class World:
             (SEA_ANEMONE,    0.10),
             (KELP_BLOCK,     0.12),
             (SEASHELL_BLOCK, 0.06),
+            (OYSTER_BLOCK,   0.04),
         ]),
         # Twilight zone — floor SURFACE_Y+50 to SURFACE_Y+110
         "twilight": (SURFACE_Y + 50, SURFACE_Y + 110, [
@@ -2059,13 +2147,37 @@ class World:
             self._soil_fallow.pop((x, y), None)
         if old_bid in (WATER, FISHING_SPOT_BLOCK):
             self._water_level.pop((x, y), None)
+            self._water_sources.discard((x, y))
         if block_id == AIR:
-            for ddx, ddy in ((0, -1), (-1, 0), (1, 0)):
-                nx, ny = x + ddx, y + ddy
-                if 0 <= ny < WORLD_H:
-                    nb = self._chunk_get(nx, ny)
-                    if nb == WATER:
-                        self._pending_water.add((nx, ny))
+            # Immediately fill from adjacent water — gravity first (above), then the
+            # highest-level horizontal neighbour. This prevents any visible gap when
+            # clearing blocks inside or next to a water body.
+            above_y = y - 1
+            if above_y >= 0 and self._chunk_get(x, above_y) == WATER:
+                chunk[y][x % CHUNK_W] = WATER
+                self._water_level[(x, y)] = self._water_level.get((x, above_y), 8)
+                self._pending_water.add((x, above_y))
+                self._pending_water.add((x, y))
+            else:
+                best_nx, best_lvl = None, 0
+                for ddx in (-1, 1):
+                    nx = x + ddx
+                    if self._chunk_get(nx, y) == WATER:
+                        lvl = self._water_level.get((nx, y), 8)
+                        if lvl > best_lvl:
+                            best_lvl, best_nx = lvl, nx
+                if best_nx is not None and best_lvl >= 1:
+                    chunk[y][x % CHUNK_W] = WATER
+                    self._water_level[(x, y)] = best_lvl
+                    self._pending_water.add((best_nx, y))
+                    self._pending_water.add((x, y))
+                else:
+                    for ddx, ddy in ((0, -1), (-1, 0), (1, 0)):
+                        nx, ny = x + ddx, y + ddy
+                        if 0 <= ny < WORLD_H:
+                            nb = self._chunk_get(nx, ny)
+                            if nb == WATER:
+                                self._pending_water.add((nx, ny))
         elif old_bid in (DAM_BLOCK_CLOSED,) and block_id == DAM_BLOCK_OPEN:
             # DAM open: release water pooled above the dam
             for check_y in range(y - 1, max(0, y - 20), -1):
@@ -2078,11 +2190,36 @@ class World:
                 nx, ny = x + ddx, y + ddy
                 if self._chunk_get(nx, ny) == WATER:
                     self._drain_unsustained_water(nx, ny)
-        from blocks import LIGHT_TRAP_BLOCK as _LTB
+        from blocks import (LIGHT_TRAP_BLOCK as _LTB, ANIMAL_TRAP_BLOCK as _ATB,
+                            WICKER_FISH_TRAP_BLOCK as _WFTB, IRON_FISH_TRAP_BLOCK as _IFTB)
         if block_id == _LTB:
             self.light_traps.setdefault((x, y), {"accumulated": []})
         elif old_bid == _LTB:
             self.light_traps.pop((x, y), None)
+        if block_id == _ATB:
+            self.animal_traps.setdefault((x, y), {"accumulated": []})
+        elif old_bid == _ATB:
+            self.animal_traps.pop((x, y), None)
+        from blocks import REINFORCED_FISH_TRAP_BLOCK as _RFTB, STEEL_CAGE_TRAP_BLOCK as _SCTB
+        _FTRAP_TYPE = {_WFTB: "wicker", _IFTB: "iron", _RFTB: "reinforced", _SCTB: "steel"}
+        if block_id in _FTRAP_TYPE:
+            self.fish_traps.setdefault((x, y), {"type": _FTRAP_TYPE[block_id], "bait": 0, "accumulated": []})
+        elif old_bid in _FTRAP_TYPE:
+            self.fish_traps.pop((x, y), None)
+            self.logic_state.pop((x, y), None)
+        if block_id == AIR:
+            self.block_shapes.pop((x, y), None)
+
+    def get_block_shape(self, x, y):
+        """Return (shape_type, rotation) for the tile, or ('full', 0) if unset."""
+        return self.block_shapes.get((x, y), ("full", 0))
+
+    def set_block_shape(self, x, y, shape_type, rotation):
+        """Tag a tile with a placement shape.  Passing ('full', 0) removes the tag."""
+        if shape_type == "full":
+            self.block_shapes.pop((x, y), None)
+        else:
+            self.block_shapes[(x, y)] = (shape_type, rotation)
 
     def get_bg_block(self, x, y):
         if y < 0 or y >= WORLD_H or abs(x) > WORLD_MAX_X:
@@ -2122,6 +2259,24 @@ class World:
     def toggle_wire_mode(self):
         self.wire_mode = not self.wire_mode
 
+    def get_pipe(self, x, y) -> int:
+        if y < 0 or y >= WORLD_H or abs(x) > WORLD_MAX_X:
+            return 0
+        chunk = self._pipe_chunks.get(x // CHUNK_W)
+        return chunk[y][x % CHUNK_W] if chunk is not None else 0
+
+    def set_pipe(self, x, y, val: int):
+        if y < 0 or y >= WORLD_H or abs(x) > WORLD_MAX_X:
+            return
+        cx = x // CHUNK_W
+        if cx not in self._pipe_chunks:
+            self._pipe_chunks[cx] = [[0] * CHUNK_W for _ in range(WORLD_H)]
+        self._pipe_chunks[cx][y][x % CHUNK_W] = val
+        self._dirty_pipe_chunks.add(cx)
+
+    def toggle_pipe_mode(self):
+        self.pipe_mode = not self.pipe_mode
+
     def is_solid(self, x, y):
         bid = self.get_block(x, y)
         return (bid != AIR and bid != LADDER
@@ -2146,7 +2301,40 @@ class World:
             tick_outpost_day(self.day_count)
             from player_cities import tick_city_day
             tick_city_day(self)
+            self._tick_training_day()
         self._tick_light_traps(dt)
+        if self.time_of_day < prev:
+            self._tick_animal_traps_day()
+            self._tick_fish_traps_day()
+
+    def _tick_training_day(self):
+        """Advance all active training sessions by one day and apply boosts when complete."""
+        player = getattr(self, "player", None)
+        if not player:
+            return
+        sessions = getattr(player, "training_sessions", [])
+        if not sessions:
+            return
+        _STAT_CAP = 0.15
+        finished  = []
+        for s in sessions:
+            s["days_remaining"] -= 1
+            if s["days_remaining"] <= 0:
+                # Find entity and apply boost
+                uid = s.get("uid")
+                for ent in self.entities:
+                    if getattr(ent, "uid", None) == uid:
+                        tb  = ent.traits.setdefault("training_bonuses", {})
+                        stat = s["stat"]
+                        cur  = tb.get(stat, 0.0)
+                        tb[stat] = round(min(_STAT_CAP, cur + s.get("boost_per_day", 0.01) * s.get("days_total", 1)), 3)
+                        break
+                finished.append(s)
+                player.pending_notifications.append(
+                    ("Training", f"Training complete! {s['stat'].title()} improved.", None)
+                )
+        for s in finished:
+            sessions.remove(s)
 
     def _apply_morning_dew(self):
         """Give every sky-exposed tilled tile a small free moisture boost at dawn."""
@@ -2182,6 +2370,122 @@ class World:
             if candidates:
                 sp = _rnd.choice(candidates).SPECIES
                 trap["accumulated"].append(sp)
+
+    # (catch_chance_per_day, max_catches_per_day, drop_pool)
+    _TRAP_BIOME_DATA = {
+        # Rich — dense woodland with abundant game
+        "boreal":          (0.85, 2, [("rabbit_pelt",1),("rabbit_pelt",1),("wolf_pelt",1),("fox_pelt",1),("deer_hide",1)]),
+        "temperate":       (0.85, 2, [("rabbit_pelt",1),("rabbit_pelt",1),("fox_pelt",1),("deer_hide",1),("deer_hide",1)]),
+        "birch_forest":    (0.80, 2, [("rabbit_pelt",1),("rabbit_pelt",1),("fox_pelt",1),("deer_hide",1)]),
+        "redwood":         (0.80, 2, [("rabbit_pelt",1),("deer_hide",1),("deer_hide",1),("wolf_pelt",1)]),
+        "alpine_mountain": (0.75, 2, [("rabbit_pelt",1),("wolf_pelt",1),("deer_hide",1),("arctic_fox_pelt",1)]),
+        # Good — mixed terrain with reasonable game
+        "rolling_hills":   (0.60, 1, [("rabbit_pelt",1),("rabbit_pelt",1),("fox_pelt",1),("deer_hide",1)]),
+        "steep_hills":     (0.60, 1, [("rabbit_pelt",1),("fox_pelt",1),("deer_hide",1)]),
+        "east_asian":      (0.60, 1, [("rabbit_pelt",1),("fox_pelt",1),("deer_hide",1)]),
+        "rocky_mountain":  (0.55, 1, [("rabbit_pelt",1),("rabbit_pelt",1),("deer_hide",1)]),
+        "south_asian":     (0.55, 1, [("rabbit_pelt",1),("rabbit_pelt",1),("deer_hide",1)]),
+        "steppe":          (0.55, 1, [("rabbit_pelt",1),("rabbit_pelt",1),("fox_pelt",1)]),
+        "mediterranean":   (0.50, 1, [("rabbit_pelt",1),("fox_pelt",1),("deer_hide",1)]),
+        # Moderate — passable but not ideal
+        "savanna":         (0.40, 1, [("rabbit_pelt",1),("deer_hide",1),("deer_hide",1)]),
+        "jungle":          (0.35, 1, [("rabbit_pelt",1),("rabbit_pelt",1),("deer_hide",1)]),
+        "tropical":        (0.35, 1, [("rabbit_pelt",1),("deer_hide",1)]),
+        "wetland":         (0.35, 1, [("rabbit_pelt",1),("rabbit_pelt",1)]),
+        # Sparse — tough terrain, little game
+        "tundra":          (0.20, 1, [("arctic_fox_pelt",1),("rabbit_pelt",1),("rabbit_pelt",1)]),
+        "arid_steppe":     (0.20, 1, [("rabbit_pelt",1),("fox_pelt",1)]),
+        "swamp":           (0.15, 1, [("rabbit_pelt",1)]),
+        # Barren biomes (desert, beach, wasteland, canyon, coastal) have no entry → 0 yield
+    }
+
+    # Human-readable quality label shown when the trap is empty
+    _TRAP_QUALITY_LABELS = [
+        (0.75, "Rich hunting ground"),
+        (0.50, "Good hunting ground"),
+        (0.30, "Moderate game — check every few days"),
+        (0.01, "Sparse game — rarely produces"),
+    ]
+
+    def trap_quality_label(self, bx: int) -> str:
+        biome = self.biodome_at(bx)
+        data  = self._TRAP_BIOME_DATA.get(biome)
+        if data is None:
+            return "Barren — no game in this region"
+        chance = data[0]
+        for threshold, label in self._TRAP_QUALITY_LABELS:
+            if chance >= threshold:
+                return label
+        return "Sparse game — rarely produces"
+
+    def _tick_animal_traps_day(self):
+        if not self.animal_traps:
+            return
+        import random as _rnd
+        for pos, trap in self.animal_traps.items():
+            if len(trap["accumulated"]) >= 3:
+                continue
+            biome = self.biodome_at(pos[0])
+            data  = self._TRAP_BIOME_DATA.get(biome)
+            if data is None:
+                continue
+            catch_chance, max_per_day, pool = data
+            caught = 0
+            while caught < max_per_day and len(trap["accumulated"]) < 3:
+                if _rnd.random() > catch_chance:
+                    break
+                item_id, count = _rnd.choice(pool)
+                trap["accumulated"].append((item_id, count))
+                caught += 1
+
+    # Base catches per day by biome (wicker tier); richer water = more fish
+    _FISH_TRAP_BIOME_DATA = {
+        "boreal": 4, "temperate": 4, "east_asian": 4, "wetland": 4,
+        "birch_forest": 3, "redwood": 3, "rolling_hills": 3, "rocky_mountain": 3,
+        "alpine_mountain": 3, "south_asian": 3, "jungle": 3, "tropical": 3,
+        "mediterranean": 3, "steep_hills": 2, "steppe": 2, "savanna": 2,
+        "swamp": 2, "tundra": 2, "arid_steppe": 1,
+        # desert / beach / canyon — no entry → no yield
+    }
+    # Catches added per day for each tier above wicker
+    _TRAP_TIER_BONUS = {"wicker": 0, "iron": 2, "reinforced": 4, "steel": 8}
+    # Inventory and bait caps per tier
+    _TRAP_CAPS = {
+        "wicker":     {"inv": 10, "bait": 20},
+        "iron":       {"inv": 20, "bait": 40},
+        "reinforced": {"inv": 30, "bait": 60},
+        "steel":      {"inv": 50, "bait": 80},
+    }
+
+    def _tick_fish_traps_day(self):
+        if not self.fish_traps:
+            return
+        for pos, trap in self.fish_traps.items():
+            tier      = trap["type"]
+            caps      = self._TRAP_CAPS.get(tier, self._TRAP_CAPS["wicker"])
+            total     = sum(c for _, c in trap["accumulated"])
+            if total >= caps["inv"] or trap["bait"] <= 0:
+                continue
+            bx, by = pos
+            # Trap must be submerged (placed in water means 3+ adjacent water tiles typical)
+            from blocks import WATER as _W
+            water_count = sum(1 for dx, dy in ((0,1),(0,-1),(1,0),(-1,0))
+                              if self.get_block(bx+dx, by+dy) == _W)
+            if water_count == 0:
+                continue
+            base      = self._FISH_TRAP_BIOME_DATA.get(self.biodome_at(bx))
+            if base is None:
+                continue
+            max_catch = base + self._TRAP_TIER_BONUS.get(tier, 0)
+            # Deeper/more surrounded water gives a small bonus
+            if water_count >= 3:
+                max_catch += 1
+            caught = 0
+            while caught < max_catch and trap["bait"] > 0 and total < caps["inv"]:
+                trap["accumulated"].append(("fish", 1))
+                trap["bait"] -= 1
+                total += 1
+                caught += 1
 
     def _update_pumps(self):
         """When a pump block is on and adjacent to water, push water one tile upward."""
@@ -2225,16 +2529,33 @@ class World:
         self._water_timer -= self._water_interval
         self._update_pumps()
 
+        loaded_cx = set(self._chunks.keys())
+
+        # Every tick: queue water that has a lower horizontal neighbour OR has air
+        # directly below — gravity blocks must always process before horizontal spread.
+        for (x, y), level in self._water_level.items():
+            if x // CHUNK_W not in loaded_cx:
+                continue
+            if (self._water_level.get((x - 1, y), 8) < level or
+                    self._water_level.get((x + 1, y), 8) < level):
+                self._pending_water.add((x, y))
+            elif y + 1 < WORLD_H and self._chunk_get(x, y + 1) == AIR:
+                self._pending_water.add((x, y))
+
         if not self._pending_water:
             return
 
-        # Process top-to-bottom: downward flow has priority
-        to_process = sorted(self._pending_water, key=lambda p: p[1])
+        # Process top-to-bottom (gravity first); within same row, highest level first
+        # so donors process before receivers and water flows naturally downhill.
+        to_process = sorted(self._pending_water,
+                            key=lambda p: (p[1], -self._water_level.get(p, 8)))
         self._pending_water.clear()
 
-        new_water = set()
+        new_pending = set()
         spreads = 0
-        max_spreads = 160
+        max_spreads = 256
+
+        from blocks import IRRIGATION_CHANNEL_BLOCK as _ICB
 
         for (x, y) in to_process:
             if self._chunk_get(x, y) != WATER:
@@ -2245,37 +2566,102 @@ class World:
                 self._pending_water.add((x, y))
                 continue
 
+            is_source = (x, y) in self._water_sources
             below = y + 1
-            if below < WORLD_H and self._chunk_get(x, below) == AIR:
-                # Water FALLS: block moves down, leaving AIR behind.
-                self._chunk_set(x, y, AIR)
-                self._water_level.pop((x, y), None)
-                self._chunk_set(x, below, WATER)
-                self._water_level[(x, below)] = level
-                new_water.add((x, below))
-                for adx in (-1, 1):
-                    anx = x + adx
-                    if self._chunk_get(anx, y) == WATER:
-                        new_water.add((anx, y))
-                spreads += 1
-                continue
 
-            # Blocked below — spread sideways
-            if level > 1:
-                from blocks import IRRIGATION_CHANNEL_BLOCK as _ICB
-                source_in_channel = self.get_bg_block(x, y) == _ICB
-                for dx in (-1, 1):
-                    nx = x + dx
-                    if self._chunk_get(nx, y) == AIR:
-                        dest_in_channel = self.get_bg_block(nx, y) == _ICB
-                        spread_level = level if (source_in_channel and dest_in_channel) else level - 1
-                        if spread_level > 0:
-                            self._chunk_set(nx, y, WATER)
-                            self._water_level[(nx, y)] = spread_level
-                            new_water.add((nx, y))
-                            spreads += 1
+            # ── Phase 1: Gravity ────────────────────────────────────────────
+            if below < WORLD_H:
+                below_bid = self._chunk_get(x, below)
 
-        self._pending_water.update(new_water)
+                if below_bid == AIR:
+                    # Fall into empty space below
+                    self._chunk_set(x, below, WATER)
+                    self._water_level[(x, below)] = level
+                    new_pending.add((x, below))
+                    if not is_source:
+                        self._chunk_set(x, y, AIR)
+                        self._water_level.pop((x, y), None)
+                        # Queue block above so the column cascades down without gaps
+                        if y > 0 and self._chunk_get(x, y - 1) == WATER:
+                            new_pending.add((x, y - 1))
+                    # Re-queue horizontal neighbours so they can also fall/flow
+                    for adx in (-1, 1):
+                        if self._chunk_get(x + adx, y) == WATER:
+                            new_pending.add((x + adx, y))
+                    spreads += 1
+                    continue
+
+                elif below_bid == WATER:
+                    below_level = self._water_level.get((x, below), 8)
+                    if below_level < 8:
+                        # Push volume downward to fill incomplete block below
+                        space = 8 - below_level
+                        transfer = min(level if not is_source else space, space)
+                        self._water_level[(x, below)] = below_level + transfer
+                        new_pending.add((x, below))
+                        if not is_source:
+                            new_mine = level - transfer
+                            if new_mine <= 0:
+                                self._chunk_set(x, y, AIR)
+                                self._water_level.pop((x, y), None)
+                                # Queue block above so the column cascades down
+                                if y > 0 and self._chunk_get(x, y - 1) == WATER:
+                                    new_pending.add((x, y - 1))
+                            else:
+                                self._water_level[(x, y)] = new_mine
+                                new_pending.add((x, y))
+                        spreads += 1
+                        continue
+
+            # ── Phase 2: Horizontal equalization / spreading ─────────────────
+            source_in_channel = self.get_bg_block(x, y) == _ICB
+
+            for dx in (-1, 1):
+                nx = x + dx
+                nbid = self._chunk_get(nx, y)
+
+                if nbid == AIR:
+                    # Determine spread level: no decay if there's a drop at the neighbour
+                    # (water is "falling" toward a lower path — waterfall / slope).
+                    below_nx = self._chunk_get(nx, below) if below < WORLD_H else BEDROCK
+                    dest_in_channel = self.get_bg_block(nx, y) == _ICB
+                    if source_in_channel and dest_in_channel:
+                        spread_level = level          # channel preserves level
+                    elif below_nx == AIR:
+                        spread_level = level          # drop exists → no decay
+                    else:
+                        spread_level = level - 1      # flat terrain → normal decay
+                    if spread_level >= 1:
+                        self._chunk_set(nx, y, WATER)
+                        self._water_level[(nx, y)] = spread_level
+                        new_pending.add((nx, y))
+                        spreads += 1
+
+                elif nbid == WATER:
+                    n_level = self._water_level.get((nx, y), 8)
+                    # Equalize: any difference causes flow toward the lower neighbour.
+                    # We update `level` immediately so a block can't donate the same
+                    # volume to both neighbours in one pass (prevents double-donation).
+                    if level > n_level:
+                        transfer = max(1, (level - n_level) // 2)
+                        self._water_level[(nx, y)] = min(8, n_level + transfer)
+                        new_pending.add((nx, y))
+                        # Propagate one step further so chains converge in fewer ticks
+                        nx2 = nx + dx
+                        if self._chunk_get(nx2, y) == WATER:
+                            new_pending.add((nx2, y))
+                        if not is_source:
+                            level -= transfer   # keep local var in sync
+                            if level <= 0:
+                                self._chunk_set(x, y, AIR)
+                                self._water_level.pop((x, y), None)
+                                level = 0
+                            else:
+                                self._water_level[(x, y)] = level
+                                new_pending.add((x, y))
+                        spreads += 1
+
+        self._pending_water.update(new_pending)
 
     def _drain_unsustained_water(self, start_x, start_y):
         """Drain water tiles that can no longer be fed after a block was placed nearby."""
@@ -2288,9 +2674,9 @@ class World:
             seen.add((x, y))
             if self._chunk_get(x, y) != WATER:
                 continue
+            if (x, y) in self._water_sources:
+                continue  # never drain infinite source blocks
             level = self._water_level.get((x, y), 8)
-            if level == 8:
-                continue  # never drain world-gen source blocks
             # Sustained if a horizontal neighbor can supply it (level >= this+1)
             # or a water tile above can fall into it (level >= this).
             sustained = False
@@ -2311,6 +2697,50 @@ class World:
                     queue.append((x + dx, y))
             if y + 1 < WORLD_H and self._chunk_get(x, y + 1) == WATER:
                 queue.append((x, y + 1))
+
+    # Blocks that flowing water (level 1-7, i.e. non-source) can erode.
+    # Maps block_id → replacement block_id.
+    _FLOOD_ERODIBLE = None  # initialised lazily so block constants are available
+
+    @staticmethod
+    def _build_erodible():
+        erodible = {TILLED_SOIL: DIRT, HAY_BALE: AIR, TORCH: AIR, WALL_SCONCE: AIR}
+        for bid in YOUNG_CROP_BLOCKS:
+            erodible[bid] = AIR
+        return erodible
+
+    def update_flood_erosion(self, dt):
+        """Flowing water (level 1–7) erodes fragile adjacent blocks over time."""
+        if World._FLOOD_ERODIBLE is None:
+            World._FLOOD_ERODIBLE = World._build_erodible()
+        self._erosion_timer = getattr(self, '_erosion_timer', 0.0) + dt
+        if self._erosion_timer < 3.0:
+            return
+        self._erosion_timer = 0.0
+
+        erodible = World._FLOOD_ERODIBLE
+        loaded_chunks = set(self._chunks.keys())
+        rng = random.Random()
+
+        for (wx, wy), level in list(self._water_level.items()):
+            # Only flowing water (non-source, level 1-7) causes erosion
+            if level < 5 or (wx, wy) in self._water_sources:
+                continue
+            # Skip blocks in unloaded chunks
+            if wx // CHUNK_W not in loaded_chunks:
+                continue
+            # Water sitting inside an irrigation channel is intentional — never erode from it
+            if self.get_bg_block(wx, wy) == IRRIGATION_CHANNEL_BLOCK:
+                continue
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                nx, ny = wx + dx, wy + dy
+                bid = self.get_block(nx, ny)
+                if bid not in erodible:
+                    continue
+                if rng.random() > 0.20:   # 20 % chance per check per 3 s
+                    continue
+                replacement = erodible[bid]
+                self.set_block(nx, ny, replacement)
 
     def _has_sky_view(self, x, y):
         _transparent = BUSH_BLOCKS | CROP_BLOCKS | {SAPLING} | ALL_FRUIT_SAPLINGS
@@ -3726,6 +4156,97 @@ class World:
         for cx in sorted(self._chunks.keys()):
             self._spawn_insects_for_chunk(cx)
             self._spawn_garden_insects_in_chunk(cx)
+
+    def _spawn_live_fish_for_chunk(self, cx):
+        from live_fish import LiveFish, LIVE_FISH_SPECIES
+        from blocks import WATER, FISHING_SPOT_BLOCK
+        rng = random.Random(self.seed + 42424 + cx * 6151)
+        base_x = cx * CHUNK_W
+        sample_step = 4
+        for x in range(base_x + 2, base_x + CHUNK_W - 2, sample_step):
+            biodome = self.biodome_at(x)
+            biome   = self.get_biome(x)
+            is_ocean = biodome == "ocean"
+            # Probe water at fixed depths below sea level (SURFACE_Y = ocean surface).
+            # surface_height() returns ocean floor, not ocean surface, so we probe
+            # from SURFACE_Y directly. For land with lakes this still finds water at
+            # the shallow band; for ocean it finds water at reef, twilight, and deep.
+            for depth_offset in (2, 15, 55, 110):
+                py = SURFACE_Y + depth_offset
+                if py >= WORLD_H - 2:
+                    continue
+                bid = self.get_block(x, py)
+                if bid != WATER and bid != FISHING_SPOT_BLOCK:
+                    continue
+                zone = get_ocean_depth_zone(py)
+                # Filter eligible species.
+                eligible = []
+                for entry in LIVE_FISH_SPECIES:
+                    zones = entry["ocean_zones"]
+                    if zones:
+                        if not is_ocean:
+                            continue
+                        if zone not in zones:
+                            continue
+                    else:
+                        # Surface/freshwater fish: only spawn in shallow water
+                        if depth_offset > 20:
+                            continue
+                    weight = entry["rarity_weight"]
+                    eligible.extend([entry] * weight)
+                if not eligible:
+                    continue
+                # Density: ~60% of valid water probes spawn a fish.
+                if rng.random() > 0.60:
+                    continue
+                entry = rng.choice(eligible)
+                fdata_seed = (self.seed * 17 + x * 31 + py * 7 + rng.randint(0, 1 << 30)) & 0x7FFFFFFF
+                spawn_x = float(x * BLOCK_SIZE + rng.randint(-6, 6))
+                spawn_y = float(py * BLOCK_SIZE + rng.randint(-4, 4))
+                fdata = self._lookup_fish_data(entry["species"])
+                rarity = rng.choice(fdata.get("rarity_pool", ["common"])) if fdata else "common"
+                fish_ent = LiveFish(
+                    spawn_x, spawn_y, self,
+                    species=entry["species"],
+                    rarity=rarity,
+                    seed=fdata_seed,
+                    biome=biodome,
+                    ocean_zone=zone,
+                    schooling=entry.get("schooling", False),
+                )
+                self.live_fish.append(fish_ent)
+                # Schools: spawn 2-4 followers nearby.
+                if entry.get("schooling") and rng.random() < 0.5:
+                    for _ in range(rng.randint(2, 4)):
+                        ox = rng.randint(-30, 30)
+                        oy = rng.randint(-12, 12)
+                        bx2 = int((spawn_x + ox) // BLOCK_SIZE)
+                        by2 = int((spawn_y + oy) // BLOCK_SIZE)
+                        bid2 = self.get_block(bx2, by2)
+                        if bid2 != WATER and bid2 != FISHING_SPOT_BLOCK:
+                            continue
+                        fseed = (fdata_seed + rng.randint(0, 1 << 30)) & 0x7FFFFFFF
+                        self.live_fish.append(LiveFish(
+                            spawn_x + ox, spawn_y + oy, self,
+                            species=entry["species"],
+                            rarity=rarity,
+                            seed=fseed,
+                            biome=biodome,
+                            ocean_zone=zone,
+                            schooling=True,
+                        ))
+
+    def _lookup_fish_data(self, species):
+        try:
+            from fish import FISH_TYPES
+            return FISH_TYPES.get(species)
+        except Exception:
+            return None
+
+    def _spawn_live_fish(self):
+        self.live_fish.clear()
+        for cx in sorted(self._chunks.keys()):
+            self._spawn_live_fish_for_chunk(cx)
 
     def surface_y_at(self, x: int) -> int:
         return self.surface_height(x)

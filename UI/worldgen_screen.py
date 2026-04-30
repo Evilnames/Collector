@@ -378,14 +378,14 @@ def _draw_begin_button(surface, font_l, btn_rect, hovered: bool):
 # Main entry
 # ---------------------------------------------------------------------------
 
-def show_worldgen(screen, seed: int, span=None):
+def show_worldgen(screen, seed: int, span=None, config_overrides: dict = None):
     """Run the animated worldgen screen and return the finished WorldPlan.
 
     Generates the plan synchronously up front (~1s for span 400), then plays
     the four phases as an animation. Press SPACE/ENTER to skip to the Begin
     button at any time.
     """
-    plan = generate_world(seed=seed, span=span)
+    plan = generate_world(seed=seed, span=span, config_overrides=config_overrides)
     snapshots = _build_year_states(plan)
 
     font_l = pygame.font.SysFont("arial", 22, bold=True)

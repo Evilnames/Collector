@@ -5,6 +5,8 @@ from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOO
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
                       BAIT_STATION_RECIPES, FLETCHING_RECIPES, SMELTER_RECIPES, GLASS_KILN_RECIPES,
                       GARDEN_WORKSHOP_RECIPES, JUICER_RECIPES, AUTOMATION_RECIPES,
+                      TANNING_RACK_RECIPES,
+                      ARTISAN_TABS, ARTISAN_RECIPE_TAB,
                       RECIPE_GROUPS, RECIPE_GROUPS_ORDER,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
@@ -125,12 +127,19 @@ class CraftingMixin:
             self.screen.blit(self.small.render("Materials:", True, (150, 150, 150)),
                              (info_x, info_y))
             info_y += 18
-            for iid, needed in craft_costs(self._craft_grid).items():
+            costs = list(craft_costs(self._craft_grid).items())
+            ing_x = info_x
+            for j, (iid, needed) in enumerate(costs):
                 have = player.inventory.get(iid, 0)
                 col = (65, 200, 65) if have >= needed else (210, 75, 75)
-                ms = self.small.render(f"{ITEMS.get(iid,{}).get('name',iid)}: {have}/{needed}", True, col)
-                self.screen.blit(ms, (info_x, info_y))
-                info_y += 15
+                ms = self.small.render(f"{ITEMS.get(iid,{}).get('name',iid)} {have}/{needed}", True, col)
+                self.screen.blit(ms, (ing_x, info_y))
+                ing_x += ms.get_width()
+                if j < len(costs) - 1:
+                    sep = self.small.render(" | ", True, (80, 90, 80))
+                    self.screen.blit(sep, (ing_x, info_y))
+                    ing_x += sep.get_width()
+            info_y += 15
         elif any(self._craft_grid[r][c] for r in range(3) for c in range(3)):
             self.screen.blit(self.small.render("No recipe.", True, (130, 75, 75)),
                              (info_x, info_y))
@@ -411,13 +420,16 @@ class CraftingMixin:
         out_lbl  = self.font.render(out_name, True, out_col)
         self.screen.blit(out_lbl, (DX + 24, iy + 4))
 
+        nut_y = self._draw_food_nutrition(DX, iy + 34, out_data, accent=(220, 160, 80))
+        btn_top = max(iy + 40, nut_y + 6)
+
         # BAKE button
         can_bake = all(
             player.inventory.get(iid, 0) >= cnt
             for iid, cnt in recipe["ingredients"].items()
         )
         btn_col  = (160, 100, 40) if can_bake else (60, 50, 40)
-        btn_rect = pygame.Rect(DX, iy + 40, 120, 34)
+        btn_rect = pygame.Rect(DX, btn_top, 120, 34)
         pygame.draw.rect(self.screen, btn_col, btn_rect)
         pygame.draw.rect(self.screen, (220, 160, 80) if can_bake else (80, 70, 60), btn_rect, 2)
         btn_txt = self.font.render("BAKE", True,
@@ -425,6 +437,43 @@ class CraftingMixin:
         self.screen.blit(btn_txt, (btn_rect.centerx - btn_txt.get_width() // 2,
                                    btn_rect.centery - btn_txt.get_height() // 2))
         self._refine_btn = btn_rect
+
+    def _draw_food_nutrition(self, x, y, item_data, accent=(180, 140, 60)):
+        """Draw a nutrition breakdown for a food output. Returns the y after the panel."""
+        if not item_data.get("edible"):
+            return y
+        hunger   = item_data.get("hunger_restore", 0)
+        protein  = item_data.get("protein_factor", 0.0)
+        fiber    = item_data.get("fiber_factor",   0.0)
+        vitamins = item_data.get("vitamin_factor", 0.0)
+        sugar    = item_data.get("sugar_factor",   0.0)
+
+        hdr = self.small.render("Nutrition", True, accent)
+        self.screen.blit(hdr, (x, y))
+        y += 16
+
+        self._draw_nutrition_bar_simple(x, y, hunger / 100.0, (110, 195, 110),
+                                        f"Hunger   +{hunger}")
+        y += 18
+        self._draw_nutrition_bar_simple(x, y, protein,  (210, 120,  80), f"Protein  {protein:.2f}")
+        y += 18
+        self._draw_nutrition_bar_simple(x, y, fiber,    ( 80, 175,  90), f"Fiber    {fiber:.2f}")
+        y += 18
+        self._draw_nutrition_bar_simple(x, y, vitamins, ( 90, 180, 220), f"Vitamins {vitamins:.2f}")
+        y += 18
+        self._draw_nutrition_bar_simple(x, y, sugar,    (235, 200,  60), f"Sugar    {sugar:.2f}")
+        y += 18
+        return y
+
+    def _draw_nutrition_bar_simple(self, x, y, value, color, label):
+        SEGS, SEG_W, SEG_H, SEG_GAP = 10, 12, 8, 2
+        filled = round(max(0.0, min(1.0, value)) * SEGS)
+        label_s = self.small.render(label, True, (185, 160, 120))
+        self.screen.blit(label_s, (x, y))
+        bx = x + 110
+        for i in range(SEGS):
+            col = color if i < filled else (45, 35, 25)
+            pygame.draw.rect(self.screen, col, (bx + i * (SEG_W + SEG_GAP), y, SEG_W, SEG_H))
 
     def _draw_cooking_station(self, player, recipe_list, title_str, title_color,
                                selected_idx, recipe_rects_dict, selected_attr, block_id=None,
@@ -460,9 +509,10 @@ class CraftingMixin:
             pygame.draw.rect(self.screen, (20, 35, 25), (sb_x, LIST_Y, 7, sb_h))
             pygame.draw.rect(self.screen, title_color, (sb_x, sb_top, 7, sb_th))
 
+        sorted_recipes = sorted(enumerate(recipe_list), key=lambda x: x[1]["name"])
         recipe_rects_dict.clear()
-        for i, recipe in enumerate(recipe_list):
-            display_idx = i - scroll
+        for slot, (i, recipe) in enumerate(sorted_recipes):
+            display_idx = slot - scroll
             if display_idx < 0:
                 continue
             ry = LIST_Y + display_idx * (ROW_H + GAP)
@@ -530,12 +580,15 @@ class CraftingMixin:
         out_lbl  = self.font.render(out_name, True, out_col)
         self.screen.blit(out_lbl, (DX + 24, iy + 4))
 
+        nut_y = self._draw_food_nutrition(DX, iy + 34, out_data, accent=title_color)
+        btn_top = max(iy + 40, nut_y + 6)
+
         can_cook = all(
             player.inventory.get(iid, 0) >= cnt
             for iid, cnt in recipe["ingredients"].items()
         )
         btn_col  = (40, 100, 60) if can_cook else (40, 50, 40)
-        btn_rect = pygame.Rect(DX, iy + 40, 120, 34)
+        btn_rect = pygame.Rect(DX, btn_top, 120, 34)
         pygame.draw.rect(self.screen, btn_col, btn_rect)
         pygame.draw.rect(self.screen, title_color if can_cook else (60, 70, 60), btn_rect, 2)
         btn_txt = self.font.render(action_label, True,
@@ -559,6 +612,252 @@ class CraftingMixin:
                 self.screen.blit(preview, (px, py + 14))
                 pygame.draw.rect(self.screen, (70, 70, 70), (px, py + 14, PREVIEW_SZ, PREVIEW_SZ), 1)
 
+    def _draw_artisan_bench(self, player):
+        from blocks import ARTISAN_BENCH_BLOCK
+        TITLE_COLOR = (210, 180, 130)
+
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 220))
+        self.screen.blit(overlay, (0, 0))
+
+        title = self.font.render("ARTISAN BENCH", True, TITLE_COLOR)
+        self.screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 6))
+        hint = self.small.render("ESC to close  |  Select a recipe and click CRAFT",
+                                 True, (120, 120, 130))
+        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 26))
+
+        # View All Blocks toggle button (top-right)
+        vab_label = "VIEW RECIPES" if self._artisan_view_all else "VIEW ALL BLOCKS"
+        vab_s = self.small.render(vab_label, True, TITLE_COLOR)
+        vab_rect = pygame.Rect(SCREEN_W - vab_s.get_width() - 28, 10, vab_s.get_width() + 16, 22)
+        pygame.draw.rect(self.screen, (60, 48, 24) if self._artisan_view_all else (35, 28, 14), vab_rect)
+        pygame.draw.rect(self.screen, TITLE_COLOR, vab_rect, 1)
+        self.screen.blit(vab_s, (vab_rect.x + 8, vab_rect.y + 3))
+        self._artisan_view_all_btn = vab_rect
+
+        LIST_X, LIST_W = 30, 290
+        TAB_H, TAB_GAP = 22, 2
+        n_tabs = len(ARTISAN_TABS)
+        tab_w  = (LIST_W - TAB_GAP * (n_tabs - 1)) // n_tabs
+
+        # --- Tabs ---
+        self._artisan_tab_rects = []
+        for i, label in enumerate(ARTISAN_TABS):
+            tx       = LIST_X + i * (tab_w + TAB_GAP)
+            active   = (i == self._artisan_tab)
+            tab_rect = pygame.Rect(tx, 46, tab_w, TAB_H)
+            pygame.draw.rect(self.screen, (70, 55, 30) if active else (25, 20, 12), tab_rect)
+            pygame.draw.rect(self.screen, TITLE_COLOR if active else (80, 70, 50), tab_rect, 1)
+            lbl = self.small.render(label, True, TITLE_COLOR if active else (140, 120, 90))
+            self.screen.blit(lbl, (tab_rect.centerx - lbl.get_width() // 2,
+                                   tab_rect.centery - lbl.get_height() // 2))
+            self._artisan_tab_rects.append(tab_rect)
+
+        # --- Search box ---
+        SEARCH_Y = 46 + TAB_H + 4
+        SEARCH_H = 22
+        search_rect = pygame.Rect(LIST_X, SEARCH_Y, LIST_W, SEARCH_H)
+        self._artisan_search_rect = search_rect
+        pygame.draw.rect(self.screen,
+                         (45, 38, 22) if self._artisan_search_active else (30, 25, 15),
+                         search_rect)
+        pygame.draw.rect(self.screen,
+                         TITLE_COLOR if self._artisan_search_active else (80, 70, 50),
+                         search_rect, 1)
+        display_str = self._artisan_search if self._artisan_search else "Search..."
+        stxt = self.small.render(display_str, True,
+                                 (200, 185, 150) if self._artisan_search else (90, 80, 60))
+        self.screen.blit(stxt, (LIST_X + 6, SEARCH_Y + SEARCH_H // 2 - stxt.get_height() // 2))
+        if self._artisan_search_active:
+            cur_x = LIST_X + 6 + stxt.get_width() + 1
+            pygame.draw.line(self.screen, TITLE_COLOR,
+                             (cur_x, SEARCH_Y + 4), (cur_x, SEARCH_Y + SEARCH_H - 4))
+
+        # --- Filter recipes ---
+        query   = self._artisan_search.lower()
+        tab_idx = self._artisan_tab
+        filtered = sorted(
+            [(fi, r) for fi, r in enumerate(ARTISAN_RECIPES)
+             if (tab_idx == 0 or ARTISAN_RECIPE_TAB[fi] == tab_idx)
+             and (not query or query in r["name"].lower())],
+            key=lambda x: x[1]["name"]
+        )
+
+        # Auto-reset selection when it falls outside the filtered view
+        sel_idx = self._artisan_selected_recipe
+        if filtered and sel_idx not in {fi for fi, _ in filtered}:
+            self._artisan_selected_recipe = filtered[0][0]
+            sel_idx = self._artisan_selected_recipe
+
+        # --- Recipe list or grid ---
+        LIST_Y      = SEARCH_Y + SEARCH_H + 6
+        LIST_BOTTOM = SCREEN_H - 10
+
+        if self._artisan_view_all:
+            # ── Grid view: all filtered recipes as icon tiles ──
+            CELL        = 88
+            GRID_X      = LIST_X
+            GRID_W      = SCREEN_W - LIST_X - 16
+            cols        = max(1, GRID_W // CELL)
+            total_rows  = max(1, (len(filtered) + cols - 1) // cols)
+            vis_rows    = max(1, (LIST_BOTTOM - LIST_Y) // CELL)
+            max_gs      = max(0, total_rows - vis_rows)
+            self._artisan_grid_scroll = max(0, min(max_gs, self._artisan_grid_scroll))
+            row_off     = self._artisan_grid_scroll
+
+            if max_gs > 0:
+                sb_x  = GRID_X + cols * CELL + 2
+                sb_h  = LIST_BOTTOM - LIST_Y
+                sb_th = max(20, sb_h * vis_rows // total_rows)
+                sb_top = LIST_Y + (sb_h - sb_th) * row_off // max_gs
+                pygame.draw.rect(self.screen, (20, 35, 25), (sb_x, LIST_Y, 7, sb_h))
+                pygame.draw.rect(self.screen, TITLE_COLOR,  (sb_x, sb_top, 7, sb_th))
+
+            self._artisan_grid_rects.clear()
+            if not filtered:
+                msg = self.small.render("No results", True, (100, 90, 70))
+                self.screen.blit(msg, (GRID_X + 10, LIST_Y + 10))
+            for slot, (fi, recipe) in enumerate(filtered):
+                c   = slot % cols
+                r   = slot // cols - row_off
+                if r < 0:
+                    continue
+                cx  = GRID_X + c * CELL
+                cy  = LIST_Y + r * CELL
+                if cy + CELL > LIST_BOTTOM:
+                    break
+                can_cook_r = all(player.inventory.get(iid, 0) >= cnt
+                                 for iid, cnt in recipe["ingredients"].items())
+                selected   = (fi == sel_idx)
+                bg = ((60, 110, 80) if can_cook_r else (75, 45, 45)) if selected \
+                    else ((18, 48, 30) if can_cook_r else (24, 24, 32))
+                border = TITLE_COLOR if selected \
+                    else ((45, 140, 75) if can_cook_r else (52, 52, 68))
+                cell_rect = pygame.Rect(cx + 2, cy + 2, CELL - 4, CELL - 4)
+                pygame.draw.rect(self.screen, bg, cell_rect)
+                pygame.draw.rect(self.screen, border, cell_rect, 1)
+                out_id      = recipe["output_id"]
+                out_data    = ITEMS.get(out_id, {})
+                block_surfs = getattr(self, "_block_surfs", None)
+                place_block = out_data.get("place_block")
+                raw_surf    = block_surfs.get(place_block) if block_surfs and place_block else None
+                if raw_surf:
+                    icon = pygame.transform.scale(raw_surf, (52, 52))
+                else:
+                    icon = render_item_icon(out_id, out_data.get("color", (80, 80, 80)), 52)
+                self.screen.blit(icon, (cx + CELL // 2 - 26, cy + 6))
+                name_col = out_data.get("color", (200, 200, 200)) if can_cook_r else (110, 110, 120)
+                short = recipe["name"] if len(recipe["name"]) <= 11 else recipe["name"][:10] + "…"
+                ns = self.small.render(short, True, name_col)
+                self.screen.blit(ns, (cx + CELL // 2 - ns.get_width() // 2, cy + 62))
+                self._artisan_grid_rects[fi] = cell_rect
+        else:
+            # ── Normal list view ──
+            ROW_H, GAP, ICON_SZ = 58, 4, 28
+            visible_count = max(1, (LIST_BOTTOM - LIST_Y) // (ROW_H + GAP))
+            max_scroll    = max(0, len(filtered) - visible_count)
+            bid           = ARTISAN_BENCH_BLOCK
+            scroll        = max(0, min(max_scroll, self._cook_station_scroll.get(bid, 0)))
+            self._cook_station_scroll[bid]     = scroll
+            self._cook_station_max_scroll[bid] = max_scroll
+
+            if max_scroll > 0:
+                sb_x   = LIST_X + LIST_W + 4
+                sb_h   = LIST_BOTTOM - LIST_Y
+                sb_th  = max(20, sb_h * visible_count // len(filtered))
+                sb_top = LIST_Y + (sb_h - sb_th) * scroll // max_scroll
+                pygame.draw.rect(self.screen, (20, 35, 25), (sb_x, LIST_Y, 7, sb_h))
+                pygame.draw.rect(self.screen, TITLE_COLOR,  (sb_x, sb_top, 7, sb_th))
+
+            self._artisan_recipe_rects.clear()
+            if not filtered:
+                msg = self.small.render("No results", True, (100, 90, 70))
+                self.screen.blit(msg, (LIST_X + 10, LIST_Y + 10))
+            for slot, (fi, recipe) in enumerate(filtered):
+                display_slot = slot - scroll
+                if display_slot < 0:
+                    continue
+                ry = LIST_Y + display_slot * (ROW_H + GAP)
+                if ry + ROW_H > LIST_BOTTOM:
+                    break
+                can_cook_r = all(player.inventory.get(iid, 0) >= cnt
+                                 for iid, cnt in recipe["ingredients"].items())
+                selected   = (fi == sel_idx)
+                bg = ((60, 110, 80) if can_cook_r else (75, 45, 45)) if selected \
+                    else ((18, 48, 30) if can_cook_r else (24, 24, 32))
+                border = TITLE_COLOR if selected \
+                    else ((45, 140, 75) if can_cook_r else (52, 52, 68))
+                row_rect = pygame.Rect(LIST_X, ry, LIST_W, ROW_H)
+                pygame.draw.rect(self.screen, bg, row_rect)
+                pygame.draw.rect(self.screen, border, row_rect, 1)
+                out_id   = recipe["output_id"]
+                out_data = ITEMS.get(out_id, {})
+                icon = render_item_icon(out_id, out_data.get("color", (80, 80, 80)), ICON_SZ)
+                self.screen.blit(icon, (LIST_X + 4, ry + (ROW_H - ICON_SZ) // 2))
+                name_col = out_data.get("color", (200, 200, 200)) if can_cook_r else (110, 110, 120)
+                self.screen.blit(self.font.render(recipe["name"], True, name_col),
+                                 (LIST_X + 4 + ICON_SZ + 6, ry + 5))
+                ing_x, ing_y = LIST_X + 4 + ICON_SZ + 6, ry + 20
+                for j, (item_id, count) in enumerate(recipe["ingredients"].items()):
+                    have = player.inventory.get(item_id, 0)
+                    col  = (100, 200, 120) if have >= count else (200, 80, 60)
+                    seg  = self.small.render(
+                        f"{ITEMS.get(item_id, {}).get('name', item_id)} {have}/{count}", True, col)
+                    self.screen.blit(seg, (ing_x, ing_y))
+                    ing_x += seg.get_width()
+                    if j < len(recipe["ingredients"]) - 1:
+                        sep = self.small.render(" | ", True, (80, 90, 80))
+                        self.screen.blit(sep, (ing_x, ing_y))
+                        ing_x += sep.get_width()
+                self._artisan_recipe_rects[fi] = row_rect
+
+        if self._artisan_view_all:
+            return
+
+        # --- Right panel: selected recipe detail ---
+        recipe   = ARTISAN_RECIPES[sel_idx] if filtered else ARTISAN_RECIPES[0]
+        DX, DY   = LIST_X + LIST_W + 30, 55
+        self.screen.blit(self.font.render(recipe["name"], True, (220, 210, 170)), (DX, DY))
+        iy = DY + 30
+        for item_id, count in recipe["ingredients"].items():
+            have = player.inventory.get(item_id, 0)
+            col  = (180, 220, 100) if have >= count else (220, 80, 60)
+            self.screen.blit(
+                self.small.render(
+                    f"{ITEMS.get(item_id, {}).get('name', item_id)}: {have}/{count}", True, col),
+                (DX, iy))
+            iy += 20
+        self.screen.blit(self.font.render("→", True, (160, 160, 80)), (DX, iy + 4))
+        out_data = ITEMS.get(recipe["output_id"], {})
+        self.screen.blit(
+            self.font.render(out_data.get("name", recipe["output_id"]), True,
+                             out_data.get("color", (200, 200, 200))),
+            (DX + 24, iy + 4))
+        nut_y   = self._draw_food_nutrition(DX, iy + 34, out_data, accent=TITLE_COLOR)
+        btn_top = max(iy + 40, nut_y + 6)
+        can_cook = all(player.inventory.get(iid, 0) >= cnt
+                       for iid, cnt in recipe["ingredients"].items())
+        btn_rect = pygame.Rect(DX, btn_top, 120, 34)
+        pygame.draw.rect(self.screen, (40, 100, 60) if can_cook else (40, 50, 40), btn_rect)
+        pygame.draw.rect(self.screen, TITLE_COLOR if can_cook else (60, 70, 60), btn_rect, 2)
+        btn_txt = self.font.render("CRAFT", True, (200, 255, 180) if can_cook else (80, 100, 80))
+        self.screen.blit(btn_txt, (btn_rect.centerx - btn_txt.get_width() // 2,
+                                   btn_rect.centery - btn_txt.get_height() // 2))
+        self._refine_btn = btn_rect
+
+        place_block = out_data.get("place_block")
+        block_surfs = getattr(self, "_block_surfs", None)
+        if place_block and block_surfs:
+            surf = block_surfs.get(place_block)
+            if surf:
+                PREVIEW_SZ = 96
+                preview    = pygame.transform.scale(surf, (PREVIEW_SZ, PREVIEW_SZ))
+                px, py     = DX, btn_rect.bottom + 16
+                self.screen.blit(self.small.render("In-world:", True, (110, 110, 110)), (px, py))
+                self.screen.blit(preview, (px, py + 14))
+                pygame.draw.rect(self.screen, (70, 70, 70),
+                                 (px, py + 14, PREVIEW_SZ, PREVIEW_SZ), 1)
+
     def _draw_refinery(self, player, dt=0.0):
         from blocks import (FOSSIL_TABLE_BLOCK, ROASTER_BLOCK, BLEND_STATION_BLOCK,
                             BREW_STATION_BLOCK, GEM_CUTTER_BLOCK, BAKERY_BLOCK,
@@ -578,6 +877,14 @@ class CraftingMixin:
                             GLASS_KILN_BLOCK, GARDEN_WORKSHOP_BLOCK,
                             JEWELRY_WORKBENCH_BLOCK, JUICER_BLOCK,
                             AUTOMATION_BENCH_BLOCK, WEAPON_ASSEMBLER_BLOCK)
+        from blocks import TANNING_RACK_BLOCK
+        if self.refinery_block_id == TANNING_RACK_BLOCK:
+            self._draw_cooking_station(player, TANNING_RACK_RECIPES, "TANNING RACK",
+                                       (145, 105, 60), self._tanning_rack_selected_recipe,
+                                       self._tanning_rack_recipe_rects, "_tanning_rack_selected_recipe",
+                                       block_id=TANNING_RACK_BLOCK,
+                                       action_label="TAN")
+            return
         if self.refinery_block_id == JEWELRY_WORKBENCH_BLOCK:
             self._draw_jewelry_workbench(player, dt)
             return
@@ -705,11 +1012,7 @@ class CraftingMixin:
                                        block_id=DESERT_FORGE_BLOCK)
             return
         if self.refinery_block_id == ARTISAN_BENCH_BLOCK:
-            self._draw_cooking_station(player, ARTISAN_RECIPES, "ARTISAN BENCH",
-                                       (210, 180, 130), self._artisan_selected_recipe,
-                                       self._artisan_recipe_rects, "_artisan_selected_recipe",
-                                       block_id=ARTISAN_BENCH_BLOCK,
-                                       action_label="CRAFT")
+            self._draw_artisan_bench(player)
             return
         if self.refinery_block_id == BAIT_STATION_BLOCK:
             self._draw_cooking_station(player, BAIT_STATION_RECIPES, "BAIT STATION",

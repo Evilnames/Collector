@@ -79,6 +79,15 @@ class Bird:
         except Exception:
             return 40  # fallback
 
+    def _flyable_surface_y_at(self, bx):
+        """Like _surface_y_at but returns the water surface over oceans, not the ocean floor."""
+        sy = self._surface_y_at(bx)
+        # Scan upward from terrain; if we're in water, find where water ends
+        for wy in range(sy - 1, max(0, sy - 40), -1):
+            if self.world.get_block(int(bx), wy) != WATER:
+                return wy + 1  # first block above air is the water surface
+        return sy
+
     def _find_leaf_above(self, bx):
         """Scan upward from surface to find lowest leaf block at bx. Returns by or None."""
         sy = self._surface_y_at(bx)
@@ -119,7 +128,7 @@ class Bird:
         dist = rng.uniform(30, 100) * BLOCK_SIZE
         tx_px = self.x + direction * dist
         tx_bx = int(tx_px // BLOCK_SIZE)
-        sy    = self._surface_y_at(tx_bx)
+        sy    = self._flyable_surface_y_at(tx_bx)
         alt   = rng.randint(*self.ALTITUDE_BLOCKS) * BLOCK_SIZE
         ty_px = sy * BLOCK_SIZE - alt
         self._target_x = tx_px
@@ -237,9 +246,9 @@ class Bird:
         if self.y < 5 * BLOCK_SIZE:
             self.y = 5 * BLOCK_SIZE
 
-        # Don't fly below the surface
+        # Don't fly below the surface (or below water surface over oceans)
         bx = int(self.x // BLOCK_SIZE)
-        sy = self._surface_y_at(bx)
+        sy = self._flyable_surface_y_at(bx)
         ground_limit = (sy - 1) * BLOCK_SIZE
         if self.y > ground_limit:
             self.y = ground_limit

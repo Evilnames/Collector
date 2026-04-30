@@ -2,7 +2,7 @@ import math as _m
 import pygame
 
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H
-from blocks import LIGHT_EMITTERS, WARM_EMITTERS
+from blocks import LIGHT_EMITTERS, WARM_EMITTERS, GLASS_BLOCKS, OPEN_DOORS, ALL_LEAVES, BUSH_BLOCKS, CROP_BLOCKS
 from Render.surface.flags import golden_hour_alphas
 
 # Must match the RGB used in _light_surf.fill() so BLEND_RGBA_MIN doesn't
@@ -121,6 +121,97 @@ def build_warm_gradient(radius, pattern, flicker_frame=0):
     return surf
 
 
+def _draw_indoor_and_glass_shafts(renderer, world, cam_x, cam_y, day_strength):
+    """
+    Surface-level pass:
+      1. Darkens enclosed interior spaces that have no sky view.
+      2. Cuts sunbeam shafts downward through glass ceiling tiles.
+    day_strength: 0-255, 255 = full noon.
+    """
+    if day_strength < 5:
+        return
+
+    bs = BLOCK_SIZE
+    cam_xi = int(cam_x)
+    cam_yi = int(cam_y)
+    SCAN_ABOVE = 25
+    bx0 = cam_xi // bs - 1
+    bx1 = (cam_xi + SCREEN_W) // bs + 2
+    by0 = max(0, cam_yi // bs - SCAN_ABOVE)
+    by1 = min(world.height, (cam_yi + SCREEN_H) // bs + 2)
+
+    darkness_base = max(0, 255 - day_strength)
+    INDOOR_ALPHA = min(255, darkness_base + int(day_strength * 0.78))
+    LEAF_ALPHA   = min(255, darkness_base + int(day_strength * 0.28))  # subtle tree shade
+    MAX_SHAFT = 20
+
+    # Blocks that are fully permeable — never act as ceilings
+    _SKY_PASS = GLASS_BLOCKS | OPEN_DOORS | BUSH_BLOCKS | CROP_BLOCKS
+    # Leaves create a softer shadow, tracked separately
+    _LEAF_CEIL = ALL_LEAVES
+
+    shaft_origins = []  # (bx, glass_by) for skylight beams
+
+    for bx in range(bx0, bx1):
+        pending_glass = []
+        sky_open = True
+        leaf_shade = False  # ceiling was leaves, not solid
+
+        for by in range(by0, by1):
+            bid = world.get_block(bx, by)
+
+            if sky_open:
+                if bid in GLASS_BLOCKS:
+                    pending_glass.append(by)
+                elif bid in _LEAF_CEIL:
+                    sky_open = False
+                    leaf_shade = True
+                    for g in pending_glass:
+                        shaft_origins.append((bx, g))
+                elif bid != 0 and bid not in _SKY_PASS:
+                    sky_open = False
+                    leaf_shade = False
+                    for g in pending_glass:
+                        shaft_origins.append((bx, g))
+            else:
+                sy = by * bs - cam_yi
+                if sy + bs < 0 or sy > SCREEN_H:
+                    continue
+                sx = bx * bs - cam_xi
+                alpha = LEAF_ALPHA if leaf_shade else INDOOR_ALPHA
+                if bid == 0:
+                    pygame.draw.rect(renderer._light_surf, (_DR, _DG, _DB, alpha),
+                                     (sx, sy, bs, bs))
+                elif bid in GLASS_BLOCKS:
+                    glass_alpha = max(darkness_base, alpha // 3)
+                    pygame.draw.rect(renderer._light_surf, (_DR, _DG, _DB, glass_alpha),
+                                     (sx, sy, bs, bs))
+                elif bid in _LEAF_CEIL:
+                    # Another leaf layer — don't change shade type, keep going
+                    pass
+
+    # Cut sunbeam shafts downward from each skylight glass tile
+    for bx, glass_by in shaft_origins:
+        sx = bx * bs - cam_xi
+        if sx + bs < 0 or sx > SCREEN_W:
+            continue
+        for depth in range(1, MAX_SHAFT + 1):
+            by = glass_by + depth
+            if by >= world.height:
+                break
+            bid = world.get_block(bx, by)
+            if bid != 0 and bid not in GLASS_BLOCKS:
+                break  # Solid block stops the shaft
+            sy = by * bs - cam_yi
+            if sy + bs < 0 or sy > SCREEN_H:
+                continue
+            ratio = 1.0 - (depth / MAX_SHAFT) ** 0.7
+            # Shaft cuts indoor darkness; clamp so it never goes below outdoor level
+            cut_alpha = max(darkness_base, int(INDOOR_ALPHA * (1.0 - ratio * 0.93)))
+            pygame.draw.rect(renderer._light_surf, (_DR, _DG, _DB, cut_alpha),
+                             (bx * bs - cam_xi, sy, bs, bs))
+
+
 def draw_lighting(renderer, player, world, depth, time_of_day=0.0):
     night_alpha = renderer._sky_night_alpha(time_of_day)
     dawn_a, dusk_a = golden_hour_alphas(time_of_day)
@@ -129,9 +220,15 @@ def draw_lighting(renderer, player, world, depth, time_of_day=0.0):
     surface_ambient = int(230 * night_factor)
 
     if depth <= 0:
-        if night_alpha <= 0 and dawn_a == 0 and dusk_a == 0:
-            return
         darkness = int(night_alpha * 0.72)
+        # At noon with no atmospheric effects, only indoor shadows matter
+        if night_alpha <= 0 and dawn_a == 0 and dusk_a == 0:
+            if world is not None:
+                renderer._light_surf.fill((_DR, _DG, _DB, 0))
+                _draw_indoor_and_glass_shafts(renderer, world,
+                                              renderer.cam_x, renderer.cam_y, 255)
+                renderer.screen.blit(renderer._light_surf, (0, 0))
+            return
     else:
         ambient  = max(10, surface_ambient - depth * 2)
         darkness = 255 - ambient
@@ -150,6 +247,12 @@ def draw_lighting(renderer, player, world, depth, time_of_day=0.0):
 
     # Cool moonlit darkness (blue-tinted, not pure black)
     renderer._light_surf.fill((5, 8, 20, darkness))
+
+    # Indoor shadows + glass sunbeam shafts (surface only)
+    if depth <= 0 and world is not None:
+        _draw_indoor_and_glass_shafts(renderer, world,
+                                      renderer.cam_x, renderer.cam_y,
+                                      max(0, 255 - darkness))
 
     if depth > 0:
         ambient = max(10, surface_ambient - depth * 2)
@@ -218,6 +321,28 @@ def draw_lighting(renderer, player, world, depth, time_of_day=0.0):
                     sy = by * BLOCK_SIZE + BLOCK_SIZE // 2 - cam_yi
                     renderer._warm_surf.blit(grad, (sx - gw // 2, sy - gh // 2),
                                              special_flags=pygame.BLEND_RGBA_MAX)
+        # Glass relay: warm emitters adjacent to glass leak warm glow through it
+        for by in range(by0, by1):
+            for bx in range(bx0, bx1):
+                for bid in (world.get_block(bx, by), world.get_bg_block(bx, by)):
+                    if bid not in WARM_EMITTERS:
+                        continue
+                    warm_r = WARM_EMITTERS[bid][0]
+                    for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                        nbid = world.get_block(bx + dx, by + dy)
+                        if nbid not in GLASS_BLOCKS:
+                            continue
+                        warm_drawn = True
+                        relay_r = max(20, warm_r // 2)
+                        relay_key = ("glass_relay", relay_r)
+                        if relay_key not in renderer._light_grad_cache:
+                            renderer._light_grad_cache[relay_key] = build_warm_gradient(relay_r, "soft", 0)
+                        grad = renderer._light_grad_cache[relay_key]
+                        gw, gh = grad.get_size()
+                        sx = (bx + dx) * BLOCK_SIZE + BLOCK_SIZE // 2 - cam_xi
+                        sy = (by + dy) * BLOCK_SIZE + BLOCK_SIZE // 2 - cam_yi
+                        renderer._warm_surf.blit(grad, (sx - gw // 2, sy - gh // 2),
+                                                 special_flags=pygame.BLEND_RGBA_MAX)
         if warm_drawn:
             renderer.screen.blit(renderer._warm_surf, (0, 0))
 

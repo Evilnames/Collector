@@ -91,6 +91,9 @@ class Horse(Animal):
         )[0]
         self.traits["coat_color"]        = random.choice(coat_options)
         self.traits["horseshoe_applied"] = False
+        self.traits["equipped_saddle"]   = None
+        self.traits["equipped_horseshoe"]= None
+        self.traits["training_bonuses"]  = {}
 
         self.stamina    = 100.0
         self.rider      = None       # Player ref when mounted
@@ -341,7 +344,10 @@ class Horse(Animal):
             for i in range(3)
         )
 
-        offspring.traits["horseshoe_applied"] = False
+        offspring.traits["horseshoe_applied"]  = False
+        offspring.traits["equipped_saddle"]    = None
+        offspring.traits["equipped_horseshoe"] = None
+        offspring.traits["training_bonuses"]   = {}
         offspring.parent_a_uid = self.uid
         offspring.parent_b_uid = other.uid
         offspring.tamed  = True

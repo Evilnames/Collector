@@ -2,7 +2,7 @@ import math
 import pygame
 from blocks import (CORAL_FRAGMENT_BLOCK, CORAL_GROWING, CORAL_FULL,
                     KELP_BLOCK, SEASHELL_BLOCK, SEA_ANEMONE,
-                    BIOLUME_DEEP_BLOCK, OCEAN_ROCK)
+                    BIOLUME_DEEP_BLOCK, OCEAN_ROCK, OYSTER_BLOCK)
 from constants import BLOCK_SIZE
 
 BS = BLOCK_SIZE
@@ -305,6 +305,27 @@ def draw_seashell_block():
 # Public builder
 # ---------------------------------------------------------------------------
 
+def draw_oyster_block():
+    surf = _s()
+    pygame.draw.rect(surf, (200, 185, 150), (0, BS - 6, BS, 6))
+    base_y = BS - 6
+    cx = _HALF
+
+    shell_outer = (155, 140, 115)
+    shell_dark  = (105,  95,  75)
+    pearl_hi    = (240, 235, 220)
+
+    # Two clamped half-shells, slightly open
+    pygame.draw.ellipse(surf, shell_outer, (cx - 12, base_y - 11, 24, 13))
+    pygame.draw.ellipse(surf, shell_dark,  (cx - 12, base_y - 11, 24, 13), 1)
+    # Hinge line
+    pygame.draw.line(surf, shell_dark, (cx - 11, base_y - 4), (cx + 11, base_y - 4), 1)
+    # Open gap revealing inner pearl-light
+    pygame.draw.ellipse(surf, pearl_hi, (cx - 4, base_y - 7, 8, 4))
+    pygame.draw.ellipse(surf, (255, 250, 240), (cx - 1, base_y - 6, 2, 2))
+    return surf
+
+
 def build_ocean_surfs():
     return {
         CORAL_FRAGMENT_BLOCK: draw_coral_fragment(),
@@ -315,4 +336,5 @@ def build_ocean_surfs():
         BIOLUME_DEEP_BLOCK:   draw_biolume_deep(),
         OCEAN_ROCK:           draw_ocean_rock(),
         SEASHELL_BLOCK:       draw_seashell_block(),
+        OYSTER_BLOCK:         draw_oyster_block(),
     }

@@ -10,6 +10,9 @@ from Render.blocks_decor import build_decor_surfs
 from Render.blocks_structures import build_structure_surfs
 from Render.logic_blocks import build_logic_surfs
 from Render.ocean import build_ocean_surfs
+from Render.pipe_blocks import build_pipe_surfs
+from Render.blocks_bauhaus import build_bauhaus_surfs
+from Render.blocks_victorian import build_victorian_surfs
 
 
 def build_all_block_surfs():
@@ -22,6 +25,9 @@ def build_all_block_surfs():
     surfs.update(build_structure_surfs())
     surfs.update(build_logic_surfs())
     surfs.update(build_ocean_surfs())
+    surfs.update(build_pipe_surfs())
+    surfs.update(build_bauhaus_surfs())
+    surfs.update(build_victorian_surfs())
 
     # Fallback: generic solid-fill for any block with color not yet rendered
     for bid, bdata in BLOCKS.items():

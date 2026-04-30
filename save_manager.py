@@ -33,7 +33,7 @@ class SaveManager:
         try:
             with sqlite3.connect(self.db_path) as con:
                 self._create_tables(con)
-                for tbl in ("save_meta", "chunks", "bg_chunks", "world_meta", "player",
+                for tbl in ("save_meta", "chunks", "bg_chunks", "wire_chunks", "pipe_chunks", "world_meta", "player",
                             "rocks", "wildflowers", "fossils", "gems", "bird_observations",
                             "insect_observations",
                             "fish", "coffee_beans", "wine_grapes", "spirits",
@@ -78,6 +78,7 @@ class SaveManager:
             self._save_npc_relationships(con, player)
             self._save_rocks(con, player)
             self._save_seashells(con, player)
+            self._save_pearls(con, player)
             self._save_wildflowers(con, player)
             self._save_fossils(con, player)
             self._save_gems(con, player)
@@ -109,6 +110,8 @@ class SaveManager:
             self._save_dropped_items(con, world)
             self._save_chests(con, world)
             self._save_banners(con, world)
+            self._save_animal_traps(con, world)
+            self._save_fish_traps(con, world)
             self._merge_global_collection(con, player)
             newly_unlocked = self._check_and_save_achievements(con)
             con.commit()
@@ -136,6 +139,8 @@ class SaveManager:
             dropped_items = self._load_dropped_items(con)
             chest_data = self._load_chests(con)
             banner_data = self._load_banners(con)
+            animal_trap_data = self._load_animal_traps(con)
+            fish_trap_data   = self._load_fish_traps(con)
         return {
             "seed": seed,
             "world_plan": world_plan,
@@ -152,6 +157,11 @@ class SaveManager:
             "pottery_display_data":    world_meta.get("pottery_display_data", {}),
             "unplaced_vase_uids":      world_meta.get("unplaced_vase_uids", []),
             "logic_state":             world_meta.get("logic_state", {}),
+            "pipe_state":              world_meta.get("pipe_state", {}),
+            "pipe_buffers":            world_meta.get("pipe_buffers", {}),
+            "pipe_in_transit":         world_meta.get("pipe_in_transit", []),
+            "factory_data":            world_meta.get("factory_data", {}),
+            "block_shapes":            world_meta.get("block_shapes", {}),
             "player": player_data,
             "automations": automations,
             "farm_bots": farm_bots,
@@ -164,6 +174,8 @@ class SaveManager:
             "dropped_items": dropped_items,
             "chest_data": chest_data,
             "banner_data": banner_data,
+            "animal_trap_data": animal_trap_data,
+            "fish_trap_data":   fish_trap_data,
         }
 
     def load_chunk(self, chunk_x):
@@ -277,6 +289,55 @@ class SaveManager:
                           for y in range(WORLD_H)]
         return result
 
+    def load_pipe_chunk(self, chunk_x):
+        """Load a single pipe chunk from DB. Returns 2-D list or None."""
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                row = con.execute(
+                    "SELECT data FROM pipe_chunks WHERE chunk_x=?", (chunk_x,)
+                ).fetchone()
+        except Exception:
+            return None
+        if row is None:
+            return None
+        flat = struct.unpack(f"<{CHUNK_W * WORLD_H}B", zlib.decompress(row[0]))
+        return [[flat[y * CHUNK_W + lx] for lx in range(CHUNK_W)]
+                for y in range(WORLD_H)]
+
+    def load_pipe_chunks_batch(self, chunk_xs):
+        if not chunk_xs:
+            return {}
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                placeholders = ",".join("?" * len(chunk_xs))
+                rows = con.execute(
+                    f"SELECT chunk_x, data FROM pipe_chunks WHERE chunk_x IN ({placeholders})",
+                    list(chunk_xs),
+                ).fetchall()
+        except Exception:
+            return {}
+        result = {}
+        for cx, data in rows:
+            flat = struct.unpack(f"<{CHUNK_W * WORLD_H}B", zlib.decompress(data))
+            result[cx] = [[flat[y * CHUNK_W + lx] for lx in range(CHUNK_W)]
+                          for y in range(WORLD_H)]
+        return result
+
+    def save_pipe_chunks_batch(self, chunks_dict):
+        if not chunks_dict:
+            return
+        with sqlite3.connect(self.db_path) as con:
+            con.execute("CREATE TABLE IF NOT EXISTS pipe_chunks "
+                        "(chunk_x INTEGER PRIMARY KEY, data BLOB NOT NULL)")
+            for cx, chunk in chunks_dict.items():
+                raw = struct.pack(
+                    f"<{CHUNK_W * WORLD_H}B",
+                    *[chunk[y][lx] for y in range(WORLD_H) for lx in range(CHUNK_W)],
+                )
+                con.execute("INSERT OR REPLACE INTO pipe_chunks VALUES (?,?)",
+                            (cx, zlib.compress(raw, level=1)))
+            con.commit()
+
     def save_bg_chunk(self, chunk_x, chunk):
         """Immediately persist a single background chunk to DB."""
         raw = struct.pack(
@@ -347,8 +408,13 @@ class SaveManager:
             chunk_x INTEGER PRIMARY KEY,
             data    BLOB NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS pipe_chunks (
+            chunk_x INTEGER PRIMARY KEY,
+            data    BLOB NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS world_meta (
             water_level TEXT,
+            water_sources TEXT,
             soil_moisture TEXT,
             crop_progress TEXT,
             crop_care_sum TEXT,
@@ -381,6 +447,10 @@ class SaveManager:
         CREATE TABLE IF NOT EXISTS seashells (
             uid TEXT PRIMARY KEY, species TEXT, rarity TEXT, depth_zone TEXT,
             color TEXT, pattern TEXT, size_cm REAL, biome_found TEXT, seed INTEGER
+        );
+        CREATE TABLE IF NOT EXISTS pearls (
+            uid TEXT PRIMARY KEY, color_name TEXT, color TEXT, luster TEXT,
+            shape TEXT, size_mm REAL, rarity TEXT, biome_found TEXT, seed INTEGER
         );
         CREATE TABLE IF NOT EXISTS wildflowers (
             uid TEXT PRIMARY KEY, flower_type TEXT, rarity TEXT, bloom_stage TEXT,
@@ -464,6 +534,12 @@ class SaveManager:
         );
         CREATE TABLE IF NOT EXISTS banners (
             x INTEGER, y INTEGER, coat_of_arms_json TEXT
+        );
+        CREATE TABLE IF NOT EXISTS animal_traps (
+            x INTEGER, y INTEGER, contents TEXT
+        );
+        CREATE TABLE IF NOT EXISTS fish_traps (
+            x INTEGER, y INTEGER, trap_type TEXT, bait INTEGER, contents TEXT
         );
         CREATE TABLE IF NOT EXISTS world_plan (
             id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -824,6 +900,18 @@ class SaveManager:
             con.execute("ALTER TABLE world_meta ADD COLUMN chicken_coop_data TEXT")
         except Exception:
             pass
+        for col in ("pipe_state", "pipe_buffers", "pipe_in_transit", "factory_data", "water_sources", "block_shapes"):
+            try:
+                con.execute(f"ALTER TABLE world_meta ADD COLUMN {col} TEXT")
+            except Exception:
+                pass
+        try:
+            con.execute(
+                "CREATE TABLE IF NOT EXISTS pipe_chunks "
+                "(chunk_x INTEGER PRIMARY KEY, data BLOB NOT NULL)"
+            )
+        except Exception:
+            pass
         try:
             con.execute("ALTER TABLE regions ADD COLUMN coat_of_arms_json TEXT")
         except Exception:
@@ -994,6 +1082,40 @@ class SaveManager:
                 "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
                 ("spirit", t),
             )
+        for t in player.discovered_shell_types:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("shell", t),
+            )
+        for t in player.discovered_bird_types:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("bird", t),
+            )
+        for t in player.discovered_insect_types:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("insect", t),
+            )
+        for t in player.discovered_tea_origins:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("tea", t),
+            )
+        for t in player.discovered_beers:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("beer", t),
+            )
+        for animal_id in player.animals_hunted:
+            con.execute(
+                "INSERT OR IGNORE INTO global_collection VALUES (?, ?)",
+                ("hunt", animal_id),
+            )
+        if player.races_won >= 1:
+            con.execute("INSERT OR IGNORE INTO global_collection VALUES (?, ?)", ("horse_racing", "winner"))
+        if player.dog_races_won >= 1:
+            con.execute("INSERT OR IGNORE INTO global_collection VALUES (?, ?)", ("dog_racing", "winner"))
 
     def _check_and_save_achievements(self, con):
         """Check all achievements against global_collection; persist new unlocks.
@@ -1164,9 +1286,21 @@ class SaveManager:
             data = zlib.compress(raw, level=1)
             con.execute("INSERT OR REPLACE INTO wire_chunks VALUES (?,?)", (cx, data))
         getattr(world, "_dirty_wire_chunks", set()).clear()
+        for cx in list(getattr(world, "_dirty_pipe_chunks", set())):
+            if cx not in getattr(world, "_pipe_chunks", {}):
+                continue
+            chunk = world._pipe_chunks[cx]
+            raw = struct.pack(
+                f"<{CHUNK_W * WORLD_H}B",
+                *[chunk[y][lx] for y in range(WORLD_H) for lx in range(CHUNK_W)],
+            )
+            data = zlib.compress(raw, level=1)
+            con.execute("INSERT OR REPLACE INTO pipe_chunks VALUES (?,?)", (cx, data))
+        getattr(world, "_dirty_pipe_chunks", set()).clear()
 
     def _save_world_meta(self, con, world, player=None):
         water        = {f"{x},{y}": lvl    for (x, y), lvl   in world._water_level.items()}
+        water_srcs   = [f"{x},{y}" for (x, y) in getattr(world, "_water_sources", set())]
         moisture     = {f"{x},{y}": m      for (x, y), m     in world._soil_moisture.items()}
         fertility    = {f"{x},{y}": f      for (x, y), f     in world._soil_fertility.items()}
         progress     = {f"{x},{y}": p      for (x, y), p     in world._crop_progress.items()}
@@ -1212,17 +1346,44 @@ class SaveManager:
             f"{bx},{by}": d
             for (bx, by), d in getattr(world, "chicken_coop_data", {}).items()
         }
+        pipe_state_out = {
+            f"{bx},{by}": v
+            for (bx, by), v in getattr(world, "pipe_state", {}).items()
+        }
+        pipe_buffers_out = {
+            f"{bx},{by}": v
+            for (bx, by), v in getattr(world, "pipe_buffers", {}).items()
+        }
+        pipe_transit_out = [
+            {
+                "item_id":  p["item_id"],
+                "count":    p["count"],
+                "path":     [list(t) for t in p["path"]],
+                "progress": p["progress"],
+            }
+            for p in getattr(world, "pipe_in_transit", [])
+        ]
+        factory_data_out = {
+            f"{bx},{by}": v
+            for (bx, by), v in getattr(world, "factory_data", {}).items()
+        }
+        block_shapes_out = {
+            f"{bx},{by}": list(v)
+            for (bx, by), v in getattr(world, "block_shapes", {}).items()
+        }
         con.execute("DELETE FROM world_meta")
         con.execute(
             "INSERT INTO world_meta "
-            "(water_level, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, tapestry_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids, day_count, trade_block_data, logic_state, chicken_coop_data) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (json.dumps(water), json.dumps(moisture), json.dumps(progress),
+            "(water_level, water_sources, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, tapestry_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids, day_count, trade_block_data, logic_state, chicken_coop_data, pipe_state, pipe_buffers, pipe_in_transit, factory_data, block_shapes) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (json.dumps(water), json.dumps(water_srcs), json.dumps(moisture), json.dumps(progress),
              json.dumps(care_sum), json.dumps(fertility), json.dumps(compost_bins),
              json.dumps(garden_flowers), json.dumps(sculpture_pos), json.dumps(tapestry_pos),
              json.dumps(wf_displays), json.dumps(pottery_displays), json.dumps(unplaced_uids),
              getattr(world, 'day_count', 0), json.dumps(trade_blocks),
-             json.dumps(logic_state_out), json.dumps(coop_data_out)),
+             json.dumps(logic_state_out), json.dumps(coop_data_out),
+             json.dumps(pipe_state_out), json.dumps(pipe_buffers_out), json.dumps(pipe_transit_out),
+             json.dumps(factory_data_out), json.dumps(block_shapes_out)),
         )
 
     def _save_player(self, con, player):
@@ -1347,6 +1508,45 @@ class SaveManager:
             pass
         con.execute("UPDATE player SET smithed_parts=?",
                     (json.dumps(getattr(player, "smithed_parts", [])),))
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN dog_races_entered INTEGER DEFAULT 0")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN dog_races_won INTEGER DEFAULT 0")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN gold_won_dog_racing INTEGER DEFAULT 0")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN dog_race_pbs TEXT DEFAULT '{}'")
+        except Exception:
+            pass
+        con.execute(
+            "UPDATE player SET dog_races_entered=?, dog_races_won=?, gold_won_dog_racing=?, dog_race_pbs=?",
+            (
+                getattr(player, "dog_races_entered", 0),
+                getattr(player, "dog_races_won", 0),
+                getattr(player, "gold_won_dog_racing", 0),
+                json.dumps(getattr(player, "dog_race_pbs", {})),
+            )
+        )
+        for col in ("active_circuit", "completed_circuits", "circuits_completed_by_tier", "training_sessions"):
+            try:
+                con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT 'null'")
+            except Exception:
+                pass
+        con.execute(
+            "UPDATE player SET active_circuit=?, completed_circuits=?, circuits_completed_by_tier=?, training_sessions=?",
+            (
+                json.dumps(getattr(player, "active_circuit", None)),
+                json.dumps(getattr(player, "completed_circuits", [])),
+                json.dumps(getattr(player, "circuits_completed_by_tier", {"1":0,"2":0,"3":0,"4":0})),
+                json.dumps(getattr(player, "training_sessions", [])),
+            )
+        )
 
     def _save_npc_relationships(self, con, player):
         con.execute("DELETE FROM npc_relationships")
@@ -1382,6 +1582,17 @@ class SaveManager:
                     s.uid, s.species, s.rarity, s.depth_zone,
                     json.dumps(list(s.color)),
                     s.pattern, s.size_cm, s.biome_found, s.seed,
+                )
+            )
+
+    def _save_pearls(self, con, player):
+        con.execute("DELETE FROM pearls")
+        for p in getattr(player, "pearls", []):
+            con.execute(
+                "INSERT OR REPLACE INTO pearls VALUES (?,?,?,?,?,?,?,?,?)",
+                (
+                    p.uid, p.color_name, json.dumps(list(p.color)),
+                    p.luster, p.shape, p.size_mm, p.rarity, p.biome_found, p.seed,
                 )
             )
 
@@ -2012,13 +2223,16 @@ class SaveManager:
                     traits_dict["stamina_max"]       = e.traits["stamina_max"]
                     traits_dict["temperament"]       = e.traits["temperament"]
                     traits_dict["coat_color"]        = list(e.traits["coat_color"])
-                    traits_dict["horseshoe_applied"] = e.traits.get("horseshoe_applied", False)
-                    traits_dict["endurance"]         = e.traits.get("endurance", 1.0)
-                    traits_dict["gait"]              = e.traits.get("gait", 1.0)
-                    traits_dict["coat_pattern"]  = e.traits.get("coat_pattern", "solid")
-                    traits_dict["leg_marking"]   = e.traits.get("leg_marking", "none")
-                    traits_dict["mane_color"]    = e.traits.get("mane_color", "match")
-                    traits_dict["face_marking"]  = e.traits.get("face_marking", "none")
+                    traits_dict["horseshoe_applied"]  = e.traits.get("horseshoe_applied", False)
+                    traits_dict["endurance"]          = e.traits.get("endurance", 1.0)
+                    traits_dict["gait"]               = e.traits.get("gait", 1.0)
+                    traits_dict["coat_pattern"]       = e.traits.get("coat_pattern", "solid")
+                    traits_dict["leg_marking"]        = e.traits.get("leg_marking", "none")
+                    traits_dict["mane_color"]         = e.traits.get("mane_color", "match")
+                    traits_dict["face_marking"]       = e.traits.get("face_marking", "none")
+                    traits_dict["equipped_saddle"]    = e.traits.get("equipped_saddle")
+                    traits_dict["equipped_horseshoe"] = e.traits.get("equipped_horseshoe")
+                    traits_dict["training_bonuses"]   = e.traits.get("training_bonuses", {})
                 elif isinstance(e, Sheep):
                     traits_dict["wool_color"] = e.traits.get("wool_color", "white")
                     traits_dict["fleece"]     = e.traits.get("fleece", 1.0)
@@ -2037,11 +2251,14 @@ class SaveManager:
                                "ear_type", "tail_type", "eye_color", "size_class",
                                "speed", "endurance", "agility", "strength", "nose", "alertness",
                                "loyalty", "playfulness", "stubbornness", "prey_drive",
+                               "sprint", "focus", "race_style",
                                "has_tracking", "has_herding", "has_guard", "has_retrieve",
                                "collar_applied", "dog_name",
-                               "base_color", "dilute_expressed", "dilute_carrier", "white_spotting"):
+                               "base_color", "dilute_expressed", "dilute_carrier", "white_spotting",
+                               "equipped_collar", "equipped_blinkers"):
                         traits_dict[tk] = e.traits.get(tk)
-                    traits_dict["coat_color"] = list(e.traits.get("coat_color", [160, 100, 50]))
+                    traits_dict["coat_color"]      = list(e.traits.get("coat_color", [160, 100, 50]))
+                    traits_dict["training_bonuses"] = e.traits.get("training_bonuses", {})
             extra = {
                 "uid":           getattr(e, 'uid', None),
                 "parent_a_uid":  getattr(e, 'parent_a_uid', None),
@@ -2097,6 +2314,46 @@ class SaveManager:
         for r in rows:
             try:
                 result[(r[0], r[1])] = json.loads(r[2]) if r[2] else {}
+            except Exception:
+                pass
+        return result
+
+    def _save_animal_traps(self, con, world):
+        con.execute("DELETE FROM animal_traps")
+        for (bx, by), trap in world.animal_traps.items():
+            if trap["accumulated"]:
+                con.execute("INSERT INTO animal_traps (x, y, contents) VALUES (?,?,?)",
+                            (bx, by, json.dumps(trap["accumulated"])))
+
+    def _save_fish_traps(self, con, world):
+        con.execute("DELETE FROM fish_traps")
+        for (bx, by), trap in world.fish_traps.items():
+            con.execute("INSERT INTO fish_traps (x, y, trap_type, bait, contents) VALUES (?,?,?,?,?)",
+                        (bx, by, trap["type"], trap["bait"], json.dumps(trap["accumulated"])))
+
+    def _load_fish_traps(self, con) -> dict:
+        try:
+            rows = con.execute("SELECT x, y, trap_type, bait, contents FROM fish_traps").fetchall()
+        except Exception:
+            return {}
+        result = {}
+        for x, y, trap_type, bait, contents in rows:
+            result[f"{x},{y}"] = {
+                "type":        trap_type,
+                "bait":        bait,
+                "accumulated": json.loads(contents) if contents else [],
+            }
+        return result
+
+    def _load_animal_traps(self, con) -> dict:
+        try:
+            rows = con.execute("SELECT x, y, contents FROM animal_traps").fetchall()
+        except Exception:
+            return {}
+        result = {}
+        for x, y, contents in rows:
+            try:
+                result[f"{x},{y}"] = {"accumulated": json.loads(contents) if contents else []}
             except Exception:
                 pass
         return result
@@ -2254,8 +2511,85 @@ class SaveManager:
                 bx, by = key.split(",")
                 coop_data_loaded[(int(bx), int(by))] = val
 
+        raw_pipe_state = None
+        try:
+            r = con.execute("SELECT pipe_state FROM world_meta LIMIT 1").fetchone()
+            if r:
+                raw_pipe_state = r[0]
+        except Exception:
+            pass
+        pipe_state_loaded = {}
+        if raw_pipe_state:
+            for key, val in json.loads(raw_pipe_state).items():
+                bx, by = key.split(",")
+                pipe_state_loaded[(int(bx), int(by))] = val
+
+        raw_pipe_buffers = None
+        try:
+            r = con.execute("SELECT pipe_buffers FROM world_meta LIMIT 1").fetchone()
+            if r:
+                raw_pipe_buffers = r[0]
+        except Exception:
+            pass
+        pipe_buffers_loaded = {}
+        if raw_pipe_buffers:
+            for key, val in json.loads(raw_pipe_buffers).items():
+                bx, by = key.split(",")
+                pipe_buffers_loaded[(int(bx), int(by))] = val
+
+        water_sources_loaded = []
+        try:
+            r = con.execute("SELECT water_sources FROM world_meta LIMIT 1").fetchone()
+            if r and r[0]:
+                water_sources_loaded = [
+                    tuple(int(v) for v in s.split(","))
+                    for s in json.loads(r[0])
+                ]
+        except Exception:
+            pass
+
+        pipe_transit_loaded = []
+        try:
+            r = con.execute("SELECT pipe_in_transit FROM world_meta LIMIT 1").fetchone()
+            if r and r[0]:
+                pipe_transit_loaded = [
+                    {
+                        "item_id":  p["item_id"],
+                        "count":    p["count"],
+                        "path":     [tuple(t) for t in p["path"]],
+                        "progress": p["progress"],
+                    }
+                    for p in json.loads(r[0])
+                ]
+        except Exception:
+            pass
+
+        factory_data_loaded = {}
+        try:
+            r = con.execute("SELECT factory_data FROM world_meta LIMIT 1").fetchone()
+            if r and r[0]:
+                for key, val in json.loads(r[0]).items():
+                    bx, by = key.split(",")
+                    factory_data_loaded[(int(bx), int(by))] = val
+        except Exception:
+            pass
+
+        raw_block_shapes = None
+        try:
+            r = con.execute("SELECT block_shapes FROM world_meta LIMIT 1").fetchone()
+            if r:
+                raw_block_shapes = r[0]
+        except Exception:
+            pass
+        block_shapes_loaded = {}
+        if raw_block_shapes:
+            for key, val in json.loads(raw_block_shapes).items():
+                bx, by = key.split(",")
+                block_shapes_loaded[(int(bx), int(by))] = tuple(val)
+
         return {
             "water_level":            _parse_coord_dict(row[0]),
+            "water_sources":          water_sources_loaded,
             "soil_moisture":          _parse_coord_dict(row[1]),
             "crop_progress":          _parse_coord_dict(row[2]),
             "crop_care_sum":          _parse_coord_dict(row[3], lambda v: (float(v[0]), int(v[1]))),
@@ -2271,16 +2605,35 @@ class SaveManager:
             "trade_block_data":       json.loads(row[13]) if len(row) > 13 and row[13] else {},
             "logic_state":            logic_state_loaded,
             "chicken_coop_data":      coop_data_loaded,
+            "pipe_state":             pipe_state_loaded,
+            "pipe_buffers":           pipe_buffers_loaded,
+            "pipe_in_transit":        pipe_transit_loaded,
+            "factory_data":           factory_data_loaded,
+            "block_shapes":           block_shapes_loaded,
         }
 
     def _load_player(self, con, bird_obs=None, insect_obs=None, guard_sketches=None):
         for col, default in (
-            ("drying_rack_slots",    "[]"),
-            ("withering_rack_slots", "[]"),
-            ("smithed_parts",        "[]"),
+            ("drying_rack_slots",             "[]"),
+            ("withering_rack_slots",          "[]"),
+            ("smithed_parts",                 "[]"),
+            ("dog_race_pbs",                  "{}"),
+            ("active_circuit",                "null"),
+            ("completed_circuits",            "[]"),
+            ("circuits_completed_by_tier",    "null"),
+            ("training_sessions",             "[]"),
         ):
             try:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT '{default}'")
+            except Exception:
+                pass
+        for col, default in (
+            ("dog_races_entered",   "0"),
+            ("dog_races_won",       "0"),
+            ("gold_won_dog_racing", "0"),
+        ):
+            try:
+                con.execute(f"ALTER TABLE player ADD COLUMN {col} INTEGER DEFAULT {default}")
             except Exception:
                 pass
 
@@ -2333,7 +2686,15 @@ class SaveManager:
                    COALESCE(withering_rack_slots, '[]'),
                    COALESCE(worn_armor, '{}'),
                    COALESCE(worn_armor_dye, '{}'),
-                   COALESCE(smithed_parts, '[]')
+                   COALESCE(smithed_parts, '[]'),
+                   COALESCE(dog_races_entered, 0),
+                   COALESCE(dog_races_won, 0),
+                   COALESCE(gold_won_dog_racing, 0),
+                   COALESCE(dog_race_pbs, '{}'),
+                   COALESCE(active_circuit, 'null'),
+                   COALESCE(completed_circuits, '[]'),
+                   COALESCE(circuits_completed_by_tier, 'null'),
+                   COALESCE(training_sessions, '[]')
             FROM player LIMIT 1
         """).fetchone()
 
@@ -2361,7 +2722,11 @@ class SaveManager:
          racing_prestige_raw, horse_pbs_raw,
          gladiator_cards_raw, fish_bests_raw, tea_house_pos_raw,
          drying_rack_slots_raw, withering_rack_slots_raw,
-         worn_armor_raw, worn_armor_dye_raw, smithed_parts_raw) = row
+         worn_armor_raw, worn_armor_dye_raw, smithed_parts_raw,
+         dog_races_entered_raw, dog_races_won_raw, gold_won_dog_racing_raw,
+         dog_race_pbs_raw,
+         active_circuit_raw, completed_circuits_raw, circuits_by_tier_raw,
+         training_sessions_raw) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -2392,6 +2757,19 @@ class SaveManager:
                 "pattern": s[5], "size_cm": s[6], "biome_found": s[7], "seed": s[8],
             }
             for s in shell_rows
+        ]
+
+        pearl_rows = con.execute(
+            "SELECT uid, color_name, color, luster, shape, size_mm, rarity, biome_found, seed FROM pearls"
+        ).fetchall()
+        pearls_data = [
+            {
+                "uid": p[0], "color_name": p[1],
+                "color": tuple(json.loads(p[2])),
+                "luster": p[3], "shape": p[4], "size_mm": p[5],
+                "rarity": p[6], "biome_found": p[7], "seed": p[8],
+            }
+            for p in pearl_rows
         ]
 
         wf_rows = con.execute("""
@@ -2788,6 +3166,8 @@ class SaveManager:
             "rocks": rocks_data,
             "seashells": seashells_data,
             "discovered_shell_types": list({s["species"] for s in seashells_data}),
+            "pearls": pearls_data,
+            "discovered_pearl_colors": list({p["color_name"] for p in pearls_data}),
             "wildflowers": wf_data,
             "fossils": fossils_data,
             "gems": gems_data,
@@ -2886,11 +3266,19 @@ class SaveManager:
             "rivalry_last_incident":    json.loads(rivalry_last_incident_raw    or "{}"),
             "incident_quests_active":   json.loads(incident_quests_active_raw   or "{}"),
             "rivalry_dormant_until":    json.loads(rivalry_dormant_until_raw    or "{}"),
-            "races_entered":    int(races_entered_raw or 0),
-            "races_won":        int(races_won_raw or 0),
-            "gold_won_racing":  int(gold_won_racing_raw or 0),
-            "racing_prestige":  json.loads(racing_prestige_raw or "{}"),
-            "horse_pbs":        json.loads(horse_pbs_raw or "{}"),
+            "races_entered":        int(races_entered_raw or 0),
+            "races_won":            int(races_won_raw or 0),
+            "gold_won_racing":      int(gold_won_racing_raw or 0),
+            "racing_prestige":      json.loads(racing_prestige_raw or "{}"),
+            "horse_pbs":            json.loads(horse_pbs_raw or "{}"),
+            "dog_races_entered":           int(dog_races_entered_raw or 0),
+            "dog_races_won":               int(dog_races_won_raw or 0),
+            "gold_won_dog_racing":         int(gold_won_dog_racing_raw or 0),
+            "dog_race_pbs":                json.loads(dog_race_pbs_raw or "{}"),
+            "active_circuit":              json.loads(active_circuit_raw or "null"),
+            "completed_circuits":          json.loads(completed_circuits_raw or "[]"),
+            "circuits_completed_by_tier":  json.loads(circuits_by_tier_raw or "null") or {1:0,2:0,3:0,4:0},
+            "training_sessions":           json.loads(training_sessions_raw or "[]"),
             "gladiator_cards":  json.loads(gladiator_cards_raw or "[]"),
             "crafted_weapons":    weapons_data,
             "smithed_parts":      json.loads(smithed_parts_raw or "[]"),

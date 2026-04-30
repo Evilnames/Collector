@@ -103,6 +103,7 @@ BREED_PROFILES = {
     "Border Collie": {
         "biomes": {"temperate", "rolling_hills", "birch_forest"},
         "size_class": "medium",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":       (0.9, 1.2),
             "endurance_gene":   (0.9, 1.2),
@@ -114,6 +115,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.5, 0.9),
             "stubbornness_gene":(0.2, 0.5),
             "prey_drive_gene":  (0.7, 1.0),
+            "sprint_gene":      (0.85, 1.10),
+            "focus_gene":       (1.05, 1.30),
         },
         "abilities": {"herding": 0.60},
         "coat_colors": [(80, 60, 40), (220, 215, 200), (30, 28, 28)],
@@ -126,6 +129,7 @@ BREED_PROFILES = {
     "Husky": {
         "biomes": {"tundra", "boreal", "alpine_mountain"},
         "size_class": "large",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":       (1.0, 1.3),
             "endurance_gene":   (1.1, 1.3),
@@ -137,6 +141,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.7, 1.0),
             "stubbornness_gene":(0.5, 0.8),
             "prey_drive_gene":  (0.6, 0.9),
+            "sprint_gene":      (0.95, 1.15),
+            "focus_gene":       (0.90, 1.10),
         },
         "abilities": {},
         "coat_colors": [(200, 195, 190), (80, 75, 70), (240, 238, 235)],
@@ -149,6 +155,7 @@ BREED_PROFILES = {
     "Greyhound": {
         "biomes": {"savanna", "steppe", "arid_steppe", "beach", "tropical"},
         "size_class": "large",
+        "race_style": "sprinter",
         "genes": {
             "speed_gene":       (1.2, 1.3),
             "endurance_gene":   (0.7, 0.9),
@@ -160,6 +167,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.4, 0.7),
             "stubbornness_gene":(0.3, 0.6),
             "prey_drive_gene":  (0.8, 1.0),
+            "sprint_gene":      (1.10, 1.30),
+            "focus_gene":       (0.85, 1.15),
         },
         "abilities": {},
         "coat_colors": [(200, 190, 175), (80, 75, 68), (165, 155, 140)],
@@ -172,6 +181,7 @@ BREED_PROFILES = {
     "Bloodhound": {
         "biomes": {"wetland", "jungle", "swamp"},
         "size_class": "large",
+        "race_style": "chaser",
         "genes": {
             "speed_gene":       (0.7, 1.0),
             "endurance_gene":   (0.9, 1.2),
@@ -183,6 +193,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.3, 0.6),
             "stubbornness_gene":(0.5, 0.8),
             "prey_drive_gene":  (0.9, 1.1),
+            "sprint_gene":      (0.80, 1.05),
+            "focus_gene":       (0.85, 1.10),
         },
         "abilities": {"tracking": 0.70},
         "coat_colors": [(140, 80, 40), (100, 55, 25), (185, 115, 65)],
@@ -195,6 +207,7 @@ BREED_PROFILES = {
     "German Shepherd": {
         "biomes": {"temperate", "rolling_hills"},
         "size_class": "large",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":       (0.9, 1.2),
             "endurance_gene":   (1.0, 1.2),
@@ -206,6 +219,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.5, 0.8),
             "stubbornness_gene":(0.2, 0.5),
             "prey_drive_gene":  (0.7, 1.0),
+            "sprint_gene":      (0.85, 1.10),
+            "focus_gene":       (1.05, 1.30),
         },
         "abilities": {"guard": 0.60},
         "coat_colors": [(60, 40, 20), (180, 150, 80), (30, 25, 18)],
@@ -218,6 +233,7 @@ BREED_PROFILES = {
     "Labrador": {
         "biomes": {"beach", "wetland", "temperate"},
         "size_class": "large",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":       (0.9, 1.2),
             "endurance_gene":   (1.0, 1.2),
@@ -229,6 +245,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.8, 1.0),
             "stubbornness_gene":(0.1, 0.4),
             "prey_drive_gene":  (0.5, 0.8),
+            "sprint_gene":      (0.85, 1.10),
+            "focus_gene":       (0.90, 1.15),
         },
         "abilities": {"retrieve": 0.70},
         "coat_colors": [(220, 195, 150), (50, 40, 30), (210, 205, 195)],
@@ -241,6 +259,7 @@ BREED_PROFILES = {
     "Dalmatian": {
         "biomes": {"temperate", "rocky_mountain", "beach"},
         "size_class": "large",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":       (1.0, 1.2),
             "endurance_gene":   (1.1, 1.3),
@@ -252,6 +271,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.7, 1.0),
             "stubbornness_gene":(0.4, 0.7),
             "prey_drive_gene":  (0.5, 0.8),
+            "sprint_gene":      (0.95, 1.15),
+            "focus_gene":       (0.85, 1.10),
         },
         "abilities": {},
         "coat_colors": [(235, 232, 225), (235, 232, 225)],
@@ -264,6 +285,7 @@ BREED_PROFILES = {
     "Beagle": {
         "biomes": {"boreal", "temperate", "birch_forest"},
         "size_class": "small",
+        "race_style": "chaser",
         "genes": {
             "speed_gene":       (0.8, 1.1),
             "endurance_gene":   (0.9, 1.1),
@@ -275,6 +297,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.7, 1.0),
             "stubbornness_gene":(0.4, 0.7),
             "prey_drive_gene":  (0.8, 1.1),
+            "sprint_gene":      (0.80, 1.05),
+            "focus_gene":       (0.80, 1.05),
         },
         "abilities": {"tracking": 0.50},
         "coat_colors": [(180, 155, 100), (80, 55, 30), (220, 215, 200)],
@@ -287,6 +311,7 @@ BREED_PROFILES = {
     "Poodle": {
         "biomes": {"temperate", "birch_forest"},
         "size_class": "medium",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":       (0.8, 1.1),
             "endurance_gene":   (0.9, 1.1),
@@ -298,6 +323,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.8, 1.0),
             "stubbornness_gene":(0.0, 0.3),
             "prey_drive_gene":  (0.3, 0.6),
+            "sprint_gene":      (0.80, 1.05),
+            "focus_gene":       (1.00, 1.25),
         },
         "abilities": {},
         "coat_colors": [(235, 230, 220), (80, 70, 60), (200, 185, 155)],
@@ -310,6 +337,7 @@ BREED_PROFILES = {
     "Bulldog": {
         "biomes": {"temperate", "canyon"},
         "size_class": "medium",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":       (0.7, 0.9),
             "endurance_gene":   (0.8, 1.0),
@@ -321,6 +349,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.4, 0.7),
             "stubbornness_gene":(0.6, 0.9),
             "prey_drive_gene":  (0.4, 0.7),
+            "sprint_gene":      (0.70, 0.90),
+            "focus_gene":       (0.80, 1.05),
         },
         "abilities": {"guard": 0.40},
         "coat_colors": [(190, 160, 120), (160, 130, 95), (80, 65, 45)],
@@ -333,6 +363,7 @@ BREED_PROFILES = {
     "Malamute": {
         "biomes": {"tundra", "alpine_mountain"},
         "size_class": "large",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":       (0.9, 1.1),
             "endurance_gene":   (1.1, 1.3),
@@ -344,6 +375,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.5, 0.8),
             "stubbornness_gene":(0.6, 0.9),
             "prey_drive_gene":  (0.6, 0.9),
+            "sprint_gene":      (0.95, 1.15),
+            "focus_gene":       (0.90, 1.10),
         },
         "abilities": {},
         "coat_colors": [(215, 210, 200), (55, 50, 45), (185, 175, 160)],
@@ -356,6 +389,7 @@ BREED_PROFILES = {
     "Vizsla": {
         "biomes": {"steppe", "savanna", "rolling_hills"},
         "size_class": "medium",
+        "race_style": "chaser",
         "genes": {
             "speed_gene":       (1.0, 1.3),
             "endurance_gene":   (1.0, 1.2),
@@ -367,6 +401,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.7, 1.0),
             "stubbornness_gene":(0.2, 0.5),
             "prey_drive_gene":  (0.8, 1.1),
+            "sprint_gene":      (0.80, 1.05),
+            "focus_gene":       (0.85, 1.10),
         },
         "abilities": {"retrieve": 0.50},
         "coat_colors": [(200, 130, 65), (180, 115, 55), (215, 150, 80)],
@@ -379,6 +415,7 @@ BREED_PROFILES = {
     "Australian Shepherd": {
         "biomes": {"rolling_hills", "steppe", "temperate", "wetland", "swamp"},
         "size_class": "medium",
+        "race_style": "surger",
         "genes": {
             "speed_gene":       (1.0, 1.2),
             "endurance_gene":   (1.0, 1.2),
@@ -390,6 +427,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.6, 0.9),
             "stubbornness_gene":(0.2, 0.5),
             "prey_drive_gene":  (0.8, 1.0),
+            "sprint_gene":      (0.90, 1.20),
+            "focus_gene":       (0.70, 1.00),
         },
         "abilities": {"herding": 0.55},
         "coat_colors": [(80, 95, 115), (200, 195, 180), (50, 60, 70)],
@@ -402,6 +441,7 @@ BREED_PROFILES = {
     "Dachshund": {
         "biomes": {"boreal", "birch_forest", "swamp"},
         "size_class": "small",
+        "race_style": "chaser",
         "genes": {
             "speed_gene":       (0.7, 0.9),
             "endurance_gene":   (0.8, 1.1),
@@ -413,6 +453,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.6, 0.9),
             "stubbornness_gene":(0.6, 0.9),
             "prey_drive_gene":  (0.9, 1.2),
+            "sprint_gene":      (0.75, 1.00),
+            "focus_gene":       (0.70, 0.95),
         },
         "abilities": {"tracking": 0.40},
         "coat_colors": [(120, 70, 30), (60, 35, 15), (190, 160, 100)],
@@ -425,6 +467,7 @@ BREED_PROFILES = {
     "Setter": {
         "biomes": {"temperate", "boreal", "redwood"},
         "size_class": "large",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":       (1.0, 1.2),
             "endurance_gene":   (1.0, 1.2),
@@ -436,6 +479,8 @@ BREED_PROFILES = {
             "playfulness_gene": (0.7, 1.0),
             "stubbornness_gene":(0.3, 0.6),
             "prey_drive_gene":  (0.7, 1.0),
+            "sprint_gene":      (0.90, 1.15),
+            "focus_gene":       (0.90, 1.15),
         },
         "abilities": {"retrieve": 0.45, "tracking": 0.30},
         "coat_colors": [(190, 90, 40), (210, 110, 55), (170, 75, 30)],
@@ -448,6 +493,7 @@ BREED_PROFILES = {
     "Akita": {
         "biomes": {"boreal", "alpine_mountain", "rocky_mountain", "redwood"},
         "size_class": "large",
+        "race_style": "surger",
         "genes": {
             "speed_gene":        (0.9, 1.2),
             "endurance_gene":    (1.0, 1.2),
@@ -459,6 +505,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.4, 0.7),
             "stubbornness_gene": (0.5, 0.8),
             "prey_drive_gene":   (0.7, 1.0),
+            "sprint_gene":       (0.85, 1.10),
+            "focus_gene":        (0.85, 1.10),
         },
         "abilities": {"guard": 0.55},
         "coat_colors": [(220, 200, 160), (28, 22, 18), (190, 75, 30)],
@@ -471,6 +519,7 @@ BREED_PROFILES = {
     "Rottweiler": {
         "biomes": {"temperate", "canyon", "wasteland", "swamp"},
         "size_class": "large",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":        (0.8, 1.1),
             "endurance_gene":    (0.9, 1.2),
@@ -482,6 +531,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.4, 0.7),
             "stubbornness_gene": (0.4, 0.7),
             "prey_drive_gene":   (0.7, 1.0),
+            "sprint_gene":       (0.80, 1.05),
+            "focus_gene":        (0.85, 1.10),
         },
         "abilities": {"guard": 0.65},
         "coat_colors": [(28, 22, 18), (40, 28, 12)],
@@ -494,6 +545,7 @@ BREED_PROFILES = {
     "Samoyed": {
         "biomes": {"tundra", "alpine_mountain"},
         "size_class": "large",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":        (0.9, 1.2),
             "endurance_gene":    (1.1, 1.3),
@@ -505,6 +557,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.7, 1.0),
             "stubbornness_gene": (0.4, 0.7),
             "prey_drive_gene":   (0.5, 0.8),
+            "sprint_gene":       (0.95, 1.15),
+            "focus_gene":        (0.90, 1.10),
         },
         "abilities": {},
         "coat_colors": [(235, 222, 192), (248, 243, 232)],
@@ -517,6 +571,7 @@ BREED_PROFILES = {
     "Shiba Inu": {
         "biomes": {"boreal", "birch_forest", "temperate"},
         "size_class": "small",
+        "race_style": "sprinter",
         "genes": {
             "speed_gene":        (0.9, 1.2),
             "endurance_gene":    (0.9, 1.1),
@@ -528,6 +583,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.5, 0.8),
             "stubbornness_gene": (0.6, 0.9),
             "prey_drive_gene":   (0.7, 1.0),
+            "sprint_gene":       (0.90, 1.15),
+            "focus_gene":        (0.80, 1.05),
         },
         "abilities": {"guard": 0.30},
         "coat_colors": [(190, 75, 30), (205, 168, 55), (28, 22, 18)],
@@ -540,6 +597,7 @@ BREED_PROFILES = {
     "Great Pyrenees": {
         "biomes": {"alpine_mountain", "rocky_mountain", "tundra", "redwood"},
         "size_class": "giant",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":        (0.8, 1.0),
             "endurance_gene":    (1.0, 1.2),
@@ -551,6 +609,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.4, 0.7),
             "stubbornness_gene": (0.4, 0.7),
             "prey_drive_gene":   (0.5, 0.8),
+            "sprint_gene":       (0.75, 1.00),
+            "focus_gene":        (0.90, 1.15),
         },
         "abilities": {"guard": 0.60},
         "coat_colors": [(235, 222, 192), (248, 243, 232)],
@@ -563,6 +623,7 @@ BREED_PROFILES = {
     "Weimaraner": {
         "biomes": {"temperate", "steppe", "rolling_hills"},
         "size_class": "large",
+        "race_style": "sprinter",
         "genes": {
             "speed_gene":        (1.1, 1.3),
             "endurance_gene":    (1.0, 1.2),
@@ -574,6 +635,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.6, 0.9),
             "stubbornness_gene": (0.3, 0.6),
             "prey_drive_gene":   (0.9, 1.2),
+            "sprint_gene":       (1.00, 1.20),
+            "focus_gene":        (0.90, 1.15),
         },
         "abilities": {"tracking": 0.45, "retrieve": 0.35},
         "coat_colors": [(95, 100, 115), (110, 115, 125)],
@@ -586,6 +649,7 @@ BREED_PROFILES = {
     "Doberman": {
         "biomes": {"temperate", "wasteland", "canyon"},
         "size_class": "large",
+        "race_style": "sprinter",
         "genes": {
             "speed_gene":        (1.1, 1.3),
             "endurance_gene":    (1.0, 1.2),
@@ -597,6 +661,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.4, 0.7),
             "stubbornness_gene": (0.3, 0.6),
             "prey_drive_gene":   (0.7, 1.0),
+            "sprint_gene":       (1.00, 1.20),
+            "focus_gene":        (0.90, 1.15),
         },
         "abilities": {"guard": 0.65},
         "coat_colors": [(28, 22, 18), (110, 58, 24)],
@@ -609,6 +675,7 @@ BREED_PROFILES = {
     "Chow Chow": {
         "biomes": {"boreal", "alpine_mountain"},
         "size_class": "medium",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":        (0.8, 1.0),
             "endurance_gene":    (0.9, 1.1),
@@ -620,6 +687,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.3, 0.6),
             "stubbornness_gene": (0.7, 1.0),
             "prey_drive_gene":   (0.5, 0.8),
+            "sprint_gene":       (0.75, 1.00),
+            "focus_gene":        (0.70, 0.95),
         },
         "abilities": {"guard": 0.35},
         "coat_colors": [(190, 75, 30), (235, 222, 192), (28, 22, 18)],
@@ -632,6 +701,7 @@ BREED_PROFILES = {
     "Jack Russell": {
         "biomes": {"temperate", "rolling_hills", "birch_forest"},
         "size_class": "small",
+        "race_style": "surger",
         "genes": {
             "speed_gene":        (1.0, 1.2),
             "endurance_gene":    (0.9, 1.1),
@@ -643,6 +713,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.8, 1.0),
             "stubbornness_gene": (0.5, 0.8),
             "prey_drive_gene":   (0.9, 1.2),
+            "sprint_gene":       (0.90, 1.20),
+            "focus_gene":        (0.70, 1.00),
         },
         "abilities": {"tracking": 0.35},
         "coat_colors": [(248, 243, 232), (235, 222, 192)],
@@ -655,6 +727,7 @@ BREED_PROFILES = {
     "Rhodesian Ridgeback": {
         "biomes": {"savanna", "tropical", "wasteland", "arid_steppe"},
         "size_class": "large",
+        "race_style": "chaser",
         "genes": {
             "speed_gene":        (1.1, 1.3),
             "endurance_gene":    (1.0, 1.2),
@@ -666,6 +739,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.5, 0.8),
             "stubbornness_gene": (0.4, 0.7),
             "prey_drive_gene":   (0.9, 1.2),
+            "sprint_gene":       (0.80, 1.05),
+            "focus_gene":        (0.85, 1.10),
         },
         "abilities": {"tracking": 0.40, "guard": 0.30},
         "coat_colors": [(190, 75, 30), (205, 168, 55)],
@@ -678,6 +753,7 @@ BREED_PROFILES = {
     "Cane Corso": {
         "biomes": {"canyon", "temperate", "wasteland"},
         "size_class": "giant",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":        (0.8, 1.1),
             "endurance_gene":    (0.9, 1.2),
@@ -689,6 +765,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.3, 0.6),
             "stubbornness_gene": (0.4, 0.7),
             "prey_drive_gene":   (0.7, 1.0),
+            "sprint_gene":       (0.80, 1.05),
+            "focus_gene":        (0.85, 1.10),
         },
         "abilities": {"guard": 0.60},
         "coat_colors": [(28, 22, 18), (95, 100, 115), (110, 58, 24)],
@@ -701,6 +779,7 @@ BREED_PROFILES = {
     "Bernese Mountain Dog": {
         "biomes": {"alpine_mountain", "rocky_mountain", "boreal", "redwood"},
         "size_class": "large",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":        (0.8, 1.1),
             "endurance_gene":    (1.0, 1.2),
@@ -712,6 +791,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.6, 0.9),
             "stubbornness_gene": (0.2, 0.5),
             "prey_drive_gene":   (0.5, 0.8),
+            "sprint_gene":       (0.80, 1.05),
+            "focus_gene":        (0.90, 1.15),
         },
         "abilities": {"retrieve": 0.30},
         "coat_colors": [(28, 22, 18), (110, 58, 24)],
@@ -724,6 +805,7 @@ BREED_PROFILES = {
     "Whippet": {
         "biomes": {"steppe", "arid_steppe", "savanna"},
         "size_class": "medium",
+        "race_style": "sprinter",
         "genes": {
             "speed_gene":        (1.2, 1.3),
             "endurance_gene":    (0.8, 1.0),
@@ -735,6 +817,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.6, 0.9),
             "stubbornness_gene": (0.3, 0.6),
             "prey_drive_gene":   (0.8, 1.1),
+            "sprint_gene":       (1.10, 1.30),
+            "focus_gene":        (0.85, 1.15),
         },
         "abilities": {},
         "coat_colors": [(28, 22, 18), (190, 75, 30), (95, 100, 115), (235, 222, 192)],
@@ -747,6 +831,7 @@ BREED_PROFILES = {
     "Basenji": {
         "biomes": {"jungle", "tropical", "savanna", "arid_steppe", "beach"},
         "size_class": "small",
+        "race_style": "surger",
         "genes": {
             "speed_gene":        (1.0, 1.2),
             "endurance_gene":    (0.9, 1.1),
@@ -758,6 +843,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.5, 0.8),
             "stubbornness_gene": (0.6, 0.9),
             "prey_drive_gene":   (0.9, 1.2),
+            "sprint_gene":       (0.90, 1.20),
+            "focus_gene":        (0.70, 1.00),
         },
         "abilities": {"tracking": 0.50},
         "coat_colors": [(190, 75, 30), (205, 168, 55), (28, 22, 18)],
@@ -770,6 +857,7 @@ BREED_PROFILES = {
     "Saint Bernard": {
         "biomes": {"alpine_mountain", "tundra", "boreal"},
         "size_class": "giant",
+        "race_style": "pacer",
         "genes": {
             "speed_gene":        (0.7, 0.9),
             "endurance_gene":    (1.1, 1.3),
@@ -781,6 +869,8 @@ BREED_PROFILES = {
             "playfulness_gene":  (0.5, 0.8),
             "stubbornness_gene": (0.2, 0.5),
             "prey_drive_gene":   (0.4, 0.7),
+            "sprint_gene":       (0.70, 0.90),
+            "focus_gene":        (0.85, 1.10),
         },
         "abilities": {"tracking": 0.35},
         "coat_colors": [(190, 75, 30), (205, 168, 55)],
@@ -846,8 +936,11 @@ class Dog(Animal):
 
         self.traits["breed"]          = breed
         self.traits["generation"]     = 1
-        self.traits["collar_applied"] = False
-        self.traits["dog_name"]       = None
+        self.traits["collar_applied"]    = False
+        self.traits["dog_name"]          = None
+        self.traits["equipped_collar"]   = None
+        self.traits["equipped_blinkers"] = None
+        self.traits["training_bonuses"]  = {}
         self.traits["size_class"]     = profile["size_class"]
         self.traits["ear_type"]       = profile.get("ear_type", "floppy")
         self.traits["tail_type"]      = profile.get("tail_type", "long")
@@ -895,6 +988,10 @@ class Dog(Animal):
             profile["size_class"], profile["size_class"]
         ]
 
+        # Racing style gene (categorical default from profile)
+        style_val = profile.get("race_style", "pacer")
+        self.genotype["race_style_gene"] = [style_val, style_val]
+
         # Color genetics
         cg = _BREED_COLOR_GENES.get(self.traits.get("breed", "Labrador"), _BREED_COLOR_GENES.get("Labrador",
             {"base": [20,20,20,20,20], "dilute": 0.15, "spotting": [60,20,15,5]}))
@@ -937,11 +1034,17 @@ class Dog(Animal):
             ("playfulness_gene",  "playfulness",   0.0, 1.0),
             ("stubbornness_gene", "stubbornness",  0.0, 1.0),
             ("prey_drive_gene",   "prey_drive",    0.0, 1.0),
+            ("sprint_gene",       "sprint",        0.7, 1.3),
+            ("focus_gene",        "focus",         0.7, 1.3),
         ]
         for gene_key, trait_key, lo, hi in float_genes:
             if gene_key in self.genotype:
                 avg = sum(self.genotype[gene_key]) / 2
                 self.traits[trait_key] = round(max(lo, min(hi, avg)), 3)
+
+        # Race style (categorical — first allele wins, both alleles always match for pure breeds)
+        if "race_style_gene" in self.genotype:
+            self.traits["race_style"] = self.genotype["race_style_gene"][0]
 
         # Categorical visual genes
         cat_genes = [
@@ -996,6 +1099,8 @@ class Dog(Animal):
             ("playfulness_gene",  "playfulness",   0.0, 1.0),
             ("stubbornness_gene", "stubbornness",  0.0, 1.0),
             ("prey_drive_gene",   "prey_drive",    0.0, 1.0),
+            ("sprint_gene",       "sprint",        0.7, 1.3),
+            ("focus_gene",        "focus",         0.7, 1.3),
         ]
         for gene_key, trait_key, lo, hi in float_genes:
             v = self.traits.get(trait_key, (lo + hi) / 2)
@@ -1004,6 +1109,9 @@ class Dog(Animal):
                 round(max(lo, min(hi, v + noise)), 3),
                 round(max(lo, min(hi, v - noise)), 3),
             ]
+        # Race style gene
+        style = self.traits.get("race_style", "pacer")
+        self.genotype["race_style_gene"] = [style, style]
         for gene_key, trait_key in [
             ("coat_pattern_gene", "coat_pattern"),
             ("coat_length_gene",  "coat_length"),
@@ -1030,6 +1138,15 @@ class Dog(Animal):
         if spot not in WHITE_SPOTTING_ORDER:
             spot = "solid"
         self.genotype["white_spotting_gene"] = [spot, spot]
+
+    @property
+    def race_rating(self):
+        sp = self.traits.get("speed", 1.0)
+        en = self.traits.get("endurance", 1.0)
+        ag = self.traits.get("agility", 1.0)
+        al = self.traits.get("alertness", 1.0)
+        raw = sp * 0.40 + en * 0.25 + ag * 0.20 + al * 0.15
+        return max(0.5, min(1.5, raw))
 
     # ------------------------------------------------------------------
     # Non-killable

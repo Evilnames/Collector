@@ -14,7 +14,7 @@ from guard_sketches import sketch_from_npc
 _SEED_IDS = {"cactus_spine", "prickly_pear_pad", "cholla_segment"}
 _TOOL_PROPS = {"pick_power", "axe_power", "till_tool", "water_tool",
                "harvest_tool", "fertilize_tool", "fishing_tool",
-               "weapon_part", "wire_layer"}
+               "weapon_part", "wire_layer", "pipe_layer"}
 
 
 def _inv_tab_match(item_id, item, tab):
@@ -1517,53 +1517,119 @@ class PanelsMixin:
         rx  = div_x + 8
         RW  = PW - CANVAS_W - 38
         title2 = self.font.render("YOUR WILDFLOWERS", True, (140, 215, 100))
-        self.screen.blit(title2, (rx + RW // 2 - title2.get_width() // 2, py + 30))
+        self.screen.blit(title2, (rx + RW // 2 - title2.get_width() // 2, py + 10))
+
+        # View All toggle button
+        va_label = "VIEW LIST" if self._garden_view_all else "VIEW ALL"
+        va_s = self.small.render(va_label, True, (140, 215, 100))
+        va_rect = pygame.Rect(rx + RW - va_s.get_width() - 18, py + 29, va_s.get_width() + 12, 20)
+        pygame.draw.rect(self.screen, (20, 48, 20) if self._garden_view_all else (12, 30, 12), va_rect)
+        pygame.draw.rect(self.screen, (55, 130, 55), va_rect, 1)
+        self.screen.blit(va_s, (va_rect.x + 6, va_rect.y + 2))
+        self._garden_view_all_btn = va_rect
 
         placed_uids = {wf.uid for wf, cx, cy in flowers}
         if drag_wf and self._garden_drag_source == 'collection':
             placed_uids.add(drag_wf.uid)
         available = [f for f in player.wildflowers if f.uid not in placed_uids]
 
-        CH, GAP   = 58, 6
-        VISIBLE   = 7
-        AREA_H    = VISIBLE * (CH + GAP)
-        self._max_garden_col_scroll = max(0, len(available) - VISIBLE)
-        self._garden_col_scroll = min(self._garden_col_scroll, self._max_garden_col_scroll)
+        COL_TOP = py + 52
 
-        clip = pygame.Rect(rx, py + 52, RW, AREA_H + 4)
-        self.screen.set_clip(clip)
-        self._garden_col_rects.clear()
+        if self._garden_view_all:
+            # ── Grid view ──
+            GCELL   = (RW - 8) // 3
+            cols    = 3
+            AREA_H  = PH - 52 - 20
+            total_rows = max(1, (len(available) + cols - 1) // cols)
+            vis_rows   = max(1, AREA_H // GCELL)
+            max_vs     = max(0, total_rows - vis_rows)
+            self._garden_view_all_scroll = max(0, min(max_vs, self._garden_view_all_scroll))
+            row_off = self._garden_view_all_scroll
 
-        for i, wf in enumerate(available):
-            row = i - self._garden_col_scroll
-            if row < 0 or row >= VISIBLE:
-                continue
-            ry = py + 55 + row * (CH + GAP)
-            rect = pygame.Rect(rx + 4, ry, RW - 8, CH)
-            self._garden_col_rects[wf.uid] = rect
+            if max_vs > 0:
+                sb_x  = rx + RW - 6
+                sb_h  = AREA_H
+                sb_th = max(20, sb_h * vis_rows // total_rows)
+                sb_top = COL_TOP + (sb_h - sb_th) * row_off // max_vs
+                pygame.draw.rect(self.screen, (14, 28, 14), (sb_x, COL_TOP, 5, sb_h))
+                pygame.draw.rect(self.screen, (55, 130, 55), (sb_x, sb_top, 5, sb_th))
 
-            pygame.draw.rect(self.screen, (18, 32, 18), rect)
-            rar_col = self._RARITY_COLOR.get(wf.rarity, (100, 100, 100))
-            pygame.draw.rect(self.screen, rar_col, rect, 1)
+            clip = pygame.Rect(rx, COL_TOP, RW, AREA_H)
+            self.screen.set_clip(clip)
+            self._garden_view_all_rects.clear()
+            self._garden_col_rects.clear()
 
-            surf = render_wildflower(wf, 44)
-            self.screen.blit(surf, (rx + 8, ry + (CH - 44) // 2))
+            for i, wf in enumerate(available):
+                c   = i % cols
+                r   = i // cols - row_off
+                if r < 0:
+                    continue
+                gx  = rx + 4 + c * GCELL
+                gy  = COL_TOP + r * GCELL
+                if gy + GCELL > COL_TOP + AREA_H:
+                    break
+                cell_rect = pygame.Rect(gx, gy, GCELL - 2, GCELL - 2)
+                rar_col = self._RARITY_COLOR.get(wf.rarity, (100, 100, 100))
+                pygame.draw.rect(self.screen, (18, 32, 18), cell_rect)
+                pygame.draw.rect(self.screen, rar_col, cell_rect, 1)
+                thumb_sz = min(GCELL - 24, 52)
+                surf = render_wildflower(wf, thumb_sz)
+                self.screen.blit(surf, (gx + (GCELL - 2) // 2 - surf.get_width() // 2, gy + 4))
+                name = wf.flower_type.replace("_", " ").title()
+                short = name if len(name) <= 10 else name[:9] + "…"
+                ns = self.small.render(short, True, (210, 245, 188))
+                self.screen.blit(ns, (gx + (GCELL - 2) // 2 - ns.get_width() // 2, gy + thumb_sz + 6))
+                self._garden_view_all_rects[wf.uid] = cell_rect
+                self._garden_col_rects[wf.uid] = cell_rect
 
-            name = wf.flower_type.replace("_", " ").title()
-            self.screen.blit(self.small.render(name, True, (210, 245, 188)), (rx + 58, ry + 6))
-            self.screen.blit(self.small.render(wf.rarity.capitalize(), True, rar_col), (rx + 58, ry + 24))
-            bio_s = self.small.render(wf.biodome_found, True, (95, 155, 105))
-            self.screen.blit(bio_s, (rx + 58, ry + 40))
-            if wf.specials:
-                sp_label = self.small.render(wf.specials[0], True, (160, 200, 115))
-                self.screen.blit(sp_label, (rx + RW - sp_label.get_width() - 12, ry + 6))
+            self.screen.set_clip(None)
 
-        self.screen.set_clip(None)
+            if not available and not placed:
+                es = self.small.render("No wildflowers in collection", True, (50, 90, 55))
+                self.screen.blit(es, (rx + RW // 2 - es.get_width() // 2, py + 280))
+        else:
+            # ── Normal list view ──
+            CH, GAP   = 58, 6
+            VISIBLE   = 7
+            AREA_H    = VISIBLE * (CH + GAP)
+            self._max_garden_col_scroll = max(0, len(available) - VISIBLE)
+            self._garden_col_scroll = min(self._garden_col_scroll, self._max_garden_col_scroll)
 
-        if not available and not placed:
-            es = self.small.render("No wildflowers in collection", True, (50, 90, 55))
-            self.screen.blit(es, (rx + RW // 2 - es.get_width() // 2, py + 280))
-        elif len(flowers) >= CAPACITY:
+            clip = pygame.Rect(rx, COL_TOP, RW, AREA_H + 4)
+            self.screen.set_clip(clip)
+            self._garden_col_rects.clear()
+
+            for i, wf in enumerate(available):
+                row = i - self._garden_col_scroll
+                if row < 0 or row >= VISIBLE:
+                    continue
+                ry2 = py + 55 + row * (CH + GAP)
+                rect = pygame.Rect(rx + 4, ry2, RW - 8, CH)
+                self._garden_col_rects[wf.uid] = rect
+
+                pygame.draw.rect(self.screen, (18, 32, 18), rect)
+                rar_col = self._RARITY_COLOR.get(wf.rarity, (100, 100, 100))
+                pygame.draw.rect(self.screen, rar_col, rect, 1)
+
+                surf = render_wildflower(wf, 44)
+                self.screen.blit(surf, (rx + 8, ry2 + (CH - 44) // 2))
+
+                name = wf.flower_type.replace("_", " ").title()
+                self.screen.blit(self.small.render(name, True, (210, 245, 188)), (rx + 58, ry2 + 6))
+                self.screen.blit(self.small.render(wf.rarity.capitalize(), True, rar_col), (rx + 58, ry2 + 24))
+                bio_s = self.small.render(wf.biodome_found, True, (95, 155, 105))
+                self.screen.blit(bio_s, (rx + 58, ry2 + 40))
+                if wf.specials:
+                    sp_label = self.small.render(wf.specials[0], True, (160, 200, 115))
+                    self.screen.blit(sp_label, (rx + RW - sp_label.get_width() - 12, ry2 + 6))
+
+            self.screen.set_clip(None)
+
+            if not available and not placed:
+                es = self.small.render("No wildflowers in collection", True, (50, 90, 55))
+                self.screen.blit(es, (rx + RW // 2 - es.get_width() // 2, py + 280))
+
+        if len(flowers) >= CAPACITY:
             full_s = self.small.render("Garden full (12/12)", True, (140, 100, 40))
             self.screen.blit(full_s, (rx + RW // 2 - full_s.get_width() // 2, py + 510))
 
@@ -2740,51 +2806,55 @@ class PanelsMixin:
             cost       = npc.discounted_cost(i)
             can_buy    = npc.can_buy(i, player)
             can_barter = npc.can_barter(i, player)
+            active     = can_buy or can_barter
 
-            row_h    = 72
+            row_h    = 64
             row_rect = pygame.Rect(px + 20, y, PW - 40, row_h)
-            bg  = (20, 22, 30) if (can_buy or can_barter) else (22, 22, 30)
-            bdr = (120, 135, 165) if (can_buy or can_barter) else (50, 55, 70)
-            pygame.draw.rect(self.screen, bg, row_rect)
-            pygame.draw.rect(self.screen, bdr, row_rect, 2)
+            pygame.draw.rect(self.screen, (24, 26, 34), row_rect)
+            pygame.draw.rect(self.screen, (60, 70, 90) if active else (40, 44, 55), row_rect, 1)
 
             item_color = ITEMS.get(item_id, {}).get("color", (128, 128, 128))
-            pygame.draw.rect(self.screen, item_color, (px + 28, y + 20, 28, 28))
+            pygame.draw.rect(self.screen, item_color, (px + 30, y + 18, 28, 28))
 
-            name_col = (210, 220, 240) if (can_buy or can_barter) else (110, 115, 130)
-            self.screen.blit(self.font.render(display, True, name_col), (px + 66, y + 8))
+            name_col = (220, 228, 245) if active else (115, 120, 135)
+            self.screen.blit(self.font.render(display, True, name_col), (px + 70, y + 8))
 
-            buy_col = (180, 155, 60) if can_buy else (80, 75, 40)
-            buy_lbl = self.font.render("BUY", True, (220, 195, 80) if can_buy else (70, 70, 82))
-            gold_lbl = self.font.render(f"{cost} gold", True, buy_col)
-            self.screen.blit(gold_lbl, (px + 66, y + 30))
             spec_tag = specialty_price_label(npc, item_id)
             if spec_tag:
                 tag_col = (130, 200, 130) if spec_tag == "export" else (220, 170, 90)
-                tag_s = self.small.render(f"({spec_tag})", True, tag_col)
-                self.screen.blit(tag_s, (px + 66 + gold_lbl.get_width() + 6, y + 34))
-            buy_rect = pygame.Rect(row_rect.right - 70, y + 26, 58, 20)
-            buy_bg   = (50, 50, 30) if can_buy else (35, 35, 45)
-            pygame.draw.rect(self.screen, buy_bg, buy_rect)
-            pygame.draw.rect(self.screen, buy_col, buy_rect, 1)
+                tag_s = self.small.render(spec_tag, True, tag_col)
+                name_w = self.font.size(display)[0]
+                self.screen.blit(tag_s, (px + 70 + name_w + 8, y + 12))
+
+            sub_col = (150, 155, 170) if active else (90, 95, 105)
+            cost_col = (210, 180, 80) if can_buy else sub_col
+            self.screen.blit(self.small.render(f"{cost} gold", True, cost_col), (px + 70, y + 30))
+
+            barter_name = ITEMS.get(barter_item, {}).get("name", barter_item)
+            barter_col = (140, 210, 165) if can_barter else sub_col
+            self.screen.blit(self.small.render(f"or {barter_qty} {barter_name}", True, barter_col),
+                             (px + 70, y + 46))
+
+            btn_w, btn_h = 64, 22
+            buy_rect = pygame.Rect(row_rect.right - btn_w - 10, y + 8, btn_w, btn_h)
+            buy_fill = (90, 75, 25) if can_buy else (38, 40, 50)
+            buy_text = (255, 220, 110) if can_buy else (95, 95, 110)
+            pygame.draw.rect(self.screen, buy_fill, buy_rect, border_radius=3)
+            buy_lbl = self.small.render("BUY", True, buy_text)
             self.screen.blit(buy_lbl, (buy_rect.centerx - buy_lbl.get_width() // 2,
                                        buy_rect.centery - buy_lbl.get_height() // 2))
             self._trade_rects[(i, "buy")] = buy_rect
 
-            barter_name = ITEMS.get(barter_item, {}).get("name", barter_item)
-            trade_col   = (100, 190, 140) if can_barter else (55, 85, 70)
-            trade_lbl   = self.font.render("TRADE", True, (120, 220, 160) if can_barter else (60, 80, 70))
-            barter_lbl  = self.font.render(f"{barter_qty} {barter_name}", True, trade_col)
-            self.screen.blit(barter_lbl, (px + 66, y + 50))
-            trade_rect = pygame.Rect(row_rect.right - 70, y + 46, 58, 20)
-            trade_bg   = (10, 50, 35) if can_barter else (35, 35, 45)
-            pygame.draw.rect(self.screen, trade_bg, trade_rect)
-            pygame.draw.rect(self.screen, trade_col, trade_rect, 1)
+            trade_rect = pygame.Rect(row_rect.right - btn_w - 10, y + 34, btn_w, btn_h)
+            trade_fill = (25, 75, 55) if can_barter else (38, 40, 50)
+            trade_text = (140, 230, 175) if can_barter else (95, 95, 110)
+            pygame.draw.rect(self.screen, trade_fill, trade_rect, border_radius=3)
+            trade_lbl = self.small.render("TRADE", True, trade_text)
             self.screen.blit(trade_lbl, (trade_rect.centerx - trade_lbl.get_width() // 2,
                                          trade_rect.centery - trade_lbl.get_height() // 2))
             self._trade_rects[(i, "barter")] = trade_rect
 
-            y += row_h + 6
+            y += row_h + 4
 
     def _draw_innkeeper_content(self, player, npc, px, py, PW, PH):
         title = self.font.render("THE INN", True, (240, 175, 80))
@@ -4331,3 +4401,471 @@ class PanelsMixin:
                 if lst is not None and item in lst:
                     _try_remove(lst, item)
                     break
+
+    # =========================================================================
+    # Pipe layer panels
+    # =========================================================================
+
+    def _draw_hopper(self, player, world):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 500, 280
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (22, 18, 12), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (140, 100, 60), (px, py, PW, PH), 2)
+
+        title = self.font.render("HOPPER", True, (220, 170, 80))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+
+        bx, by = self.active_hopper_pos
+        cfg = world.pipe_state.get((bx, by), {})
+        pull_rate = cfg.get("pull_rate", 1)
+
+        # Pull rate control
+        rate_label = self.font.render(f"Pull Rate: {pull_rate}", True, (210, 200, 180))
+        self.screen.blit(rate_label, (px + 20, py + 55))
+        bw = 30
+        minus_r = pygame.Rect(px + 210, py + 52, bw, 26)
+        plus_r  = pygame.Rect(px + 250, py + 52, bw, 26)
+        for r, lbl in ((minus_r, "-"), (plus_r, "+")):
+            pygame.draw.rect(self.screen, (60, 50, 38), r)
+            pygame.draw.rect(self.screen, (140, 100, 60), r, 1)
+            s = self.font.render(lbl, True, (220, 200, 160))
+            self.screen.blit(s, (r.x + r.w // 2 - s.get_width() // 2,
+                                 r.y + r.h // 2 - s.get_height() // 2))
+        self._hopper_rate_minus = minus_r
+        self._hopper_rate_plus  = plus_r
+
+        # Source contents
+        from pipes import _get_container
+        source = _get_container(world, bx, by - 1)
+        src_label = self.small.render("Source above:", True, (160, 140, 110))
+        self.screen.blit(src_label, (px + 20, py + 95))
+        if source:
+            items_str = "  ".join(f"{ITEMS.get(k, {}).get('name', k)} x{v}"
+                                  for k, v in list(source.items())[:5])
+            ts = self.small.render(items_str or "(empty)", True, (180, 200, 160))
+        else:
+            ts = self.small.render("(nothing above)", True, (120, 100, 80))
+        self.screen.blit(ts, (px + 20, py + 115))
+
+        # Buffer contents
+        buf = world.pipe_buffers.get((bx, by), {})
+        buf_label = self.small.render("Buffer:", True, (160, 140, 110))
+        self.screen.blit(buf_label, (px + 20, py + 145))
+        buf_str = "  ".join(f"{ITEMS.get(k, {}).get('name', k)} x{v}"
+                             for k, v in list(buf.items())[:5])
+        bs = self.small.render(buf_str or "(empty)", True, (180, 200, 160))
+        self.screen.blit(bs, (px + 20, py + 165))
+
+        # Wire status
+        from pipes import _wire_disabled
+        wire_st = "Disabled by wire" if _wire_disabled(world, bx, by) else "Active"
+        ws = self.small.render(f"Wire: {wire_st}", True, (120, 180, 220))
+        self.screen.blit(ws, (px + 20, py + 205))
+
+        close_r = pygame.Rect(px + PW - 90, py + PH - 40, 80, 28)
+        pygame.draw.rect(self.screen, (60, 40, 30), close_r)
+        pygame.draw.rect(self.screen, (140, 80, 50), close_r, 1)
+        cs = self.small.render("Close [E]", True, (220, 180, 120))
+        self.screen.blit(cs, (close_r.x + close_r.w // 2 - cs.get_width() // 2,
+                               close_r.y + close_r.h // 2 - cs.get_height() // 2))
+        self._hopper_close_btn = close_r
+
+    def _draw_pipe_output(self, player, world):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 420, 220
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (14, 20, 28), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (60, 110, 150), (px, py, PW, PH), 2)
+
+        title = self.font.render("PIPE OUTPUT", True, (120, 180, 220))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+
+        bx, by = self.active_pipe_output_pos
+        cfg = world.pipe_state.get((bx, by), {})
+        facing = cfg.get("facing", "down")
+
+        dirs_label = self.font.render("Output Direction:", True, (190, 190, 190))
+        self.screen.blit(dirs_label, (px + 20, py + 50))
+
+        self._po_facing_btns = {}
+        directions = [("up", 0), ("down", 1), ("left", 2), ("right", 3)]
+        for name, idx in directions:
+            bx_btn = px + 20 + idx * 90
+            by_btn = py + 80
+            r = pygame.Rect(bx_btn, by_btn, 80, 30)
+            active = (name == facing)
+            pygame.draw.rect(self.screen, (40, 80, 110) if active else (25, 40, 55), r)
+            pygame.draw.rect(self.screen, (80, 160, 210) if active else (50, 80, 100), r, 1)
+            s = self.small.render(name.capitalize(), True, (220, 220, 240) if active else (140, 160, 180))
+            self.screen.blit(s, (r.x + r.w // 2 - s.get_width() // 2,
+                                 r.y + r.h // 2 - s.get_height() // 2))
+            self._po_facing_btns[name] = r
+
+        buf = world.pipe_buffers.get((bx, by), {})
+        buf_str = "  ".join(f"{ITEMS.get(k, {}).get('name', k)} x{v}"
+                             for k, v in list(buf.items())[:4])
+        bl = self.small.render(f"Buffer: {buf_str or '(empty)'}", True, (170, 200, 160))
+        self.screen.blit(bl, (px + 20, py + 130))
+
+        close_r = pygame.Rect(px + PW - 90, py + PH - 38, 80, 26)
+        pygame.draw.rect(self.screen, (40, 30, 20), close_r)
+        pygame.draw.rect(self.screen, (80, 110, 140), close_r, 1)
+        cs = self.small.render("Close [E]", True, (180, 200, 220))
+        self.screen.blit(cs, (close_r.x + close_r.w // 2 - cs.get_width() // 2,
+                               close_r.y + close_r.h // 2 - cs.get_height() // 2))
+        self._po_close_btn = close_r
+
+    def _draw_pipe_filter(self, player, world):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 760, 420
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (20, 16, 10), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (150, 120, 70), (px, py, PW, PH), 2)
+
+        title = self.font.render("PIPE FILTER", True, (220, 180, 80))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+
+        bx, by = self.active_pipe_filter_pos
+        cfg = world.pipe_state.get((bx, by), {})
+        allowed = cfg.get("allowed", [])
+
+        half = (PW - 30) // 2
+        lx, rx = px + 10, px + 20 + half
+        pygame.draw.line(self.screen, (80, 60, 30),
+                         (px + half + 15, py + 35), (px + half + 15, py + PH - 10), 1)
+
+        # Left: allowed items
+        lbl = self.small.render("Allowed (click to remove)", True, (200, 170, 90))
+        self.screen.blit(lbl, (lx, py + 38))
+        self._pf_item_rects = {}
+        CW, CH, GAP = 200, 36, 4
+        for i, item_id in enumerate(allowed):
+            y = py + 60 + i * (CH + GAP) - self._pf_scroll * (CH + GAP)
+            if y + CH < py + 60 or y > py + PH - 20:
+                continue
+            r = pygame.Rect(lx, y, CW, CH)
+            pygame.draw.rect(self.screen, (45, 35, 20), r)
+            pygame.draw.rect(self.screen, (160, 120, 60), r, 1)
+            nm = ITEMS.get(item_id, {}).get("name", item_id)
+            s = self.small.render(f"[X] {nm}", True, (220, 200, 150))
+            self.screen.blit(s, (r.x + 6, r.y + r.h // 2 - s.get_height() // 2))
+            self._pf_item_rects[item_id] = r
+
+        # Right: player inventory to add
+        rlbl = self.small.render("Add from inventory (click)", True, (180, 180, 180))
+        self.screen.blit(rlbl, (rx, py + 38))
+        self._pf_add_rects = {}
+        inv_items = [(k, v) for k, v in player.inventory.items() if v > 0 and k not in allowed]
+        for i, (item_id, count) in enumerate(inv_items[:12]):
+            col = i % 2
+            row = i // 2
+            x = rx + col * (CW + GAP)
+            y = py + 60 + row * (CH + GAP)
+            if y + CH > py + PH - 20:
+                break
+            r = pygame.Rect(x, y, CW, CH)
+            pygame.draw.rect(self.screen, (30, 28, 20), r)
+            pygame.draw.rect(self.screen, (100, 90, 60), r, 1)
+            nm = ITEMS.get(item_id, {}).get("name", item_id)
+            s = self.small.render(f"{nm} x{count}", True, (200, 210, 180))
+            self.screen.blit(s, (r.x + 6, r.y + r.h // 2 - s.get_height() // 2))
+            self._pf_add_rects[item_id] = r
+
+        close_r = pygame.Rect(px + PW - 90, py + PH - 38, 80, 26)
+        pygame.draw.rect(self.screen, (45, 32, 18), close_r)
+        pygame.draw.rect(self.screen, (140, 100, 50), close_r, 1)
+        cs = self.small.render("Close [E]", True, (210, 180, 110))
+        self.screen.blit(cs, (close_r.x + close_r.w // 2 - cs.get_width() // 2,
+                               close_r.y + close_r.h // 2 - cs.get_height() // 2))
+        self._pf_close_btn = close_r
+
+    def _draw_pipe_sorter(self, player, world):
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 800, 460
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (12, 10, 20), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (80, 70, 140), (px, py, PW, PH), 2)
+
+        title = self.font.render("PIPE SORTER", True, (180, 160, 240))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+
+        bx, by = self.active_pipe_sorter_pos
+        cfg = world.pipe_state.get((bx, by), {})
+        routes = cfg.get("routes", {})
+
+        col_hdrs = ["Item", "Up", "Down", "Left", "Right", "Clear"]
+        col_xs = [px + 10, px + 230, px + 310, px + 390, px + 470, px + 560]
+        for hdr, hx in zip(col_hdrs, col_xs):
+            hs = self.small.render(hdr, True, (180, 170, 210))
+            self.screen.blit(hs, (hx, py + 38))
+
+        pygame.draw.line(self.screen, (60, 55, 90),
+                         (px + 10, py + 56), (px + PW - 10, py + 56), 1)
+
+        self._ps_item_rects = {}
+        self._ps_dir_rects  = {}
+        inv_items = [(k, v) for k, v in player.inventory.items() if v > 0]
+        VISIBLE = 8
+        ROW_H = 34
+        self._ps_scroll = max(0, min(self._ps_scroll, max(0, len(inv_items) - VISIBLE)))
+
+        for idx in range(self._ps_scroll, min(self._ps_scroll + VISIBLE, len(inv_items))):
+            item_id, count = inv_items[idx]
+            row = idx - self._ps_scroll
+            ry = py + 62 + row * ROW_H
+
+            nm = ITEMS.get(item_id, {}).get("name", item_id)
+            ns = self.small.render(f"{nm} x{count}", True, (200, 195, 220))
+            self.screen.blit(ns, (col_xs[0], ry + 8))
+
+            current_dir = routes.get(item_id)
+            for di, dname in enumerate(("up", "down", "left", "right")):
+                r = pygame.Rect(col_xs[1 + di], ry + 4, 60, 26)
+                active = (current_dir == dname)
+                pygame.draw.rect(self.screen, (50, 40, 80) if active else (25, 20, 40), r)
+                pygame.draw.rect(self.screen, (140, 120, 200) if active else (60, 55, 90), r, 1)
+                ds = self.small.render(dname[0].upper(), True, (230, 220, 255) if active else (130, 120, 160))
+                self.screen.blit(ds, (r.x + r.w // 2 - ds.get_width() // 2,
+                                      r.y + r.h // 2 - ds.get_height() // 2))
+                self._ps_dir_rects[(item_id, dname)] = r
+
+            clr_r = pygame.Rect(col_xs[5], ry + 4, 55, 26)
+            pygame.draw.rect(self.screen, (50, 20, 20), clr_r)
+            pygame.draw.rect(self.screen, (120, 60, 60), clr_r, 1)
+            xs = self.small.render("Clear", True, (200, 140, 130))
+            self.screen.blit(xs, (clr_r.x + clr_r.w // 2 - xs.get_width() // 2,
+                                   clr_r.y + clr_r.h // 2 - xs.get_height() // 2))
+            self._ps_item_rects[item_id] = clr_r
+
+        close_r = pygame.Rect(px + PW - 90, py + PH - 38, 80, 26)
+        pygame.draw.rect(self.screen, (35, 28, 50), close_r)
+        pygame.draw.rect(self.screen, (80, 70, 120), close_r, 1)
+        cs = self.small.render("Close [E]", True, (190, 180, 220))
+        self.screen.blit(cs, (close_r.x + close_r.w // 2 - cs.get_width() // 2,
+                               close_r.y + close_r.h // 2 - cs.get_height() // 2))
+        self._ps_close_btn = close_r
+
+    # =========================================================================
+    # Factory panel
+    # =========================================================================
+
+    def _draw_factory(self, player, world):
+        from factory import MAX_INPUT_SLOTS, MAX_OUTPUT_SLOTS
+
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 200))
+        self.screen.blit(overlay, (0, 0))
+
+        PW, PH = 860, 500
+        px = (SCREEN_W - PW) // 2
+        py = (SCREEN_H - PH) // 2
+        pygame.draw.rect(self.screen, (18, 26, 22), (px, py, PW, PH))
+        pygame.draw.rect(self.screen, (80, 160, 110), (px, py, PW, PH), 2)
+
+        title = self.font.render("FACTORY", True, (120, 210, 150))
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+
+        bx, by = self.active_factory_pos
+        state  = world.factory_data.get((bx, by), {})
+        recipe = state.get("recipe", {})
+        inputs_cfg  = recipe.get("inputs",  [None] * MAX_INPUT_SLOTS)
+        outputs_cfg = recipe.get("outputs", [None] * MAX_OUTPUT_SLOTS)
+        craft_time  = recipe.get("craft_time", 5.0)
+        inv         = state.get("inventory", {})
+        inv_cap     = state.get("inv_cap", 64)
+        progress    = state.get("progress", 0.0)
+
+        # ── Layout ────────────────────────────────────────────────────────────
+        col_w   = 230
+        slot_h  = 44
+        slot_gap = 6
+        in_x    = px + 20
+        out_x   = px + PW - col_w - 20
+        arrow_x = px + PW // 2 - 18
+        slots_y = py + 48
+
+        # ── Input column ──────────────────────────────────────────────────────
+        ih = self.small.render("INPUTS  (click to assign / right-click clear)", True, (160, 200, 170))
+        self.screen.blit(ih, (in_x, slots_y))
+
+        self._fac_input_rects = {}
+        self._fac_count_btns  = {}
+        for i, slot in enumerate(inputs_cfg):
+            sy = slots_y + 22 + i * (slot_h + slot_gap)
+            r  = pygame.Rect(in_x, sy, col_w, slot_h)
+            picking_this = (self._fac_picking == ("input", i))
+            bg = (40, 70, 55) if picking_this else (28, 42, 34)
+            bdr = (120, 210, 140) if picking_this else (55, 100, 70)
+            pygame.draw.rect(self.screen, bg, r)
+            pygame.draw.rect(self.screen, bdr, r, 1)
+            if slot:
+                nm = ITEMS.get(slot["item_id"], {}).get("name", slot["item_id"])
+                ns = self.small.render(nm, True, (200, 230, 210))
+                self.screen.blit(ns, (r.x + 6, r.y + 6))
+                # count +/-
+                cnt = slot["count"]
+                cs  = self.small.render(f"x{cnt}", True, (180, 220, 190))
+                self.screen.blit(cs, (r.x + 6, r.y + 24))
+                minus_r = pygame.Rect(r.right - 50, r.y + 8, 20, 20)
+                plus_r  = pygame.Rect(r.right - 26, r.y + 8, 20, 20)
+                for btn_r, lbl in ((minus_r, "-"), (plus_r, "+")):
+                    pygame.draw.rect(self.screen, (40, 60, 48), btn_r)
+                    pygame.draw.rect(self.screen, (80, 140, 100), btn_r, 1)
+                    bs2 = self.small.render(lbl, True, (180, 240, 200))
+                    self.screen.blit(bs2, (btn_r.x + btn_r.w // 2 - bs2.get_width() // 2,
+                                           btn_r.y + btn_r.h // 2 - bs2.get_height() // 2))
+                self._fac_count_btns[("input", i, "-")] = minus_r
+                self._fac_count_btns[("input", i, "+")] = plus_r
+            else:
+                es = self.small.render("— empty —", True, (80, 110, 90))
+                self.screen.blit(es, (r.x + 6, r.y + r.h // 2 - es.get_height() // 2))
+            self._fac_input_rects[i] = r
+
+        # ── Arrow ─────────────────────────────────────────────────────────────
+        ay = slots_y + 22 + MAX_INPUT_SLOTS * (slot_h + slot_gap) // 2 - 8
+        for step in range(3):
+            pygame.draw.polygon(self.screen, (80, 160, 110),
+                                [(arrow_x + step * 10, ay),
+                                 (arrow_x + step * 10 + 8, ay + 8),
+                                 (arrow_x + step * 10, ay + 16)])
+
+        # ── Output column ─────────────────────────────────────────────────────
+        oh = self.small.render("OUTPUTS  (click to assign / right-click clear)", True, (160, 200, 170))
+        self.screen.blit(oh, (out_x, slots_y))
+
+        self._fac_output_rects = {}
+        for i, slot in enumerate(outputs_cfg):
+            sy = slots_y + 22 + i * (slot_h + slot_gap)
+            r  = pygame.Rect(out_x, sy, col_w, slot_h)
+            picking_this = (self._fac_picking == ("output", i))
+            bg  = (40, 55, 70) if picking_this else (26, 34, 44)
+            bdr = (100, 150, 210) if picking_this else (50, 80, 120)
+            pygame.draw.rect(self.screen, bg, r)
+            pygame.draw.rect(self.screen, bdr, r, 1)
+            if slot:
+                nm = ITEMS.get(slot["item_id"], {}).get("name", slot["item_id"])
+                ns = self.small.render(nm, True, (190, 210, 240))
+                self.screen.blit(ns, (r.x + 6, r.y + 6))
+                cnt = slot["count"]
+                cs  = self.small.render(f"x{cnt}", True, (170, 200, 230))
+                self.screen.blit(cs, (r.x + 6, r.y + 24))
+                minus_r = pygame.Rect(r.right - 50, r.y + 8, 20, 20)
+                plus_r  = pygame.Rect(r.right - 26, r.y + 8, 20, 20)
+                for btn_r, lbl in ((minus_r, "-"), (plus_r, "+")):
+                    pygame.draw.rect(self.screen, (35, 45, 65), btn_r)
+                    pygame.draw.rect(self.screen, (70, 110, 170), btn_r, 1)
+                    bs2 = self.small.render(lbl, True, (180, 210, 255))
+                    self.screen.blit(bs2, (btn_r.x + btn_r.w // 2 - bs2.get_width() // 2,
+                                           btn_r.y + btn_r.h // 2 - bs2.get_height() // 2))
+                self._fac_count_btns[("output", i, "-")] = minus_r
+                self._fac_count_btns[("output", i, "+")] = plus_r
+            else:
+                es = self.small.render("— empty —", True, (70, 90, 120))
+                self.screen.blit(es, (r.x + 6, r.y + r.h // 2 - es.get_height() // 2))
+            self._fac_output_rects[i] = r
+
+        # ── Craft time ────────────────────────────────────────────────────────
+        ct_y = slots_y + 22 + MAX_INPUT_SLOTS * (slot_h + slot_gap) + 12
+        ctl  = self.small.render(f"Craft time: {craft_time:.1f}s", True, (180, 200, 180))
+        self.screen.blit(ctl, (in_x, ct_y))
+        tm = self.small.render("[-]", True, (200, 180, 140))
+        tp = self.small.render("[+]", True, (200, 180, 140))
+        tm_r = pygame.Rect(in_x + 160, ct_y - 2, 28, 20)
+        tp_r = pygame.Rect(in_x + 194, ct_y - 2, 28, 20)
+        for btn_r, lbl in ((tm_r, "−"), (tp_r, "+")):
+            pygame.draw.rect(self.screen, (40, 55, 40), btn_r)
+            pygame.draw.rect(self.screen, (100, 140, 100), btn_r, 1)
+            bs2 = self.small.render(lbl, True, (200, 230, 180))
+            self.screen.blit(bs2, (btn_r.x + btn_r.w // 2 - bs2.get_width() // 2,
+                                   btn_r.y + btn_r.h // 2 - bs2.get_height() // 2))
+        self._fac_time_btns = {"-": tm_r, "+": tp_r}
+
+        # ── Inventory cap ────────────────────────────────────────────────────
+        cap_y  = ct_y + 24
+        total  = sum(inv.values())
+        cap_col = (220, 80, 80) if total >= inv_cap else (180, 200, 180)
+        cap_lbl = self.small.render(f"Inv cap: {total}/{inv_cap}", True, cap_col)
+        self.screen.blit(cap_lbl, (in_x, cap_y))
+        cm_r = pygame.Rect(in_x + 160, cap_y - 2, 28, 20)
+        cp_r = pygame.Rect(in_x + 194, cap_y - 2, 28, 20)
+        for btn_r, lbl in ((cm_r, "−"), (cp_r, "+")):
+            pygame.draw.rect(self.screen, (50, 38, 38), btn_r)
+            pygame.draw.rect(self.screen, (130, 80, 80), btn_r, 1)
+            bs2 = self.small.render(lbl, True, (230, 190, 190))
+            self.screen.blit(bs2, (btn_r.x + btn_r.w // 2 - bs2.get_width() // 2,
+                                   btn_r.y + btn_r.h // 2 - bs2.get_height() // 2))
+        self._fac_cap_btns = {"-": cm_r, "+": cp_r}
+
+        # ── Progress bar ─────────────────────────────────────────────────────
+        bar_y = cap_y + 26
+        bar_w = col_w * 2 + (arrow_x - in_x - col_w) * 2
+        bar_h = 16
+        bar_x = in_x
+        pygame.draw.rect(self.screen, (30, 45, 35), (bar_x, bar_y, bar_w, bar_h))
+        if craft_time > 0:
+            fill = int(bar_w * min(1.0, progress / craft_time))
+            if fill > 0:
+                pygame.draw.rect(self.screen, (60, 180, 100), (bar_x, bar_y, fill, bar_h))
+        pygame.draw.rect(self.screen, (70, 120, 80), (bar_x, bar_y, bar_w, bar_h), 1)
+        pct_s = self.small.render(f"{int(min(100, progress / max(craft_time, 0.01) * 100))}%",
+                                   True, (180, 220, 180))
+        self.screen.blit(pct_s, (bar_x + bar_w // 2 - pct_s.get_width() // 2,
+                                   bar_y + bar_h // 2 - pct_s.get_height() // 2))
+
+        # ── Inventory ─────────────────────────────────────────────────────────
+        inv_y = bar_y + bar_h + 12
+        inv_label = self.small.render("Inventory:", True, (140, 180, 150))
+        self.screen.blit(inv_label, (bar_x, inv_y))
+        inv_str = "  ".join(
+            f"{ITEMS.get(k, {}).get('name', k)} x{v}"
+            for k, v in list(inv.items())[:8]
+        ) or "(empty)"
+        inv_s = self.small.render(inv_str, True, (170, 210, 180))
+        self.screen.blit(inv_s, (bar_x, inv_y + 18))
+
+        # ── Item picker (when a slot is being assigned) ───────────────────────
+        if self._fac_picking is not None:
+            pick_y   = py + PH - 170
+            pick_lbl = self.small.render("Pick item from inventory:", True, (220, 220, 180))
+            self.screen.blit(pick_lbl, (in_x, pick_y - 20))
+            self._fac_pick_rects = {}
+            inv_items = [(k, v) for k, v in player.inventory.items() if v > 0]
+            PCOLS, PCW, PCH, PGAP = 4, 180, 32, 4
+            for idx, (item_id, count) in enumerate(inv_items[:16]):
+                col = idx % PCOLS
+                row = idx // PCOLS
+                rx  = in_x + col * (PCW + PGAP)
+                ry  = pick_y + row * (PCH + PGAP)
+                r   = pygame.Rect(rx, ry, PCW, PCH)
+                pygame.draw.rect(self.screen, (35, 38, 28), r)
+                pygame.draw.rect(self.screen, (100, 130, 80), r, 1)
+                nm = ITEMS.get(item_id, {}).get("name", item_id)
+                ns = self.small.render(f"{nm} x{count}", True, (210, 220, 190))
+                self.screen.blit(ns, (r.x + 5, r.y + r.h // 2 - ns.get_height() // 2))
+                self._fac_pick_rects[item_id] = r
+
+        # ── Close button ─────────────────────────────────────────────────────
+        close_r = pygame.Rect(px + PW - 90, py + PH - 38, 80, 26)
+        pygame.draw.rect(self.screen, (28, 42, 34), close_r)
+        pygame.draw.rect(self.screen, (70, 140, 90), close_r, 1)
+        cs = self.small.render("Close [E]", True, (160, 220, 170))
+        self.screen.blit(cs, (close_r.x + close_r.w // 2 - cs.get_width() // 2,
+                               close_r.y + close_r.h // 2 - cs.get_height() // 2))
+        self._fac_close_btn = close_r

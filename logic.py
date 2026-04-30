@@ -3,6 +3,7 @@ from collections import deque
 from blocks import (
     LOGIC_SOURCE_BLOCKS, LOGIC_OUTPUT_BLOCKS,
     LOGIC_SENSOR_BLOCKS, LOGIC_TIMER_BLOCKS,
+    FISH_TRAP_BLOCKS,
     AND_GATE_BLOCK, OR_GATE_BLOCK, NOT_GATE_BLOCK,
     REPEATER_BLOCK, PULSE_GEN_BLOCK,
     RS_LATCH_Q0, RS_LATCH_Q1,
@@ -206,14 +207,14 @@ def logic_tick(world, dt, player):
             bx1, by1 = bx * _BS, by * _BS
             bx2, by2 = bx1 + _BS, by1 + _BS
             pr = player.rect
-            occupied = pr.left < bx2 and pr.right > bx1 and pr.top < by2 and pr.bottom > by1
+            occupied = pr.left < bx2 and pr.right > bx1 and pr.top < by2 and pr.bottom >= by1
             if not occupied:
                 for ent in world.entities:
                     ex = getattr(ent, 'x', None)
                     if ex is None:
                         continue
                     ey, ew, eh = getattr(ent, 'y', 0), getattr(ent, 'W', _BS), getattr(ent, 'H', _BS)
-                    if ex < bx2 and ex + ew > bx1 and ey < by2 and ey + eh > by1:
+                    if ex < bx2 and ex + ew > bx1 and ey < by2 and ey + eh >= by1:
                         occupied = True
                         break
             new_bid = PRESSURE_PLATE_ON if occupied else PRESSURE_PLATE_OFF
@@ -249,6 +250,14 @@ def logic_tick(world, dt, player):
         # ── Crop sensor ─────────────────────────────────────────────────────
         elif bid == CROP_SENSOR_BLOCK:
             now_on = world.get_block(bx, by + 1) in MATURE_CROP_BLOCKS
+            if gs.get("sensor_on", False) != now_on:
+                gs["sensor_on"] = now_on
+                changed = True
+
+        # ── Fish trap sensor — HIGH when trap has accumulated fish ───────────
+        elif bid in FISH_TRAP_BLOCKS:
+            trap   = world.fish_traps.get((bx, by))
+            now_on = bool(trap and trap.get("accumulated"))
             if gs.get("sensor_on", False) != now_on:
                 gs["sensor_on"] = now_on
                 changed = True

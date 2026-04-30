@@ -1344,6 +1344,22 @@ CLOSED_DOORS = {WOOD_DOOR_CLOSED, IRON_DOOR_CLOSED,
                 BRONZE_DOOR_CLOSED, SWAHILI_DOOR_CLOSED, SANDALWOOD_DOOR_CLOSED, STONE_SLAB_DOOR_CLOSED}
 ALL_DOORS    = OPEN_DOORS | CLOSED_DOORS
 STAIR_BLOCKS = {STAIRS_RIGHT, STAIRS_LEFT}
+DORMER_WINDOW = 1054  # alpine dormer window; redefined with Alpine block group below
+
+GLASS_BLOCKS = {
+    FROSTED_GLASS,
+    STAINED_GLASS_RED, STAINED_GLASS_BLUE, STAINED_GLASS_GREEN,
+    CLEAR_GLASS, STAINED_GLASS_GOLDEN, STAINED_GLASS_CRIMSON, STAINED_GLASS_ROSE,
+    STAINED_GLASS_COBALT, STAINED_GLASS_VIOLET, STAINED_GLASS_VERDANT,
+    STAINED_GLASS_AMBER, STAINED_GLASS_IVORY, CATHEDRAL_WINDOW,
+    MOSAIC_GLASS, SMOKED_GLASS,
+    RIBBED_GLASS, HAMMERED_GLASS, CRACKLED_GLASS, OCULUS_WINDOW, LANCET_WINDOW,
+    DIAMOND_PANE, SEA_GLASS, MIRROR_GLASS, IRIDESCENT_GLASS,
+    SUNSET_GLASS, OBSIDIAN_GLASS, CRYSTAL_GLASS,
+    LEADLIGHT_WINDOW, PALLADIAN_WINDOW, ROSE_WINDOW,
+    ORANGERY_WINDOW, THERMAL_WINDOW, BIFORA_WINDOW, SERLIANA_WINDOW, DORMER_WINDOW,
+    PLATE_GLASS_PANEL, TINTED_GLASS_PANEL, RIBBED_GLASS_MCM,
+}
 
 CAVE_MUSHROOMS = {
     CAVE_MUSHROOM, EMBER_CAP, PALE_GHOST, GOLD_CHANTERELLE, COBALT_CAP,
@@ -1409,6 +1425,129 @@ WEAPON_ASSEMBLER_BLOCK       = 1256  # weapon assembler
 TEA_HOUSE_BLOCK              = 1257  # placed Tea House serving counter
 MORTAR_BLOCK                 = 1270  # placed Mortar & Pestle; grinds fresh herbs
 RUIN_MARKER_BLOCK            = 1271  # weathered stone marker at ruined settlement; reads its history
+ANIMAL_TRAP_BLOCK            = 1273  # passive surface trap; accumulates fur/hide drops over time
+TANNING_RACK_BLOCK           = 1274  # crafting station; processes raw pelts/hides into materials
+WICKER_FISH_TRAP_BLOCK       = 1275  # bait-fed water trap; ~2 fish/day
+IRON_FISH_TRAP_BLOCK         = 1276  # bait-fed water trap; ~4 fish/day
+REINFORCED_FISH_TRAP_BLOCK   = 1277  # bait-fed water trap; ~6 fish/day (iron_bar)
+STEEL_CAGE_TRAP_BLOCK        = 1278  # bait-fed water trap; ~10 fish/day
+TRAINING_PADDOCK_BLOCK       = 1279  # player-placed training area for horses and dogs
+
+HOPPER_BLOCK       = 1280  # pulls items from block above into pipe network
+PIPE_OUTPUT_BLOCK  = 1281  # deposits items from pipe network into adjacent container
+PIPE_FILTER_BLOCK  = 1282  # only passes configured item types through
+PIPE_SORTER_BLOCK  = 1283  # routes item types to configured exit directions
+
+# ── Bauhaus Glass & Artisan Collection (1284–1383) ─────────────────────────
+# — Bauhaus Glass —
+BAUHAUS_PLATE_GLASS          = 1284  # floor-to-ceiling frameless plate glass
+BAUHAUS_STRIP_WINDOW         = 1285  # horizontal band window; 3 panes, steel bars
+BAUHAUS_CORNER_GLASS         = 1286  # 90-degree glass corner unit
+BAUHAUS_CURTAIN_WALL         = 1287  # steel-grid curtain wall panel 2x3
+BAUHAUS_GLASS_BRICK          = 1288  # solid cast glass brick; mortar-grid pattern
+BAUHAUS_FROSTED_STRIP        = 1289  # sandblasted horizontal-band frosted glass
+BAUHAUS_TINTED_STRIP         = 1290  # dark-tinted privacy strip window
+BAUHAUS_RED_PANEL            = 1291  # Bauhaus primary red; opaque flat glass
+BAUHAUS_YELLOW_PANEL         = 1292  # Bauhaus primary yellow; opaque flat glass
+BAUHAUS_BLUE_PANEL           = 1293  # Bauhaus primary blue; opaque flat glass
+BAUHAUS_BLACK_GLASS          = 1294  # near-black spandrel / shadow-box glass
+BAUHAUS_WHITE_GLASS          = 1295  # opaline translucent white glass
+BAUHAUS_WIRE_GLASS           = 1296  # safety glass with embedded wire mesh
+BAUHAUS_CHANNEL_GLASS        = 1297  # U-profile channel glass; vertical ribs
+BAUHAUS_SANDBLAST_GLASS      = 1298  # matte sandblasted surface; diffuse light
+BAUHAUS_ETCHED_GLASS         = 1299  # circle-in-square geometric etch
+BAUHAUS_DOUBLE_PANE          = 1300  # insulated sealed double glazing
+BAUHAUS_GLASS_FLOOR          = 1301  # structural glass floor panel
+BAUHAUS_CLERESTORY           = 1302  # high-set clerestory window strip
+BAUHAUS_GREENHOUSE_PANE      = 1303  # thin greenhouse glass; greenish cast
+BAUHAUS_FRAMELESS_WALL       = 1304  # structural frameless glass; no visible edge
+BAUHAUS_CANOPY_GLASS         = 1305  # sloped glass canopy / overhang panel
+BAUHAUS_SKYLIGHT             = 1306  # flat steel-framed skylight with corner bolts
+BAUHAUS_JALOUSIE             = 1307  # louvered glass jalousie; 4 horizontal slats
+BAUHAUS_OPAQUE_GLASS         = 1308  # dense poured-glass block; slight texture
+BAUHAUS_RIBBED_VERT          = 1309  # 6 vertical ribs; alternating light/dark
+BAUHAUS_RIBBED_HORIZ         = 1310  # 6 horizontal ribs; textured shower glass
+BAUHAUS_MIRROR_PANEL         = 1311  # polished flat mirror; no frame
+BAUHAUS_PRISM_GLASS          = 1312  # prismatic glass casting refraction bands
+BAUHAUS_SPANDREL             = 1313  # opaque spandrel panel; hides floor slab
+# — Steel & Metal Structural —
+STEEL_I_BEAM                 = 1314  # vertical steel I-section column
+STEEL_H_COLUMN               = 1315  # horizontal steel H-beam
+STEEL_ANGLE_BRACE            = 1316  # L-angle corner structural brace
+STEEL_MESH_PANEL             = 1317  # expanded steel mesh infill panel
+STEEL_GRATE_FLOOR            = 1318  # open-bar grate walkway floor
+STEEL_STAIR_TREAD            = 1319  # industrial checkered steel stair tread
+STEEL_RAILING_POST           = 1320  # tubular steel balcony railing post
+STEEL_CABLE_RAIL             = 1321  # tensioned cable railing; thin horizontal lines
+STEEL_PERFORATED             = 1322  # punched-hole perforated steel cladding
+CORRUGATED_STEEL             = 1323  # corrugated metal wall/roof cladding
+ALUMINUM_CLADDING            = 1324  # smooth brushed-aluminum facade panel
+CHROME_TRIM                  = 1325  # polished chrome accent trim strip
+STEEL_DOOR_FRAME             = 1326  # bare steel door surround frame
+STEEL_WINDOW_FRAME           = 1327  # steel casement window frame
+STEEL_LOUVER                 = 1328  # horizontal steel louvred sunscreen
+STEEL_SOFFIT                 = 1329  # steel underside/soffit cladding panel
+STEEL_FASCIA                 = 1330  # steel roof-edge fascia board
+STEEL_BALCONY_DECK           = 1331  # cantilevered steel balcony floor panel
+STEEL_SKYLIGHT_FRAME         = 1332  # steel structural skylight surround
+ROUND_PIPE_COLUMN            = 1333  # exposed circular pipe column
+ROUND_PIPE_HORIZ             = 1334  # exposed horizontal pipe / conduit run
+STEEL_GRID_CEILING           = 1335  # suspended steel T-bar grid ceiling tile
+INDUSTRIAL_BRACKET           = 1336  # heavy-duty wall-mount steel bracket
+STEEL_THRESHOLD              = 1337  # steel floor transition threshold strip
+RIVETED_STEEL                = 1338  # decorative riveted steel plate panel
+# — Concrete —
+BAUHAUS_CONCRETE_SMOOTH      = 1339  # fine-cast smooth poured concrete wall
+BAUHAUS_CONCRETE_BOARD       = 1340  # board-formed concrete; subtle wood grain
+BAUHAUS_CONCRETE_POLISHED    = 1341  # mirror-polished concrete floor slab
+BAUHAUS_CONCRETE_WHITE       = 1342  # white Portland cement wall panel
+BAUHAUS_CONCRETE_CHARCOAL    = 1343  # dark charcoal pigmented concrete
+BAUHAUS_CONCRETE_WARM        = 1344  # warm buff / sandstone-tint concrete
+BAUHAUS_CONCRETE_PILLAR      = 1345  # round concrete column
+BAUHAUS_CONCRETE_CEILING     = 1346  # flat exposed concrete ceiling panel
+BAUHAUS_CONCRETE_FASCIA      = 1347  # concrete roof-edge fascia
+BAUHAUS_CONCRETE_SCREEN      = 1348  # open-grid decorative concrete screen
+BAUHAUS_CONCRETE_CURB        = 1349  # cast concrete curb / base trim
+BAUHAUS_CONCRETE_SILL        = 1350  # cast concrete window sill
+BAUHAUS_EXPOSED_AGGREGATE    = 1351  # exposed pebble-aggregate concrete surface
+BAUHAUS_POURED_FLOOR         = 1352  # seamless poured concrete floor
+BAUHAUS_PRECAST_PANEL        = 1353  # precast wall panel with seam lines
+BAUHAUS_CEILING_COFFER       = 1354  # grid-coffered concrete ceiling
+BAUHAUS_THIN_SHELL           = 1355  # parabolic thin-shell concrete vault
+BAUHAUS_STAIR_TREAD          = 1356  # cast concrete stair tread
+BAUHAUS_HEARTH               = 1357  # polished concrete fireplace surround
+BAUHAUS_CONCRETE_MOSAIC      = 1358  # colored pebble-aggregate mosaic floor
+# — Wood & Natural Trim —
+TEAK_SLAT_WALL               = 1359  # horizontal teak slat exterior cladding
+WALNUT_STRIP_FLOOR           = 1360  # narrow walnut strip hardwood floor
+BIRCH_VENEER_PANEL           = 1361  # light birch plywood veneer wall panel
+BAMBOO_CEILING_BATTEN        = 1362  # bamboo batten ceiling cladding
+CORK_TILE                    = 1363  # natural cork acoustic floor tile
+MAPLE_STRIP_FLOOR            = 1364  # light maple narrow-strip hardwood floor
+WHITEWASH_PLANK              = 1365  # whitewashed pine cladding plank
+SMOKED_OAK_PANEL             = 1366  # ebonized / smoked oak wall panel
+ASH_VENEER                   = 1367  # pale ash wood veneer panel
+TEAK_DECK_BOARD              = 1368  # outdoor teak decking board
+WENGE_ACCENT                 = 1369  # very dark wenge accent trim strip
+ZEBRANO_PANEL                = 1370  # exotic zebrano wood; dramatic stripe grain
+RECLAIMED_PINE               = 1371  # weathered reclaimed pine with knots
+REED_SCREEN_PANEL            = 1372  # natural reed / bamboo privacy screen
+HEMP_BOARD                   = 1373  # compressed hemp-fiber composite panel
+# — Tile, Floor & Bauhaus Color —
+BLACK_CERAMIC_TILE           = 1374  # high-gloss black ceramic floor/wall tile
+WHITE_PORCELAIN_TILE         = 1375  # high-gloss white porcelain tile
+BAUHAUS_MOSAIC_TILE          = 1376  # primary-color circle-triangle-square mosaic
+CHECKER_TILE                 = 1377  # classic black and white checkerboard
+BAUHAUS_TERRAZZO             = 1378  # terrazzo with glass chip aggregate
+BAUHAUS_RED_WALL             = 1379  # matte Bauhaus primary red wall panel
+BAUHAUS_YELLOW_WALL          = 1380  # matte Bauhaus primary yellow wall panel
+BAUHAUS_BLUE_WALL            = 1381  # matte Bauhaus primary blue wall panel
+WHITE_STUCCO                 = 1382  # smooth white exterior stucco plaster
+LIME_PLASTER                 = 1383  # off-white lime plaster interior wall
+
+FACTORY_BLOCK                = 1384  # configurable factory: consumes inputs, produces outputs on a timer
+
+PIPE_DEVICE_BLOCKS = frozenset((HOPPER_BLOCK, PIPE_OUTPUT_BLOCK, PIPE_FILTER_BLOCK, PIPE_SORTER_BLOCK))
 
 EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, BAKERY_BLOCK,
                     WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
@@ -1443,13 +1582,17 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     BET_COUNTER,
                     WEAPON_ASSEMBLER_BLOCK,
                     TEA_HOUSE_BLOCK,
-                    MORTAR_BLOCK}
+                    MORTAR_BLOCK,
+                    TANNING_RACK_BLOCK,
+                    HOPPER_BLOCK, PIPE_OUTPUT_BLOCK, PIPE_FILTER_BLOCK, PIPE_SORTER_BLOCK,
+                    FACTORY_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT}
 
 LOGIC_SOURCE_BLOCKS  = {SWITCH_BLOCK_ON, LATCH_BLOCK_ON, PRESSURE_PLATE_ON, RS_LATCH_Q1}
 LOGIC_GATE_BLOCKS    = {AND_GATE_BLOCK, OR_GATE_BLOCK, NOT_GATE_BLOCK}
-LOGIC_SENSOR_BLOCKS  = {DAY_SENSOR_BLOCK, NIGHT_SENSOR_BLOCK, WATER_SENSOR_BLOCK, CROP_SENSOR_BLOCK}
+FISH_TRAP_BLOCKS     = {WICKER_FISH_TRAP_BLOCK, REINFORCED_FISH_TRAP_BLOCK, IRON_FISH_TRAP_BLOCK, STEEL_CAGE_TRAP_BLOCK}
+LOGIC_SENSOR_BLOCKS  = {DAY_SENSOR_BLOCK, NIGHT_SENSOR_BLOCK, WATER_SENSOR_BLOCK, CROP_SENSOR_BLOCK} | FISH_TRAP_BLOCKS
 LOGIC_TIMER_BLOCKS   = {REPEATER_BLOCK, PULSE_GEN_BLOCK}
 LOGIC_ROTATEABLE_BLOCKS = {AND_GATE_BLOCK, OR_GATE_BLOCK, NOT_GATE_BLOCK,
                             REPEATER_BLOCK, RS_LATCH_Q0, RS_LATCH_Q1,
@@ -1468,6 +1611,15 @@ LOGIC_OUTPUT_PAIRS  = {
     ALARM_BELL_ON:          ALARM_BELL_OFF,
 }
 LOGIC_OUTPUT_BLOCKS = set(LOGIC_OUTPUT_PAIRS)
+WIRE_RELATED_BLOCKS = (
+    LOGIC_SOURCE_BLOCKS
+    | {SWITCH_BLOCK_OFF, LATCH_BLOCK_OFF, PRESSURE_PLATE_OFF, RS_LATCH_Q0}
+    | LOGIC_GATE_BLOCKS
+    | LOGIC_SENSOR_BLOCKS
+    | LOGIC_TIMER_BLOCKS
+    | LOGIC_ROTATEABLE_BLOCKS
+    | LOGIC_OUTPUT_BLOCKS
+)
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
                      RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, GARLIC_BUSH, SCALLION_BUSH, CHILI_BUSH,
                      PEPPER_BUSH, ONION_BUSH, POTATO_BUSH, EGGPLANT_BUSH, CABBAGE_BUSH,
@@ -1773,9 +1925,260 @@ SEASHELL_BLOCK               = 1266  # collectible shell node on ocean floor
 SEA_ANEMONE                  = 1267  # decorative reef block
 BIOLUME_DEEP_BLOCK           = 1268  # deep-zone glowing organism
 OCEAN_ROCK                   = 1269  # encrusted rock for twilight/deep floors
+OYSTER_BLOCK                 = 1272  # collectible oyster cluster; drops shell + chance of pearl
 
 CLOUD_BLOCKS = {CLOUD_CIRRUS, CLOUD_CUMULUS, CLOUD_STRATUS, CLOUD_STORM}
 
+FISH_SCALE_SHINGLE                   = 1385  # fish scale shingle
+FISH_SCALE_SHINGLE_DARK              = 1386  # fish scale shingle dark
+FISH_SCALE_SHINGLE_BLUE              = 1387  # fish scale shingle blue
+CLAPBOARD_SIDING                     = 1388  # clapboard siding
+CLAPBOARD_SIDING_DARK                = 1389  # clapboard siding dark
+DROP_SIDING                          = 1390  # drop siding
+BOARD_AND_BATTEN_SIDING              = 1391  # board and batten siding
+SHIPLAP_SIDING                       = 1392  # shiplap siding
+PEBBLEDASH_RENDER                    = 1393  # pebbledash render
+HALF_TIMBERING_PANEL                 = 1394  # half timbering panel
+TERRACOTTA_CLADDING_TILE             = 1395  # terracotta cladding tile
+FAIENCE_TILE_PANEL                   = 1396  # faience tile panel
+PRESSED_METAL_PANEL                  = 1397  # pressed metal panel
+INCISED_RENDER_PANEL                 = 1398  # incised render panel
+ROUGHCAST_RENDER                     = 1399  # roughcast render
+PARGETING_PANEL                      = 1400  # pargeting panel
+STUCCO_BAND                          = 1401  # stucco band
+DECORATIVE_FRIEZE_PANEL              = 1402  # decorative frieze panel
+VERGEBOARD                           = 1403  # vergeboard
+DENTIL_MOULDING_STRIP                = 1404  # dentil moulding strip
+SLATE_ROOF_TILE                      = 1405  # slate roof tile
+SLATE_ROOF_TILE_DARK                 = 1406  # slate roof tile dark
+CLAY_ROOF_TILE                       = 1407  # clay roof tile
+CLAY_ROOF_TILE_GREEN                 = 1408  # clay roof tile green
+IMBREX_ROOF_TILE                     = 1409  # imbrex roof tile
+MANSARD_SLATE_PANEL                  = 1410  # mansard slate panel
+DECORATED_RIDGE_TILE                 = 1411  # decorated ridge tile
+FINIAL_BLOCK                         = 1412  # finial block
+IRON_CRESTING_RAIL                   = 1413  # iron cresting rail
+JERKINHEAD_GABLE                     = 1414  # jerkinhead gable
+TURRET_CAP_BLOCK                     = 1415  # turret cap block
+OCTAGONAL_TURRET_BLOCK               = 1416  # octagonal turret block
+BAY_WINDOW_ROOF                      = 1417  # bay window roof
+DORMER_CHEEK                         = 1418  # dormer cheek
+GABLED_DORMER_FRONT                  = 1419  # gabled dormer front
+PRESSED_BRICK                        = 1420  # pressed brick
+PRESSED_BRICK_BUFF                   = 1421  # pressed brick buff
+GAUGED_BRICK                         = 1422  # gauged brick
+RUBBED_BRICK                         = 1423  # rubbed brick
+VITRIFIED_BRICK                      = 1424  # vitrified brick
+POLYCHROME_BRICK_RED                 = 1425  # polychrome brick red
+POLYCHROME_BRICK_BLUE                = 1426  # polychrome brick blue
+POLYCHROME_BRICK_CREAM               = 1427  # polychrome brick cream
+TERRACOTTA_BLOCK                     = 1428  # terracotta block
+TERRACOTTA_PANEL                     = 1429  # terracotta panel
+BUFF_TERRACOTTA                      = 1430  # buff terracotta
+RUSTICATED_STONE                     = 1431  # rusticated stone
+ASHLAR_STONE_BLOCK                   = 1432  # ashlar stone block
+ROCK_FACED_STONE                     = 1433  # rock faced stone
+VERMICULATED_STONE                   = 1434  # vermiculated stone
+QUOIN_BLOCK                          = 1435  # quoin block
+STRING_COURSE_BLOCK                  = 1436  # string course block
+PLINTH_BLOCK                         = 1437  # plinth block
+ARCH_KEYSTONE_BLOCK                  = 1438  # arch keystone block
+VOUSSOIR_BLOCK                       = 1439  # voussoir block
+TYMPANUM_PANEL                       = 1440  # tympanum panel
+MEDALLION_BLOCK                      = 1441  # medallion block
+CARTOUCHE_BLOCK                      = 1442  # cartouche block
+HERALDIC_PANEL                       = 1443  # heraldic panel
+FLORENTINE_STONE                     = 1444  # florentine stone
+IONIC_COLUMN                         = 1445  # ionic column
+DORIC_COLUMN                         = 1446  # doric column
+CORINTHIAN_COLUMN_SHAFT              = 1447  # corinthian column shaft
+COLUMN_CAPITAL                       = 1448  # column capital
+COLUMN_BASE                          = 1449  # column base
+PILASTER_BLOCK                       = 1450  # pilaster block
+ENGAGED_COLUMN_BLOCK                 = 1451  # engaged column block
+FLUTED_PANEL                         = 1452  # fluted panel
+BRACKET_SUPPORT                      = 1453  # bracket support
+KNEE_BRACE                           = 1454  # knee brace
+CORBEL_BLOCK                         = 1455  # corbel block
+MODILLION_BLOCK                      = 1456  # modillion block
+CONSOLE_BRACKET                      = 1457  # console bracket
+CANTILEVER_BEAM_END                  = 1458  # cantilever beam end
+EXPOSED_RAFTER_END                   = 1459  # exposed rafter end
+STAINED_GLASS_RED                    = 1460  # stained glass red
+STAINED_GLASS_BLUE                   = 1461  # stained glass blue
+STAINED_GLASS_AMBER                  = 1462  # stained glass amber
+STAINED_GLASS_GREEN                  = 1463  # stained glass green
+STAINED_GLASS_PURPLE                 = 1464  # stained glass purple
+LEADED_LIGHT_PANEL                   = 1465  # leaded light panel
+QUARRY_GLASS_PANEL                   = 1466  # quarry glass panel
+FROSTED_GLASS_PANEL                  = 1467  # frosted glass panel
+ETCHED_GLASS_PANEL                   = 1468  # etched glass panel
+COLOURED_BORDER_GLASS                = 1469  # coloured border glass
+BAY_WINDOW_FRAME                     = 1470  # bay window frame
+ORIEL_WINDOW_FRAME                   = 1471  # oriel window frame
+TRANSOM_WINDOW_FRAME                 = 1472  # transom window frame
+FANLIGHT_FRAME                       = 1473  # fanlight frame
+GOTHIC_ARCH_WINDOW                   = 1474  # gothic arch window
+ROUND_ARCH_WINDOW                    = 1475  # round arch window
+PALLADIAN_WINDOW_FRAME               = 1476  # palladian window frame
+SASH_WINDOW_FRAME                    = 1477  # sash window frame
+CASEMENT_WINDOW_FRAME                = 1478  # casement window frame
+VENETIAN_WINDOW_FRAME                = 1479  # venetian window frame
+PANELLED_DOOR_BLOCK                  = 1480  # panelled door block
+GLAZED_DOOR_BLOCK                    = 1481  # glazed door block
+DOUBLE_DOOR_BLOCK                    = 1482  # double door block
+DUTCH_DOOR_BLOCK                     = 1483  # dutch door block
+SLIDING_POCKET_DOOR_BLOCK            = 1484  # sliding pocket door block
+FANLIGHT_SURROUND                    = 1485  # fanlight surround
+PILASTER_DOOR_SURROUND               = 1486  # pilaster door surround
+HOOD_MOULDING                        = 1487  # hood moulding
+PORCH_ENTRY_STEPS                    = 1488  # porch entry steps
+BOOT_SCRAPER_BLOCK                   = 1489  # boot scraper block
+DOOR_KNOCKER_PLATE                   = 1490  # door knocker plate
+LETTERBOX_PANEL                      = 1491  # letterbox panel
+MARBLE_THRESHOLD                     = 1492  # marble threshold
+STORM_DOOR_BLOCK                     = 1493  # storm door block
+SERVICE_DOOR_BLOCK                   = 1494  # service door block
+PORCH_COLUMN                         = 1495  # porch column
+ORNATE_PORCH_COLUMN                  = 1496  # ornate porch column
+SPINDLE_RAIL                         = 1497  # spindle rail
+NEWEL_POST                           = 1498  # newel post
+BALUSTER_BLOCK                       = 1499  # baluster block
+PORCH_BALUSTRADE                     = 1500  # porch balustrade
+PORCH_CORNICE                        = 1501  # porch cornice
+VERANDA_BRACKET                      = 1502  # veranda bracket
+PORCH_CEILING_BOARD                  = 1503  # porch ceiling board
+PORCH_FLOOR_BOARD                    = 1504  # porch floor board
+SCREEN_PORCH_PANEL                   = 1505  # screen porch panel
+PORTE_COCHERE_BEAM                   = 1506  # porte cochere beam
+PERGOLA_POST                         = 1507  # pergola post
+PERGOLA_BEAM                         = 1508  # pergola beam
+PERGOLA_SLAT                         = 1509  # pergola slat
+PORCH_SWING_BRACKET                  = 1510  # porch swing bracket
+WISTERIA_TRELLIS                     = 1511  # wisteria trellis
+LATTICE_PANEL                        = 1512  # lattice panel
+JIGSAW_TRIM_PANEL                    = 1513  # jigsaw trim panel
+GINGERBREAD_TRIM                     = 1514  # gingerbread trim
+WAINSCOT_PANEL_OAK                   = 1515  # wainscot panel oak
+WAINSCOT_PANEL_DARK                  = 1516  # wainscot panel dark
+BEADBOARD_PANEL                      = 1517  # beadboard panel
+RAISED_PANEL_WALL                    = 1518  # raised panel wall
+LINCRUSTA_PANEL                      = 1519  # lincrusta panel
+ANAGLYPTA_PANEL                      = 1520  # anaglypta panel
+DADO_RAIL                            = 1521  # dado rail
+PICTURE_RAIL                         = 1522  # picture rail
+CROWN_MOULDING                       = 1523  # crown moulding
+COVED_CORNICE                        = 1524  # coved cornice
+DENTIL_CORNICE                       = 1525  # dentil cornice
+EGG_AND_DART_MOULDING                = 1526  # egg and dart moulding
+OVOLO_MOULDING                       = 1527  # ovolo moulding
+TALL_BASEBOARD                       = 1528  # tall baseboard
+DARK_BASEBOARD                       = 1529  # dark baseboard
+ARCHITRAVE                           = 1530  # architrave
+FLUTED_INTERIOR_PILASTER             = 1531  # fluted interior pilaster
+SMOOTH_PLASTER_PANEL                 = 1532  # smooth plaster panel
+PLASTER_CEILING_ROSE                 = 1533  # plaster ceiling rose
+COFFERED_CEILING_PANEL               = 1534  # coffered ceiling panel
+EMBOSSED_TIN_CEILING_SILVER          = 1535  # embossed tin ceiling silver
+EMBOSSED_TIN_CEILING_GOLD            = 1536  # embossed tin ceiling gold
+SHIPLAP_INTERIOR                     = 1537  # shiplap interior
+TONGUE_GROOVE_PLANK                  = 1538  # tongue groove plank
+WIDE_BOARD_PANELLING                 = 1539  # wide board panelling
+ENCAUSTIC_FLOOR_TILE_RED             = 1540  # encaustic floor tile red
+ENCAUSTIC_FLOOR_TILE_BLUE            = 1541  # encaustic floor tile blue
+ENCAUSTIC_FLOOR_TILE_GREEN           = 1542  # encaustic floor tile green
+ENCAUSTIC_BORDER_TILE                = 1543  # encaustic border tile
+GEOMETRIC_MOSAIC_FLOOR               = 1544  # geometric mosaic floor
+PARQUET_FLOOR_HERRINGBONE            = 1545  # parquet floor herringbone
+PARQUET_FLOOR_BASKET                 = 1546  # parquet floor basket
+PARQUET_FLOOR_STRIP                  = 1547  # parquet floor strip
+MARBLE_FLOOR_TILE                    = 1548  # marble floor tile
+MARBLE_FLOOR_TILE_BLACK              = 1549  # marble floor tile black
+TERRACOTTA_FLOOR_TILE                = 1550  # terracotta floor tile
+FLAGSTONE_FLOOR                      = 1551  # flagstone floor
+HARDWOOD_STAIR_TREAD                 = 1552  # hardwood stair tread
+PAINTED_STAIR_RISER                  = 1553  # painted stair riser
+BRASS_STAIR_NOSING                   = 1554  # brass stair nosing
+OPEN_RISER_STAIR_STEP                = 1555  # open riser stair step
+LANDING_BOARD                        = 1556  # landing board
+BALCONY_DECK_BOARD                   = 1557  # balcony deck board
+CELLAR_STONE_FLOOR                   = 1558  # cellar stone floor
+TILE_THRESHOLD_STRIP                 = 1559  # tile threshold strip
+FIREPLACE_MANTEL                     = 1560  # fireplace mantel
+FIREPLACE_SURROUND_TILE              = 1561  # fireplace surround tile
+FIREPLACE_OVERMANTEL                 = 1562  # fireplace overmantel
+CAST_IRON_GRATE_FRONT                = 1563  # cast iron grate front
+CAST_IRON_FIREBACK                   = 1564  # cast iron fireback
+HEARTH_TILE                          = 1565  # hearth tile
+INGLENOOK_SIDE_WALL                  = 1566  # inglenook side wall
+INGLENOOK_BENCH                      = 1567  # inglenook bench
+OAK_BOOKCASE                         = 1568  # oak bookcase
+PAINTED_BOOKCASE                     = 1569  # painted bookcase
+WINDOW_SEAT_BOX                      = 1570  # window seat box
+ALCOVE_SHELF                         = 1571  # alcove shelf
+BUTLER_PANTRY_SHELF                  = 1572  # butler pantry shelf
+CHINA_CABINET_BLOCK                  = 1573  # china cabinet block
+BUILT_IN_WARDROBE_PANEL              = 1574  # built in wardrobe panel
+HIGH_BACK_SETTLE                     = 1575  # high back settle
+PLATE_RACK                           = 1576  # plate rack
+DRESSER_BACK_PANEL                   = 1577  # dresser back panel
+PANTRY_DOOR_BLOCK                    = 1578  # pantry door block
+DUMBWAITER_SHAFT_PANEL               = 1579  # dumbwaiter shaft panel
+WROUGHT_IRON_FENCE_PANEL             = 1580  # wrought iron fence panel
+WROUGHT_IRON_GATE                    = 1581  # wrought iron gate
+BRICK_GARDEN_PIER                    = 1582  # brick garden pier
+STONE_GARDEN_PIER                    = 1583  # stone garden pier
+CAST_IRON_RAILING_PANEL              = 1584  # cast iron railing panel
+LOW_GARDEN_WALL                      = 1585  # low garden wall
+GARDEN_WALL_COPING                   = 1586  # garden wall coping
+STONE_GARDEN_BALUSTRADE              = 1587  # stone garden balustrade
+STONE_GARDEN_STEPS                   = 1588  # stone garden steps
+BATTERED_RETAINING_WALL              = 1589  # battered retaining wall
+COAL_HOLE_COVER                      = 1590  # coal hole cover
+AREA_STEPS_BLOCK                     = 1591  # area steps block
+MOUNTING_BLOCK                       = 1592  # mounting block
+GARDEN_URN_PEDESTAL                  = 1593  # garden urn pedestal
+SUNDIAL_PEDESTAL                     = 1594  # sundial pedestal
+CARRIAGE_HOUSE_DOOR                  = 1595  # carriage house door
+STABLE_WALL_PANEL                    = 1596  # stable wall panel
+CONSERVATORY_GLASS_PANEL             = 1597  # conservatory glass panel
+CONSERVATORY_IRON_FRAME              = 1598  # conservatory iron frame
+VICTORIAN_GREENHOUSE_FRAME           = 1599  # victorian greenhouse frame
+CLINKER_BRICK                        = 1600  # clinker brick
+RIVER_ROCK_BLOCK                     = 1601  # river rock block
+RIVER_ROCK_COLUMN                    = 1602  # river rock column
+COBBLESTONE_PIER                     = 1603  # cobblestone pier
+CRAFTSMAN_BEAM_END                   = 1604  # craftsman beam end
+CRAFTSMAN_FRIEZE_BOARD               = 1605  # craftsman frieze board
+CRAFTSMAN_BARGEBOARD                 = 1606  # craftsman bargeboard
+CRAFTSMAN_TRIM_STRIP                 = 1607  # craftsman trim strip
+ARTS_AND_CRAFTS_TILE                 = 1608  # arts and crafts tile
+PRAIRIE_GRID_GLASS                   = 1609  # prairie grid glass
+STRAP_HINGE_PANEL                    = 1610  # strap hinge panel
+CRAFTSMAN_COLUMN_CAP                 = 1611  # craftsman column cap
+TAPERED_PORCH_POST                   = 1612  # tapered porch post
+SHED_DORMER_BLOCK                    = 1613  # shed dormer block
+CHIMNEY_STACK_BLOCK                  = 1614  # chimney stack block
+CHIMNEY_POT                          = 1615  # chimney pot
+CHIMNEY_CAP                          = 1616  # chimney cap
+FLAUNCHING_BLOCK                     = 1617  # flaunching block
+CAST_IRON_GUTTER                     = 1618  # cast iron gutter
+CAST_IRON_DOWNPIPE                   = 1619  # cast iron downpipe
+HOPPER_HEAD_BLOCK                    = 1620  # hopper head block
+AIR_BRICK                            = 1621  # air brick
+DAMP_COURSE_BLOCK                    = 1622  # damp course block
+BASEMENT_WINDOW_WELL                 = 1623  # basement window well
+ICE_HOUSE_BLOCK                      = 1624  # ice house block
+GARDEN_TOOL_STORE_PANEL              = 1625  # garden tool store panel
+BELL_TOWER_BLOCK                     = 1626  # bell tower block
+SUMMERHOUSE_PANEL                    = 1627  # summerhouse panel
+GAZEBO_BEAM                          = 1628  # gazebo beam
+GARDEN_PAVILION_POST                 = 1629  # garden pavilion post
+DOVECOTE_BLOCK                       = 1630  # dovecote block
+HA_HA_WALL_BLOCK                     = 1631  # ha ha wall block
+TOPIARY_FRAME                        = 1632  # topiary frame
+ROSE_ARCH_FRAME                      = 1633  # rose arch frame
+COAL_CELLAR_BLOCK                    = 1634  # coal cellar block
 BLOCKS = {
     AIR:              {"name": "Air",               "hardness": 0,            "color": None,            "drop": None},
     GRASS:            {"name": "Grass",             "hardness": 1,            "color": (58, 154, 58),   "drop": "dirt_clump"},
@@ -2120,6 +2523,114 @@ BLOCKS = {
     HORSE_TROUGH_BLOCK:        {"name": "Horse Trough",             "hardness": 1.5, "color": ( 60, 100, 130), "drop": "horse_trough_item"},
     KENNEL_BLOCK:              {"name": "Kennel",                   "hardness": 2.0, "color": (100,  75,  40), "drop": "kennel_item"},
     DOG_BOWL_BLOCK:            {"name": "Dog Bowl",                 "hardness": 1.0, "color": (180, 140,  90), "drop": "dog_bowl_item"},
+    TRAINING_PADDOCK_BLOCK:    {"name": "Training Paddock",         "hardness": 2.0, "color": ( 90,  65,  35), "drop": "training_paddock_item"},
+    HOPPER_BLOCK:              {"name": "Hopper",                   "hardness": 1.5, "color": (100,  80,  60), "drop": "hopper_item"},
+    PIPE_OUTPUT_BLOCK:         {"name": "Pipe Output",              "hardness": 1.5, "color": ( 80, 100, 120), "drop": "pipe_output_item"},
+    PIPE_FILTER_BLOCK:         {"name": "Pipe Filter",              "hardness": 1.5, "color": (110,  90,  70), "drop": "pipe_filter_item"},
+
+    # --- Bauhaus Glass & Artisan Collection ---
+    BAUHAUS_PLATE_GLASS         : {"name": "Bauhaus Plate Glass", "hardness": 2, "color": (218, 233, 245), "drop": "bauhaus_plate_glass"},
+    BAUHAUS_STRIP_WINDOW        : {"name": "Strip Window", "hardness": 2, "color": (215, 230, 242), "drop": "bauhaus_strip_window"},
+    BAUHAUS_CORNER_GLASS        : {"name": "Corner Glass Panel", "hardness": 2, "color": (220, 235, 247), "drop": "bauhaus_corner_glass"},
+    BAUHAUS_CURTAIN_WALL        : {"name": "Curtain Wall Unit", "hardness": 2, "color": (210, 228, 240), "drop": "bauhaus_curtain_wall"},
+    BAUHAUS_GLASS_BRICK         : {"name": "Glass Brick", "hardness": 2, "color": (200, 222, 238), "drop": "bauhaus_glass_brick"},
+    BAUHAUS_FROSTED_STRIP       : {"name": "Frosted Strip", "hardness": 2, "color": (228, 236, 242), "drop": "bauhaus_frosted_strip"},
+    BAUHAUS_TINTED_STRIP        : {"name": "Tinted Strip Window", "hardness": 2, "color": ( 90, 110, 128), "drop": "bauhaus_tinted_strip"},
+    BAUHAUS_RED_PANEL           : {"name": "Primary Red Panel", "hardness": 2, "color": (200,  50,  40), "drop": "bauhaus_red_panel"},
+    BAUHAUS_YELLOW_PANEL        : {"name": "Primary Yellow Panel", "hardness": 2, "color": (240, 210,  30), "drop": "bauhaus_yellow_panel"},
+    BAUHAUS_BLUE_PANEL          : {"name": "Primary Blue Panel", "hardness": 2, "color": ( 30,  80, 180), "drop": "bauhaus_blue_panel"},
+    BAUHAUS_BLACK_GLASS         : {"name": "Black Glass Panel", "hardness": 2, "color": ( 22,  24,  28), "drop": "bauhaus_black_glass"},
+    BAUHAUS_WHITE_GLASS         : {"name": "Opaline White Glass", "hardness": 2, "color": (242, 245, 248), "drop": "bauhaus_white_glass"},
+    BAUHAUS_WIRE_GLASS          : {"name": "Wire Glass", "hardness": 2, "color": (195, 215, 230), "drop": "bauhaus_wire_glass"},
+    BAUHAUS_CHANNEL_GLASS       : {"name": "Channel Glass", "hardness": 2, "color": (210, 226, 240), "drop": "bauhaus_channel_glass"},
+    BAUHAUS_SANDBLAST_GLASS     : {"name": "Sandblasted Glass", "hardness": 2, "color": (225, 232, 238), "drop": "bauhaus_sandblast_glass"},
+    BAUHAUS_ETCHED_GLASS        : {"name": "Etched Glass", "hardness": 2, "color": (222, 234, 244), "drop": "bauhaus_etched_glass"},
+    BAUHAUS_DOUBLE_PANE         : {"name": "Double Pane Unit", "hardness": 2, "color": (214, 230, 242), "drop": "bauhaus_double_pane"},
+    BAUHAUS_GLASS_FLOOR         : {"name": "Glass Floor Tile", "hardness": 2, "color": (200, 220, 236), "drop": "bauhaus_glass_floor"},
+    BAUHAUS_CLERESTORY          : {"name": "Clerestory Strip", "hardness": 2, "color": (215, 232, 246), "drop": "bauhaus_clerestory"},
+    BAUHAUS_GREENHOUSE_PANE     : {"name": "Greenhouse Pane", "hardness": 2, "color": (200, 228, 210), "drop": "bauhaus_greenhouse_pane"},
+    BAUHAUS_FRAMELESS_WALL      : {"name": "Frameless Glass Wall", "hardness": 2, "color": (220, 236, 248), "drop": "bauhaus_frameless_wall"},
+    BAUHAUS_CANOPY_GLASS        : {"name": "Glass Canopy", "hardness": 2, "color": (205, 228, 244), "drop": "bauhaus_canopy_glass"},
+    BAUHAUS_SKYLIGHT            : {"name": "Flat Skylight", "hardness": 2, "color": (212, 232, 248), "drop": "bauhaus_skylight"},
+    BAUHAUS_JALOUSIE            : {"name": "Jalousie Window", "hardness": 2, "color": (210, 228, 240), "drop": "bauhaus_jalousie"},
+    BAUHAUS_OPAQUE_GLASS        : {"name": "Cast Opaque Glass", "hardness": 2, "color": (175, 200, 218), "drop": "bauhaus_opaque_glass"},
+    BAUHAUS_RIBBED_VERT         : {"name": "Ribbed Vertical Glass", "hardness": 2, "color": (212, 230, 244), "drop": "bauhaus_ribbed_vert"},
+    BAUHAUS_RIBBED_HORIZ        : {"name": "Ribbed Horizontal Glass", "hardness": 2, "color": (210, 228, 242), "drop": "bauhaus_ribbed_horiz"},
+    BAUHAUS_MIRROR_PANEL        : {"name": "Mirror Panel", "hardness": 2, "color": (185, 200, 215), "drop": "bauhaus_mirror_panel"},
+    BAUHAUS_PRISM_GLASS         : {"name": "Prism Glass", "hardness": 2, "color": (215, 232, 246), "drop": "bauhaus_prism_glass"},
+    BAUHAUS_SPANDREL            : {"name": "Spandrel Panel", "hardness": 2, "color": ( 50,  65,  80), "drop": "bauhaus_spandrel"},
+    STEEL_I_BEAM                : {"name": "Steel I-Beam", "hardness": 2, "color": ( 75,  82,  88), "drop": "steel_i_beam"},
+    STEEL_H_COLUMN              : {"name": "Steel H-Column", "hardness": 2, "color": ( 70,  78,  84), "drop": "steel_h_column"},
+    STEEL_ANGLE_BRACE           : {"name": "Steel Angle Brace", "hardness": 2, "color": ( 78,  85,  90), "drop": "steel_angle_brace"},
+    STEEL_MESH_PANEL            : {"name": "Steel Mesh Panel", "hardness": 2, "color": ( 82,  90,  96), "drop": "steel_mesh_panel"},
+    STEEL_GRATE_FLOOR           : {"name": "Steel Grate Floor", "hardness": 2, "color": ( 70,  80,  86), "drop": "steel_grate_floor"},
+    STEEL_STAIR_TREAD           : {"name": "Steel Stair Tread", "hardness": 2, "color": ( 72,  80,  86), "drop": "steel_stair_tread"},
+    STEEL_RAILING_POST          : {"name": "Steel Railing Post", "hardness": 2, "color": ( 80,  88,  94), "drop": "steel_railing_post"},
+    STEEL_CABLE_RAIL            : {"name": "Cable Railing", "hardness": 2, "color": ( 90,  98, 104), "drop": "steel_cable_rail"},
+    STEEL_PERFORATED            : {"name": "Perforated Steel Panel", "hardness": 2, "color": ( 78,  86,  92), "drop": "steel_perforated"},
+    CORRUGATED_STEEL            : {"name": "Corrugated Steel", "hardness": 2, "color": ( 85,  92,  98), "drop": "corrugated_steel"},
+    ALUMINUM_CLADDING           : {"name": "Brushed Aluminum", "hardness": 2, "color": (168, 172, 178), "drop": "aluminum_cladding"},
+    CHROME_TRIM                 : {"name": "Chrome Trim Strip", "hardness": 2, "color": (195, 200, 208), "drop": "chrome_trim"},
+    STEEL_DOOR_FRAME            : {"name": "Steel Door Frame", "hardness": 2, "color": ( 65,  72,  78), "drop": "steel_door_frame"},
+    STEEL_WINDOW_FRAME          : {"name": "Steel Window Frame", "hardness": 2, "color": ( 68,  75,  80), "drop": "steel_window_frame"},
+    STEEL_LOUVER                : {"name": "Steel Louver Panel", "hardness": 2, "color": ( 80,  88,  94), "drop": "steel_louver"},
+    STEEL_SOFFIT                : {"name": "Steel Soffit Panel", "hardness": 2, "color": ( 88,  94, 100), "drop": "steel_soffit"},
+    STEEL_FASCIA                : {"name": "Steel Roof Fascia", "hardness": 2, "color": ( 72,  80,  86), "drop": "steel_fascia"},
+    STEEL_BALCONY_DECK          : {"name": "Steel Balcony Deck", "hardness": 2, "color": ( 75,  83,  89), "drop": "steel_balcony_deck"},
+    STEEL_SKYLIGHT_FRAME        : {"name": "Skylight Frame", "hardness": 2, "color": ( 70,  78,  84), "drop": "steel_skylight_frame"},
+    ROUND_PIPE_COLUMN           : {"name": "Round Pipe Column", "hardness": 2, "color": ( 85,  92,  98), "drop": "round_pipe_column"},
+    ROUND_PIPE_HORIZ            : {"name": "Horizontal Pipe", "hardness": 2, "color": ( 82,  90,  96), "drop": "round_pipe_horiz"},
+    STEEL_GRID_CEILING          : {"name": "Steel Grid Ceiling", "hardness": 2, "color": ( 92,  98, 104), "drop": "steel_grid_ceiling"},
+    INDUSTRIAL_BRACKET          : {"name": "Industrial Bracket", "hardness": 2, "color": ( 68,  76,  82), "drop": "industrial_bracket"},
+    STEEL_THRESHOLD             : {"name": "Steel Threshold", "hardness": 2, "color": ( 80,  87,  93), "drop": "steel_threshold"},
+    RIVETED_STEEL               : {"name": "Riveted Steel Plate", "hardness": 2, "color": ( 72,  79,  85), "drop": "riveted_steel"},
+    BAUHAUS_CONCRETE_SMOOTH     : {"name": "Smooth Concrete", "hardness": 2, "color": (175, 172, 168), "drop": "bauhaus_concrete_smooth"},
+    BAUHAUS_CONCRETE_BOARD      : {"name": "Board-Form Concrete", "hardness": 2, "color": (172, 168, 162), "drop": "bauhaus_concrete_board"},
+    BAUHAUS_CONCRETE_POLISHED   : {"name": "Polished Concrete Floor", "hardness": 2, "color": (182, 180, 176), "drop": "bauhaus_concrete_polished"},
+    BAUHAUS_CONCRETE_WHITE      : {"name": "White Concrete", "hardness": 2, "color": (225, 222, 218), "drop": "bauhaus_concrete_white"},
+    BAUHAUS_CONCRETE_CHARCOAL   : {"name": "Charcoal Concrete", "hardness": 2, "color": ( 58,  58,  60), "drop": "bauhaus_concrete_charcoal"},
+    BAUHAUS_CONCRETE_WARM       : {"name": "Buff Concrete", "hardness": 2, "color": (192, 185, 170), "drop": "bauhaus_concrete_warm"},
+    BAUHAUS_CONCRETE_PILLAR     : {"name": "Concrete Pillar", "hardness": 2, "color": (178, 175, 170), "drop": "bauhaus_concrete_pillar"},
+    BAUHAUS_CONCRETE_CEILING    : {"name": "Concrete Soffit", "hardness": 2, "color": (168, 165, 162), "drop": "bauhaus_concrete_ceiling"},
+    BAUHAUS_CONCRETE_FASCIA     : {"name": "Concrete Fascia", "hardness": 2, "color": (180, 177, 173), "drop": "bauhaus_concrete_fascia"},
+    BAUHAUS_CONCRETE_SCREEN     : {"name": "Concrete Breeze Block", "hardness": 2, "color": (175, 172, 168), "drop": "bauhaus_concrete_screen"},
+    BAUHAUS_CONCRETE_CURB       : {"name": "Concrete Curb", "hardness": 2, "color": (170, 168, 164), "drop": "bauhaus_concrete_curb"},
+    BAUHAUS_CONCRETE_SILL       : {"name": "Concrete Window Sill", "hardness": 2, "color": (178, 175, 171), "drop": "bauhaus_concrete_sill"},
+    BAUHAUS_EXPOSED_AGGREGATE   : {"name": "Exposed Aggregate", "hardness": 2, "color": (165, 158, 148), "drop": "bauhaus_exposed_aggregate"},
+    BAUHAUS_POURED_FLOOR        : {"name": "Poured Concrete Floor", "hardness": 2, "color": (172, 170, 166), "drop": "bauhaus_poured_floor"},
+    BAUHAUS_PRECAST_PANEL       : {"name": "Precast Concrete Panel", "hardness": 2, "color": (178, 174, 170), "drop": "bauhaus_precast_panel"},
+    BAUHAUS_CEILING_COFFER      : {"name": "Coffered Concrete Ceiling", "hardness": 2, "color": (168, 166, 162), "drop": "bauhaus_ceiling_coffer"},
+    BAUHAUS_THIN_SHELL          : {"name": "Thin-Shell Concrete", "hardness": 2, "color": (180, 177, 173), "drop": "bauhaus_thin_shell"},
+    BAUHAUS_STAIR_TREAD         : {"name": "Concrete Stair Tread", "hardness": 2, "color": (170, 168, 164), "drop": "bauhaus_stair_tread"},
+    BAUHAUS_HEARTH              : {"name": "Concrete Hearth", "hardness": 2, "color": (182, 178, 174), "drop": "bauhaus_hearth"},
+    BAUHAUS_CONCRETE_MOSAIC     : {"name": "Colored Aggregate Floor", "hardness": 2, "color": (168, 162, 155), "drop": "bauhaus_concrete_mosaic"},
+    TEAK_SLAT_WALL              : {"name": "Teak Slat Wall", "hardness": 2, "color": (145,  95,  55), "drop": "teak_slat_wall"},
+    WALNUT_STRIP_FLOOR          : {"name": "Walnut Strip Floor", "hardness": 2, "color": ( 92,  62,  38), "drop": "walnut_strip_floor"},
+    BIRCH_VENEER_PANEL          : {"name": "Birch Veneer Panel", "hardness": 2, "color": (225, 208, 180), "drop": "birch_veneer_panel"},
+    BAMBOO_CEILING_BATTEN       : {"name": "Bamboo Ceiling Batten", "hardness": 2, "color": (210, 195, 140), "drop": "bamboo_ceiling_batten"},
+    CORK_TILE                   : {"name": "Natural Cork Tile", "hardness": 2, "color": (195, 162, 110), "drop": "cork_tile"},
+    MAPLE_STRIP_FLOOR           : {"name": "Maple Strip Floor", "hardness": 2, "color": (215, 185, 138), "drop": "maple_strip_floor"},
+    WHITEWASH_PLANK             : {"name": "Whitewashed Plank", "hardness": 2, "color": (232, 228, 220), "drop": "whitewash_plank"},
+    SMOKED_OAK_PANEL            : {"name": "Smoked Oak Panel", "hardness": 2, "color": ( 58,  48,  40), "drop": "smoked_oak_panel"},
+    ASH_VENEER                  : {"name": "Pale Ash Veneer", "hardness": 2, "color": (212, 200, 180), "drop": "ash_veneer"},
+    TEAK_DECK_BOARD             : {"name": "Teak Deck Board", "hardness": 2, "color": (148,  98,  58), "drop": "teak_deck_board"},
+    WENGE_ACCENT                : {"name": "Wenge Accent Strip", "hardness": 2, "color": ( 38,  28,  22), "drop": "wenge_accent"},
+    ZEBRANO_PANEL               : {"name": "Zebrano Veneer Panel", "hardness": 2, "color": (188, 162, 110), "drop": "zebrano_panel"},
+    RECLAIMED_PINE              : {"name": "Reclaimed Pine Plank", "hardness": 2, "color": (185, 155, 112), "drop": "reclaimed_pine"},
+    REED_SCREEN_PANEL           : {"name": "Reed Screen Panel", "hardness": 2, "color": (195, 178, 132), "drop": "reed_screen_panel"},
+    HEMP_BOARD                  : {"name": "Hemp Composite Board", "hardness": 2, "color": (180, 168, 135), "drop": "hemp_board"},
+    BLACK_CERAMIC_TILE          : {"name": "Black Ceramic Tile", "hardness": 2, "color": ( 28,  28,  30), "drop": "black_ceramic_tile"},
+    WHITE_PORCELAIN_TILE        : {"name": "White Porcelain Tile", "hardness": 2, "color": (242, 242, 244), "drop": "white_porcelain_tile"},
+    BAUHAUS_MOSAIC_TILE         : {"name": "Bauhaus Mosaic Tile", "hardness": 2, "color": (200,  50,  40), "drop": "bauhaus_mosaic_tile"},
+    CHECKER_TILE                : {"name": "Checkerboard Tile", "hardness": 2, "color": (240, 238, 235), "drop": "checker_tile"},
+    BAUHAUS_TERRAZZO            : {"name": "Bauhaus Terrazzo", "hardness": 2, "color": (195, 188, 178), "drop": "bauhaus_terrazzo"},
+    BAUHAUS_RED_WALL            : {"name": "Primary Red Wall", "hardness": 2, "color": (198,  48,  38), "drop": "bauhaus_red_wall"},
+    BAUHAUS_YELLOW_WALL         : {"name": "Primary Yellow Wall", "hardness": 2, "color": (238, 208,  28), "drop": "bauhaus_yellow_wall"},
+    BAUHAUS_BLUE_WALL           : {"name": "Primary Blue Wall", "hardness": 2, "color": ( 28,  78, 178), "drop": "bauhaus_blue_wall"},
+    WHITE_STUCCO                : {"name": "White Stucco", "hardness": 2, "color": (238, 236, 232), "drop": "white_stucco"},
+    LIME_PLASTER                : {"name": "Lime Plaster", "hardness": 2, "color": (228, 222, 210), "drop": "lime_plaster"},
+    PIPE_SORTER_BLOCK:         {"name": "Pipe Sorter",              "hardness": 1.5, "color": ( 80,  80, 110), "drop": "pipe_sorter_item"},
+    FACTORY_BLOCK:             {"name": "Factory",                  "hardness": 2.0, "color": ( 70, 100,  85), "drop": "factory_item"},
     # --- Waterside plants ---
     REED_BLOCK:           {"name": "Reeds",          "hardness": 0.3, "color": ( 75, 148,  60), "drop": "reed_bundle"},
     CATTAIL_BLOCK:        {"name": "Cattail",        "hardness": 0.3, "color": ( 70, 138,  55), "drop": "cattail"},
@@ -3122,6 +3633,9 @@ BLOCKS = {
     # Collectible node — drop is None; player.py triggers the SeashellGenerator instead
     SEASHELL_BLOCK:       {"name": "Seashell",        "hardness": 0.5, "color": (230, 210, 170),
                            "drop": None},
+    # Collectible oyster cluster — player.py runs SeashellGenerator + PearlGenerator
+    OYSTER_BLOCK:         {"name": "Oyster",          "hardness": 0.6, "color": (175, 165, 155),
+                           "drop": None},
     # Decorative reef — no drops
     SEA_ANEMONE:          {"name": "Sea Anemone",     "hardness": 0.3, "color": (255, 140,  60),
                            "drop": None},
@@ -3134,6 +3648,268 @@ BLOCKS = {
                            "bonus_drop": "shell_fragment", "bonus_drop_chance": 0.20},
     EDELWEISS_BUSH:       {"name": "Edelweiss",       "hardness": 0.5, "color": (248, 246, 242),
                            "drop": "edelweiss",       "drop_chance": 0.30},
+    ANIMAL_TRAP_BLOCK:    {"name": "Animal Trap",     "hardness": 1.0, "color": (120,  88,  48),
+                           "drop": "animal_trap",     "interact": True},
+    TANNING_RACK_BLOCK:   {"name": "Tanning Rack",    "hardness": 1.5, "color": (145, 105,  60),
+                           "drop": "tanning_rack",    "interact": True},
+    WICKER_FISH_TRAP_BLOCK:  {"name": "Wicker Fish Trap", "hardness": 1.0, "color": (155, 115,  55),
+                              "drop": "wicker_fish_trap",  "interact": True},
+    IRON_FISH_TRAP_BLOCK:    {"name": "Iron Fish Trap",   "hardness": 2.0, "color": ( 90, 115, 135),
+                              "drop": "iron_fish_trap",    "interact": True},
+    REINFORCED_FISH_TRAP_BLOCK:  {"name": "Reinforced Fish Trap", "hardness": 2.0, "color": (165, 130,  80),
+                              "drop": "reinforced_fish_trap",  "interact": True},
+    STEEL_CAGE_TRAP_BLOCK:   {"name": "Steel Cage Trap",  "hardness": 3.0, "color": (100, 120, 130),
+                              "drop": "steel_cage_trap",   "interact": True},
+    FISH_SCALE_SHINGLE:        {"name": "Fish Scale Shingle", "hardness": 2, "color": (178,  90,  80), "drop": "fish_scale_shingle"},
+    FISH_SCALE_SHINGLE_DARK:   {"name": "Fish Scale Shingle Dark", "hardness": 2, "color": ( 80,  55,  55), "drop": "fish_scale_shingle_dark"},
+    FISH_SCALE_SHINGLE_BLUE:   {"name": "Fish Scale Shingle Blue", "hardness": 2, "color": ( 75,  95, 120), "drop": "fish_scale_shingle_blue"},
+    CLAPBOARD_SIDING:          {"name": "Clapboard Siding", "hardness": 2, "color": (235, 228, 210), "drop": "clapboard_siding"},
+    CLAPBOARD_SIDING_DARK:     {"name": "Clapboard Siding Dark", "hardness": 2, "color": (100,  75,  55), "drop": "clapboard_siding_dark"},
+    DROP_SIDING:               {"name": "Drop Siding", "hardness": 2, "color": (195, 175, 145), "drop": "drop_siding"},
+    BOARD_AND_BATTEN_SIDING:   {"name": "Board and Batten Siding", "hardness": 2, "color": (140, 155, 120), "drop": "board_and_batten_siding"},
+    SHIPLAP_SIDING:            {"name": "Shiplap Siding", "hardness": 2, "color": (230, 225, 215), "drop": "shiplap_siding"},
+    PEBBLEDASH_RENDER:         {"name": "Pebbledash Render", "hardness": 3, "color": (185, 180, 170), "drop": "pebbledash_render"},
+    HALF_TIMBERING_PANEL:      {"name": "Half Timbering Panel", "hardness": 2, "color": (210, 200, 185), "drop": "half_timbering_panel"},
+    TERRACOTTA_CLADDING_TILE:  {"name": "Terracotta Cladding Tile", "hardness": 3, "color": (195, 105,  65), "drop": "terracotta_cladding_tile"},
+    FAIENCE_TILE_PANEL:        {"name": "Faience Tile Panel", "hardness": 3, "color": ( 80, 165, 165), "drop": "faience_tile_panel"},
+    PRESSED_METAL_PANEL:       {"name": "Pressed Metal Panel", "hardness": 2, "color": (160, 158, 155), "drop": "pressed_metal_panel"},
+    INCISED_RENDER_PANEL:      {"name": "Incised Render Panel", "hardness": 3, "color": (210, 205, 195), "drop": "incised_render_panel"},
+    ROUGHCAST_RENDER:          {"name": "Roughcast Render", "hardness": 3, "color": (175, 172, 165), "drop": "roughcast_render"},
+    PARGETING_PANEL:           {"name": "Pargeting Panel", "hardness": 3, "color": (225, 220, 210), "drop": "pargeting_panel"},
+    STUCCO_BAND:               {"name": "Stucco Band", "hardness": 2, "color": (235, 232, 225), "drop": "stucco_band"},
+    DECORATIVE_FRIEZE_PANEL:   {"name": "Decorative Frieze Panel", "hardness": 2, "color": (225, 215, 200), "drop": "decorative_frieze_panel"},
+    VERGEBOARD:                {"name": "Vergeboard", "hardness": 2, "color": ( 80,  55,  40), "drop": "vergeboard"},
+    DENTIL_MOULDING_STRIP:     {"name": "Dentil Moulding Strip", "hardness": 2, "color": (235, 230, 220), "drop": "dentil_moulding_strip"},
+    SLATE_ROOF_TILE:           {"name": "Slate Roof Tile", "hardness": 3, "color": (100, 105, 110), "drop": "slate_roof_tile"},
+    SLATE_ROOF_TILE_DARK:      {"name": "Slate Roof Tile Dark", "hardness": 3, "color": ( 60,  62,  68), "drop": "slate_roof_tile_dark"},
+    CLAY_ROOF_TILE:            {"name": "Clay Roof Tile", "hardness": 3, "color": (190,  95,  65), "drop": "clay_roof_tile"},
+    CLAY_ROOF_TILE_GREEN:      {"name": "Clay Roof Tile Green", "hardness": 3, "color": ( 85, 120,  80), "drop": "clay_roof_tile_green"},
+    IMBREX_ROOF_TILE:          {"name": "Imbrex Roof Tile", "hardness": 3, "color": (170,  80,  55), "drop": "imbrex_roof_tile"},
+    MANSARD_SLATE_PANEL:       {"name": "Mansard Slate Panel", "hardness": 3, "color": ( 90,  92,  98), "drop": "mansard_slate_panel"},
+    DECORATED_RIDGE_TILE:      {"name": "Decorated Ridge Tile", "hardness": 3, "color": (185,  90,  60), "drop": "decorated_ridge_tile"},
+    FINIAL_BLOCK:              {"name": "Finial Block", "hardness": 3, "color": ( 70,  65,  80), "drop": "finial_block"},
+    IRON_CRESTING_RAIL:        {"name": "Iron Cresting Rail", "hardness": 2, "color": ( 45,  42,  40), "drop": "iron_cresting_rail"},
+    JERKINHEAD_GABLE:          {"name": "Jerkinhead Gable", "hardness": 3, "color": (100, 105, 110), "drop": "jerkinhead_gable"},
+    TURRET_CAP_BLOCK:          {"name": "Turret Cap Block", "hardness": 3, "color": ( 95, 105, 120), "drop": "turret_cap_block"},
+    OCTAGONAL_TURRET_BLOCK:    {"name": "Octagonal Turret Block", "hardness": 3, "color": (140, 145, 155), "drop": "octagonal_turret_block"},
+    BAY_WINDOW_ROOF:           {"name": "Bay Window Roof", "hardness": 3, "color": (100, 105, 110), "drop": "bay_window_roof"},
+    DORMER_CHEEK:              {"name": "Dormer Cheek", "hardness": 2, "color": (220, 215, 205), "drop": "dormer_cheek"},
+    GABLED_DORMER_FRONT:       {"name": "Gabled Dormer Front", "hardness": 2, "color": (220, 215, 200), "drop": "gabled_dormer_front"},
+    PRESSED_BRICK:             {"name": "Pressed Brick", "hardness": 3, "color": (185,  78,  58), "drop": "pressed_brick"},
+    PRESSED_BRICK_BUFF:        {"name": "Pressed Brick Buff", "hardness": 3, "color": (210, 185, 140), "drop": "pressed_brick_buff"},
+    GAUGED_BRICK:              {"name": "Gauged Brick", "hardness": 3, "color": (170,  70,  55), "drop": "gauged_brick"},
+    RUBBED_BRICK:              {"name": "Rubbed Brick", "hardness": 3, "color": (210, 160, 145), "drop": "rubbed_brick"},
+    VITRIFIED_BRICK:           {"name": "Vitrified Brick", "hardness": 4, "color": ( 90,  95, 105), "drop": "vitrified_brick"},
+    POLYCHROME_BRICK_RED:      {"name": "Polychrome Brick Red", "hardness": 3, "color": (185,  78,  58), "drop": "polychrome_brick_red"},
+    POLYCHROME_BRICK_BLUE:     {"name": "Polychrome Brick Blue", "hardness": 3, "color": ( 80,  90, 130), "drop": "polychrome_brick_blue"},
+    POLYCHROME_BRICK_CREAM:    {"name": "Polychrome Brick Cream", "hardness": 3, "color": (220, 210, 190), "drop": "polychrome_brick_cream"},
+    TERRACOTTA_BLOCK:          {"name": "Terracotta Block", "hardness": 3, "color": (195, 105,  60), "drop": "terracotta_block"},
+    TERRACOTTA_PANEL:          {"name": "Terracotta Panel", "hardness": 3, "color": (190, 100,  55), "drop": "terracotta_panel"},
+    BUFF_TERRACOTTA:           {"name": "Buff Terracotta", "hardness": 3, "color": (215, 185, 130), "drop": "buff_terracotta"},
+    RUSTICATED_STONE:          {"name": "Rusticated Stone", "hardness": 4, "color": (140, 135, 125), "drop": "rusticated_stone"},
+    ASHLAR_STONE_BLOCK:        {"name": "Ashlar Stone Block", "hardness": 4, "color": (195, 190, 180), "drop": "ashlar_stone_block"},
+    ROCK_FACED_STONE:          {"name": "Rock Faced Stone", "hardness": 4, "color": (130, 125, 115), "drop": "rock_faced_stone"},
+    VERMICULATED_STONE:        {"name": "Vermiculated Stone", "hardness": 4, "color": (165, 160, 150), "drop": "vermiculated_stone"},
+    QUOIN_BLOCK:               {"name": "Quoin Block", "hardness": 4, "color": (200, 195, 185), "drop": "quoin_block"},
+    STRING_COURSE_BLOCK:       {"name": "String Course Block", "hardness": 3, "color": (205, 200, 188), "drop": "string_course_block"},
+    PLINTH_BLOCK:              {"name": "Plinth Block", "hardness": 4, "color": (155, 150, 140), "drop": "plinth_block"},
+    ARCH_KEYSTONE_BLOCK:       {"name": "Arch Keystone Block", "hardness": 4, "color": (210, 205, 195), "drop": "arch_keystone_block"},
+    VOUSSOIR_BLOCK:            {"name": "Voussoir Block", "hardness": 4, "color": (205, 200, 190), "drop": "voussoir_block"},
+    TYMPANUM_PANEL:            {"name": "Tympanum Panel", "hardness": 4, "color": (215, 210, 200), "drop": "tympanum_panel"},
+    MEDALLION_BLOCK:           {"name": "Medallion Block", "hardness": 3, "color": (225, 220, 210), "drop": "medallion_block"},
+    CARTOUCHE_BLOCK:           {"name": "Cartouche Block", "hardness": 3, "color": (220, 210, 185), "drop": "cartouche_block"},
+    HERALDIC_PANEL:            {"name": "Heraldic Panel", "hardness": 3, "color": (210, 190, 165), "drop": "heraldic_panel"},
+    FLORENTINE_STONE:          {"name": "Florentine Stone", "hardness": 4, "color": (200, 195, 180), "drop": "florentine_stone"},
+    IONIC_COLUMN:              {"name": "Ionic Column", "hardness": 4, "color": (235, 232, 228), "drop": "ionic_column"},
+    DORIC_COLUMN:              {"name": "Doric Column", "hardness": 4, "color": (230, 228, 225), "drop": "doric_column"},
+    CORINTHIAN_COLUMN_SHAFT:   {"name": "Corinthian Column Shaft", "hardness": 4, "color": (235, 230, 225), "drop": "corinthian_column_shaft"},
+    COLUMN_CAPITAL:            {"name": "Column Capital", "hardness": 4, "color": (240, 235, 228), "drop": "column_capital"},
+    COLUMN_BASE:               {"name": "Column Base", "hardness": 4, "color": (228, 225, 218), "drop": "column_base"},
+    PILASTER_BLOCK:            {"name": "Pilaster Block", "hardness": 3, "color": (230, 228, 222), "drop": "pilaster_block"},
+    ENGAGED_COLUMN_BLOCK:      {"name": "Engaged Column Block", "hardness": 4, "color": (232, 228, 222), "drop": "engaged_column_block"},
+    FLUTED_PANEL:              {"name": "Fluted Panel", "hardness": 3, "color": (225, 222, 215), "drop": "fluted_panel"},
+    BRACKET_SUPPORT:           {"name": "Bracket Support", "hardness": 2, "color": (115,  85,  55), "drop": "bracket_support"},
+    KNEE_BRACE:                {"name": "Knee Brace", "hardness": 2, "color": (100,  72,  45), "drop": "knee_brace"},
+    CORBEL_BLOCK:              {"name": "Corbel Block", "hardness": 4, "color": (155, 150, 140), "drop": "corbel_block"},
+    MODILLION_BLOCK:           {"name": "Modillion Block", "hardness": 3, "color": (235, 230, 220), "drop": "modillion_block"},
+    CONSOLE_BRACKET:           {"name": "Console Bracket", "hardness": 3, "color": (225, 220, 210), "drop": "console_bracket"},
+    CANTILEVER_BEAM_END:       {"name": "Cantilever Beam End", "hardness": 2, "color": (110,  82,  52), "drop": "cantilever_beam_end"},
+    EXPOSED_RAFTER_END:        {"name": "Exposed Rafter End", "hardness": 2, "color": (150, 120,  80), "drop": "exposed_rafter_end"},
+    STAINED_GLASS_RED:         {"name": "Stained Glass Red", "hardness": 1, "color": (200,  50,  45), "drop": "stained_glass_red"},
+    STAINED_GLASS_BLUE:        {"name": "Stained Glass Blue", "hardness": 1, "color": ( 40,  80, 190), "drop": "stained_glass_blue"},
+    STAINED_GLASS_AMBER:       {"name": "Stained Glass Amber", "hardness": 1, "color": (215, 155,  35), "drop": "stained_glass_amber"},
+    STAINED_GLASS_GREEN:       {"name": "Stained Glass Green", "hardness": 1, "color": ( 50, 160,  80), "drop": "stained_glass_green"},
+    STAINED_GLASS_PURPLE:      {"name": "Stained Glass Purple", "hardness": 1, "color": (120,  50, 175), "drop": "stained_glass_purple"},
+    LEADED_LIGHT_PANEL:        {"name": "Leaded Light Panel", "hardness": 1, "color": (190, 200, 210), "drop": "leaded_light_panel"},
+    QUARRY_GLASS_PANEL:        {"name": "Quarry Glass Panel", "hardness": 1, "color": (195, 205, 210), "drop": "quarry_glass_panel"},
+    FROSTED_GLASS_PANEL:       {"name": "Frosted Glass Panel", "hardness": 1, "color": (225, 228, 232), "drop": "frosted_glass_panel"},
+    ETCHED_GLASS_PANEL:        {"name": "Etched Glass Panel", "hardness": 1, "color": (210, 215, 220), "drop": "etched_glass_panel"},
+    COLOURED_BORDER_GLASS:     {"name": "Coloured Border Glass", "hardness": 1, "color": (200, 185, 160), "drop": "coloured_border_glass"},
+    BAY_WINDOW_FRAME:          {"name": "Bay Window Frame", "hardness": 2, "color": ( 65,  50,  38), "drop": "bay_window_frame"},
+    ORIEL_WINDOW_FRAME:        {"name": "Oriel Window Frame", "hardness": 2, "color": ( 70,  55,  40), "drop": "oriel_window_frame"},
+    TRANSOM_WINDOW_FRAME:      {"name": "Transom Window Frame", "hardness": 2, "color": ( 75,  60,  45), "drop": "transom_window_frame"},
+    FANLIGHT_FRAME:            {"name": "Fanlight Frame", "hardness": 2, "color": ( 55,  52,  50), "drop": "fanlight_frame"},
+    GOTHIC_ARCH_WINDOW:        {"name": "Gothic Arch Window", "hardness": 2, "color": ( 70,  55,  42), "drop": "gothic_arch_window"},
+    ROUND_ARCH_WINDOW:         {"name": "Round Arch Window", "hardness": 2, "color": ( 68,  53,  40), "drop": "round_arch_window"},
+    PALLADIAN_WINDOW_FRAME:    {"name": "Palladian Window Frame", "hardness": 2, "color": ( 72,  57,  42), "drop": "palladian_window_frame"},
+    SASH_WINDOW_FRAME:         {"name": "Sash Window Frame", "hardness": 2, "color": (225, 222, 215), "drop": "sash_window_frame"},
+    CASEMENT_WINDOW_FRAME:     {"name": "Casement Window Frame", "hardness": 2, "color": ( 75,  60,  45), "drop": "casement_window_frame"},
+    VENETIAN_WINDOW_FRAME:     {"name": "Venetian Window Frame", "hardness": 2, "color": ( 80,  65,  48), "drop": "venetian_window_frame"},
+    PANELLED_DOOR_BLOCK:       {"name": "Panelled Door Block", "hardness": 2, "color": ( 75,  52,  35), "drop": "panelled_door_block"},
+    GLAZED_DOOR_BLOCK:         {"name": "Glazed Door Block", "hardness": 2, "color": ( 80,  58,  38), "drop": "glazed_door_block"},
+    DOUBLE_DOOR_BLOCK:         {"name": "Double Door Block", "hardness": 2, "color": ( 72,  50,  33), "drop": "double_door_block"},
+    DUTCH_DOOR_BLOCK:          {"name": "Dutch Door Block", "hardness": 2, "color": ( 95, 110,  75), "drop": "dutch_door_block"},
+    SLIDING_POCKET_DOOR_BLOCK: {"name": "Sliding Pocket Door Block", "hardness": 2, "color": ( 85,  65,  45), "drop": "sliding_pocket_door_block"},
+    FANLIGHT_SURROUND:         {"name": "Fanlight Surround", "hardness": 3, "color": (200, 195, 182), "drop": "fanlight_surround"},
+    PILASTER_DOOR_SURROUND:    {"name": "Pilaster Door Surround", "hardness": 3, "color": (220, 215, 205), "drop": "pilaster_door_surround"},
+    HOOD_MOULDING:             {"name": "Hood Moulding", "hardness": 3, "color": (195, 190, 182), "drop": "hood_moulding"},
+    PORCH_ENTRY_STEPS:         {"name": "Porch Entry Steps", "hardness": 4, "color": (165, 160, 155), "drop": "porch_entry_steps"},
+    BOOT_SCRAPER_BLOCK:        {"name": "Boot Scraper Block", "hardness": 2, "color": ( 55,  52,  50), "drop": "boot_scraper_block"},
+    DOOR_KNOCKER_PLATE:        {"name": "Door Knocker Plate", "hardness": 2, "color": (170, 140,  80), "drop": "door_knocker_plate"},
+    LETTERBOX_PANEL:           {"name": "Letterbox Panel", "hardness": 2, "color": (175, 145,  82), "drop": "letterbox_panel"},
+    MARBLE_THRESHOLD:          {"name": "Marble Threshold", "hardness": 4, "color": (235, 232, 228), "drop": "marble_threshold"},
+    STORM_DOOR_BLOCK:          {"name": "Storm Door Block", "hardness": 2, "color": (180, 185, 190), "drop": "storm_door_block"},
+    SERVICE_DOOR_BLOCK:        {"name": "Service Door Block", "hardness": 2, "color": ( 90,  75,  60), "drop": "service_door_block"},
+    PORCH_COLUMN:              {"name": "Porch Column", "hardness": 2, "color": (235, 232, 228), "drop": "porch_column"},
+    ORNATE_PORCH_COLUMN:       {"name": "Ornate Porch Column", "hardness": 2, "color": (238, 235, 230), "drop": "ornate_porch_column"},
+    SPINDLE_RAIL:              {"name": "Spindle Rail", "hardness": 2, "color": (238, 235, 230), "drop": "spindle_rail"},
+    NEWEL_POST:                {"name": "Newel Post", "hardness": 2, "color": ( 90,  68,  45), "drop": "newel_post"},
+    BALUSTER_BLOCK:            {"name": "Baluster Block", "hardness": 2, "color": (235, 232, 225), "drop": "baluster_block"},
+    PORCH_BALUSTRADE:          {"name": "Porch Balustrade", "hardness": 2, "color": (232, 230, 222), "drop": "porch_balustrade"},
+    PORCH_CORNICE:             {"name": "Porch Cornice", "hardness": 2, "color": (232, 228, 218), "drop": "porch_cornice"},
+    VERANDA_BRACKET:           {"name": "Veranda Bracket", "hardness": 2, "color": (238, 235, 228), "drop": "veranda_bracket"},
+    PORCH_CEILING_BOARD:       {"name": "Porch Ceiling Board", "hardness": 2, "color": (185, 210, 215), "drop": "porch_ceiling_board"},
+    PORCH_FLOOR_BOARD:         {"name": "Porch Floor Board", "hardness": 2, "color": (115,  82,  52), "drop": "porch_floor_board"},
+    SCREEN_PORCH_PANEL:        {"name": "Screen Porch Panel", "hardness": 2, "color": (175, 180, 185), "drop": "screen_porch_panel"},
+    PORTE_COCHERE_BEAM:        {"name": "Porte Cochere Beam", "hardness": 2, "color": (100,  75,  48), "drop": "porte_cochere_beam"},
+    PERGOLA_POST:              {"name": "Pergola Post", "hardness": 2, "color": ( 90,  70,  48), "drop": "pergola_post"},
+    PERGOLA_BEAM:              {"name": "Pergola Beam", "hardness": 2, "color": ( 95,  73,  50), "drop": "pergola_beam"},
+    PERGOLA_SLAT:              {"name": "Pergola Slat", "hardness": 2, "color": (100,  77,  52), "drop": "pergola_slat"},
+    PORCH_SWING_BRACKET:       {"name": "Porch Swing Bracket", "hardness": 2, "color": (110,  82,  55), "drop": "porch_swing_bracket"},
+    WISTERIA_TRELLIS:          {"name": "Wisteria Trellis", "hardness": 2, "color": (230, 235, 230), "drop": "wisteria_trellis"},
+    LATTICE_PANEL:             {"name": "Lattice Panel", "hardness": 2, "color": (235, 232, 228), "drop": "lattice_panel"},
+    JIGSAW_TRIM_PANEL:         {"name": "Jigsaw Trim Panel", "hardness": 2, "color": (238, 232, 220), "drop": "jigsaw_trim_panel"},
+    GINGERBREAD_TRIM:          {"name": "Gingerbread Trim", "hardness": 2, "color": (235, 225, 208), "drop": "gingerbread_trim"},
+    WAINSCOT_PANEL_OAK:        {"name": "Wainscot Panel Oak", "hardness": 2, "color": (155, 120,  75), "drop": "wainscot_panel_oak"},
+    WAINSCOT_PANEL_DARK:       {"name": "Wainscot Panel Dark", "hardness": 2, "color": ( 75,  52,  35), "drop": "wainscot_panel_dark"},
+    BEADBOARD_PANEL:           {"name": "Beadboard Panel", "hardness": 2, "color": (235, 232, 225), "drop": "beadboard_panel"},
+    RAISED_PANEL_WALL:         {"name": "Raised Panel Wall", "hardness": 2, "color": (200, 175, 138), "drop": "raised_panel_wall"},
+    LINCRUSTA_PANEL:           {"name": "Lincrusta Panel", "hardness": 2, "color": (228, 222, 210), "drop": "lincrusta_panel"},
+    ANAGLYPTA_PANEL:           {"name": "Anaglypta Panel", "hardness": 2, "color": (238, 235, 230), "drop": "anaglypta_panel"},
+    DADO_RAIL:                 {"name": "Dado Rail", "hardness": 2, "color": (235, 232, 222), "drop": "dado_rail"},
+    PICTURE_RAIL:              {"name": "Picture Rail", "hardness": 2, "color": (230, 228, 218), "drop": "picture_rail"},
+    CROWN_MOULDING:            {"name": "Crown Moulding", "hardness": 2, "color": (240, 238, 232), "drop": "crown_moulding"},
+    COVED_CORNICE:             {"name": "Coved Cornice", "hardness": 2, "color": (238, 235, 228), "drop": "coved_cornice"},
+    DENTIL_CORNICE:            {"name": "Dentil Cornice", "hardness": 2, "color": (240, 237, 230), "drop": "dentil_cornice"},
+    EGG_AND_DART_MOULDING:     {"name": "Egg and Dart Moulding", "hardness": 2, "color": (238, 235, 228), "drop": "egg_and_dart_moulding"},
+    OVOLO_MOULDING:            {"name": "Ovolo Moulding", "hardness": 2, "color": (240, 238, 232), "drop": "ovolo_moulding"},
+    TALL_BASEBOARD:            {"name": "Tall Baseboard", "hardness": 2, "color": (238, 235, 228), "drop": "tall_baseboard"},
+    DARK_BASEBOARD:            {"name": "Dark Baseboard", "hardness": 2, "color": ( 82,  62,  42), "drop": "dark_baseboard"},
+    ARCHITRAVE:                {"name": "Architrave", "hardness": 2, "color": (238, 234, 226), "drop": "architrave"},
+    FLUTED_INTERIOR_PILASTER:  {"name": "Fluted Interior Pilaster", "hardness": 3, "color": (232, 228, 220), "drop": "fluted_interior_pilaster"},
+    SMOOTH_PLASTER_PANEL:      {"name": "Smooth Plaster Panel", "hardness": 2, "color": (228, 225, 218), "drop": "smooth_plaster_panel"},
+    PLASTER_CEILING_ROSE:      {"name": "Plaster Ceiling Rose", "hardness": 2, "color": (240, 238, 234), "drop": "plaster_ceiling_rose"},
+    COFFERED_CEILING_PANEL:    {"name": "Coffered Ceiling Panel", "hardness": 2, "color": (232, 228, 220), "drop": "coffered_ceiling_panel"},
+    EMBOSSED_TIN_CEILING_SILVER: {"name": "Embossed Tin Ceiling Silver", "hardness": 2, "color": (185, 188, 192), "drop": "embossed_tin_ceiling_silver"},
+    EMBOSSED_TIN_CEILING_GOLD: {"name": "Embossed Tin Ceiling Gold", "hardness": 2, "color": (195, 175, 100), "drop": "embossed_tin_ceiling_gold"},
+    SHIPLAP_INTERIOR:          {"name": "Shiplap Interior", "hardness": 2, "color": (232, 228, 220), "drop": "shiplap_interior"},
+    TONGUE_GROOVE_PLANK:       {"name": "Tongue Groove Plank", "hardness": 2, "color": (185, 158, 118), "drop": "tongue_groove_plank"},
+    WIDE_BOARD_PANELLING:      {"name": "Wide Board Panelling", "hardness": 2, "color": (148, 118,  78), "drop": "wide_board_panelling"},
+    ENCAUSTIC_FLOOR_TILE_RED:  {"name": "Encaustic Floor Tile Red", "hardness": 3, "color": (185,  72,  55), "drop": "encaustic_floor_tile_red"},
+    ENCAUSTIC_FLOOR_TILE_BLUE: {"name": "Encaustic Floor Tile Blue", "hardness": 3, "color": ( 68,  85, 148), "drop": "encaustic_floor_tile_blue"},
+    ENCAUSTIC_FLOOR_TILE_GREEN: {"name": "Encaustic Floor Tile Green", "hardness": 3, "color": ( 72, 115,  72), "drop": "encaustic_floor_tile_green"},
+    ENCAUSTIC_BORDER_TILE:     {"name": "Encaustic Border Tile", "hardness": 3, "color": (165,  62,  50), "drop": "encaustic_border_tile"},
+    GEOMETRIC_MOSAIC_FLOOR:    {"name": "Geometric Mosaic Floor", "hardness": 3, "color": (195, 185, 165), "drop": "geometric_mosaic_floor"},
+    PARQUET_FLOOR_HERRINGBONE: {"name": "Parquet Floor Herringbone", "hardness": 2, "color": (140, 108,  68), "drop": "parquet_floor_herringbone"},
+    PARQUET_FLOOR_BASKET:      {"name": "Parquet Floor Basket", "hardness": 2, "color": (148, 115,  72), "drop": "parquet_floor_basket"},
+    PARQUET_FLOOR_STRIP:       {"name": "Parquet Floor Strip", "hardness": 2, "color": (135, 102,  65), "drop": "parquet_floor_strip"},
+    MARBLE_FLOOR_TILE:         {"name": "Marble Floor Tile", "hardness": 4, "color": (235, 232, 228), "drop": "marble_floor_tile"},
+    MARBLE_FLOOR_TILE_BLACK:   {"name": "Marble Floor Tile Black", "hardness": 4, "color": ( 42,  40,  45), "drop": "marble_floor_tile_black"},
+    TERRACOTTA_FLOOR_TILE:     {"name": "Terracotta Floor Tile", "hardness": 3, "color": (188,  98,  62), "drop": "terracotta_floor_tile"},
+    FLAGSTONE_FLOOR:           {"name": "Flagstone Floor", "hardness": 3, "color": (140, 135, 128), "drop": "flagstone_floor"},
+    HARDWOOD_STAIR_TREAD:      {"name": "Hardwood Stair Tread", "hardness": 2, "color": (115,  85,  52), "drop": "hardwood_stair_tread"},
+    PAINTED_STAIR_RISER:       {"name": "Painted Stair Riser", "hardness": 2, "color": (238, 235, 228), "drop": "painted_stair_riser"},
+    BRASS_STAIR_NOSING:        {"name": "Brass Stair Nosing", "hardness": 2, "color": (195, 165,  80), "drop": "brass_stair_nosing"},
+    OPEN_RISER_STAIR_STEP:     {"name": "Open Riser Stair Step", "hardness": 2, "color": (120,  90,  58), "drop": "open_riser_stair_step"},
+    LANDING_BOARD:             {"name": "Landing Board", "hardness": 2, "color": (130,  98,  62), "drop": "landing_board"},
+    BALCONY_DECK_BOARD:        {"name": "Balcony Deck Board", "hardness": 2, "color": (115,  82,  52), "drop": "balcony_deck_board"},
+    CELLAR_STONE_FLOOR:        {"name": "Cellar Stone Floor", "hardness": 3, "color": (115, 112, 108), "drop": "cellar_stone_floor"},
+    TILE_THRESHOLD_STRIP:      {"name": "Tile Threshold Strip", "hardness": 3, "color": (178,  72,  55), "drop": "tile_threshold_strip"},
+    FIREPLACE_MANTEL:          {"name": "Fireplace Mantel", "hardness": 2, "color": (235, 232, 225), "drop": "fireplace_mantel"},
+    FIREPLACE_SURROUND_TILE:   {"name": "Fireplace Surround Tile", "hardness": 3, "color": (210, 200, 185), "drop": "fireplace_surround_tile"},
+    FIREPLACE_OVERMANTEL:      {"name": "Fireplace Overmantel", "hardness": 2, "color": (225, 210, 188), "drop": "fireplace_overmantel"},
+    CAST_IRON_GRATE_FRONT:     {"name": "Cast Iron Grate Front", "hardness": 3, "color": ( 45,  42,  40), "drop": "cast_iron_grate_front"},
+    CAST_IRON_FIREBACK:        {"name": "Cast Iron Fireback", "hardness": 3, "color": ( 48,  45,  43), "drop": "cast_iron_fireback"},
+    HEARTH_TILE:               {"name": "Hearth Tile", "hardness": 3, "color": (190, 100,  60), "drop": "hearth_tile"},
+    INGLENOOK_SIDE_WALL:       {"name": "Inglenook Side Wall", "hardness": 2, "color": (172, 140, 108), "drop": "inglenook_side_wall"},
+    INGLENOOK_BENCH:           {"name": "Inglenook Bench", "hardness": 2, "color": (120,  90,  60), "drop": "inglenook_bench"},
+    OAK_BOOKCASE:              {"name": "Oak Bookcase", "hardness": 2, "color": ( 90,  65,  40), "drop": "oak_bookcase"},
+    PAINTED_BOOKCASE:          {"name": "Painted Bookcase", "hardness": 2, "color": (230, 228, 222), "drop": "painted_bookcase"},
+    WINDOW_SEAT_BOX:           {"name": "Window Seat Box", "hardness": 2, "color": (155, 125,  85), "drop": "window_seat_box"},
+    ALCOVE_SHELF:              {"name": "Alcove Shelf", "hardness": 2, "color": (145, 115,  75), "drop": "alcove_shelf"},
+    BUTLER_PANTRY_SHELF:       {"name": "Butler Pantry Shelf", "hardness": 2, "color": (180, 155, 118), "drop": "butler_pantry_shelf"},
+    CHINA_CABINET_BLOCK:       {"name": "China Cabinet Block", "hardness": 2, "color": (100,  75,  50), "drop": "china_cabinet_block"},
+    BUILT_IN_WARDROBE_PANEL:   {"name": "Built In Wardrobe Panel", "hardness": 2, "color": (115,  88,  58), "drop": "built_in_wardrobe_panel"},
+    HIGH_BACK_SETTLE:          {"name": "High Back Settle", "hardness": 2, "color": ( 80,  58,  38), "drop": "high_back_settle"},
+    PLATE_RACK:                {"name": "Plate Rack", "hardness": 2, "color": (158, 128,  88), "drop": "plate_rack"},
+    DRESSER_BACK_PANEL:        {"name": "Dresser Back Panel", "hardness": 2, "color": (185, 158, 120), "drop": "dresser_back_panel"},
+    PANTRY_DOOR_BLOCK:         {"name": "Pantry Door Block", "hardness": 2, "color": ( 88,  68,  48), "drop": "pantry_door_block"},
+    DUMBWAITER_SHAFT_PANEL:    {"name": "Dumbwaiter Shaft Panel", "hardness": 3, "color": ( 65,  55,  48), "drop": "dumbwaiter_shaft_panel"},
+    WROUGHT_IRON_FENCE_PANEL:  {"name": "Wrought Iron Fence Panel", "hardness": 2, "color": ( 45,  42,  40), "drop": "wrought_iron_fence_panel"},
+    WROUGHT_IRON_GATE:         {"name": "Wrought Iron Gate", "hardness": 2, "color": ( 48,  44,  42), "drop": "wrought_iron_gate"},
+    BRICK_GARDEN_PIER:         {"name": "Brick Garden Pier", "hardness": 3, "color": (182,  80,  58), "drop": "brick_garden_pier"},
+    STONE_GARDEN_PIER:         {"name": "Stone Garden Pier", "hardness": 4, "color": (165, 160, 150), "drop": "stone_garden_pier"},
+    CAST_IRON_RAILING_PANEL:   {"name": "Cast Iron Railing Panel", "hardness": 3, "color": ( 52,  50,  48), "drop": "cast_iron_railing_panel"},
+    LOW_GARDEN_WALL:           {"name": "Low Garden Wall", "hardness": 3, "color": (178,  82,  60), "drop": "low_garden_wall"},
+    GARDEN_WALL_COPING:        {"name": "Garden Wall Coping", "hardness": 3, "color": (195, 190, 182), "drop": "garden_wall_coping"},
+    STONE_GARDEN_BALUSTRADE:   {"name": "Stone Garden Balustrade", "hardness": 4, "color": (185, 182, 175), "drop": "stone_garden_balustrade"},
+    STONE_GARDEN_STEPS:        {"name": "Stone Garden Steps", "hardness": 4, "color": (170, 165, 158), "drop": "stone_garden_steps"},
+    BATTERED_RETAINING_WALL:   {"name": "Battered Retaining Wall", "hardness": 4, "color": (148, 142, 135), "drop": "battered_retaining_wall"},
+    COAL_HOLE_COVER:           {"name": "Coal Hole Cover", "hardness": 3, "color": ( 52,  50,  48), "drop": "coal_hole_cover"},
+    AREA_STEPS_BLOCK:          {"name": "Area Steps Block", "hardness": 4, "color": (155, 152, 148), "drop": "area_steps_block"},
+    MOUNTING_BLOCK:            {"name": "Mounting Block", "hardness": 4, "color": (162, 158, 152), "drop": "mounting_block"},
+    GARDEN_URN_PEDESTAL:       {"name": "Garden Urn Pedestal", "hardness": 3, "color": (185, 182, 175), "drop": "garden_urn_pedestal"},
+    SUNDIAL_PEDESTAL:          {"name": "Sundial Pedestal", "hardness": 3, "color": (188, 185, 178), "drop": "sundial_pedestal"},
+    CARRIAGE_HOUSE_DOOR:       {"name": "Carriage House Door", "hardness": 2, "color": (105,  78,  52), "drop": "carriage_house_door"},
+    STABLE_WALL_PANEL:         {"name": "Stable Wall Panel", "hardness": 3, "color": (182,  82,  60), "drop": "stable_wall_panel"},
+    CONSERVATORY_GLASS_PANEL:  {"name": "Conservatory Glass Panel", "hardness": 1, "color": (200, 215, 225), "drop": "conservatory_glass_panel"},
+    CONSERVATORY_IRON_FRAME:   {"name": "Conservatory Iron Frame", "hardness": 2, "color": (180, 185, 188), "drop": "conservatory_iron_frame"},
+    VICTORIAN_GREENHOUSE_FRAME: {"name": "Victorian Greenhouse Frame", "hardness": 2, "color": (155, 168, 172), "drop": "victorian_greenhouse_frame"},
+    CLINKER_BRICK:             {"name": "Clinker Brick", "hardness": 3, "color": ( 72,  55,  48), "drop": "clinker_brick"},
+    RIVER_ROCK_BLOCK:          {"name": "River Rock Block", "hardness": 3, "color": (138, 130, 118), "drop": "river_rock_block"},
+    RIVER_ROCK_COLUMN:         {"name": "River Rock Column", "hardness": 3, "color": (130, 122, 110), "drop": "river_rock_column"},
+    COBBLESTONE_PIER:          {"name": "Cobblestone Pier", "hardness": 3, "color": (118, 112, 105), "drop": "cobblestone_pier"},
+    CRAFTSMAN_BEAM_END:        {"name": "Craftsman Beam End", "hardness": 2, "color": (140, 108,  68), "drop": "craftsman_beam_end"},
+    CRAFTSMAN_FRIEZE_BOARD:    {"name": "Craftsman Frieze Board", "hardness": 2, "color": ( 78,  58,  40), "drop": "craftsman_frieze_board"},
+    CRAFTSMAN_BARGEBOARD:      {"name": "Craftsman Bargeboard", "hardness": 2, "color": ( 82,  62,  42), "drop": "craftsman_bargeboard"},
+    CRAFTSMAN_TRIM_STRIP:      {"name": "Craftsman Trim Strip", "hardness": 2, "color": ( 85,  65,  44), "drop": "craftsman_trim_strip"},
+    ARTS_AND_CRAFTS_TILE:      {"name": "Arts and Crafts Tile", "hardness": 3, "color": (158, 128,  85), "drop": "arts_and_crafts_tile"},
+    PRAIRIE_GRID_GLASS:        {"name": "Prairie Grid Glass", "hardness": 1, "color": (185, 200, 215), "drop": "prairie_grid_glass"},
+    STRAP_HINGE_PANEL:         {"name": "Strap Hinge Panel", "hardness": 2, "color": ( 65,  58,  52), "drop": "strap_hinge_panel"},
+    CRAFTSMAN_COLUMN_CAP:      {"name": "Craftsman Column Cap", "hardness": 3, "color": (185, 180, 172), "drop": "craftsman_column_cap"},
+    TAPERED_PORCH_POST:        {"name": "Tapered Porch Post", "hardness": 2, "color": ( 95,  72,  48), "drop": "tapered_porch_post"},
+    SHED_DORMER_BLOCK:         {"name": "Shed Dormer Block", "hardness": 3, "color": (175, 172, 168), "drop": "shed_dormer_block"},
+    CHIMNEY_STACK_BLOCK:       {"name": "Chimney Stack Block", "hardness": 3, "color": (175,  75,  55), "drop": "chimney_stack_block"},
+    CHIMNEY_POT:               {"name": "Chimney Pot", "hardness": 3, "color": (182,  82,  60), "drop": "chimney_pot"},
+    CHIMNEY_CAP:               {"name": "Chimney Cap", "hardness": 4, "color": (188, 185, 178), "drop": "chimney_cap"},
+    FLAUNCHING_BLOCK:          {"name": "Flaunching Block", "hardness": 3, "color": (148, 142, 135), "drop": "flaunching_block"},
+    CAST_IRON_GUTTER:          {"name": "Cast Iron Gutter", "hardness": 2, "color": ( 52,  50,  48), "drop": "cast_iron_gutter"},
+    CAST_IRON_DOWNPIPE:        {"name": "Cast Iron Downpipe", "hardness": 2, "color": ( 55,  52,  50), "drop": "cast_iron_downpipe"},
+    HOPPER_HEAD_BLOCK:         {"name": "Hopper Head Block", "hardness": 2, "color": ( 58,  55,  52), "drop": "hopper_head_block"},
+    AIR_BRICK:                 {"name": "Air Brick", "hardness": 3, "color": (178,  78,  58), "drop": "air_brick"},
+    DAMP_COURSE_BLOCK:         {"name": "Damp Course Block", "hardness": 3, "color": (145, 140, 132), "drop": "damp_course_block"},
+    BASEMENT_WINDOW_WELL:      {"name": "Basement Window Well", "hardness": 2, "color": ( 62,  60,  58), "drop": "basement_window_well"},
+    ICE_HOUSE_BLOCK:           {"name": "Ice House Block", "hardness": 4, "color": (148, 152, 158), "drop": "ice_house_block"},
+    GARDEN_TOOL_STORE_PANEL:   {"name": "Garden Tool Store Panel", "hardness": 2, "color": (148, 118,  78), "drop": "garden_tool_store_panel"},
+    BELL_TOWER_BLOCK:          {"name": "Bell Tower Block", "hardness": 4, "color": (182,  80,  58), "drop": "bell_tower_block"},
+    SUMMERHOUSE_PANEL:         {"name": "Summerhouse Panel", "hardness": 2, "color": (188, 182, 172), "drop": "summerhouse_panel"},
+    GAZEBO_BEAM:               {"name": "Gazebo Beam", "hardness": 2, "color": (100,  78,  52), "drop": "gazebo_beam"},
+    GARDEN_PAVILION_POST:      {"name": "Garden Pavilion Post", "hardness": 2, "color": (105,  82,  55), "drop": "garden_pavilion_post"},
+    DOVECOTE_BLOCK:            {"name": "Dovecote Block", "hardness": 3, "color": (205, 200, 192), "drop": "dovecote_block"},
+    HA_HA_WALL_BLOCK:          {"name": "Ha Ha Wall Block", "hardness": 4, "color": (148, 142, 135), "drop": "ha_ha_wall_block"},
+    TOPIARY_FRAME:             {"name": "Topiary Frame", "hardness": 2, "color": (105, 138,  78), "drop": "topiary_frame"},
+    ROSE_ARCH_FRAME:           {"name": "Rose Arch Frame", "hardness": 2, "color": ( 72,  58,  45), "drop": "rose_arch_frame"},
+    COAL_CELLAR_BLOCK:         {"name": "Coal Cellar Block", "hardness": 4, "color": (118, 112, 108), "drop": "coal_cellar_block"},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}

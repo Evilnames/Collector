@@ -349,6 +349,8 @@ class CollectionsMixin:
             items.extend(("fossil", i) for i in range(len(player.fossils)))
         if flt in ("all", "seashells"):
             items.extend(("seashell", i) for i in range(len(getattr(player, "seashells", []))))
+        if flt in ("all", "pearls", "seashells"):
+            items.extend(("pearl", i) for i in range(len(getattr(player, "pearls", []))))
         if flt in ("all", "gems"):
             items.extend(("gem", i) for i in range(len(player.gems)))
         if flt in ("all", "mushrooms"):
@@ -466,6 +468,15 @@ class CollectionsMixin:
                 img = render_seashell(it, 58)
                 label = it.species.replace("_", " ")
                 label_col = (120, 200, 225)
+            elif cat == "pearl":
+                it = player.pearls[key]
+                from pearls import render_pearl
+                rar_col = SHELL_RARITY_COLORS.get(it.rarity, (200, 200, 230))
+                pygame.draw.rect(self.screen, (28, 28, 44) if selected else (18, 18, 30), rect)
+                pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
+                img = render_pearl(it, 58)
+                label = f"{it.color_name} pearl"
+                label_col = (215, 210, 230)
             elif cat == "gem":
                 it = player.gems[key]
                 rar_col = GEM_RARITY_COLORS.get(it.rarity, (120, 120, 120))
@@ -861,6 +872,19 @@ class CollectionsMixin:
                     dlabel(f"    {FOSSIL_SPECIAL_DESCS.get(sp, '')}", (145, 130, 90))
             else:
                 dlabel("No special traits.", (90, 82, 60))
+
+        elif sel_cat == "pearl":
+            from pearls import render_pearl
+            pearl = player.pearls[sel_key]
+            pygame.draw.rect(self.screen, (18, 18, 30), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, SHELL_RARITY_COLORS.get(pearl.rarity, (200, 200, 230)), (dx, dy2, dw, dh), 2)
+            self.screen.blit(render_pearl(pearl, 80), (dx + dw // 2 - 40, dy2 + 8))
+            dlabel(f"{pearl.color_name.title()} Pearl", (215, 210, 230))
+            dlabel(SHELL_RARITY_LABEL.get(pearl.rarity, pearl.rarity), SHELL_RARITY_COLORS.get(pearl.rarity, (200, 200, 230)))
+            dlabel(f"Size: {pearl.size_mm} mm")
+            dlabel(f"Shape: {pearl.shape.title()}")
+            dlabel(f"Luster: {pearl.luster.title()}")
+            dlabel(f"Found in: {pearl.biome_found.replace('_', ' ').title()}")
 
         elif sel_cat == "seashell":
             shell = player.seashells[sel_key]
@@ -3102,15 +3126,21 @@ class CollectionsMixin:
                 ix = 12 + item_col_i * (CARD_W // items_per_row - 4)
                 iy = 76 + item_row_i * 17
                 item_found = str(req) in self.global_collection.get(ach.category, set())
-                tick  = "✓" if item_found else "–"
-                t_col = (130, 210, 110) if item_found else (80, 80, 90)
+                t_col = (130, 210, 110) if item_found else (55, 55, 65)
                 n_col = (190, 190, 200) if item_found else (80, 80, 90)
-                tk_s  = self.small.render(tick, True, t_col)
+                # Draw a small filled square (found) or outlined square (not found)
+                dot_y = iy + 3
+                if item_found:
+                    pygame.draw.rect(card_surf, t_col, (ix, dot_y, 8, 8), border_radius=2)
+                    # Checkmark lines inside the square
+                    pygame.draw.line(card_surf, (20, 20, 20), (ix + 1, dot_y + 4), (ix + 3, dot_y + 6), 2)
+                    pygame.draw.line(card_surf, (20, 20, 20), (ix + 3, dot_y + 6), (ix + 7, dot_y + 1), 2)
+                else:
+                    pygame.draw.rect(card_surf, t_col, (ix, dot_y, 8, 8), 1, border_radius=2)
                 nm_s  = self.small.render(
                     self._fit_label(item_display_name(ach.category, req), label_max_w),
                     True, n_col,
                 )
-                card_surf.blit(tk_s, (ix, iy))
                 card_surf.blit(nm_s, (ix + 12, iy))
 
             if overflow > 0:

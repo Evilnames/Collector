@@ -1,7 +1,8 @@
 import pygame
-from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, MAX_HEALTH
+from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, MAX_HEALTH, MAX_BREATH
 from items import ITEMS
 from item_icons import render_item_icon
+from block_shapes import SHAPE_VARIANTS, draw_shape_preview
 
 _MOISTURE_LABELS = {
     (0, 3): "dry / arid",
@@ -52,6 +53,30 @@ class HUDMixin:
         else:
             label, label_col = "Starving",  (255,  60,  40)
         txt = self.small.render(f"Hunger: {label}", True, label_col)
+        self.screen.blit(txt, (x + 4, y + 2))
+
+    def _draw_breath(self, player):
+        if player.breath >= MAX_BREATH and not player._head_in_water():
+            return
+        bw, bh = 180, 18
+        x, y = 10, 58
+        pygame.draw.rect(self.screen, (10, 25, 50), (x, y, bw, bh))
+        frac = max(0.0, player.breath / MAX_BREATH)
+        br_w = int(bw * frac)
+        r = int(60 + 40 * (1.0 - frac))
+        g = int(180 * frac + 60)
+        b = int(220 * frac + 30)
+        pygame.draw.rect(self.screen, (r, g, b), (x, y, br_w, bh))
+        pygame.draw.rect(self.screen, (200, 220, 240), (x, y, bw, bh), 1)
+        if frac > 0.66:
+            label, label_col = "Breath: Full",    (160, 230, 255)
+        elif frac > 0.33:
+            label, label_col = "Breath: Holding", (200, 220, 255)
+        elif frac > 0.0:
+            label, label_col = "Breath: Gasping", (255, 180,  80)
+        else:
+            label, label_col = "Drowning!",       (255,  60,  40)
+        txt = self.small.render(label, True, label_col)
         self.screen.blit(txt, (x + 4, y + 2))
 
     def _draw_depth(self, player):
@@ -150,30 +175,139 @@ class HUDMixin:
 
     def _draw_hints(self, research, player):
         nearby_bed = player.get_nearby_bed()
+        e_active = (self.npc_open or self.refinery_open or self.chest_open
+                    or self.garden_open or nearby_bed is not None)
+        research_glow = self.research_open or (
+            research and any(research.can_unlock(nid, player.inventory, player.money)
+                             for nid in research.nodes))
+        wire_mode = getattr(player.world, "wire_mode", False) if hasattr(player, "world") else False
+        pipe_mode = getattr(player.world, "pipe_mode", False) if hasattr(player, "world") else False
         hints = [
-            ("R: Research", self.research_open or (
-                research and any(research.can_unlock(nid, player.inventory, player.money)
-                                 for nid in research.nodes))),
-            ("I: Inventory",  self.inventory_open),
-            ("C: Craft",      self.crafting_open),
-            ("G: Collection",  self.collection_open),
-            ("B: Animals",     self.breeding_open),
-            ("E: Talk",       self.npc_open),
-            ("E: Refinery",   self.refinery_open),
-            ("E: Chest",      self.chest_open),
-            ("E: Garden",     self.garden_open),
-            ("E: Set Spawn",  nearby_bed is not None),
-            ("`  Cheats",     self.cheat_open),
+            ("R",  "Research",   research_glow),
+            ("I",  "Inventory",  self.inventory_open),
+            ("C",  "Craft",      self.crafting_open),
+            ("G",  "Collection", self.collection_open),
+            ("B",  "Animals",    self.breeding_open),
+            ("E",  "Interact",   e_active),
+            ("\\", "Wire Mode",  wire_mode),
+            ("P",  "Pipe Mode",  pipe_mode),
+            ("`",  "Cheats",     self.cheat_open),
         ]
-        y = 68
-        for label, active in hints:
-            color = (220, 200, 50) if active else (130, 130, 130)
-            txt = self.small.render(label, True, color)
-            self.screen.blit(txt, (SCREEN_W - txt.get_width() - 10, y))
-            y += 16
+        collapsed = getattr(self, "_hints_collapsed", False)
+
+        panel_w   = 168
+        title_h   = 22
+        row_h     = 18
+        pad_x     = 10
+        body_h    = (len(hints) * row_h) + 10
+        panel_h   = title_h + (0 if collapsed else body_h)
+        panel_x   = SCREEN_W - panel_w - 8
+        panel_y   = 64
+
+        bg = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
+        bg.fill((18, 22, 30, 200))
+        self.screen.blit(bg, (panel_x, panel_y))
+        pygame.draw.rect(self.screen, (90, 110, 140),
+                         (panel_x, panel_y, panel_w, panel_h), 1)
+
+        # Title bar (clickable to collapse/expand)
+        title_rect = pygame.Rect(panel_x, panel_y, panel_w, title_h)
+        pygame.draw.rect(self.screen, (40, 55, 80), title_rect)
+        pygame.draw.line(self.screen, (90, 110, 140),
+                         (panel_x, panel_y + title_h),
+                         (panel_x + panel_w, panel_y + title_h))
+        self._hints_toggle_rect = title_rect
+        chev = "▸" if collapsed else "▾"
+        title_txt = self.small.render(f"{chev}  Controls", True, (220, 230, 245))
+        self.screen.blit(title_txt, (panel_x + pad_x, panel_y + 4))
+
+        if collapsed:
+            return
+
+        y = panel_y + title_h + 6
+        key_col_x = panel_x + pad_x
+        lbl_col_x = panel_x + pad_x + 22
+        for key, label, active in hints:
+            key_color   = (255, 220, 90)  if active else (170, 180, 200)
+            label_color = (240, 230, 140) if active else (150, 155, 170)
+            ktxt = self.small.render(key, True, key_color)
+            ltxt = self.small.render(label, True, label_color)
+            self.screen.blit(ktxt, (key_col_x, y))
+            self.screen.blit(ltxt, (lbl_col_x, y))
+            y += row_h
+
+        flag_y = panel_y + panel_h + 4
         if player.spawn_x is not None:
-            sp = self.small.render("* Bed spawn set", True, (100, 200, 100))
-            self.screen.blit(sp, (SCREEN_W - sp.get_width() - 10, y + 4))
+            sp = self.small.render("* Bed spawn set", True, (120, 220, 130))
+            self.screen.blit(sp, (SCREEN_W - sp.get_width() - 10, flag_y))
+            flag_y += 16
         if player.god_mode:
             god = self.small.render("GOD MODE", True, (255, 220, 50))
-            self.screen.blit(god, (SCREEN_W - god.get_width() - 10, y + 20))
+            self.screen.blit(god, (SCREEN_W - god.get_width() - 10, flag_y))
+
+    def _draw_shape_brush(self, player):
+        """Bottom-right shape brush indicator: strip of 5 thumbnails + label."""
+        from items import ITEMS as _ITEMS
+        from blocks import BLOCKS as _BLOCKS
+
+        # Determine current block colour for preview
+        item_id = player.hotbar[player.selected_slot]
+        block_color = (160, 168, 178)   # neutral steel-grey fallback
+        if item_id and item_id in _ITEMS:
+            place_block = _ITEMS[item_id].get("place_block")
+            if place_block and place_block in _BLOCKS:
+                bc = _BLOCKS[place_block].get("color")
+                if bc:
+                    block_color = bc
+            else:
+                block_color = _ITEMS[item_id].get("color", block_color)
+
+        n_total = len(SHAPE_VARIANTS)
+        cur = player.shape_idx % n_total
+        cur_shape, cur_rot, cur_label = SHAPE_VARIANTS[cur]
+
+        # Layout — 5 thumbnails centred on current
+        thumb = 28
+        gap = 3
+        n_visible = 5
+        panel_w = n_visible * (thumb + gap) - gap + 16
+        panel_h = thumb + 36
+        px = SCREEN_W - panel_w - 8
+        slot_sz = 48
+        py = SCREEN_H - slot_sz - 10 - panel_h - 6
+
+        # Panel background
+        bg = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
+        bg.fill((18, 22, 30, 200))
+        self.screen.blit(bg, (px, py))
+        pygame.draw.rect(self.screen, (80, 92, 108), (px, py, panel_w, panel_h), 1)
+
+        # Label row
+        label_surf = self.small.render(cur_label, True, (220, 228, 240))
+        lx = px + (panel_w - label_surf.get_width()) // 2
+        self.screen.blit(label_surf, (lx, py + 3))
+
+        # Thumbnail row
+        thumb_y = py + 18
+        half = n_visible // 2
+        for slot_i in range(n_visible):
+            variant_i = (cur - half + slot_i) % n_total
+            v_shape, v_rot, _ = SHAPE_VARIANTS[variant_i]
+            cx = px + 8 + slot_i * (thumb + gap) + thumb // 2
+            cy = thumb_y + thumb // 2
+            draw_shape_preview(
+                self.screen, v_shape, v_rot, block_color,
+                cx, cy, thumb, highlight=(slot_i == half),
+            )
+
+        # Key hint
+        hint = self.small.render("[Tab] cycle", True, (100, 108, 118))
+        hx = px + (panel_w - hint.get_width()) // 2
+        self.screen.blit(hint, (hx, py + panel_h - 13))
+
+    def handle_hints_click(self, pos):
+        rect = getattr(self, "_hints_toggle_rect", None)
+        if rect is not None and rect.collidepoint(pos):
+            self._hints_collapsed = not getattr(self, "_hints_collapsed", False)
+            return True
+        return False

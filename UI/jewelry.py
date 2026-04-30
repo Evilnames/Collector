@@ -23,11 +23,17 @@ def _rock_color(rock):
 def _item_label(kind, obj):
     if kind == "gem":
         return f"{obj.gem_type.replace('_',' ').title()} ({obj.rarity[:3].upper()})"
+    if kind == "pearl":
+        return f"{obj.color_name.title()} Pearl ({obj.rarity[:3].upper()})"
     return f"{obj.base_type.replace('_',' ').title()} ({obj.rarity[:3].upper()})"
 
 
 def _item_color(kind, obj):
-    return _gem_color(obj) if kind == "gem" else _rock_color(obj)
+    if kind == "gem":
+        return _gem_color(obj)
+    if kind == "pearl":
+        return obj.color
+    return _rock_color(obj)
 
 
 # ---------------------------------------------------------------------------
@@ -182,13 +188,14 @@ class JewelryMixin:
         pygame.draw.rect(self.screen, (25, 20, 10), (px, py, PANEL_W, PANEL_H))
         pygame.draw.rect(self.screen, (120, 95, 35), (px, py, PANEL_W, PANEL_H), 1)
 
-        lbl = self.small.render("Your Gems & Rocks  (drag to slots →)", True, (170, 140, 55))
+        lbl = self.small.render("Your Gems, Rocks & Pearls  (drag to slots →)", True, (170, 140, 55))
         self.screen.blit(lbl, (px + 8, py + 6))
 
         # Build combined list excluding already-slotted uids
         slotted_uids = {s["uid"] for s in self._jw_slots if s is not None}
         items = [(g.uid, "gem", g) for g in player.gems if g.uid not in slotted_uids]
         items += [(r.uid, "rock", r) for r in player.rocks if r.uid not in slotted_uids]
+        items += [(p.uid, "pearl", p) for p in getattr(player, "pearls", []) if p.uid not in slotted_uids]
 
         CELL_W, CELL_H, GAP, COLS = 140, 40, 4, 2
         visible_h = PANEL_H - 30
@@ -270,7 +277,7 @@ class JewelryMixin:
         self.screen.blit(f_lbl, (finish_rect.centerx - f_lbl.get_width() // 2,
                                  finish_rect.centery - f_lbl.get_height() // 2))
 
-        hint = self.small.render("Drag gems/rocks into slots  •  click a filled slot to clear it", True, (110, 90, 40))
+        hint = self.small.render("Drag gems/rocks/pearls into slots  •  click a filled slot to clear it", True, (110, 90, 40))
         self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, SCREEN_H - 18))
 
     # ------------------------------------------------------------------ #
@@ -395,19 +402,18 @@ class JewelryMixin:
         title = self.font.render("JEWELRY MERCHANT", True, _GOLD)
         self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
 
-        if not player.jewelry:
-            msg = self.small.render("You have no jewelry to sell.", True, (150, 120, 55))
-            self.screen.blit(msg, (px + PW // 2 - msg.get_width() // 2, py + PH // 2))
-            return
-
-        sub = self.small.render("Select a piece to sell:", True, (150, 125, 55))
-        self.screen.blit(sub, (px + 16, py + 38))
-
         self._jw_sell_rects = {}
         CELL_H, GAP = 52, 6
-        for i, piece in enumerate(player.jewelry):
-            ry = py + 60 + i * (CELL_H + GAP)
-            if ry + CELL_H > py + PH - 20:
+        ry = py + 38
+
+        # ---- Jewelry section ----
+        has_jewelry = bool(player.jewelry)
+        sub = self.small.render("Jewelry" if has_jewelry else "No jewelry to sell", True, (160, 135, 55))
+        self.screen.blit(sub, (px + 16, ry))
+        ry += 20
+
+        for piece in player.jewelry:
+            if ry + CELL_H > py + PH - 60:
                 break
             rect = pygame.Rect(px + 12, ry, PW - 100, CELL_H)
             self._jw_sell_rects[piece.uid] = rect
@@ -415,8 +421,9 @@ class JewelryMixin:
             pygame.draw.rect(self.screen, (140, 110, 40), rect, 1)
             nm = self.font.render(piece.custom_name, True, _GOLD)
             self.screen.blit(nm, (rect.x + 10, ry + 8))
-            type_lbl = self.small.render(JEWELRY_TYPES[piece.jewelry_type]["label"] +
-                                         f"  •  {piece.slot_count} slots", True, (140, 115, 50))
+            type_lbl = self.small.render(
+                JEWELRY_TYPES[piece.jewelry_type]["label"] + f"  •  {piece.slot_count} slots",
+                True, (140, 115, 50))
             self.screen.blit(type_lbl, (rect.x + 10, ry + 28))
             val = npc.appraise(piece, player)
             val_lbl = self.font.render(f"{val}g", True, (200, 175, 60))
@@ -426,6 +433,41 @@ class JewelryMixin:
             pygame.draw.rect(self.screen, _GOLD, sell_rect, 1, border_radius=4)
             self.screen.blit(val_lbl, (sell_rect.centerx - val_lbl.get_width() // 2,
                                        sell_rect.centery - val_lbl.get_height() // 2))
+            ry += CELL_H + GAP
+
+        # ---- Pearls section ----
+        pearls = getattr(player, "pearls", [])
+        ry += 6
+        if ry + 20 < py + PH - 20:
+            pearl_hdr = self.small.render(
+                "Loose Pearls" if pearls else "No loose pearls",
+                True, (180, 175, 210))
+            self.screen.blit(pearl_hdr, (px + 16, ry))
+            ry += 20
+
+        PEARL_H = 34
+        for pearl in pearls:
+            if ry + PEARL_H > py + PH - 10:
+                break
+            rect = pygame.Rect(px + 12, ry, PW - 100, PEARL_H)
+            pygame.draw.rect(self.screen, (22, 20, 32), rect)
+            pygame.draw.rect(self.screen, pearl.color, rect, 1)
+            # Color dot
+            pygame.draw.circle(self.screen, pearl.color, (rect.x + 16, rect.centery), 7)
+            lbl_txt = f"{pearl.color_name.title()} Pearl  •  {pearl.shape}  •  {pearl.size_mm}mm"
+            lbl = self.small.render(lbl_txt, True, (210, 205, 230))
+            self.screen.blit(lbl, (rect.x + 30, ry + 4))
+            rar = self.small.render(pearl.rarity, True, (160, 155, 190))
+            self.screen.blit(rar, (rect.x + 30, ry + 20))
+            val = npc.pearl_offer(pearl)
+            val_lbl = self.small.render(f"{val}g", True, (200, 175, 60))
+            sell_rect = pygame.Rect(px + PW - 82, ry + 4, 68, PEARL_H - 8)
+            self._jw_sell_rects["pearl_" + pearl.uid + "_btn"] = sell_rect
+            pygame.draw.rect(self.screen, (35, 28, 50), sell_rect, border_radius=4)
+            pygame.draw.rect(self.screen, (180, 170, 220), sell_rect, 1, border_radius=4)
+            self.screen.blit(val_lbl, (sell_rect.centerx - val_lbl.get_width() // 2,
+                                       sell_rect.centery - val_lbl.get_height() // 2))
+            ry += PEARL_H + GAP
 
     # ------------------------------------------------------------------ #
     #  Click handlers                                                     #
@@ -504,7 +546,14 @@ class JewelryMixin:
         for uid, rect in self._jw_sell_rects.items():
             if rect.collidepoint(pos) and uid.endswith("_btn"):
                 base_uid = uid[:-4]
-                npc.sell_piece(base_uid, player)
+                if base_uid.startswith("pearl_"):
+                    pearl_uid = base_uid[len("pearl_"):]
+                    value = npc.sell_pearl(pearl_uid, player)
+                    if value:
+                        player.pending_notifications.append(
+                            ("Pearl Sold", f"+{value}g", None))
+                else:
+                    npc.sell_piece(base_uid, player)
                 return
 
     def handle_jewelry_detail_click(self, pos):
@@ -532,11 +581,14 @@ class JewelryMixin:
             seed=seed,
         )
 
-        # Remove consumed gems/rocks from player collections
-        gem_uids  = {s["uid"] for s in self._jw_slots if s and s["kind"] == "gem"}
-        rock_uids = {s["uid"] for s in self._jw_slots if s and s["kind"] == "rock"}
+        # Remove consumed gems/rocks/pearls from player collections
+        gem_uids   = {s["uid"] for s in self._jw_slots if s and s["kind"] == "gem"}
+        rock_uids  = {s["uid"] for s in self._jw_slots if s and s["kind"] == "rock"}
+        pearl_uids = {s["uid"] for s in self._jw_slots if s and s["kind"] == "pearl"}
         player.gems  = [g for g in player.gems  if g.uid not in gem_uids]
         player.rocks = [r for r in player.rocks if r.uid not in rock_uids]
+        if hasattr(player, "pearls"):
+            player.pearls = [p for p in player.pearls if p.uid not in pearl_uids]
 
         player.jewelry.append(piece)
         player.discovered_jewelry.add(self._jw_type)
@@ -558,6 +610,8 @@ class JewelryMixin:
         uid = slot_data["uid"]
         if slot_data["kind"] == "gem":
             return next((g for g in player.gems if g.uid == uid), None)
+        if slot_data["kind"] == "pearl":
+            return next((p for p in getattr(player, "pearls", []) if p.uid == uid), None)
         return next((r for r in player.rocks if r.uid == uid), None)
 
     def _draw_jw_icon(self, jtype, cx, cy, size):

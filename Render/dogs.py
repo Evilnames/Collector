@@ -335,6 +335,13 @@ def draw_dog_portrait(screen, dx, dy, dog, size=120):
             pass
 
 
+def draw_dog_from_dict(screen, sx, sy, d, scale=0.5, facing=1):
+    """Draw a dog directly from a flat traits dict (e.g. a racing participant dict)."""
+    import types
+    proxy = types.SimpleNamespace(traits=d, facing=facing)
+    draw_dog(screen, sx, sy, proxy, scale=scale, facing=facing)
+
+
 def draw_tame_hearts(screen, sx, sy, progress, threshold):
     """Draw taming progress as small hearts above the dog."""
     if threshold <= 0:

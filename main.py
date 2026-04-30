@@ -13,7 +13,7 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK, BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK, CHICKEN_COOP_BLOCK, GAMBLING_TABLE, BET_COUNTER, TEA_HOUSE_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK, BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK, CHICKEN_COOP_BLOCK, GAMBLING_TABLE, BET_COUNTER, TEA_HOUSE_BLOCK, TRAINING_PADDOCK_BLOCK
 from elevators import ElevatorCar
 from minecarts import Minecart
 
@@ -29,6 +29,32 @@ def _nearby_light_trap(world, player):
         for dx in range(-2, 3):
             bx, by = px + dx, py + dy
             if world.get_block(bx, by) == _LTB:
+                return (bx, by)
+    return None
+
+
+def _nearby_animal_trap(world, player):
+    """Return (bx, by) of an animal trap block within 2 blocks of the player, or None."""
+    from blocks import ANIMAL_TRAP_BLOCK as _ATB
+    px = int(player.x // BLOCK_SIZE)
+    py = int(player.y // BLOCK_SIZE)
+    for dy in range(-2, 3):
+        for dx in range(-2, 3):
+            bx, by = px + dx, py + dy
+            if world.get_block(bx, by) == _ATB:
+                return (bx, by)
+    return None
+
+
+def _nearby_fish_trap(world, player):
+    """Return (bx, by) of any fish trap block within 2 blocks of the player, or None."""
+    from blocks import FISH_TRAP_BLOCKS as _FTBS
+    px = int(player.x // BLOCK_SIZE)
+    py = int(player.y // BLOCK_SIZE)
+    for dy in range(-2, 3):
+        for dx in range(-2, 3):
+            bx, by = px + dx, py + dy
+            if world.get_block(bx, by) in _FTBS:
                 return (bx, by)
     return None
 
@@ -275,74 +301,87 @@ def _show_settings_screen(screen, settings):
 
 def _show_main_menu(screen, has_save, settings):
     """Returns ('new'|'load', screen). Blocks until the player clicks a button."""
+    from UI.menu_scene import MenuScene
+
     W, H = screen.get_size()
     clock = pygame.time.Clock()
 
-    BLACK      = (0,   0,   0)
-    BLUE_DARK  = (10,  50, 180)
-    BLUE_MID   = (25,  90, 220)
-    BLUE_LIGHT = (55, 130, 255)
-    BLUE_SHINE = (90, 160, 255)
-    WHITE      = (255, 255, 255)
-    GRAY       = (120, 120, 140)
-    BTN_HOVER  = (40, 100, 240)
-    BTN_NORMAL = (20,  60, 160)
-    BTN_DIM    = (30,  30,  60)
+    CREAM = (248, 243, 228)
+    SAGE  = (172, 210, 158)
+    GRAY  = (155, 148, 130)
 
-    try:
-        font_title = pygame.font.SysFont("Arial Black", 96, bold=True)
-        font_btn   = pygame.font.SysFont("Arial Black", 38, bold=True)
-    except Exception:
-        font_title = pygame.font.SysFont(None, 110, bold=True)
-        font_btn   = pygame.font.SysFont(None, 44, bold=True)
+    # --- Fonts (prefer elegant serifs) ---
+    def _sfont(names, size, italic=False):
+        for name in names:
+            try:
+                f = pygame.font.SysFont(name, size, bold=False, italic=italic)
+                if f:
+                    return f
+            except Exception:
+                pass
+        return pygame.font.SysFont(None, size)
 
-    title_txt = font_title.render("Collector", True, WHITE)
+    font_title    = _sfont(["Georgia", "Palatino Linotype", "Book Antiqua", "Times New Roman"], 94)
+    font_subtitle = _sfont(["Georgia", "Palatino Linotype", "Book Antiqua", "Times New Roman"], 24, italic=True)
+    font_btn      = _sfont(["Georgia", "Palatino Linotype", "Arial", "Times New Roman"], 30)
 
-    # Title oval
-    oval_w, oval_h = 480, 180
-    ox = W // 2 - oval_w // 2
-    oy = H // 4 - oval_h // 2
-    gradient_steps = [
-        (0,   0,   oval_w,     oval_h,     BLUE_DARK),
-        (8,   5,   oval_w-16,  oval_h-10,  BLUE_MID),
-        (20,  10,  oval_w-40,  oval_h-20,  BLUE_MID),
-        (45,  22,  oval_w-90,  oval_h-44,  BLUE_LIGHT),
-        (75,  36,  oval_w-150, oval_h-72,  BLUE_SHINE),
-    ]
+    # Pre-render title with soft drop-shadow
+    title_surf   = font_title.render("Collector", True, CREAM)
+    title_shadow = font_title.render("Collector", True, (0, 0, 0))
 
-    # Button layout
-    btn_w, btn_h = 280, 62
-    btn_gap = 24
-    btn_x = W // 2 - btn_w // 2
-    btn_new_y = H // 2 + 20
-    btn_load_y = btn_new_y + btn_h + btn_gap
-    btn_settings_y = btn_load_y + btn_h + btn_gap
+    # Subtitle — letter-spaced "DISCOVER NATURE"
+    _SUB = "DISCOVER  NATURE"
+    _CHAR_GAP = 5
+    char_surfs = [font_subtitle.render(ch, True, SAGE) for ch in _SUB]
+    sub_total_w = sum(s.get_width() for s in char_surfs) + _CHAR_GAP * (len(_SUB) - 1)
 
-    rect_new      = pygame.Rect(btn_x, btn_new_y,      btn_w, btn_h)
-    rect_load     = pygame.Rect(btn_x, btn_load_y,     btn_w, btn_h)
-    rect_settings = pygame.Rect(btn_x, btn_settings_y, btn_w, btn_h)
+    # --- Button layout ---
+    btn_w, btn_h = 256, 52
+    btn_gap = btn_h + 16
+    btn_x   = W // 2 - btn_w // 2
+    btn_base_y = int(H * 0.54)
+
+    rect_new  = pygame.Rect(btn_x, btn_base_y,               btn_w, btn_h)
+    rect_load = pygame.Rect(btn_x, btn_base_y + btn_gap,     btn_w, btn_h)
+    rect_quit = pygame.Rect(btn_x, btn_base_y + btn_gap * 2, btn_w, btn_h)
+
+    _BTN_BG  = (12, 20, 12, 172)
+    _BTN_HOV = (28, 45, 24, 210)
+    _BTN_DIM = (18, 18, 14, 100)
 
     def draw_button(surf, rect, label, hovered, enabled):
+        bg = pygame.Surface((rect.w, rect.h), pygame.SRCALPHA)
         if not enabled:
-            col = BTN_DIM
-            text_col = GRAY
+            bg.fill(_BTN_DIM)
+            border_col = (255, 255, 255, 14)
+            text_col   = GRAY
         elif hovered:
-            col = BTN_HOVER
-            text_col = WHITE
+            bg.fill(_BTN_HOV)
+            border_col = (255, 255, 255, 55)
+            text_col   = CREAM
         else:
-            col = BTN_NORMAL
-            text_col = WHITE
-        pygame.draw.rect(surf, col, rect, border_radius=10)
-        pygame.draw.rect(surf, BLUE_LIGHT if (hovered and enabled) else BLUE_DARK, rect, 2, border_radius=10)
+            bg.fill(_BTN_BG)
+            border_col = (255, 255, 255, 22)
+            text_col   = CREAM
+        pygame.draw.rect(bg, border_col, bg.get_rect(), 1, border_radius=8)
+        surf.blit(bg, rect.topleft)
         lbl = font_btn.render(label, True, text_col)
-        lbl_rect = lbl.get_rect(center=rect.center)
-        surf.blit(lbl, lbl_rect)
+        surf.blit(lbl, lbl.get_rect(center=rect.center))
+
+    scene = MenuScene(W, H)
+
+    # Fade-in from black
+    fade_alpha = 255
+    fade_surf = pygame.Surface((W, H))
+    fade_surf.fill((0, 0, 0))
 
     while True:
+        dt = min(clock.tick(60) / 1000.0, 0.05)
+
         mx, my = pygame.mouse.get_pos()
-        hover_new      = rect_new.collidepoint(mx, my)
-        hover_load     = rect_load.collidepoint(mx, my) and has_save
-        hover_settings = rect_settings.collidepoint(mx, my)
+        hover_new  = rect_new.collidepoint(mx, my)
+        hover_load = rect_load.collidepoint(mx, my) and has_save
+        hover_quit = rect_quit.collidepoint(mx, my)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -356,26 +395,37 @@ def _show_main_menu(screen, has_save, settings):
                     return "new", screen
                 if has_save and rect_load.collidepoint(mx, my):
                     return "load", screen
-                if rect_settings.collidepoint(mx, my):
-                    screen, settings = _show_settings_screen(screen, settings)
-                    W, H = screen.get_size()
+                if rect_quit.collidepoint(mx, my):
+                    pygame.quit()
+                    sys.exit()
 
-        screen.fill(BLACK)
+        scene.update(dt)
+        scene.draw(screen)
 
-        # Draw title oval
-        for dx, dy, ew, eh, col in gradient_steps:
-            if ew > 0 and eh > 0:
-                pygame.draw.ellipse(screen, col, (ox + dx, oy + dy, ew, eh))
-        pygame.draw.ellipse(screen, (0, 30, 120), (ox, oy, oval_w, oval_h), 3)
-        tr = title_txt.get_rect(center=(W // 2, oy + oval_h // 2))
-        screen.blit(title_txt, tr)
+        # Title
+        title_y = int(H * 0.215)
+        screen.blit(title_shadow, title_shadow.get_rect(center=(W // 2 + 2, title_y + 3)))
+        screen.blit(title_surf,   title_surf.get_rect(center=(W // 2,       title_y)))
 
-        draw_button(screen, rect_new,      "New Game",  hover_new,      True)
-        draw_button(screen, rect_load,     "Load Game", hover_load,     has_save)
-        draw_button(screen, rect_settings, "Settings",  hover_settings, True)
+        # Subtitle — letter by letter for spacing
+        sub_y = title_y + title_surf.get_height() + 2
+        cx = W // 2 - sub_total_w // 2
+        for cs in char_surfs:
+            screen.blit(cs, (cx, sub_y))
+            cx += cs.get_width() + _CHAR_GAP
+
+        # Buttons
+        draw_button(screen, rect_new,  "New Game",  hover_new,  True)
+        draw_button(screen, rect_load, "Load Game", hover_load, has_save)
+        draw_button(screen, rect_quit, "Quit",      hover_quit, True)
+
+        # Fade-in overlay
+        if fade_alpha > 0:
+            fade_alpha = max(0, fade_alpha - int(255 * dt * 2.2))
+            fade_surf.set_alpha(fade_alpha)
+            screen.blit(fade_surf, (0, 0))
 
         pygame.display.flip()
-        clock.tick(60)
 
 
 def _run_with_loading_screen(screen, label, task_fn):
@@ -413,9 +463,6 @@ def main():
     pygame.display.set_caption("CollectorBlocks")
     clock = pygame.time.Clock()
     t0 = _t("display init", t0)
-
-    _show_splash(screen)
-    t0 = _t("splash", t0)
 
     save_mgr = SaveManager()
     t0 = _t("SaveManager", t0)
@@ -482,9 +529,11 @@ def main():
         seed = random.randint(0, 2**31 - 1)
         # Animated worldgen: shows phases 1-4 (geography → kingdoms → 500-year
         # history → finalize) and returns the baked WorldPlan for the new World.
+        from UI.world_setup import show_world_setup
         from UI.worldgen_screen import show_worldgen
         save_mgr.new_game()
-        plan = show_worldgen(screen, seed)
+        overrides, seed = show_world_setup(screen, seed)
+        plan = show_worldgen(screen, seed, config_overrides=overrides)
         def _do_gen():
             global t0
             t0 = time.perf_counter()
@@ -569,9 +618,15 @@ def main():
         ui.gambling_open = False
         ui.racing_open = False
         ui.arena_open = False
+        ui.training_paddock_open = False
         ui.tea_house_open = False
         ui.ruin_plaque_open = False
         ui.ruin_plaque_info = None
+        ui.hopper_open = False
+        ui.pipe_output_open = False
+        ui.pipe_filter_open = False
+        ui.pipe_sorter_open = False
+        ui.factory_open = False
 
     def _any_ui_open():
         return any([ui.pause_open, ui.help_open, ui.research_open, ui.inventory_open, ui.crafting_open,
@@ -580,8 +635,11 @@ def main():
                     ui.backhoe_open, ui.breeding_open, ui.garden_open, ui.wildflower_display_open,
                     ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open,
                     ui.town_menu_open, ui.outpost_menu_open, ui.landmark_menu_open, ui.city_block_menu_open, ui.coa_designer_open, ui.hire_panel_open, ui.job_panel_open, ui.reputation_screen_open, ui.trade_block_open,
-                    ui.dog_view_open, ui.dog_breeding_open, ui.gambling_open, ui.racing_open, ui.arena_open, ui.tea_house_open,
+                    ui.dog_view_open, ui.dog_breeding_open, ui.gambling_open, ui.racing_open, ui.arena_open, ui.tea_house_open, getattr(ui, "training_paddock_open", False),
                     getattr(ui, "ruin_plaque_open", False),
+                    getattr(ui, "hopper_open", False), getattr(ui, "pipe_output_open", False),
+                    getattr(ui, "pipe_filter_open", False), getattr(ui, "pipe_sorter_open", False),
+                    getattr(ui, "factory_open", False),
                     getattr(player, "inspecting_npc", None) is not None])
 
     def _find_nearby_npc(world, player):
@@ -692,6 +750,11 @@ def main():
                 # Inventory search bar intercepts all keys while active
                 if ui.inventory_open and ui._inv_search_active:
                     ui.handle_inventory_search_key(event)
+                    continue
+
+                # Artisan bench search bar intercepts all keys while active
+                if ui.refinery_open and ui._artisan_search_active:
+                    ui.handle_artisan_search_key(event)
                     continue
 
                 # Death screen: only SPACE/ENTER to respawn
@@ -845,6 +908,8 @@ def main():
                 # Horse Racing: ESC navigates phases or closes
                 if ui.racing_open:
                     ui.handle_racing_keydown(event.key, player)
+                if getattr(ui, "training_paddock_open", False) and event.key == pygame.K_ESCAPE:
+                    ui.training_paddock_open = False
 
                 # Arena: ESC skips to result or closes
                 if ui.arena_open:
@@ -1297,7 +1362,56 @@ def main():
                             else:
                                 player.pending_notifications.append(("Pottery", "No vases available to display", None))
                         else:
-                            _lt_pos = _nearby_light_trap(world, player)
+                            _at_pos = _nearby_animal_trap(world, player)
+                            if _at_pos is not None:
+                                trap = world.animal_traps.get(_at_pos)
+                                if trap and trap["accumulated"]:
+                                    for _item_id, _count in trap["accumulated"]:
+                                        player.inventory[_item_id] = player.inventory.get(_item_id, 0) + _count
+                                        player.pending_notifications.append(
+                                            ("Trap", _item_id.replace("_", " ").title(), None))
+                                    trap["accumulated"].clear()
+                                else:
+                                    quality = world.trap_quality_label(_at_pos[0])
+                                    player.pending_notifications.append(
+                                        ("Animal Trap", f"Nothing caught yet  •  {quality}", None))
+                            _ft_pos = _nearby_fish_trap(world, player) if _at_pos is None else None
+                            if _ft_pos is not None:
+                                _ft = world.fish_traps.get(_ft_pos)
+                                if _ft is not None:
+                                    _ft_names    = {"wicker": "Wicker Fish Trap", "iron": "Iron Fish Trap",
+                                                    "reinforced": "Reinforced Fish Trap", "steel": "Steel Cage Trap"}
+                                    _ft_label    = _ft_names.get(_ft["type"], "Fish Trap")
+                                    _ft_caps_tbl = {"wicker": (10, 20), "iron": (20, 40),
+                                                    "reinforced": (30, 60), "steel": (50, 80)}
+                                    _ft_cap, _ft_bait_cap = _ft_caps_tbl.get(_ft["type"], (10, 20))
+                                    _gave_fish   = False
+                                    if _ft["accumulated"]:
+                                        for _fid, _fc in _ft["accumulated"]:
+                                            player.inventory[_fid] = player.inventory.get(_fid, 0) + _fc
+                                            player.pending_notifications.append(
+                                                (_ft_label, _fid.replace("_", " ").title(), None))
+                                        _ft["accumulated"].clear()
+                                        _gave_fish = True
+                                    _worms = player.inventory.get("worm_bait", 0)
+                                    if _worms > 0 and _ft["bait"] < _ft_bait_cap:
+                                        _deposit = min(_worms, _ft_bait_cap - _ft["bait"])
+                                        _ft["bait"] += _deposit
+                                        player.inventory["worm_bait"] = _worms - _deposit
+                                        if player.inventory["worm_bait"] == 0:
+                                            del player.inventory["worm_bait"]
+                                        player.pending_notifications.append(
+                                            (_ft_label, f"Loaded {_deposit} worm bait  •  {_ft['bait']}/{_ft_bait_cap}", None))
+                                    elif not _gave_fish:
+                                        from blocks import WATER as _FTW
+                                        _bx2, _by2 = _ft_pos
+                                        _has_water = any(world.get_block(_bx2+_dx, _by2+_dy) == _FTW
+                                                         for _dx, _dy in ((0,1),(0,-1),(1,0),(-1,0)))
+                                        _total_fish = sum(c for _, c in _ft["accumulated"])
+                                        _status = "needs water nearby" if not _has_water else f"bait: {_ft['bait']}  •  caught: {_total_fish}/{_ft_cap}"
+                                        player.pending_notifications.append(
+                                            (_ft_label, _status, None))
+                            _lt_pos = _nearby_light_trap(world, player) if _at_pos is None and _ft_pos is None else None
                             if _lt_pos is not None:
                                 trap = world.light_traps.get(_lt_pos)
                                 if trap and trap["accumulated"]:
@@ -1317,7 +1431,7 @@ def main():
                                     player.pending_notifications.append(
                                         ("Light Trap", "No insects gathered yet", None))
                             _switch_toggled = False
-                            if _lt_pos is None:
+                            if _at_pos is None and _lt_pos is None:
                                 from blocks import SWITCH_BLOCK_OFF, SWITCH_BLOCK_ON, LATCH_BLOCK_OFF, LATCH_BLOCK_ON
                                 import logic as _logic
                                 _sw_pos = player.get_nearby_equipment_pos(SWITCH_BLOCK_OFF) or \
@@ -1336,7 +1450,7 @@ def main():
                                     world.set_block(lbx, lby, LATCH_BLOCK_ON if lbid == LATCH_BLOCK_OFF else LATCH_BLOCK_OFF)
                                     _logic.evaluate_full_network(world)
                                     _switch_toggled = True
-                            equip = None if (_lt_pos is not None or _switch_toggled) else player.get_nearby_equipment()
+                            equip = None if (_at_pos is not None or _lt_pos is not None or _switch_toggled) else player.get_nearby_equipment()
                             if equip is not None:
                                 ui.refinery_open = True
                                 ui.refinery_block_id = equip
@@ -1398,13 +1512,41 @@ def main():
                                                 break
                                     _close_all_ui()
                                     ui.open_racing(_bkp, player)
+                                elif equip == TRAINING_PADDOCK_BLOCK:
+                                    _close_all_ui()
+                                    ui.open_training_paddock(player, world)
                                 else:
-                                    ui.active_compost_bin_pos = None
+                                    from blocks import (HOPPER_BLOCK as _HOP2,
+                                                        PIPE_OUTPUT_BLOCK as _PO2,
+                                                        PIPE_FILTER_BLOCK as _PF2,
+                                                        PIPE_SORTER_BLOCK as _PS2,
+                                                        FACTORY_BLOCK as _FAC2)
+                                    equip_pos = player.get_nearby_equipment_pos(equip)
+                                    if equip == _HOP2:
+                                        _close_all_ui()
+                                        ui.open_hopper(world, equip_pos)
+                                    elif equip == _PO2:
+                                        _close_all_ui()
+                                        ui.open_pipe_output(world, equip_pos)
+                                    elif equip == _PF2:
+                                        _close_all_ui()
+                                        ui.open_pipe_filter(world, equip_pos)
+                                    elif equip == _PS2:
+                                        _close_all_ui()
+                                        ui.open_pipe_sorter(world, equip_pos)
+                                    elif equip == _FAC2:
+                                        _close_all_ui()
+                                        ui.open_factory(world, equip_pos)
+                                    else:
+                                        ui.active_compost_bin_pos = None
                             else:
                                 ui.refinery_open = False
 
                 if event.key == pygame.K_BACKSLASH:
                     world.toggle_wire_mode()
+
+                if event.key == pygame.K_p and not _any_ui_open():
+                    world.toggle_pipe_mode()
 
                 if event.key == pygame.K_g and not _any_ui_open():
                     # Toggle stay/follow for all tamed dogs within 8 blocks
@@ -1435,6 +1577,11 @@ def main():
                     if event.key == getattr(pygame, f"K_{i + 1}", None):
                         player.selected_slot = i
 
+                # Shape brush cycling (Tab = next shape)
+                if event.key == pygame.K_TAB and not _any_ui_open():
+                    from block_shapes import SHAPE_VARIANTS as _SV
+                    player.shape_idx = (player.shape_idx + 1) % len(_SV)
+
             if event.type == pygame.MOUSEWHEEL:
                 if not player.dead and not ui.cheat_open:
                     if ui.coa_designer_open:
@@ -1445,7 +1592,14 @@ def main():
                         else:
                             ui.handle_reputation_screen_scroll(-event.y * 20)
                     elif ui.help_open:
-                        ui._help_scroll = max(0, min(ui._help_max_scroll, ui._help_scroll - event.y * 20))
+                        mx, my = pygame.mouse.get_pos()
+                        left_rect = getattr(ui, '_help_left_rect', None)
+                        if left_rect and left_rect.collidepoint(mx, my):
+                            ui._help_topic_scroll = max(0, min(ui._help_topic_max_scroll,
+                                                               ui._help_topic_scroll - event.y * 20))
+                        else:
+                            ui._help_scroll = max(0, min(ui._help_max_scroll,
+                                                         ui._help_scroll - event.y * 20))
                     elif ui.wildflower_display_open:
                         max_s = max(0, len(player.wildflowers) - 6)
                         ui._display_scroll = max(0, min(max_s, getattr(ui, '_display_scroll', 0) - event.y))
@@ -1495,6 +1649,8 @@ def main():
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if player.dead or ui.cheat_open:
+                    pass
+                elif event.button == 1 and ui.handle_hints_click(event.pos):
                     pass
                 elif ui.help_open:
                     ui.handle_help_click(event.pos)
@@ -1616,6 +1772,8 @@ def main():
                     ui.handle_gambling_click(event.pos, player)
                 elif ui.racing_open:
                     ui.handle_racing_click(event.pos, player)
+                elif getattr(ui, "training_paddock_open", False):
+                    ui.handle_training_paddock_click(event.pos, player, world)
                 elif ui.arena_open:
                     ui.handle_arena_click(event.pos, player)
                 elif ui.wardrobe_open:
@@ -1624,6 +1782,16 @@ def main():
                     ui.handle_trade_block_click(event.pos, player, world, event.button)
                 elif ui.chest_open:
                     ui.handle_chest_click(event.pos, player, event.button)
+                elif getattr(ui, "hopper_open", False):
+                    ui.handle_hopper_click(event.pos, world)
+                elif getattr(ui, "pipe_output_open", False):
+                    ui.handle_pipe_output_click(event.pos, world)
+                elif getattr(ui, "pipe_filter_open", False):
+                    ui.handle_pipe_filter_click(event.pos, player, world)
+                elif getattr(ui, "pipe_sorter_open", False):
+                    ui.handle_pipe_sorter_click(event.pos, player, world)
+                elif getattr(ui, "factory_open", False):
+                    ui.handle_factory_click(event.pos, player, world, event.button)
                 elif ui.garden_open:
                     ui.handle_garden_mousedown(event.pos, player)
                 elif ui.wildflower_display_open:
@@ -1723,6 +1891,9 @@ def main():
                     # Bow firing — left-click with bow equipped fires an arrow
                     if event.button == 1 and not player.dead:
                         player.fire_arrow()
+                    # Spear gun firing — left-click underwater with spear gun equipped
+                    if event.button == 1 and not player.dead:
+                        player.fire_spear()
                     # Melee attack — left-click with weapon equipped (no UI open)
                     if event.button == 1 and not player.dead and player.equipped_weapon_uid and not _any_ui_open():
                         from animals import HuntableAnimal
@@ -1926,6 +2097,8 @@ def main():
             renderer.draw_nests(world.nests)
             renderer.draw_birds(world.birds)
             renderer.draw_insects(world.insects, world.time_of_day)
+            renderer.draw_live_fish(world.live_fish)
+            renderer.draw_spears(world.spears)
             renderer.draw_automations(world.automations)
             renderer.draw_farm_bots(world.farm_bots)
             renderer.draw_backhoes(world.backhoes, player)
@@ -2041,6 +2214,45 @@ def main():
             bird.update(dt)
         for ins in world.insects:
             ins.update(dt)
+        for lf in world.live_fish:
+            lf.update(dt)
+        world.live_fish = [lf for lf in world.live_fish if not lf.dead]
+
+        # Spear projectile update + collision with live fish
+        if world.spears:
+            import pygame as _pg
+            for spear in world.spears:
+                if spear.dead:
+                    continue
+                spear.update()
+                spear_rect = _pg.Rect(int(spear.x), int(spear.y), spear.W, spear.H)
+                for lf in world.live_fish:
+                    if lf.dead:
+                        continue
+                    if spear_rect.colliderect(lf.rect):
+                        from fish import FishGenerator
+                        if not hasattr(world, "_speared_fish_gen"):
+                            world._speared_fish_gen = FishGenerator(world.seed)
+                        from constants import BLOCK_SIZE as _LF_BS
+                        bx_f = int(lf.x // _LF_BS)
+                        by_f = int(lf.y // _LF_BS)
+                        caught = world._speared_fish_gen.generate(
+                            bx_f, by_f, lf.biome,
+                            ocean_zone=lf.ocean_zone,
+                        )
+                        # Override species with the entity's species so the spear
+                        # actually catches the fish you aimed at.
+                        caught.species = lf.species
+                        caught.rarity = lf.rarity
+                        player.fish_caught.append(caught)
+                        if hasattr(player, "discovered_fish_species"):
+                            player.discovered_fish_species.add(lf.species)
+                        player.pending_notifications.append(
+                            ("Speared", lf.species.replace("_", " ").title(), lf.rarity))
+                        lf.dead = True
+                        spear.dead = True
+                        break
+            world.spears = [s for s in world.spears if not s.dead]
         # Bird observation mini-game tick
         if ui._bird_obs_active and ui._bird_obs_bird is not None:
             bird = ui._bird_obs_bird
@@ -2086,6 +2298,7 @@ def main():
                 bh.apply_gravity(world)
         world.update_time(dt)
         world.update_water(dt, player)
+        world.update_flood_erosion(dt)
         world.update_soil(dt)
         world.update_compost_bins(dt)
         world.update_chicken_coops(dt)
@@ -2093,6 +2306,10 @@ def main():
         world.update_tea_house_visitors(dt, player)
         import logic as _ltm
         _ltm.logic_tick(world, dt, player)
+        import pipes as _pipes
+        _pipes.pipe_tick(world, dt)
+        import factory as _factory_mod
+        _factory_mod.factory_tick(world, dt)
         world.update_irrigation(dt)
         world.update_saplings(dt)
         world.update_crops(dt)
@@ -2140,6 +2357,8 @@ def main():
         renderer.draw_float_texts()
         renderer.draw_lighting(player, world, player.get_depth(), world.time_of_day)
         ui.draw(player, research, dt)
+        renderer.draw_wire_hud(world)
+        renderer.draw_pipe_hud(world)
         # Drain town tier-up toasts
         if hasattr(world, '_town_toasts') and world._town_toasts:
             for msg in world._town_toasts:

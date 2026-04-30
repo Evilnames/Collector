@@ -18,21 +18,35 @@ from worldgen.materialize import build_plan
 from worldgen.plan import WorldPlan
 
 
-def generate_world(seed: int, span=None, year_callback=None) -> WorldPlan:
+def generate_world(seed: int, span=None, year_callback=None,
+                   config_overrides: dict = None) -> WorldPlan:
     """Run the full pipeline and return a WorldPlan.
 
     ``year_callback(year, kingdoms, settlements, dynasties, chronicle)`` is
     called once per simulated year (used by the worldgen viz screen).
+    ``config_overrides`` keys are merged into WORLDGEN_CONFIG for this run only.
     """
-    if span is None:
-        span = WORLDGEN_CONFIG["world_span"]
-    span = resolve_span(span)
+    _saved = {}
+    if config_overrides:
+        for k, v in config_overrides.items():
+            _saved[k] = WORLDGEN_CONFIG.get(k)
+            WORLDGEN_CONFIG[k] = v
+    try:
+        if span is None:
+            span = WORLDGEN_CONFIG["world_span"]
+        span = resolve_span(span)
 
-    cells = build_geography(seed, span)
-    kingdoms, settlements, dynasties, next_ids = seed_kingdoms(cells, seed)
-    chronicle = simulate_history(seed, cells, kingdoms, settlements, dynasties,
-                                 next_ids, year_callback=year_callback)
-    return build_plan(seed, cells, kingdoms, settlements, dynasties, chronicle)
+        cells = build_geography(seed, span)
+        kingdoms, settlements, dynasties, next_ids = seed_kingdoms(cells, seed)
+        chronicle = simulate_history(seed, cells, kingdoms, settlements, dynasties,
+                                     next_ids, year_callback=year_callback)
+        return build_plan(seed, cells, kingdoms, settlements, dynasties, chronicle)
+    finally:
+        for k, v in _saved.items():
+            if v is None:
+                WORLDGEN_CONFIG.pop(k, None)
+            else:
+                WORLDGEN_CONFIG[k] = v
 
 
 __all__ = ["generate_world", "WorldPlan", "WORLDGEN_CONFIG"]

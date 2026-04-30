@@ -36,17 +36,26 @@ OPTICAL_BONUS = {
     "adularescence":35,
 }
 
+# Extra gold for pearl luster quality on top of rarity value
+PEARL_LUSTER_BONUS = {
+    "matte":       0,
+    "satin":      10,
+    "lustrous":   25,
+    "iridescent": 50,
+}
+
 # Jewelry type display order for codex
 JEWELRY_TYPE_ORDER = list(JEWELRY_TYPES.keys())
 
 
 def calculate_value(jewelry, player, master_jeweler=False):
-    """Return gold value for a Jewelry piece based on slotted gems/rocks."""
+    """Return gold value for a Jewelry piece based on slotted gems/rocks/pearls."""
     jtype = JEWELRY_TYPES.get(jewelry.jewelry_type, {})
     total = jtype.get("base_value", 80)
 
-    gem_index  = {g.uid: g for g in player.gems}
-    rock_index = {r.uid: r for r in player.rocks}
+    gem_index   = {g.uid: g for g in player.gems}
+    rock_index  = {r.uid: r for r in player.rocks}
+    pearl_index = {p.uid: p for p in getattr(player, "pearls", [])}
 
     for slot in jewelry.slots:
         if slot is None:
@@ -60,10 +69,20 @@ def calculate_value(jewelry, player, master_jeweler=False):
             rock = rock_index.get(slot["uid"])
             if rock:
                 total += RARITY_VALUES.get(rock.rarity, 10)
+        elif slot["kind"] == "pearl":
+            pearl = pearl_index.get(slot["uid"])
+            if pearl:
+                total += RARITY_VALUES.get(pearl.rarity, 10)
+                total += PEARL_LUSTER_BONUS.get(pearl.luster, 0)
 
     if master_jeweler:
         total = int(total * 1.25)
     return total
+
+
+def pearl_raw_value(pearl):
+    """Gold value for selling a loose pearl (no jewelry wrapping)."""
+    return RARITY_VALUES.get(pearl.rarity, 10) + PEARL_LUSTER_BONUS.get(pearl.luster, 0)
 
 
 def make_uid(seed, counter):

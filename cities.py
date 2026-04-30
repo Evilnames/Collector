@@ -725,6 +725,20 @@ class AmbientNPC(NPC):
                 break
             self.y -= BLOCK_SIZE
 
+    def _check_flood_flee(self):
+        """Return (fleeing, flee_facing) — True when the NPC needs to run from water."""
+        from blocks import WATER as _W
+        bx = int((self.x + self.NPC_W / 2) // BLOCK_SIZE)
+        by = int((self.y + self.NPC_H) // BLOCK_SIZE)  # foot tile
+        wl = self.world._water_level
+        for check_dx, check_dy in ((0, 0), (0, 1), (-1, 0), (1, 0), (-1, 1), (1, 1)):
+            tx, ty = bx + check_dx, by + check_dy
+            if self.world.get_block(tx, ty) == _W and wl.get((tx, ty), 0) >= 4:
+                # Run away from the water tile (opposite direction)
+                flee_facing = -check_dx if check_dx != 0 else self.facing
+                return True, flee_facing
+        return False, self.facing
+
     def update(self, dt):
         # Gravity
         self.vy = min(self.vy + GRAVITY, MAX_FALL)
@@ -739,6 +753,18 @@ class AmbientNPC(NPC):
         # Bob animation
         self._bob_timer += dt
         self._bob_offset = math.sin(self._bob_timer * 2.2) * 1.5
+
+        # Flood flee — overrides normal patrol when water is at feet
+        fleeing, flee_facing = self._check_flood_flee()
+        if fleeing:
+            self.facing = flee_facing if flee_facing != 0 else self.facing
+            flee_speed = max(self._walk_speed * 2.5, 80.0)
+            old_x = self.x
+            self.x += flee_speed * dt * self.facing
+            if self._collides():
+                self.x = old_x
+                self.facing *= -1   # wall in flee direction — try the other way
+            return
 
         # Walk / pause state machine
         self._state_timer -= dt
@@ -1535,6 +1561,7 @@ BLACKSMITH_SHOP_TABLE = [
     ("armor_leather_boots",       18, "Leather Boots",      "deer_hide",     2),
     # Iron armor
     ("armor_iron_helmet",         55, "Iron Helmet",        "iron_chunk",    8),
+    ("armor_diving_helmet",       85, "Diving Helmet",      "iron_chunk",    6),
     ("armor_iron_chestplate",     95, "Iron Chestplate",    "iron_chunk",   14),
     ("armor_iron_leggings",       78, "Iron Leggings",      "iron_chunk",   11),
     ("armor_iron_boots",          50, "Iron Boots",         "iron_chunk",    7),
@@ -2219,6 +2246,24 @@ class JewelryMerchantNPC(NPC):
         player.money += value
         return value
 
+    def sell_pearl(self, pearl_uid, player):
+        """Buy a loose pearl from the player at its raw market value."""
+        from jewelry import pearl_raw_value
+        pearl = next((p for p in getattr(player, "pearls", []) if p.uid == pearl_uid), None)
+        if pearl is None:
+            return 0
+        value = pearl_raw_value(pearl)
+        if getattr(player, "master_jeweler", False):
+            value = int(value * 1.25)
+        player.pearls = [p for p in player.pearls if p.uid != pearl_uid]
+        player.money += value
+        return value
+
+    def pearl_offer(self, pearl):
+        """Return the gold offer for a loose pearl (preview without selling)."""
+        from jewelry import pearl_raw_value
+        return pearl_raw_value(pearl)
+
 
 class BlacksmithNPC(NPC):
     SHOP_HOURS = True
@@ -2359,7 +2404,7 @@ class TavernkeeperNPC(InnkeeperNPC):
 
 
 class RacingBookkeeperNPC(NPC):
-    """Runs the horse racing ring — takes entry fees, manages NPC horse rosters, pays out winnings."""
+    """Runs the horse and dog racing ring — manages NPC rosters, takes entry fees, pays out winnings."""
 
     STANDARD_ENTRY_FEE  = 50
     CHAMPION_ENTRY_FEE  = 500
@@ -2371,6 +2416,8 @@ class RacingBookkeeperNPC(NPC):
         self.display_name = "Bookkeeper"
         self._rng       = rng
         self._npc_horses = self._generate_npc_horses(rng, difficulty)
+        self._npc_dogs   = self._generate_npc_dogs(rng, difficulty)
+        self.tack_shop   = self._generate_tack_shop(difficulty)
 
     def _generate_npc_horses(self, rng, difficulty):
         """Generate 3-5 rival horses scaled to region difficulty."""
@@ -2437,6 +2484,171 @@ class RacingBookkeeperNPC(NPC):
                 "owner":        rng.choice(_OWNER_SURNAMES),
             })
         return horses
+
+    def _generate_npc_dogs(self, rng, difficulty):
+        """Generate 4-6 rival dogs scaled to region difficulty."""
+        _DOG_NAMES = [
+            "Bolt", "Rex", "Chip", "Dash", "Pepper", "Scout", "Brindle",
+            "Fang", "Storm", "Coal", "Arrow", "Slate", "Rustle", "Cinder",
+            "Pip", "Jax", "Coco", "Biscuit", "Flint", "Sage",
+        ]
+        _OWNER_SURNAMES = [
+            "Aldrath", "Voss", "Keldran", "Morwen", "Caleth",
+            "Dunmore", "Harwick", "Selden", "Braye", "Corvath",
+        ]
+        _BREEDS = [
+            "Greyhound", "Whippet", "Border Collie", "Labrador", "Vizsla",
+            "German Shepherd", "Australian Shepherd", "Jack Russell",
+            "Dalmatian", "Weimaraner", "Rhodesian Ridgeback", "Basenji",
+        ]
+        _STYLES = ["sprinter", "pacer", "chaser", "surger"]
+        _STYLE_WEIGHTS = [2, 3, 2, 1]
+
+        count = rng.randint(4, 6)
+        names = rng.sample(_DOG_NAMES, min(count, len(_DOG_NAMES)))
+        lo = max(0.60, 0.70 + difficulty * 0.08)
+        hi = min(1.40, 0.95 + difficulty * 0.08)
+        dogs = []
+        for name in names:
+            rr     = round(rng.uniform(lo, hi), 3)
+            en     = round(rng.uniform(max(0.7, rr - 0.15), min(1.3, rr + 0.15)), 3)
+            ag     = round(rng.uniform(max(0.7, rr - 0.15), min(1.3, rr + 0.15)), 3)
+            al     = round(rng.uniform(0.7, 1.3), 3)
+            pd     = round(rng.uniform(0.3, 0.9), 3)
+            sprint = round(rng.uniform(0.75, 1.25), 3)
+            focus  = round(rng.uniform(0.75, 1.25), 3)
+            breed  = rng.choice(_BREEDS)
+            coat   = (rng.randint(20, 230), rng.randint(20, 170), rng.randint(10, 100))
+            style  = rng.choices(_STYLES, weights=_STYLE_WEIGHTS)[0]
+            prior_races = rng.randint(0, 8)
+            prior_wins  = rng.randint(0, prior_races)
+            dogs.append({
+                "name":          name,
+                "breed":         breed,
+                "race_rating":   rr,
+                "endurance":     en,
+                "agility":       ag,
+                "alertness":     al,
+                "prey_drive":    pd,
+                "sprint":        sprint,
+                "focus":         focus,
+                "coat_color":    coat,
+                "style":         style,
+                "wins":          prior_wins,
+                "races":         prior_races,
+                "owner":         rng.choice(_OWNER_SURNAMES),
+                # Visual fields for draw_dog_from_dict
+                "coat_pattern":  rng.choices(["solid","spotted","brindle","ticked"],  weights=[55,20,15,10])[0],
+                "white_spotting":rng.choices(["solid","irish","piebald"],              weights=[70,20,10])[0],
+                "coat_length":   rng.choices(["short","medium","long"],                weights=[50,35,15])[0],
+                "coat_type":     rng.choices(["smooth","wavy","wire"],                 weights=[65,25,10])[0],
+                "ear_type":      rng.choices(["erect","semi-erect","floppy"],          weights=[30,30,40])[0],
+                "tail_type":     rng.choices(["long","curled","short"],                weights=[50,30,20])[0],
+                "eye_color":     rng.choices(["brown","amber","blue"],                 weights=[55,35,10])[0],
+                "size_class":    rng.choices(["small","medium","large"],               weights=[25,50,25])[0],
+            })
+        return dogs
+
+    def _generate_tack_shop(self, difficulty):
+        """Return a list of (item_id, gold_cost, display_name, None, 0) tuples for the tack shop."""
+        base_mult = 1.0 + difficulty * 0.15
+        items = [
+            ("tack_basic_saddle",    int(150 * base_mult),  "Basic Saddle",          None, 0),
+            ("tack_quality_saddle",  int(450 * base_mult),  "Quality Saddle",        None, 0),
+            ("tack_champion_saddle", int(1200 * base_mult), "Champion Saddle",       None, 0),
+            ("tack_lucky_horseshoe", int(280 * base_mult),  "Lucky Horseshoe",       None, 0),
+            ("tack_basic_collar",    int(130 * base_mult),  "Racing Collar",         None, 0),
+            ("tack_quality_collar",  int(400 * base_mult),  "Quality Racing Collar", None, 0),
+            ("tack_champion_collar", int(1100 * base_mult), "Champion Collar",       None, 0),
+            ("tack_blinkers",        int(220 * base_mult),  "Racing Blinkers",       None, 0),
+        ]
+        return items
+
+    def _generate_circuit(self, tier, mode, player_x, world):
+        """Generate a circuit dict for the given tier and mode (horse/dog).
+
+        Scans world.entities for other RacingBookkeeperNPC instances, selects
+        stops based on tier count, and pre-generates NPC fields for each leg.
+        """
+        from constants import BLOCK_SIZE as _BS
+        from towns import TOWNS as _TOWNS
+
+        _TIER_CONFIG = {
+            1: {"name": "Local Circuit",            "stops": 3, "entry_fee": 100,  "prize": 1500},
+            2: {"name": "Regional Circuit",         "stops": 4, "entry_fee": 300,  "prize": 5000},
+            3: {"name": "National Circuit",         "stops": 5, "entry_fee": 800,  "prize": 15000},
+            4: {"name": "International Grand Prix", "stops": 6, "entry_fee": 2000, "prize": 50000},
+        }
+        cfg = _TIER_CONFIG[tier]
+
+        def _nearest_town_name(bx):
+            best, name = float("inf"), "City"
+            for t in _TOWNS.values():
+                d = abs(t.center_bx - bx)
+                if d < best:
+                    best, name = d, t.name
+            return name
+
+        # Collect other bookkeeper NPCs (not self)
+        others = []
+        for ent in world.entities:
+            if isinstance(ent, RacingBookkeeperNPC) and ent is not self:
+                dist = abs(getattr(ent, "x", 0) - player_x)
+                others.append((dist, ent))
+        others.sort(key=lambda x: x[0])
+
+        # Pick 'stops - 1' away cities (first leg is always the home city)
+        needed = cfg["stops"] - 1
+        chosen = [ent for _, ent in others[:needed]]
+
+        # Build legs — first leg is home (this bookkeeper)
+        legs = []
+        center_bx = int(getattr(self, "x", 0) // _BS)
+        legs.append({
+            "city_name":  _nearest_town_name(center_bx),
+            "center_bx":  center_bx,
+            "difficulty": self.difficulty,
+            "npc_field":  self._npc_horses[:] if mode == "horse" else self._npc_dogs[:],
+            "completed":  False,
+            "placement":  None,
+            "points":     0,
+        })
+        for bkp in chosen:
+            bkp_bx = int(getattr(bkp, "x", 0) // _BS)
+            field  = bkp._npc_horses[:] if mode == "horse" else bkp._npc_dogs[:]
+            legs.append({
+                "city_name":  _nearest_town_name(bkp_bx),
+                "center_bx":  bkp_bx,
+                "difficulty": bkp.difficulty,
+                "npc_field":  field,
+                "completed":  False,
+                "placement":  None,
+                "points":     0,
+            })
+
+        # Pad legs if not enough distinct bookkeepers found
+        while len(legs) < cfg["stops"]:
+            legs.append({
+                "city_name":  f"Circuit Stop {len(legs) + 1}",
+                "center_bx":  center_bx + len(legs) * 200,
+                "difficulty": min(5, self.difficulty + len(legs)),
+                "npc_field":  (self._generate_npc_horses(self._rng, min(5, self.difficulty + 1))
+                               if mode == "horse"
+                               else self._generate_npc_dogs(self._rng, min(5, self.difficulty + 1))),
+                "completed":  False,
+                "placement":  None,
+                "points":     0,
+            })
+
+        return {
+            "name":         cfg["name"],
+            "tier":         tier,
+            "mode":         mode,
+            "legs":         legs,
+            "current_leg":  0,
+            "entry_fee_per_leg": cfg["entry_fee"],
+            "grand_prize_gold":  cfg["prize"],
+        }
 
     def is_champion_ring(self):
         return self.difficulty >= 4
@@ -4354,7 +4566,7 @@ def _place_tower(world, left_x, sy, width, wall_height,
             # above the city floor can still walk through without hitting solid wall.
             is_door  = (wy >= sy - 4) and (is_left or is_right)
             if is_door:
-                world.set_block(wx, wy, WOOD_DOOR_OPEN)
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
             elif is_left or is_right:
                 world.set_block(wx, wy, wall_block)
             else:
@@ -4524,7 +4736,7 @@ def _place_smithy(world, left_x, sy, width, wall_height,
             is_right_wall = (wx == left_x + width - 1)
             is_door_row   = (wy >= sy - 2)
             if is_door_row and (is_left_wall or is_right_wall):
-                world.set_block(wx, wy, WOOD_DOOR_OPEN)
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
             elif is_ceiling or is_left_wall or is_right_wall:
                 world.set_block(wx, wy, wall_block)
                 world.set_bg_block(wx, wy, wall_block)
@@ -4657,7 +4869,7 @@ def _build_modular_building(world, rng, left_x, sy, width, wall_height,
                 is_door = (wy >= sy - 2) and is_wall
                 
                 if is_door:
-                    world.set_block(wx, wy, WOOD_DOOR_OPEN)
+                    world.set_block(wx, wy, WOOD_DOOR_CLOSED)
                 elif is_wall or is_ceiling:
                     world.set_block(wx, wy, wall_block)
                 else:
@@ -4732,7 +4944,7 @@ def _place_house_two_story(world, left_x, sy, width, floor1_h, floor2_h,
             is_hole       = (is_ceiling and is_ladder_pos)
 
             if is_left_door or is_right_door:
-                world.set_block(wx, wy, WOOD_DOOR_OPEN)
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
             elif is_hole:
                 # Opening in ceiling for ladder passthrough
                 world.set_block(wx, wy, LADDER)
@@ -4799,7 +5011,7 @@ def _place_house_three_story(world, rng, left_x, sy, width, floor1_h, floor2_h, 
                 is_door  = has_doors and (wy >= bot_y - 2) and (is_left or is_right)
                 is_hole  = has_ceiling_hole and is_ceil and (wx == ladder_col)
                 if is_door:
-                    world.set_block(wx, wy, WOOD_DOOR_OPEN)
+                    world.set_block(wx, wy, WOOD_DOOR_CLOSED)
                 elif is_hole:
                     world.set_block(wx, wy, LADDER)
                     world.set_bg_block(wx, wy, wall_block)
@@ -4870,7 +5082,7 @@ def _place_restaurant(world, left_x, sy, width, wall_height, style="default"):
             is_right_door = is_right_side and is_door_row
 
             if is_left_door or is_right_door:
-                world.set_block(wx, wy, WOOD_DOOR_OPEN)
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
             elif is_top or is_left_side or is_right_side:
                 world.set_block(wx, wy, wall_block)
             else:
@@ -4902,7 +5114,7 @@ def _place_temple(world, left_x, sy, width, wall_height):
             is_right_door2 = (wx == left_x + width - 2) and is_door_row
 
             if is_left_door or is_right_door or is_left_door2 or is_right_door2:
-                world.set_block(wx, wy, WOOD_DOOR_OPEN)
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
             elif is_top or is_left_side or is_right_side:
                 world.set_block(wx, wy, HOUSE_WALL_STONE)
             else:
@@ -4939,7 +5151,7 @@ def _place_dome_house(world, left_x, sy, width, wall_height,
             is_right_door = is_right and is_door_row
 
             if is_left_door or is_right_door:
-                world.set_block(wx, wy, WOOD_DOOR_OPEN)
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
             elif is_left or is_right:
                 world.set_block(wx, wy, wall_block)
             else:
@@ -5044,7 +5256,7 @@ def _place_chapel(world, left_x, sy, width, wall_height):
             is_center_door = (wx == center) and is_door_row
 
             if is_left_door or is_right_door or is_center_door:
-                world.set_block(wx, wy, WOOD_DOOR_OPEN)
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
             elif is_top or is_left_side or is_right_side:
                 world.set_block(wx, wy, HOUSE_WALL)
             else:
@@ -5155,7 +5367,7 @@ def _place_himalayan_house(world, left_x, sy, width, wall_height):
             use_block = MANI_STONE if is_stone_base else WHITEWASHED_WALL
 
             if is_left_door or is_right_door:
-                world.set_block(wx, wy, WOOD_DOOR_OPEN)
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
             elif is_top or is_left_side or is_right_side:
                 world.set_block(wx, wy, use_block)
             else:
@@ -5196,7 +5408,7 @@ def _place_dzong(world, left_x, sy, width, wall_height):
             is_right_door2 = is_door_row and wx == left_x + width - 2
 
             if is_left_door or is_left_door2 or is_right_door or is_right_door2:
-                world.set_block(wx, wy, WOOD_DOOR_OPEN)
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
             elif is_top or is_left_wall or is_right_wall:
                 world.set_block(wx, wy, wall_blk)
             else:

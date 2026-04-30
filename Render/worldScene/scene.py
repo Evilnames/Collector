@@ -29,6 +29,7 @@ _OCEAN_DECOR_BLOCKS = frozenset((
 ))
 from constants import BLOCK_SIZE, SCREEN_W, SCREEN_H, PLAYER_W, PLAYER_H, ROCK_WARM_ZONE, SURFACE_Y
 from world import get_ocean_depth_zone
+from block_shapes import blit_shaped
 from Render.worldScene.art import (draw_all_sculptures, draw_all_tapestries,
                                     draw_pottery_displays, draw_wildflower_displays,
                                     draw_garden_blocks)
@@ -364,8 +365,17 @@ def draw_world(renderer, world, player=None):
                 else:
                     wsurf = renderer._water_surfs[level - 1]
                 wh = wsurf.get_height()
-                screen.blit(wsurf, (bx * BLOCK_SIZE - cam_xi,
-                                    by * BLOCK_SIZE - cam_yi + BLOCK_SIZE - wh))
+                draw_x = bx * BLOCK_SIZE - cam_xi
+                draw_y = by * BLOCK_SIZE - cam_yi + BLOCK_SIZE - wh
+                screen.blit(wsurf, (draw_x, draw_y))
+                # Animated shimmer: a translucent highlight line that drifts upward
+                tick = pygame.time.get_ticks()
+                shimmer_off = (tick // 90 + bx * 3 + by * 7) % max(wh, 1)
+                shimmer_y = draw_y + shimmer_off
+                if draw_y <= shimmer_y < draw_y + wh:
+                    pygame.draw.line(screen, (180, 230, 255, 55),
+                                     (draw_x, shimmer_y),
+                                     (draw_x + BLOCK_SIZE - 1, shimmer_y))
                 continue
             if bid == FISHING_SPOT_BLOCK:
                 # Render as full-level water with animated shimmer sparkles
@@ -589,7 +599,8 @@ def draw_world(renderer, world, player=None):
                             fc_surf = fc_var[(bx * 97 + by * 31 + world.seed) % len(fc_var)]
                             screen.blit(fc_surf, (sx + _sway_x, sy))
                 else:
-                    screen.blit(surf, (sx, sy))
+                    _shape, _rot = world.get_block_shape(bx, by)
+                    blit_shaped(screen, surf, sx, sy, _shape, _rot)
                     if bid in SHIMMER and ore_visible and (px_blk is None or dist <= detect):
                         now = pygame.time.get_ticks()
                         sc = SHIMMER[bid]
@@ -614,9 +625,20 @@ def draw_world(renderer, world, player=None):
             for bx in range(bx0, bx1):
                 if world.get_wire(bx, by):
                     draw_wire_tile(screen, bx, by, world, cam_xi, cam_yi)
-        _draw_wire_mode_hud(screen)
     elif player is not None and player.hotbar[player.selected_slot] == "wire":
         _draw_wire_hint(screen)
+
+    if getattr(world, "pipe_mode", False):
+        from Render.pipe_blocks import draw_pipe_tile, draw_pipe_transit_dots
+        for by in range(by0, by1):
+            for bx in range(bx0, bx1):
+                if world.get_pipe(bx, by):
+                    draw_pipe_tile(screen, bx, by, world, cam_xi, cam_yi)
+        draw_pipe_transit_dots(screen, world, cam_xi, cam_yi)
+
+    if getattr(world, "factory_data", None):
+        from Render.pipe_blocks import draw_factory_overlays
+        draw_factory_overlays(screen, world, cam_xi, cam_yi)
 
     draw_all_sculptures(screen, renderer.cam_x, renderer.cam_y, world)
     draw_all_tapestries(screen, renderer.cam_x, renderer.cam_y, world)
@@ -642,6 +664,17 @@ def draw_world(renderer, world, player=None):
                     _uw_surf = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
                     _uw_surf.fill((0, 0, 20, alpha))
                     screen.blit(_uw_surf, (0, 0))
+
+
+def draw_wire_hud(screen, world):
+    if getattr(world, "wire_mode", False):
+        _draw_wire_mode_hud(screen)
+
+
+def draw_pipe_hud(screen, world):
+    if getattr(world, "pipe_mode", False):
+        from Render.pipe_blocks import _draw_pipe_mode_hud
+        _draw_pipe_mode_hud(screen)
 
 
 def _draw_textured_region(screen, x, y, w, h, base_col, texture):

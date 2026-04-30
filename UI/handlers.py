@@ -5,6 +5,7 @@ from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOO
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
                       BAIT_STATION_RECIPES, FLETCHING_RECIPES, SMELTER_RECIPES, GLASS_KILN_RECIPES,
                       GARDEN_WORKSHOP_RECIPES, JUICER_RECIPES, AUTOMATION_RECIPES,
+                      TANNING_RACK_RECIPES,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
 from rocks import get_refinery_equipment
@@ -24,7 +25,7 @@ from blocks import (BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BB
                     DAIRY_VAT_BLOCK, CHEESE_PRESS_BLOCK, AGING_CAVE_BLOCK,
                     FLETCHING_TABLE_BLOCK, SMELTER_BLOCK, ANAEROBIC_TANK_BLOCK,
                     GLASS_KILN_BLOCK, GARDEN_WORKSHOP_BLOCK, AUTOMATION_BENCH_BLOCK,
-                    WEAPON_ASSEMBLER_BLOCK)
+                    WEAPON_ASSEMBLER_BLOCK, TANNING_RACK_BLOCK)
 from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, BLOCK_SIZE
 
 
@@ -89,6 +90,16 @@ class HandlersMixin:
             self._inv_search = self._inv_search[:-1]
         elif event.unicode and event.unicode.isprintable():
             self._inv_search += event.unicode
+
+    def handle_artisan_search_key(self, event):
+        if event.key == pygame.K_ESCAPE:
+            self._artisan_search = ""
+            self._artisan_search_active = False
+        elif event.key == pygame.K_BACKSPACE:
+            self._artisan_search = self._artisan_search[:-1]
+        elif event.unicode and event.unicode.isprintable():
+            self._artisan_search += event.unicode
+        self._cook_station_scroll[ARTISAN_BENCH_BLOCK] = 0
 
     def handle_inventory_drag(self, pos):
         if self._drag_item_id is not None:
@@ -327,6 +338,8 @@ class HandlersMixin:
             self._bakery_scroll = max(0, min(self._max_bakery_scroll, self._bakery_scroll - dy))
         elif self.refinery_open and self.refinery_block_id == WEAPON_ASSEMBLER_BLOCK:
             self._bench_scroll = max(0, self._bench_scroll - dy * 20)
+        elif self.refinery_open and self.refinery_block_id == ARTISAN_BENCH_BLOCK and self._artisan_view_all:
+            self._artisan_grid_scroll = max(0, self._artisan_grid_scroll - dy)
         elif self.refinery_open:
             bid = self.refinery_block_id
             cur = self._cook_station_scroll.get(bid, 0)
@@ -380,7 +393,7 @@ class HandlersMixin:
                 elif self._encyclopedia_cat == 14:
                     self._herb_codex_scroll = max(0, min(self._max_herb_codex_scroll, self._herb_codex_scroll - dy * 60))
             elif self._collection_tab == 2:
-                self._achievement_scroll = max(0, min(self._max_achievement_scroll, self._achievement_scroll - dy))
+                self._achievement_scroll = max(0, min(self._max_achievement_scroll, self._achievement_scroll - dy * 60))
         elif self.breeding_open:
             self._breed_scroll = max(0, min(self._max_breed_scroll, self._breed_scroll - dy))
         elif self.chest_open:
@@ -391,6 +404,8 @@ class HandlersMixin:
                 self._chest_scroll = max(0, min(self._max_chest_scroll, self._chest_scroll - dy))
             else:
                 self._player_chest_scroll = max(0, min(self._max_player_chest_scroll, self._player_chest_scroll - dy))
+        elif self.garden_open and self._garden_view_all:
+            self._garden_view_all_scroll = max(0, self._garden_view_all_scroll - dy)
         elif self.garden_open:
             self._garden_col_scroll = max(0, min(self._max_garden_col_scroll, self._garden_col_scroll - dy))
 
@@ -452,6 +467,11 @@ class HandlersMixin:
         flowers    = self.active_garden_flowers
         garden_pos = self.active_garden_pos
         if flowers is None or garden_pos is None:
+            return
+        # Toggle view-all button
+        if self._garden_view_all_btn and self._garden_view_all_btn.collidepoint(pos):
+            self._garden_view_all = not self._garden_view_all
+            self._garden_view_all_scroll = 0
             return
         CAPACITY = 12
         # Pick up a placed flower from the canvas
@@ -870,6 +890,26 @@ class HandlersMixin:
                 self._do_cook(player, FORGE_RECIPES, self._desert_forge_selected_recipe)
             return
         if self.refinery_block_id == ARTISAN_BENCH_BLOCK:
+            if self._artisan_view_all_btn and self._artisan_view_all_btn.collidepoint(pos):
+                self._artisan_view_all = not self._artisan_view_all
+                self._artisan_grid_scroll = 0
+                return
+            for i, rect in enumerate(self._artisan_tab_rects):
+                if rect.collidepoint(pos):
+                    self._artisan_tab = i
+                    self._cook_station_scroll[ARTISAN_BENCH_BLOCK] = 0
+                    self._artisan_grid_scroll = 0
+                    return
+            if self._artisan_view_all:
+                for i, rect in self._artisan_grid_rects.items():
+                    if rect.collidepoint(pos):
+                        self._artisan_selected_recipe = i
+                        return
+                return
+            if self._artisan_search_rect and self._artisan_search_rect.collidepoint(pos):
+                self._artisan_search_active = True
+                return
+            self._artisan_search_active = False
             for i, rect in self._artisan_recipe_rects.items():
                 if rect.collidepoint(pos):
                     self._artisan_selected_recipe = i
@@ -935,6 +975,14 @@ class HandlersMixin:
                     return
             if self._refine_btn and self._refine_btn.collidepoint(pos):
                 self._do_cook(player, AUTOMATION_RECIPES, self._automation_selected_recipe, debug=debug)
+            return
+        if self.refinery_block_id == TANNING_RACK_BLOCK:
+            for i, rect in self._tanning_rack_recipe_rects.items():
+                if rect.collidepoint(pos):
+                    self._tanning_rack_selected_recipe = i
+                    return
+            if self._refine_btn and self._refine_btn.collidepoint(pos):
+                self._do_cook(player, TANNING_RACK_RECIPES, self._tanning_rack_selected_recipe)
             return
         if self.refinery_block_id == COMPOST_BIN_BLOCK:
             self._handle_compost_bin_click(pos, player)
@@ -1211,6 +1259,139 @@ class HandlersMixin:
                                 player.hotbar_uses[idx] = None
                         state["inventory"][item_id] = state["inventory"].get(item_id, 0) + deposit
                     return
+
+    # =========================================================================
+    # Pipe layer click handlers
+    # =========================================================================
+
+    def handle_hopper_click(self, pos, world):
+        bx, by = self.active_hopper_pos
+        cfg = world.pipe_state.setdefault((bx, by), {"pull_rate": 1, "enabled": True})
+        if self._hopper_rate_minus and self._hopper_rate_minus.collidepoint(pos):
+            cfg["pull_rate"] = max(1, cfg.get("pull_rate", 1) - 1)
+        elif self._hopper_rate_plus and self._hopper_rate_plus.collidepoint(pos):
+            cfg["pull_rate"] = min(16, cfg.get("pull_rate", 1) + 1)
+        elif self._hopper_close_btn and self._hopper_close_btn.collidepoint(pos):
+            self.hopper_open = False
+
+    def handle_pipe_output_click(self, pos, world):
+        bx, by = self.active_pipe_output_pos
+        cfg = world.pipe_state.setdefault((bx, by), {"facing": "down", "enabled": True})
+        for direction, r in self._po_facing_btns.items():
+            if r.collidepoint(pos):
+                cfg["facing"] = direction
+                return
+        if self._po_close_btn and self._po_close_btn.collidepoint(pos):
+            self.pipe_output_open = False
+
+    def handle_pipe_filter_click(self, pos, player, world):
+        bx, by = self.active_pipe_filter_pos
+        cfg = world.pipe_state.setdefault((bx, by), {"allowed": []})
+        allowed = cfg.setdefault("allowed", [])
+        for item_id, r in self._pf_item_rects.items():
+            if r.collidepoint(pos):
+                if item_id in allowed:
+                    allowed.remove(item_id)
+                return
+        for item_id, r in self._pf_add_rects.items():
+            if r.collidepoint(pos):
+                if item_id not in allowed:
+                    allowed.append(item_id)
+                return
+        if self._pf_close_btn and self._pf_close_btn.collidepoint(pos):
+            self.pipe_filter_open = False
+
+    def handle_pipe_sorter_click(self, pos, player, world):
+        bx, by = self.active_pipe_sorter_pos
+        cfg = world.pipe_state.setdefault((bx, by), {"routes": {}})
+        routes = cfg.setdefault("routes", {})
+        for (item_id, direction), r in self._ps_dir_rects.items():
+            if r.collidepoint(pos):
+                routes[item_id] = direction
+                return
+        for item_id, r in self._ps_item_rects.items():  # clear buttons
+            if r.collidepoint(pos):
+                routes.pop(item_id, None)
+                return
+        if self._ps_close_btn and self._ps_close_btn.collidepoint(pos):
+            self.pipe_sorter_open = False
+
+    def handle_factory_click(self, pos, player, world, button=1):
+        from factory import MAX_INPUT_SLOTS, MAX_OUTPUT_SLOTS
+
+        bx, by = self.active_factory_pos
+        state  = world.factory_data.setdefault((bx, by), {
+            "recipe": {"inputs": [None]*MAX_INPUT_SLOTS,
+                       "outputs": [None]*MAX_OUTPUT_SLOTS,
+                       "craft_time": 5.0},
+            "inventory": {},
+            "progress": 0.0,
+        })
+        recipe = state.setdefault("recipe", {})
+        inputs  = recipe.setdefault("inputs",  [None]*MAX_INPUT_SLOTS)
+        outputs = recipe.setdefault("outputs", [None]*MAX_OUTPUT_SLOTS)
+
+        # Close button
+        if self._fac_close_btn and self._fac_close_btn.collidepoint(pos):
+            self.factory_open = False
+            self._fac_picking = None
+            return
+
+        # Craft time buttons
+        for sign, r in self._fac_time_btns.items():
+            if r.collidepoint(pos):
+                delta = 0.5 if sign == "+" else -0.5
+                recipe["craft_time"] = max(0.5, round(recipe.get("craft_time", 5.0) + delta, 1))
+                return
+
+        # Inventory cap buttons
+        for sign, r in getattr(self, "_fac_cap_btns", {}).items():
+            if r.collidepoint(pos):
+                delta = 8 if sign == "+" else -8
+                state["inv_cap"] = max(8, state.get("inv_cap", 64) + delta)
+                return
+
+        # Item picker selection
+        if self._fac_picking is not None:
+            for item_id, r in self._fac_pick_rects.items():
+                if r.collidepoint(pos):
+                    side, idx = self._fac_picking
+                    slot = {"item_id": item_id, "count": 1}
+                    if side == "input":
+                        inputs[idx] = slot
+                    else:
+                        outputs[idx] = slot
+                    self._fac_picking = None
+                    return
+            # Click outside picker → cancel picking
+            self._fac_picking = None
+            return
+
+        # Count +/- buttons
+        for (side, idx, sign), r in self._fac_count_btns.items():
+            if r.collidepoint(pos):
+                slots = inputs if side == "input" else outputs
+                if slots[idx]:
+                    delta = 1 if sign == "+" else -1
+                    slots[idx]["count"] = max(1, slots[idx]["count"] + delta)
+                return
+
+        # Input slot clicks — left-click = enter picking mode, right-click = clear
+        for i, r in self._fac_input_rects.items():
+            if r.collidepoint(pos):
+                if button == 3:
+                    inputs[i] = None
+                else:
+                    self._fac_picking = ("input", i)
+                return
+
+        for i, r in self._fac_output_rects.items():
+            if r.collidepoint(pos):
+                if button == 3:
+                    outputs[i] = None
+                else:
+                    self._fac_picking = ("output", i)
+                return
 
 
 def _deliver_farmer_seeds(player, world):

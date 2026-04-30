@@ -40,7 +40,7 @@ def _noop(player, world):
 
 
 class ResearchTree:
-    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship", "Tea Cultivation", "Herbalism", "Textile Arts", "Dairy Arts", "Hunting", "Jewelry Arts", "Garden Arts", "Masonry Arts", "Ceramics", "Cynology", "Smithing Arts", "Brewing", "Salting Arts"]
+    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship", "Tea Cultivation", "Herbalism", "Textile Arts", "Dairy Arts", "Hunting", "Jewelry Arts", "Garden Arts", "Masonry Arts", "Ceramics", "Cynology", "Smithing Arts", "Brewing", "Salting Arts", "Fishing", "Logistics"]
 
     def __init__(self):
         self.nodes = {}    # id -> ResearchNode
@@ -665,6 +665,44 @@ class ResearchTree:
             "Learn to harvest salt — unlocks Evaporation Pan and Salt Grinder",
             {"stone_chip": 5, "coal": 2}, [],
             _noop, money_cost=15), 21, 0)
+
+        # --- Fishing (column 22) ---
+        self._add(ResearchNode(
+            "trap_fishing", "Fish Trapping",
+            "Submerged cage theory — unlocks the Iron Fish Trap",
+            {"lumber": 4, "wool": 2}, [],
+            _noop, money_cost=20), 22, 0)
+
+        self._add(ResearchNode(
+            "advanced_trapping", "Advanced Trapping",
+            "Reinforced frames and tighter mesh — unlocks the Reinforced Fish Trap",
+            {"iron_chunk": 4, "wool": 2}, ["trap_fishing"],
+            _noop, money_cost=45), 22, 1)
+
+        self._add(ResearchNode(
+            "cage_mastery", "Cage Mastery",
+            "Precision steel construction — unlocks the Steel Cage Trap",
+            {"iron_chunk": 6, "coal": 3}, ["advanced_trapping"],
+            _noop, money_cost=80), 22, 2)
+
+        # --- Logistics (column 23) ---
+        self._add(ResearchNode(
+            "pipe_basics", "Pipe Logistics",
+            "Item transport fundamentals — unlocks Pipe, Hopper, Pipe Output, Filter, and Sorter",
+            {"iron_chunk": 6, "stone_chip": 4}, [],
+            _noop, money_cost=30), 23, 0)
+
+        self._add(ResearchNode(
+            "advanced_pipes", "Advanced Conveyance",
+            "Tempered alloy tubing — unlocks Iron Pipe for 3x throughput",
+            {"tempered_iron": 4, "wire": 2}, ["pipe_basics"],
+            _noop, money_cost=60), 23, 1)
+
+        self._add(ResearchNode(
+            "factory_automation", "Factory Automation",
+            "Programmable processing — unlocks Factory Block and Crystal Pipe",
+            {"tempered_iron": 6, "gold_nugget": 2, "wire": 4}, ["advanced_pipes"],
+            _noop, money_cost=120), 23, 2)
 
     def prereqs_met(self, node_id):
         return all(self.nodes[p].unlocked for p in self.nodes[node_id].prerequisites)

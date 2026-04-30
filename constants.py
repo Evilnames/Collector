@@ -21,6 +21,7 @@ ROCK_DETECT_RANGE = 5   # blocks — full reveal of rock deposits
 ROCK_WARM_ZONE    = 7   # extra blocks beyond detect range where a hint is shown
 
 MAX_HEALTH = 100
+MAX_BREATH = 100.0
 HOTBAR_SIZE = 8
 
 CITY_SPACING       = 277
