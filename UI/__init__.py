@@ -53,8 +53,10 @@ class UI(
     def __init__(self, screen):
         self.screen = screen
         pygame.font.init()
-        self.font  = pygame.font.SysFont("consolas", 18)
-        self.small = pygame.font.SysFont("consolas", 13)
+        self.font   = pygame.font.SysFont("consolas", 18)
+        self.small  = pygame.font.SysFont("consolas", 13)
+        self.medium = pygame.font.SysFont("consolas", 16)
+        self.large  = pygame.font.SysFont("consolas", 22)
         self.research_open               = False
         self._research_selected_col      = 0
         self._research_cat_rects         = {}

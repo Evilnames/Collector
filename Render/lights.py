@@ -225,8 +225,8 @@ def draw_lighting(renderer, player, world, depth, time_of_day=0.0):
         if night_alpha <= 0 and dawn_a == 0 and dusk_a == 0:
             if world is not None:
                 renderer._light_surf.fill((_DR, _DG, _DB, 0))
-                _draw_indoor_and_glass_shafts(renderer, world,
-                                              renderer.cam_x, renderer.cam_y, 255)
+                # _draw_indoor_and_glass_shafts(renderer, world,
+                #                               renderer.cam_x, renderer.cam_y, 255)
                 renderer.screen.blit(renderer._light_surf, (0, 0))
             return
     else:
@@ -249,10 +249,10 @@ def draw_lighting(renderer, player, world, depth, time_of_day=0.0):
     renderer._light_surf.fill((5, 8, 20, darkness))
 
     # Indoor shadows + glass sunbeam shafts (surface only)
-    if depth <= 0 and world is not None:
-        _draw_indoor_and_glass_shafts(renderer, world,
-                                      renderer.cam_x, renderer.cam_y,
-                                      max(0, 255 - darkness))
+    # if depth <= 0 and world is not None:
+    #     _draw_indoor_and_glass_shafts(renderer, world,
+    #                                   renderer.cam_x, renderer.cam_y,
+    #                                   max(0, 255 - darkness))
 
     if depth > 0:
         ambient = max(10, surface_ambient - depth * 2)

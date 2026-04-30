@@ -338,6 +338,8 @@ class HandlersMixin:
             self._bakery_scroll = max(0, min(self._max_bakery_scroll, self._bakery_scroll - dy))
         elif self.refinery_open and self.refinery_block_id == WEAPON_ASSEMBLER_BLOCK:
             self._bench_scroll = max(0, self._bench_scroll - dy * 20)
+        elif self.refinery_open and self.refinery_block_id == GARDEN_WORKSHOP_BLOCK and self._gw_view_all:
+            self._gw_grid_scroll = max(0, self._gw_grid_scroll - dy)
         elif self.refinery_open and self.refinery_block_id == ARTISAN_BENCH_BLOCK and self._artisan_view_all:
             self._artisan_grid_scroll = max(0, self._artisan_grid_scroll - dy)
         elif self.refinery_open:
@@ -953,6 +955,16 @@ class HandlersMixin:
                 self._do_cook(player, GLASS_KILN_RECIPES, self._glass_kiln_selected_recipe)
             return
         if self.refinery_block_id == GARDEN_WORKSHOP_BLOCK:
+            if self._gw_view_all_btn and self._gw_view_all_btn.collidepoint(pos):
+                self._gw_view_all = not self._gw_view_all
+                self._gw_grid_scroll = 0
+                return
+            if self._gw_view_all:
+                for i, rect in self._gw_grid_rects.items():
+                    if rect.collidepoint(pos):
+                        self._garden_workshop_selected_recipe = i
+                        return
+                return
             for i, rect in self._garden_workshop_recipe_rects.items():
                 if rect.collidepoint(pos):
                     self._garden_workshop_selected_recipe = i

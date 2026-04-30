@@ -1640,6 +1640,11 @@ def main():
                     ui.handle_garden_mouseup(event.pos, player)
                 if ui.refinery_open and ui.refinery_block_id == OXIDATION_STATION_BLOCK:
                     ui.handle_oxidation_mouse_up(event.pos)
+                # Bow / spear gun — release to fire (only when no UI is open)
+                if event.button == 1 and not player.dead and not _any_ui_open():
+                    player.release_aim_shot(
+                        event.pos[0], event.pos[1],
+                        renderer.cam_x, renderer.cam_y)
                 # End sculpt drag on any mouse release
                 if getattr(ui, '_sculpt_drag_mode', None) is not None:
                     ui._sculpt_drag_mode = None
@@ -1843,7 +1848,8 @@ def main():
                             bsx = int(bird.x - renderer.cam_x)
                             bsy = int(bird.y - renderer.cam_y)
                             if pygame.Rect(bsx - 4, bsy - 4, bird.W + 8, bird.H + 8).collidepoint(mx, my):
-                                _settled = bird.state in ("perching", "stopped", "landing")
+                                _settled = (bird.state in ("perching", "stopped", "landing")
+                                            or getattr(bird, 'IS_GROUND', False))
                                 if _bino_held or _settled:
                                     ui.open_bird_observation(bird)
                                 break
@@ -1888,12 +1894,9 @@ def main():
                                     player.inventory[drop] = player.inventory.get(drop, 0) + 1
                                 ins.spook()
                                 break
-                    # Bow firing — left-click with bow equipped fires an arrow
+                    # Bow / spear gun — hold left-click to aim, release to fire
                     if event.button == 1 and not player.dead:
-                        player.fire_arrow()
-                    # Spear gun firing — left-click underwater with spear gun equipped
-                    if event.button == 1 and not player.dead:
-                        player.fire_spear()
+                        player.start_aim("bow") or player.start_aim("spear")
                     # Melee attack — left-click with weapon equipped (no UI open)
                     if event.button == 1 and not player.dead and player.equipped_weapon_uid and not _any_ui_open():
                         from animals import HuntableAnimal
@@ -2099,6 +2102,7 @@ def main():
             renderer.draw_insects(world.insects, world.time_of_day)
             renderer.draw_live_fish(world.live_fish)
             renderer.draw_spears(world.spears)
+            renderer.draw_aim_preview(player, mouse_scr_pos)
             renderer.draw_automations(world.automations)
             renderer.draw_farm_bots(world.farm_bots)
             renderer.draw_backhoes(world.backhoes, player)
@@ -2160,6 +2164,7 @@ def main():
         if not _any_ui_open() and not ui.cheat_open:
             player.handle_input(keys, mouse_btns, mouse_world, dt)
         player.update(dt)
+        player.update_aim(dt)
         for wx, wy, text, color in player.pending_harvest_floats:
             renderer.add_float_text(wx, wy, text, color)
         player.pending_harvest_floats.clear()
@@ -2245,8 +2250,11 @@ def main():
                         caught.species = lf.species
                         caught.rarity = lf.rarity
                         player.fish_caught.append(caught)
-                        if hasattr(player, "discovered_fish_species"):
-                            player.discovered_fish_species.add(lf.species)
+                        player.discovered_fish_species.add(lf.species)
+                        player._add_item("fish")
+                        prev = player.fish_bests.get(caught.species)
+                        if prev is None or caught.weight_kg > prev["weight_kg"]:
+                            player.fish_bests[caught.species] = {"weight_kg": caught.weight_kg, "length_cm": caught.length_cm}
                         player.pending_notifications.append(
                             ("Speared", lf.species.replace("_", " ").title(), lf.rarity))
                         lf.dead = True
@@ -2334,11 +2342,15 @@ def main():
         renderer.draw_nests(world.nests)
         renderer.draw_birds(world.birds)
         renderer.draw_insects(world.insects)
+        renderer.draw_live_fish(world.live_fish)
+        renderer.draw_spears(world.spears)
+        renderer.draw_aim_preview(player, mouse_scr_pos)
         renderer.draw_automations(world.automations)
         renderer.draw_farm_bots(world.farm_bots)
         renderer.draw_backhoes(world.backhoes, player)
         renderer.draw_elevator_cars(world.elevator_cars, player)
         renderer.draw_minecarts(world.minecarts, player)
+        renderer.draw_boats(world.boats, player, world)
         renderer.draw_dropped_items(world.dropped_items)
         renderer.draw_farm_sense(player, world)
         renderer.draw_logic_help(player, world)

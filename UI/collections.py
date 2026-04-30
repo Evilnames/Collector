@@ -2461,32 +2461,89 @@ class CollectionsMixin:
             obs = player.birds_observed.get(sp_cls.SPECIES, {})
             rar_col = RARITY_BIRD_COLS.get(sp_cls.RARITY, (150, 150, 150))
 
-            # Background
+            # ── Cell background ────────────────────────────────────────
             bg_col = (14, 28, 42) if discovered else (18, 18, 22)
             pygame.draw.rect(self.screen, bg_col, rect)
             pygame.draw.rect(self.screen, rar_col if discovered else (40, 40, 55), rect, 2)
 
-            # Bird icon
-            bw, bh = sp_cls.W * 3, sp_cls.H * 3
-            bird_surf = pygame.Surface((bw, bh), pygame.SRCALPHA)
-            bird_surf.fill((0, 0, 0, 0))
-            if discovered:
-                pygame.draw.ellipse(bird_surf, sp_cls.WING_COLOR, (0, bh // 3, bw, bh // 2))
-                pygame.draw.ellipse(bird_surf, sp_cls.BODY_COLOR,
-                                    (bw // 6, bh // 3, bw * 2 // 3, bh // 2))
-                pygame.draw.circle(bird_surf, sp_cls.HEAD_COLOR,
-                                   (bw - bw // 5, bh // 4), bh // 5)
-                pygame.draw.ellipse(bird_surf, sp_cls.ACCENT_COLOR,
-                                    (bw // 6, bh // 3 + bh // 8, bw // 2, bh // 5))
-            else:
-                # Silhouette
-                pygame.draw.ellipse(bird_surf, (50, 50, 60), (0, bh // 3, bw, bh // 2))
-                pygame.draw.ellipse(bird_surf, (40, 40, 50),
-                                    (bw // 6, bh // 3, bw * 2 // 3, bh // 2))
-                pygame.draw.circle(bird_surf, (50, 50, 60), (bw - bw // 5, bh // 4), bh // 5)
-            self.screen.blit(bird_surf, (x + CELL // 2 - bw // 2, y + 6))
+            # ── Bird icon ──────────────────────────────────────────────
+            # Canvas: 92w × 62h — perched bird facing right
+            SW, SH = 92, 62
+            bird_surf = pygame.Surface((SW, SH), pygame.SRCALPHA)
 
-            # Name
+            if discovered:
+                pc  = sp_cls.BODY_COLOR
+                wc  = sp_cls.WING_COLOR
+                hc  = sp_cls.HEAD_COLOR
+                ac  = sp_cls.ACCENT_COLOR
+                bkc = sp_cls.BEAK_COLOR
+                dark  = (max(0,pc[0]-55), max(0,pc[1]-55), max(0,pc[2]-55))
+                wdark = (max(0,wc[0]-40), max(0,wc[1]-40), max(0,wc[2]-40))
+                light = (min(255,pc[0]+62), min(255,pc[1]+62), min(255,pc[2]+65))
+            else:
+                pc = wc = hc = ac = bkc = (44, 44, 55)
+                dark = wdark = (28, 28, 36)
+                light = (56, 56, 68)
+
+            # Tail: fan polygon extending left-down from body back
+            tail_pts = [(18, 35), (3, 24), (3, 51), (18, 44)]
+            pygame.draw.polygon(bird_surf, wc, tail_pts)
+            pygame.draw.polygon(bird_surf, wdark, tail_pts, 1)
+
+            # Body (main oval)
+            body_r = (16, 30, 52, 22)
+            pygame.draw.ellipse(bird_surf, pc, body_r)
+
+            # Wing on top of body (wing color, slightly narrower and higher)
+            wing_r = (16, 28, 48, 18)
+            pygame.draw.ellipse(bird_surf, wc, wing_r)
+
+            # Dorsal sheen on wing top
+            pygame.draw.ellipse(bird_surf, light, (22, 29, 28, 7))
+
+            # Breast/accent patch (front-lower body)
+            pygame.draw.ellipse(bird_surf, ac, (22, 39, 28, 13))
+
+            # Head circle (upper-right, overlapping body front)
+            hcx, hcy, hr = 63, 24, 13
+            pygame.draw.circle(bird_surf, hc, (hcx, hcy), hr)
+
+            # Head highlight
+            hlight = (min(255,hc[0]+55), min(255,hc[1]+55), min(255,hc[2]+58))
+            pygame.draw.circle(bird_surf, hlight, (hcx - 3, hcy - 3), 5)
+
+            # Beak (small triangle from head front)
+            beak_tip_x = hcx + hr + 11
+            beak_pts = [(hcx + hr - 1, hcy - 3),
+                        (hcx + hr,     hcy + 3),
+                        (min(beak_tip_x, SW - 2), hcy)]
+            pygame.draw.polygon(bird_surf, bkc, beak_pts)
+            bk_dark = (max(0,bkc[0]-45), max(0,bkc[1]-45), max(0,bkc[2]-45))
+            pygame.draw.polygon(bird_surf, bk_dark, beak_pts, 1)
+
+            # Wing detail line
+            pygame.draw.line(bird_surf, wdark, (18, 41), (56, 38), 1)
+
+            # Body outline
+            pygame.draw.ellipse(bird_surf, dark, body_r, 1)
+
+            # Legs
+            leg_col = bk_dark if discovered else dark
+            pygame.draw.line(bird_surf, leg_col, (31, 52), (29, 60), 2)
+            pygame.draw.line(bird_surf, leg_col, (43, 52), (41, 60), 2)
+            pygame.draw.line(bird_surf, leg_col, (25, 60), (34, 60), 1)
+            pygame.draw.line(bird_surf, leg_col, (37, 60), (46, 60), 1)
+
+            # Eye
+            eye_x, eye_y = hcx + 5, hcy - 4
+            pygame.draw.circle(bird_surf, (215, 225, 232), (eye_x, eye_y), 3)
+            pygame.draw.circle(bird_surf, (12, 12, 18),    (eye_x, eye_y), 2)
+            if discovered:
+                pygame.draw.circle(bird_surf, (255, 255, 255), (eye_x - 1, eye_y - 1), 1)
+
+            self.screen.blit(bird_surf, (x + CELL // 2 - SW // 2, y + 5))
+
+            # ── Name ───────────────────────────────────────────────────
             if discovered:
                 name = sp_cls.SPECIES.replace("_", " ").title()
                 name_col = (200, 225, 255)
@@ -2496,12 +2553,12 @@ class CollectionsMixin:
             ns = self.small.render(self._fit_label(name, CELL - 6), True, name_col)
             self.screen.blit(ns, (x + CELL // 2 - ns.get_width() // 2, y + CELL - 28))
 
-            # Rarity
+            # ── Rarity ─────────────────────────────────────────────────
             rs = self.small.render(sp_cls.RARITY.upper(), True,
-                                    rar_col if discovered else (50, 50, 65))
+                                   rar_col if discovered else (50, 50, 65))
             self.screen.blit(rs, (x + CELL // 2 - rs.get_width() // 2, y + CELL - 14))
 
-            # Observation count badge
+            # ── Observation count badge ────────────────────────────────
             if discovered:
                 cnt = obs.get("count", 0)
                 cb = self.small.render(f"×{cnt}", True, (180, 230, 200))

@@ -14,17 +14,99 @@ def fmt_fuel_time(fuel, fuel_rate):
 
 
 def draw_arrows(screen, arrows, cam_x, cam_y):
+    import math
     for arrow in arrows:
         if arrow.dead:
             continue
         ax = int(arrow.x) - cam_x
         ay = int(arrow.y) - cam_y
-        tip_x = ax + (arrow.W if arrow.vx > 0 else -arrow.W)
+        angle = math.atan2(arrow.vy, arrow.vx)
+        cos_a, sin_a = math.cos(angle), math.sin(angle)
+        tip_x = ax + int(cos_a * arrow.W)
+        tip_y = ay + int(sin_a * arrow.W)
         shaft_col = getattr(arrow, "color", (200, 170, 100))
         head_col  = tuple(max(0, c - 20) for c in shaft_col)
-        pygame.draw.line(screen, shaft_col, (ax, ay), (tip_x, ay), 2)
-        head_x = tip_x + (2 if arrow.vx > 0 else -2)
-        pygame.draw.circle(screen, head_col, (head_x, ay), 2)
+        pygame.draw.line(screen, shaft_col, (ax, ay), (tip_x, tip_y), 2)
+        head_x = tip_x + int(cos_a * 2)
+        head_y = tip_y + int(sin_a * 2)
+        pygame.draw.circle(screen, head_col, (head_x, head_y), 2)
+
+
+def draw_aim_preview(screen, player, mouse_scr, cam_x, cam_y):
+    """Trajectory dots + power bar while the player is holding to aim."""
+    import math
+    state = player._aim_state
+    if state is None:
+        return
+
+    from constants import GRAVITY, MAX_FALL, PLAYER_W, PLAYER_H, BLOCK_SIZE
+    from hunting import ARROW_SPEED, ARROW_MAX_X, SPEAR_SPEED, SPEAR_MAX_X
+    from items import ITEMS
+
+    AIM_MAX_TIME  = player._AIM_MAX_TIME
+    AIM_MIN_POWER = player._AIM_MIN_POWER
+    power = AIM_MIN_POWER + (1.0 - AIM_MIN_POWER) * (state["timer"] / AIM_MAX_TIME)
+
+    px_s = int(player.x + PLAYER_W / 2) - cam_x
+    py_s = int(player.y + PLAYER_H / 2) - cam_y
+
+    mx, my = mouse_scr
+    dx = mx - px_s
+    dy = my - py_s
+    if abs(dx) < 1:
+        dx = float(player.facing)
+    angle = math.atan2(dy, abs(dx))
+    angle = max(-math.pi / 3, min(math.pi / 3, angle))
+
+    tool      = player.hotbar[player.selected_slot]
+    tool_data = ITEMS.get(tool or "", {})
+
+    if state["type"] == "bow":
+        base_speed    = tool_data.get("arrow_speed", ARROW_SPEED)
+        bow_range     = tool_data.get("arrow_range", None)
+        base_range    = (bow_range * BLOCK_SIZE) if bow_range else ARROW_MAX_X
+        gravity_scale = 0.18
+        fall_cap      = MAX_FALL * 0.35
+    else:
+        base_speed    = tool_data.get("spear_speed", SPEAR_SPEED)
+        gun_range     = tool_data.get("spear_range", None)
+        base_range    = (gun_range * BLOCK_SIZE) if gun_range else SPEAR_MAX_X
+        gravity_scale = 0.30
+        fall_cap      = MAX_FALL * 0.50
+
+    speed_val = base_speed * power
+    cvx = player.facing * speed_val * math.cos(angle)
+    cvy = speed_val * math.sin(angle)
+    max_range = base_range * power
+
+    # Trajectory dots — simulate every 3 ticks
+    sx = float(player.x + PLAYER_W / 2)
+    sy = float(player.y + PLAYER_H / 2)
+    dist = 0.0
+    for i in range(28):
+        for _ in range(3):
+            cvy = min(cvy + GRAVITY * gravity_scale, fall_cap)
+            sx += cvx
+            sy += cvy
+            dist += abs(cvx)
+        if dist >= max_range:
+            break
+        dot_x = int(sx) - cam_x
+        dot_y = int(sy) - cam_y
+        radius = max(1, 3 - i // 9)
+        alpha  = max(80, 255 - int(175 * (dist / max_range)))
+        col    = (255, min(255, 200 + int(55 * (1 - power))), 50)
+        pygame.draw.circle(screen, col, (dot_x, dot_y), radius)
+
+    # Power bar above player
+    BAR_W, BAR_H = 40, 5
+    bx = px_s - BAR_W // 2
+    by = py_s - 32
+    pygame.draw.rect(screen, (40, 40, 40), (bx - 1, by - 1, BAR_W + 2, BAR_H + 2))
+    fill_w = max(1, int(BAR_W * power))
+    r = min(255, int(510 * min(1.0, power)))
+    g = min(255, int(510 * max(0.0, 1.0 - power)))
+    pygame.draw.rect(screen, (r, g, 30), (bx, by, fill_w, BAR_H))
 
 
 def draw_automations(screen, automations, cam_x, cam_y, font):

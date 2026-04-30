@@ -997,11 +997,11 @@ def _draw_boots(screen, x, y, w, h, tier, pc, hc, dye):
 
 
 _CLOAK_WIDTHS = {
-    "garment_cloak":          5,
-    "garment_cloak_hooded":   6,
-    "garment_cloak_royal":    9,
-    "garment_cloak_tattered": 5,
-    "garment_cloak_half":     5,
+    "garment_cloak":          8,
+    "garment_cloak_hooded":   9,
+    "garment_cloak_royal":   13,
+    "garment_cloak_tattered": 8,
+    "garment_cloak_half":     7,
 }
 
 def _draw_cloak(screen, cloak_t, px, py, head_h, body_h, facing):
@@ -1011,10 +1011,10 @@ def _draw_cloak(screen, cloak_t, px, py, head_h, body_h, facing):
     dk   = tuple(max(0,   x - 45) for x in c)
     ts   = pygame.time.get_ticks() / 1000.0
     ot   = cloak_t.output_type
-    w    = _CLOAK_WIDTHS.get(ot, 5)
-    sign = 1 if facing == 1 else -1
-    # Back side of the body (opposite the arm)
-    bx   = (px + PLAYER_W) if facing == 1 else (px - w)
+    w    = _CLOAK_WIDTHS.get(ot, 8)
+    # Back side: opposite the facing direction
+    sign = -1 if facing == 1 else 1
+    bx   = (px - w) if facing == 1 else (px + PLAYER_W)
     by   = py + head_h - 1
 
     if ot == "garment_cloak":

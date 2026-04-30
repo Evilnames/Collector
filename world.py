@@ -2627,10 +2627,10 @@ class World:
                     dest_in_channel = self.get_bg_block(nx, y) == _ICB
                     if source_in_channel and dest_in_channel:
                         spread_level = level          # channel preserves level
-                    elif below_nx == AIR:
-                        spread_level = level          # drop exists → no decay
+                    elif below_nx == AIR or below_nx == WATER:
+                        spread_level = level          # drop or submerged → no decay
                     else:
-                        spread_level = level - 1      # flat terrain → normal decay
+                        spread_level = level - 1      # flat terrain (surface) → normal decay
                     if spread_level >= 1:
                         self._chunk_set(nx, y, WATER)
                         self._water_level[(nx, y)] = spread_level

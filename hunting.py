@@ -11,12 +11,12 @@ class Arrow:
     H = 3
 
     def __init__(self, x, y, direction, world, damage=1,
-                 speed=None, max_range=None, poison=False, extra_drops=False,
+                 speed=None, max_range=None, vy_init=0.0, poison=False, extra_drops=False,
                  barb=False, color=None):
         self.x           = float(x)
         self.y           = float(y)
         self.vx          = direction * (speed or ARROW_SPEED)
-        self.vy          = 0.0
+        self.vy          = float(vy_init)
         self.world       = world
         self.dead        = False
         self.damage      = damage
@@ -48,11 +48,11 @@ class Spear:
     H = 3
 
     def __init__(self, x, y, direction, world, damage=2,
-                 speed=None, max_range=None, barb=False, color=None):
+                 speed=None, max_range=None, vy_init=0.0, barb=False, color=None):
         self.x          = float(x)
         self.y          = float(y)
         self.vx         = direction * (speed or SPEAR_SPEED)
-        self.vy         = 0.0
+        self.vy         = float(vy_init)
         self.world      = world
         self.dead       = False
         self.damage     = damage

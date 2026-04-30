@@ -3657,6 +3657,584 @@ FISH_TYPES = {
         ],
         "description": "A deep-sea grenadier found at the very bottom of the ocean trenches. Feeds on organic particles raining down from above — the 'marine snow' of the abyss.",
     },
+
+    # ------------------------------------------------------------------
+    # Savanna (savanna)
+    # ------------------------------------------------------------------
+    "nile_perch": {
+        "name": "Nile Perch",
+        "rarity_pool": ["rare", "epic", "epic", "legendary"],
+        "habitat": "lake",
+        "biome_affinity": ["savanna"],
+        "weight_range": (5.0, 200.0),
+        "length_range": (60, 250),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((185, 195, 205), (120, 128, 138)),
+            ((175, 185, 195), (110, 118, 128)),
+        ],
+        "description": "One of the largest freshwater fish in the world. Its introduction to Lake Victoria caused the extinction of hundreds of native species.",
+        "tension": 2.8,
+    },
+    "tigerfish_africa": {
+        "name": "African Tigerfish",
+        "rarity_pool": ["uncommon", "rare", "rare", "epic"],
+        "habitat": "river",
+        "biome_affinity": ["savanna", "jungle"],
+        "weight_range": (1.5, 15.0),
+        "length_range": (35, 120),
+        "pattern_pool": ["striped", "plain"],
+        "colors": [
+            ((195, 185, 140), (38, 38, 32)),
+            ((185, 175, 130), (32, 32, 28)),
+        ],
+        "description": "Africa's most ferocious river predator. Razor-edged interlocking teeth and explosive speed make it a legendary sporting fish.",
+        "tension": 2.6,
+    },
+    "african_lungfish": {
+        "name": "African Lungfish",
+        "rarity_pool": ["rare", "epic"],
+        "habitat": "river",
+        "biome_affinity": ["savanna", "wetland"],
+        "weight_range": (1.0, 5.0),
+        "length_range": (50, 120),
+        "pattern_pool": ["mottled", "plain"],
+        "colors": [
+            ((95, 88, 62), (58, 52, 35)),
+            ((108, 100, 72), (65, 58, 40)),
+        ],
+        "description": "Breathes air through a primitive lung. Survives drought by burrowing into mud and secreting a mucous cocoon — dormant for up to four years.",
+    },
+    "vundu_catfish": {
+        "name": "Vundu",
+        "rarity_pool": ["epic", "epic", "legendary"],
+        "habitat": "river",
+        "biome_affinity": ["savanna"],
+        "weight_range": (20.0, 100.0),
+        "length_range": (100, 200),
+        "pattern_pool": ["plain", "mottled"],
+        "colors": [
+            ((68, 72, 55), (42, 45, 32)),
+            ((75, 80, 62), (48, 50, 36)),
+        ],
+        "description": "The largest catfish in southern Africa. A nocturnal giant that haunts the deep pools of the Zambezi and Congo rivers.",
+        "tension": 2.4,
+    },
+    "squeaker_catfish": {
+        "name": "Squeaker Catfish",
+        "rarity_pool": ["common", "common", "uncommon"],
+        "habitat": "river",
+        "biome_affinity": ["savanna"],
+        "weight_range": (0.05, 0.8),
+        "length_range": (8, 25),
+        "pattern_pool": ["spotted", "mottled"],
+        "colors": [
+            ((110, 95, 65), (72, 60, 40)),
+            ((125, 108, 75), (80, 68, 45)),
+        ],
+        "description": "Named for the audible squeak it produces by grinding its pectoral spine. A small, abundant catfish of African savanna rivers.",
+    },
+
+    # ------------------------------------------------------------------
+    # Mediterranean (mediterranean)
+    # ------------------------------------------------------------------
+    "branzino": {
+        "name": "Branzino",
+        "rarity_pool": ["uncommon", "uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["mediterranean", "beach"],
+        "weight_range": (0.3, 5.0),
+        "length_range": (25, 70),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((185, 195, 210), (118, 125, 140)),
+            ((175, 185, 200), (108, 115, 130)),
+        ],
+        "description": "The prized European sea bass of Mediterranean lagoons and coastal rivers. Silvery and elegant, with flesh that has made it synonymous with fine dining.",
+    },
+    "red_mullet": {
+        "name": "Red Mullet",
+        "rarity_pool": ["common", "common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["mediterranean"],
+        "weight_range": (0.1, 0.8),
+        "length_range": (12, 28),
+        "pattern_pool": ["plain", "striped"],
+        "colors": [
+            ((215, 80, 60), (235, 195, 155)),
+            ((200, 70, 52), (220, 180, 140)),
+            ((225, 95, 72), (240, 210, 165)),
+        ],
+        "description": "A vivid red goatfish with two chin barbels for sniffing out buried prey. Prized since antiquity — ancient Romans paid fortunes for the largest specimens.",
+    },
+    "common_dentex": {
+        "name": "Common Dentex",
+        "rarity_pool": ["uncommon", "rare", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["mediterranean"],
+        "weight_range": (1.0, 8.0),
+        "length_range": (40, 100),
+        "pattern_pool": ["plain", "mottled"],
+        "colors": [
+            ((125, 140, 180), (195, 165, 145)),
+            ((115, 130, 168), (185, 155, 135)),
+        ],
+        "description": "A powerful Mediterranean predator with protruding canine teeth. Hunts in rocky coastal reefs and is among the most sought-after sporting fish in the region.",
+        "tension": 1.9,
+    },
+    "bluefish": {
+        "name": "Bluefish",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["mediterranean", "beach"],
+        "weight_range": (0.5, 6.0),
+        "length_range": (35, 80),
+        "pattern_pool": ["plain", "striped"],
+        "colors": [
+            ((62, 120, 148), (48, 92, 115)),
+            ((55, 110, 138), (42, 84, 106)),
+        ],
+        "description": "A fierce schooling predator that attacks baitfish in a slashing frenzy, biting indiscriminately at anything that moves. Travels vast distances following prey.",
+        "tension": 2.0,
+    },
+    "greater_amberjack": {
+        "name": "Greater Amberjack",
+        "rarity_pool": ["rare", "rare", "epic"],
+        "habitat": "lake",
+        "biome_affinity": ["mediterranean", "pacific_island"],
+        "weight_range": (5.0, 50.0),
+        "length_range": (70, 180),
+        "pattern_pool": ["plain", "striped"],
+        "colors": [
+            ((55, 110, 168), (205, 168, 55)),
+            ((48, 100, 155), (192, 155, 48)),
+        ],
+        "description": "A muscular open-water predator with a vivid amber stripe running through its eye. One of the hardest-fighting large fish in the Mediterranean.",
+        "tension": 2.3,
+    },
+
+    # ------------------------------------------------------------------
+    # South Asian (south_asian)
+    # ------------------------------------------------------------------
+    "mahseer": {
+        "name": "Golden Mahseer",
+        "rarity_pool": ["rare", "rare", "epic", "legendary"],
+        "habitat": "river",
+        "biome_affinity": ["south_asian"],
+        "weight_range": (2.0, 30.0),
+        "length_range": (40, 150),
+        "pattern_pool": ["scaled", "plain"],
+        "colors": [
+            ((210, 165, 55), (155, 118, 35)),
+            ((225, 178, 65), (168, 128, 40)),
+            ((195, 150, 45), (140, 105, 28)),
+        ],
+        "description": "The 'Tiger of Indian Rivers' — a golden torpedo of extraordinary power. Revered as a sport fish for over a century, it now swims in critically few clear Himalayan rivers.",
+        "tension": 2.7,
+    },
+    "rohu": {
+        "name": "Rohu",
+        "rarity_pool": ["common", "common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["south_asian"],
+        "weight_range": (1.0, 5.0),
+        "length_range": (40, 80),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((168, 155, 120), (195, 95, 72)),
+            ((155, 142, 108), (182, 85, 62)),
+        ],
+        "description": "The most important food fish of the Indian subcontinent. A herbivorou carp with reddish-orange fins that inhabits slow rivers and floodplain lakes.",
+    },
+    "catla": {
+        "name": "Catla",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["south_asian"],
+        "weight_range": (2.0, 15.0),
+        "length_range": (45, 90),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((175, 180, 192), (108, 112, 125)),
+            ((165, 170, 182), (98, 102, 115)),
+        ],
+        "description": "A large silver carp with a cavernous upturned mouth and a massive head. A surface feeder that rises in vast leaps at dawn across Indian river lakes.",
+    },
+    "hilsa": {
+        "name": "Hilsa Shad",
+        "rarity_pool": ["uncommon", "rare", "rare"],
+        "habitat": "river",
+        "biome_affinity": ["south_asian"],
+        "weight_range": (0.5, 3.0),
+        "length_range": (30, 60),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((195, 210, 220), (140, 158, 175)),
+            ((185, 200, 212), (130, 148, 165)),
+        ],
+        "description": "The national fish of Bangladesh. A migratory shad of great cultural importance — its run upriver at monsoon is celebrated across the subcontinent. Its many fine bones are legendary.",
+    },
+    "murrel": {
+        "name": "Snakehead Murrel",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["south_asian", "jungle"],
+        "weight_range": (0.5, 4.0),
+        "length_range": (30, 75),
+        "pattern_pool": ["mottled", "spotted"],
+        "colors": [
+            ((75, 80, 55), (115, 120, 82)),
+            ((68, 72, 48), (105, 110, 74)),
+        ],
+        "description": "The most widespread snakehead of Asia. A tough, air-breathing predator that can walk overland and inhabits every kind of still water from ponds to flooded rice paddies.",
+    },
+
+    # ------------------------------------------------------------------
+    # Alpine / Rocky Mountain (alpine_mountain, rocky_mountain, steep_hills)
+    # ------------------------------------------------------------------
+    "marble_trout": {
+        "name": "Marble Trout",
+        "rarity_pool": ["rare", "rare", "epic"],
+        "habitat": "river",
+        "biome_affinity": ["alpine_mountain", "rocky_mountain"],
+        "weight_range": (0.5, 8.0),
+        "length_range": (30, 90),
+        "pattern_pool": ["mottled", "spotted"],
+        "colors": [
+            ((105, 158, 85), (210, 150, 55)),
+            ((95, 145, 75), (195, 138, 48)),
+            ((115, 168, 95), (225, 162, 62)),
+        ],
+        "description": "Found only in a few pristine Slovenian rivers. Its wild marble camouflage — green, gold, and black swirled together — makes it the most beautiful trout in Europe.",
+    },
+    "huchen": {
+        "name": "Huchen",
+        "rarity_pool": ["epic", "epic", "legendary"],
+        "habitat": "river",
+        "biome_affinity": ["alpine_mountain", "rocky_mountain"],
+        "weight_range": (10.0, 60.0),
+        "length_range": (80, 200),
+        "pattern_pool": ["plain", "spotted"],
+        "colors": [
+            ((145, 118, 85), (90, 72, 50)),
+            ((158, 130, 95), (100, 80, 58)),
+        ],
+        "description": "The Danube salmon — a torpedo-shaped apex predator of European mountain rivers. Can live 20 years and grows to enormous size. Strikes with terrifying power.",
+        "tension": 3.0,
+    },
+    "alpine_char": {
+        "name": "Alpine Char",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["alpine_mountain", "rocky_mountain", "tundra"],
+        "weight_range": (0.2, 3.0),
+        "length_range": (18, 55),
+        "pattern_pool": ["spotted", "plain"],
+        "colors": [
+            ((215, 95, 58), (160, 185, 195)),
+            ((200, 85, 50), (148, 172, 182)),
+        ],
+        "description": "A landlocked char of glacial mountain lakes. Its brilliant breeding colors — vivid orange belly, white-edged fins — appear as if painted by hand.",
+    },
+    "lenok": {
+        "name": "Lenok",
+        "rarity_pool": ["uncommon", "rare", "rare"],
+        "habitat": "river",
+        "biome_affinity": ["alpine_mountain", "rocky_mountain", "boreal"],
+        "weight_range": (0.5, 5.0),
+        "length_range": (35, 75),
+        "pattern_pool": ["spotted", "plain"],
+        "colors": [
+            ((158, 135, 80), (195, 72, 48)),
+            ((145, 122, 70), (182, 62, 40)),
+        ],
+        "description": "Siberia's prized trout relative. Covered in black and orange spots, it inhabits the coldest, clearest mountain rivers across Asia. Known to local fishermen as the 'Siberian salmon.'",
+    },
+    "european_grayling": {
+        "name": "European Grayling",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "river",
+        "biome_affinity": ["alpine_mountain", "steep_hills", "temperate", "boreal"],
+        "weight_range": (0.2, 2.0),
+        "length_range": (20, 50),
+        "pattern_pool": ["spotted", "plain"],
+        "colors": [
+            ((178, 178, 195), (110, 88, 165)),
+            ((168, 168, 185), (100, 80, 152)),
+        ],
+        "description": "The 'Lady of the Stream' — a beautiful sail-finned fish with a delicate violet iridescence on its enormous dorsal fin. Prefers cold, fast, gravelly rivers.",
+    },
+
+    # ------------------------------------------------------------------
+    # Canyon / Steppe / Desert (canyon, steppe, arid_steppe, desert)
+    # ------------------------------------------------------------------
+    "colorado_pikeminnow": {
+        "name": "Colorado Pikeminnow",
+        "rarity_pool": ["epic", "epic", "legendary"],
+        "habitat": "river",
+        "biome_affinity": ["canyon", "steppe", "arid_steppe"],
+        "weight_range": (5.0, 36.0),
+        "length_range": (60, 180),
+        "pattern_pool": ["plain", "mottled"],
+        "colors": [
+            ((108, 118, 82), (168, 178, 138)),
+            ((98, 108, 74), (155, 165, 126)),
+        ],
+        "description": "Once the apex predator of the Colorado River. Now critically endangered — fewer than a thousand survive. A living relic of an ancient and vanishing river.",
+        "tension": 2.2,
+    },
+    "razorback_sucker": {
+        "name": "Razorback Sucker",
+        "rarity_pool": ["rare", "epic", "legendary"],
+        "habitat": "river",
+        "biome_affinity": ["canyon", "arid_steppe", "desert"],
+        "weight_range": (2.0, 10.0),
+        "length_range": (50, 100),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((90, 95, 62), (152, 148, 108)),
+            ((80, 85, 55), (140, 136, 98)),
+        ],
+        "description": "A humpbacked sucker of the American West's great river canyons. The prominent keel on its back makes it unmistakable. Critically endangered. May live over 40 years.",
+    },
+    "humpback_chub": {
+        "name": "Humpback Chub",
+        "rarity_pool": ["uncommon", "rare", "rare"],
+        "habitat": "river",
+        "biome_affinity": ["canyon", "steppe"],
+        "weight_range": (0.05, 0.5),
+        "length_range": (15, 38),
+        "pattern_pool": ["plain", "mottled"],
+        "colors": [
+            ((148, 138, 98), (88, 82, 55)),
+            ((138, 128, 88), (80, 75, 50)),
+        ],
+        "description": "An ancient minnow found only in the Grand Canyon. Its prominent hump is thought to stabilize it in fierce whitewater currents. A survivor from a time before dams.",
+    },
+    "bonytail_chub": {
+        "name": "Bonytail Chub",
+        "rarity_pool": ["rare", "epic"],
+        "habitat": "river",
+        "biome_affinity": ["canyon", "desert"],
+        "weight_range": (0.1, 0.8),
+        "length_range": (20, 45),
+        "pattern_pool": ["plain", "striped"],
+        "colors": [
+            ((145, 148, 158), (95, 98, 108)),
+            ((135, 138, 148), (88, 90, 100)),
+        ],
+        "description": "One of the rarest fish in North America. Its whip-like tail — nearly half its body length — is adapted for swift canyon currents. Effectively extinct in the wild.",
+    },
+    "desert_pupfish": {
+        "name": "Desert Pupfish",
+        "rarity_pool": ["uncommon", "uncommon", "rare"],
+        "habitat": "river",
+        "biome_affinity": ["desert", "arid_steppe"],
+        "weight_range": (0.001, 0.008),
+        "length_range": (2, 6),
+        "pattern_pool": ["plain", "banded"],
+        "colors": [
+            ((58, 128, 195), (175, 162, 88)),
+            ((48, 115, 180), (162, 150, 78)),
+        ],
+        "description": "Survives in isolated desert springs at temperatures and salt concentrations lethal to most fish. Males gleam iridescent blue. Each population is a separate, irreplaceable species.",
+    },
+    "wadi_catfish": {
+        "name": "Wadi Catfish",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "river",
+        "biome_affinity": ["desert", "canyon"],
+        "weight_range": (0.2, 2.0),
+        "length_range": (18, 50),
+        "pattern_pool": ["mottled", "plain"],
+        "colors": [
+            ((128, 112, 78), (85, 72, 48)),
+            ((138, 122, 85), (92, 78, 52)),
+        ],
+        "description": "A whisker-bearing survivor of desert flash floods. Aestivates in mud during droughts, reawakening when rains return to dry riverbeds. Found in wadis across Arabia and the Sahara.",
+    },
+
+    # ------------------------------------------------------------------
+    # Redwood (redwood)
+    # ------------------------------------------------------------------
+    "pacific_lamprey": {
+        "name": "Pacific Lamprey",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "river",
+        "biome_affinity": ["redwood", "boreal"],
+        "weight_range": (0.3, 2.0),
+        "length_range": (40, 90),
+        "pattern_pool": ["plain", "mottled"],
+        "colors": [
+            ((80, 92, 62), (52, 60, 40)),
+            ((72, 84, 55), (46, 54, 35)),
+        ],
+        "description": "An eel-like jawless fish that has swum Pacific coastal rivers for 340 million years. Sacred to indigenous peoples of the Pacific Northwest, who have harvested it in the same places for millennia.",
+    },
+    "green_sturgeon": {
+        "name": "Green Sturgeon",
+        "rarity_pool": ["epic", "epic", "legendary"],
+        "habitat": "river",
+        "biome_affinity": ["redwood", "boreal"],
+        "weight_range": (20.0, 150.0),
+        "length_range": (120, 250),
+        "pattern_pool": ["plated", "plain"],
+        "colors": [
+            ((72, 108, 72), (45, 68, 45)),
+            ((65, 98, 65), (40, 62, 40)),
+        ],
+        "description": "A massive, olive-armored prehistoric fish of Pacific coastal rivers. Can live 70 years and grows larger than a man. Its range has shrunk to a handful of rivers.",
+        "tension": 3.2,
+    },
+    "tule_perch": {
+        "name": "Tule Perch",
+        "rarity_pool": ["common", "common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["redwood"],
+        "weight_range": (0.05, 0.3),
+        "length_range": (10, 22),
+        "pattern_pool": ["plain", "banded"],
+        "colors": [
+            ((138, 148, 88), (98, 105, 60)),
+            ((128, 138, 80), (90, 96, 54)),
+        ],
+        "description": "The only viviparous freshwater fish in the western US — it gives birth to live young. Endemic to California's coastal rivers and estuaries.",
+    },
+    "coastal_cutthroat": {
+        "name": "Coastal Cutthroat",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "river",
+        "biome_affinity": ["redwood", "boreal"],
+        "weight_range": (0.2, 2.5),
+        "length_range": (20, 55),
+        "pattern_pool": ["spotted", "plain"],
+        "colors": [
+            ((118, 142, 85), (212, 72, 52)),
+            ((108, 130, 78), (198, 64, 46)),
+        ],
+        "description": "A sea-run cutthroat trout of old-growth coastal streams. Moves between salt and fresh water, always returning to the shadow of ancient redwoods.",
+    },
+
+    # ------------------------------------------------------------------
+    # East Asian (east_asian)
+    # ------------------------------------------------------------------
+    "mandarin_fish": {
+        "name": "Mandarin Fish",
+        "rarity_pool": ["rare", "rare", "epic"],
+        "habitat": "lake",
+        "biome_affinity": ["east_asian", "temperate"],
+        "weight_range": (0.3, 2.0),
+        "length_range": (25, 45),
+        "pattern_pool": ["mottled", "spotted"],
+        "colors": [
+            ((45, 148, 72), (215, 118, 35)),
+            ((38, 135, 62), (200, 105, 28)),
+        ],
+        "description": "Also called the Chinese perch — a voracious predator with the markings of a classical painting. Prefers clear rocky lakes in southern China and has been prized since the Tang Dynasty.",
+    },
+    "chinese_sturgeon": {
+        "name": "Chinese Sturgeon",
+        "rarity_pool": ["epic", "epic", "legendary"],
+        "habitat": "river",
+        "biome_affinity": ["east_asian"],
+        "weight_range": (100.0, 300.0),
+        "length_range": (150, 400),
+        "pattern_pool": ["plated", "plain"],
+        "colors": [
+            ((72, 78, 90), (45, 50, 60)),
+            ((80, 86, 100), (50, 55, 68)),
+        ],
+        "description": "One of the largest and most ancient fish in the world. Migrates thousands of kilometres up the Yangtze to spawn. Critically endangered — fewer than 100 are believed to remain.",
+        "tension": 3.5,
+    },
+    "silver_carp": {
+        "name": "Silver Carp",
+        "rarity_pool": ["common", "common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["east_asian", "temperate"],
+        "weight_range": (1.0, 8.0),
+        "length_range": (40, 90),
+        "pattern_pool": ["plain", "scaled"],
+        "colors": [
+            ((195, 200, 210), (140, 148, 160)),
+            ((185, 190, 200), (130, 138, 150)),
+        ],
+        "description": "A filter-feeding carp that leaps dramatically from the water when startled by boat motors. Now an invasive giant across North American waterways.",
+    },
+    "bighead_carp": {
+        "name": "Bighead Carp",
+        "rarity_pool": ["uncommon", "rare"],
+        "habitat": "lake",
+        "biome_affinity": ["east_asian", "temperate"],
+        "weight_range": (2.0, 20.0),
+        "length_range": (50, 100),
+        "pattern_pool": ["plain", "mottled"],
+        "colors": [
+            ((125, 128, 115), (80, 82, 72)),
+            ((115, 118, 105), (72, 75, 65)),
+        ],
+        "description": "An enormous filter-feeder whose comically oversized head takes up nearly half its body length. Can consume 40% of its body weight in plankton daily.",
+    },
+    "chinese_paddlefish": {
+        "name": "Chinese Paddlefish",
+        "rarity_pool": ["legendary"],
+        "habitat": "river",
+        "biome_affinity": ["east_asian"],
+        "weight_range": (100.0, 300.0),
+        "length_range": (150, 300),
+        "pattern_pool": ["plain", "spotted"],
+        "colors": [
+            ((88, 92, 108), (140, 145, 165)),
+            ((80, 85, 100), (128, 132, 152)),
+        ],
+        "description": "A ghost. The Chinese paddlefish was officially declared extinct in 2020 — the last confirmed sighting was in 2003. To catch one here is to witness something lost forever.",
+    },
+
+    # ------------------------------------------------------------------
+    # Wasteland (wasteland)
+    # ------------------------------------------------------------------
+    "blind_cavefish": {
+        "name": "Blind Cavefish",
+        "rarity_pool": ["uncommon", "rare", "epic"],
+        "habitat": "river",
+        "biome_affinity": ["wasteland", "canyon"],
+        "weight_range": (0.02, 0.1),
+        "length_range": (5, 12),
+        "pattern_pool": ["plain", "spotted"],
+        "colors": [
+            ((235, 215, 205), (195, 175, 162)),
+            ((225, 205, 195), (185, 165, 152)),
+        ],
+        "description": "Evolved in lightless underground rivers over millions of years, losing eyes and pigment entirely. Navigates by pressure-sensitive cells lining its body. A marvel of adaptation.",
+    },
+    "desert_killifish": {
+        "name": "Desert Killifish",
+        "rarity_pool": ["common", "uncommon", "uncommon"],
+        "habitat": "river",
+        "biome_affinity": ["wasteland", "desert", "arid_steppe"],
+        "weight_range": (0.001, 0.01),
+        "length_range": (2, 5),
+        "pattern_pool": ["plain", "spotted"],
+        "colors": [
+            ((115, 105, 72), (75, 68, 45)),
+            ((125, 115, 80), (82, 75, 50)),
+        ],
+        "description": "Survives in alkaline pools, thermal springs, and shrinking desert puddles that would kill any other fish. Among the most stress-tolerant vertebrates on Earth.",
+    },
+    "resilient_carp": {
+        "name": "Resilient Carp",
+        "rarity_pool": ["common", "common", "common", "uncommon"],
+        "habitat": "lake",
+        "biome_affinity": ["wasteland", "swamp"],
+        "weight_range": (0.5, 6.0),
+        "length_range": (25, 65),
+        "pattern_pool": ["plain", "mottled"],
+        "colors": [
+            ((105, 95, 68), (65, 58, 42)),
+            ((115, 105, 75), (72, 65, 48)),
+        ],
+        "description": "A carp adapted to the most degraded waters — polluted, oxygen-starved, and silted. Can breathe surface air in a pinch. Found wherever water remains, no matter how foul.",
+    },
 }
 
 # Order for display in the fish codex (roughly by biome group, then rarity)
@@ -3708,6 +4286,23 @@ FISH_TYPE_ORDER = [
     "striped_loach", "dojou", "namazu", "gigi",
     "yamame", "amago", "iwana", "ugui", "itou",
     "sakura_masu", "shishamo", "aburahaya", "japanese_eel", "biwamasu",
+    # East Asian
+    "mandarin_fish", "chinese_sturgeon", "silver_carp", "bighead_carp", "chinese_paddlefish",
+    # Savanna
+    "nile_perch", "tigerfish_africa", "african_lungfish", "vundu_catfish", "squeaker_catfish",
+    # Mediterranean
+    "branzino", "red_mullet", "common_dentex", "bluefish", "greater_amberjack",
+    # South Asian
+    "mahseer", "rohu", "catla", "hilsa", "murrel",
+    # Alpine / Rocky Mountain
+    "marble_trout", "huchen", "alpine_char", "lenok", "european_grayling",
+    # Canyon / Desert / Steppe
+    "colorado_pikeminnow", "razorback_sucker", "humpback_chub", "bonytail_chub",
+    "desert_pupfish", "wadi_catfish",
+    # Redwood
+    "pacific_lamprey", "green_sturgeon", "tule_perch", "coastal_cutthroat",
+    # Wasteland
+    "blind_cavefish", "desert_killifish", "resilient_carp",
     # Ocean Reef
     "clownfish", "moorish_idol", "lionfish", "parrotfish_reef", "grouper",
     "blue_tang", "damselfish", "wrasse", "hawksbill_companion", "sergeant_major",
@@ -3783,6 +4378,20 @@ FISH_BIOME_GROUPS = [
                             "striped_loach", "dojou", "namazu", "gigi",
                             "yamame", "amago", "iwana", "ugui", "itou",
                             "sakura_masu", "shishamo", "aburahaya", "japanese_eel", "biwamasu"]),
+    ("East Asian",       ["mandarin_fish", "chinese_sturgeon", "silver_carp", "bighead_carp",
+                          "chinese_paddlefish"]),
+    ("Savanna",          ["nile_perch", "tigerfish_africa", "african_lungfish",
+                          "vundu_catfish", "squeaker_catfish"]),
+    ("Mediterranean",    ["branzino", "red_mullet", "common_dentex", "bluefish",
+                          "greater_amberjack"]),
+    ("South Asian",      ["mahseer", "rohu", "catla", "hilsa", "murrel"]),
+    ("Alpine / Mountain",["marble_trout", "huchen", "alpine_char", "lenok",
+                          "european_grayling"]),
+    ("Canyon / Desert",  ["colorado_pikeminnow", "razorback_sucker", "humpback_chub",
+                          "bonytail_chub", "desert_pupfish", "wadi_catfish"]),
+    ("Redwood",          ["pacific_lamprey", "green_sturgeon", "tule_perch",
+                          "coastal_cutthroat"]),
+    ("Wasteland",        ["blind_cavefish", "desert_killifish", "resilient_carp"]),
     ("Ocean Reef",       ["clownfish", "moorish_idol", "lionfish", "parrotfish_reef", "grouper",
                           "blue_tang", "damselfish", "wrasse", "hawksbill_companion", "sergeant_major",
                           "butterflyfish", "ocean_angelfish", "trumpetfish", "barracuda", "moray_eel",
@@ -4038,78 +4647,152 @@ def render_fish(fish, size=58):
         return cached
 
     surf = pygame.Surface((size, size), pygame.SRCALPHA)
-    rng = random.Random(fish.seed)
+    rng  = random.Random(fish.seed)
 
     pc = fish.primary_color
     sc = fish.secondary_color
-    dark = (max(0, pc[0] - 45), max(0, pc[1] - 45), max(0, pc[2] - 45))
+    dark    = (max(0, pc[0]-55), max(0, pc[1]-55), max(0, pc[2]-55))
+    light   = (min(255, pc[0]+68), min(255, pc[1]+68), min(255, pc[2]+72))
+    belly_c = (min(255, pc[0]+48), min(255, pc[1]+52), min(255, pc[2]+56))
+    sc_dark = (max(0, sc[0]-45), max(0, sc[1]-45), max(0, sc[2]-45))
 
-    # Body: elongated ellipse
-    bw = int(size * 0.68)
-    bh = int(size * 0.36)
-    bx0 = int(size * 0.18)
-    by0 = size // 2 - bh // 2
+    # ── Body geometry ─────────────────────────────────────────────────
+    bw  = int(size * 0.64)
+    bh  = int(size * 0.34)
+    bx0 = int(size * 0.21)   # left (tail) edge
+    bxr = bx0 + bw            # right (head) edge
+    cy  = size // 2
+    by0 = cy - bh // 2
+    byr = by0 + bh
 
+    # ── Forked tail ───────────────────────────────────────────────────
+    # Narrow peduncle where tail meets body, then two diverging lobes
+    neck_x    = bx0 + int(bw * 0.07)
+    neck_top  = cy - int(bh * 0.24)
+    neck_bot  = cy + int(bh * 0.24)
+    tip_x     = int(size * 0.03)
+    tip_spread = int(size * 0.16)
+    mid_x     = int(size * 0.12)
+
+    upper_lobe = [(neck_x, neck_top),
+                  (mid_x,  cy - int(size * 0.05)),
+                  (tip_x,  cy - tip_spread)]
+    lower_lobe = [(neck_x, neck_bot),
+                  (mid_x,  cy + int(size * 0.05)),
+                  (tip_x,  cy + tip_spread)]
+    pygame.draw.polygon(surf, sc, upper_lobe)
+    pygame.draw.polygon(surf, sc, lower_lobe)
+    pygame.draw.polygon(surf, sc_dark, upper_lobe, 1)
+    pygame.draw.polygon(surf, sc_dark, lower_lobe, 1)
+
+    # ── Anal fin (small bottom-centre triangle) ───────────────────────
+    af_x = bx0 + int(bw * 0.28)
+    pygame.draw.polygon(surf, sc, [
+        (af_x,                  byr - 1),
+        (af_x + int(bw * 0.13), byr - 1),
+        (af_x + int(bw * 0.065), byr + int(size * 0.09)),
+    ])
+
+    # ── Main body ────────────────────────────────────────────────────
     pygame.draw.ellipse(surf, pc, (bx0, by0, bw, bh))
 
-    # Tail fin
-    cx_tail = bx0
-    cy_mid = size // 2
-    tail_pts = [
-        (cx_tail, cy_mid),
-        (int(size * 0.04), cy_mid - int(size * 0.19)),
-        (int(size * 0.04), cy_mid + int(size * 0.19)),
-    ]
-    pygame.draw.polygon(surf, sc, tail_pts)
+    # Belly lighter band (bottom ~38% of body height)
+    bh_belly = int(bh * 0.40)
+    pygame.draw.ellipse(surf, belly_c,
+                        (bx0 + int(bw*0.10), byr - bh_belly,
+                         int(bw * 0.68), bh_belly - 1))
 
-    # Dorsal fin
-    fin_pts = [
-        (bx0 + int(bw * 0.30), by0),
-        (bx0 + int(bw * 0.15), by0 - int(size * 0.13)),
-        (bx0 + int(bw * 0.52), by0 - int(size * 0.09)),
-    ]
+    # Dorsal sheen (top highlight strip)
+    pygame.draw.ellipse(surf, light,
+                        (bx0 + int(bw*0.14), by0 + int(bh*0.10),
+                         int(bw * 0.56), int(bh * 0.24)))
+
+    # ── Dorsal fin ────────────────────────────────────────────────────
+    df_l    = bx0 + int(bw * 0.16)
+    df_r    = bx0 + int(bw * 0.52)
+    df_tx   = bx0 + int(bw * 0.26)
+    df_ty   = by0 - int(size * 0.17)
+    fin_pts = [(df_l, by0), (df_tx, df_ty), (df_r, by0)]
     pygame.draw.polygon(surf, sc, fin_pts)
+    # Two internal fin rays
+    for t in (0.30, 0.62):
+        rx = int(df_l + t * (df_r - df_l))
+        pygame.draw.line(surf, sc_dark,
+                         (rx, by0),
+                         (int(df_l + t * (df_tx - df_l)),
+                          int(by0 + t * (df_ty - by0))), 1)
+    pygame.draw.polygon(surf, sc_dark, fin_pts, 1)
 
-    # Pattern overlay
+    # ── Pectoral fin (small side fin near head) ───────────────────────
+    pec_x = bx0 + int(bw * 0.74)
+    pec_y = cy + int(bh * 0.16)
+    pygame.draw.polygon(surf, sc, [
+        (pec_x,                  pec_y - 1),
+        (pec_x - int(size*0.05), pec_y + int(size*0.09)),
+        (pec_x - int(size*0.11), pec_y + int(size*0.03)),
+    ])
+
+    # ── Pattern overlay ───────────────────────────────────────────────
     if fish.pattern == "striped":
         for i in range(3):
-            sx = bx0 + int(bw * (0.22 + i * 0.22))
-            pygame.draw.line(surf, sc, (sx, by0 + 3), (sx, by0 + bh - 3), 2)
+            sx = bx0 + int(bw * (0.19 + i * 0.22))
+            t  = (sx - bx0) / bw
+            hw = int((bh / 2) * math.sqrt(max(0.0, 1.0 - (2*t - 1)**2)))
+            pygame.draw.line(surf, sc, (sx, cy - hw + 2), (sx, cy + hw - 2), 2)
+
     elif fish.pattern == "spotted":
-        for _ in range(5):
-            dot_x = rng.randint(bx0 + 6, bx0 + bw - 10)
-            dot_y = rng.randint(by0 + 4, by0 + bh - 4)
-            pygame.draw.circle(surf, sc, (dot_x, dot_y), rng.randint(2, 4))
-    elif fish.pattern == "banded":
-        for i in range(2):
-            bnd_x = bx0 + int(bw * (0.28 + i * 0.28))
-            bnd_w = max(3, int(bw * 0.10))
-            r = pygame.Rect(bnd_x, by0 + 3, bnd_w, bh - 6)
-            pygame.draw.rect(surf, sc, r)
-    elif fish.pattern == "mottled":
         for _ in range(6):
-            mx2 = rng.randint(bx0 + 4, bx0 + bw - 8)
-            my2 = rng.randint(by0 + 3, by0 + bh - 3)
-            pygame.draw.ellipse(surf, sc, (mx2, my2, rng.randint(4, 8), rng.randint(3, 6)))
+            dx = rng.randint(bx0 + 6, bxr - 12)
+            dy = rng.randint(by0 + 3, byr - 3)
+            r  = rng.randint(2, 4)
+            pygame.draw.circle(surf, sc,      (dx, dy), r)
+            pygame.draw.circle(surf, sc_dark, (dx, dy), r, 1)
+
+    elif fish.pattern == "banded":
+        for i in range(3):
+            bx = bx0 + int(bw * (0.17 + i * 0.22))
+            t  = (bx - bx0) / bw
+            hw = int((bh / 2) * math.sqrt(max(0.0, 1.0 - (2*t - 1)**2)))
+            bw2 = max(3, int(bw * 0.08))
+            pygame.draw.rect(surf, sc, (bx, cy - hw + 2, bw2, hw * 2 - 4))
+
+    elif fish.pattern == "mottled":
+        for _ in range(8):
+            mx = rng.randint(bx0 + 4, bxr - 10)
+            my = rng.randint(by0 + 3, byr - 5)
+            pygame.draw.ellipse(surf, sc,
+                                (mx, my, rng.randint(5, 10), rng.randint(3, 6)))
+
     elif fish.pattern == "scaled":
+        # Overlapping arc rows — like real fish scales
+        sc_r = max(5, size // 10)
         for row in range(3):
-            for col in range(4):
-                sx = bx0 + 8 + col * max(1, bw // 4)
-                sy = by0 + 5 + row * max(1, bh // 3)
-                pygame.draw.circle(surf, sc, (sx, sy), 3, 1)
+            for col in range(5):
+                sx = bx0 + 3 + col * (bw // 5)
+                sy = by0 + 1 + row * (bh // 3)
+                ox = (row % 2) * (bw // 10)
+                pygame.draw.arc(surf, sc,
+                                (sx + ox - sc_r // 2, sy, sc_r, sc_r),
+                                math.pi * 0.15, math.pi * 0.85, 1)
+
     elif fish.pattern == "plated":
         for i in range(5):
-            px_s = bx0 + int(bw * (0.10 + i * 0.17))
-            pygame.draw.line(surf, sc, (px_s, by0 + 2), (px_s, by0 + bh - 2), 3)
+            px = bx0 + int(bw * (0.08 + i * 0.17))
+            t  = (px - bx0) / bw
+            hw = int((bh / 2) * math.sqrt(max(0.0, 1.0 - (2*t - 1)**2)))
+            pygame.draw.line(surf, sc, (px, cy - hw + 2), (px, cy + hw - 2), 3)
 
-    # Eye
-    eye_x = bx0 + int(bw * 0.84)
-    eye_y = size // 2 - 2
-    pygame.draw.circle(surf, (15, 15, 15), (eye_x, eye_y), max(2, size // 20))
-    pygame.draw.circle(surf, (230, 230, 230), (eye_x - 1, eye_y - 1), max(1, size // 40))
-
-    # Body outline
+    # ── Body outline ──────────────────────────────────────────────────
     pygame.draw.ellipse(surf, dark, (bx0, by0, bw, bh), 1)
+
+    # ── Eye ───────────────────────────────────────────────────────────
+    eye_x = bxr - int(bw * 0.13)
+    eye_y = cy  - int(size * 0.03)
+    eye_r = max(2, size // 17)
+    pygame.draw.circle(surf, (205, 220, 232), (eye_x, eye_y), eye_r)           # sclera
+    pygame.draw.circle(surf, (16, 16, 22),    (eye_x, eye_y), max(1, eye_r-1)) # pupil
+    pygame.draw.circle(surf, (255, 255, 255), (eye_x-1, eye_y-1),
+                       max(1, size // 42))                                       # gleam
 
     _fish_render_cache[key] = surf
     return surf

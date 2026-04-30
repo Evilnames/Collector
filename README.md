@@ -134,6 +134,62 @@ Each outpost buys specific goods, sells region-exclusive materials, and gives qu
 
 ---
 
+## Player Cities
+
+Place a **City Block** anywhere in the world to anchor your own settlement. The City Block is an unbreakable background block that defines the city center. Everything within **±80 blocks horizontally and ±50 blocks vertically** of it is your city region — the area where settlers work, buildings count toward city stats, and resources are managed.
+
+### Getting Started
+
+1. Craft a **City Block** item and place it (background layer) where you want your settlement.
+2. Press **E** near it to open the City Block Menu.
+3. Name your city, design a coat of arms, and deposit coins into the treasury.
+
+### Settlers
+
+Settlers arrive passively each in-game dawn. Arrival chance per bed in the city region:
+
+> **Base 15%** + **5% per food chest** − **5% per unemployed settler**
+
+Each settler is procedurally generated with a name, trait, and six stats (Strength, Agility, Craft, Endurance, Intelligence, Animal Affinity — each 1–10). Daily wage scales from **5–25 coins** based on total stats.
+
+Settlers need both **food** and **wages** from the city treasury every day. Miss two days of either and they become disgruntled (50% work efficiency). Miss three days and they leave permanently.
+
+### Jobs
+
+Assign settlers jobs via the **Job Panel**. Each job draws on specific stats for throughput:
+
+| Job | Stat | What It Does |
+|-----|------|-------------|
+| **Farming** | Agility | Harvests mature crops in the city region and replants |
+| **Mining** | Strength | Extracts blocks from a configured Mining Post radius |
+| **Hauling** | Agility + Strength | Moves items between two specified chests |
+| **Taming** | Animal Affinity | Collects milk and eggs from livestock in the region |
+| **Logging** | Strength | Fells trees in the city region and deposits lumber |
+| **Cooking** | Craft | Converts raw meat and eggs into cooked meals |
+
+Unemployed settlers don't work but still consume food and wages.
+
+### City Block Menu
+
+Open with **E** while within 3 blocks of the City Block.
+
+- **Name** — Click to rename your city (28 character limit).
+- **Coat of Arms** — Design button opens the heraldry editor. Choose a division, ordinary, charge, tinctures, metals, and a custom motto.
+- **Treasury** — Deposit coins (+10 / +50 / +200 / All). The menu shows your daily wage drain and how many days of funds remain.
+- **Settler Roster** — Lists up to 9 settlers with name, trait, job status, and wage. Color coded: green = employed, yellow = idle, red = disgruntled, dim = seeking work.
+
+### Infrastructure Blocks
+
+| Block | Purpose |
+|-------|---------|
+| **City Block** (1249) | Settlement anchor — defines the city center |
+| **Mining Post** (1252) | Marks the work zone for Mining settlers |
+| **Banner Block** (1253) | Displays your city coat of arms |
+
+Beds and food chests placed within the city region contribute to settler attraction. More beds means more chances; more food chests boosts the arrival roll. Keep chests stocked and the treasury funded to grow your population steadily.
+
+---
+
 ## Research — 24 Columns
 
 Progress is gated behind a research tree organized into 24 disciplines:
@@ -157,13 +213,147 @@ Depth gates (shallow / mid / deep / core) gate research nodes — you cannot rus
 
 ## Automation and Machinery
 
-When the hand work is done, machines take over:
-- **FarmBot** — automated crop planting and harvesting, configurable per plot
-- **Backhoe** — excavates tunnels and deposits ore to a chest
-- **Minecarts** — ore transport across rail networks you lay by hand
-- **Elevators** — vertical travel through deep mine shafts
-- **Logic Gates + Wire** — programmable automation circuits for device control
-- **Automations** require oil. Oil is finite. Plan accordingly.
+### Mining Machines — 3 Tiers
+
+Point a miner in a direction and it digs indefinitely, collecting drops into its internal inventory. Each tier cuts through harder rock, carries more, and refuels on a different resource.
+
+| Machine | Fuel | Max Hardness | Inventory |
+|---------|------|-------------|-----------|
+| Coal Miner | Coal | 3 (stone, soft ore) | 30 slots |
+| Iron Miner | Iron Chunks | 6 (deep ore, granite) | 50 slots |
+| Crystal Miner | Crystal Shards | 9 (all blocks) | 80 slots |
+
+Miners halt automatically when fuel runs out, inventory fills, or they hit an indestructible block. Connect a logic wire — the miner reads it as an enable pin. No power on the wire means the miner stops. Power restored, it resumes. Chain this with a Deposit Trigger to build a full stop-fill-dump-resume cycle without any player input.
+
+### Farm Bots — 3 Tiers
+
+A Farm Bot scans a radius around itself each tick, harvesting mature crops and replanting from its seed inventory automatically. Higher tiers do more.
+
+| Bot | Fuel | Scan Radius | Special |
+|-----|------|------------|---------|
+| Farm Bot | Coal | 5 blocks | Harvest + replant |
+| Iron Farm Bot | Iron Chunks | 9 blocks | + internal water tank, auto-irrigates dry soil |
+| Crystal Farm Bot | Crystal Shards | 13 blocks | + water tank + compost slot + auto-tills dirt/grass |
+
+The Crystal Farm Bot converts raw dirt and grass into tilled soil, waters it, applies compost when fertility drops, and cycles seeds it harvests back into its own seed slot. A fully stocked Crystal Farm Bot left running is a closed agricultural loop.
+
+### Backhoe
+
+A player-operated heavy excavator that runs on oil barrels. The arm has 4-block reach and can be aimed in any direction. Dig speed is 7 blocks per second regardless of hardness (up to its cap), making it the fastest excavation tool in the game. Carries 40 slots of ore. Park it at a shaft entrance, fuel it, and carve out rooms or tunnels at a fraction of the hand time.
+
+### Minecarts and Elevators
+
+Lay rail networks by hand. Minecarts follow the track and carry ore between your mine face and surface depots. Elevators handle vertical shafts — set car stops at each level and ride between them.
+
+---
+
+## Logic System
+
+A full programmable wire network. Wires carry a binary signal (powered / unpowered). Any machine adjacent to a powered wire runs; adjacent to an unpowered wire on an otherwise wired circuit, it halts. The logic system evaluates in phases — sources seed power, BFS propagates through wire, gates resolve, then outputs switch state.
+
+### Signal Sources
+
+| Block | Behavior |
+|-------|---------|
+| **Lever / Switch** | Manual on/off toggle, omnidirectional output |
+| **Pressure Plate** | HIGH when player or any entity stands on it |
+| **Day Sensor** | HIGH during daylight hours |
+| **Night Sensor** | HIGH during nighttime |
+| **Water Sensor** | HIGH when water is adjacent to it |
+| **Crop Sensor** | HIGH when a mature crop is directly below it |
+| **Fish Trap Sensor** | HIGH when the fish trap it watches has accumulated catches |
+| **Pulse Generator** | Oscillates on/off at a configurable period (default 2 s) |
+| **Observer** | Emits a 2-tick pulse whenever the block it faces changes ID |
+
+### Logic Gates
+
+| Gate | Behavior |
+|------|---------|
+| **AND Gate** | Output HIGH only when all inputs are HIGH |
+| **OR Gate** | Output HIGH when any input is HIGH |
+| **NOT Gate** | Output HIGH when its input is LOW (inverts signal) |
+| **Repeater** | Delays signal propagation by a configurable time (default 0.5 s); also cleans up long-distance signal |
+
+### Memory and State
+
+| Block | Behavior |
+|-------|---------|
+| **RS Latch** | Set input latches it ON; Reset input latches it OFF. Holds state with no power input. |
+| **T Flip-Flop** | Toggles output on every rising edge of its input — converts a pulse into a sustained toggle |
+| **Counter** | Counts rising edges on its input; output goes HIGH when count reaches threshold; a Reset wire zeroes it |
+| **Comparator** | Reads the fill level of an adjacent chest (0–8 scale); output goes HIGH when fill ≥ threshold |
+| **Sequencer** | Advances through 4 output channels (Right → Down → Left → Up) on each rising input edge |
+
+### Outputs
+
+| Block | Powered State | Unpowered State |
+|-------|-------------|----------------|
+| **Dam Block** | Open — water flows through | Closed — water blocked |
+| **Pump** | Active — moves water | Inactive |
+| **Iron Gate** | Open | Closed |
+| **Powered Lantern** | Lit | Dark |
+| **Alarm Bell** | Ringing | Silent |
+| **Deposit Trigger** | Rising edge dumps nearby bot inventories into an adjacent chest | — |
+
+The **Deposit Trigger** is the keystone of any automated mining loop. On a rising edge (not while continuously powered — only on the transition LOW→HIGH), it finds every miner and farm bot within 3 blocks and forces their stored inventory into the nearest adjacent chest. Wire a Pulse Generator into a Deposit Trigger next to a chest and your bots empty themselves on a timer without you ever touching them.
+
+### Example Circuits
+
+**Auto-harvest loop:** Crop Sensor → Deposit Trigger. When the crop below the sensor matures, the sensor goes HIGH, the Deposit Trigger fires, and the farm bot dumps its load into the chest. The sensor drops LOW when the crop is harvested and replanted. Cycle repeats.
+
+**Chest overflow gate:** Comparator (threshold 7) on a chest → NOT Gate → Iron Miner enable pin. When the chest is nearly full, the NOT Gate drops LOW, halting the miner. When items are removed and fill drops below threshold, the NOT Gate goes HIGH and mining resumes.
+
+**Day/night lighting:** Day Sensor → NOT Gate → Powered Lanterns. Lanterns light up at dusk and switch off at dawn automatically.
+
+**4-stage sequencer:** Pulse Generator → Sequencer → 4 separate output channels. Each channel can feed a different machine or gate. Rotate through four actions on a timed cycle.
+
+**Latch memory:** Use an RS Latch when you want something to stay ON after a brief trigger pulse (like a fish trap filling) without needing continuous power from the sensor.
+
+---
+
+## Pipe System
+
+A physical item transport network. Items move through pipes from Hoppers (source) to Output Blocks (sink). The system path-finds automatically using BFS — you place the pipes, connect the endpoints, and items route themselves.
+
+### Pipe Tiers
+
+| Pipe | Item | Speed |
+|------|------|-------|
+| Wooden Pipe | `pipe` | 1× |
+| Iron Pipe | `pipe_iron` | 3× |
+| Crystal Pipe | `pipe_crystal` | 8× |
+
+Speed determines how many tiles an item advances per routing tick (every 0.5 s). Mix tiers in a single network — items inherit the speed of whichever tile they're currently on.
+
+### Pipe Devices
+
+| Block | Function |
+|-------|---------|
+| **Hopper** | Pulls 1 item per tick from the container directly above it into the pipe network |
+| **Pipe Output** | Deposits items into the container directly below (or in its facing direction) |
+| **Filter** | Items not on its whitelist are blocked and buffered; whitelisted items pass through |
+| **Sorter** | Routes specific item IDs to specific directions — split a mixed stream into sorted outputs |
+
+### How Routing Works
+
+When a Hopper pulls an item, the system runs a BFS across all connected pipe tiles to find the nearest reachable Output Block. The item is launched along that path. If a Filter blocks it mid-route, the item buffers at the tile before the filter and waits for re-routing. If an Output Block's destination container is full, the item buffers at the output and retries next tick.
+
+This means the network is self-healing — remove a pipe tile and in-transit items strand at their last valid position, then re-route once the network is repaired.
+
+### Wire Integration
+
+Hoppers and Output Blocks obey the logic wire enable pin. An unpowered wire adjacent to a Hopper stops it from pulling. An unpowered wire adjacent to an Output Block stops it from depositing. This lets you gate entire production pipelines with a single logic signal — pause a pipe output when a downstream chest is full (via Comparator), or stop a hopper when a machine is offline.
+
+### What Pipes Connect
+
+Pipes can pull from and deposit into: **Chests**, **Mining Automations** (miner stored inventory), **Farm Bots** (stored harvest), and **Factories**. A Crystal Miner next to a Hopper with a Crystal Pipe network feeding into sorted chests is a fully hands-off deep mining operation.
+
+---
+
+## Transport Infrastructure
+
+- **Minecarts** — follow hand-laid rail networks, carry ore between mine face and depot
+- **Elevators** — vertical shaft transport with configurable stops per level
 
 ---
 

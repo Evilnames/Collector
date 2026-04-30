@@ -738,6 +738,10 @@ class Renderer:
         from Render.vehicles import draw_arrows
         draw_arrows(self.screen, arrows, self.cam_x, self.cam_y)
 
+    def draw_aim_preview(self, player, mouse_scr):
+        from Render.vehicles import draw_aim_preview
+        draw_aim_preview(self.screen, player, mouse_scr, self.cam_x, self.cam_y)
+
     @staticmethod
     def _fmt_fuel_time(fuel, fuel_rate):
         from Render.vehicles import fmt_fuel_time

@@ -284,6 +284,7 @@ class Player:
         self.hunt_trophies   = {}   # animal_id -> {stat_key: best_value}
         self._bow_cooldown   = 0.0
         self._spear_cooldown = 0.0
+        self._aim_state      = None  # None or {"type": "bow"|"spear", "timer": 0.0}
         self.master_hunter   = False  # set True by research bonus
         # Fishing mini-game state
         self.fishing_state = None       # None | "casting" | "biting" | "reeling" | "result"
@@ -643,8 +644,73 @@ class Player:
     # ------------------------------------------------------------------
     # Bow / Arrow firing
     # ------------------------------------------------------------------
+    # Hold-to-aim system (bow + spear gun)
+    # ------------------------------------------------------------------
 
-    def fire_arrow(self):
+    _AIM_MAX_TIME  = 1.5   # seconds to reach full power
+    _AIM_MIN_POWER = 0.3   # minimum power on instant release
+
+    def start_aim(self, weapon_type):
+        """Begin charging a shot. Returns True if weapon+ammo are valid."""
+        if self._aim_state is not None:
+            return False
+        tool = self.hotbar[self.selected_slot]
+        if not tool:
+            return False
+        if weapon_type == "bow":
+            if not ITEMS.get(tool, {}).get("bow"):
+                return False
+            if self._bow_cooldown > 0:
+                return False
+            ammo_ids = ("gold_arrow", "broadhead_arrow", "barbed_arrow", "poison_arrow",
+                        "iron_arrow", "flint_arrow", "bone_arrow", "wood_arrow")
+            if not any(self.inventory.get(a, 0) > 0 for a in ammo_ids):
+                return False
+        elif weapon_type == "spear":
+            if not ITEMS.get(tool, {}).get("speargun"):
+                return False
+            if self._spear_cooldown > 0:
+                return False
+            if not self._head_in_water():
+                return False
+            if not any(self.inventory.get(s, 0) > 0
+                       for s in ("barbed_spear", "iron_spear", "bone_spear")):
+                return False
+        else:
+            return False
+        self._aim_state = {"type": weapon_type, "timer": 0.0}
+        return True
+
+    def update_aim(self, dt):
+        if self._aim_state is not None:
+            self._aim_state["timer"] = min(
+                self._aim_state["timer"] + dt, self._AIM_MAX_TIME)
+
+    def release_aim_shot(self, mouse_x, mouse_y, cam_x, cam_y):
+        """Fire from current aim state. mouse_x/y are screen coords. Returns True if fired."""
+        if self._aim_state is None:
+            return False
+        state = self._aim_state
+        self._aim_state = None
+        import math
+        power = (self._AIM_MIN_POWER +
+                 (1.0 - self._AIM_MIN_POWER) * (state["timer"] / self._AIM_MAX_TIME))
+        px_s = self.x + PLAYER_W / 2 - cam_x
+        py_s = self.y + PLAYER_H / 2 - cam_y
+        dx   = mouse_x - px_s
+        dy   = mouse_y - py_s
+        if abs(dx) < 1:
+            dx = float(self.facing)
+        angle = math.atan2(dy, abs(dx))
+        angle = max(-math.pi / 3, min(math.pi / 3, angle))
+        if state["type"] == "bow":
+            return self.fire_arrow(power=power, aim_angle=angle)
+        else:
+            return self.fire_spear(power=power, aim_angle=angle)
+
+    # ------------------------------------------------------------------
+
+    def fire_arrow(self, power=1.0, aim_angle=0.0):
         """Fire an arrow in player.facing direction. Returns True on success."""
         tool = self.hotbar[self.selected_slot]
         if not tool or not ITEMS.get(tool, {}).get("bow"):
@@ -665,7 +731,8 @@ class Player:
             for i in range(HOTBAR_SIZE):
                 if self.hotbar[i] == arrow_id and self.inventory.get(arrow_id, 0) == 0:
                     pass  # keep bow in slot; arrows are separate inventory items
-        from hunting import Arrow
+        import math
+        from hunting import Arrow, ARROW_SPEED, ARROW_MAX_X
         from constants import BLOCK_SIZE as _BS
         cx = self.x + PLAYER_W / 2
         cy = self.y + PLAYER_H / 2 - 4
@@ -676,12 +743,17 @@ class Player:
         extra_drops   = arrow_data.get("arrow_extra_drops", False)
         barb          = arrow_data.get("arrow_barb", False)
         color         = arrow_data.get("color", (200, 170, 100))
-        speed         = bow_data.get("arrow_speed", None)
+        base_speed    = bow_data.get("arrow_speed", ARROW_SPEED)
         bow_range     = bow_data.get("arrow_range", None)
-        max_range     = bow_range * _BS if bow_range else None
+        base_range    = bow_range * _BS if bow_range else ARROW_MAX_X
         cooldown      = bow_data.get("bow_cooldown", 0.45)
+        speed_val     = base_speed * power
+        vx_speed      = speed_val * math.cos(aim_angle)
+        vy_init       = speed_val * math.sin(aim_angle)
+        max_range     = base_range * power
         self.world.arrows.append(Arrow(cx, cy, self.facing, self.world, damage,
-                                       speed=speed, max_range=max_range,
+                                       speed=vx_speed, max_range=max_range,
+                                       vy_init=vy_init,
                                        poison=poison, extra_drops=extra_drops,
                                        barb=barb, color=color))
         self._bow_cooldown = cooldown
@@ -691,7 +763,7 @@ class Player:
     # Spear gun firing
     # ------------------------------------------------------------------
 
-    def fire_spear(self):
+    def fire_spear(self, power=1.0, aim_angle=0.0):
         """Fire a spear from an equipped spear gun. Returns True on success."""
         tool = self.hotbar[self.selected_slot]
         if not tool or not ITEMS.get(tool, {}).get("speargun"):
@@ -710,7 +782,8 @@ class Player:
         self.inventory[spear_id] -= 1
         if self.inventory[spear_id] <= 0:
             del self.inventory[spear_id]
-        from hunting import Spear
+        import math
+        from hunting import Spear, SPEAR_SPEED, SPEAR_MAX_X
         from constants import BLOCK_SIZE as _BS
         cx = self.x + PLAYER_W / 2
         cy = self.y + PLAYER_H / 2 - 4
@@ -719,12 +792,17 @@ class Player:
         damage     = spear_data.get("spear_damage", 2) + gun_data.get("spear_damage_bonus", 0)
         barb       = spear_data.get("spear_barb", False)
         color      = spear_data.get("color", (200, 200, 215))
-        speed      = gun_data.get("spear_speed", None)
+        base_speed = gun_data.get("spear_speed", SPEAR_SPEED)
         gun_range  = gun_data.get("spear_range", None)
-        max_range  = gun_range * _BS if gun_range else None
+        base_range = gun_range * _BS if gun_range else SPEAR_MAX_X
         cooldown   = gun_data.get("spear_cooldown", 0.9)
+        speed_val  = base_speed * power
+        vx_speed   = speed_val * math.cos(aim_angle)
+        vy_init    = speed_val * math.sin(aim_angle)
+        max_range  = base_range * power
         self.world.spears.append(Spear(cx, cy, self.facing, self.world, damage,
-                                       speed=speed, max_range=max_range,
+                                       speed=vx_speed, max_range=max_range,
+                                       vy_init=vy_init,
                                        barb=barb, color=color))
         self._spear_cooldown = cooldown
         return True
@@ -1753,7 +1831,7 @@ class Player:
                 from blocks import WATER as _WATER
                 from boats import Boat as _Boat
                 if self.inventory.get(item_id, 0) > 0 and self.world.get_block(bx, by) == _WATER:
-                    self.world.boats.append(_Boat(float(bx * BLOCK_SIZE), float(by * BLOCK_SIZE), boat_type))
+                    self.world.boats.append(_Boat(float(bx * BLOCK_SIZE), float((by - 1) * BLOCK_SIZE), boat_type))
                     self.inventory[item_id] -= 1
                     if self.inventory[item_id] <= 0:
                         del self.inventory[item_id]

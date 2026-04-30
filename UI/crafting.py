@@ -477,7 +477,7 @@ class CraftingMixin:
 
     def _draw_cooking_station(self, player, recipe_list, title_str, title_color,
                                selected_idx, recipe_rects_dict, selected_attr, block_id=None,
-                               action_label="COOK"):
+                               action_label="COOK", show_block_grid=False):
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 220))
         self.screen.blit(overlay, (0, 0))
@@ -487,6 +487,75 @@ class CraftingMixin:
         hint = self.small.render(f"ESC to close  |  Select a recipe and click {action_label}",
                                  True, (120, 120, 130))
         self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 26))
+
+        if show_block_grid:
+            vab_label = "VIEW RECIPES" if self._gw_view_all else "VIEW ALL BLOCKS"
+            vab_s = self.small.render(vab_label, True, title_color)
+            vab_rect = pygame.Rect(SCREEN_W - vab_s.get_width() - 28, 10,
+                                   vab_s.get_width() + 16, 22)
+            pygame.draw.rect(self.screen, (40, 55, 30) if self._gw_view_all else (25, 35, 15), vab_rect)
+            pygame.draw.rect(self.screen, title_color, vab_rect, 1)
+            self.screen.blit(vab_s, (vab_rect.x + 8, vab_rect.y + 3))
+            self._gw_view_all_btn = vab_rect
+
+            if self._gw_view_all:
+                sorted_recipes = sorted(enumerate(recipe_list), key=lambda x: x[1]["name"])
+                LIST_X  = 30
+                LIST_Y  = 55
+                LIST_BOTTOM = SCREEN_H - 10
+                CELL    = 88
+                GRID_W  = SCREEN_W - LIST_X - 16
+                cols    = max(1, GRID_W // CELL)
+                total_rows = max(1, (len(sorted_recipes) + cols - 1) // cols)
+                vis_rows   = max(1, (LIST_BOTTOM - LIST_Y) // CELL)
+                max_gs     = max(0, total_rows - vis_rows)
+                self._gw_grid_scroll = max(0, min(max_gs, self._gw_grid_scroll))
+                row_off = self._gw_grid_scroll
+
+                if max_gs > 0:
+                    sb_x  = LIST_X + cols * CELL + 2
+                    sb_h  = LIST_BOTTOM - LIST_Y
+                    sb_th = max(20, sb_h * vis_rows // total_rows)
+                    sb_top = LIST_Y + (sb_h - sb_th) * row_off // max_gs
+                    pygame.draw.rect(self.screen, (20, 35, 25), (sb_x, LIST_Y, 7, sb_h))
+                    pygame.draw.rect(self.screen, title_color, (sb_x, sb_top, 7, sb_th))
+
+                self._gw_grid_rects.clear()
+                block_surfs = getattr(self, "_block_surfs", None)
+                for slot, (i, recipe) in enumerate(sorted_recipes):
+                    c = slot % cols
+                    r = slot // cols - row_off
+                    if r < 0:
+                        continue
+                    cx = LIST_X + c * CELL
+                    cy = LIST_Y + r * CELL
+                    if cy + CELL > LIST_BOTTOM:
+                        break
+                    can_cook_r = all(player.inventory.get(iid, 0) >= cnt
+                                     for iid, cnt in recipe["ingredients"].items())
+                    selected = (i == selected_idx)
+                    bg = ((60, 110, 80) if can_cook_r else (75, 45, 45)) if selected \
+                        else ((18, 48, 30) if can_cook_r else (24, 24, 32))
+                    border = title_color if selected \
+                        else ((45, 140, 75) if can_cook_r else (52, 52, 68))
+                    cell_rect = pygame.Rect(cx + 2, cy + 2, CELL - 4, CELL - 4)
+                    pygame.draw.rect(self.screen, bg, cell_rect)
+                    pygame.draw.rect(self.screen, border, cell_rect, 1)
+                    out_id      = recipe["output_id"]
+                    out_data    = ITEMS.get(out_id, {})
+                    place_block = out_data.get("place_block")
+                    raw_surf    = block_surfs.get(place_block) if block_surfs and place_block else None
+                    if raw_surf:
+                        icon = pygame.transform.scale(raw_surf, (52, 52))
+                    else:
+                        icon = render_item_icon(out_id, out_data.get("color", (80, 80, 80)), 52)
+                    self.screen.blit(icon, (cx + CELL // 2 - 26, cy + 6))
+                    name_col = out_data.get("color", (200, 200, 200)) if can_cook_r else (110, 110, 120)
+                    short = recipe["name"] if len(recipe["name"]) <= 11 else recipe["name"][:10] + "…"
+                    ns = self.small.render(short, True, name_col)
+                    self.screen.blit(ns, (cx + CELL // 2 - ns.get_width() // 2, cy + 62))
+                    self._gw_grid_rects[i] = cell_rect
+                return
 
         # --- Left panel: recipe list ---
         LIST_X, LIST_Y = 30, 55
@@ -1053,7 +1122,7 @@ class CraftingMixin:
                                        (100, 155, 80), self._garden_workshop_selected_recipe,
                                        self._garden_workshop_recipe_rects, "_garden_workshop_selected_recipe",
                                        block_id=GARDEN_WORKSHOP_BLOCK,
-                                       action_label="CRAFT")
+                                       action_label="CRAFT", show_block_grid=True)
             return
         if self.refinery_block_id == JUICER_BLOCK:
             self._draw_cooking_station(player, JUICER_RECIPES, "JUICER",

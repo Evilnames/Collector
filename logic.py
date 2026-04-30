@@ -122,23 +122,27 @@ def evaluate_full_network(world):
                 visited.add((nx, ny))
                 queue.append((nx, ny))
             elif nb in (AND_GATE_BLOCK, OR_GATE_BLOCK):
-                gs = world.logic_state.get((nx, ny), {})
-                facing = gs.get("facing", "right")
-                ins = _input_wire_tiles(nx, ny, facing)
+                # Symmetric: no fixed input/output sides.
+                # AND: fires when all-but-one connected wire is powered (N-1 threshold).
+                #      The one unpowered wire is the natural "output" — it gets powered.
+                # OR:  fires when any connected wire is powered.
+                # Both emit to all connected wires when triggered.
+                connected = [(nx+dx, ny+dy) for dx, dy in _DIRS
+                             if world.get_wire(nx+dx, ny+dy) == 1]
+                n_powered = sum(1 for p in connected if p in powered)
                 triggered = (
-                    all(world.get_wire(ix, iy) == 1 and (ix, iy) in powered for ix, iy in ins)
+                    bool(connected) and n_powered >= len(connected) - 1
                     if nb == AND_GATE_BLOCK
-                    else any(world.get_wire(ix, iy) == 1 and (ix, iy) in powered for ix, iy in ins)
+                    else n_powered > 0
                 )
                 if triggered:
                     powered.add((nx, ny))
                     visited.add((nx, ny))
-                    out_dx, out_dy = _facing_dir(facing)
-                    ox, oy = nx + out_dx, ny + out_dy
-                    if (ox, oy) not in visited and world.get_wire(ox, oy) == 1:
-                        powered.add((ox, oy))
-                        visited.add((ox, oy))
-                        queue.append((ox, oy))
+                    for ox, oy in connected:
+                        if (ox, oy) not in visited:
+                            powered.add((ox, oy))
+                            visited.add((ox, oy))
+                            queue.append((ox, oy))
 
     # --- Phase 2: NOT gate (loop-guarded, up to 8 passes) ---
     for _ in range(8):
