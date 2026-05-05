@@ -1160,6 +1160,7 @@ def init_towns(world) -> None:
     # TOWNS/REGIONS during city build. Don't wipe them — just stamp chronicles.
     # (Must check BEFORE TOWNS.clear() since the plan-registered towns live there.)
     if TOWNS and getattr(world, "plan", None) is not None:
+        _fill_missing_coat_of_arms(world.seed)
         for town in TOWNS.values():
             if town.is_capital:
                 _place_capital_structures(town, world)

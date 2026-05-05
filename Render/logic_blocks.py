@@ -404,23 +404,154 @@ def build_deposit_trigger_surf():
     return s
 
 
+def build_xor_gate_surf(powered):
+    s = _gate_base((70, 95, 45), (110, 145, 70))
+    font = _small_font()
+    lbl = font.render("XOR", True, (195, 240, 140) if powered else (120, 170, 80))
+    s.blit(lbl, (H - lbl.get_width() // 2, H - lbl.get_height() // 2))
+    # Double curve on output side to distinguish from OR
+    pygame.draw.arc(s, (110, 145, 70), (BS - Q - 4, H - 5, 8, 10), 0, 3, 1)
+    if powered:
+        pygame.draw.rect(s, _POWERED_TINT, (0, 0, BS, BS), 2)
+    return s
+
+
+def build_player_sensor_surf():
+    import math
+    s = _gate_base((40, 55, 90), (65, 90, 150))
+    # Silhouette body
+    pygame.draw.circle(s, (120, 160, 220), (H, Q + 4), 4)
+    pygame.draw.line(s, (120, 160, 220), (H, Q + 8), (H, H + 4), 2)
+    pygame.draw.line(s, (120, 160, 220), (H, H + 1), (H - 4, H + 7), 2)
+    pygame.draw.line(s, (120, 160, 220), (H, H + 1), (H + 4, H + 7), 2)
+    # Detection radius arcs
+    for r in (10, 14):
+        pygame.draw.arc(s, (0, 180, 240),
+                        pygame.Rect(H - r, H - r, r * 2, r * 2), 0, 6.28, 1)
+    return s
+
+
+def build_crossover_wire_surf(h_powered, v_powered):
+    s = pygame.Surface((BS, BS))
+    s.fill((40, 42, 50))
+    cx, cy = H, H
+    h_col = _LIT_WIRE if h_powered else _DIM_WIRE
+    v_col = _LIT_WIRE if v_powered else _DIM_WIRE
+    # Horizontal channel
+    pygame.draw.line(s, h_col, (0, cy), (BS, cy), 2)
+    # Vertical channel (drawn over, with a tiny gap at centre to hint at separation)
+    pygame.draw.line(s, v_col, (cx, 0), (cx, cy - 4), 2)
+    pygame.draw.line(s, v_col, (cx, cy + 4), (cx, BS), 2)
+    # Bridge marker at crossing point
+    pygame.draw.circle(s, (70, 75, 90), (cx, cy), 3)
+    return s
+
+
+def build_signal_lamp_surfs():
+    surfs = {}
+    for on in (False, True):
+        s = pygame.Surface((BS, BS))
+        s.fill((45, 45, 50))
+        body_col = (100, 100, 108) if not on else (200, 200, 80)
+        glass_col = (70, 70, 80) if not on else (255, 255, 100)
+        pygame.draw.circle(s, body_col, (H, H), 10)
+        pygame.draw.circle(s, glass_col, (H, H), 7)
+        pygame.draw.circle(s, (60, 60, 68), (H, H), 10, 2)
+        if on:
+            pygame.draw.circle(s, (255, 255, 180), (H, H), 4)
+            pygame.draw.rect(s, _POWERED_TINT, (0, 0, BS, BS), 2)
+        surfs[on] = s
+    return surfs
+
+
+def build_pipe_valve_surfs():
+    surfs = {}
+    for open_ in (False, True):
+        s = pygame.Surface((BS, BS))
+        s.fill((55, 45, 35))
+        pipe_col = (100, 85, 65)
+        # Horizontal pipe body
+        pygame.draw.rect(s, pipe_col, (2, H - 4, BS - 4, 8))
+        pygame.draw.rect(s, (80, 65, 50), (2, H - 4, BS - 4, 8), 1)
+        # Gate disc
+        disc_col = (160, 120, 60) if open_ else (200, 70, 50)
+        if open_:
+            pygame.draw.line(s, disc_col, (H - 4, Q + 2), (H + 4, BS - Q - 2), 3)
+        else:
+            pygame.draw.rect(s, disc_col, (H - 3, Q, 6, BS - Q * 2))
+        # Actuator stem on top
+        pygame.draw.line(s, (130, 120, 100), (H, H - 4), (H, Q), 2)
+        pygame.draw.rect(s, (150, 130, 100), (H - 4, Q - 4, 8, 5))
+        surfs[open_] = s
+    return surfs
+
+
+def build_pipe_buffer_surf():
+    s = pygame.Surface((BS, BS))
+    s.fill((40, 48, 38))
+    # Tank body
+    pygame.draw.rect(s, (70, 90, 60), (Q, Q + 2, H, BS - Q * 2 - 2))
+    pygame.draw.rect(s, (50, 70, 45), (Q, Q + 2, H, BS - Q * 2 - 2), 1)
+    # Fill indicator lines
+    for i in range(3):
+        y = Q + 4 + i * 6
+        pygame.draw.line(s, (80, 110, 70), (Q + 2, y), (Q + H - 3, y), 1)
+    # Input/output arrows
+    pygame.draw.polygon(s, (100, 140, 90),
+                        [(2, H - 3), (Q - 1, H), (2, H + 3)])
+    pygame.draw.polygon(s, (100, 140, 90),
+                        [(BS - 2, H - 3), (BS - Q + 1, H), (BS - 2, H + 3)])
+    return s
+
+
+def build_trapdoor_surfs():
+    surfs = {}
+    for open_ in (False, True):
+        s = pygame.Surface((BS, BS))
+        if not open_:
+            s.fill((80, 65, 45))
+            # Plank lines
+            for y in range(4, BS - 4, 8):
+                pygame.draw.line(s, (65, 52, 36), (4, y), (BS - 4, y), 1)
+            pygame.draw.rect(s, (55, 44, 30), (0, 0, BS, BS), 2)
+            # Hinge hints
+            for hx in (Q, BS - Q - 2):
+                pygame.draw.rect(s, (110, 100, 80), (hx, BS - 6, 6, 5))
+        else:
+            s.set_colorkey((0, 0, 0))
+            s.fill((0, 0, 0))
+            # Open: show a dark pit with edge boards folded up
+            pygame.draw.rect(s, (30, 25, 18), (0, 0, BS, BS))
+            for brd_y in (0, BS - 5):
+                pygame.draw.rect(s, (80, 65, 45), (0, brd_y, BS, 5))
+        surfs[open_] = s
+    return surfs
+
+
 def build_logic_surfs():
     from blocks import (SWITCH_BLOCK_OFF, SWITCH_BLOCK_ON,
                         LATCH_BLOCK_OFF, LATCH_BLOCK_ON,
                         AND_GATE_BLOCK, OR_GATE_BLOCK, NOT_GATE_BLOCK,
+                        XOR_GATE_BLOCK,
                         DAM_BLOCK_CLOSED, DAM_BLOCK_OPEN,
                         PUMP_BLOCK_OFF, PUMP_BLOCK_ON,
                         IRON_GATE_BLOCK_CLOSED, IRON_GATE_BLOCK_OPEN,
                         PRESSURE_PLATE_OFF, PRESSURE_PLATE_ON,
                         DAY_SENSOR_BLOCK, NIGHT_SENSOR_BLOCK,
                         WATER_SENSOR_BLOCK, CROP_SENSOR_BLOCK,
+                        PLAYER_SENSOR_BLOCK,
                         REPEATER_BLOCK, PULSE_GEN_BLOCK,
                         RS_LATCH_Q0, RS_LATCH_Q1,
                         POWERED_LANTERN_OFF, POWERED_LANTERN_ON,
                         ALARM_BELL_OFF, ALARM_BELL_ON,
                         COUNTER_BLOCK, COMPARATOR_BLOCK, OBSERVER_BLOCK,
                         SEQUENCER_BLOCK, T_FLIPFLOP_BLOCK,
-                        DEPOSIT_TRIGGER_BLOCK)
+                        DEPOSIT_TRIGGER_BLOCK,
+                        CROSSOVER_WIRE_BLOCK,
+                        SIGNAL_LAMP_OFF, SIGNAL_LAMP_ON,
+                        PIPE_VALVE_CLOSED, PIPE_VALVE_OPEN,
+                        PIPE_BUFFER_BLOCK,
+                        TRAPDOOR_CLOSED, TRAPDOOR_OPEN)
     sw = build_switch_surfs()
     lt = build_latch_surfs()
     dm = build_dam_surfs()
@@ -430,6 +561,9 @@ def build_logic_surfs():
     rsl = build_rs_latch_surfs()
     pl = build_powered_lantern_surfs()
     ab = build_alarm_bell_surfs()
+    sl = build_signal_lamp_surfs()
+    pv = build_pipe_valve_surfs()
+    td = build_trapdoor_surfs()
     return {
         SWITCH_BLOCK_OFF:       sw[False],
         SWITCH_BLOCK_ON:        sw[True],
@@ -438,6 +572,7 @@ def build_logic_surfs():
         AND_GATE_BLOCK:         build_and_gate_surf(False),
         OR_GATE_BLOCK:          build_or_gate_surf(False),
         NOT_GATE_BLOCK:         build_not_gate_surf(False),
+        XOR_GATE_BLOCK:         build_xor_gate_surf(False),
         DAM_BLOCK_CLOSED:       dm[True],
         DAM_BLOCK_OPEN:         dm[False],
         PUMP_BLOCK_OFF:         pm[False],
@@ -450,6 +585,7 @@ def build_logic_surfs():
         NIGHT_SENSOR_BLOCK:     build_night_sensor_surf(),
         WATER_SENSOR_BLOCK:     build_water_sensor_surf(),
         CROP_SENSOR_BLOCK:      build_crop_sensor_surf(),
+        PLAYER_SENSOR_BLOCK:    build_player_sensor_surf(),
         REPEATER_BLOCK:         build_repeater_surf(False),
         PULSE_GEN_BLOCK:        build_pulse_gen_surf(False),
         RS_LATCH_Q0:            rsl[False],
@@ -464,6 +600,14 @@ def build_logic_surfs():
         SEQUENCER_BLOCK:        build_sequencer_surf(0),
         T_FLIPFLOP_BLOCK:       build_t_flipflop_surf(False),
         DEPOSIT_TRIGGER_BLOCK:  build_deposit_trigger_surf(),
+        CROSSOVER_WIRE_BLOCK:   build_crossover_wire_surf(False, False),
+        SIGNAL_LAMP_OFF:        sl[False],
+        SIGNAL_LAMP_ON:         sl[True],
+        PIPE_VALVE_CLOSED:      pv[False],
+        PIPE_VALVE_OPEN:        pv[True],
+        PIPE_BUFFER_BLOCK:      build_pipe_buffer_surf(),
+        TRAPDOOR_CLOSED:        td[False],
+        TRAPDOOR_OPEN:          td[True],
     }
 
 

@@ -92,7 +92,11 @@ class PanelsMixin:
                             RoyalCuratorNPC, RoyalFloristNPC, RoyalJewelerNPC,
                             RoyalPaleontologistNPC, RoyalAnglerNPC,
                             WeaponArmorerNPC, QuartermasterNPC, GarrisonCommanderNPC,
-                            DoctorNPC)
+                            DoctorNPC, CoinDealerNPC,
+                            NobleMaecenasNPC, WeaponOrderNPC,
+                            sculpture_commission_display, sculpture_commission_hint,
+                            tapestry_commission_display, tapestry_commission_hint,
+                            weapon_commission_display, weapon_commission_hint)
         from outpost_npcs import OutpostKeeperNPC
         npc = self.active_npc
         if isinstance(npc, LeaderNPC):
@@ -105,8 +109,9 @@ class PanelsMixin:
 
         is_quest = isinstance(npc, (RockQuestNPC, WildflowerQuestNPC, GemQuestNPC))
         is_outpost = isinstance(npc, OutpostKeeperNPC)
+        is_commission = isinstance(npc, (NobleMaecenasNPC, WeaponOrderNPC))
         PW = 660
-        PH = 580 if is_outpost else (490 if is_quest else 460)
+        PH = 580 if is_outpost else (490 if (is_quest or is_commission) else 460)
         px = (SCREEN_W - PW) // 2
         py = (SCREEN_H - PH) // 2
 
@@ -114,10 +119,16 @@ class PanelsMixin:
         if isinstance(npc, (RoyalCuratorNPC, RoyalFloristNPC, RoyalJewelerNPC,
                              RoyalPaleontologistNPC, RoyalAnglerNPC)):
             border_col = (220, 175, 40)
+        elif isinstance(npc, NobleMaecenasNPC):
+            border_col = (140, 110, 170)
+        elif isinstance(npc, WeaponOrderNPC):
+            border_col = (130, 115, 90)
         elif isinstance(npc, WildflowerQuestNPC):
             border_col = (60, 140, 70)
         elif isinstance(npc, GemQuestNPC):
             border_col = (110, 50, 160)
+        elif isinstance(npc, CoinDealerNPC):
+            border_col = (200, 165, 45)
         elif isinstance(npc, MerchantNPC):
             border_col = (180, 140, 40)
         elif isinstance(npc, RestaurantNPC):
@@ -159,6 +170,8 @@ class PanelsMixin:
             self._draw_fossil_quest_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, RoyalAnglerNPC):
             self._draw_fish_quest_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, (NobleMaecenasNPC, WeaponOrderNPC)):
+            self._draw_commission_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, RockQuestNPC):
             self._draw_quest_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, TradeNPC):
@@ -167,6 +180,8 @@ class PanelsMixin:
             self._draw_wf_quest_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, GemQuestNPC):
             self._draw_gem_quest_content(player, npc, px, py, PW, PH)
+        elif isinstance(npc, CoinDealerNPC):
+            self._draw_coin_dealer_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, MerchantNPC):
             self._draw_merchant_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, RestaurantNPC):
@@ -810,6 +825,94 @@ class PanelsMixin:
                                    by2 + BH // 2 - bl.get_height() // 2))
             y += row_h + 8
 
+    def _draw_commission_content(self, player, npc, px, py, PW, PH):
+        from cities import NobleMaecenasNPC, WeaponOrderNPC
+
+        if isinstance(npc, WeaponOrderNPC):
+            title_txt = "WEAPON ORDER CLERK"
+            title_col = (190, 170, 120)
+        else:
+            DIFF_LABELS = {0: "Patron", 1: "Grand Patron", 2: "Royal Patron"}
+            diff_col    = {0: (160, 140, 200), 1: (190, 155, 220), 2: (220, 175, 255)}
+            d = getattr(npc, "difficulty", 0)
+            title_txt = f"NOBLE PATRON  [{DIFF_LABELS.get(d, 'Patron')}]"
+            title_col = diff_col.get(d, (160, 140, 200))
+
+        title = self.font.render(title_txt, True, title_col)
+        self.screen.blit(title, (px + PW // 2 - title.get_width() // 2, py + 10))
+        self._draw_rep_rank(npc, px, py)
+
+        streak = getattr(npc, "_streak", 0)
+        if streak > 0:
+            bonus_pct = min(streak - 1, 2) * 25
+            s_label = f"Streak: {streak}  (+{bonus_pct}% bonus)" if bonus_pct else f"Streak: {streak}"
+            s_col = (80, 220, 130) if bonus_pct else (160, 200, 160)
+            stxt = self.small.render(s_label, True, s_col)
+            self.screen.blit(stxt, (px + PW - stxt.get_width() - 12, py + 32))
+
+        self._trade_rects.clear()
+        y = py + 40
+
+        for cidx, c in enumerate(npc.commissions):
+            row_h    = 150
+            row_rect = pygame.Rect(px + 14, y, PW - 28, row_h)
+            can = npc.can_complete(player, cidx)
+            bg  = (25, 40, 20) if can else (22, 22, 30)
+            bdr = (60, 160, 60) if can else (70, 60, 80)
+            pygame.draw.rect(self.screen, bg, row_rect)
+            pygame.draw.rect(self.screen, bdr, row_rect, 2)
+
+            iy = y + 10
+            kind = c["kind"]
+            kind_labels = {"sculpture": "SCULPTURE", "tapestry": "TAPESTRY", "weapon": "WEAPON"}
+            kind_cols   = {"sculpture": (180, 160, 120), "tapestry": (120, 160, 200), "weapon": (190, 140, 100)}
+            badge = self.small.render(kind_labels.get(kind, "COMMISSION"), True,
+                                      kind_cols.get(kind, (160, 160, 160)))
+            self.screen.blit(badge, (px + 22, iy)); iy += 18
+
+            if kind == "sculpture":
+                desc = sculpture_commission_display(c)
+                hint = sculpture_commission_hint(c)
+            elif kind == "tapestry":
+                desc = tapestry_commission_display(c)
+                hint = tapestry_commission_hint(c)
+            else:
+                desc = weapon_commission_display(c)
+                hint = weapon_commission_hint(c)
+
+            self.screen.blit(self.font.render(desc, True, (220, 220, 220)), (px + 22, iy)); iy += 24
+            self.screen.blit(self.small.render(hint, True, (140, 150, 170)), (px + 22, iy)); iy += 20
+
+            matching_count = len(npc.find_matching(player, cidx)) if hasattr(npc, "find_matching") else \
+                             len(npc.find_matching_weapons(player, c))
+            if matching_count >= 1:
+                status, sc = f"Ready!  ({matching_count} matching)", (80, 220, 80)
+            else:
+                status, sc = "None matching in inventory", (180, 90, 90)
+            self.screen.blit(self.small.render(status, True, sc), (px + 22, iy)); iy += 18
+
+            streak_bonus = min(streak, 2) * 25
+            reward_str = f"Reward: {c['reward']} gold"
+            if streak_bonus:
+                bonus_val = int(c["reward"] * (1 + streak_bonus / 100)) - c["reward"]
+                reward_str += f"  (+{bonus_val} streak bonus)"
+            self.screen.blit(self.font.render(reward_str, True, (240, 210, 50)), (px + 22, iy))
+
+            BW, BH = 170, 36
+            bx2, by2 = px + PW - BW - 20, y + row_h // 2 - BH // 2
+            btn_rect = pygame.Rect(bx2, by2, BW, BH)
+            self._trade_rects[cidx] = btn_rect
+            if can:
+                b_bg, b_bdr, b_tc = (18, 90, 18), (45, 200, 45), (190, 255, 190)
+            else:
+                b_bg, b_bdr, b_tc = (30, 30, 36), (55, 55, 68), (70, 70, 82)
+            pygame.draw.rect(self.screen, b_bg, btn_rect)
+            pygame.draw.rect(self.screen, b_bdr, btn_rect, 2)
+            bl = self.small.render("HAND OVER", True, b_tc)
+            self.screen.blit(bl, (bx2 + BW // 2 - bl.get_width() // 2,
+                                   by2 + BH // 2 - bl.get_height() // 2))
+            y += row_h + 8
+
     def _draw_research(self, player, research):
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 210))
@@ -1015,7 +1118,7 @@ class PanelsMixin:
         elif self._inv_search_active:
             sb_surf = self.small.render("|", True, (160, 160, 180))
         else:
-            sb_surf = self.small.render("Search…", True, (80, 80, 100))
+            sb_surf = self.small.render("Search...", True, (80, 80, 100))
         self.screen.blit(sb_surf, (sb_x + 6, sb_y + (sb_h - sb_surf.get_height()) // 2))
 
         # --- Tab row ---
@@ -1141,13 +1244,15 @@ class PanelsMixin:
 
     def _draw_leader_panel(self, player, npc):
         from towns import TOWNS, REGIONS
-        from cities import rep_rank, supply_status_label
+        from cities import (rep_rank, supply_status_label,
+                            sculpture_commission_display, sculpture_commission_hint,
+                            tapestry_commission_display, tapestry_commission_hint)
 
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 215))
         self.screen.blit(overlay, (0, 0))
 
-        PW, PH = 640, 560
+        PW, PH = 640, 700
         px = (SCREEN_W - PW) // 2
         py = (SCREEN_H - PH) // 2
 
@@ -1178,8 +1283,8 @@ class PanelsMixin:
                       if region.relations[r] == "allied" and r in REGIONS]
             rivals = [REGIONS[r].name for r in region.relations
                       if region.relations[r] == "rival"  and r in REGIONS]
-            ally_text = ", ".join(allies[:3]) + ("…" if len(allies) > 3 else "") if allies else "none"
-            rival_text = ", ".join(rivals[:3]) + ("…" if len(rivals) > 3 else "") if rivals else "none"
+            ally_text = ", ".join(allies[:3]) + ("..." if len(allies) > 3 else "") if allies else "none"
+            rival_text = ", ".join(rivals[:3]) + ("..." if len(rivals) > 3 else "") if rivals else "none"
             self.screen.blit(
                 self.small.render(f"Allied: {ally_text}", True, (140, 200, 130)),
                 (px + 16, py + 76))
@@ -1313,6 +1418,69 @@ class PanelsMixin:
             self.screen.blit(bl, (btn_rect.centerx - bl.get_width() // 2,
                                    btn_rect.centery - bl.get_height() // 2))
             cy += row_h + 6
+
+        # --- ART COMMISSIONS ---
+        cy += 4
+        pygame.draw.line(self.screen, border_col, (px + 10, cy), (px + PW - 10, cy))
+        cy += 8
+        art_lbl = self.font.render("ART COMMISSIONS", True, (190, 160, 220))
+        self.screen.blit(art_lbl, (px + 16, cy)); cy += 24
+
+        art_streak = getattr(npc, "_art_streak", 0)
+        if art_streak > 0:
+            bonus_pct = min(art_streak - 1, 2) * 25
+            as_label = f"Streak: {art_streak}  (+{bonus_pct}% bonus)" if bonus_pct else f"Streak: {art_streak}"
+            as_txt = self.small.render(as_label, True, (160, 200, 160))
+            self.screen.blit(as_txt, (px + PW - as_txt.get_width() - 14, cy - 20))
+
+        for slot, c in enumerate(getattr(npc, "art_commissions", [])):
+            row_h_art = 80
+            row_rect_art = pygame.Rect(px + 12, cy, PW - 24, row_h_art)
+            can_art = npc.can_complete_art(player, slot)
+            bg  = (30, 20, 40) if can_art else (22, 18, 30)
+            bdr = (140, 80, 200) if can_art else (80, 60, 100)
+            pygame.draw.rect(self.screen, bg, row_rect_art)
+            pygame.draw.rect(self.screen, bdr, row_rect_art, 2)
+
+            kind = c["kind"]
+            if kind == "sculpture":
+                desc = sculpture_commission_display(c)
+                hint_txt = sculpture_commission_hint(c)
+            else:
+                desc = tapestry_commission_display(c)
+                hint_txt = tapestry_commission_hint(c)
+
+            kind_col = (200, 170, 120) if kind == "sculpture" else (140, 180, 220)
+            badge_s = self.small.render(kind.upper(), True, kind_col)
+            self.screen.blit(badge_s, (px + 20, cy + 8))
+            desc_s = self.font.render(desc, True, (220, 215, 200) if can_art else (140, 130, 110))
+            self.screen.blit(desc_s, (px + 20 + badge_s.get_width() + 10, cy + 6))
+            hint_s2 = self.small.render(hint_txt, True, (140, 130, 160))
+            self.screen.blit(hint_s2, (px + 20, cy + 30))
+
+            art_streak_bonus = min(art_streak, 2) * 25
+            reward_str = f"{c['reward']} gold"
+            if art_streak_bonus:
+                bonus_val = int(c["reward"] * (1 + art_streak_bonus / 100)) - c["reward"]
+                reward_str += f"  (+{bonus_val})"
+            rwd_s = self.small.render(f"Reward: {reward_str}", True, (240, 210, 50))
+            self.screen.blit(rwd_s, (px + 20, cy + 52))
+
+            BW2, BH2 = 110, 28
+            bx3 = row_rect_art.right - BW2 - 8
+            by3 = cy + row_h_art // 2 - BH2 // 2
+            btn_rect_art = pygame.Rect(bx3, by3, BW2, BH2)
+            self._trade_rects[f"art_{slot}"] = btn_rect_art
+            if can_art:
+                b_bg2, b_bdr2, b_tc2 = (55, 20, 80), (160, 80, 220), (220, 180, 255)
+            else:
+                b_bg2, b_bdr2, b_tc2 = (30, 25, 38), (70, 55, 85), (90, 75, 105)
+            pygame.draw.rect(self.screen, b_bg2, btn_rect_art)
+            pygame.draw.rect(self.screen, b_bdr2, btn_rect_art, 2)
+            bl2 = self.small.render("HAND OVER", True, b_tc2)
+            self.screen.blit(bl2, (btn_rect_art.centerx - bl2.get_width() // 2,
+                                    btn_rect_art.centery - bl2.get_height() // 2))
+            cy += row_h_art + 6
 
         hint_s = self.small.render("[E] or [ESC] to close", True, (90, 82, 60))
         self.screen.blit(hint_s, (px + PW - hint_s.get_width() - 14, py + PH - 20))
@@ -1576,7 +1744,7 @@ class PanelsMixin:
                 surf = render_wildflower(wf, thumb_sz)
                 self.screen.blit(surf, (gx + (GCELL - 2) // 2 - surf.get_width() // 2, gy + 4))
                 name = wf.flower_type.replace("_", " ").title()
-                short = name if len(name) <= 10 else name[:9] + "…"
+                short = name if len(name) <= 10 else name[:9] + "..."
                 ns = self.small.render(short, True, (210, 245, 188))
                 self.screen.blit(ns, (gx + (GCELL - 2) // 2 - ns.get_width() // 2, gy + thumb_sz + 6))
                 self._garden_view_all_rects[wf.uid] = cell_rect
@@ -2326,7 +2494,7 @@ class PanelsMixin:
         sex_lbl  = self.font.render(sex_sym, True, sex_col)
         self.screen.blit(sex_lbl, (rx0 + 12 + hdg.get_width() + 8, py + 12))
 
-        uid_lbl = self.small.render(f"uid: {animal.uid[:18]}…", True, (65, 90, 75))
+        uid_lbl = self.small.render(f"uid: {animal.uid[:18]}...", True, (65, 90, 75))
         self.screen.blit(uid_lbl, (rx0 + 12, py + 35))
 
         breed_ready = animal._breed_cooldown <= 0
@@ -2604,7 +2772,7 @@ class PanelsMixin:
                         st_s   = self.small.render(st_txt, True, (75, 195, 100))
                         self.screen.blit(st_s, (stats_x + 112, sy + 16))
                     else:
-                        gone = self.small.render(f"Deceased  ({puid[:10]}…)", True, (155, 80, 80))
+                        gone = self.small.render(f"Deceased  ({puid[:10]}...)", True, (155, 80, 80))
                         self.screen.blit(gone, (stats_x + 80, sy + 4))
                 sy += 40
 
@@ -2727,6 +2895,152 @@ class PanelsMixin:
             self._trade_rects[(i, "barter")] = trade_rect
 
             y += row_h + 6
+
+    def _draw_coin_dealer_content(self, player, npc, px, py, PW, PH):
+        from UI.coins import _render_coin, _render_coin_reverse
+        from coins import RARITY_COLORS, coin_price, ERROR_TYPES
+
+        npc._ensure_stock(player, npc.world)
+
+        _GOLD_C  = (218, 182, 55)
+        _LABEL_C = (200, 185, 130)
+        _DIM_C   = (90, 82, 58)
+        _ERR_C   = (220, 80, 60)
+
+        title_s = self.font.render("COIN DEALER", True, _GOLD_C)
+        self.screen.blit(title_s, (px + PW // 2 - title_s.get_width() // 2, py + 10))
+        gold_s = self.font.render(f"Your gold: {player.money}", True, _GOLD_C)
+        self.screen.blit(gold_s, (px + PW - gold_s.get_width() - 16, py + 10))
+
+        # Tab buttons
+        tab = getattr(self, "_coin_dealer_tab", "buy")
+        for t_label, t_key, t_x in (
+            ("FOR SALE", "buy",  px + PW // 4 - 50),
+            ("SELL COINS", "sell", px + 3 * PW // 4 - 50),
+        ):
+            active = (tab == t_key)
+            tc = _GOLD_C if active else _DIM_C
+            bg = (40, 35, 14) if active else (24, 22, 18)
+            tb_rect = pygame.Rect(t_x, py + 34, 100, 22)
+            pygame.draw.rect(self.screen, bg, tb_rect)
+            pygame.draw.rect(self.screen, tc, tb_rect, 1)
+            ts = self.small.render(t_label, True, tc)
+            self.screen.blit(ts, (t_x + 50 - ts.get_width() // 2, py + 38))
+            self._trade_rects[("tab", t_key)] = tb_rect
+
+        sep_y = py + 60
+        pygame.draw.line(self.screen, (80, 72, 45),
+                         (px + 10, sep_y), (px + PW - 10, sep_y))
+
+        self._coin_dealer_buy_rects  = {}
+        self._coin_dealer_sell_rects = {}
+        row_h   = 58
+        col_w   = PW - 32
+        y_start = sep_y + 8
+        visible_rows = max(1, (PH - (sep_y - py) - 16) // (row_h + 4))
+
+        if tab == "buy":
+            stock  = npc._stock
+            scroll = getattr(self, "_coin_dealer_scroll", 0)
+            scroll = max(0, min(scroll, max(0, len(stock) - visible_rows)))
+            self._coin_dealer_scroll = scroll
+
+            for i, coin in enumerate(stock[scroll: scroll + visible_rows]):
+                real_i = i + scroll
+                y = y_start + i * (row_h + 4)
+                price   = npc.sell_price(real_i)
+                can_buy = player.money >= price
+                rarity_col = RARITY_COLORS.get(coin.rarity, (160, 140, 80))
+                is_err = getattr(coin, "error_type", "")
+
+                bg  = (35, 30, 10) if can_buy else (26, 24, 32)
+                brd = rarity_col if can_buy else (55, 50, 65)
+                row_rect = pygame.Rect(px + 16, y, col_w, row_h)
+                pygame.draw.rect(self.screen, bg, row_rect)
+                pygame.draw.rect(self.screen, brd, row_rect, 2)
+                if is_err:
+                    pygame.draw.rect(self.screen, _ERR_C, row_rect, 1)
+
+                coin_s = _render_coin(coin, 20)
+                rev_s  = _render_coin_reverse(coin, 14)
+                self.screen.blit(coin_s, (px + 20, y + row_h // 2 - 21))
+                self.screen.blit(rev_s,  (px + 44, y + row_h // 2 - 15))
+
+                name_col = _GOLD_C if can_buy else _DIM_C
+                name_s = self.small.render(coin.denomination_label, True, name_col)
+                self.screen.blit(name_s, (px + 68, y + 6))
+                info_s = self.small.render(
+                    f"{coin.civilization_name}  •  {coin.year_label}  •  {coin.condition.replace('_',' ').title()}",
+                    True, _LABEL_C)
+                self.screen.blit(info_s, (px + 68, y + 22))
+
+                if is_err:
+                    err_lbl = ERROR_TYPES.get(is_err, {}).get("label", is_err)
+                    err_s = self.small.render(f"ERROR: {err_lbl}", True, _ERR_C)
+                    self.screen.blit(err_s, (px + 68, y + 38))
+                elif getattr(coin, "provenance", ""):
+                    trunc = coin.provenance[:52] + ("..." if len(coin.provenance) > 52 else "")
+                    prov_s = self.small.render(f'"{trunc}"', True, (140, 160, 120))
+                    self.screen.blit(prov_s, (px + 68, y + 38))
+
+                price_col = _GOLD_C if can_buy else (90, 80, 40)
+                buy_s = self.font.render(f"{price}g  BUY", True, price_col)
+                bx = px + PW - buy_s.get_width() - 20
+                self.screen.blit(buy_s, (bx, y + row_h // 2 - buy_s.get_height() // 2))
+                buy_rect = pygame.Rect(bx - 4, y + 4, buy_s.get_width() + 8, row_h - 8)
+                self._coin_dealer_buy_rects[real_i] = buy_rect
+                self._trade_rects[("buy", real_i)] = buy_rect
+
+            if not stock:
+                empty_s = self.small.render("No coins in stock today.", True, _DIM_C)
+                self.screen.blit(empty_s, (px + PW // 2 - empty_s.get_width() // 2,
+                                           y_start + 20))
+
+        else:  # sell tab
+            my_coins = getattr(player, "coins", [])
+            scroll   = getattr(self, "_coin_dealer_sell_scroll", 0)
+            scroll   = max(0, min(scroll, max(0, len(my_coins) - visible_rows)))
+            self._coin_dealer_sell_scroll = scroll
+
+            for i, coin in enumerate(my_coins[scroll: scroll + visible_rows]):
+                real_i = i + scroll
+                y      = y_start + i * (row_h + 4)
+                price  = npc.buy_price(coin)
+                rarity_col = RARITY_COLORS.get(coin.rarity, (160, 140, 80))
+                is_err = getattr(coin, "error_type", "")
+
+                row_rect = pygame.Rect(px + 16, y, col_w, row_h)
+                pygame.draw.rect(self.screen, (26, 24, 20), row_rect)
+                pygame.draw.rect(self.screen, rarity_col if not is_err else _ERR_C, row_rect, 2)
+
+                coin_s = _render_coin(coin, 20)
+                rev_s  = _render_coin_reverse(coin, 14)
+                self.screen.blit(coin_s, (px + 20, y + row_h // 2 - 21))
+                self.screen.blit(rev_s,  (px + 44, y + row_h // 2 - 15))
+
+                name_s = self.small.render(coin.denomination_label, True, _LABEL_C)
+                self.screen.blit(name_s, (px + 68, y + 6))
+                info_s = self.small.render(
+                    f"{coin.civilization_name}  •  {coin.year_label}  •  {coin.rarity.title()}",
+                    True, _DIM_C)
+                self.screen.blit(info_s, (px + 68, y + 22))
+                if is_err:
+                    err_s = self.small.render(
+                        f"ERROR: {ERROR_TYPES.get(is_err,{}).get('label', is_err)}",
+                        True, _ERR_C)
+                    self.screen.blit(err_s, (px + 68, y + 38))
+
+                sell_s = self.font.render(f"+{price}g  SELL", True, _GOLD_C)
+                bx = px + PW - sell_s.get_width() - 20
+                self.screen.blit(sell_s, (bx, y + row_h // 2 - sell_s.get_height() // 2))
+                sell_rect = pygame.Rect(bx - 4, y + 4, sell_s.get_width() + 8, row_h - 8)
+                self._coin_dealer_sell_rects[real_i] = sell_rect
+                self._trade_rects[("sell", real_i)] = sell_rect
+
+            if not my_coins:
+                empty_s = self.small.render("You have no coins to sell.", True, _DIM_C)
+                self.screen.blit(empty_s, (px + PW // 2 - empty_s.get_width() // 2,
+                                           y_start + 20))
 
     def _draw_restaurant_content(self, player, npc, px, py, PW, PH):
         title = self.font.render(npc.cuisine.upper(), True, (240, 120, 30))
@@ -3344,16 +3658,16 @@ class PanelsMixin:
         elif st == "traveling":
             if active_horse is not None and linked_town is not None:
                 blocks_left = max(0, abs((active_horse.x + active_horse.W / 2) - linked_town.center_bx * _BS) // _BS)
-                status_text = f"Traveling to {town_name}… (~{blocks_left:.0f} blocks away)"
+                status_text = f"Traveling to {town_name}... (~{blocks_left:.0f} blocks away)"
             else:
-                status_text = f"Traveling to {town_name}…"
+                status_text = f"Traveling to {town_name}..."
             st_col = (255, 160, 0) if horse_stuck else (200, 200, 80)
         else:
             if active_horse is not None:
                 blocks_left = max(0, abs((active_horse.x + active_horse.W / 2) - pos[0] * _BS) // _BS)
-                status_text = f"Returning home… (~{blocks_left:.0f} blocks away)"
+                status_text = f"Returning home... (~{blocks_left:.0f} blocks away)"
             else:
-                status_text = "Returning home…"
+                status_text = "Returning home..."
             st_col = (255, 160, 0) if horse_stuck else (200, 160, 80)
         self.screen.blit(self.small.render(status_text, True, st_col), (px + 20, config_y + 8))
         if horse_stuck:
@@ -3542,7 +3856,7 @@ class PanelsMixin:
                     self.screen.blit(self.small.render(label, True, (195, 185, 140)), (px + 24, cy))
                     cy += 16
                 if len(dynasty_kin) > 4:
-                    extra = self.small.render(f"  +{len(dynasty_kin) - 4} more kin…", True, (120, 115, 100))
+                    extra = self.small.render(f"  +{len(dynasty_kin) - 4} more kin...", True, (120, 115, 100))
                     self.screen.blit(extra, (px + 24, cy))
                     cy += 16
             else:

@@ -468,6 +468,18 @@ OUTPOST_TYPES = {
         "base_stock": 4, "clothing_key": "ranger",
         "building_style": "house", "half_w": 16, "layout": "default",
     },
+
+    "apiary": {
+        "display_name":    "Apiary",
+        "eligible_biomes": ["temperate", "rolling_hills", "birch_forest", "meadow",
+                            "tropical", "jungle", "alpine_mountain"],
+        "sells": [("beeswax", 12), ("honeycomb_raw", 10), ("mead", 28)],
+        "buys":  [("honey_jar", 22, 8), ("honey_jar_fine", 48, 4),
+                  ("honey_jar_artisan", 90, 2), ("mead_fine", 55, 3)],
+        "needs": [("lumber", 12), ("wildflower", 10)],
+        "base_stock": 5, "clothing_key": "beekeeper",
+        "building_style": "house", "half_w": 14, "layout": "default",
+    },
 }
 
 # Flag pennant color per outpost type (RGB)
@@ -511,6 +523,7 @@ OUTPOST_FLAG_COLORS = {
     "canoe_trading_post":     (200, 130,  50),
     "polynesian_shrine_outpost": (120, 80, 160),
     "mountain_lodge":            (100, 120, 155),
+    "apiary":                    (210, 175,  55),
 }
 
 _MILITARY_OUTPOST_TYPES = {
@@ -521,13 +534,13 @@ _MILITARY_OUTPOST_TYPES = {
 # Maps each biodome to its eligible outpost types
 BIOME_OUTPOST_TYPES = {
     "temperate":       ("wine_estate",        "herb_monastery",    "border_garrison",
-                        "timber_camp"),
+                        "timber_camp",         "apiary"),
     "boreal":          ("trapper_post",        "boreal_distillery", "timber_camp",
                         "glacier_camp"),
     "birch_forest":    ("herb_monastery",      "hillside_vineyard", "border_garrison",
-                        "timber_camp"),
+                        "timber_camp",         "apiary"),
     "jungle":          ("coffee_plantation",   "jungle_herbalist",  "silk_pavilion",
-                        "incense_lodge"),
+                        "incense_lodge",       "apiary"),
     "wetland":         ("fungal_grove",        "fishing_outpost",   "reed_weaver",
                         "bog_apothecary"),
     "redwood":         ("herb_monastery",      "trapper_post",      "timber_camp"),
@@ -536,11 +549,11 @@ BIOME_OUTPOST_TYPES = {
     "savanna":         ("nomad_camp",          "spirit_distillery", "desert_legion"),
     "wasteland":       ("nomad_camp",          "canyon_forge",      "steppe_warcamp"),
     "alpine_mountain": ("alpine_monastery",    "cheese_cave",       "highland_fortress",
-                        "glacier_camp",        "mountain_lodge"),
+                        "glacier_camp",        "mountain_lodge",    "apiary"),
     "rocky_mountain":  ("cheese_cave",         "canyon_forge",      "highland_fortress",
                         "mountain_lodge"),
     "rolling_hills":   ("hillside_vineyard",   "pottery_workshop",  "border_garrison",
-                        "mountain_lodge"),
+                        "mountain_lodge",      "apiary"),
     "steep_hills":     ("hillside_vineyard",   "sculpture_atelier", "highland_fortress",
                         "mountain_lodge"),
     "steppe":          ("nomad_camp",          "spirit_distillery", "steppe_warcamp"),
@@ -561,22 +574,16 @@ BIOME_OUTPOST_TYPES = {
 }
 
 # ---------------------------------------------------------------------------
-# Kingdom (region) assignment — derived deterministically from center_bx
-# using the same city-slot scheme as towns: every 3 city slots form a region.
+# Kingdom (region) assignment — nearest town lookup
 # ---------------------------------------------------------------------------
 
-def region_id_for_bx(bx: int) -> int:
-    """Region id for any world x — matches cities._city_slot_metadata.
-    Slots sit at n * CITY_SPACING + CITY_SPACING//2, three slots per region.
-    The nearest slot to bx has index floor(bx / CITY_SPACING)."""
-    from constants import CITY_SPACING
-    return (bx // CITY_SPACING) // 3
-
-
 def region_for_outpost(op: "Outpost"):
-    """Return the Region this outpost belongs to (or None if uncharted)."""
-    from towns import REGIONS
-    return REGIONS.get(region_id_for_bx(op.center_bx))
+    """Return the Region this outpost belongs to (nearest town's region, or None)."""
+    from towns import TOWNS, REGIONS
+    if not TOWNS:
+        return None
+    nearest = min(TOWNS.values(), key=lambda t: abs(t.center_bx - op.center_bx))
+    return REGIONS.get(nearest.region_id)
 
 # ---------------------------------------------------------------------------
 # Dataclass
@@ -695,6 +702,7 @@ _TYPE_SUFFIXES = {
     "incense_lodge":     ["Incense Lodge", "Sandalwood Shrine", "Censer Hall", "Smoke Hermitage"],
     "glacier_camp":      ["Glacier Camp", "Ice Station", "Frost Outpost", "Cold Camp"],
     "bog_apothecary":    ["Bog Apothecary", "Marsh Steepery", "Peat Tea House", "Mire Apothecary"],
+    "apiary":            ["Apiary", "Bee Garden", "Honey House", "Meadow Apiary"],
 }
 
 def _make_outpost_name(rng, otype: str, biodome: str) -> str:

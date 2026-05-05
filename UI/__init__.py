@@ -26,6 +26,7 @@ from .sculpture import SculptureMixin
 from .tapestry import TapestryMixin
 from .pottery import PotteryMixin
 from .salt import SaltMixin
+from .coins import CoinsMixin
 from .town_menu import TownMenuMixin
 from .outpost_menu import OutpostMenuMixin
 from .landmark_menu import LandmarkMenuMixin
@@ -39,16 +40,23 @@ from .weapons import SmithingMixin
 from .gambling import GamblingMixin
 from .racing import RacingMixin
 from .arena import ArenaUIMixin
+from .bazaar import BazaarUIMixin
 from .tea_house import TeaHouseMixin
 from .dynasty_tree import DynastyTreeMixin
+from .beekeeping import BeekeepingMixin
+from .mead import MeadMixin
+from .charcuterie import CharcuterieMixin
 
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
     CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, BeerMixin, MinigamesMixin, CollectionsMixin,
-    HelpMixin, HorseMixin, DogsMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin,
-    TownMenuMixin, OutpostMenuMixin, LandmarkMenuMixin, CityBlockMenuMixin, CoatOfArmsDesignerMixin, HirePanelMixin, JobPanelMixin, ReputationScreenMixin, SmithingMixin, GamblingMixin, RacingMixin, ArenaUIMixin, TeaHouseMixin,
+    HelpMixin, HorseMixin, DogsMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin, CoinsMixin,
+    TownMenuMixin, OutpostMenuMixin, LandmarkMenuMixin, CityBlockMenuMixin, CoatOfArmsDesignerMixin, HirePanelMixin, JobPanelMixin, ReputationScreenMixin, SmithingMixin, GamblingMixin, RacingMixin, ArenaUIMixin, BazaarUIMixin, TeaHouseMixin,
     DynastyTreeMixin,
+    BeekeepingMixin,
+    MeadMixin,
+    CharcuterieMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -1045,6 +1053,80 @@ class UI(
         self._salt_codex_selected     = None
         self._salt_codex_rects        = {}
 
+        # ----- Coin codex state -----
+        self._coin_codex_scroll       = 0
+        self._coin_codex_selected     = None   # selected civilization name
+        self._coin_denom_selected     = None   # selected type_id within civ
+        self._coin_civ_rects          = {}
+        self._coin_denom_rects        = {}
+        self._coin_dealer_tab         = "buy"
+        self._coin_dealer_scroll      = 0
+        self._coin_dealer_sell_scroll = 0
+        self._trade_rects             = {}
+
+        # ----- Mead state -----
+        self._mead_vat_phase      = "select_honey"
+        self._mead_honey_sel      = None
+        self._mead_add_sel        = "none"
+        self._mead_yeast_sel      = "wine"
+        self._mead_stir_speed     = 0.0
+        self._mead_stir_held      = False
+        self._mead_stir_phase     = 0
+        self._mead_stir_elapsed   = 0.0
+        self._mead_stir_good      = 0.0
+        self._mead_batch_wip      = None
+        self._mead_cellar_phase   = "select"
+        self._mead_cellar_idx     = 0
+        self._mead_cond_prog      = 0.0
+        self._mead_rack_bonus     = 0.0
+        self._mead_racked         = False
+        self._mead_result_item    = None
+        self._mead_rack_btn       = None
+        self._mead_bottle_btn     = None
+        self._mead_codex_selected = None
+        self._mead_codex_rects    = {}
+        # ----- Charcuterie state -----
+        self._curing_rack_phase      = "select_meat"
+        self._curing_meat_sel        = None
+        self._curing_cure_sel        = None
+        self._curing_method_sel      = None
+        self._curing_zone_prog       = [0.0, 0.0, 0.0, 0.0]
+        self._curing_zone_held       = None
+        self._curing_wip             = None
+        self._curing_zone_rects      = []
+        self._curing_cellar_phase    = "select"
+        self._curing_cellar_idx      = None
+        self._curing_result_item     = None
+        self._curing_item_btns       = []
+        self._curing_retrieve_btn    = None
+        self._curing_back_btn        = None
+        self._curing_codex_selected  = None
+        self._curing_codex_rects     = {}
+        # ----- Beekeeping state -----
+        self._hive_phase             = "inspect"
+        self._hive_bx                = 0
+        self._hive_by                = 0
+        self._hive_flower_count      = 0
+        self._hive_flower_diversity  = 0
+        self._hive_spin_speed        = 0.0
+        self._hive_spin_held         = False
+        self._hive_spin_time         = 0.0
+        self._hive_spin_time_good    = 0.0
+        self._hive_spin_over_penalty = 0
+        self._hive_result_jar        = None
+        self._hive_harvest_btn       = None
+        self._hive_extract_btn       = None
+        self._hive_stop_btn          = None
+        self._hive_spin_btn          = None
+        self._hive_done_btn          = None
+        self._honey_codex_scroll     = 0
+        self._max_honey_codex_scroll = 0
+        self._honey_codex_selected   = None
+        self._honey_codex_rects      = {}
+
+        # ----- Bazaar state -----
+        self.bazaar_open             = False
+
         # ----- Arena state -----
         self.arena_open              = False
         self._arena_phase            = "lobby"
@@ -1309,6 +1391,8 @@ class UI(
             self._draw_gambling(player, dt)
         if self.arena_open:
             self._draw_arena(player, dt)
+        if self.bazaar_open:
+            self._draw_bazaar(player, dt)
         if self.racing_open:
             self._draw_racing(player, dt)
         if getattr(self, "training_paddock_open", False):

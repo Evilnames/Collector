@@ -243,6 +243,13 @@ HERBAL_ADDITIVES = {
         "astringency":      -0.06,
         "complexity_bonus": 0.06,
     },
+    "honey_jar": {
+        "label":            "Honey",
+        "sweetness":        +0.20,
+        "floral":           +0.10,
+        "astringency":      -0.15,
+        "complexity_bonus": 0.06,
+    },
 }
 
 AGE_DURATIONS = {

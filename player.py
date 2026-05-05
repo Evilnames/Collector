@@ -63,6 +63,7 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     CUSTOM_TAPESTRY_ROOT, CUSTOM_TAPESTRY_BODY,
                     POTTERY_DISPLAY_BLOCK,
                     SALT_DEPOSIT,
+                    COIN_CACHE_BLOCK,
                     TOWN_FLAG_BLOCK, OUTPOST_FLAG_BLOCK, LANDMARK_FLAG_BLOCK, RUIN_MARKER_BLOCK,
                     CITY_BLOCK, BANNER_BLOCK, FISHING_SPOT_BLOCK, TEA_HOUSE_BLOCK,
                     SEASHELL_BLOCK, OYSTER_BLOCK,
@@ -77,6 +78,9 @@ from gemstones import GemGenerator, Gemstone
 from fish import FishGenerator, Fish, FISH_TYPES
 from coffee import CoffeeGenerator, CoffeeBean
 from wine import WineGenerator, Grape
+from beekeeping import HoneyGenerator, HoneyJar
+from mead import MeadGenerator, MeadBatch
+from charcuterie import CharcuterieGenerator, CuredMeat
 from sculpture import SculptureGenerator, Sculpture
 from weapons import WeaponGenerator, Weapon, weapon_damage, WEAPON_TYPES
 from tapestry import TapestryGenerator, Tapestry
@@ -88,6 +92,7 @@ from textiles import TextileGenerator, Textile
 from cheese import CheeseGenerator, Cheese
 from jewelry import Jewelry
 from salt import SaltGenerator, SaltCrystal
+from coins import CoinGenerator, Coin
 from crossover import apply_pairing_to_buff, get_pollination_bonus, apply_aging_modifier
 from constants import (
     BLOCK_SIZE, PLAYER_W, PLAYER_H,
@@ -213,6 +218,21 @@ class Player:
         self._tea_gen = TeaGenerator(world.seed)
         # Active buffs from drinking tea (separate pool, stacks with coffee/wine)
         self.tea_buffs = {}   # buff_name -> {"duration": float}
+        # Beekeeping collection
+        self.honey_jars = []
+        # Mead collection
+        self.mead_batches = []
+        self.discovered_meads = set()  # "biome_tier" strings e.g. "temperate_fine"
+        self._mead_gen = MeadGenerator(world.seed)
+        self.mead_buffs = {}  # buff_name -> {"duration": float}
+        # Charcuterie collection
+        self.charcuterie_items      = []
+        self.discovered_charcuterie = set()  # "raw_boar_meat_prosciutto" strings
+        self._charcuterie_gen       = CharcuterieGenerator(world.seed)
+        self.charcuterie_buffs      = {}  # buff_name -> {"duration": float}
+        self.discovered_honeys = set()  # "biome_tier" strings e.g. "temperate_artisan"
+        self._honey_gen = HoneyGenerator(world.seed)
+        self.honey_buffs = {}  # buff_name -> {"duration": float}
         # Tea house
         self.tea_house_pos        = None  # (bx, by) of placed Tea House block
         self.tea_house_last_spawn = 0.0   # world time of last visitor spawn attempt
@@ -248,6 +268,11 @@ class Player:
         self.discovered_salt_origins = set()    # "biome_grade" strings
         self._salt_gen = SaltGenerator(world.seed)
         self.salt_buffs = {}                    # buff_name -> {"duration": float}
+        # Coin collection
+        self.coins = []
+        self.discovered_coin_types = set()      # coin_type_id strings
+        self.completed_coin_sets   = set()      # civ names where all denoms found
+        self._coin_gen = CoinGenerator(world.seed)
         # Jewelry collection
         self.jewelry = []
         self.discovered_jewelry = set()          # jewelry_type strings
@@ -542,10 +567,25 @@ class Player:
         self.tapestries_created = [Tapestry.from_dict(x) for x in d.get("tapestries_created", [])]
         self.pottery_pieces     = [PotteryPiece(**x) for x in d.get("pottery_pieces", [])]
         self.discovered_pottery = set(d.get("discovered_pottery", []))
+        self.honey_jars         = [HoneyJar(**x) for x in d.get("honey_jars", [])]
+        self.discovered_honeys  = set(d.get("discovered_honeys", []))
+        self.mead_batches       = [MeadBatch(**x) for x in d.get("mead_batches", [])]
+        self.discovered_meads   = set(d.get("discovered_meads", []))
+        self.charcuterie_items      = [CuredMeat(**x) for x in d.get("charcuterie_items", [])]
+        self.discovered_charcuterie = set(d.get("discovered_charcuterie", []))
         self.pottery_buffs      = d.get("pottery_buffs", {})
         self.salt_crystals          = [SaltCrystal(**x) for x in d.get("salt_crystals", [])]
         self.discovered_salt_origins= set(d.get("discovered_salt_origins", []))
         self.salt_buffs             = d.get("salt_buffs", {})
+        self.coins                  = [Coin(**x) for x in d.get("coins", [])]
+        self.discovered_coin_types  = set(d.get("discovered_coin_types", []))
+        # Recompute set completion from discovered types (derived, not stored)
+        self.completed_coin_sets = set()
+        for _civ in self._coin_gen.civilizations:
+            _civ_types = {t for t, td in self._coin_gen.coin_types.items()
+                          if td["civilization_name"] == _civ["name"]}
+            if _civ_types and _civ_types.issubset(self.discovered_coin_types):
+                self.completed_coin_sets.add(_civ["name"])
         self.discovered_pairings    = set(d.get("discovered_pairings", []))
         self.aging_vessels          = d.get("aging_vessels", [])
         self.drying_rack_slots      = d.get("drying_rack_slots", [])
@@ -933,6 +973,11 @@ class Player:
                             self._add_item(item_id)
                     self._consume_tool_use()
                     self._on_milk_harvested(harvest_target, result)
+                manure = getattr(harvest_target, 'collect_manure', lambda: None)()
+                if manure:
+                    for item_id, qty in manure:
+                        for _ in range(qty):
+                            self._add_item(item_id)
                 if getattr(harvest_target, 'dead', False):
                     if harvest_target in self.world.entities:
                         self.world.entities.remove(harvest_target)
@@ -1302,6 +1347,12 @@ class Player:
                 crystal = self._salt_gen.generate(biodome)
                 self.salt_crystals.append(crystal)
                 self.pending_notifications.append(("Salt", "Salt Deposit", None))
+            elif block_id == COIN_CACHE_BLOCK:
+                coin = self._coin_gen.generate("cache")
+                self.coins.append(coin)
+                self.discovered_coin_types.add(coin.coin_type_id)
+                self._check_coin_set_complete(coin.civilization_name)
+                self.pending_notifications.append(("Coin", coin.display_name, coin.rarity))
             elif block_id == COFFEE_CROP_MATURE:
                 biodome = self.world.get_biodome(bx)
                 # Farmed crops: compute terroir from soil below the crop tile.
@@ -2055,6 +2106,11 @@ class Player:
                                 REPEATER_BLOCK as _RPT, PULSE_GEN_BLOCK as _PGN,
                                 RS_LATCH_Q0 as _RSQ0, PRESSURE_PLATE_OFF as _PPO)
             import logic as _logic
+            from blocks import (XOR_GATE_BLOCK as _XOR, PLAYER_SENSOR_BLOCK as _PLRSNS,
+                                CROSSOVER_WIRE_BLOCK as _CRX,
+                                SIGNAL_LAMP_OFF as _SLO,
+                                PIPE_VALVE_CLOSED as _PVC, PIPE_BUFFER_BLOCK as _PBF,
+                                TRAPDOOR_CLOSED as _TDC)
             _facing = "right" if self.facing == 1 else "left"
             if block_id in _LGB | {SWITCH_BLOCK_OFF, LATCH_BLOCK_OFF}:
                 self.world.logic_state[(bx, by)] = {
@@ -2086,6 +2142,15 @@ class Player:
                     _logic.register_sequencer(self.world, bx, by, _facing)
                 elif block_id == _TFF:
                     _logic.register_t_flipflop(self.world, bx, by, _facing)
+                elif block_id == _XOR:
+                    _logic.register_xor_gate(self.world, bx, by)
+                elif block_id == _PLRSNS:
+                    _logic.register_player_sensor(self.world, bx, by)
+                elif block_id == _CRX:
+                    _logic.register_crossover_wire(self.world, bx, by)
+                elif block_id in (_SLO, _TDC):
+                    _logic.register_output_block(self.world, bx, by)
+                    _logic.evaluate_full_network(self.world)
                 else:
                     from blocks import DEPOSIT_TRIGGER_BLOCK as _DTR
                     if block_id == _DTR:
@@ -2103,6 +2168,10 @@ class Player:
                 _pipes.register_pipe_filter(self.world, bx, by)
             elif block_id == _PS:
                 _pipes.register_pipe_sorter(self.world, bx, by)
+            elif block_id == _PVC:
+                _pipes.register_pipe_valve(self.world, bx, by)
+            elif block_id == _PBF:
+                _pipes.register_pipe_buffer(self.world, bx, by)
             elif block_id == _FAC:
                 import factory as _factory_reg
                 _factory_reg.register_factory(self.world, bx, by)
@@ -2164,7 +2233,26 @@ class Player:
         else:
             self.hotbar_uses[slot] = uses
 
+    def _check_coin_set_complete(self, civ_name: str):
+        """Mark civ_name as a completed set if all its denominations are discovered."""
+        if civ_name in self.completed_coin_sets:
+            return
+        civ_types = {t for t, td in self._coin_gen.coin_types.items()
+                     if td["civilization_name"] == civ_name}
+        if civ_types and civ_types.issubset(self.discovered_coin_types):
+            self.completed_coin_sets.add(civ_name)
+            self.pending_notifications.append(
+                ("Set Complete", f"{civ_name} collection complete!", "epic"))
+
     def _add_item(self, item_id, count=1):
+        if item_id == "coin_pouch":
+            for _ in range(count):
+                coin = self._coin_gen.generate("ruin")
+                self.coins.append(coin)
+                self.discovered_coin_types.add(coin.coin_type_id)
+                self._check_coin_set_complete(coin.civilization_name)
+                self.pending_notifications.append(("Coin", coin.display_name, coin.rarity))
+            return
         self.inventory[item_id] = self.inventory.get(item_id, 0) + count
         if item_id not in self.hotbar:
             for i in range(HOTBAR_SIZE):
@@ -3000,20 +3088,23 @@ class Player:
     # ------------------------------------------------------------------
 
     def get_nearby_equipment(self):
-        """Return the block_id of an equipment block within 2 blocks of the player, or None."""
+        """Return the block_id of the closest equipment block within 2 blocks, or None."""
         cx = int((self.x + PLAYER_W / 2) // BLOCK_SIZE)
         cy = int((self.y + PLAYER_H / 2) // BLOCK_SIZE)
-        for dy in range(-2, 3):
-            for dx in range(-2, 3):
-                if dx * self.facing < 0:
-                    continue
-                bx, by = cx + dx, cy + dy
-                bid = self.world.get_block(bx, by)
-                if bid in EQUIPMENT_BLOCKS:
-                    return bid
-                bg = self.world.get_bg_block(bx, by)
-                if bg in EQUIPMENT_BLOCKS:
-                    return bg
+        candidates = sorted(
+            ((abs(dx) + abs(dy), dy, dx)
+             for dy in range(-2, 3)
+             for dx in range(-2, 3)
+             if dx * self.facing >= 0),
+        )
+        for _, dy, dx in candidates:
+            bx, by = cx + dx, cy + dy
+            bid = self.world.get_block(bx, by)
+            if bid in EQUIPMENT_BLOCKS:
+                return bid
+            bg = self.world.get_bg_block(bx, by)
+            if bg in EQUIPMENT_BLOCKS:
+                return bg
         return None
 
     def get_nearby_equipment_pos(self, target_bid):

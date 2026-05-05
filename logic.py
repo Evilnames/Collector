@@ -4,20 +4,24 @@ from blocks import (
     LOGIC_SOURCE_BLOCKS, LOGIC_OUTPUT_BLOCKS,
     LOGIC_SENSOR_BLOCKS, LOGIC_TIMER_BLOCKS,
     FISH_TRAP_BLOCKS,
-    AND_GATE_BLOCK, OR_GATE_BLOCK, NOT_GATE_BLOCK,
+    AND_GATE_BLOCK, OR_GATE_BLOCK, NOT_GATE_BLOCK, XOR_GATE_BLOCK,
     REPEATER_BLOCK, PULSE_GEN_BLOCK,
     RS_LATCH_Q0, RS_LATCH_Q1,
     COUNTER_BLOCK, COMPARATOR_BLOCK, OBSERVER_BLOCK,
     SEQUENCER_BLOCK, T_FLIPFLOP_BLOCK,
     DEPOSIT_TRIGGER_BLOCK,
     DAY_SENSOR_BLOCK, NIGHT_SENSOR_BLOCK,
-    WATER_SENSOR_BLOCK, CROP_SENSOR_BLOCK,
+    WATER_SENSOR_BLOCK, CROP_SENSOR_BLOCK, PLAYER_SENSOR_BLOCK,
     PRESSURE_PLATE_OFF, PRESSURE_PLATE_ON,
     DAM_BLOCK_CLOSED, DAM_BLOCK_OPEN,
     PUMP_BLOCK_OFF, PUMP_BLOCK_ON,
     IRON_GATE_BLOCK_CLOSED, IRON_GATE_BLOCK_OPEN,
     POWERED_LANTERN_OFF, POWERED_LANTERN_ON,
     ALARM_BELL_OFF, ALARM_BELL_ON,
+    SIGNAL_LAMP_OFF, SIGNAL_LAMP_ON,
+    PIPE_VALVE_CLOSED, PIPE_VALVE_OPEN,
+    TRAPDOOR_CLOSED, TRAPDOOR_OPEN,
+    CROSSOVER_WIRE_BLOCK,
     WATER, MATURE_CROP_BLOCKS, CHEST_BLOCK,
 )
 from constants import BLOCK_SIZE as _BS, PLAYER_W as _PW, PLAYER_H as _PH
@@ -36,6 +40,12 @@ _OPEN_STATE = {
     POWERED_LANTERN_ON:  POWERED_LANTERN_ON,
     ALARM_BELL_OFF: ALARM_BELL_ON,
     ALARM_BELL_ON:  ALARM_BELL_ON,
+    SIGNAL_LAMP_OFF: SIGNAL_LAMP_ON,
+    SIGNAL_LAMP_ON:  SIGNAL_LAMP_ON,
+    PIPE_VALVE_CLOSED: PIPE_VALVE_OPEN,
+    PIPE_VALVE_OPEN:   PIPE_VALVE_OPEN,
+    TRAPDOOR_CLOSED: TRAPDOOR_OPEN,
+    TRAPDOOR_OPEN:   TRAPDOOR_OPEN,
 }
 _CLOSED_STATE = {
     DAM_BLOCK_CLOSED: DAM_BLOCK_CLOSED, DAM_BLOCK_OPEN: DAM_BLOCK_CLOSED,
@@ -46,20 +56,32 @@ _CLOSED_STATE = {
     POWERED_LANTERN_ON:  POWERED_LANTERN_OFF,
     ALARM_BELL_OFF: ALARM_BELL_OFF,
     ALARM_BELL_ON:  ALARM_BELL_OFF,
+    SIGNAL_LAMP_OFF: SIGNAL_LAMP_OFF,
+    SIGNAL_LAMP_ON:  SIGNAL_LAMP_OFF,
+    PIPE_VALVE_CLOSED: PIPE_VALVE_CLOSED,
+    PIPE_VALVE_OPEN:   PIPE_VALVE_CLOSED,
+    TRAPDOOR_CLOSED: TRAPDOOR_CLOSED,
+    TRAPDOOR_OPEN:   TRAPDOOR_CLOSED,
 }
 
 
 def evaluate_full_network(world):
     """
     Re-evaluate the entire wire network from scratch.
-    Phase 1: seed all sources → BFS through wire and AND/OR gates.
+    Phase 1: seed all sources → BFS through wire, AND/OR/XOR gates, crossover wire.
     Phase 2: NOT gate inversion (loop-guarded).
     Phase 2b: RS latch resolution.
     Phase 3: apply output block state changes.
+
+    Queue items carry (bx, by, came_dx, came_dy) so crossover wire can enforce
+    axis isolation: a signal entering horizontally can only exit horizontally, and
+    likewise for vertical.  Seeded sources use came_dx=0, came_dy=0 (unconstrained).
     """
     powered = set()
-    queue = deque()
+    # visited holds (bx,by) for normal tiles and (bx,by,'H'/'V') for crossover wire,
+    # allowing both axes of a crossover tile to be independently powered.
     visited = set()
+    queue = deque()   # items: (bx, by, came_dx, came_dy)
 
     # --- Phase 1: seed omnidirectional sources, then directional memory blocks ---
     for (bx, by), gs in world.logic_state.items():
@@ -76,7 +98,7 @@ def evaluate_full_network(world):
         if is_omni_source:
             powered.add((bx, by))
             visited.add((bx, by))
-            queue.append((bx, by))
+            queue.append((bx, by, 0, 0))
             continue
 
         # Directional memory sources: powered only if their stored state is active,
@@ -106,35 +128,54 @@ def evaluate_full_network(world):
             if out_pos not in visited and world.get_wire(*out_pos) == 1:
                 powered.add(out_pos)
                 visited.add(out_pos)
-                queue.append(out_pos)
+                queue.append((*out_pos, 0, 0))
 
-    # BFS through wires and AND/OR gates
+    # BFS through wires, AND/OR/XOR gates, and crossover wire
     while queue:
-        bx, by = queue.popleft()
+        bx, by, cdx, cdy = queue.popleft()
         for dx, dy in _DIRS:
             nx, ny = bx + dx, by + dy
+            nb = world.get_block(nx, ny)
+            nw = world.get_wire(nx, ny)
+
+            # --- Crossover wire: H and V channels are isolated ---
+            if nb == CROSSOVER_WIRE_BLOCK:
+                # Determine which axis this traversal travels on
+                axis = 'H' if dx != 0 else 'V'
+                # If the tile we're departing from is also a crossover, enforce
+                # the incoming axis so signals can't jump between H and V inside it.
+                if world.get_block(bx, by) == CROSSOVER_WIRE_BLOCK:
+                    cur_axis = 'H' if cdx != 0 else 'V'
+                    if axis != cur_axis:
+                        continue
+                ckey = (nx, ny, axis)
+                if ckey not in visited:
+                    visited.add(ckey)
+                    powered.add((nx, ny))
+                    queue.append((nx, ny, dx, dy))
+                continue
+
             if (nx, ny) in visited:
                 continue
-            nw = world.get_wire(nx, ny)
-            nb = world.get_block(nx, ny)
+
             if nw == 1:
                 powered.add((nx, ny))
                 visited.add((nx, ny))
-                queue.append((nx, ny))
-            elif nb in (AND_GATE_BLOCK, OR_GATE_BLOCK):
-                # Symmetric: no fixed input/output sides.
-                # AND: fires when all-but-one connected wire is powered (N-1 threshold).
-                #      The one unpowered wire is the natural "output" — it gets powered.
-                # OR:  fires when any connected wire is powered.
-                # Both emit to all connected wires when triggered.
-                connected = [(nx+dx, ny+dy) for dx, dy in _DIRS
-                             if world.get_wire(nx+dx, ny+dy) == 1]
+                queue.append((nx, ny, dx, dy))
+            elif nb in (AND_GATE_BLOCK, OR_GATE_BLOCK, XOR_GATE_BLOCK):
+                # Symmetric gates: no fixed input/output sides.
+                # AND:  fires when all-but-one connected wire is powered.
+                # OR:   fires when any connected wire is powered.
+                # XOR:  fires when an odd number of connected wires are powered.
+                connected = [(nx+ddx, ny+ddy) for ddx, ddy in _DIRS
+                             if world.get_wire(nx+ddx, ny+ddy) == 1]
                 n_powered = sum(1 for p in connected if p in powered)
-                triggered = (
-                    bool(connected) and n_powered >= len(connected) - 1
-                    if nb == AND_GATE_BLOCK
-                    else n_powered > 0
-                )
+                if nb == AND_GATE_BLOCK:
+                    triggered = bool(connected) and n_powered >= len(connected) - 1
+                elif nb == OR_GATE_BLOCK:
+                    triggered = n_powered > 0
+                else:  # XOR
+                    triggered = n_powered % 2 == 1
                 if triggered:
                     powered.add((nx, ny))
                     visited.add((nx, ny))
@@ -142,7 +183,7 @@ def evaluate_full_network(world):
                         if (ox, oy) not in visited:
                             powered.add((ox, oy))
                             visited.add((ox, oy))
-                            queue.append((ox, oy))
+                            queue.append((ox, oy, 0, 0))
 
     # --- Phase 2: NOT gate (loop-guarded, up to 8 passes) ---
     for _ in range(8):
@@ -254,6 +295,16 @@ def logic_tick(world, dt, player):
         # ── Crop sensor ─────────────────────────────────────────────────────
         elif bid == CROP_SENSOR_BLOCK:
             now_on = world.get_block(bx, by + 1) in MATURE_CROP_BLOCKS
+            if gs.get("sensor_on", False) != now_on:
+                gs["sensor_on"] = now_on
+                changed = True
+
+        # ── Player sensor ────────────────────────────────────────────────────
+        elif bid == PLAYER_SENSOR_BLOCK:
+            radius = gs.get("radius", 5)
+            px_blk = int((player.x + player.W / 2) // _BS)
+            py_blk = int((player.y + player.H / 2) // _BS)
+            now_on = abs(px_blk - bx) <= radius and abs(py_blk - by) <= radius
             if gs.get("sensor_on", False) != now_on:
                 gs["sensor_on"] = now_on
                 changed = True
@@ -441,6 +492,15 @@ def register_t_flipflop(world, bx, by, facing="right"):
 
 def register_deposit_trigger(world, bx, by):
     world.logic_state[(bx, by)] = {"prev_powered": False}
+
+def register_player_sensor(world, bx, by):
+    world.logic_state.setdefault((bx, by), {"sensor_on": False, "radius": 5})
+
+def register_xor_gate(world, bx, by):
+    world.logic_state.setdefault((bx, by), {})
+
+def register_crossover_wire(world, bx, by):
+    world.logic_state.setdefault((bx, by), {})
 
 
 def _trigger_deposit(world, bx, by):

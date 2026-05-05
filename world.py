@@ -266,6 +266,7 @@ class World:
         self._soil_moisture  = {}  # tilled tile -> int 0..MAX_MOISTURE
         self._soil_fertility = {}  # tilled tile -> int 0..MAX_FERTILITY
         self._crop_progress  = {}  # young crop tile -> int 0..GROWTH_PROGRESS_MAX
+        self._hive_progress  = {}  # beehive tile -> float 0.0..1.0
         self._crop_care_sum  = {}  # young crop tile -> (sum, count) running mean of care
         self._soil_fallow    = {}  # tilled-but-empty tile -> ticks without a crop
         # Rain state (Phase 2)
@@ -706,6 +707,8 @@ class World:
         self._soil_fertility = data.get("soil_fertility", {})
         self._crop_progress  = data.get("crop_progress", {})
         self._crop_care_sum  = data.get("crop_care_sum", {})
+        self._hive_progress  = {tuple(k) if isinstance(k, list) else k: v
+                                for k, v in data.get("hive_progress", {}).items()}
         raw_bins = data.get("compost_bin_data", {})
         self.compost_bin_data = {
             tuple(int(v) for v in k.split(",")): bin_d
@@ -843,12 +846,19 @@ class World:
                     entity.has_wool = extra["has_wool"]
                 if "has_milk" in extra:
                     entity.has_milk = extra["has_milk"]
-            elif isinstance(entity, Cow) and "has_milk" in extra:
-                entity.has_milk = extra["has_milk"]
-            elif isinstance(entity, Goat) and "has_milk" in extra:
-                entity.has_milk = extra["has_milk"]
-            elif isinstance(entity, Chicken) and "has_egg" in extra:
-                entity.has_egg = extra["has_egg"]
+                entity.has_manure = extra.get("has_manure", False)
+            elif isinstance(entity, Cow):
+                if "has_milk" in extra:
+                    entity.has_milk = extra["has_milk"]
+                entity.has_manure = extra.get("has_manure", False)
+            elif isinstance(entity, Goat):
+                if "has_milk" in extra:
+                    entity.has_milk = extra["has_milk"]
+                entity.has_manure = extra.get("has_manure", False)
+            elif isinstance(entity, Chicken):
+                if "has_egg" in extra:
+                    entity.has_egg = extra["has_egg"]
+                entity.has_manure = extra.get("has_manure", False)
             elif isinstance(entity, Horse):
                 entity.stamina   = extra.get("stamina", 100.0)
                 entity._broken   = extra.get("broken", False)
@@ -970,6 +980,9 @@ class World:
             if "trades"        in extra: entity.trades        = [tuple(t) for t in extra["trades"]]
             if "ore_commission" in extra: entity.ore_commission = extra["ore_commission"]
             if "streak"        in extra: entity._streak       = extra["streak"]
+            if "art_streak"    in extra: entity._art_streak   = extra["art_streak"]
+            if "commissions"   in extra: entity.commissions   = extra["commissions"]
+            if "art_commissions" in extra: entity.art_commissions = extra["art_commissions"]
             if "difficulty"    in extra: entity.difficulty    = extra["difficulty"]
             if "npc_horses"    in extra: entity._npc_horses   = extra["npc_horses"]
             if "rest_cost"     in extra: entity.rest_cost     = extra["rest_cost"]
@@ -1333,6 +1346,22 @@ class World:
                 if ice_rng.random() < 0.03:
                     chunk[sy - 1][lx] = ICE_SHARD
             lx += ice_rng.randint(6, 16)
+
+        # Beach shells — seashell nodes scattered on coastal/beach sand surfaces
+        shell_rng = random.Random(hash((self.seed, cx, 'beach_shells')) & 0x7FFFFFFF)
+        lx = shell_rng.randint(2, 6)
+        while lx < CHUNK_W - 2:
+            x = cx * CHUNK_W + lx
+            sy = self.surface_height(x)
+            biodome = self.biodome_at(x)
+            if (biodome in ("beach", "coastal")
+                    and 0 < sy < WORLD_H
+                    and sy <= SURFACE_Y
+                    and chunk[sy][lx] == SAND
+                    and chunk[sy - 1][lx] == AIR
+                    and shell_rng.random() < 0.30):
+                chunk[sy - 1][lx] = SEASHELL_BLOCK
+            lx += shell_rng.randint(4, 9)
 
         # Wildflowers
         flower_rng = random.Random(hash((self.seed, cx, 'flowers')) & 0x7FFFFFFF)
@@ -2041,6 +2070,13 @@ class World:
                 base = 0.0018 if depth >= 172 else 0.0012 if depth >= 100 else 0.0008 if depth >= 50 else 0.0004
                 if gr < base * 2.9:
                     return GEM_DEPOSIT
+        # Coin caches — shallow-medium depth, more common near ruins-era strata (all biomes)
+        if 8 <= depth < 80:
+            coin_n = self._vein_noise(bx, by, 0xC01CC4, scale=3)
+            if coin_n >= 0.70:
+                base = 0.0006 if depth >= 50 else 0.0003 if depth >= 25 else 0.00015
+                if rng.random() < base * 2.2:
+                    return COIN_CACHE_BLOCK
         r = rng.random()  # fresh roll so deposit chance doesn't eat ore slots
         m = BIOME_ORE_MULTIPLIERS.get(biome, {})
         cm = m.get("coal", 1.0)
@@ -2209,6 +2245,11 @@ class World:
             self.logic_state.pop((x, y), None)
         if block_id == AIR:
             self.block_shapes.pop((x, y), None)
+        from blocks import BEEHIVE_BLOCK as _BHB
+        if block_id == _BHB:
+            self._hive_progress[(x, y)] = 0.0
+        elif old_bid == _BHB:
+            self._hive_progress.pop((x, y), None)
 
     def get_block_shape(self, x, y):
         """Return (shape_type, rotation) for the tile, or ('full', 0) if unset."""
@@ -2278,6 +2319,7 @@ class World:
         self.pipe_mode = not self.pipe_mode
 
     def is_solid(self, x, y):
+        from blocks import TRAPDOOR_OPEN as _TDO
         bid = self.get_block(x, y)
         return (bid != AIR and bid != LADDER
                 and bid != WATER and bid != FISHING_SPOT_BLOCK and bid != OIL and bid != SAPLING and bid not in ALL_FRUIT_SAPLINGS
@@ -2287,7 +2329,8 @@ class World:
                 and bid not in ALL_LOGS and bid not in ALL_LEAVES
                 and bid not in EQUIPMENT_BLOCKS
                 and bid != MINE_TRACK_BLOCK and bid != MINE_TRACK_STOP_BLOCK
-                and bid != ELEVATOR_CABLE_BLOCK)
+                and bid != ELEVATOR_CABLE_BLOCK
+                and bid != _TDO)
 
     def update_time(self, dt):
         prev = self.time_of_day
@@ -3320,6 +3363,12 @@ class World:
             if any(abs(ins.x / BLOCK_SIZE - x) < 6 and abs(ins.y / BLOCK_SIZE - y) < 4
                    for ins in self.insects if not ins.spooked):
                 delta *= poll_mult
+            # Beehive pollination bonus: a placed hive within 8 blocks also boosts growth
+            from blocks import BEEHIVE_BLOCK as _BHB2
+            for _hdx in range(-8, 9):
+                if self._chunk_get(x + _hdx, y) == _BHB2:
+                    delta *= 1.12
+                    break
             progress = self._crop_progress.get((x, y), 0) + delta
             if progress >= _soil.GROWTH_PROGRESS_MAX:
                 if bid not in WILD_DESERT_PLANT_BLOCKS or below != SAND:
@@ -3332,6 +3381,20 @@ class World:
                 self._crop_progress[(x, y)] = progress
                 still_pending.add((x, y))
         self.pending_crops = still_pending
+
+    def tick_hives(self, dt):
+        """Advance beehive production progress based on nearby wildflower displays."""
+        from blocks import BEEHIVE_BLOCK as _BHB, WILDFLOWER_DISPLAY_BLOCK as _WFD
+        for (hx, hy) in list(self._hive_progress):
+            if self._chunk_get(hx, hy) != _BHB:
+                self._hive_progress.pop((hx, hy), None)
+                continue
+            flower_count = sum(
+                1 for dx in range(-8, 9) for dy in range(-3, 4)
+                if self._chunk_get(hx + dx, hy + dy) == _WFD
+            )
+            rate = 0.0002 + min(flower_count, 10) * 0.00015
+            self._hive_progress[(hx, hy)] = min(1.0, self._hive_progress[(hx, hy)] + rate * dt)
 
     def update_fruit_trees(self, dt):
         """Slowly regrow fruit clusters on bare fruit-tree leaf blocks."""
@@ -3468,7 +3531,10 @@ class World:
                 print(f"[Compost] {pos}: progress={bin_data['progress']:.0f}/{_s.COMPOST_OUTPUT_THRESHOLD:.0f} items={bin_data['input']}")
             if bin_data["progress"] >= _s.COMPOST_OUTPUT_THRESHOLD:
                 bin_data["progress"] -= _s.COMPOST_OUTPUT_THRESHOLD
-                bin_data["output"] += 1
+                if any(k in _s.MANURE_ITEM_IDS for k in bin_data["input"]):
+                    bin_data["output_rich"] = bin_data.get("output_rich", 0) + 1
+                else:
+                    bin_data["output"] += 1
                 remaining = _s.COMPOST_INPUT_PER_OUTPUT
                 for item_id in list(bin_data["input"].keys()):
                     take = min(remaining, bin_data["input"][item_id])

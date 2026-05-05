@@ -13,7 +13,7 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK, BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK, CHICKEN_COOP_BLOCK, GAMBLING_TABLE, BET_COUNTER, TEA_HOUSE_BLOCK, TRAINING_PADDOCK_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK, BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK, CHICKEN_COOP_BLOCK, GAMBLING_TABLE, BET_COUNTER, TEA_HOUSE_BLOCK, TRAINING_PADDOCK_BLOCK, BEEHIVE_BLOCK, MEAD_VAT_BLOCK, MEAD_CELLAR_BLOCK, SALTING_RACK_BLOCK, CURING_CELLAR_BLOCK
 from elevators import ElevatorCar
 from minecarts import Minecart
 
@@ -618,6 +618,7 @@ def main():
         ui.gambling_open = False
         ui.racing_open = False
         ui.arena_open = False
+        ui.bazaar_open = False
         ui.training_paddock_open = False
         ui.tea_house_open = False
         ui.ruin_plaque_open = False
@@ -635,7 +636,7 @@ def main():
                     ui.backhoe_open, ui.breeding_open, ui.garden_open, ui.wildflower_display_open,
                     ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open,
                     ui.town_menu_open, ui.outpost_menu_open, ui.landmark_menu_open, ui.city_block_menu_open, ui.coa_designer_open, ui.hire_panel_open, ui.job_panel_open, ui.reputation_screen_open, ui.trade_block_open,
-                    ui.dog_view_open, ui.dog_breeding_open, ui.gambling_open, ui.racing_open, ui.arena_open, ui.tea_house_open, getattr(ui, "training_paddock_open", False),
+                    ui.dog_view_open, ui.dog_breeding_open, ui.gambling_open, ui.racing_open, ui.arena_open, ui.bazaar_open, ui.tea_house_open, getattr(ui, "training_paddock_open", False),
                     getattr(ui, "ruin_plaque_open", False),
                     getattr(ui, "hopper_open", False), getattr(ui, "pipe_output_open", False),
                     getattr(ui, "pipe_filter_open", False), getattr(ui, "pipe_sorter_open", False),
@@ -818,6 +819,13 @@ def main():
                 if ui.refinery_open and ui.refinery_block_id == GRAPE_PRESS_BLOCK:
                     ui.handle_press_keydown(event.key, player)
 
+                # Beehive: ENTER / SPACE keydown
+                if ui.refinery_open and ui.refinery_block_id == BEEHIVE_BLOCK:
+                    ui.handle_beehive_keydown(event.key, player)
+                # Mead Vat: SPACE keydown
+                if ui.refinery_open and ui.refinery_block_id == MEAD_VAT_BLOCK:
+                    ui.handle_mead_vat_keydown(event.key, player)
+
                 # Fermentation Tank: P punchdown, ENTER to finish
                 if ui.refinery_open and ui.refinery_block_id == FERMENTATION_BLOCK:
                     ui.handle_fermenter_keydown(event.key, player)
@@ -914,6 +922,10 @@ def main():
                 # Arena: ESC skips to result or closes
                 if ui.arena_open:
                     ui.handle_arena_keydown(event.key, player)
+
+                # Bazaar: ESC skips resolve or closes
+                if ui.bazaar_open:
+                    ui.handle_bazaar_keydown(event.key, player)
 
                 # Milking mini-game: SPACE pulls the currently lit teat
                 if event.key == pygame.K_SPACE and not _any_ui_open():
@@ -1220,6 +1232,11 @@ def main():
                                     _close_all_ui()
                                     ui.open_arena(world.pending_arena_open)
                                     world.pending_arena_open = None
+                                if getattr(world, "pending_bazaar_open", None) is not None:
+                                    _close_all_ui()
+                                    lots, fence_wants, rivals = world.pending_bazaar_open
+                                    ui.open_bazaar(lots, fence_wants, rivals)
+                                    world.pending_bazaar_open = None
                             else:
                                 # First E: open the info screen
                                 _close_all_ui()
@@ -1515,6 +1532,26 @@ def main():
                                 elif equip == TRAINING_PADDOCK_BLOCK:
                                     _close_all_ui()
                                     ui.open_training_paddock(player, world)
+                                elif equip == BEEHIVE_BLOCK:
+                                    _hive_pos = player.get_nearby_equipment_pos(BEEHIVE_BLOCK)
+                                    if _hive_pos is not None:
+                                        ui._open_beehive(_hive_pos[0], _hive_pos[1], player)
+                                elif equip == MEAD_VAT_BLOCK:
+                                    _mv_pos = player.get_nearby_equipment_pos(MEAD_VAT_BLOCK)
+                                    if _mv_pos is not None:
+                                        ui._open_mead_vat(_mv_pos[0], _mv_pos[1], player)
+                                elif equip == MEAD_CELLAR_BLOCK:
+                                    _mc_pos = player.get_nearby_equipment_pos(MEAD_CELLAR_BLOCK)
+                                    if _mc_pos is not None:
+                                        ui._open_mead_cellar(_mc_pos[0], _mc_pos[1], player)
+                                elif equip == SALTING_RACK_BLOCK:
+                                    _sr_pos = player.get_nearby_equipment_pos(SALTING_RACK_BLOCK)
+                                    if _sr_pos is not None:
+                                        ui._open_salting_rack(_sr_pos[0], _sr_pos[1], player)
+                                elif equip == CURING_CELLAR_BLOCK:
+                                    _cc_pos = player.get_nearby_equipment_pos(CURING_CELLAR_BLOCK)
+                                    if _cc_pos is not None:
+                                        ui._open_curing_cellar(_cc_pos[0], _cc_pos[1], player)
                                 else:
                                     from blocks import (HOPPER_BLOCK as _HOP2,
                                                         PIPE_OUTPUT_BLOCK as _PO2,
@@ -1613,6 +1650,16 @@ def main():
                         _max = getattr(ui, '_chronicle_max_scroll', 0)
                         ui._chronicle_scroll = max(0, min(_max,
                             getattr(ui, '_chronicle_scroll', 0) - event.y * 20))
+                    elif ui.active_npc is not None:
+                        from cities import CoinDealerNPC
+                        if isinstance(ui.active_npc, CoinDealerNPC):
+                            tab = getattr(ui, "_coin_dealer_tab", "buy")
+                            if tab == "buy":
+                                ui._coin_dealer_scroll = max(0,
+                                    getattr(ui, "_coin_dealer_scroll", 0) - event.y)
+                            else:
+                                ui._coin_dealer_sell_scroll = max(0,
+                                    getattr(ui, "_coin_dealer_sell_scroll", 0) - event.y)
                     elif (player.inspecting_npc is not None
                           and not getattr(player, 'dynasty_panel_open', False)):
                         _max = getattr(ui, '_inspect_scroll_max', 0)
@@ -1640,6 +1687,8 @@ def main():
                     ui.handle_garden_mouseup(event.pos, player)
                 if ui.refinery_open and ui.refinery_block_id == OXIDATION_STATION_BLOCK:
                     ui.handle_oxidation_mouse_up(event.pos)
+                if ui.refinery_open and ui.refinery_block_id == SALTING_RACK_BLOCK:
+                    ui.handle_salting_rack_mouseup(player)
                 # Bow / spear gun — release to fire (only when no UI is open)
                 if event.button == 1 and not player.dead and not _any_ui_open():
                     player.release_aim_shot(
@@ -1781,6 +1830,8 @@ def main():
                     ui.handle_training_paddock_click(event.pos, player, world)
                 elif ui.arena_open:
                     ui.handle_arena_click(event.pos, player)
+                elif ui.bazaar_open:
+                    ui.handle_bazaar_click(event.pos, player)
                 elif ui.wardrobe_open:
                     ui.handle_wardrobe_click(event.pos, player)
                 elif ui.trade_block_open:
@@ -2015,6 +2066,30 @@ def main():
                             _tgs["q"] = not _tgs.get("q", False)
                             world.logic_state[(_rbx, _rby)] = _tgs
                             _logicr.evaluate_full_network(world)
+                        # Player Sensor right-click: cycle detection radius 3→5→8→12
+                        from blocks import PLAYER_SENSOR_BLOCK as _PLRSNS_R
+                        if _rbid == _PLRSNS_R:
+                            _psgs = world.logic_state.get((_rbx, _rby), {})
+                            _radii = [3, 5, 8, 12]
+                            _cur_r = _psgs.get("radius", 5)
+                            try:
+                                _ridx = _radii.index(_cur_r)
+                            except ValueError:
+                                _ridx = 1
+                            _psgs["radius"] = _radii[(_ridx + 1) % len(_radii)]
+                            world.logic_state[(_rbx, _rby)] = _psgs
+                        # Pipe Buffer right-click: cycle release rate 1→2→4→8 ticks
+                        from blocks import PIPE_BUFFER_BLOCK as _PBFR
+                        if _rbid == _PBFR:
+                            _pbcfg = world.pipe_state.get((_rbx, _rby), {})
+                            _rates = [1, 2, 4, 8]
+                            _cur_rate = _pbcfg.get("rate", 2)
+                            try:
+                                _prdx = _rates.index(_cur_rate)
+                            except ValueError:
+                                _prdx = 1
+                            _pbcfg["rate"] = _rates[(_prdx + 1) % len(_rates)]
+                            world.pipe_state[(_rbx, _rby)] = _pbcfg
                     # Sculptor right-click: restore stone in carve phase
                     if event.button == 3 and ui.refinery_open:
                         from blocks import SCULPTORS_BENCH as _SCULPTORS_BENCH_R
@@ -2059,6 +2134,15 @@ def main():
         # Spinning Wheel: poll SPACE for fiber tension
         if ui.refinery_open and ui.refinery_block_id == SPINNING_WHEEL_BLOCK:
             ui.handle_spinning_wheel_keys(keys, dt, player)
+        # Beehive: poll SPACE for spin extraction
+        if ui.refinery_open and ui.refinery_block_id == BEEHIVE_BLOCK:
+            ui.handle_beehive_keys(keys, dt, player)
+        # Mead Vat: poll SPACE for stirring mini-game
+        if ui.refinery_open and ui.refinery_block_id == MEAD_VAT_BLOCK:
+            ui.handle_mead_vat_keys(keys, dt, player)
+        # Salting Rack: poll mouse held for zone filling
+        if ui.refinery_open and ui.refinery_block_id == SALTING_RACK_BLOCK:
+            ui.handle_charcuterie_keys(keys, dt, player)
 
         # Sculptor's Bench: per-frame drag painting + hover tracking
         if ui.refinery_open and getattr(ui, '_sculpt_phase', 'idle') == 'carve':
@@ -2321,6 +2405,7 @@ def main():
         world.update_irrigation(dt)
         world.update_saplings(dt)
         world.update_crops(dt)
+        world.tick_hives(dt)
         world.update_fruit_trees(dt)
         world.update_leaves(dt, player)
         world.update_dropped_items(dt, player)

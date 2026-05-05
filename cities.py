@@ -164,6 +164,10 @@ TRADE_TABLE = [
     ("obsidian_slab", 1, 20),
     ("dirt_clump",   15,  1),
     ("milk",          2,  4),
+    ("honey_jar",     2, 18),
+    ("beeswax",       3,  8),
+    ("mead",          2, 22),
+    ("mead_fine",     1, 48),
 ]
 
 _ORE_COMMISSIONS = [
@@ -174,6 +178,103 @@ _ORE_COMMISSIONS = [
     ("ruby",          "Ruby",    ( 2,  4), 110),
 ]
 _COMMISSION_DAYS = 7
+
+# ---------------------------------------------------------------------------
+# Commissioned works — sculpture, tapestry, weapon
+# ---------------------------------------------------------------------------
+
+_SC_MINERALS = [
+    "limestone_chip", "granite_slab", "basalt_chunk",   # diff 0
+    "marble_chunk",   "alabaster_chunk",                 # diff 1
+    "verdite_slab",   "polished_marble",                 # diff 2
+    "onyx_slab",      "magmatic_stone",
+]
+_SC_TEMPLATES = {
+    0: ["Pillar", "Pedestal", "Column", "Monolith", "Effigy", "Obelisk"],
+    1: ["Pyramid", "Tower", "Gate", "Bust", "Shield", "Vase", "Tree"],
+    2: ["Pagoda", "Dragon Coil", "Foo Dog", "Triumphal Arch", "Cartouche", "Tondo"],
+}
+_TP_THREADS = [
+    "wool", "dye_extract_golden", "dye_extract_crimson", "dye_extract_rose",
+    "dye_extract_cobalt", "dye_extract_violet", "dye_extract_verdant",
+    "dye_extract_amber", "dye_extract_ivory",
+]
+_TP_TEMPLATES = {
+    0: ["Stripes", "H. Stripes", "Checkerboard", "Diamond", "Wave"],
+    1: ["Tree of Life", "Sun", "Moon", "Fish", "Zigzag", "Spiral", "Cross"],
+    2: ["Hunting Scene", "Medallion", "Maze", "Herringbone"],
+}
+
+
+def _build_sculpture_commission(rng, difficulty=0):
+    mineral = rng.choice(_SC_MINERALS[:3 + difficulty * 2])
+    template = rng.choice(_SC_TEMPLATES[min(difficulty, 2)]) if difficulty >= 1 else None
+    min_height = rng.randint(1, 1 + min(difficulty, 2))
+    reward = int((55 + difficulty * 50) * rng.uniform(0.85, 1.25))
+    return {"kind": "sculpture", "mineral": mineral, "template": template,
+            "min_height": min_height, "reward": reward}
+
+
+def _build_tapestry_commission(rng, difficulty=0):
+    thread = rng.choice(_TP_THREADS[:3 + difficulty * 3])
+    template = rng.choice(_TP_TEMPLATES[min(difficulty, 2)]) if difficulty >= 1 else None
+    min_h = rng.randint(1, 1 + min(difficulty, 1))
+    min_w = rng.randint(1, 1 + min(difficulty, 1))
+    reward = int((45 + difficulty * 40) * rng.uniform(0.85, 1.25))
+    return {"kind": "tapestry", "thread": thread, "template": template,
+            "min_height": min_h, "min_width": min_w, "reward": reward}
+
+
+def _build_weapon_commission(rng, difficulty=0):
+    from weapons import WEAPON_TYPES
+    wtype = rng.choice(list(WEAPON_TYPES.keys()))
+    material = rng.choice(["iron", "gold", "steel"][:1 + difficulty])
+    style = rng.choice(["classic", "ornate", "rugged"]) if difficulty >= 2 else None
+    min_quality = round(0.25 + difficulty * 0.2, 2)
+    reward = int((80 + difficulty * 65) * rng.uniform(0.85, 1.25))
+    return {"kind": "weapon", "weapon_type": wtype, "material": material,
+            "style": style, "min_quality": min_quality, "reward": reward}
+
+
+def sculpture_commission_display(c):
+    from sculpture import SCULPTABLE_MINERALS
+    name = SCULPTABLE_MINERALS.get(c["mineral"], c["mineral"].replace("_", " ").title())
+    return f"{name} {c['template']}" if c.get("template") else name
+
+
+def sculpture_commission_hint(c):
+    parts = []
+    if c.get("min_height", 1) > 1:
+        parts.append(f"{c['min_height']}+ blocks tall")
+    parts.append(f"Template: {c['template']}" if c.get("template") else "Any template")
+    return "  •  ".join(parts)
+
+
+def tapestry_commission_display(c):
+    from tapestry import WEAVABLE_THREADS
+    name = WEAVABLE_THREADS.get(c["thread"], c["thread"].replace("_", " ").title())
+    return f"{name} {c['template']}" if c.get("template") else name
+
+
+def tapestry_commission_hint(c):
+    parts = []
+    mh, mw = c.get("min_height", 1), c.get("min_width", 1)
+    if mh > 1 or mw > 1:
+        parts.append(f"{mw}w × {mh}h+")
+    parts.append(f"Pattern: {c['template']}" if c.get("template") else "Any pattern")
+    return "  •  ".join(parts)
+
+
+def weapon_commission_display(c):
+    mat, wt = c["material"].title(), c["weapon_type"].title()
+    return f"{mat} {c['style'].title()} {wt}" if c.get("style") else f"{mat} {wt}"
+
+
+def weapon_commission_hint(c):
+    parts = [f"Quality ≥ {int(c.get('min_quality', 0.25) * 100)}%"]
+    if not c.get("style"):
+        parts.append("Any style")
+    return "  •  ".join(parts)
 
 # ---------------------------------------------------------------------------
 # Wildflower quest data
@@ -1294,6 +1395,135 @@ class RoyalAnglerNPC(NPC):
         return True
 
 
+class NobleMaecenasNPC(NPC):
+    """Noble art patron — commissions specific sculptures and tapestries."""
+    def __init__(self, x, y, world, rng, difficulty=0, biodome="temperate"):
+        super().__init__(x, y, world, "npc_noble_maecenas")
+        self.clothing   = _npc_clothing(biodome)
+        self._rng       = rng
+        self.difficulty = difficulty
+        self._streak    = 0
+        self.commissions = [
+            _build_sculpture_commission(rng, difficulty),
+            _build_tapestry_commission(rng, difficulty),
+        ]
+
+    def find_matching_sculptures(self, player, c):
+        results = []
+        for i, sc in enumerate(getattr(player, "pending_sculptures", [])):
+            if sc.mineral != c["mineral"]:
+                continue
+            if c.get("template") and sc.template != c["template"]:
+                continue
+            if sc.height < c.get("min_height", 1):
+                continue
+            results.append(i)
+        return results
+
+    def find_matching_tapestries(self, player, c):
+        results = []
+        for i, tp in enumerate(getattr(player, "pending_tapestries", [])):
+            if tp.thread != c["thread"]:
+                continue
+            if c.get("template") and tp.template != c["template"]:
+                continue
+            if tp.height < c.get("min_height", 1):
+                continue
+            if tp.width < c.get("min_width", 1):
+                continue
+            results.append(i)
+        return results
+
+    def find_matching(self, player, commission_idx):
+        c = self.commissions[commission_idx]
+        if c["kind"] == "sculpture":
+            return self.find_matching_sculptures(player, c)
+        return self.find_matching_tapestries(player, c)
+
+    def can_complete(self, player, commission_idx):
+        return len(self.find_matching(player, commission_idx)) >= 1
+
+    def complete_commission(self, player, commission_idx=0):
+        c = self.commissions[commission_idx]
+        matching = self.find_matching(player, commission_idx)
+        if not matching:
+            return False
+        idx = matching[0]
+        if c["kind"] == "sculpture":
+            player.pending_sculptures.pop(idx)
+            inv = player.inventory
+            if inv.get("sculpture", 0) > 0:
+                inv["sculpture"] -= 1
+                if inv["sculpture"] <= 0:
+                    del inv["sculpture"]
+            builder = _build_sculpture_commission
+        else:
+            player.pending_tapestries.pop(idx)
+            inv = player.inventory
+            if inv.get("tapestry", 0) > 0:
+                inv["tapestry"] -= 1
+                if inv["tapestry"] <= 0:
+                    del inv["tapestry"]
+            builder = _build_tapestry_commission
+        self._streak += 1
+        streak_mult = 1.0 + min(self._streak - 1, 2) * 0.25
+        earned = int(c["reward"] * streak_mult * getattr(player, "blessing_mult", 1.0))
+        player.money += earned
+        player.pending_notifications.append(
+            ("Commission", f"Commission fulfilled!  +{earned} gold", "rare"))
+        self.commissions[commission_idx] = builder(self._rng, self.difficulty)
+        return True
+
+
+class WeaponOrderNPC(NPC):
+    """Weapon order clerk — commissions specific crafted weapons."""
+    def __init__(self, x, y, world, rng, difficulty=0, biodome="temperate"):
+        super().__init__(x, y, world, "npc_weapon_order")
+        self.clothing   = _npc_clothing(biodome)
+        self._rng       = rng
+        self.difficulty = difficulty
+        self._streak    = 0
+        self.commissions = [
+            _build_weapon_commission(rng, difficulty),
+            _build_weapon_commission(rng, min(difficulty + 1, 2)),
+        ]
+
+    def find_matching_weapons(self, player, c):
+        results = []
+        equipped = getattr(player, "equipped_weapon_uid", None)
+        for i, w in enumerate(getattr(player, "crafted_weapons", [])):
+            if w.uid == equipped:
+                continue
+            if w.weapon_type != c["weapon_type"]:
+                continue
+            if c.get("material") and w.material != c["material"]:
+                continue
+            if c.get("style") and w.style != c["style"]:
+                continue
+            if w.quality < c.get("min_quality", 0.0):
+                continue
+            results.append(i)
+        return results
+
+    def can_complete(self, player, commission_idx):
+        return len(self.find_matching_weapons(player, self.commissions[commission_idx])) >= 1
+
+    def complete_commission(self, player, commission_idx=0):
+        c = self.commissions[commission_idx]
+        matching = self.find_matching_weapons(player, c)
+        if not matching:
+            return False
+        player.crafted_weapons.pop(matching[0])
+        self._streak += 1
+        streak_mult = 1.0 + min(self._streak - 1, 2) * 0.25
+        earned = int(c["reward"] * streak_mult * getattr(player, "blessing_mult", 1.0))
+        player.money += earned
+        player.pending_notifications.append(
+            ("Commission", f"Weapon order filled!  +{earned} gold", "rare"))
+        self.commissions[commission_idx] = _build_weapon_commission(self._rng, self.difficulty)
+        return True
+
+
 class TradeNPC(NPC):
     def __init__(self, x, y, world, rng, biodome="temperate"):
         super().__init__(x, y, world, "npc_trade")
@@ -1614,6 +1844,145 @@ SCHOLAR_SHOP_TABLE = [
     ("votive_tablet",       25, "Votive Tablet",       "stone_chip",  8),
     ("olive_branch",        20, "Olive Branch",        "lumber",      4),
     ("greek_theatre_mask",  40, "Theatre Mask",        "wool",        4),
+]
+
+LIBRARY_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("philosophers_scroll", 30, "Philosopher's Scroll", "iron_chunk",  5),
+    ("votive_tablet",       25, "Votive Tablet",        "stone_chip",  8),
+    ("olive_branch",        20, "Olive Branch",         "lumber",      4),
+    ("greek_theatre_mask",  40, "Theatre Mask",         "wool",        4),
+]
+
+HERBORIST_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("dried_ginger",         8, "Dried Ginger",          "wheat",      3),
+    ("dried_garlic",         8, "Dried Garlic",          "wheat",      3),
+    ("dried_chamomile",      9, "Dried Chamomile",       "lumber",     3),
+    ("dried_lavender",      10, "Dried Lavender",        "lumber",     3),
+    ("dried_mint",           9, "Dried Mint",            "lumber",     3),
+    ("dried_rosemary",      10, "Dried Rosemary",        "lumber",     3),
+    ("dried_thyme",          9, "Dried Thyme",           "lumber",     3),
+    ("dried_sage",          10, "Dried Sage",            "lumber",     3),
+    ("dried_basil",          9, "Dried Basil",           "lumber",     2),
+    ("dried_oregano",        9, "Dried Oregano",         "lumber",     2),
+    ("dried_valerian",      14, "Dried Valerian",        "stone_chip", 4),
+    ("dried_echinacea",     14, "Dried Echinacea",       "stone_chip", 4),
+    ("dried_yarrow",        12, "Dried Yarrow",          "stone_chip", 4),
+    ("dried_lemon_balm",    12, "Dried Lemon Balm",      "lumber",     4),
+    ("dried_st_johns_wort", 14, "Dried St. John's Wort", "stone_chip", 4),
+    ("dried_wormwood",      13, "Dried Wormwood",        "stone_chip", 3),
+]
+
+FISHMONGER_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("cane_rod",            18, "Cane Rod",          "lumber",     6),
+    ("composite_rod",       55, "Composite Rod",     "iron_chunk", 5),
+    ("worm_bait",            5, "Worm Bait",         "lumber",     2),
+    ("insect_bait",          6, "Insect Bait",       "stone_chip", 3),
+    ("grain_bait",           5, "Grain Bait",        "stone_chip", 4),
+    ("berry_bait",           7, "Berry Bait",        "stone_chip", 3),
+    ("meat_bait",            8, "Meat Bait",         "stone_chip", 4),
+    ("floral_bait",          8, "Floral Bait",       "stone_chip", 3),
+    ("honeyed_bait",        10, "Honeyed Bait",      "stone_chip", 5),
+    ("wicker_fish_trap",    22, "Wicker Fish Trap",  "lumber",     8),
+    ("iron_fish_trap",      55, "Iron Fish Trap",    "iron_chunk", 6),
+]
+
+SALT_MERCHANT_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("coarse_salt",       8, "Coarse Salt",        "stone_chip", 3),
+    ("fine_salt",        12, "Fine Salt",          "stone_chip", 5),
+    ("fleur_de_sel",     20, "Fleur de Sel",       "stone_chip", 8),
+    ("coarse_salt_fine", 15, "Coarse Salt (Fine)", "stone_chip", 5),
+    ("fine_salt_fine",   20, "Fine Salt (Fine)",   "stone_chip", 8),
+    ("salted_bread",     18, "Salted Bread",       "wheat",      4),
+    ("salt_cured_beef",  32, "Salt-Cured Beef",    "iron_chunk", 3),
+    ("salt_grinder_item",40, "Salt Grinder",       "stone_chip", 10),
+]
+
+SPIRITS_DISTILLER_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("whiskey",       20, "Whiskey",        "wheat", 5),
+    ("bourbon",       22, "Bourbon",        "wheat", 5),
+    ("rum",           18, "Rum",            "wheat", 6),
+    ("gin",           20, "Gin",            "wheat", 5),
+    ("brandy",        24, "Brandy",         "wheat", 6),
+    ("vodka",         18, "Vodka",          "wheat", 5),
+    ("whiskey_aged",  38, "Whiskey (Aged)", "wheat", 8),
+    ("bourbon_aged",  42, "Bourbon (Aged)", "wheat", 8),
+    ("rum_aged",      35, "Rum (Aged)",     "wheat", 10),
+    ("brandy_aged",   46, "Brandy (Aged)",  "wheat", 10),
+    ("vodka_aged",    40, "Vodka (Aged)",   "wheat", 10),
+]
+
+DYER_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("dye_extract_golden",  18, "Dye (Golden)",  "iron_chunk", 3),
+    ("dye_extract_crimson", 18, "Dye (Crimson)", "iron_chunk", 3),
+    ("dye_extract_rose",    18, "Dye (Rose)",    "iron_chunk", 3),
+    ("dye_extract_cobalt",  18, "Dye (Cobalt)",  "iron_chunk", 3),
+    ("dye_extract_violet",  18, "Dye (Violet)",  "iron_chunk", 3),
+    ("dye_extract_verdant", 18, "Dye (Verdant)", "iron_chunk", 3),
+    ("dye_extract_amber",   18, "Dye (Amber)",   "iron_chunk", 3),
+    ("dye_extract_ivory",   18, "Dye (Ivory)",   "iron_chunk", 3),
+    ("dye_extract_teal",    18, "Dye (Teal)",    "iron_chunk", 3),
+    ("dye_extract_indigo",  18, "Dye (Indigo)",  "iron_chunk", 3),
+    ("dye_extract_ochre",   18, "Dye (Ochre)",   "iron_chunk", 3),
+    ("wool",                12, "Wool",          "stone_chip", 5),
+    ("silk_thread",         35, "Silk Thread",   "iron_chunk", 4),
+]
+
+CARTOGRAPHER_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("philosophers_scroll", 30, "Philosopher's Scroll", "iron_chunk", 5),
+    ("votive_tablet",       25, "Votive Tablet",        "stone_chip", 8),
+    ("torch",               10, "Torch",                "lumber",     3),
+    ("iron_pickaxe",        35, "Iron Pickaxe",         "iron_chunk", 8),
+    ("bucket",              14, "Bucket",               "lumber",     4),
+    ("hoe",                 18, "Hoe",                  "lumber",     6),
+]
+
+FARRIER_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("saddle",    45, "Saddle",    "deer_hide",  4),
+    ("horseshoe", 20, "Horseshoe", "iron_chunk", 3),
+    ("bucket",    14, "Bucket",    "lumber",     4),
+    ("hoe",       18, "Hoe",       "lumber",     6),
+    ("stone_axe", 14, "Stone Axe", "lumber",     5),
+]
+
+CANDLEMAKER_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("torch",          8, "Torch",         "lumber",     3),
+    ("tallow_candle", 12, "Tallow Candle", "bone",       3),
+    ("beeswax",       15, "Beeswax",       "stone_chip", 4),
+    ("honeycomb_raw", 18, "Honeycomb",     "wildflower", 3),
+]
+
+HONEY_MERCHANT_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("honey_jar",           22, "Honey Jar",           "wildflower", 4),
+    ("honey_jar_fine",      48, "Honey Jar (Fine)",    "wildflower", 8),
+    ("honey_jar_artisan",   90, "Honey Jar (Artisan)", "wildflower", 15),
+    ("honeycomb_raw",       14, "Honeycomb",           "wildflower", 3),
+    ("beeswax",             12, "Beeswax",             "lumber",     3),
+    ("restorative_honey_tonic", 35, "Honey Tonic",    "wildflower", 6),
+]
+
+TEA_MERCHANT_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("green_tea",       14, "Green Tea",         "tea_leaf", 3),
+    ("black_tea",       14, "Black Tea",         "tea_leaf", 3),
+    ("white_tea",       16, "White Tea",         "tea_leaf", 4),
+    ("oolong_tea",      16, "Oolong Tea",        "tea_leaf", 4),
+    ("yellow_tea",      18, "Yellow Tea",        "tea_leaf", 5),
+    ("puerh_tea",       22, "Pu-erh Tea",        "tea_leaf", 6),
+    ("hojicha",         18, "Hojicha",           "tea_leaf", 5),
+    ("green_tea_fine",  28, "Green Tea (Fine)",  "tea_leaf", 8),
+    ("black_tea_fine",  28, "Black Tea (Fine)",  "tea_leaf", 8),
+    ("oolong_tea_fine", 32, "Oolong Tea (Fine)", "tea_leaf", 10),
+    ("puerh_tea_fine",  42, "Pu-erh Tea (Fine)", "tea_leaf", 12),
 ]
 
 CUISINE_MENUS = {
@@ -2106,6 +2475,67 @@ class SweetShopNPC(MerchantNPC):
         self.display_name = "Sweet Shop"
         n = rng.randint(5, 8)
         self.shop = rng.sample(SWEET_SHOP_TABLE, min(n, len(SWEET_SHOP_TABLE)))
+
+
+class CoinDealerNPC(NPC):
+    """Buys and sells historical coins. Stock rotates daily per town seed."""
+    SHOP_HOURS = True
+
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_merchant")
+        self.clothing      = _npc_clothing(biodome)
+        self.clothing["body"] = (140, 115, 55)   # worn gold coat
+        self.clothing["trim"] = (100,  80, 35)
+        self.display_name  = "Coin Dealer"
+        self._shop_seed    = rng.randint(0, 0x7FFFFFFF)
+        self._last_day     = -1
+        self._stock: list  = []   # list of Coin objects
+
+    def _ensure_stock(self, player, world):
+        day = getattr(world, "day", 0)
+        if day == self._last_day:
+            return
+        from coins import generate_trader_stock
+        gen = getattr(player, "_coin_gen", None)
+        if gen is None:
+            return
+        self._stock    = generate_trader_stock(gen, day, self._shop_seed, stock_size=8)
+        self._last_day = day
+
+    def sell_price(self, idx: int) -> int:
+        """Price player pays to buy coin idx from this dealer."""
+        from coins import coin_price
+        return max(1, int(coin_price(self._stock[idx]) * 1.35))
+
+    def buy_price(self, coin) -> int:
+        """Price dealer pays when player sells a coin."""
+        from coins import coin_price
+        return max(1, int(coin_price(coin) * 0.65))
+
+    def can_afford(self, idx: int, player) -> bool:
+        return idx < len(self._stock) and player.money >= self.sell_price(idx)
+
+    def execute_purchase(self, idx: int, player) -> bool:
+        if not self.can_afford(idx, player):
+            return False
+        coin = self._stock[idx]
+        player.money -= self.sell_price(idx)
+        player.coins.append(coin)
+        player.discovered_coin_types.add(coin.coin_type_id)
+        player._check_coin_set_complete(coin.civilization_name)
+        player.pending_notifications.append(("Coin", coin.display_name, coin.rarity))
+        self._stock.pop(idx)
+        return True
+
+    def execute_sell(self, coin_idx: int, player) -> bool:
+        if not (0 <= coin_idx < len(player.coins)):
+            return False
+        coin  = player.coins.pop(coin_idx)
+        price = self.buy_price(coin)
+        player.money += price
+        player.pending_notifications.append(
+            ("Coin Sold", f"+{price}g  {coin.display_name}", "uncommon"))
+        return True
 
 
 class DoctorNPC(NPC):
@@ -2852,6 +3282,11 @@ class LeaderNPC(NPC):
         import random as _rnd
         self._rng = _rnd.Random(int(x) ^ (getattr(world, "seed", 0) * 0x9E3779B9))
         self.contracts = [self._new_contract(), self._new_contract()]
+        self._art_streak = 0
+        self.art_commissions = [
+            _build_sculpture_commission(self._rng, 2),
+            _build_tapestry_commission(self._rng, 2),
+        ]
 
     def _new_contract(self):
         from towns import REGIONS
@@ -2896,6 +3331,66 @@ class LeaderNPC(NPC):
         if region is None:
             return 0
         return sum(TOWNS[tid].reputation for tid in region.member_town_ids if tid in TOWNS)
+
+    def _find_matching_art(self, player, c):
+        if c["kind"] == "sculpture":
+            results = []
+            for i, sc in enumerate(getattr(player, "pending_sculptures", [])):
+                if sc.mineral != c["mineral"]:
+                    continue
+                if c.get("template") and sc.template != c["template"]:
+                    continue
+                if sc.height < c.get("min_height", 1):
+                    continue
+                results.append(i)
+            return results
+        else:
+            results = []
+            for i, tp in enumerate(getattr(player, "pending_tapestries", [])):
+                if tp.thread != c["thread"]:
+                    continue
+                if c.get("template") and tp.template != c["template"]:
+                    continue
+                if tp.height < c.get("min_height", 1):
+                    continue
+                if tp.width < c.get("min_width", 1):
+                    continue
+                results.append(i)
+            return results
+
+    def can_complete_art(self, player, slot):
+        return len(self._find_matching_art(player, self.art_commissions[slot])) >= 1
+
+    def complete_art_commission(self, player, slot=0):
+        c = self.art_commissions[slot]
+        matching = self._find_matching_art(player, c)
+        if not matching:
+            return False
+        idx = matching[0]
+        if c["kind"] == "sculpture":
+            player.pending_sculptures.pop(idx)
+            inv = player.inventory
+            if inv.get("sculpture", 0) > 0:
+                inv["sculpture"] -= 1
+                if inv["sculpture"] <= 0:
+                    del inv["sculpture"]
+            builder = _build_sculpture_commission
+        else:
+            player.pending_tapestries.pop(idx)
+            inv = player.inventory
+            if inv.get("tapestry", 0) > 0:
+                inv["tapestry"] -= 1
+                if inv["tapestry"] <= 0:
+                    del inv["tapestry"]
+            builder = _build_tapestry_commission
+        self._art_streak += 1
+        streak_mult = 1.0 + min(self._art_streak - 1, 2) * 0.25
+        earned = int(c["reward"] * streak_mult * getattr(player, "blessing_mult", 1.0))
+        player.money += earned
+        player.pending_notifications.append(
+            ("Commission", f"Royal commission fulfilled!  +{earned} gold", "epic"))
+        self.art_commissions[slot] = builder(self._rng, 2)
+        return True
 
 
 class LandmarkNPC(NPC):
@@ -3232,6 +3727,302 @@ class GarrisonCommanderNPC(NPC):
         return True
 
 
+def _make_shopkeeper(shop_table, n_min, n_max, bonus_tag):
+    """Return (shop, discounted_cost, rep_discount_pct, can_buy, execute_purchase,
+    can_barter, execute_barter) closures — shared boilerplate for simple shop NPCs."""
+    def _build(rng, self_npc):
+        n = max(1, rng.randint(n_min, n_max)
+                + _shop_size_bonus(self_npc, bonus_tag)
+                + _wealth_stock_bonus(self_npc))
+        return rng.sample(shop_table, min(n, len(shop_table)))
+    return _build
+
+
+class LibraryNPC(NPC):
+    """Sells rare scrolls and artefacts; a quieter scholar variant for metropolitan libraries."""
+    SHOP_HOURS = True
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_scholar")
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (60, 55, 120)  # Deep blue librarian robe
+        self.display_name = "Librarian"
+        n = max(1, rng.randint(3, 4) + _shop_size_bonus(self, "scholarly") + _wealth_stock_bonus(self))
+        self.shop = rng.sample(LIBRARY_SHOP_TABLE, min(n, len(LIBRARY_SHOP_TABLE)))
+
+    def discounted_cost(self, idx, player=None):
+        _, cost, *_ = self.shop[idx]
+        item_id = self.shop[idx][0]
+        return max(1, round(cost
+                            * _rep_discount(self._town_rep(), self)
+                            * _specialty_price_mult(self, item_id)
+                            * _supply_price_mult(self, item_id)
+                            * self._beloved_price_mult(player)
+                            * self._dynasty_price_mult(player)
+                            * _wealth_price_mult(self)))
+
+    def rep_discount_pct(self):
+        return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
+
+    def can_buy(self, idx, player):
+        return player.money >= self.discounted_cost(idx, player)
+
+    def execute_purchase(self, idx, player):
+        if not self.can_buy(idx, player):
+            return False
+        item_id = self.shop[idx][0]
+        player.money -= self.discounted_cost(idx, player)
+        player._add_item(item_id)
+        return True
+
+    def can_barter(self, idx, player):
+        *_, barter_item, barter_qty = self.shop[idx]
+        return player.inventory.get(barter_item, 0) >= barter_qty
+
+    def execute_barter(self, idx, player):
+        if not self.can_barter(idx, player):
+            return False
+        item_id, _, _, barter_item, barter_qty = self.shop[idx]
+        player.inventory[barter_item] = player.inventory.get(barter_item, 0) - barter_qty
+        if player.inventory[barter_item] <= 0:
+            del player.inventory[barter_item]
+            for i in range(len(player.hotbar)):
+                if player.hotbar[i] == barter_item:
+                    player.hotbar[i] = None
+        player._add_item(item_id)
+        return True
+
+
+def _simple_shop_methods(cls):
+    """Mixin-inject the standard buy/barter shop methods onto a class."""
+    def discounted_cost(self, idx, player=None):
+        _, cost, *_ = self.shop[idx]
+        item_id = self.shop[idx][0]
+        return max(1, round(cost
+                            * _rep_discount(self._town_rep(), self)
+                            * _specialty_price_mult(self, item_id)
+                            * _supply_price_mult(self, item_id)
+                            * self._beloved_price_mult(player)
+                            * self._dynasty_price_mult(player)
+                            * _wealth_price_mult(self)))
+
+    def rep_discount_pct(self):
+        return round((1.0 - _rep_discount(self._town_rep(), self)) * 100)
+
+    def can_buy(self, idx, player):
+        return player.money >= self.discounted_cost(idx, player)
+
+    def execute_purchase(self, idx, player):
+        if not self.can_buy(idx, player):
+            return False
+        item_id = self.shop[idx][0]
+        player.money -= self.discounted_cost(idx, player)
+        player._add_item(item_id)
+        return True
+
+    def can_barter(self, idx, player):
+        *_, barter_item, barter_qty = self.shop[idx]
+        return player.inventory.get(barter_item, 0) >= barter_qty
+
+    def execute_barter(self, idx, player):
+        if not self.can_barter(idx, player):
+            return False
+        item_id, _, _, barter_item, barter_qty = self.shop[idx]
+        player.inventory[barter_item] = player.inventory.get(barter_item, 0) - barter_qty
+        if player.inventory[barter_item] <= 0:
+            del player.inventory[barter_item]
+            for i in range(len(player.hotbar)):
+                if player.hotbar[i] == barter_item:
+                    player.hotbar[i] = None
+        player._add_item(item_id)
+        return True
+
+    cls.discounted_cost   = discounted_cost
+    cls.rep_discount_pct  = rep_discount_pct
+    cls.can_buy           = can_buy
+    cls.execute_purchase  = execute_purchase
+    cls.can_barter        = can_barter
+    cls.execute_barter    = execute_barter
+    return cls
+
+
+@_simple_shop_methods
+class HerboristNPC(NPC):
+    """Herbalist — sells dried herbs and medicinal plants."""
+    SHOP_HOURS = True
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_merchant")
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (80, 130, 75)   # Herb green
+        self.display_name = "Herbalist"
+        n = max(1, rng.randint(4, 6) + _shop_size_bonus(self, "scholarly") + _wealth_stock_bonus(self))
+        self.shop = rng.sample(HERBORIST_SHOP_TABLE, min(n, len(HERBORIST_SHOP_TABLE)))
+
+
+@_simple_shop_methods
+class FishmongerNPC(NPC):
+    """Sells fishing rods, traps, and bait."""
+    SHOP_HOURS = True
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_merchant")
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (55, 110, 160)  # Nautical blue
+        self.display_name = "Fishmonger"
+        n = max(1, rng.randint(4, 6) + _shop_size_bonus(self, "mercantile") + _wealth_stock_bonus(self))
+        self.shop = rng.sample(FISHMONGER_SHOP_TABLE, min(n, len(FISHMONGER_SHOP_TABLE)))
+
+
+@_simple_shop_methods
+class SaltMerchantNPC(NPC):
+    """Sells salt varieties and salt-cured foods."""
+    SHOP_HOURS = True
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_merchant")
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (215, 210, 195)  # Off-white salt
+        self.display_name = "Salt Merchant"
+        n = max(1, rng.randint(4, 5) + _shop_size_bonus(self, "mercantile") + _wealth_stock_bonus(self))
+        self.shop = rng.sample(SALT_MERCHANT_SHOP_TABLE, min(n, len(SALT_MERCHANT_SHOP_TABLE)))
+
+
+@_simple_shop_methods
+class SpiritsDistillerNPC(NPC):
+    """Sells distilled spirits — whiskey, rum, brandy, and aged varieties."""
+    SHOP_HOURS = True
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_innkeeper")
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (130, 75, 30)   # Copper still amber
+        self.display_name = "Spirits Distiller"
+        n = max(1, rng.randint(4, 6) + _shop_size_bonus(self, "mercantile") + _wealth_stock_bonus(self))
+        self.shop = rng.sample(SPIRITS_DISTILLER_SHOP_TABLE, min(n, len(SPIRITS_DISTILLER_SHOP_TABLE)))
+
+
+@_simple_shop_methods
+class DyerNPC(NPC):
+    """Sells dye extracts, wool, and silk thread."""
+    SHOP_HOURS = True
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_merchant")
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (145, 55, 175)  # Vivid dyer purple
+        self.display_name = "Dyer"
+        n = max(1, rng.randint(5, 7) + _shop_size_bonus(self, "mercantile") + _wealth_stock_bonus(self))
+        self.shop = rng.sample(DYER_SHOP_TABLE, min(n, len(DYER_SHOP_TABLE)))
+
+
+@_simple_shop_methods
+class CartographerNPC(NPC):
+    """Sells exploration tools, scrolls, and surveying equipment."""
+    SHOP_HOURS = True
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_scholar")
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (160, 130, 75)  # Parchment tan
+        self.display_name = "Cartographer"
+        n = max(1, rng.randint(3, 5) + _shop_size_bonus(self, "scholarly") + _wealth_stock_bonus(self))
+        self.shop = rng.sample(CARTOGRAPHER_SHOP_TABLE, min(n, len(CARTOGRAPHER_SHOP_TABLE)))
+
+
+@_simple_shop_methods
+class FarrierNPC(NPC):
+    """Sells saddles, horseshoes, and animal husbandry tools."""
+    SHOP_HOURS = True
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_blacksmith")
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (100, 75, 45)   # Leather brown
+        self.display_name = "Farrier"
+        n = max(1, rng.randint(3, 4) + _shop_size_bonus(self, "martial") + _wealth_stock_bonus(self))
+        self.shop = rng.sample(FARRIER_SHOP_TABLE, min(n, len(FARRIER_SHOP_TABLE)))
+
+
+@_simple_shop_methods
+class CandlemakerNPC(NPC):
+    """Sells torches, tallow candles, and beeswax."""
+    SHOP_HOURS = True
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_merchant")
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (235, 215, 160)  # Warm candlelight
+        self.display_name = "Candlemaker"
+        n = max(1, rng.randint(2, 3) + _shop_size_bonus(self, "mercantile") + _wealth_stock_bonus(self))
+        self.shop = rng.sample(CANDLEMAKER_SHOP_TABLE, min(n, len(CANDLEMAKER_SHOP_TABLE)))
+
+
+@_simple_shop_methods
+class TeaMerchantNPC(NPC):
+    """Sells processed teas of all oxidation levels."""
+    SHOP_HOURS = True
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_merchant")
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (70, 120, 90)   # Celadon green
+        self.display_name = "Tea Merchant"
+        n = max(1, rng.randint(5, 7) + _shop_size_bonus(self, "mercantile") + _wealth_stock_bonus(self))
+        self.shop = rng.sample(TEA_MERCHANT_SHOP_TABLE, min(n, len(TEA_MERCHANT_SHOP_TABLE)))
+
+
+@_simple_shop_methods
+class HoneyMerchantNPC(NPC):
+    """Sells and buys honey jars, beeswax, and honeycomb."""
+    SHOP_HOURS = True
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, "npc_merchant")
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (210, 175, 55)  # Golden amber
+        self.display_name = "Honey Merchant"
+        n = max(1, rng.randint(3, 5) + _shop_size_bonus(self, "mercantile") + _wealth_stock_bonus(self))
+        self.shop = rng.sample(HONEY_MERCHANT_SHOP_TABLE, min(n, len(HONEY_MERCHANT_SHOP_TABLE)))
+
+
+# --- Ambient NPCs ---
+
+class ScoutNPC(AmbientNPC):
+    """Fast-moving ranger who patrols the city outskirts."""
+    def __init__(self, x, y, world, biodome="temperate"):
+        super().__init__(x, y, world, "npc_scout", patrol_half=70)
+        self.animal_id = "npc_scout"
+        self.clothing  = _npc_clothing(biodome)
+        self.clothing["body"] = (60, 100, 55)   # Forest green
+        self.speed = 50
+
+
+class MonkNPC(AmbientNPC):
+    """Slow-moving contemplative figure — often found near shrines."""
+    def __init__(self, x, y, world, biodome="temperate"):
+        super().__init__(x, y, world, "npc_monk", patrol_half=30)
+        self.animal_id = "npc_monk"
+        self.clothing  = _npc_clothing(biodome)
+        self.clothing["body"] = (180, 165, 135)  # Sandy robe
+        self.clothing["leg"]  = (165, 150, 120)
+        self.speed = 18
+
+
+class VendorNPC(AmbientNPC):
+    """Street hawker who wanders selling wares from a basket."""
+    def __init__(self, x, y, world, biodome="temperate"):
+        super().__init__(x, y, world, "npc_vendor", 50, biodome)
+        self.clothing["body"] = (200, 130, 50)   # Saffron orange
+        self.speed = 28
+
+
+class SailorNPC(AmbientNPC):
+    """Sea-weathered traveller passing through port towns."""
+    def __init__(self, x, y, world, biodome="temperate"):
+        super().__init__(x, y, world, "npc_sailor", 60, biodome)
+        self.clothing["body"] = (50, 80, 155)    # Navy blue
+        self.clothing["hat"]  = (35, 60, 125)
+        self.speed = 35
+
+
+class CraftsmanNPC(AmbientNPC):
+    """Artisan moving between workshops with tools in hand."""
+    def __init__(self, x, y, world, biodome="temperate"):
+        super().__init__(x, y, world, "npc_craftsman", 45, biodome)
+        self.clothing["body"] = (110, 80, 50)    # Leather apron brown
+        self.speed = 25
+
+
 # Frontier biomes that may produce military towns
 _FRONTIER_BIOMES = {"steppe", "wasteland", "rocky_mountain", "canyon", "arid_steppe"}
 
@@ -3272,8 +4063,8 @@ CITY_CONFIGS = {
         # be a list (sampled) or include "none" so head-count varies.
         "ambient_npcs": [(-6, ["villager", "villager", "none"]),
                          (8,  ["child", "child", "none"]),
-                         (-12, ["villager", "elder", "none"]),
-                         (12, ["child", "villager", "none"]),
+                         (-12, ["villager", "elder", "craftsman", "none"]),
+                         (12, ["child", "villager", "vendor", "none"]),
                          (3,  ["elder", "none", "none"]),
                          (-3, ["pilgrim", "none", "none", "none"])],
     },
@@ -3294,8 +4085,9 @@ CITY_CONFIGS = {
             ( 28, (7, 9), (4, 5), ["racing_ring"]),
         ],
         "npc_types": ["quest_rock", "blacksmith", "innkeeper", "merchant",
-                      ["quest_gem", "quest_gem", "villager", "sweet_shop"],
-                      ["scholar", "villager", "villager", "coffee_merchant", "beer_merchant", "pastry_chef"],
+                      ["quest_gem", "quest_gem", "noble_maecenas", "villager", "sweet_shop", "cartographer", "farrier", "candlemaker"],
+                      ["scholar", "villager", "villager", "coffee_merchant", "beer_merchant", "pastry_chef",
+                       "herb_merchant", "tea_merchant", "salt_merchant", "honey_merchant", "coin_dealer"],
                       "shrine_npc", "racing_bookkeeper"],
         "gardens": [(-21, 2), (-12, 2), (16, 2)],
         # (center_offset, half_w) — paved plaza with a centre sculpture.
@@ -3317,7 +4109,9 @@ CITY_CONFIGS = {
                          (22,  ["villager", "child", "none", "none"]),
                          (3,   ["elder", "pilgrim", "none", "none"]),
                          (-15, ["beggar", "none", "none", "none"]),
-                         (6,   ["drunkard", "none", "none"])],
+                         (6,   ["drunkard", "none", "none"]),
+                         (-9,  ["craftsman", "vendor", "monk", "none", "none"]),
+                         (18,  ["sailor", "none", "none"])],
     },
     "large": {
         "half_w": 36,
@@ -3338,16 +4132,19 @@ CITY_CONFIGS = {
             ( 26, (7, 9), (5, 7), ["shrine"]),
             ( 38, (7, 10), (4, 5), ["racing_ring"]),
         ],
-        "npc_types": [["quest_rock", "doctor"], "blacksmith",
-                      ["quest_wildflower", "quest_wildflower", "villager", "wine_merchant", "pastry_chef"],
+        "npc_types": [["quest_rock", "doctor", "weapon_order"], "blacksmith",
+                      ["quest_wildflower", "quest_wildflower", "villager", "wine_merchant", "pastry_chef",
+                       "fishmonger", "salt_merchant"],
                       "merchant",
-                      ["quest_gem", "quest_gem", "villager", "coffee_merchant", "sweet_shop"],
+                      ["quest_gem", "quest_gem", "villager", "coffee_merchant", "sweet_shop",
+                       "cartographer", "farrier"],
                       ["innkeeper", "innkeeper", "tavern"],
-                      ["trade", "merchant", "villager", "beer_merchant", "pastry_chef"],
-                      ["scholar", "scholar", "villager"],
+                      ["trade", "merchant", "villager", "beer_merchant", "pastry_chef",
+                       "candlemaker", "spirits_distiller", "dyer", "honey_merchant"],
+                      ["scholar", "scholar", "noble_maecenas", "villager", "herb_merchant", "tea_merchant"],
                       "shrine_npc",
                       "racing_bookkeeper",
-                      ["jewelry_merchant", "villager", "villager", "sweet_shop"]],
+                      ["jewelry_merchant", "villager", "coin_dealer", "sweet_shop"]],
         "gardens": [(-31, 2), (-23, 2), (22, 2)],
         "squares": [(-10, 4), (13, 4)],
         "growth_slots_tier1": [( 32, (4, 6), (3, 4), ["house", "two_story"]),
@@ -3368,9 +4165,12 @@ CITY_CONFIGS = {
                          (15,  ["child", "elder", "none"]),
                          (35,  ["villager", "child", "none", "none"]),
                          (-3,  ["beggar", "none", "none", "none"]),
-                         (3,   ["pilgrim", "elder", "none", "none"]),
+                         (3,   ["pilgrim", "elder", "monk", "none"]),
                          (-25, ["noble", "none", "none"]),
-                         (12,  ["drunkard", "none", "none"])],
+                         (12,  ["drunkard", "none", "none"]),
+                         (-20, ["craftsman", "vendor", "none", "none"]),
+                         (30,  ["scout", "none", "none", "none"]),
+                         (20,  ["sailor", "none", "none"])],
     },
     # Tier-3 metropolis (capital after max growth)
     "metropolitan": {
@@ -3391,10 +4191,10 @@ CITY_CONFIGS = {
             ( 46, (7, 10), (6, 9), ["shrine", "shrine"]),
             ( 56, (8, 11), (4, 6), ["racing_ring"]),
         ],
-        "npc_types": [["scholar", "doctor"], ["innkeeper", "tavern"], "blacksmith", "scholar",
+        "npc_types": [["scholar", "doctor"], ["innkeeper", "tavern"], ["blacksmith", "weapon_order"], "scholar",
                       "scholar", "shrine_npc", ["restaurant_npc", "pastry_chef"], ["merchant", "beer_merchant", "sweet_shop"],
                       "villager", ["scholar", "library_npc", "villager", "wine_merchant"], "jewelry_merchant",
-                      "noble", "shrine_npc", "racing_bookkeeper"],
+                      "noble_maecenas", "shrine_npc", "racing_bookkeeper"],
         "gardens": [(-46, 3), (-22, 2), (10, 2), (34, 3)],
         "squares": [(-30, 5), (0, 6), (26, 5)],
         "growth_slots_tier1": [( 50, (4, 6), (3, 4), ["house", "two_story"]),
@@ -3405,15 +4205,15 @@ CITY_CONFIGS = {
                                (-54, (5, 7), (4, 6), ["tower", "three_story"])],
         "farms": [(-70, 10), (70, 10)],
         "ambient_npcs": [(-45, ["villager", "noble", "guard", "town_crier"]),
-                         (-25, ["child", "villager", "none", "musician"]),
+                         (-25, ["child", "villager", "craftsman", "musician"]),
                          (0,   ["noble", "noble", "guard", "none", "town_crier"]),
-                         (15,  ["child", "child", "none", "musician"]),
-                         (35,  ["villager", "drunkard", "beggar", "musician"]),
-                         (45,  ["guard", "guard", "guard"]),
-                         (-10, ["scholar", "villager", "none"]),
+                         (15,  ["child", "child", "vendor", "musician"]),
+                         (35,  ["villager", "drunkard", "beggar", "sailor"]),
+                         (45,  ["guard", "guard", "scout"]),
+                         (-10, ["scholar", "monk", "none"]),
                          (25,  ["noble", "none", "none"]),
                          (-35, ["beggar", "none", "none"]),
-                         (10,  ["pilgrim", "elder", "none"])],
+                         (10,  ["pilgrim", "elder", "monk"])],
     },
     # Military garrison — spawns biome-driven in frontier biomes (steppe/wasteland/etc.)
     "military": {
@@ -3427,7 +4227,7 @@ CITY_CONFIGS = {
             ( 10, None,   None,   None),
             ( 17, (5, 7), (4, 6), ["shrine", "tower"]),
         ],
-        "npc_types": ["weapon_armorer", "blacksmith", "quest_rock",
+        "npc_types": ["weapon_armorer", ["blacksmith", "weapon_order"], "quest_rock",
                       "garrison_commander", "innkeeper", "quartermaster", "shrine_npc"],
         "gardens": [],
         "squares": [(-5, 4), (8, 4)],
@@ -3512,7 +4312,7 @@ CITY_CONFIGS["atoll_village"] = {
         (  0, (5, 7), (3, 5), ["longhouse", "inn", "pavilion"]),
         ( 12, (4, 6), (2, 4), ["house", "house", "shrine", "market_stall"]),
     ],
-    "npc_types": ["quest_rock", "innkeeper", "restaurant_npc"],
+    "npc_types": ["quest_rock", ["innkeeper", "fishmonger"], "restaurant_npc"],
     "gardens": [(-7, 2), (6, 2)],
     "squares": [(0, 4)],
     "growth_slots_tier1": [( 15, (4, 5), (2, 4), ["house", "longhouse"]),
@@ -3524,7 +4324,7 @@ CITY_CONFIGS["atoll_village"] = {
     "farms": [(-24, 5), (24, 5)],
     "ambient_npcs": [(-4,  ["villager", "villager", "child"]),
                      ( 5,  ["elder", "musician", "none"]),
-                     (-10, ["villager", "child", "none"]),
+                     (-10, ["villager", "sailor", "none"]),
                      ( 10, ["villager", "none", "none"]),
                      ( -1, ["pilgrim", "none", "none"])],
 }
@@ -3539,8 +4339,8 @@ CITY_CONFIGS["island_town"] = {
         (  6, (4, 6), (3, 4), ["house", "two_story", "longhouse", "pavilion", "market_stall"]),
         ( 15, (5, 7), (4, 6), ["shrine", "shrine"]),
     ],
-    "npc_types": ["quest_rock", ["blacksmith", "merchant"], "innkeeper",
-                  "merchant", ["quest_gem", "villager", "coffee_merchant"], "shrine_npc"],
+    "npc_types": ["quest_rock", ["blacksmith", "merchant", "fishmonger"], "innkeeper",
+                  "merchant", ["quest_gem", "villager", "coffee_merchant", "salt_merchant"], "shrine_npc"],
     "gardens": [(-19, 2), (-10, 2), (10, 2)],
     "squares": [(0, 4)],
     "growth_slots_tier1": [( 20, (4, 6), (3, 4), ["house", "longhouse"]),
@@ -3553,9 +4353,9 @@ CITY_CONFIGS["island_town"] = {
     "ambient_npcs": [(-18, ["villager", "elder", "none"]),
                      (-10, ["child", "child", "none"]),
                      (  8, ["villager", "musician", "drunkard"]),
-                     ( 18, ["child", "villager", "none"]),
+                     ( 18, ["child", "sailor", "none"]),
                      ( -5, ["guard", "none"]),
-                     ( 12, ["merchant", "none"]),
+                     ( 12, ["merchant", "craftsman", "none"]),
                      ( -2, ["elder", "pilgrim", "none"]),
                      (  2, ["child", "none", "none"])],
 }
@@ -6063,6 +6863,34 @@ def _build_single_city(world, rng, city_bx, difficulty):
                 world.entities.append(TownCrierNPC(npc_px, npc_py, world, biodome=biodome))
             elif npc_type == "racing_bookkeeper":
                 world.entities.append(RacingBookkeeperNPC(npc_px, npc_py, world, rng, difficulty, biodome))
+            elif npc_type == "library_npc":
+                world.entities.append(LibraryNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "herb_merchant":
+                world.entities.append(HerboristNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "fishmonger":
+                world.entities.append(FishmongerNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "salt_merchant":
+                world.entities.append(SaltMerchantNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "spirits_distiller":
+                world.entities.append(SpiritsDistillerNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "dyer":
+                world.entities.append(DyerNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "cartographer":
+                world.entities.append(CartographerNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "farrier":
+                world.entities.append(FarrierNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "candlemaker":
+                world.entities.append(CandlemakerNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "tea_merchant":
+                world.entities.append(TeaMerchantNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "honey_merchant":
+                world.entities.append(HoneyMerchantNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "coin_dealer":
+                world.entities.append(CoinDealerNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "noble_maecenas":
+                world.entities.append(NobleMaecenasNPC(npc_px, npc_py, world, rng, difficulty, biodome))
+            elif npc_type == "weapon_order":
+                world.entities.append(WeaponOrderNPC(npc_px, npc_py, world, rng, difficulty, biodome))
 
         current_x += width + gaps[i]
 
@@ -6076,7 +6904,9 @@ def _build_single_city(world, rng, city_bx, difficulty):
                         "elder": ElderNPC, "beggar": BeggarNPC, "noble": NobleNPC,
                         "pilgrim": PilgrimNPC, "drunkard": DrunkardNPC,
                         "musician": MusicianNPC, "town_crier": TownCrierNPC,
-                        "farmer": FarmerNPC}
+                        "farmer": FarmerNPC,
+                        "scout": ScoutNPC, "monk": MonkNPC, "vendor": VendorNPC,
+                        "sailor": SailorNPC, "craftsman": CraftsmanNPC}
     
     # Ambient NPCs now roam randomly between the city walls
     for _, npc_type in cfg.get("ambient_npcs", ()):
@@ -10311,6 +11141,10 @@ def _build_settlement(world, settlement, rng):
 
     from towns import register_town_from_plan
     register_town_from_plan(world, settlement, city_bx, final_size)
+
+    from ruins import spawn_underground_ruins_for_settlement
+    spawn_underground_ruins_for_settlement(world, settlement)
+
     return True
 
 

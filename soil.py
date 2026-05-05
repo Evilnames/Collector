@@ -42,8 +42,12 @@ YIELD_MIN_MULT = 0.5
 YIELD_MAX_MULT = 2.5
 
 # Fertility
-FERTILITY_DRAIN_PER_HARVEST = 2    # default fertility drained when a crop matures
-COMPOST_FERTILITY_GAIN      = 3    # fertility gained per compost item applied
+FERTILITY_DRAIN_PER_HARVEST     = 2    # default fertility drained when a crop matures
+COMPOST_FERTILITY_GAIN          = 3    # fertility gained per compost item applied
+MANURE_FERTILITY_GAIN           = 2    # fertility gained per raw manure item applied
+RICH_COMPOST_FERTILITY_GAIN     = 4    # fertility gained per rich compost item applied
+
+MANURE_ITEM_IDS = {"chicken_droppings", "sheep_droppings", "goat_droppings", "cow_manure"}
 
 # Rain events (Phase 2)
 RAIN_MIN_GAP_SECS      = 360.0    # shortest gap between rain events (6 min)
@@ -64,6 +68,7 @@ ORGANIC_ITEM_IDS = {
     "zucchini", "sweet_potato", "watermelon", "radish", "pea", "celery",
     "broccoli", "cactus_pulp", "date", "agave_fibre",
     "lumber", "sapling",
+    "chicken_droppings", "sheep_droppings", "goat_droppings", "cow_manure",
 }
 
 

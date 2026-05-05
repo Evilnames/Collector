@@ -166,6 +166,27 @@ BAKERY_RECIPES = [
     {"name": "Brownie",               "ingredients": {"wheat": 1, "egg": 2, "milk": 1},               "output_id": "brownie",               "output_count": 4},
     {"name": "Bread Pudding",         "ingredients": {"wheat": 2, "milk": 2, "egg": 2},               "output_id": "bread_pudding",         "output_count": 1},
     {"name": "Rice Pudding",          "ingredients": {"rice": 2, "milk": 2, "agave_syrup": 1},        "output_id": "rice_pudding",          "output_count": 2},
+    # --- Honey baked goods ---
+    {"name": "Honey Baklava",         "ingredients": {"sesame_seeds": 2, "wheat": 1, "honeycomb_raw": 2},              "output_id": "honey_baklava",          "output_count": 2},
+    {"name": "Honey Walnut Cake",     "ingredients": {"wheat": 2, "egg": 1, "sesame_seeds": 1, "honeycomb_raw": 2},   "output_id": "honey_walnut_cake",      "output_count": 1},
+    {"name": "Honey Lavender Cake",   "ingredients": {"wheat": 2, "egg": 1, "milk": 1, "honeycomb_raw": 2},           "output_id": "honey_lavender_cake",    "output_count": 1},
+    {"name": "Honey Fig Cake",        "ingredients": {"fig": 2, "wheat": 2, "egg": 1, "honeycomb_raw": 1},            "output_id": "honey_fig_cake",         "output_count": 1},
+    {"name": "Honey Lemon Drizzle",   "ingredients": {"lemon": 1, "wheat": 2, "egg": 1, "honeycomb_raw": 2},          "output_id": "honey_lemon_drizzle",    "output_count": 1},
+    {"name": "Honey Apple Cake",      "ingredients": {"apple": 2, "wheat": 2, "egg": 1, "honeycomb_raw": 1},          "output_id": "honey_apple_cake",       "output_count": 1},
+    {"name": "Honey Pear Tart",       "ingredients": {"pear": 1, "wheat": 1, "honeycomb_raw": 1},                     "output_id": "honey_pear_tart",        "output_count": 1},
+    {"name": "Honey Carrot Cake",     "ingredients": {"carrot": 2, "wheat": 2, "egg": 1, "honeycomb_raw": 1},         "output_id": "honey_carrot_cake",      "output_count": 1},
+    {"name": "Honey Ginger Cookie",   "ingredients": {"ginger": 1, "wheat": 2, "honeycomb_raw": 1},                   "output_id": "honey_ginger_cookie",    "output_count": 4},
+    {"name": "Honey Sesame Candy",    "ingredients": {"sesame_seeds": 2, "honeycomb_raw": 1},                          "output_id": "honey_sesame_candy",     "output_count": 4},
+    {"name": "Honey Date Bread",      "ingredients": {"date_palm_fruit": 2, "wheat": 2, "honeycomb_raw": 1},           "output_id": "honey_date_bread",       "output_count": 1},
+    {"name": "Honey Pomegranate Tart","ingredients": {"pomegranate": 1, "wheat": 1, "honeycomb_raw": 1},               "output_id": "honey_pomegranate_tart", "output_count": 1},
+    {"name": "Honeycomb Toast",       "ingredients": {"wheat": 2, "honeycomb_raw": 2},                                 "output_id": "honeycomb_toast",        "output_count": 2},
+    {"name": "Honey Rice Pudding",    "ingredients": {"rice": 2, "milk": 1, "honeycomb_raw": 1},                       "output_id": "honey_rice_pudding",     "output_count": 2},
+    {"name": "Honey Pumpkin Loaf",    "ingredients": {"pumpkin": 1, "wheat": 2, "egg": 1, "honeycomb_raw": 1},        "output_id": "honey_pumpkin_loaf",     "output_count": 1},
+    {"name": "Honey Coconut Ball",    "ingredients": {"coconut": 1, "sesame_seeds": 1, "honeycomb_raw": 1},            "output_id": "honey_coconut_ball",     "output_count": 4},
+    {"name": "Honey Bun",             "ingredients": {"wheat": 2, "milk": 1, "honeycomb_raw": 1},                     "output_id": "honey_bun",              "output_count": 2},
+    {"name": "Honey Almond Slice",    "ingredients": {"wheat": 1, "sesame_seeds": 2, "egg": 1, "honeycomb_raw": 1},   "output_id": "honey_almond_slice",     "output_count": 2},
+    {"name": "Honey Strawberry Tart", "ingredients": {"strawberry": 2, "wheat": 1, "honeycomb_raw": 1},               "output_id": "honey_strawberry_tart",  "output_count": 1},
+    {"name": "Honey Fig Roll",        "ingredients": {"fig": 1, "wheat": 2, "milk": 1, "honeycomb_raw": 1},           "output_id": "honey_fig_roll",         "output_count": 2},
 ]
 
 # ---------------------------------------------------------------------------
@@ -264,6 +285,17 @@ WOK_RECIPES = [
     # --- Pacific ---
     {"name": "Coconut Rice",    "ingredients": {"rice": 2, "coconut": 1},                           "output_id": "coconut_rice",    "output_count": 2},
     {"name": "Poke Bowl",       "ingredients": {"fish": 1, "rice": 1, "scallion": 1},               "output_id": "poke_bowl",       "output_count": 1},
+    # --- Honey wok dishes ---
+    {"name": "Honey Ginger Chicken",  "ingredients": {"raw_chicken": 1, "honeycomb_raw": 1, "ginger": 1},             "output_id": "honey_ginger_chicken",   "output_count": 1},
+    {"name": "Honey Sesame Beef",     "ingredients": {"raw_beef": 1, "honeycomb_raw": 1, "sesame_seeds": 1},          "output_id": "honey_sesame_beef",      "output_count": 1},
+    {"name": "Honey Pepper Pork",     "ingredients": {"raw_mutton": 1, "honeycomb_raw": 1, "pepper": 1},              "output_id": "honey_pepper_pork",      "output_count": 1},
+    {"name": "Honey Lemon Fish",      "ingredients": {"fish": 1, "honeycomb_raw": 1, "lemon": 1},                     "output_id": "honey_lemon_fish",       "output_count": 1},
+    {"name": "Honey Broccoli Stir Fry","ingredients": {"broccoli": 2, "honeycomb_raw": 1, "garlic": 1},               "output_id": "honey_broccoli_stir",    "output_count": 1},
+    {"name": "Honey Walnut Stir Fry", "ingredients": {"bok_choy": 2, "honeycomb_raw": 1, "sesame_seeds": 1},          "output_id": "honey_walnut_fry",       "output_count": 1},
+    {"name": "Honey Chili Eggplant",  "ingredients": {"eggplant": 1, "honeycomb_raw": 1, "chili": 1},                 "output_id": "honey_chili_eggplant",   "output_count": 1},
+    {"name": "Honey Corn Chicken",    "ingredients": {"corn": 1, "raw_chicken": 1, "honeycomb_raw": 1},               "output_id": "honey_corn_chicken",     "output_count": 1},
+    {"name": "Honey Sweet Potato",    "ingredients": {"sweet_potato": 2, "honeycomb_raw": 1, "ginger": 1},            "output_id": "honey_sweet_potato_wok", "output_count": 1},
+    {"name": "Honey Beet Salad",      "ingredients": {"beet": 2, "honeycomb_raw": 1, "lemon": 1},                     "output_id": "honey_beet_salad",       "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -494,6 +526,17 @@ BBQ_GRILL_RECIPES = [
     {"name": "Grilled Lemon Corn",          "ingredients": {"lemon": 1, "corn": 2},                                  "output_id": "grilled_lemon_corn",          "output_count": 2},
     # --- Pacific ---
     {"name": "Roasted Breadfruit",         "ingredients": {"breadfruit": 2},                                         "output_id": "roasted_breadfruit",          "output_count": 2},
+    # --- Honey BBQ dishes ---
+    {"name": "Honey Glazed Chicken",  "ingredients": {"raw_chicken": 1, "honeycomb_raw": 1},                          "output_id": "honey_glazed_chicken",   "output_count": 1},
+    {"name": "Honey Chili Ribs",      "ingredients": {"raw_mutton": 1, "honeycomb_raw": 1, "chili": 1},               "output_id": "honey_chili_ribs",       "output_count": 1},
+    {"name": "Honey Garlic Beef",     "ingredients": {"raw_beef": 1, "honeycomb_raw": 1, "garlic": 1},                "output_id": "honey_garlic_beef",      "output_count": 1},
+    {"name": "Honey Glazed Fish",     "ingredients": {"fish": 1, "honeycomb_raw": 1, "lemon": 1},                     "output_id": "honey_glazed_fish",      "output_count": 1},
+    {"name": "Honey Mustard Mutton",  "ingredients": {"raw_mutton": 1, "honeycomb_raw": 1, "ginger": 1},              "output_id": "honey_mustard_mutton",   "output_count": 1},
+    {"name": "Honey Glazed Corn",     "ingredients": {"corn": 2, "honeycomb_raw": 1},                                  "output_id": "honey_glazed_corn",      "output_count": 2},
+    {"name": "Honey Roasted Carrot",  "ingredients": {"carrot": 2, "honeycomb_raw": 1, "ginger": 1},                  "output_id": "honey_roasted_carrot",   "output_count": 2},
+    {"name": "Honey Glazed Eggplant", "ingredients": {"eggplant": 1, "honeycomb_raw": 1, "garlic": 1},                "output_id": "honey_eggplant_grill",   "output_count": 1},
+    {"name": "Honey Glazed Duck",     "ingredients": {"raw_duck": 1, "honeycomb_raw": 1, "ginger": 1},                "output_id": "honey_duck_glaze",       "output_count": 1},
+    {"name": "Honey Pepper Skewer",   "ingredients": {"raw_beef": 1, "pepper": 1, "honeycomb_raw": 1},                "output_id": "honey_pepper_skewer",    "output_count": 2},
 ]
 
 # ---------------------------------------------------------------------------
@@ -617,6 +660,17 @@ CLAY_POT_RECIPES = [
     # --- Pacific ---
     {"name": "Laplap",               "ingredients": {"taro": 2, "fish": 1},                                 "output_id": "laplap",               "output_count": 1},
     {"name": "Coconut Fish Curry",   "ingredients": {"fish": 1, "coconut": 1, "ginger": 1},                "output_id": "coconut_fish_curry",   "output_count": 1},
+    # --- Honey clay pot dishes ---
+    {"name": "Honey Lamb Stew",       "ingredients": {"raw_mutton": 1, "honeycomb_raw": 1, "carrot": 2},              "output_id": "honey_lamb_stew",        "output_count": 1},
+    {"name": "Honey Fig Braised Chicken","ingredients": {"raw_chicken": 1, "fig": 2, "honeycomb_raw": 1},             "output_id": "honey_fig_braise",       "output_count": 1},
+    {"name": "Honey Lemon Chicken Pot","ingredients": {"raw_chicken": 1, "lemon": 1, "honeycomb_raw": 1},             "output_id": "honey_lemon_pot",        "output_count": 1},
+    {"name": "Honey Pumpkin Soup",    "ingredients": {"pumpkin": 2, "honeycomb_raw": 1, "milk": 1},                   "output_id": "honey_pumpkin_soup",     "output_count": 1},
+    {"name": "Honey Sweet Potato Stew","ingredients": {"sweet_potato": 2, "honeycomb_raw": 1, "lemon": 1},            "output_id": "honey_sweet_stew",       "output_count": 1},
+    {"name": "Honey Carrot Ginger Soup","ingredients": {"carrot": 2, "ginger": 1, "honeycomb_raw": 1},                "output_id": "honey_carrot_soup",      "output_count": 1},
+    {"name": "Honey Lentil Stew",     "ingredients": {"lentil": 2, "honeycomb_raw": 1, "tomato": 1},                  "output_id": "honey_lentil_stew",      "output_count": 1},
+    {"name": "Honey Apple Pork",      "ingredients": {"raw_mutton": 1, "apple": 1, "honeycomb_raw": 1},               "output_id": "honey_apple_pork",       "output_count": 1},
+    {"name": "Honey Beet Braise",     "ingredients": {"beet": 2, "honeycomb_raw": 1, "onion": 1},                     "output_id": "honey_beet_braise",      "output_count": 1},
+    {"name": "Honey Pomegranate Chicken","ingredients": {"raw_chicken": 1, "pomegranate": 1, "honeycomb_raw": 1},     "output_id": "honey_pomegranate_pot",  "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -2617,9 +2671,9 @@ RECIPES = [
     {
         "name": "Evaporation Pan",
         "pattern": [
-            ["iron_chunk", "iron_chunk", "iron_chunk"],
+            [None,         None,         None        ],
             ["iron_chunk", None,         "iron_chunk"],
-            ["stone_chip", "stone_chip", "stone_chip"],
+            ["iron_chunk", "iron_chunk", "iron_chunk"],
         ],
         "output_id":    "evap_pan_item",
         "output_count": 1,
@@ -2956,6 +3010,11 @@ AUTOMATION_RECIPES = [
     {"name": "Sequencer",         "ingredients": {"tempered_iron": 3, "wire": 3},                   "output_id": "sequencer_item",        "output_count": 1},
     {"name": "T Flip-Flop",       "ingredients": {"tempered_iron": 2, "wire": 2},                   "output_id": "t_flipflop_item",       "output_count": 1},
     {"name": "Deposit Trigger",   "ingredients": {"tempered_iron": 3, "wire": 2, "chest_item": 1},  "output_id": "deposit_trigger_item",  "output_count": 1},
+    {"name": "XOR Gate",          "ingredients": {"tempered_iron": 2, "wire": 3},                    "output_id": "xor_gate_item",         "output_count": 1},
+    {"name": "Player Sensor",     "ingredients": {"tempered_iron": 2, "wire": 2, "crystal_shard": 1},"output_id": "player_sensor_item",    "output_count": 1},
+    {"name": "Crossover Wire",    "ingredients": {"iron_chunk": 2, "wire": 2},                       "output_id": "crossover_wire_item",   "output_count": 2},
+    {"name": "Signal Lamp",       "ingredients": {"glass": 2, "wire": 1, "iron_chunk": 1},           "output_id": "signal_lamp_item",      "output_count": 1},
+    {"name": "Trapdoor",          "ingredients": {"iron_chunk": 4, "wire": 1},                       "output_id": "trapdoor_item",         "output_count": 1},
     # ── Pipes ─────────────────────────────────────────────────────────────────
     {"name": "Pipe",              "ingredients": {"iron_chunk": 2},                                  "output_id": "pipe",                  "output_count": 8},
     {"name": "Iron Pipe",         "ingredients": {"tempered_iron": 2, "wire": 1},                   "output_id": "pipe_iron",             "output_count": 8},
@@ -2964,6 +3023,8 @@ AUTOMATION_RECIPES = [
     {"name": "Pipe Output",       "ingredients": {"iron_chunk": 3, "wire": 1},                      "output_id": "pipe_output_item",      "output_count": 1},
     {"name": "Pipe Filter",       "ingredients": {"tempered_iron": 2, "glass": 1, "wire": 1},       "output_id": "pipe_filter_item",      "output_count": 1},
     {"name": "Pipe Sorter",       "ingredients": {"tempered_iron": 3, "wire": 2},                   "output_id": "pipe_sorter_item",      "output_count": 1},
+    {"name": "Pipe Valve",        "ingredients": {"iron_chunk": 3, "wire": 2},                       "output_id": "pipe_valve_item",       "output_count": 1},
+    {"name": "Pipe Buffer",       "ingredients": {"iron_chunk": 4, "wire": 1},                       "output_id": "pipe_buffer_item",      "output_count": 1},
     # ── Factory ───────────────────────────────────────────────────────────────
     {"name": "Factory",           "ingredients": {"tempered_iron": 6, "wire": 3, "chest_item": 1},  "output_id": "factory_item",          "output_count": 1},
 ]

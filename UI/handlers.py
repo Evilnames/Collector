@@ -25,7 +25,7 @@ from blocks import (BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BB
                     DAIRY_VAT_BLOCK, CHEESE_PRESS_BLOCK, AGING_CAVE_BLOCK,
                     FLETCHING_TABLE_BLOCK, SMELTER_BLOCK, ANAEROBIC_TANK_BLOCK,
                     GLASS_KILN_BLOCK, GARDEN_WORKSHOP_BLOCK, AUTOMATION_BENCH_BLOCK,
-                    WEAPON_ASSEMBLER_BLOCK, TANNING_RACK_BLOCK)
+                    WEAPON_ASSEMBLER_BLOCK, TANNING_RACK_BLOCK, BEEHIVE_BLOCK)
 from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, BLOCK_SIZE
 
 
@@ -394,6 +394,8 @@ class HandlersMixin:
                     self._tea_codex_scroll = max(0, min(self._max_tea_codex_scroll, self._tea_codex_scroll - dy * 60))
                 elif self._encyclopedia_cat == 14:
                     self._herb_codex_scroll = max(0, min(self._max_herb_codex_scroll, self._herb_codex_scroll - dy * 60))
+                elif self._encyclopedia_cat == 28:
+                    self._coin_codex_scroll = max(0, getattr(self, "_coin_codex_scroll", 0) - dy * 30)
             elif self._collection_tab == 2:
                 self._achievement_scroll = max(0, min(self._max_achievement_scroll, self._achievement_scroll - dy * 60))
         elif self.breeding_open:
@@ -565,10 +567,25 @@ class HandlersMixin:
                             LeaderNPC, BlacksmithNPC, InnkeeperNPC, ScholarNPC,
                             RoyalPaleontologistNPC, RoyalAnglerNPC,
                             WeaponArmorerNPC, QuartermasterNPC, GarrisonCommanderNPC,
-                            DoctorNPC)
+                            DoctorNPC, CoinDealerNPC,
+                            NobleMaecenasNPC, WeaponOrderNPC)
         from outpost_npcs import OutpostKeeperNPC
         npc = self.active_npc
-        if isinstance(npc, RockQuestNPC):
+        if isinstance(npc, CoinDealerNPC):
+            for key, rect in self._trade_rects.items():
+                if rect.collidepoint(pos):
+                    if isinstance(key, tuple):
+                        action, idx = key
+                        if action == "tab":
+                            self._coin_dealer_tab = idx
+                            self._coin_dealer_scroll = 0
+                            self._coin_dealer_sell_scroll = 0
+                        elif action == "buy":
+                            npc.execute_purchase(idx, player)
+                        elif action == "sell":
+                            npc.execute_sell(idx, player)
+                    break
+        elif isinstance(npc, RockQuestNPC):
             for quest_idx, rect in self._trade_rects.items():
                 if rect.collidepoint(pos):
                     npc.complete_quest(player, quest_idx)
@@ -600,6 +617,11 @@ class HandlersMixin:
             for quest_idx, rect in self._trade_rects.items():
                 if rect.collidepoint(pos):
                     npc.complete_quest(player, quest_idx)
+                    break
+        elif isinstance(npc, (NobleMaecenasNPC, WeaponOrderNPC)):
+            for cidx, rect in self._trade_rects.items():
+                if rect.collidepoint(pos):
+                    npc.complete_commission(player, cidx)
                     break
         elif isinstance(npc, MerchantNPC):
             for key, rect in self._trade_rects.items():
@@ -650,7 +672,11 @@ class HandlersMixin:
         elif isinstance(npc, LeaderNPC):
             for idx, rect in self._trade_rects.items():
                 if rect.collidepoint(pos):
-                    npc.execute_contract(idx, player)
+                    if isinstance(idx, str) and idx.startswith("art_"):
+                        slot = int(idx.split("_")[1])
+                        npc.complete_art_commission(player, slot)
+                    else:
+                        npc.execute_contract(idx, player)
                     break
         elif isinstance(npc, WeaponArmorerNPC):
             self._handle_weapon_armorer_click(pos, player, npc)
@@ -820,6 +846,23 @@ class HandlersMixin:
             return
         if self.refinery_block_id == TAPESTRY_FRAME_BLOCK:
             self._handle_tapestry_frame_click(pos, player, right=False)
+            return
+        if self.refinery_block_id == BEEHIVE_BLOCK:
+            self._handle_beehive_click(pos, player)
+            return
+        from blocks import MEAD_VAT_BLOCK, MEAD_CELLAR_BLOCK
+        if self.refinery_block_id == MEAD_VAT_BLOCK:
+            self._handle_mead_vat_click(pos, player)
+            return
+        if self.refinery_block_id == MEAD_CELLAR_BLOCK:
+            self._handle_mead_cellar_click(pos, player)
+            return
+        from blocks import SALTING_RACK_BLOCK, CURING_CELLAR_BLOCK
+        if self.refinery_block_id == SALTING_RACK_BLOCK:
+            self._handle_salting_rack_click(pos, player)
+            return
+        if self.refinery_block_id == CURING_CELLAR_BLOCK:
+            self._handle_curing_cellar_click(pos, player)
             return
         from blocks import POTTERY_WHEEL_BLOCK, POTTERY_KILN_BLOCK
         if self.refinery_block_id == POTTERY_WHEEL_BLOCK:
@@ -1090,7 +1133,7 @@ class HandlersMixin:
         if bin_pos is None:
             return
         bin_data = player.world.compost_bin_data.setdefault(
-            bin_pos, {"input": {}, "progress": 0.0, "output": 0})
+            bin_pos, {"input": {}, "progress": 0.0, "output": 0, "output_rich": 0})
 
         if self._compost_deposit_btn and self._compost_deposit_btn.collidepoint(pos):
             sel = player.hotbar[player.selected_slot]
@@ -1104,6 +1147,10 @@ class HandlersMixin:
             if bin_data["output"] > 0:
                 player._add_item("compost", bin_data["output"])
                 bin_data["output"] = 0
+            rich = bin_data.get("output_rich", 0)
+            if rich > 0:
+                player._add_item("rich_compost", rich)
+                bin_data["output_rich"] = 0
 
     def _handle_coop_click(self, pos, player):
         coop_pos = self.active_coop_pos

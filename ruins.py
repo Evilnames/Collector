@@ -14,6 +14,7 @@ import random
 from blocks import (
     AIR, GRASS, DIRT, STONE, COBBLESTONE, MOSSY_BRICK, CRACKED_STONE,
     MOSS_PATCH, SAND, CHEST_BLOCK, RUIN_MARKER_BLOCK,
+    LIMESTONE_BLOCK, OPUS_INCERTUM,
 )
 from constants import SURFACE_Y
 
@@ -38,7 +39,8 @@ _LOOT_BY_AGENDA = {
     "martial":    [("iron_chunk", 1, 4), ("bone_arrow", 1, 6),
                    ("stone_pickaxe", 1, 1)],
     "mercantile": [("gold_nugget", 1, 3), ("amethyst_gem", 1, 1),
-                   ("citrine_gem", 1, 1), ("quartz_gem", 1, 2)],
+                   ("citrine_gem", 1, 1), ("quartz_gem", 1, 2),
+                   ("coin_pouch", 1, 3)],
     "scholarly":  [("philosophers_scroll", 1, 1), ("quartz_gem", 1, 2),
                    ("rare_mushroom", 1, 2)],
     "pious":      [("clay_oil_lamp", 1, 2), ("ruby_dust", 1, 1),
@@ -55,6 +57,7 @@ _LOOT_RELICS = [
     ("ruby", 1, 1),
     ("philosophers_scroll", 1, 1),
     ("pottery_vase_fine", 1, 1),
+    ("coin_pouch", 1, 2),
 ]
 
 
@@ -76,6 +79,19 @@ def roll_chest_contents(rng: random.Random, agenda: str, age_years: int) -> dict
         item, lo, hi = rng.choice(_LOOT_RELICS)
         contents[item] = contents.get(item, 0) + rng.randint(lo, hi)
     return contents
+
+
+def roll_coin_count(rng: random.Random, age_years: int) -> int:
+    """How many coins to generate for this ruin chest (0-3). Older ruins → more coins."""
+    base_chance = min(0.90, 0.35 + age_years * 0.0008)
+    if rng.random() > base_chance:
+        return 0
+    # Older ruins tend to have more coins
+    if age_years > 600:
+        return rng.randint(1, 3)
+    if age_years > 200:
+        return rng.randint(1, 2)
+    return 1
 
 
 # ---------------------------------------------------------------------------
@@ -320,3 +336,194 @@ def spawn_ruins_for_chunk(world, cx: int):
         if s.world_x + 16 < base_x or s.world_x - 16 >= end_x:
             continue
         spawn_ruin_for_settlement(world, s)
+
+
+# ---------------------------------------------------------------------------
+# Underground ruins — buried city layers beneath old alive settlements
+# ---------------------------------------------------------------------------
+# Like Rome built on top of ancient Rome: old cities accumulate a buried layer
+# of weathered walls, floors, and rubble that the player discovers by mining
+# down through the soil beneath a living city.
+
+# Layout configs: span = half-width of the buried level in blocks
+_UG_CONFIGS = {
+    "small":  {"span": 14, "room_h": 4, "wall_spacing": 7},
+    "medium": {"span": 24, "room_h": 5, "wall_spacing": 9},
+    "large":  {"span": 40, "room_h": 6, "wall_spacing": 10},
+}
+
+# Relic-tier loot bumped up for underground finds (deeper = rarer)
+_UG_LOOT_RELICS = [
+    ("diamond", 1, 1),
+    ("ruby", 1, 1),
+    ("alexandrite", 1, 1),
+    ("philosophers_scroll", 1, 2),
+    ("pottery_vase_fine", 1, 1),
+    ("amethyst_gem", 1, 2),
+]
+
+
+def _ug_wall_block(rng: random.Random, age_factor: float) -> int:
+    """Wall material — older settlements use more degraded/archaic blocks."""
+    if age_factor >= 0.75:
+        return rng.choices(
+            [OPUS_INCERTUM, COBBLESTONE, MOSSY_BRICK, CRACKED_STONE],
+            weights=[4, 3, 2, 2],
+        )[0]
+    if age_factor >= 0.40:
+        return rng.choices(
+            [COBBLESTONE, MOSSY_BRICK, CRACKED_STONE],
+            weights=[4, 3, 1],
+        )[0]
+    return rng.choice([COBBLESTONE, COBBLESTONE, MOSSY_BRICK])
+
+
+def _build_underground_city(world, rng: random.Random, center_x: int,
+                             floor_y: int, layout: str, age_factor: float,
+                             chest_candidates: list):
+    """Carve a flat buried-city layer and fill it with ruins geometry."""
+    cfg = _UG_CONFIGS[layout]
+    span      = cfg["span"]
+    room_h    = cfg["room_h"]
+    wall_spc  = cfg["wall_spacing"]
+
+    x_lo   = center_x - span
+    x_hi   = center_x + span
+    ceil_y = floor_y - room_h   # solid ceiling row
+
+    # Carve interior void
+    for x in range(x_lo + 1, x_hi):
+        for y in range(ceil_y + 1, floor_y):
+            _safe_set(world, x, y, AIR)
+
+    # Solid floor
+    for x in range(x_lo, x_hi + 1):
+        blk = LIMESTONE_BLOCK if rng.random() < 0.65 else COBBLESTONE
+        _safe_set(world, x, floor_y, blk)
+
+    # Ceiling row — partially intact
+    for x in range(x_lo, x_hi + 1):
+        if rng.random() < 0.10:
+            pass  # natural stone pokes through (leave as-is)
+        else:
+            _safe_set(world, x, ceil_y, _ug_wall_block(rng, age_factor))
+
+    # Solid end walls
+    for y in range(ceil_y, floor_y + 1):
+        _safe_set(world, x_lo, y, _ug_wall_block(rng, age_factor))
+        _safe_set(world, x_hi, y, _ug_wall_block(rng, age_factor))
+
+    # Internal wall remnants at regular intervals
+    for x in range(x_lo + wall_spc, x_hi, wall_spc):
+        if rng.random() < 0.45:
+            # Partial wall — rises from floor, leaves headroom gap
+            remnant_h = rng.randint(1, room_h - 1)
+            for dy in range(remnant_h):
+                _safe_set(world, x, floor_y - dy, _ug_wall_block(rng, age_factor))
+        else:
+            # Full-height column — requires mining to pass
+            for y in range(ceil_y, floor_y + 1):
+                if rng.random() < 0.80:   # occasional missing blocks = decay
+                    _safe_set(world, x, y, _ug_wall_block(rng, age_factor))
+
+    # Floor debris and rubble
+    for x in range(x_lo + 1, x_hi):
+        r = rng.random()
+        if r < 0.08:
+            _safe_set(world, x, floor_y, COBBLESTONE)
+        elif r < 0.12:
+            _safe_set(world, x, floor_y, CRACKED_STONE)
+
+    # Chest candidates — one per rough third of the span
+    step = max(6, span * 2 // 3)
+    for cx_pos in range(x_lo + span // 3, x_hi, step):
+        chest_candidates.append((cx_pos, floor_y - 1))
+
+
+def _ug_chest_loot(rng: random.Random, agenda: str, age_years: int) -> dict:
+    """Underground chest has the same base loot but a better relic chance."""
+    contents = roll_chest_contents(rng, agenda, age_years)
+    # Extra relic roll scaled by age
+    bonus_chance = min(0.80, 0.20 + age_years * 0.0015)
+    if rng.random() < bonus_chance:
+        item, lo, hi = rng.choice(_UG_LOOT_RELICS)
+        contents[item] = contents.get(item, 0) + rng.randint(lo, hi)
+    return contents
+
+
+def spawn_underground_ruins_for_settlement(world, settlement) -> bool:
+    """Carve a buried city layer beneath an old alive settlement.
+
+    Only fires for settlements old enough that a prior city layer could
+    plausibly be buried beneath them (age_factor >= 0.20).  Returns True
+    if geometry was placed.
+    """
+    plan = getattr(world, "plan", None)
+    if plan is None:
+        return False
+    if settlement.state != "alive":
+        return False
+
+    # Idempotency
+    built = getattr(world, "_ug_ruins_built", None)
+    if built is None:
+        built = set()
+        world._ug_ruins_built = built
+    if settlement.settlement_id in built:
+        return False
+
+    age_years  = plan.history_years - settlement.founded_year
+    age_factor = age_years / max(1, plan.history_years)
+
+    if age_factor < 0.20:
+        built.add(settlement.settlement_id)
+        return False
+
+    base_x = settlement.world_x
+    biome  = world.biodome_at(base_x)
+    if biome == "ocean":
+        built.add(settlement.settlement_id)
+        return False
+
+    # Pick layout by age
+    if age_factor >= 0.70:
+        layout = "large"
+    elif age_factor >= 0.40:
+        layout = "medium"
+    else:
+        layout = "small"
+
+    span = _UG_CONFIGS[layout]["span"]
+
+    # Ensure all required chunks are loaded
+    chunk_lo = (base_x - span - 2) // 32
+    chunk_hi = (base_x + span + 2) // 32
+    for cx in range(chunk_lo, chunk_hi + 1):
+        if cx not in world._chunks:
+            return False   # will retry on next chunk stream
+
+    rng      = random.Random((world.seed ^ (settlement.settlement_id * 0x9A3C71) ^ 0xF12E45) & 0xFFFFFFFF)
+    sy       = world.surface_height(base_x)
+
+    # Depth: older = deeper; keeps the ceiling at least 15 blocks underground
+    depth    = int(22 + age_factor * 20)   # 22 – 42 blocks below surface
+    floor_y  = sy + depth
+
+    if floor_y + 2 >= world.height:
+        built.add(settlement.settlement_id)
+        return False
+
+    chest_candidates: list = []
+    _build_underground_city(world, rng, base_x, floor_y, layout, age_factor, chest_candidates)
+
+    # Place chests with era-appropriate loot
+    kingdom = plan.kingdoms.get(settlement.original_kingdom_id)
+    agenda  = kingdom.agenda if kingdom else "builder"
+    n_chests = {"small": 1, "medium": 2, "large": 3}[layout]
+    rng.shuffle(chest_candidates)
+    for cx_pos, cy_pos in chest_candidates[:n_chests]:
+        if _safe_set(world, cx_pos, cy_pos, CHEST_BLOCK):
+            world.chest_data[(cx_pos, cy_pos)] = _ug_chest_loot(rng, agenda, age_years)
+
+    built.add(settlement.settlement_id)
+    return True

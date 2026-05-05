@@ -37,7 +37,7 @@ class SaveManager:
                             "rocks", "wildflowers", "fossils", "gems", "bird_observations",
                             "insect_observations",
                             "fish", "coffee_beans", "wine_grapes", "spirits",
-                            "tea_leaves", "textiles", "cheese_wheels", "jewelry", "sculptures", "custom_tapestries", "pottery_pieces", "salt_crystals",
+                            "tea_leaves", "textiles", "cheese_wheels", "jewelry", "sculptures", "custom_tapestries", "pottery_pieces", "salt_crystals", "coins",
                             "research", "automations",
                             "towns", "regions", "outposts", "player_cities", "world_plan",
                             "farm_bots", "backhoes", "elevator_cars", "minecarts", "boats", "entities", "dropped_items", "chests", "banners"):
@@ -94,7 +94,12 @@ class SaveManager:
             self._save_sculptures(con, player)
             self._save_tapestries(con, player)
             self._save_pottery_pieces(con, player)
+            self._save_honey_jars(con, player)
+            self._save_hive_progress(con, world)
+            self._save_mead_batches(con, player)
+            self._save_charcuterie_items(con, player)
             self._save_salt_crystals(con, player)
+            self._save_coins(con, player)
             self._save_crafted_weapons(con, player)
             self._save_guard_sketches(con, player)
             self._save_bird_observations(con, player)
@@ -141,6 +146,11 @@ class SaveManager:
             banner_data = self._load_banners(con)
             animal_trap_data = self._load_animal_traps(con)
             fish_trap_data   = self._load_fish_traps(con)
+            try:
+                _hive_rows = con.execute("SELECT bx, by, progress FROM hive_progress").fetchall()
+            except Exception:
+                _hive_rows = []
+            hive_progress_data = {(r[0], r[1]): r[2] for r in _hive_rows}
         return {
             "seed": seed,
             "world_plan": world_plan,
@@ -149,6 +159,7 @@ class SaveManager:
             "soil_fertility":  world_meta["soil_fertility"],
             "crop_progress":   world_meta["crop_progress"],
             "crop_care_sum":   world_meta["crop_care_sum"],
+            "hive_progress":   hive_progress_data,
             "compost_bin_data":    world_meta["compost_bin_data"],
             "garden_data":             world_meta["garden_data"],
             "sculpture_positions":     world_meta.get("sculpture_positions", {}),
@@ -766,6 +777,79 @@ class SaveManager:
             blend_components TEXT DEFAULT '[]',
             evap_method      TEXT DEFAULT '',
             refine_grade     TEXT DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS coins (
+            uid               TEXT PRIMARY KEY,
+            coin_type_id      TEXT,
+            civilization_name TEXT,
+            civ_short         TEXT,
+            era_label         TEXT,
+            year              INTEGER,
+            currency_system   TEXT,
+            denomination_key  TEXT,
+            denomination_label TEXT,
+            face_value        INTEGER,
+            obverse_motif     TEXT,
+            reverse_motif     TEXT,
+            ruler_name        TEXT,
+            mint_city         TEXT,
+            condition         TEXT,
+            rarity            TEXT,
+            seed              INTEGER,
+            error_type        TEXT DEFAULT '',
+            provenance        TEXT DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS honey_jars (
+            uid              TEXT PRIMARY KEY,
+            origin_biome     TEXT,
+            dominant_flower  TEXT,
+            flower_diversity INTEGER,
+            quality          REAL,
+            sweetness        REAL,
+            floral           REAL,
+            earthiness       REAL,
+            flavor_notes     TEXT,
+            seed             INTEGER,
+            state            TEXT DEFAULT 'liquid'
+        );
+        CREATE TABLE IF NOT EXISTS hive_progress (
+            bx INTEGER,
+            by INTEGER,
+            progress REAL,
+            PRIMARY KEY (bx, by)
+        );
+        CREATE TABLE IF NOT EXISTS mead_batches (
+            uid              TEXT PRIMARY KEY,
+            origin_biome     TEXT,
+            honey_tier       TEXT,
+            additive         TEXT,
+            yeast_type       TEXT,
+            state            TEXT,
+            sweetness        REAL,
+            body             REAL,
+            floral           REAL,
+            complexity       REAL,
+            carbonation      REAL,
+            ferment_quality  REAL,
+            flavor_notes     TEXT,
+            seed             INTEGER,
+            blend_components TEXT
+        );
+        CREATE TABLE IF NOT EXISTS charcuterie_items (
+            uid              TEXT PRIMARY KEY,
+            meat_source      TEXT,
+            cure_type        TEXT,
+            state            TEXT,
+            cure_method      TEXT,
+            salt_penetration REAL,
+            spice_intensity  REAL,
+            fat_content      REAL,
+            age_quality      REAL,
+            age_start_time   REAL DEFAULT 0.0,
+            age_total_days   INTEGER DEFAULT 0,
+            flavor_notes     TEXT,
+            seed             INTEGER,
+            blend_components TEXT
         );
         CREATE TABLE IF NOT EXISTS crafted_weapons (
             uid           TEXT PRIMARY KEY,
@@ -1837,6 +1921,48 @@ class SaveManager:
                  1 if tp.uid in pending_uids else 0),
             )
 
+    def _save_honey_jars(self, con, player):
+        con.execute("DELETE FROM honey_jars")
+        for h in player.honey_jars:
+            con.execute(
+                "INSERT OR REPLACE INTO honey_jars VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    h.uid, h.origin_biome, h.dominant_flower, h.flower_diversity,
+                    h.quality, h.sweetness, h.floral, h.earthiness,
+                    json.dumps(h.flavor_notes), h.seed, h.state,
+                )
+            )
+
+    def _save_mead_batches(self, con, player):
+        con.execute("DELETE FROM mead_batches")
+        for m in player.mead_batches:
+            con.execute(
+                "INSERT OR REPLACE INTO mead_batches VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    m.uid, m.origin_biome, m.honey_tier, m.additive, m.yeast_type, m.state,
+                    m.sweetness, m.body, m.floral, m.complexity, m.carbonation, m.ferment_quality,
+                    json.dumps(m.flavor_notes), m.seed, json.dumps(m.blend_components),
+                )
+            )
+
+    def _save_charcuterie_items(self, con, player):
+        con.execute("DELETE FROM charcuterie_items")
+        for c in player.charcuterie_items:
+            con.execute(
+                "INSERT OR REPLACE INTO charcuterie_items VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    c.uid, c.meat_source, c.cure_type, c.state, c.cure_method,
+                    c.salt_penetration, c.spice_intensity, c.fat_content, c.age_quality,
+                    c.age_start_time, c.age_total_days,
+                    json.dumps(c.flavor_notes), c.seed, json.dumps(c.blend_components),
+                )
+            )
+
+    def _save_hive_progress(self, con, world):
+        con.execute("DELETE FROM hive_progress")
+        for (bx, by), progress in world._hive_progress.items():
+            con.execute("INSERT OR REPLACE INTO hive_progress VALUES (?,?,?)", (bx, by, progress))
+
     def _save_pottery_pieces(self, con, player):
         con.execute("DELETE FROM pottery_pieces")
         for p in player.pottery_pieces:
@@ -1864,6 +1990,26 @@ class SaveManager:
                     json.dumps(getattr(c, "blend_components", [])),
                     getattr(c, "evap_method", ""),
                     getattr(c, "refine_grade", ""),
+                )
+            )
+
+    def _save_coins(self, con, player):
+        for col in ("error_type", "provenance"):
+            try:
+                con.execute(f"ALTER TABLE coins ADD COLUMN {col} TEXT DEFAULT ''")
+            except Exception:
+                pass
+        con.execute("DELETE FROM coins")
+        for c in getattr(player, "coins", []):
+            con.execute(
+                "INSERT OR REPLACE INTO coins VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    c.uid, c.coin_type_id, c.civilization_name, c.civ_short,
+                    c.era_label, c.year, c.currency_system,
+                    c.denomination_key, c.denomination_label, c.face_value,
+                    c.obverse_motif, c.reverse_motif, c.ruler_name,
+                    c.mint_city, c.condition, c.rarity, c.seed,
+                    getattr(c, "error_type", ""), getattr(c, "provenance", ""),
                 )
             )
 
@@ -2193,12 +2339,15 @@ class SaveManager:
                     "preferences": e.preferences,
                 }
                 for attr in ("shop", "quests", "cuisine", "difficulty",
-                             "rest_cost", "blessing_cost", "religion_name", "religion_style"):
+                             "rest_cost", "blessing_cost", "religion_name", "religion_style",
+                             "commissions", "art_commissions"):
                     val = getattr(e, attr, None)
                     if val is not None:
                         extra[attr] = val
                 if hasattr(e, "_streak"):
                     extra["streak"] = e._streak
+                if hasattr(e, "_art_streak"):
+                    extra["art_streak"] = e._art_streak
                 if hasattr(e, "trades"):
                     extra["trades"] = [list(t) for t in e.trades]
                 if hasattr(e, "ore_commission") and e.ore_commission is not None:
@@ -2273,14 +2422,18 @@ class SaveManager:
                 "tame_progress":   getattr(e, 'tame_progress', 0),
             }
             if isinstance(e, Sheep):
-                extra["has_wool"] = e.has_wool
-                extra["has_milk"] = e.has_milk
+                extra["has_wool"]   = e.has_wool
+                extra["has_milk"]   = e.has_milk
+                extra["has_manure"] = e.has_manure
             elif isinstance(e, Cow):
-                extra["has_milk"] = e.has_milk
+                extra["has_milk"]   = e.has_milk
+                extra["has_manure"] = e.has_manure
             elif isinstance(e, Goat):
-                extra["has_milk"] = e.has_milk
+                extra["has_milk"]   = e.has_milk
+                extra["has_manure"] = e.has_manure
             elif isinstance(e, Chicken):
-                extra["has_egg"] = e.has_egg
+                extra["has_egg"]    = e.has_egg
+                extra["has_manure"] = e.has_manure
             elif isinstance(e, Horse):
                 extra["stamina"] = e.stamina
                 extra["broken"]  = e._broken
@@ -3095,6 +3248,64 @@ class SaveManager:
                 _tapestry_pending.append(tp_dict)
 
         try:
+            honey_rows = con.execute(
+                "SELECT uid, origin_biome, dominant_flower, flower_diversity, quality, "
+                "sweetness, floral, earthiness, flavor_notes, seed, state FROM honey_jars"
+            ).fetchall()
+        except Exception:
+            honey_rows = []
+        honey_data = []
+        for r in honey_rows:
+            honey_data.append({
+                "uid": r[0], "origin_biome": r[1], "dominant_flower": r[2],
+                "flower_diversity": r[3], "quality": r[4],
+                "sweetness": r[5], "floral": r[6], "earthiness": r[7],
+                "flavor_notes": json.loads(r[8] or "[]"),
+                "seed": r[9], "state": r[10] or "liquid",
+            })
+
+        try:
+            mead_rows = con.execute(
+                "SELECT uid, origin_biome, honey_tier, additive, yeast_type, state, "
+                "sweetness, body, floral, complexity, carbonation, ferment_quality, "
+                "flavor_notes, seed, blend_components FROM mead_batches"
+            ).fetchall()
+        except Exception:
+            mead_rows = []
+        mead_data = []
+        for r in mead_rows:
+            mead_data.append({
+                "uid": r[0], "origin_biome": r[1], "honey_tier": r[2] or "base",
+                "additive": r[3] or "none", "yeast_type": r[4] or "wine", "state": r[5],
+                "sweetness": r[6], "body": r[7], "floral": r[8],
+                "complexity": r[9], "carbonation": r[10], "ferment_quality": r[11],
+                "flavor_notes": json.loads(r[12] or "[]"),
+                "seed": r[13],
+                "blend_components": json.loads(r[14] or "[]"),
+            })
+
+        try:
+            char_rows = con.execute(
+                "SELECT uid, meat_source, cure_type, state, cure_method, "
+                "salt_penetration, spice_intensity, fat_content, age_quality, "
+                "age_start_time, age_total_days, flavor_notes, seed, blend_components "
+                "FROM charcuterie_items"
+            ).fetchall()
+        except Exception:
+            char_rows = []
+        charcuterie_data = []
+        for r in char_rows:
+            charcuterie_data.append({
+                "uid": r[0], "meat_source": r[1], "cure_type": r[2], "state": r[3],
+                "cure_method": r[4] or "", "salt_penetration": r[5], "spice_intensity": r[6],
+                "fat_content": r[7], "age_quality": r[8],
+                "age_start_time": r[9] or 0.0, "age_total_days": r[10] or 0,
+                "flavor_notes": json.loads(r[11] or "[]"),
+                "seed": r[12],
+                "blend_components": json.loads(r[13] or "[]"),
+            })
+
+        try:
             pottery_rows = con.execute(
                 "SELECT uid, clay_biome, shape, state, firing_level, firing_quality, "
                 "thickness, evenness, glaze_type, texture_notes, seed, profile, blend_components "
@@ -3123,6 +3334,37 @@ class SaveManager:
             ).fetchall()
         except Exception:
             salt_rows = []
+        try:
+            coin_rows = con.execute(
+                "SELECT uid, coin_type_id, civilization_name, civ_short, era_label, year, "
+                "currency_system, denomination_key, denomination_label, face_value, "
+                "obverse_motif, reverse_motif, ruler_name, mint_city, condition, rarity, seed, "
+                "COALESCE(error_type,''), COALESCE(provenance,'') FROM coins"
+            ).fetchall()
+        except Exception:
+            try:
+                coin_rows = con.execute(
+                    "SELECT uid, coin_type_id, civilization_name, civ_short, era_label, year, "
+                    "currency_system, denomination_key, denomination_label, face_value, "
+                    "obverse_motif, reverse_motif, ruler_name, mint_city, condition, rarity, seed "
+                    "FROM coins"
+                ).fetchall()
+                coin_rows = [(*r, "", "") for r in coin_rows]
+            except Exception:
+                coin_rows = []
+        coin_data = [
+            {
+                "uid": r[0], "coin_type_id": r[1], "civilization_name": r[2],
+                "civ_short": r[3], "era_label": r[4], "year": r[5],
+                "currency_system": r[6], "denomination_key": r[7],
+                "denomination_label": r[8], "face_value": r[9],
+                "obverse_motif": r[10], "reverse_motif": r[11],
+                "ruler_name": r[12], "mint_city": r[13],
+                "condition": r[14], "rarity": r[15], "seed": r[16],
+                "error_type": r[17], "provenance": r[18],
+            }
+            for r in coin_rows
+        ]
         weapons_rows = con.execute(
             "SELECT uid, weapon_type, material, quality, parts_quality, custom_name, seed, "
             "COALESCE(style, 'classic'), COALESCE(decorations, '[]') FROM crafted_weapons"
@@ -3292,11 +3534,28 @@ class SaveManager:
                 f"{p['clay_biome']}_{p['firing_level']}"
                 for p in pottery_data if p["state"] == "fired" and p["firing_level"] != "cracked"
             }),
+            "honey_jars": honey_data,
+            "discovered_honeys": list({
+                f"{h['origin_biome']}_{'artisan' if h['quality'] >= 0.80 else 'fine' if h['quality'] >= 0.55 else 'base'}"
+                for h in honey_data
+            }),
+            "mead_batches": mead_data,
+            "discovered_meads": list({
+                f"{m['origin_biome']}_{'reserve' if m['ferment_quality'] >= 0.80 else 'fine' if m['ferment_quality'] >= 0.55 else 'base'}"
+                for m in mead_data if m["state"] == "bottled"
+            }),
+            "charcuterie_items": charcuterie_data,
+            "discovered_charcuterie": list({
+                f"{c['meat_source']}_{c['cure_type']}"
+                for c in charcuterie_data if c["state"] == "finished"
+            }),
             "salt_crystals": salt_data,
             "discovered_salt_origins": list({
                 f"{s['origin_biome']}_{s['refine_grade']}"
                 for s in salt_data if s["state"] == "finished" and s["refine_grade"]
             }),
+            "coins": coin_data,
+            "discovered_coin_types": list({c["coin_type_id"] for c in coin_data}),
         }
 
     def _load_automations(self, con):

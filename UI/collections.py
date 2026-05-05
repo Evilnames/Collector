@@ -99,15 +99,20 @@ class CollectionsMixin:
         n_tapestries_owned = len(getattr(player, "tapestries_created", []))
         n_pottery_owned    = len(getattr(player, "pottery_pieces", []))
         n_salt_owned       = len(getattr(player, "salt_crystals", []))
+        n_honey_owned      = len(getattr(player, "honey_jars", []))
+        n_mead_owned         = len(getattr(player, "mead_batches", []))
+        n_charcuterie_owned  = len(getattr(player, "charcuterie_items", []))
         n_dogs_tamed       = getattr(player, "dogs_tamed", 0)
         n_weapons_crafted  = len(getattr(player, "crafted_weapons", []))
         n_guard_sketches   = len(getattr(player, "guard_sketches", []))
+        n_coins_owned = len(getattr(player, "coins", []))
         total_collected = (len(player.rocks) + len(player.wildflowers) +
                            len(player.fossils) + len(player.gems) + n_mush_owned +
                            n_coffee_owned + n_wine_owned + n_spirits_owned + n_beer_owned + n_tea_owned +
                            n_potions_owned + n_textiles_owned + n_cheese_owned + n_jewelry_owned +
                            n_sculptures_owned + n_tapestries_owned + n_pottery_owned + n_salt_owned +
-                           n_dogs_tamed + n_weapons_crafted + n_guard_sketches)
+                           n_honey_owned + n_mead_owned +
+                           n_dogs_tamed + n_weapons_crafted + n_guard_sketches + n_coins_owned)
 
         # ---- 3 main tabs ----
         self._tab_rects.clear()
@@ -136,8 +141,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX", "BEER CODEX", "GUARD SKETCHES", "GLADIATOR CODEX", "SEASHELL CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165), (155, 215, 90), (150, 200, 240), (215, 185, 80), (210, 230, 240)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX", "BEER CODEX", "GUARD SKETCHES", "GLADIATOR CODEX", "SEASHELL CODEX", "COIN CODEX", "HONEY CODEX", "MEAD CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165), (155, 215, 90), (150, 200, 240), (215, 185, 80), (210, 230, 240), (235, 205, 110), (255, 225, 120), (240, 200, 90)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -177,6 +182,10 @@ class CollectionsMixin:
                 ("dogs",       f"DOGS ({n_dogs_tamed})",              (28, 20, 10),  (170, 130,  60), (215, 180, 110)),
                 ("weapons",    f"WEAPONS ({n_weapons_crafted})",      (30, 22, 12),  (155, 140, 120), (210, 195, 165)),
                 ("guards",     f"GUARDS ({n_guard_sketches})",        (22, 32, 48),  ( 80, 130, 185), (150, 200, 240)),
+                ("coins",      f"COINS ({len(getattr(player,'coins',[]))})", (38, 30, 8), (178, 148, 62), (235, 205, 110)),
+                ("honey",      f"HONEY ({n_honey_owned})",                  (42, 32,  8), (210, 165, 35), (255, 225, 120)),
+                ("mead",         f"MEAD ({len(getattr(player,'mead_batches',[]))})",        (38, 28,  8), (190, 145,  40), (240, 200,  90)),
+                ("charcuterie",  f"CURED ({n_charcuterie_owned})",                            (28, 18, 10), (160,  90,  60), (220, 160, 110)),
             ]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._collection_filter_rects.clear()
@@ -242,9 +251,12 @@ class CollectionsMixin:
                 ((20, 30, 45),  ( 75, 125, 180), (150, 200, 240)),   # Guards
                 ((45, 35, 10),  (185, 150,  55), (215, 185,  80)),   # Gladiators
                 ((10, 35, 52),  ( 55, 155, 195), (125, 215, 245)),   # Seashells
+                ((38, 30,  8),  (178, 148,  62), (235, 205, 110)),   # Coins
+                ((42, 30,  5),  (210, 165,  35), (255, 225, 120)),   # Honey
+                ((38, 28,  8),  (190, 145,  40), (240, 200,  90)),   # Mead
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
-                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER", "GUARDS", "GLADIATORS", "SEASHELLS"]
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER", "GUARDS", "GLADIATORS", "SEASHELLS", "COINS", "HONEY", "MEAD", "CHARCUTERIE"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
             total_sb_h = len(enc_labels) * (SB_BTN_H + SB_GAP)
@@ -308,6 +320,10 @@ class CollectionsMixin:
                 self._draw_guard_codex,
                 self._draw_gladiator_codex,
                 self._draw_seashell_codex,
+                self._draw_coin_codex,
+                self._draw_honey_codex,
+                self._draw_mead_codex,
+                self._draw_charcuterie_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)
@@ -385,6 +401,14 @@ class CollectionsMixin:
             items.extend(("weapon", i) for i in range(len(getattr(player, "crafted_weapons", []))))
         if flt in ("all", "guards"):
             items.extend(("guard", i) for i in range(len(getattr(player, "guard_sketches", []))))
+        if flt in ("all", "coins"):
+            items.extend(("coin", i) for i in range(len(getattr(player, "coins", []))))
+        if flt in ("all", "honey"):
+            items.extend(("honey", i) for i in range(len(getattr(player, "honey_jars", []))))
+        if flt in ("all", "mead"):
+            items.extend(("mead", i) for i in range(len(getattr(player, "mead_batches", []))))
+        if flt in ("all", "charcuterie"):
+            items.extend(("charcuterie", i) for i in range(len(getattr(player, "charcuterie_items", []))))
 
         if not items:
             msg = self.font.render("Nothing collected yet!", True, (80, 80, 90))
@@ -759,6 +783,59 @@ class CollectionsMixin:
                 _draw_guard_sketch_icon(img, sk, ox=19, oy=32)
                 label = sk.kit.title()
                 label_col = (150, 200, 240)
+            elif cat == "coin":
+                from coins import RARITY_COLORS as COIN_RC, RARITY_BG as COIN_RBG
+                from .coins import _render_coin
+                it = getattr(player, "coins", [])[key]
+                c_brd = COIN_RC.get(it.rarity, (178, 148, 62))
+                c_bg  = COIN_RBG.get(it.rarity, (32, 28, 18))
+                pygame.draw.rect(self.screen, (50, 45, 20) if selected else c_bg, rect)
+                pygame.draw.rect(self.screen, c_brd, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                coin_surf = _render_coin(it, 22)
+                img.blit(coin_surf, (29 - 23, 24 - 23))
+                label = it.denomination_key.replace("_", " ").title()
+                label_col = c_brd
+            elif cat == "honey":
+                from beekeeping import BIOME_DISPLAY_NAMES as _HBN
+                it = getattr(player, "honey_jars", [])[key]
+                tier_col = (255, 200, 55) if it.quality >= 0.80 else (235, 170, 40) if it.quality >= 0.55 else (210, 145, 30)
+                pygame.draw.rect(self.screen, (50, 38, 8) if selected else (32, 22, 5), rect)
+                pygame.draw.rect(self.screen, tier_col, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                pygame.draw.circle(img, (210, 165, 35), (29, 30), 16)
+                pygame.draw.circle(img, tier_col, (29, 30), 16, 2)
+                pygame.draw.rect(img, (175, 130, 25), (21, 12, 16, 6), border_radius=2)
+                label = _HBN.get(it.origin_biome, it.origin_biome.replace("_", " ").title())
+                label_col = tier_col
+            elif cat == "mead":
+                from mead import BIOME_DISPLAY_NAMES as _MBN, MEAD_STYLE_NAMES
+                it = getattr(player, "mead_batches", [])[key]
+                m_tier_col = (245, 195, 70) if it.ferment_quality >= 0.80 else (225, 170, 55) if it.ferment_quality >= 0.55 else (210, 155, 45)
+                pygame.draw.rect(self.screen, (48, 36, 10) if selected else (28, 22, 6), rect)
+                pygame.draw.rect(self.screen, m_tier_col, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                pygame.draw.rect(img, (175, 130, 40), (20, 14, 18, 30), border_radius=3)
+                pygame.draw.rect(img, m_tier_col, (20, 14, 18, 30), 2, border_radius=3)
+                pygame.draw.rect(img, (145, 105, 30), (25, 8, 8, 8), border_radius=2)
+                label = _MBN.get(it.origin_biome, it.origin_biome.replace("_", " ").title())
+                label_col = m_tier_col
+            elif cat == "charcuterie":
+                from charcuterie import MEAT_DISPLAY_NAMES as _CMDL, CURE_TYPES as _CT, get_charcuterie_output_id, OUTPUT_COLORS as _COUC
+                it = getattr(player, "charcuterie_items", [])[key]
+                out_id  = get_charcuterie_output_id(it.cure_type, it.age_quality)
+                c_col   = _COUC.get(out_id, (190, 130, 90))
+                pygame.draw.rect(self.screen, (42, 28, 14) if selected else (26, 16, 8), rect)
+                pygame.draw.rect(self.screen, c_col, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                pygame.draw.rect(img, (int(c_col[0]*0.8), int(c_col[1]*0.8), int(c_col[2]*0.8)), (10, 18, 38, 22), border_radius=4)
+                pygame.draw.rect(img, c_col, (10, 18, 38, 22), 2, border_radius=4)
+                label = f"{_CMDL.get(it.meat_source, '')} {_CT[it.cure_type]['label']}"
+                label_col = c_col
             else:  # mushroom
                 count = player.mushrooms_found.get(key, 0)
                 pygame.draw.rect(self.screen, (40, 36, 20) if selected else (25, 22, 12), rect)
@@ -1303,6 +1380,131 @@ class CollectionsMixin:
                 dlabel(f"Cape: {sk.cape.title()}", (160, 190, 220))
             if sk.beard != "none":
                 dlabel(f"Beard: {sk.beard.title()}", (160, 185, 205))
+        elif sel_cat == "coin":
+            from coins import RARITY_COLORS as COIN_RC, RARITY_BG as COIN_RBG, CONDITION_LABELS
+            from .coins import _render_coin, _render_coin_reverse
+            it = getattr(player, "coins", [])[sel_key]
+            c_brd = COIN_RC.get(it.rarity, (178, 148, 62))
+            c_bg  = COIN_RBG.get(it.rarity, (32, 28, 18))
+            pygame.draw.rect(self.screen, c_bg, (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, c_brd, (dx, dy2, dw, dh), 2)
+            # Obverse + reverse side by side
+            r_big = 30
+            obv_s = _render_coin(it, r_big)
+            rev_s = _render_coin_reverse(it, r_big)
+            mid = dx + dw // 2
+            obv_x = mid - r_big * 2 - 4
+            rev_x = mid + 4
+            coin_cy = dy2 + r_big + 10
+            self.screen.blit(obv_s, (obv_x, coin_cy - r_big - 1))
+            self.screen.blit(rev_s, (rev_x, coin_cy - r_big - 1))
+            lbl_y = coin_cy + r_big + 2
+            obv_lbl = self.small.render("Obverse", True, (90, 82, 58))
+            rev_lbl = self.small.render("Reverse", True, (90, 82, 58))
+            self.screen.blit(obv_lbl, (obv_x + r_big - obv_lbl.get_width() // 2, lbl_y))
+            self.screen.blit(rev_lbl, (rev_x + r_big - rev_lbl.get_width() // 2, lbl_y))
+            iy[0] = dy2 + r_big * 2 + 30
+            dlabel(it.denomination_label, c_brd)
+            dlabel(f"{it.civilization_name}  •  {it.era_label}", (235, 210, 140))
+            dlabel(f"Year: {it.year_label}", (200, 185, 130))
+            dlabel(f"Ruler: {it.ruler_name}", (185, 175, 120))
+            dlabel(f"Obverse: {it.obverse_motif}", (170, 165, 115))
+            dlabel(f"Reverse: {it.reverse_motif}", (160, 155, 105))
+            dlabel(f"Mint: {it.mint_city}", (150, 145, 100))
+            dlabel(CONDITION_LABELS.get(it.condition, it.condition), (175, 180, 190))
+            dlabel(f"Rarity: {it.rarity.title()}", c_brd)
+        elif sel_cat == "honey":
+            from beekeeping import BIOME_DISPLAY_NAMES as _HBN2, get_quality_tier
+            it = getattr(player, "honey_jars", [])[sel_key]
+            tier_col = (255, 200, 55) if it.quality >= 0.80 else (235, 170, 40) if it.quality >= 0.55 else (210, 145, 30)
+            pygame.draw.rect(self.screen, (32, 22, 5), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, tier_col, (dx, dy2, dw, dh), 2)
+            cx_h, cy_h = dx + dw // 2, dy2 + 36
+            pygame.draw.circle(self.screen, (210, 165, 35), (cx_h, cy_h), 22)
+            pygame.draw.circle(self.screen, tier_col, (cx_h, cy_h), 22, 3)
+            pygame.draw.rect(self.screen, (175, 130, 25), (cx_h - 10, cy_h - 28, 20, 8), border_radius=2)
+            iy[0] = dy2 + 68
+            bname = _HBN2.get(it.origin_biome, it.origin_biome.replace("_", " ").title())
+            tier = get_quality_tier(it.quality)
+            dlabel(f"{bname}  ({tier.title()})", tier_col)
+            dlabel(f"Dominant flower: {it.dominant_flower.replace('_', ' ').title()}", (200, 175, 80))
+            dlabel(f"Flower diversity: {it.flower_diversity}", (185, 165, 70))
+            stars = "★" * round(it.quality * 5)
+            dlabel(f"Quality: {stars}", (230, 200, 70))
+            iy[0] += 4
+            stat_bar("Sweetness", it.sweetness, (235, 195, 60))
+            stat_bar("Floral",    it.floral,    (200, 220, 100))
+            stat_bar("Earthy",    it.earthiness,(160, 130,  60))
+            if it.flavor_notes:
+                iy[0] += 4
+                dlabel("Notes:", (200, 175, 80))
+                for note in it.flavor_notes:
+                    dlabel(f"  • {note.title()}", (220, 195, 100))
+        elif sel_cat == "mead":
+            from mead import BIOME_DISPLAY_NAMES as _MBN2, MEAD_STYLE_NAMES, get_bottle_output_id, MEAD_BUFFS, BUFF_DESCS
+            it = getattr(player, "mead_batches", [])[sel_key]
+            m_tier_col = (245, 195, 70) if it.ferment_quality >= 0.80 else (225, 170, 55) if it.ferment_quality >= 0.55 else (210, 155, 45)
+            pygame.draw.rect(self.screen, (28, 22, 6), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, m_tier_col, (dx, dy2, dw, dh), 2)
+            cx_m, cy_m = dx + dw // 2, dy2 + 36
+            pygame.draw.rect(self.screen, (170, 125, 38), (cx_m - 10, cy_m - 20, 20, 34), border_radius=3)
+            pygame.draw.rect(self.screen, m_tier_col, (cx_m - 10, cy_m - 20, 20, 34), 2, border_radius=3)
+            pygame.draw.rect(self.screen, (145, 105, 28), (cx_m - 5, cy_m - 28, 10, 10), border_radius=2)
+            iy[0] = dy2 + 80
+            bname = _MBN2.get(it.origin_biome, it.origin_biome.replace("_", " ").title())
+            style = MEAD_STYLE_NAMES.get(it.additive, "Mead")
+            dlabel(f"{style}  —  {bname}", m_tier_col)
+            dlabel(f"Honey: {it.honey_tier.title()}  •  Yeast: {it.yeast_type.replace('_', ' ').title()}", (195, 170, 65))
+            dlabel(f"State: {it.state.title()}", (160, 140, 55))
+            stars = "★" * round(it.ferment_quality * 5)
+            dlabel(f"Quality: {stars}", (230, 200, 70))
+            iy[0] += 4
+            stat_bar("Sweetness",  it.sweetness,  (235, 195, 60))
+            stat_bar("Body",       it.body,        (190, 145, 45))
+            stat_bar("Floral",     it.floral,      (200, 220, 100))
+            stat_bar("Complexity", it.complexity,  (160, 185, 130))
+            if it.flavor_notes:
+                iy[0] += 4
+                dlabel("Notes:", (200, 175, 80))
+                for note in it.flavor_notes:
+                    dlabel(f"  • {note.title()}", (220, 195, 100))
+        elif sel_cat == "charcuterie":
+            from charcuterie import MEAT_DISPLAY_NAMES as _CMDL2, CURE_TYPES as _CT2, CURE_METHODS as _CM2, BUFF_DESCS as _CBUF, CURE_TYPE_BUFFS as _CTBUF, get_charcuterie_output_id, OUTPUT_COLORS as _COUC2, age_progress
+            it = getattr(player, "charcuterie_items", [])[sel_key]
+            out_id  = get_charcuterie_output_id(it.cure_type, it.age_quality)
+            c_col   = _COUC2.get(out_id, (190, 130, 90))
+            pygame.draw.rect(self.screen, (26, 16, 8), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, c_col, (dx, dy2, dw, dh), 2)
+            cx_c, cy_c = dx + dw // 2, dy2 + 30
+            pygame.draw.rect(self.screen, (int(c_col[0]*0.7), int(c_col[1]*0.7), int(c_col[2]*0.7)), (cx_c - 20, cy_c - 14, 40, 26), border_radius=5)
+            pygame.draw.rect(self.screen, c_col, (cx_c - 20, cy_c - 14, 40, 26), 2, border_radius=5)
+            iy[0] = dy2 + 64
+            meat_n  = _CMDL2.get(it.meat_source, it.meat_source.replace("_", " ").title())
+            cure_n  = _CT2[it.cure_type]["label"]
+            dlabel(f"{meat_n}  →  {cure_n}", c_col)
+            method_n = _CM2.get(it.cure_method, {}).get("label", it.cure_method)
+            dlabel(f"Method: {method_n}", (185, 155, 90))
+            dlabel(f"State: {it.state.title()}", (155, 130, 75))
+            stars = "★" * round(it.age_quality * 5)
+            dlabel(f"Quality: {stars}", (230, 200, 70))
+            iy[0] += 4
+            stat_bar("Salt Pen.", it.salt_penetration, (220, 200, 140))
+            stat_bar("Spice",    it.spice_intensity,   (210, 130,  80))
+            stat_bar("Fat",      it.fat_content,       (235, 215, 175))
+            if it.state == "aging":
+                prog = age_progress(it)
+                days_done = prog * it.age_total_days
+                iy[0] += 4
+                dlabel(f"Aging: Day {days_done:.1f} / {it.age_total_days}", (160, 195, 150))
+            buff_key = _CTBUF.get(it.cure_type, "")
+            if buff_key:
+                iy[0] += 4
+                dlabel(_CBUF.get(buff_key, ""), (160, 215, 160))
+            if it.flavor_notes:
+                iy[0] += 4
+                dlabel("Notes:", (200, 175, 80))
+                for note in it.flavor_notes:
+                    dlabel(f"  • {note.title()}", (220, 195, 100))
         else:  # mushroom
             bid = sel_key
             pygame.draw.rect(self.screen, (16, 14, 8), (dx, dy2, dw, dh))
@@ -3959,3 +4161,91 @@ class CollectionsMixin:
             self.screen.blit(name_s, (x + CELL // 2 - name_s.get_width() // 2, y + CELL - 28))
             kit_s = self.small.render(sk.kit.title(), True, (120, 165, 205))
             self.screen.blit(kit_s, (x + CELL // 2 - kit_s.get_width() // 2, y + CELL - 14))
+
+    def _draw_honey_codex(self, player, gy0=58, gx_off=130):
+        import pygame
+        from beekeeping import BIOME_HONEY_PROFILES, BIOME_DISPLAY_NAMES, HONEY_TYPE_ORDER, _CODEX_BIOMES
+
+        _BG   = (30, 20, 5)
+        _BDR  = (210, 165, 35)
+        _CELL = (42, 30, 8)
+        _TXT  = (255, 225, 120)
+        _DIM  = (140, 108, 40)
+
+        disc        = getattr(player, "discovered_honeys", set())
+        tiers       = ["base", "fine", "artisan"]
+        tier_labels = {"base": "Wildflower", "fine": "Fine", "artisan": "Artisan"}
+        total       = len(_CODEX_BIOMES) * len(tiers)
+        n_disc      = len(disc)
+
+        sub = self.small.render(f"{n_disc} / {total} honey varieties discovered", True, _TXT)
+        self.screen.blit(sub, (gx_off + 8, gy0))
+
+        CELL_W, CELL_H, GAP = 110, 72, 8
+        gx0 = gx_off + 8
+
+        self._honey_codex_rects.clear()
+
+        for bi, biome in enumerate(_CODEX_BIOMES):
+            bname = BIOME_DISPLAY_NAMES.get(biome, biome.replace("_", " ").title())
+            bh = self.small.render(bname, True, _TXT)
+            hdr_x = gx0 + bi * (CELL_W + GAP) + CELL_W // 2 - bh.get_width() // 2
+            self.screen.blit(bh, (hdr_x, gy0 + 18))
+
+            for ti, tier in enumerate(tiers):
+                key  = f"{biome}_{tier}"
+                rx   = gx0 + bi * (CELL_W + GAP)
+                ry   = gy0 + 36 + ti * (CELL_H + GAP)
+                rect = pygame.Rect(rx, ry, CELL_W, CELL_H)
+                self._honey_codex_rects[key] = rect
+                found = key in disc
+
+                bg  = (55, 40, 10) if found else _CELL
+                bdr = _BDR if found else (80, 60, 18)
+                pygame.draw.rect(self.screen, bg, rect, border_radius=4)
+                pygame.draw.rect(self.screen, bdr, rect, 2, border_radius=4)
+
+                if found:
+                    tlbl = self.small.render(tier_labels[tier], True, _TXT)
+                    self.screen.blit(tlbl, (rx + CELL_W // 2 - tlbl.get_width() // 2, ry + 6))
+                    # Mini honey jar
+                    jx, jy = rx + CELL_W // 2, ry + 38
+                    pygame.draw.circle(self.screen, (235, 175, 40), (jx, jy), 14)
+                    pygame.draw.circle(self.screen, (255, 215, 80), (jx, jy), 14, 2)
+                    pygame.draw.rect(self.screen, (200, 145, 30), (jx - 8, jy - 18, 16, 6), border_radius=2)
+                    if tier == "artisan":
+                        star_s = self.small.render("★★★", True, (255, 235, 90))
+                        self.screen.blit(star_s, (rx + CELL_W // 2 - star_s.get_width() // 2, ry + CELL_H - 20))
+                    elif tier == "fine":
+                        star_s = self.small.render("★★", True, (240, 210, 75))
+                        self.screen.blit(star_s, (rx + CELL_W // 2 - star_s.get_width() // 2, ry + CELL_H - 20))
+                else:
+                    unk = self.font.render("?", True, (75, 55, 18))
+                    self.screen.blit(unk, (rx + CELL_W // 2 - unk.get_width() // 2, ry + CELL_H // 2 - unk.get_height() // 2))
+
+        # Detail panel for selected entry
+        sel = self._honey_codex_selected
+        if sel and sel in disc:
+            parts = sel.rsplit("_", 1)
+            if len(parts) == 2:
+                biome, tier = parts[0], parts[1]
+                from beekeeping import BIOME_HONEY_PROFILES
+                profile = BIOME_HONEY_PROFILES.get(biome, {})
+                panel_x = gx0 + len(_CODEX_BIOMES) * (CELL_W + GAP) + 12
+                panel_w = SCREEN_W - panel_x - 8
+                if panel_w > 120:
+                    py = gy0 + 36
+                    pygame.draw.rect(self.screen, (40, 28, 8), (panel_x, py, panel_w, 200), border_radius=6)
+                    pygame.draw.rect(self.screen, _BDR, (panel_x, py, panel_w, 200), 2, border_radius=6)
+                    iy = py + 10
+                    def pline(t, col=_TXT):
+                        nonlocal iy
+                        s = self.small.render(t, True, col)
+                        self.screen.blit(s, (panel_x + 8, iy))
+                        iy += 16
+                    bname = BIOME_DISPLAY_NAMES.get(biome, biome.replace("_", " ").title())
+                    pline(f"{bname}  {tier_labels.get(tier, tier).title()}", _TXT)
+                    pline(f"Dominant: {profile.get('dominant', '?').replace('_',' ').title()}", _DIM)
+                    pline(f"Sweetness {profile.get('sweetness',0):.0%}", _DIM)
+                    pline(f"Floral    {profile.get('floral',0):.0%}", _DIM)
+                    pline(f"Earthy    {profile.get('earthiness',0):.0%}", _DIM)

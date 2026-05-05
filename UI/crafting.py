@@ -1172,6 +1172,24 @@ class CraftingMixin:
         if self.refinery_block_id == SALT_GRINDER_BLOCK:
             self._draw_salt_grinder(player, dt)
             return
+        from blocks import BEEHIVE_BLOCK as _BHB_DRAW
+        if self.refinery_block_id == _BHB_DRAW:
+            self._draw_beehive(player, dt)
+            return
+        from blocks import MEAD_VAT_BLOCK as _MVB, MEAD_CELLAR_BLOCK as _MCB
+        if self.refinery_block_id == _MVB:
+            self._draw_mead_vat(player, dt)
+            return
+        if self.refinery_block_id == _MCB:
+            self._draw_mead_cellar(player, dt)
+            return
+        from blocks import SALTING_RACK_BLOCK as _SRB, CURING_CELLAR_BLOCK as _CCB
+        if self.refinery_block_id == _SRB:
+            self._draw_salting_rack(player, dt)
+            return
+        if self.refinery_block_id == _CCB:
+            self._draw_curing_cellar(player, dt)
+            return
         equip_data = get_refinery_equipment().get(self.refinery_block_id)
         if equip_data is None:
             return
@@ -1326,8 +1344,8 @@ class CraftingMixin:
 
         bin_pos = self.active_compost_bin_pos
         bin_data = (player.world.compost_bin_data.setdefault(
-            bin_pos, {"input": {}, "progress": 0.0, "output": 0})
-            if bin_pos else {"input": {}, "progress": 0.0, "output": 0})
+            bin_pos, {"input": {}, "progress": 0.0, "output": 0, "output_rich": 0})
+            if bin_pos else {"input": {}, "progress": 0.0, "output": 0, "output_rich": 0})
 
         # --- Input inventory ---
         ix, iy = px + 16, py + 60
@@ -1371,8 +1389,12 @@ class CraftingMixin:
 
         # --- Output ---
         out_count = bin_data["output"]
+        out_rich  = bin_data.get("output_rich", 0)
         out_lbl = self.font.render(f"Compost ready: {out_count}", True, (140, 200, 80) if out_count > 0 else (80, 80, 60))
         self.screen.blit(out_lbl, (px + 16, bar_y + 24))
+        if out_rich > 0:
+            rich_lbl = self.font.render(f"Rich Compost ready: {out_rich}", True, (180, 220, 80))
+            self.screen.blit(rich_lbl, (px + 16, bar_y + 44))
 
         # --- Buttons ---
         btn_y = py + PH - 48
@@ -1391,12 +1413,13 @@ class CraftingMixin:
         self.screen.blit(dep_txt, (self._compost_deposit_btn.centerx - dep_txt.get_width() // 2,
                                    self._compost_deposit_btn.centery - dep_txt.get_height() // 2))
 
-        col_col = (40, 90, 40) if out_count > 0 else (28, 28, 36)
-        col_bdr = (80, 180, 80) if out_count > 0 else (55, 55, 68)
+        collect_any = out_count > 0 or out_rich > 0
+        col_col = (40, 90, 40) if collect_any else (28, 28, 36)
+        col_bdr = (80, 180, 80) if collect_any else (55, 55, 68)
         self._compost_collect_btn = pygame.Rect(px + 168, btn_y, 140, 32)
         pygame.draw.rect(self.screen, col_col, self._compost_collect_btn)
         pygame.draw.rect(self.screen, col_bdr, self._compost_collect_btn, 2)
-        col_txt = self.font.render("Collect", True, (200, 240, 200) if out_count > 0 else (70, 70, 82))
+        col_txt = self.font.render("Collect", True, (200, 240, 200) if collect_any else (70, 70, 82))
         self.screen.blit(col_txt, (self._compost_collect_btn.centerx - col_txt.get_width() // 2,
                                    self._compost_collect_btn.centery - col_txt.get_height() // 2))
 

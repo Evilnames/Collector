@@ -1026,6 +1026,8 @@ class Sheep(Animal):
     HARVEST_TIME = 1.5
     REGROW_TIME  = 30.0
     MILK_REFILL_TIME = 25.0
+    MANURE_TIMER = 90.0
+    _MANURE_ITEM = "sheep_droppings"
     MEAT_DROP = ("raw_mutton", 2)
     PREFERRED_FOODS = ("wheat", "carrot")
 
@@ -1034,6 +1036,8 @@ class Sheep(Animal):
         self.has_wool = True
         self._regrow_timer = 0.0
         self._milk_refill_timer = 0.0
+        self.has_manure = False
+        self._manure_timer = self.MANURE_TIMER
 
         bx = int(float(x) // BLOCK_SIZE)
         biodome = world.biodome_at(bx) if world is not None else "temperate"
@@ -1179,6 +1183,17 @@ class Sheep(Animal):
             self._milk_refill_timer -= dt
             if self._milk_refill_timer <= 0:
                 self.has_milk = True
+        if not self.has_manure:
+            self._manure_timer -= dt
+            if self._manure_timer <= 0:
+                self.has_manure = True
+
+    def collect_manure(self):
+        if not self.has_manure:
+            return None
+        self.has_manure = False
+        self._manure_timer = self.MANURE_TIMER
+        return [(self._MANURE_ITEM, 1)]
 
     def _try_harvest_resource(self, player, dt):
         tool = player.hotbar[player.selected_slot]
@@ -1235,12 +1250,16 @@ class Goat(Animal):
     HARVEST_TOOL = "bucket"
     HARVEST_TIME = 1.5
     REFILL_TIME  = 25.0
+    MANURE_TIMER = 90.0
+    _MANURE_ITEM = "goat_droppings"
     MEAT_DROP    = ("raw_mutton", 1)
     PREFERRED_FOODS = ("wheat", "carrot")
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "goat")
         self._refill_timer = 0.0
+        self.has_manure = False
+        self._manure_timer = self.MANURE_TIMER
 
         bx = int(float(x) // BLOCK_SIZE)
         biodome = world.biodome_at(bx) if world is not None else "temperate"
@@ -1332,6 +1351,17 @@ class Goat(Animal):
             self._refill_timer -= dt
             if self._refill_timer <= 0:
                 self.has_milk = True
+        if not self.has_manure:
+            self._manure_timer -= dt
+            if self._manure_timer <= 0:
+                self.has_manure = True
+
+    def collect_manure(self):
+        if not self.has_manure:
+            return None
+        self.has_manure = False
+        self._manure_timer = self.MANURE_TIMER
+        return [(self._MANURE_ITEM, 1)]
 
     def _try_harvest_resource(self, player, dt):
         if not self.has_milk:
@@ -1367,7 +1397,9 @@ class Cow(Animal):
     ANIMAL_H = 20
     HARVEST_TOOL = "bucket"
     HARVEST_TIME = 1.5
-    REFILL_TIME = 20.0
+    REFILL_TIME  = 20.0
+    MANURE_TIMER = 90.0
+    _MANURE_ITEM = "cow_manure"
     MEAT_DROP = ("raw_beef", 2)
     PREFERRED_FOODS = ("wheat", "apple")
 
@@ -1375,6 +1407,8 @@ class Cow(Animal):
         super().__init__(x, y, world, "cow")
         self.has_milk = True
         self._refill_timer = 0.0
+        self.has_manure = False
+        self._manure_timer = self.MANURE_TIMER
 
         bx = int(float(x) // BLOCK_SIZE)
         biodome = world.biodome_at(bx) if world is not None else "temperate"
@@ -1526,6 +1560,17 @@ class Cow(Animal):
             self._refill_timer -= dt
             if self._refill_timer <= 0:
                 self.has_milk = True
+        if not self.has_manure:
+            self._manure_timer -= dt
+            if self._manure_timer <= 0:
+                self.has_manure = True
+
+    def collect_manure(self):
+        if not self.has_manure:
+            return None
+        self.has_manure = False
+        self._manure_timer = self.MANURE_TIMER
+        return [(self._MANURE_ITEM, 1)]
 
     def _try_harvest_resource(self, player, dt):
         # Mini-game already running — held mouse does nothing; SPACE drives input
@@ -1548,13 +1593,17 @@ class Chicken(Animal):
     ANIMAL_H = 16
     HARVEST_TOOL = None  # collected empty-handed
     HARVEST_TIME = 1.0
-    REFILL_TIME = 30.0
+    REFILL_TIME  = 30.0
+    MANURE_TIMER = 90.0
+    _MANURE_ITEM = "chicken_droppings"
     MEAT_DROP = ("raw_chicken", 1)
     PREFERRED_FOODS = ("corn", "pea")
 
     def __init__(self, x, y, world):
         super().__init__(x, y, world, "chicken")
         self._refill_timer = 0.0
+        self.has_manure = False
+        self._manure_timer = self.MANURE_TIMER
 
         bx = int(float(x) // BLOCK_SIZE)
         biodome = world.biodome_at(bx) if world is not None else "temperate"
@@ -1641,6 +1690,17 @@ class Chicken(Animal):
             self._refill_timer -= dt
             if self._refill_timer <= 0:
                 self.has_egg = True
+        if not self.has_manure:
+            self._manure_timer -= dt
+            if self._manure_timer <= 0:
+                self.has_manure = True
+
+    def collect_manure(self):
+        if not self.has_manure:
+            return None
+        self.has_manure = False
+        self._manure_timer = self.MANURE_TIMER
+        return [(self._MANURE_ITEM, 1)]
 
     def _try_harvest_resource(self, player, dt):
         if not self.has_egg:

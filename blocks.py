@@ -1546,8 +1546,25 @@ WHITE_STUCCO                 = 1382  # smooth white exterior stucco plaster
 LIME_PLASTER                 = 1383  # off-white lime plaster interior wall
 
 FACTORY_BLOCK                = 1384  # configurable factory: consumes inputs, produces outputs on a timer
+BEEHIVE_BLOCK                = 1636  # player-placed functional beehive station
 
-PIPE_DEVICE_BLOCKS = frozenset((HOPPER_BLOCK, PIPE_OUTPUT_BLOCK, PIPE_FILTER_BLOCK, PIPE_SORTER_BLOCK))
+XOR_GATE_BLOCK       = 1637   # exclusive-or: fires when an odd number of connected wires are powered
+PLAYER_SENSOR_BLOCK  = 1638   # outputs 1 when player is within configurable radius; right-click cycles 3/5/8/12
+CROSSOVER_WIRE_BLOCK = 1639   # two wire paths cross without connecting (H and V channels isolated)
+SIGNAL_LAMP_OFF      = 1640   # wire-controlled visual indicator; off state
+SIGNAL_LAMP_ON       = 1641   # wire-controlled visual indicator; on state
+PIPE_VALVE_CLOSED    = 1642   # wire-controlled pipe gate; blocks item flow when unpowered
+PIPE_VALVE_OPEN      = 1643   # wire-controlled pipe gate; allows item flow when powered
+PIPE_BUFFER_BLOCK    = 1644   # rate-limiting pipe device; holds items and releases at configurable intervals
+TRAPDOOR_CLOSED      = 1645   # wire-controlled floor hatch; solid and walkable when unpowered
+TRAPDOOR_OPEN        = 1646   # wire-controlled floor hatch; passable (player falls through) when powered
+MEAD_VAT_BLOCK       = 1647   # mead fermentation vat: mixing + stir mini-game station
+MEAD_CELLAR_BLOCK    = 1648   # mead cellar: conditioning + bottling station
+SALTING_RACK_BLOCK   = 1649   # charcuterie: salt-rub and massage station
+CURING_CELLAR_BLOCK  = 1650   # charcuterie: real-time aging cellar
+
+PIPE_DEVICE_BLOCKS = frozenset((HOPPER_BLOCK, PIPE_OUTPUT_BLOCK, PIPE_FILTER_BLOCK, PIPE_SORTER_BLOCK,
+                                PIPE_VALVE_CLOSED, PIPE_VALVE_OPEN, PIPE_BUFFER_BLOCK))
 
 EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, RESONANCE_BLOCK, BAKERY_BLOCK,
                     WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BBQ_GRILL_BLOCK, CLAY_POT_BLOCK,
@@ -1585,14 +1602,22 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     MORTAR_BLOCK,
                     TANNING_RACK_BLOCK,
                     HOPPER_BLOCK, PIPE_OUTPUT_BLOCK, PIPE_FILTER_BLOCK, PIPE_SORTER_BLOCK,
-                    FACTORY_BLOCK}
+                    FACTORY_BLOCK,
+                    BEEHIVE_BLOCK,
+                    MEAD_VAT_BLOCK, MEAD_CELLAR_BLOCK,
+                    SALTING_RACK_BLOCK, CURING_CELLAR_BLOCK,
+                    CROSSOVER_WIRE_BLOCK,
+                    SIGNAL_LAMP_OFF, SIGNAL_LAMP_ON,
+                    PIPE_VALVE_CLOSED, PIPE_VALVE_OPEN,
+                    PIPE_BUFFER_BLOCK,
+                    TRAPDOOR_OPEN}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT}
 
 LOGIC_SOURCE_BLOCKS  = {SWITCH_BLOCK_ON, LATCH_BLOCK_ON, PRESSURE_PLATE_ON, RS_LATCH_Q1}
-LOGIC_GATE_BLOCKS    = {AND_GATE_BLOCK, OR_GATE_BLOCK, NOT_GATE_BLOCK}
+LOGIC_GATE_BLOCKS    = {AND_GATE_BLOCK, OR_GATE_BLOCK, NOT_GATE_BLOCK, XOR_GATE_BLOCK}
 FISH_TRAP_BLOCKS     = {WICKER_FISH_TRAP_BLOCK, REINFORCED_FISH_TRAP_BLOCK, IRON_FISH_TRAP_BLOCK, STEEL_CAGE_TRAP_BLOCK}
-LOGIC_SENSOR_BLOCKS  = {DAY_SENSOR_BLOCK, NIGHT_SENSOR_BLOCK, WATER_SENSOR_BLOCK, CROP_SENSOR_BLOCK} | FISH_TRAP_BLOCKS
+LOGIC_SENSOR_BLOCKS  = {DAY_SENSOR_BLOCK, NIGHT_SENSOR_BLOCK, WATER_SENSOR_BLOCK, CROP_SENSOR_BLOCK, PLAYER_SENSOR_BLOCK} | FISH_TRAP_BLOCKS
 LOGIC_TIMER_BLOCKS   = {REPEATER_BLOCK, PULSE_GEN_BLOCK}
 LOGIC_ROTATEABLE_BLOCKS = {AND_GATE_BLOCK, OR_GATE_BLOCK, NOT_GATE_BLOCK,
                             REPEATER_BLOCK, RS_LATCH_Q0, RS_LATCH_Q1,
@@ -1609,6 +1634,12 @@ LOGIC_OUTPUT_PAIRS  = {
     POWERED_LANTERN_ON:     POWERED_LANTERN_OFF,
     ALARM_BELL_OFF:         ALARM_BELL_ON,
     ALARM_BELL_ON:          ALARM_BELL_OFF,
+    SIGNAL_LAMP_OFF:        SIGNAL_LAMP_ON,
+    SIGNAL_LAMP_ON:         SIGNAL_LAMP_OFF,
+    PIPE_VALVE_CLOSED:      PIPE_VALVE_OPEN,
+    PIPE_VALVE_OPEN:        PIPE_VALVE_CLOSED,
+    TRAPDOOR_CLOSED:        TRAPDOOR_OPEN,
+    TRAPDOOR_OPEN:          TRAPDOOR_CLOSED,
 }
 LOGIC_OUTPUT_BLOCKS = set(LOGIC_OUTPUT_PAIRS)
 WIRE_RELATED_BLOCKS = (
@@ -1619,6 +1650,7 @@ WIRE_RELATED_BLOCKS = (
     | LOGIC_TIMER_BLOCKS
     | LOGIC_ROTATEABLE_BLOCKS
     | LOGIC_OUTPUT_BLOCKS
+    | {CROSSOVER_WIRE_BLOCK, PIPE_BUFFER_BLOCK}
 )
 BUSH_BLOCKS       = {STRAWBERRY_BUSH, WHEAT_BUSH, CARROT_BUSH, TOMATO_BUSH, CORN_BUSH, PUMPKIN_BUSH, APPLE_BUSH,
                      RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, GARLIC_BUSH, SCALLION_BUSH, CHILI_BUSH,
@@ -2179,6 +2211,7 @@ HA_HA_WALL_BLOCK                     = 1631  # ha ha wall block
 TOPIARY_FRAME                        = 1632  # topiary frame
 ROSE_ARCH_FRAME                      = 1633  # rose arch frame
 COAL_CELLAR_BLOCK                    = 1634  # coal cellar block
+COIN_CACHE_BLOCK                     = 1635  # buried coin cache; mine → generates a Coin object
 BLOCKS = {
     AIR:              {"name": "Air",               "hardness": 0,            "color": None,            "drop": None},
     GRASS:            {"name": "Grass",             "hardness": 1,            "color": (58, 154, 58),   "drop": "dirt_clump"},
@@ -3910,6 +3943,23 @@ BLOCKS = {
     TOPIARY_FRAME:             {"name": "Topiary Frame", "hardness": 2, "color": (105, 138,  78), "drop": "topiary_frame"},
     ROSE_ARCH_FRAME:           {"name": "Rose Arch Frame", "hardness": 2, "color": ( 72,  58,  45), "drop": "rose_arch_frame"},
     COAL_CELLAR_BLOCK:         {"name": "Coal Cellar Block", "hardness": 4, "color": (118, 112, 108), "drop": "coal_cellar_block"},
+    COIN_CACHE_BLOCK:          {"name": "Coin Cache",        "hardness": 2, "color": (178, 148,  62), "drop": None},
+    BEEHIVE_BLOCK:             {"name": "Beehive",           "hardness": 2, "color": (210, 175,  60), "drop": "beehive_item",    "drop_chance": 1.0, "equipment": True},
+    MEAD_VAT_BLOCK:            {"name": "Mead Vat",          "hardness": 2, "color": (185, 150,  55), "drop": "mead_vat_item",      "drop_chance": 1.0, "equipment": True},
+    MEAD_CELLAR_BLOCK:         {"name": "Mead Cellar",       "hardness": 2, "color": (130, 100,  45), "drop": "mead_cellar_item",   "drop_chance": 1.0, "equipment": True},
+    SALTING_RACK_BLOCK:        {"name": "Salting Rack",      "hardness": 2, "color": (160, 130, 100), "drop": "salting_rack_item",  "drop_chance": 1.0, "equipment": True},
+    CURING_CELLAR_BLOCK:       {"name": "Curing Cellar",     "hardness": 2, "color": ( 90,  70,  55), "drop": "curing_cellar_item", "drop_chance": 1.0, "equipment": True},
+
+    XOR_GATE_BLOCK:      {"name": "XOR Gate",          "hardness": 2.0, "color": ( 90, 110,  60), "drop": "xor_gate_item"},
+    PLAYER_SENSOR_BLOCK: {"name": "Player Sensor",     "hardness": 2.0, "color": ( 60,  80, 120), "drop": "player_sensor_item"},
+    CROSSOVER_WIRE_BLOCK:{"name": "Crossover Wire",    "hardness": 1.0, "color": ( 60,  70, 100), "drop": "crossover_wire_item"},
+    SIGNAL_LAMP_OFF:     {"name": "Signal Lamp",       "hardness": 1.5, "color": (140, 140, 140), "drop": "signal_lamp_item"},
+    SIGNAL_LAMP_ON:      {"name": "Signal Lamp (On)",  "hardness": 1.5, "color": (255, 255, 120), "drop": "signal_lamp_item"},
+    PIPE_VALVE_CLOSED:   {"name": "Pipe Valve",        "hardness": 2.0, "color": ( 90,  70,  50), "drop": "pipe_valve_item"},
+    PIPE_VALVE_OPEN:     {"name": "Pipe Valve (Open)", "hardness": 2.0, "color": (120, 100,  60), "drop": "pipe_valve_item"},
+    PIPE_BUFFER_BLOCK:   {"name": "Pipe Buffer",       "hardness": 2.0, "color": ( 80,  90,  70), "drop": "pipe_buffer_item"},
+    TRAPDOOR_CLOSED:     {"name": "Trapdoor",          "hardness": 2.0, "color": ( 90,  75,  55), "drop": "trapdoor_item"},
+    TRAPDOOR_OPEN:       {"name": "Trapdoor (Open)",   "hardness": 2.0, "color": ( 90,  75,  55), "drop": "trapdoor_item"},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}
@@ -3940,6 +3990,7 @@ LIGHT_EMITTERS = {
     ALPINE_CHANDELIER:(125, "wide_flat"),
     # Logic output
     POWERED_LANTERN_ON: (80, "circle"),
+    SIGNAL_LAMP_ON:     (60, "circle"),
     # Farming
     GROW_LAMP:          (170, "wide_flat"),
     # Ocean

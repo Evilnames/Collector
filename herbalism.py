@@ -129,6 +129,11 @@ RECIPES = {
         "station": "kiln",
         "tier": "basic",
     },
+    "restorative_honey_tonic": {
+        "ingredients": {"honey_jar": 1, "dried_chamomile": 1},
+        "station": "kiln",
+        "tier": "basic",
+    },
     "focus_potion": {
         "ingredients": {"dried_rosemary": 2, "dried_mushroom": 1},
         "station": "kiln",
@@ -279,6 +284,7 @@ POTION_DESCS = {
     "resilience_potion":     "Max health +20 for 90s",
     "soothe_potion":         "Hunger drain -30% for 90s",
     "focus_potion":          "Discovery XP +25% for 90s",
+    "restorative_honey_tonic": "Restores 15 HP, Hunger drain -20% for 60s",
     "health_potion_fine":    "Restores 50 HP instantly",
     "speed_potion_fine":     "Move speed +35% for 100s",
     "mining_potion_fine":    "Mining speed +25%, +1 pick power for 150s",
@@ -301,6 +307,7 @@ POTION_COLORS = {
     "luck_potion":           (255, 215,  50),
     "resilience_potion":     ( 60, 200, 130),
     "soothe_potion":         (190, 155, 230),
+    "restorative_honey_tonic": (240, 195,  60),
     "focus_potion":          (155, 175, 115),
     "health_potion_fine":    (235,  80, 100),
     "speed_potion_fine":     (100, 220, 255),

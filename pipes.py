@@ -2,6 +2,7 @@ from collections import deque
 
 from blocks import (
     HOPPER_BLOCK, PIPE_OUTPUT_BLOCK, PIPE_FILTER_BLOCK, PIPE_SORTER_BLOCK,
+    PIPE_VALVE_CLOSED, PIPE_VALVE_OPEN, PIPE_BUFFER_BLOCK,
     PIPE_DEVICE_BLOCKS, CHEST_BLOCK, FACTORY_BLOCK,
 )
 
@@ -33,6 +34,7 @@ def pipe_tick(world, dt):
         return
     _tick_accum -= PIPE_STEP_INTERVAL
     _run_pipe_pass(world)
+    _buffer_release_tick(world)
 
 
 def register_hopper(world, bx, by):
@@ -49,6 +51,13 @@ def register_pipe_filter(world, bx, by):
 
 def register_pipe_sorter(world, bx, by):
     world.pipe_state[(bx, by)] = {"routes": {}}
+
+def register_pipe_valve(world, bx, by):
+    world.pipe_state[(bx, by)] = {"enabled": True}
+
+def register_pipe_buffer(world, bx, by):
+    # rate: ticks between releases (1 tick = PIPE_STEP_INTERVAL seconds)
+    world.pipe_state[(bx, by)] = {"rate": 2, "ticks_since_release": 0}
 
 
 # ---------------------------------------------------------------------------
@@ -196,6 +205,36 @@ def _advance_transit(world):
     world.pipe_in_transit = still_moving
 
 
+def _buffer_release_tick(world):
+    """Release one item from each pipe buffer that has reached its configured rate."""
+    for (bx, by), cfg in list(world.pipe_state.items()):
+        if world.get_block(bx, by) != PIPE_BUFFER_BLOCK:
+            continue
+        buf = world.pipe_buffers.get((bx, by))
+        if not buf:
+            continue
+        cfg["ticks_since_release"] = cfg.get("ticks_since_release", 0) + 1
+        if cfg["ticks_since_release"] < cfg.get("rate", 2):
+            continue
+        cfg["ticks_since_release"] = 0
+        for item_id in list(buf.keys()):
+            if buf.get(item_id, 0) <= 0:
+                continue
+            path = _bfs_full_path(world, bx, by, item_id)
+            if path is None:
+                continue
+            buf[item_id] -= 1
+            if buf[item_id] <= 0:
+                del buf[item_id]
+            world.pipe_in_transit.append({
+                "item_id": item_id,
+                "count":   1,
+                "path":    path,
+                "progress": 0.0,
+            })
+            break  # one item per buffer per tick
+
+
 def _strand(world, packet, bx, by):
     """Drop a transit packet into pipe_buffers at (bx,by) for re-routing."""
     buf = world.pipe_buffers.setdefault((bx, by), {})
@@ -279,6 +318,12 @@ def _is_traversable(world, bx, by, item_id, from_bx, from_by):
     if not _is_pipe_node(world, bx, by):
         return False
     block = world.get_block(bx, by)
+    # Closed valve blocks all flow; open valve is transparent to items
+    if block == PIPE_VALVE_CLOSED:
+        return False
+    # Buffer is a sink for routing purposes; items stop here and are re-launched later
+    if block == PIPE_BUFFER_BLOCK:
+        return False
     if block == PIPE_FILTER_BLOCK:
         cfg     = world.pipe_state.get((bx, by), {})
         allowed = cfg.get("allowed", [])
@@ -296,8 +341,12 @@ def _is_traversable(world, bx, by, item_id, from_bx, from_by):
 
 
 def _is_sink(world, bx, by):
-    return (world.get_block(bx, by) == PIPE_OUTPUT_BLOCK
-            and not _wire_disabled(world, bx, by))
+    block = world.get_block(bx, by)
+    if block == PIPE_OUTPUT_BLOCK:
+        return not _wire_disabled(world, bx, by)
+    if block == PIPE_BUFFER_BLOCK:
+        return True   # buffer always accepts; rate-limits on release
+    return False
 
 
 def _is_pipe_node(world, bx, by):

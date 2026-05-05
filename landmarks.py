@@ -213,10 +213,29 @@ def _apply_arena(player, region, debug=False):
     return ("The crowd roars — the games begin!", "Enter the arena to watch and wager.")
 
 def _apply_bazaar(player, region):
-    """Mercantile: rare slot bonus is communicated; actual stock bonus would
-    require a per-region flag — for v1 we grant a one-time gold + small rep."""
-    player.money += 60
-    return ("Traders unfold rare goods for you.", "+60g, fresh rare wares this trip")
+    """Mercantile: open the auction floor if the bazaar is running today."""
+    from bazaar import (generate_bazaar_day, generate_fence_wants,
+                        get_rival_names, is_bazaar_day, days_until_bazaar)
+    import random as _random
+    world     = getattr(player, "world", None)
+    day_count = getattr(world, "day_count", 0)
+    rseed     = getattr(region, "region_id", 0) * 1013 + hash(getattr(region, "name", ""))
+    biome     = getattr(region, "biome", "temperate")
+
+    if not is_bazaar_day(rseed, day_count):
+        left = days_until_bazaar(rseed, day_count)
+        return ("The bazaar is closed today.",
+                f"Next session in {left} day{'s' if left != 1 else ''}.")
+
+    lots        = generate_bazaar_day(rseed, day_count, biome)
+    fence_wants = generate_fence_wants(rseed, day_count)
+    rng         = _random.Random(rseed ^ day_count)
+    rival_names = get_rival_names(biome, rng, n=3)
+
+    if world is not None:
+        world.pending_bazaar_open = (lots, fence_wants, rival_names)
+    return ("The bazaar floor is open — merchants await.",
+            "Browse lots and place your sealed bids.")
 
 def _apply_archive(player, region):
     """Scholarly: reveals one undiscovered crafting recipe at random."""
