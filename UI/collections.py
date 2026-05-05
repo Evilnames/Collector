@@ -254,6 +254,7 @@ class CollectionsMixin:
                 ((38, 30,  8),  (178, 148,  62), (235, 205, 110)),   # Coins
                 ((42, 30,  5),  (210, 165,  35), (255, 225, 120)),   # Honey
                 ((38, 28,  8),  (190, 145,  40), (240, 200,  90)),   # Mead
+                ((48, 22, 12),  (195, 110,  55), (245, 165,  95)),   # Charcuterie
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
                           "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER", "GUARDS", "GLADIATORS", "SEASHELLS", "COINS", "HONEY", "MEAD", "CHARCUTERIE"]

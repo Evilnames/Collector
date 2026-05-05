@@ -1,0 +1,247 @@
+Class,Species,Rarity,Biomes,Is Flock,Flock Size,Altitude,Speed (px/s),Size,Body Color,Wing Color,Beak Color,Head Color,Accent Color,Personality,Nocturnal
+Robin,robin,common,temperate; birch_forest; rolling_hills; boreal,False,N/A,3-7 blocks,65.0,14x10,"RGB(80,55,35)","RGB(65,45,28)","RGB(200,140,40)","RGB(70,48,30)","RGB(215,95,40)",normal,False
+BlueJay,blue_jay,uncommon,temperate; birch_forest,True,2-4,4-9 blocks,70.0,16x12,"RGB(70,120,210)","RGB(55,95,175)","RGB(45,45,55)","RGB(60,105,195)","RGB(240,240,240)",normal,False
+Eagle,eagle,rare,alpine_mountain; rocky_mountain; canyon,False,N/A,6-14 blocks,100.0,22x14,"RGB(90,60,25)","RGB(75,50,20)","RGB(240,190,40)","RGB(240,240,235)","RGB(240,190,40)",normal,False
+Pelican,pelican,uncommon,beach; wetland; swamp,True,3-5,2-6 blocks,60.0,22x14,"RGB(225,225,225)","RGB(200,200,200)","RGB(235,140,30)","RGB(225,225,225)","RGB(235,140,30)",normal,False
+Parrot,parrot,uncommon,jungle; tropical,True,2-2,3-8 blocks,75.0,16x12,"RGB(50,185,70)","RGB(40,160,55)","RGB(210,80,30)","RGB(220,60,40)","RGB(240,210,40)",normal,False
+Sparrow,sparrow,common,temperate; birch_forest; rolling_hills; steep_hills; boreal; savanna; steppe; arid_steppe; redwood,True,3-6,2-6 blocks,60.0,10x8,"RGB(130,105,75)","RGB(110,85,60)","RGB(170,130,60)","RGB(100,80,55)","RGB(60,45,30)",normal,False
+Heron,heron,uncommon,wetland; swamp; beach,False,N/A,2-5 blocks,45.0,14x20,"RGB(145,155,165)","RGB(125,135,145)","RGB(245,235,80)","RGB(230,230,235)","RGB(40,40,55)",normal,False
+Hummingbird,hummingbird,rare,jungle; tropical; temperate,False,N/A,2-6 blocks,150.0,10x8,"RGB(50,200,130)","RGB(40,175,110)","RGB(40,40,50)","RGB(50,200,130)","RGB(210,80,50)",normal,False
+Owl,owl,uncommon,boreal; redwood; birch_forest; temperate,False,N/A,3-8 blocks,65.0,18x14,"RGB(145,120,80)","RGB(120,100,65)","RGB(215,185,80)","RGB(155,130,85)","RGB(245,220,130)",normal,False
+Crow,crow,common,temperate; birch_forest; boreal; rolling_hills; steep_hills; wasteland; savanna; redwood,True,2-4,3-9 blocks,70.0,16x12,"RGB(30,30,35)","RGB(25,25,30)","RGB(40,40,45)","RGB(30,30,35)","RGB(60,60,70)",normal,False
+Flamingo,flamingo,uncommon,tropical; wetland; beach; savanna,True,3-6,1-4 blocks,50.0,14x20,"RGB(235,120,130)","RGB(210,75,95)","RGB(28,24,24)","RGB(240,130,140)","RGB(255,210,60)",normal,False
+Toucan,toucan,rare,jungle; tropical,False,N/A,3-8 blocks,70.0,18x14,"RGB(20,20,25)","RGB(20,20,25)","RGB(230,140,30)","RGB(20,20,25)","RGB(255,255,85)",normal,False
+Cardinal,cardinal,uncommon,temperate; birch_forest; rolling_hills,False,N/A,2-6 blocks,65.0,14x12,"RGB(210,30,30)","RGB(175,22,22)","RGB(220,140,50)","RGB(210,30,30)","RGB(25,25,25)",normal,False
+Puffin,puffin,uncommon,beach; tundra,True,2-4,2-5 blocks,75.0,14x10,"RGB(20,20,25)","RGB(20,20,25)","RGB(230,95,30)","RGB(240,238,235)","RGB(230,95,30)",normal,False
+Vulture,vulture,uncommon,desert; canyon; wasteland; arid_steppe,True,2-3,8-16 blocks,55.0,24x14,"RGB(60,50,40)","RGB(45,38,30)","RGB(175,50,30)","RGB(195,155,125)","RGB(175,50,30)",normal,False
+Roadrunner,roadrunner,uncommon,desert; arid_steppe; canyon; scrubland,False,N/A,0-1 blocks,115.0,22x11,"RGB(95,80,55)","RGB(75,62,42)","RGB(65,48,28)","RGB(85,72,50)","RGB(185,75,35)",bold,False
+Peacock,peacock,rare,tropical; savanna,False,N/A,0-1 blocks,55.0,20x14,"RGB(30,120,165)","RGB(25,100,145)","RGB(165,145,100)","RGB(30,120,165)","RGB(80,195,65)",normal,False
+Kookaburra,kookaburra,uncommon,savanna; tropical,False,N/A,2-6 blocks,65.0,16x12,"RGB(220,190,140)","RGB(100,80,50)","RGB(100,80,50)","RGB(240,230,210)","RGB(60,130,200)",normal,False
+Sandpiper,sandpiper,common,beach; wetland,True,3-6,1-3 blocks,70.0,12x8,"RGB(165,145,110)","RGB(145,125,95)","RGB(45,40,35)","RGB(165,145,110)","RGB(245,230,200)",normal,False
+Kingfisher,kingfisher,uncommon,wetland; swamp; beach; temperate,False,N/A,2-5 blocks,90.0,14x10,"RGB(40,80,205)","RGB(30,65,180)","RGB(50,42,38)","RGB(40,80,205)","RGB(220,130,50)",normal,False
+Woodpecker,woodpecker,uncommon,redwood; boreal; birch_forest; temperate,False,N/A,2-7 blocks,60.0,14x14,"RGB(30,28,30)","RGB(30,28,30)","RGB(200,190,158)","RGB(200,30,30)","RGB(235,232,228)",normal,False
+Finch,finch,common,temperate; rolling_hills; steep_hills; steppe; savanna,True,3-8,2-5 blocks,65.0,10x8,"RGB(230,190,50)","RGB(160,130,30)","RGB(180,145,60)","RGB(230,190,50)","RGB(240,210,80)",normal,False
+Stork,stork,uncommon,wetland; swamp,False,N/A,2-5 blocks,50.0,14x22,"RGB(238,238,238)","RGB(28,26,26)","RGB(215,90,40)","RGB(238,238,238)","RGB(215,90,40)",normal,False
+Macaw,macaw,rare,jungle; tropical,True,2-3,3-9 blocks,80.0,18x14,"RGB(200,30,40)","RGB(40,100,220)","RGB(48,43,38)","RGB(240,220,50)","RGB(40,160,60)",normal,False
+Pheasant,pheasant,uncommon,temperate; birch_forest; boreal; rolling_hills,False,N/A,0-1 blocks,55.0,18x10,"RGB(180,100,30)","RGB(155,85,25)","RGB(160,140,90)","RGB(30,80,40)","RGB(220,60,40)",timid,False
+Condor,condor,rare,alpine_mountain; rocky_mountain; canyon; redwood,False,N/A,10-20 blocks,85.0,28x16,"RGB(28,26,28)","RGB(24,22,24)","RGB(185,160,140)","RGB(210,140,90)","RGB(240,232,228)",normal,False
+SnowBunting,snow_bunting,common,tundra; alpine_mountain,True,4-8,2-5 blocks,60.0,10x8,"RGB(242,242,248)","RGB(28,26,28)","RGB(170,162,120)","RGB(242,242,248)","RGB(205,185,145)",normal,False
+PrairieFalcon,prairie_falcon,uncommon,steppe; arid_steppe; desert; rocky_mountain,False,N/A,4-10 blocks,110.0,18x12,"RGB(170,140,100)","RGB(145,115,80)","RGB(220,200,60)","RGB(170,140,100)","RGB(48,42,38)",normal,False
+Nightjar,nightjar,uncommon,savanna; wasteland; desert,False,N/A,2-5 blocks,70.0,16x10,"RGB(130,115,85)","RGB(110,100,68)","RGB(38,36,33)","RGB(125,110,80)","RGB(220,200,150)",normal,False
+Ibis,ibis,uncommon,wetland; swamp; tropical,True,2-4,2-6 blocks,55.0,14x18,"RGB(230,80,60)","RGB(210,65,50)","RGB(48,43,38)","RGB(230,80,60)","RGB(255,100,70)",normal,False
+Albatross,albatross,rare,beach,False,N/A,6-14 blocks,90.0,28x12,"RGB(248,248,250)","RGB(30,28,30)","RGB(220,195,145)","RGB(248,248,250)","RGB(200,195,175)",normal,False
+Raven,raven,uncommon,boreal; alpine_mountain; tundra; redwood; wasteland,False,N/A,3-9 blocks,80.0,18x14,"RGB(25,22,28)","RGB(20,18,24)","RGB(30,28,32)","RGB(25,22,28)","RGB(55,45,65)",normal,False
+Swallow,swallow,common,temperate; rolling_hills; steep_hills,True,3-6,3-7 blocks,100.0,14x8,"RGB(30,50,130)","RGB(25,42,115)","RGB(38,36,33)","RGB(30,50,130)","RGB(220,80,50)",normal,False
+Crane,crane,uncommon,wetland; steppe; tundra,True,2-4,2-6 blocks,60.0,16x22,"RGB(215,215,222)","RGB(190,190,200)","RGB(170,160,132)","RGB(200,30,30)","RGB(215,215,222)",normal,False
+Spoonbill,spoonbill,uncommon,wetland; tropical; beach,False,N/A,2-5 blocks,55.0,16x18,"RGB(240,170,185)","RGB(220,148,163)","RGB(182,162,132)","RGB(245,212,220)","RGB(255,182,62)",normal,False
+PeregrineFalcon,peregrine_falcon,rare,alpine_mountain; rocky_mountain; canyon; steep_hills,False,N/A,8-16 blocks,130.0,18x12,"RGB(60,75,110)","RGB(45,60,95)","RGB(220,200,60)","RGB(25,28,38)","RGB(240,230,210)",normal,False
+BarnOwl,barn_owl,uncommon,temperate; rolling_hills; wasteland; steppe,False,N/A,3-8 blocks,55.0,18x14,"RGB(225,205,155)","RGB(195,180,130)","RGB(200,185,145)","RGB(248,245,238)","RGB(165,148,108)",normal,False
+Magpie,magpie,common,temperate; birch_forest; rolling_hills; boreal,True,2-4,3-7 blocks,75.0,16x12,"RGB(22,22,28)","RGB(40,100,200)","RGB(22,22,28)","RGB(22,22,28)","RGB(245,245,245)",normal,False
+GoldenOriole,golden_oriole,uncommon,jungle; tropical; temperate,False,N/A,4-9 blocks,80.0,16x12,"RGB(240,210,30)","RGB(22,22,28)","RGB(205,90,50)","RGB(240,210,30)","RGB(22,22,28)",normal,False
+Hoopoe,hoopoe,uncommon,savanna; arid_steppe; temperate; desert,False,N/A,2-6 blocks,65.0,16x12,"RGB(200,130,60)","RGB(22,22,28)","RGB(60,55,48)","RGB(210,140,65)","RGB(240,230,200)",normal,False
+Sunbird,sunbird,rare,jungle; tropical,False,N/A,2-7 blocks,120.0,10x8,"RGB(30,180,100)","RGB(22,145,80)","RGB(22,20,22)","RGB(80,40,180)","RGB(220,60,40)",normal,False
+Ptarmigan,ptarmigan,common,tundra; alpine_mountain,True,3-6,1-4 blocks,55.0,14x10,"RGB(245,244,242)","RGB(232,230,225)","RGB(50,45,40)","RGB(245,244,242)","RGB(180,22,22)",normal,False
+Bittern,bittern,uncommon,wetland; swamp,False,N/A,1-4 blocks,45.0,14x18,"RGB(165,138,85)","RGB(145,118,72)","RGB(200,190,130)","RGB(145,118,72)","RGB(220,200,150)",normal,False
+CedarWaxwing,cedar_waxwing,uncommon,boreal; birch_forest; temperate,True,3-7,3-8 blocks,70.0,14x10,"RGB(165,130,90)","RGB(90,85,100)","RGB(38,35,32)","RGB(175,140,95)","RGB(240,210,40)",normal,False
+Mockingbird,mockingbird,common,temperate; arid_steppe; savanna; rolling_hills,False,N/A,2-6 blocks,75.0,14x10,"RGB(140,140,148)","RGB(110,110,118)","RGB(48,44,40)","RGB(148,148,155)","RGB(235,232,228)",normal,False
+Egret,egret,uncommon,wetland; swamp; beach; tropical,True,2-4,2-5 blocks,50.0,14x20,"RGB(252,252,255)","RGB(240,240,245)","RGB(240,220,50)","RGB(252,252,255)","RGB(240,220,50)",normal,False
+ArcticTern,arctic_tern,uncommon,beach; tundra,True,4-8,3-9 blocks,95.0,16x8,"RGB(245,245,248)","RGB(220,222,228)","RGB(215,50,40)","RGB(22,22,28)","RGB(215,50,40)",normal,False
+Cormorant,cormorant,common,beach; wetland; swamp,True,2-5,2-7 blocks,65.0,18x14,"RGB(28,30,35)","RGB(38,42,48)","RGB(155,130,50)","RGB(28,30,35)","RGB(155,130,50)",normal,False
+Curlew,curlew,uncommon,wetland; steppe; tundra; beach,False,N/A,2-5 blocks,60.0,16x14,"RGB(155,128,88)","RGB(138,112,75)","RGB(60,55,50)","RGB(148,122,82)","RGB(215,195,150)",normal,False
+Avocet,avocet,uncommon,wetland; beach; steppe,True,2-5,1-4 blocks,65.0,16x14,"RGB(245,242,238)","RGB(22,22,28)","RGB(38,34,30)","RGB(215,140,70)","RGB(22,22,28)",normal,False
+Jacana,jacana,uncommon,wetland; tropical; swamp,False,N/A,1-3 blocks,55.0,14x12,"RGB(120,65,28)","RGB(100,52,22)","RGB(240,220,40)","RGB(22,22,28)","RGB(240,220,40)",normal,False
+Lyrebird,lyrebird,rare,jungle; redwood,False,N/A,0-1 blocks,50.0,18x14,"RGB(110,80,55)","RGB(95,68,45)","RGB(50,45,40)","RGB(120,88,60)","RGB(185,165,120)",wary,False
+BeeEater,bee_eater,uncommon,savanna; tropical; desert; arid_steppe,True,3-6,3-8 blocks,85.0,16x10,"RGB(50,190,130)","RGB(40,165,110)","RGB(28,25,22)","RGB(240,200,40)","RGB(30,100,200)",normal,False
+Roller,roller,uncommon,savanna; arid_steppe; desert,False,N/A,3-8 blocks,75.0,16x12,"RGB(50,140,210)","RGB(38,100,180)","RGB(42,38,35)","RGB(50,150,215)","RGB(28,68,155)",normal,False
+Hornbill,hornbill,uncommon,jungle; tropical,False,N/A,3-8 blocks,55.0,22x14,"RGB(22,22,28)","RGB(22,22,28)","RGB(235,145,30)","RGB(240,238,232)","RGB(235,145,30)",normal,False
+Quetzal,quetzal,rare,jungle; tropical,False,N/A,4-10 blocks,70.0,16x14,"RGB(40,185,80)","RGB(30,160,65)","RGB(220,200,50)","RGB(40,190,85)","RGB(210,40,50)",normal,False
+SnowyOwl,snowy_owl,rare,tundra; alpine_mountain,False,N/A,4-10 blocks,60.0,20x16,"RGB(250,250,255)","RGB(235,238,248)","RGB(48,44,40)","RGB(252,252,255)","RGB(200,200,210)",normal,False
+Osprey,osprey,uncommon,beach; wetland; temperate; boreal,False,N/A,5-12 blocks,95.0,22x14,"RGB(55,45,35)","RGB(45,36,28)","RGB(38,35,32)","RGB(245,242,238)","RGB(245,242,238)",normal,False
+GoldenPheasant,golden_pheasant,rare,jungle; tropical; redwood,False,N/A,0-1 blocks,60.0,20x14,"RGB(215,40,35)","RGB(30,85,195)","RGB(200,185,120)","RGB(240,210,30)","RGB(235,140,25)",timid,False
+Treecreeper,treecreeper,common,redwood; boreal; birch_forest; temperate,False,N/A,2-6 blocks,55.0,10x8,"RGB(130,105,72)","RGB(110,88,58)","RGB(48,44,38)","RGB(118,95,65)","RGB(230,218,195)",normal,False
+Wren,wren,common,boreal; birch_forest; temperate; rocky_mountain,False,N/A,1-4 blocks,65.0,9x7,"RGB(135,100,65)","RGB(115,85,52)","RGB(55,50,42)","RGB(128,95,60)","RGB(195,170,120)",normal,False
+Nuthatch,nuthatch,common,boreal; birch_forest; redwood; temperate,False,N/A,2-6 blocks,60.0,12x8,"RGB(80,110,160)","RGB(60,88,135)","RGB(55,50,44)","RGB(70,100,150)","RGB(235,185,130)",normal,False
+Gannet,gannet,uncommon,beach,True,2-4,5-14 blocks,95.0,24x12,"RGB(248,248,252)","RGB(22,22,28)","RGB(165,175,168)","RGB(240,220,130)","RGB(100,150,195)",normal,False
+Frigatebird,frigatebird,uncommon,beach; tropical,True,2-4,6-14 blocks,100.0,28x10,"RGB(22,20,26)","RGB(18,16,22)","RGB(55,50,45)","RGB(22,20,26)","RGB(210,40,35)",normal,False
+NightHeron,night_heron,uncommon,wetland; swamp; tropical,False,N/A,2-6 blocks,50.0,14x16,"RGB(195,198,205)","RGB(175,178,188)","RGB(35,32,28)","RGB(22,22,28)","RGB(248,245,238)",normal,False
+Lapwing,lapwing,common,rolling_hills; steppe; wetland; temperate,True,3-6,2-6 blocks,70.0,16x12,"RGB(80,105,60)","RGB(62,85,45)","RGB(38,35,30)","RGB(22,22,28)","RGB(235,225,200)",normal,False
+Wheatear,wheatear,common,rocky_mountain; steppe; tundra; arid_steppe,False,N/A,1-4 blocks,70.0,12x9,"RGB(168,148,115)","RGB(22,22,28)","RGB(38,35,30)","RGB(168,148,115)","RGB(245,235,215)",normal,False
+Redstart,redstart,uncommon,boreal; birch_forest; temperate,False,N/A,2-6 blocks,70.0,12x9,"RGB(50,55,80)","RGB(40,44,68)","RGB(38,35,30)","RGB(22,22,28)","RGB(215,90,35)",normal,False
+Warbler,warbler,common,wetland; temperate; boreal; jungle,False,N/A,1-5 blocks,65.0,10x8,"RGB(115,145,70)","RGB(95,122,55)","RGB(42,38,32)","RGB(105,135,62)","RGB(225,215,160)",normal,False
+LongTailedTit,long_tailed_tit,common,temperate; birch_forest; boreal,True,4-8,2-6 blocks,60.0,10x8,"RGB(235,215,210)","RGB(22,22,28)","RGB(38,35,30)","RGB(240,235,230)","RGB(210,140,140)",normal,False
+Oystercatcher,oystercatcher,uncommon,beach; wetland,True,2-4,1-4 blocks,70.0,16x12,"RGB(22,22,28)","RGB(22,22,28)","RGB(230,95,30)","RGB(22,22,28)","RGB(245,242,238)",normal,False
+Kite,kite,uncommon,savanna; wasteland; rolling_hills; temperate,False,N/A,5-12 blocks,90.0,22x12,"RGB(185,95,40)","RGB(160,78,32)","RGB(210,195,60)","RGB(215,205,180)","RGB(210,195,60)",normal,False
+Harrier,harrier,uncommon,steppe; wetland; rolling_hills; arid_steppe,False,N/A,3-8 blocks,80.0,22x12,"RGB(155,158,168)","RGB(130,134,148)","RGB(38,35,32)","RGB(155,158,168)","RGB(248,245,240)",normal,False
+Snipe,snipe,uncommon,wetland; swamp; tundra,False,N/A,1-4 blocks,75.0,14x9,"RGB(125,100,65)","RGB(108,85,52)","RGB(58,52,44)","RGB(115,92,58)","RGB(215,195,148)",normal,False
+Merlin,merlin,uncommon,tundra; steppe; boreal,False,N/A,4-10 blocks,105.0,14x10,"RGB(72,88,128)","RGB(58,72,112)","RGB(200,185,60)","RGB(72,88,128)","RGB(205,155,80)",normal,False
+Goshawk,goshawk,rare,boreal; redwood; birch_forest,False,N/A,5-12 blocks,110.0,22x14,"RGB(95,105,118)","RGB(78,88,102)","RGB(200,185,60)","RGB(55,60,72)","RGB(232,228,218)",normal,False
+Shoebill,shoebill,rare,wetland; swamp,False,N/A,1-4 blocks,40.0,16x22,"RGB(88,100,118)","RGB(75,88,105)","RGB(195,175,115)","RGB(88,100,118)","RGB(240,235,200)",normal,False
+Booby,booby,uncommon,beach; tropical,True,2-4,3-9 blocks,80.0,20x12,"RGB(242,240,235)","RGB(28,26,32)","RGB(50,155,210)","RGB(242,240,235)","RGB(50,100,200)",normal,False
+Tropicbird,tropicbird,rare,beach; tropical,False,N/A,5-12 blocks,85.0,18x10,"RGB(250,248,252)","RGB(22,22,28)","RGB(220,80,30)","RGB(250,248,252)","RGB(220,80,30)",normal,False
+Dunlin,dunlin,common,beach; tundra; wetland,True,5-10,1-4 blocks,75.0,10x7,"RGB(148,128,98)","RGB(128,110,82)","RGB(38,35,30)","RGB(142,122,92)","RGB(22,22,28)",normal,False
+Godwit,godwit,uncommon,wetland; tundra; beach,True,2-4,2-6 blocks,80.0,18x12,"RGB(195,130,75)","RGB(165,108,58)","RGB(215,170,105)","RGB(185,120,65)","RGB(240,225,190)",normal,False
+Oxpecker,oxpecker,uncommon,savanna,True,2-5,2-6 blocks,65.0,12x9,"RGB(120,100,68)","RGB(105,88,58)","RGB(215,75,30)","RGB(112,92,62)","RGB(240,210,90)",normal,False
+Dipper,dipper,uncommon,boreal; alpine_mountain; temperate,False,N/A,1-3 blocks,60.0,12x9,"RGB(52,48,55)","RGB(42,38,45)","RGB(48,44,40)","RGB(95,72,50)","RGB(245,245,248)",normal,False
+Skua,skua,uncommon,beach; tundra,False,N/A,4-10 blocks,95.0,22x12,"RGB(95,80,55)","RGB(80,68,45)","RGB(42,38,34)","RGB(85,72,48)","RGB(215,195,145)",normal,False
+Firecrest,firecrest,uncommon,boreal; temperate; birch_forest,False,N/A,2-6 blocks,65.0,9x7,"RGB(92,115,65)","RGB(75,95,52)","RGB(38,35,30)","RGB(95,118,68)","RGB(235,130,30)",normal,False
+BrownNoddy,brown_noddy,common,beach; pacific_island; ocean,True,3-7,4-10 blocks,75.0,18x9,"RGB(55,45,35)","RGB(45,38,28)","RGB(40,35,30)","RGB(220,215,205)","RGB(200,195,185)",normal,False
+WhiteTern,white_tern,rare,pacific_island; beach,False,N/A,6-14 blocks,90.0,16x8,"RGB(252,252,255)","RGB(245,248,252)","RGB(22,22,28)","RGB(252,252,255)","RGB(200,225,240)",normal,False
+PacificGoldenPlover,pacific_golden_plover,uncommon,pacific_island; beach,True,2-5,1-4 blocks,55.0,16x10,"RGB(60,55,35)","RGB(45,42,28)","RGB(35,30,25)","RGB(245,240,195)","RGB(22,22,22)",normal,False
+CommonMyna,common_myna,common,pacific_island; tropical; beach,True,3-6,2-7 blocks,65.0,16x10,"RGB(55,45,40)","RGB(40,35,30)","RGB(215,175,40)","RGB(30,25,22)","RGB(240,190,30)",normal,False
+ReefHeron,reef_heron,uncommon,pacific_island; beach; ocean,False,N/A,1-5 blocks,45.0,18x14,"RGB(80,95,110)","RGB(70,85,100)","RGB(175,155,90)","RGB(80,95,110)","RGB(245,242,235)",normal,False
+RedCrownedCrane,red_crowned_crane,rare,wetland; steppe; tundra,True,2-4,2-6 blocks,55.0,18x24,"RGB(240,238,235)","RGB(22,22,28)","RGB(175,168,130)","RGB(200,25,25)","RGB(240,238,235)",normal,False
+MandarinDuck,mandarin_duck,uncommon,wetland; swamp; boreal,False,N/A,1-3 blocks,50.0,14x12,"RGB(210,120,40)","RGB(40,115,145)","RGB(215,90,45)","RGB(40,150,120)","RGB(245,242,238)",normal,False
+ChineseMonal,chinese_monal,rare,alpine_mountain; rocky_mountain,False,N/A,2-6 blocks,55.0,20x14,"RGB(30,140,110)","RGB(55,35,100)","RGB(185,168,125)","RGB(40,160,130)","RGB(210,85,40)",normal,False
+SilverPheasant,silver_pheasant,uncommon,jungle; redwood; boreal,False,N/A,0-1 blocks,55.0,20x14,"RGB(238,235,232)","RGB(28,26,30)","RGB(165,152,130)","RGB(30,26,30)","RGB(195,45,40)",wary,False
+CrestedIbis,crested_ibis,rare,wetland; steppe,False,N/A,2-6 blocks,50.0,16x18,"RGB(242,228,220)","RGB(228,195,175)","RGB(38,34,30)","RGB(195,45,40)","RGB(230,180,170)",normal,False
+ChinesePondHeron,chinese_pond_heron,common,wetland; swamp; beach,False,N/A,1-4 blocks,45.0,12x16,"RGB(155,120,75)","RGB(235,230,222)","RGB(195,175,80)","RGB(140,108,65)","RGB(235,230,222)",normal,False
+FairyPitta,fairy_pitta,rare,jungle; tropical,False,N/A,1-4 blocks,75.0,14x12,"RGB(50,170,80)","RGB(30,100,200)","RGB(35,32,28)","RGB(22,22,28)","RGB(220,50,50)",normal,False
+Hwamei,hwamei,uncommon,temperate; birch_forest; boreal; jungle,False,N/A,2-6 blocks,70.0,14x10,"RGB(155,115,72)","RGB(130,95,58)","RGB(195,170,70)","RGB(145,108,65)","RGB(220,195,145)",normal,False
+BlackDrongo,black_drongo,common,savanna; tropical; wetland; temperate,False,N/A,3-8 blocks,85.0,14x10,"RGB(22,22,30)","RGB(18,18,26)","RGB(40,38,42)","RGB(22,22,30)","RGB(40,40,60)",normal,False
+RedBilledBlueMagpie,red_billed_blue_magpie,uncommon,temperate; jungle; boreal,True,2-4,3-8 blocks,80.0,18x14,"RGB(40,120,210)","RGB(30,95,180)","RGB(215,55,35)","RGB(22,22,28)","RGB(240,238,230)",normal,False
+AfricanFishEagle,african_fish_eagle,rare,savanna; wetland; beach,False,N/A,6-14 blocks,95.0,24x14,"RGB(90,55,25)","RGB(75,45,20)","RGB(235,195,50)","RGB(245,245,240)","RGB(195,60,30)",normal,False
+SecretaryBird,secretary_bird,rare,savanna; steppe; arid_steppe,False,N/A,0-1 blocks,60.0,16x24,"RGB(165,168,175)","RGB(30,28,32)","RGB(210,180,80)","RGB(165,168,175)","RGB(220,115,40)",bold,False
+MartialEagle,martial_eagle,rare,savanna; arid_steppe; canyon,False,N/A,7-15 blocks,105.0,22x14,"RGB(245,242,238)","RGB(60,55,48)","RGB(200,185,130)","RGB(65,60,52)","RGB(60,55,48)",normal,False
+MarabouStork,marabou_stork,uncommon,savanna; wetland; swamp,True,2-4,2-7 blocks,55.0,18x24,"RGB(242,240,238)","RGB(48,46,52)","RGB(195,182,148)","RGB(195,135,105)","RGB(210,90,75)",normal,False
+SuperbStarling,superb_starling,common,savanna,True,3-7,2-6 blocks,75.0,12x9,"RGB(195,118,45)","RGB(28,135,90)","RGB(35,32,28)","RGB(25,80,150)","RGB(245,240,235)",normal,False
+CapeWeaver,cape_weaver,common,savanna; rolling_hills; wetland,True,4-8,2-6 blocks,65.0,12x9,"RGB(228,192,22)","RGB(72,95,38)","RGB(55,48,35)","RGB(215,180,18)","RGB(195,48,28)",normal,False
+Hamerkop,hamerkop,uncommon,wetland; swamp; savanna,False,N/A,1-4 blocks,55.0,16x14,"RGB(120,88,58)","RGB(105,75,48)","RGB(55,48,38)","RGB(115,82,52)","RGB(148,108,70)",normal,False
+AfricanGreyParrot,african_grey_parrot,rare,jungle; tropical,False,N/A,3-8 blocks,75.0,16x12,"RGB(148,148,155)","RGB(125,125,132)","RGB(38,36,38)","RGB(155,155,162)","RGB(210,38,35)",normal,False
+GroundHornbill,ground_hornbill,rare,savanna,False,N/A,0-1 blocks,50.0,24x16,"RGB(25,22,28)","RGB(240,238,235)","RGB(28,25,28)","RGB(200,45,40)","RGB(200,45,40)",bold,False
+AfricanPenguin,african_penguin,uncommon,beach,True,2-5,0-1 blocks,45.0,12x14,"RGB(245,242,238)","RGB(28,25,32)","RGB(38,35,30)","RGB(28,25,32)","RGB(218,148,132)",curious,False
+LilacBreastedRoller,lilac_breasted_roller,uncommon,savanna; rolling_hills,False,N/A,3-8 blocks,70.0,16x10,"RGB(130,100,185)","RGB(50,120,185)","RGB(72,58,40)","RGB(60,165,90)","RGB(185,145,215)",normal,False
+CarmineBeeEater,carmine_bee_eater,common,savanna; wetland,True,2-6,3-9 blocks,80.0,18x10,"RGB(210,55,80)","RGB(38,148,110)","RGB(35,30,25)","RGB(210,55,80)","RGB(35,30,25)",normal,False
+WhiteFrontedBeeEater,white_fronted_bee_eater,uncommon,canyon; savanna,True,2-5,3-8 blocks,75.0,16x10,"RGB(195,68,55)","RGB(52,128,72)","RGB(35,30,25)","RGB(245,245,240)","RGB(240,210,60)",normal,False
+LittleBeeEater,little_bee_eater,common,savanna; steppe,False,N/A,2-6 blocks,68.0,12x8,"RGB(220,180,50)","RGB(55,130,72)","RGB(35,30,25)","RGB(55,130,72)","RGB(30,28,22)",normal,False
+AbyssinianRoller,abyssinian_roller,uncommon,savanna; steppe,False,N/A,3-8 blocks,70.0,16x10,"RGB(62,120,195)","RGB(48,85,168)","RGB(68,55,38)","RGB(62,120,195)","RGB(105,55,145)",normal,False
+MalachiteKingfisher,malachite_kingfisher,uncommon,wetland; swamp,False,N/A,1-4 blocks,70.0,10x8,"RGB(215,120,45)","RGB(38,158,118)","RGB(215,80,40)","RGB(38,158,118)","RGB(245,240,235)",normal,False
+GiantKingfisher,giant_kingfisher,uncommon,wetland; beach,False,N/A,1-5 blocks,65.0,20x12,"RGB(185,105,55)","RGB(55,65,72)","RGB(55,48,38)","RGB(55,65,72)","RGB(245,240,235)",normal,False
+PygmyKingfisher,pygmy_kingfisher,common,jungle; wetland,False,N/A,1-4 blocks,72.0,10x8,"RGB(215,110,55)","RGB(95,62,145)","RGB(215,80,40)","RGB(95,62,145)","RGB(245,235,210)",normal,False
+PiedKingfisher,pied_kingfisher,common,wetland; beach,False,N/A,1-5 blocks,75.0,16x10,"RGB(245,242,238)","RGB(28,25,32)","RGB(28,22,18)","RGB(28,25,32)","RGB(245,242,238)",normal,False
+GreyHeadedKingfisher,grey_headed_kingfisher,common,savanna; wetland,False,N/A,2-6 blocks,68.0,14x10,"RGB(195,120,50)","RGB(45,110,185)","RGB(215,75,40)","RGB(148,150,155)","RGB(245,240,235)",normal,False
+BateleurEagle,bateleur_eagle,rare,savanna,False,N/A,7-16 blocks,100.0,30x14,"RGB(245,242,238)","RGB(28,25,32)","RGB(215,58,42)","RGB(28,25,32)","RGB(215,58,42)",normal,False
+TawnyEagle,tawny_eagle,uncommon,savanna; steppe; arid_steppe,False,N/A,6-14 blocks,90.0,24x14,"RGB(175,118,50)","RGB(140,90,38)","RGB(205,185,110)","RGB(185,128,55)","RGB(205,185,110)",normal,False
+VerreauxsEagle,verreauxs_eagle,rare,rocky_mountain; canyon,False,N/A,8-18 blocks,110.0,30x14,"RGB(28,25,32)","RGB(28,25,32)","RGB(200,185,120)","RGB(28,25,32)","RGB(245,242,238)",normal,False
+BrownSnakeEagle,brown_snake_eagle,uncommon,savanna; steppe,False,N/A,5-12 blocks,85.0,22x14,"RGB(115,88,55)","RGB(95,72,42)","RGB(200,185,120)","RGB(115,88,55)","RGB(245,240,218)",normal,False
+LongCrestedEagle,long_crested_eagle,uncommon,wetland; rolling_hills,False,N/A,4-10 blocks,80.0,20x12,"RGB(245,242,238)","RGB(48,42,52)","RGB(215,195,130)","RGB(48,42,52)","RGB(245,242,238)",normal,False
+AfricanCrownedEagle,african_crowned_eagle,rare,jungle; rolling_hills,False,N/A,5-12 blocks,95.0,24x14,"RGB(215,185,140)","RGB(65,55,48)","RGB(195,178,115)","RGB(65,55,48)","RGB(185,138,88)",normal,False
+LannerFalcon,lanner_falcon,uncommon,savanna; canyon; desert,False,N/A,5-12 blocks,100.0,18x12,"RGB(235,225,205)","RGB(75,68,62)","RGB(215,195,118)","RGB(185,115,70)","RGB(215,195,118)",normal,False
+PygmyFalcon,pygmy_falcon,uncommon,arid_steppe; savanna,False,N/A,3-8 blocks,80.0,10x8,"RGB(240,235,225)","RGB(88,80,75)","RGB(218,195,118)","RGB(148,148,155)","RGB(200,90,68)",normal,False
+AfricanKestrel,african_kestrel,common,savanna; steppe; rolling_hills,False,N/A,4-10 blocks,85.0,16x10,"RGB(195,145,78)","RGB(148,100,50)","RGB(215,195,118)","RGB(148,148,158)","RGB(215,195,118)",normal,False
+RedNeckedFalcon,red_necked_falcon,uncommon,savanna; tropical,False,N/A,4-10 blocks,95.0,16x10,"RGB(218,205,185)","RGB(68,62,58)","RGB(215,195,118)","RGB(195,88,55)","RGB(215,195,118)",normal,False
+LappetFacedVulture,lappet_faced_vulture,rare,savanna; desert,False,N/A,5-14 blocks,75.0,32x14,"RGB(245,240,230)","RGB(35,30,28)","RGB(200,182,128)","RGB(210,90,78)","RGB(210,90,78)",normal,False
+WhiteBackedVulture,white_backed_vulture,uncommon,savanna,True,2-5,5-14 blocks,72.0,28x14,"RGB(185,168,140)","RGB(38,32,28)","RGB(200,182,125)","RGB(215,195,165)","RGB(245,242,238)",normal,False
+EgyptianVulture,egyptian_vulture,uncommon,desert; savanna; canyon,False,N/A,5-12 blocks,70.0,22x12,"RGB(245,242,238)","RGB(32,28,25)","RGB(215,175,52)","RGB(215,175,52)","RGB(245,242,238)",normal,False
+PalmNutVulture,palm_nut_vulture,uncommon,tropical; jungle; beach,False,N/A,4-10 blocks,68.0,22x12,"RGB(245,242,238)","RGB(32,28,25)","RGB(200,182,125)","RGB(245,242,238)","RGB(215,90,55)",normal,False
+SaddlebilledStork,saddlebilled_stork,rare,wetland; savanna,False,N/A,2-8 blocks,55.0,20x28,"RGB(245,242,238)","RGB(28,25,32)","RGB(215,55,42)","RGB(245,242,238)","RGB(240,210,55)",normal,False
+YellowBilledStork,yellow_billed_stork,common,wetland; savanna,True,2-5,2-7 blocks,55.0,18x24,"RGB(245,205,195)","RGB(28,25,32)","RGB(240,185,45)","RGB(215,80,58)","RGB(240,185,45)",normal,False
+GoliathHeron,goliath_heron,rare,wetland; beach,False,N/A,1-5 blocks,50.0,20x30,"RGB(145,148,158)","RGB(118,122,132)","RGB(58,50,38)","RGB(145,62,62)","RGB(245,240,225)",normal,False
+PurpleHeron,purple_heron,uncommon,wetland; swamp,False,N/A,1-5 blocks,52.0,16x26,"RGB(105,72,128)","RGB(85,78,92)","RGB(195,162,72)","RGB(28,22,38)","RGB(175,128,68)",normal,False
+BlackHeadedHeron,black_headed_heron,common,savanna; rolling_hills,False,N/A,1-5 blocks,52.0,18x26,"RGB(148,150,158)","RGB(118,120,128)","RGB(55,48,35)","RGB(28,25,32)","RGB(245,242,238)",normal,False
+GreatEgret,great_egret,common,wetland; beach,True,2-4,1-5 blocks,52.0,18x24,"RGB(248,246,244)","RGB(242,240,238)","RGB(218,185,55)","RGB(248,246,244)","RGB(218,185,55)",normal,False
+CattleEgret,cattle_egret,common,savanna; rolling_hills,True,4-10,1-5 blocks,58.0,14x16,"RGB(248,246,244)","RGB(240,238,235)","RGB(228,180,48)","RGB(238,195,148)","RGB(238,195,148)",normal,False
+SquaccoHeron,squacco_heron,uncommon,wetland; swamp,False,N/A,1-4 blocks,50.0,14x16,"RGB(218,188,140)","RGB(248,246,244)","RGB(95,168,88)","RGB(218,188,140)","RGB(185,152,108)",normal,False
+GreyCrownedCrane,grey_crowned_crane,rare,savanna; wetland,False,N/A,2-7 blocks,58.0,20x26,"RGB(165,168,175)","RGB(245,242,238)","RGB(48,42,38)","RGB(48,42,38)","RGB(228,202,50)",normal,False
+HadedaIbis,hadeda_ibis,common,rolling_hills; wetland,True,2-5,2-7 blocks,60.0,18x14,"RGB(105,108,100)","RGB(62,148,95)","RGB(145,48,38)","RGB(108,110,105)","RGB(62,148,95)",normal,False
+SacredIbis,sacred_ibis,common,wetland; savanna; beach,True,3-7,2-7 blocks,60.0,18x14,"RGB(245,242,238)","RGB(245,242,238)","RGB(32,28,25)","RGB(32,28,25)","RGB(32,28,25)",normal,False
+GlossyIbis,glossy_ibis,uncommon,wetland; savanna,True,2-5,2-7 blocks,62.0,16x12,"RGB(108,62,32)","RGB(55,118,75)","RGB(55,48,38)","RGB(108,62,32)","RGB(72,62,148)",normal,False
+AfricanSpoonbill,african_spoonbill,uncommon,wetland; beach,True,2-4,2-6 blocks,58.0,18x14,"RGB(248,245,242)","RGB(242,240,238)","RGB(215,80,62)","RGB(215,80,62)","RGB(215,80,62)",normal,False
+GreatWhitePelican,great_white_pelican,uncommon,wetland; beach,True,2-5,2-8 blocks,60.0,26x14,"RGB(248,245,242)","RGB(32,28,25)","RGB(218,178,48)","RGB(248,245,242)","RGB(218,178,48)",normal,False
+AfricanDarter,african_darter,uncommon,wetland; swamp,False,N/A,1-5 blocks,60.0,18x14,"RGB(65,55,42)","RGB(48,40,32)","RGB(185,162,85)","RGB(80,50,32)","RGB(215,185,120)",normal,False
+CrownedLapwing,crowned_lapwing,common,savanna; steppe,False,N/A,1-4 blocks,65.0,14x10,"RGB(165,135,78)","RGB(58,52,45)","RGB(225,190,52)","RGB(28,25,32)","RGB(245,242,238)",normal,False
+BlackwingedStilt,blackwinged_stilt,common,wetland; beach,True,2-5,1-5 blocks,65.0,14x16,"RGB(245,242,238)","RGB(28,25,32)","RGB(32,28,25)","RGB(245,242,238)","RGB(215,68,58)",normal,False
+PurpleSwamphen,purple_swamphen,uncommon,wetland; swamp,False,N/A,1-3 blocks,55.0,14x12,"RGB(88,78,155)","RGB(72,62,128)","RGB(215,68,52)","RGB(88,78,155)","RGB(215,68,52)",normal,False
+AfricanRail,african_rail,uncommon,wetland; swamp,False,N/A,1-3 blocks,52.0,12x10,"RGB(105,68,38)","RGB(88,55,30)","RGB(215,68,52)","RGB(68,88,118)","RGB(68,88,118)",normal,False
+AfricanJacana,african_jacana,common,wetland; swamp,False,N/A,1-3 blocks,58.0,12x10,"RGB(145,88,42)","RGB(118,68,32)","RGB(215,195,55)","RGB(28,25,32)","RGB(215,195,55)",normal,False
+RedBilledQuelea,red_billed_quelea,common,savanna; steppe,True,8-16,2-6 blocks,72.0,10x8,"RGB(195,162,88)","RGB(88,72,48)","RGB(215,55,42)","RGB(28,25,32)","RGB(215,195,138)",normal,False
+VillageWeaver,village_weaver,common,savanna; rolling_hills,True,3-7,2-6 blocks,68.0,12x9,"RGB(228,192,22)","RGB(68,88,42)","RGB(52,45,35)","RGB(28,25,32)","RGB(228,165,22)",normal,False
+GoldenBishop,golden_bishop,uncommon,wetland; savanna,True,2-5,2-5 blocks,65.0,12x9,"RGB(228,185,22)","RGB(32,28,25)","RGB(52,45,35)","RGB(228,185,22)","RGB(32,28,25)",normal,False
+SouthernRedBishop,southern_red_bishop,common,wetland; savanna,True,3-7,2-5 blocks,65.0,12x9,"RGB(215,58,38)","RGB(32,28,25)","RGB(52,45,35)","RGB(32,28,25)","RGB(215,58,38)",normal,False
+WattledStarling,wattled_starling,common,savanna,True,4-9,2-6 blocks,72.0,14x10,"RGB(218,215,210)","RGB(48,45,40)","RGB(52,45,35)","RGB(225,195,48)","RGB(28,25,22)",normal,False
+MalachiteSunbird,malachite_sunbird,uncommon,rolling_hills; alpine_mountain,False,N/A,2-6 blocks,72.0,14x10,"RGB(38,165,88)","RGB(28,128,68)","RGB(32,28,22)","RGB(38,165,88)","RGB(228,185,22)",normal,False
+OrangeBreastSunbird,orange_breasted_sunbird,uncommon,mediterranean; rolling_hills,False,N/A,2-6 blocks,70.0,14x10,"RGB(215,118,38)","RGB(35,108,72)","RGB(32,28,22)","RGB(35,108,72)","RGB(228,215,55)",normal,False
+ScarletChestSunbird,scarlet_chested_sunbird,common,savanna; tropical,False,N/A,2-6 blocks,70.0,12x9,"RGB(215,48,38)","RGB(28,25,22)","RGB(32,28,22)","RGB(28,25,22)","RGB(215,48,38)",normal,False
+AmethystSunbird,amethyst_sunbird,uncommon,jungle; tropical; rolling_hills,False,N/A,2-6 blocks,70.0,12x9,"RGB(28,25,32)","RGB(28,25,32)","RGB(32,28,22)","RGB(158,68,175)","RGB(215,48,38)",normal,False
+CollaredSunbird,collared_sunbird,common,jungle; tropical,False,N/A,2-6 blocks,68.0,11x8,"RGB(225,205,55)","RGB(42,125,72)","RGB(32,28,22)","RGB(42,125,72)","RGB(98,52,148)",normal,False
+VariableSunbird,variable_sunbird,common,jungle; tropical; savanna,False,N/A,2-6 blocks,68.0,11x8,"RGB(225,205,55)","RGB(35,118,68)","RGB(32,28,22)","RGB(35,118,68)","RGB(215,78,52)",normal,False
+VioletBackedStarling,violet_backed_starling,uncommon,savanna; jungle,True,2-5,2-7 blocks,72.0,12x9,"RGB(245,242,238)","RGB(98,72,188)","RGB(35,30,25)","RGB(98,72,188)","RGB(245,242,238)",normal,False
+GreaterBlueEaredStarling,greater_blue_eared_starling,common,savanna,True,3-7,2-6 blocks,70.0,14x10,"RGB(38,158,98)","RGB(35,108,178)","RGB(35,30,25)","RGB(35,108,178)","RGB(215,55,148)",normal,False
+PlumColoredStarling,plum_colored_starling,uncommon,jungle; tropical,True,2-5,2-7 blocks,70.0,12x9,"RGB(245,240,235)","RGB(128,62,145)","RGB(35,30,25)","RGB(128,62,145)","RGB(245,240,235)",normal,False
+PiedStarling,pied_starling,common,rolling_hills; savanna,True,3-6,2-6 blocks,68.0,12x9,"RGB(28,25,32)","RGB(28,25,32)","RGB(228,192,55)","RGB(28,25,32)","RGB(245,242,238)",normal,False
+BurchellsStarling,burchells_starling,common,savanna,True,2-5,2-6 blocks,70.0,14x10,"RGB(58,48,128)","RGB(48,38,108)","RGB(35,30,25)","RGB(68,58,148)","RGB(88,78,168)",normal,False
+AfricanFirefinch,african_firefinch,common,savanna; jungle,True,2-5,1-4 blocks,65.0,10x8,"RGB(205,55,42)","RGB(118,42,32)","RGB(215,72,58)","RGB(205,55,42)","RGB(245,240,230)",normal,False
+BlueWaxbill,blue_waxbill,common,savanna; steppe,True,3-7,1-4 blocks,65.0,10x8,"RGB(85,145,205)","RGB(128,88,52)","RGB(95,148,215)","RGB(85,145,205)","RGB(245,240,230)",normal,False
+VioletEaredWaxbill,violet_eared_waxbill,uncommon,arid_steppe; steppe,True,2-5,1-4 blocks,65.0,11x8,"RGB(145,88,52)","RGB(118,68,38)","RGB(215,55,128)","RGB(115,78,168)","RGB(215,55,128)",normal,False
+YellowFrontedCanary,yellow_fronted_canary,common,savanna; rolling_hills,True,2-5,2-5 blocks,65.0,11x8,"RGB(222,195,55)","RGB(85,105,55)","RGB(52,45,35)","RGB(218,188,42)","RGB(88,145,68)",normal,False
+MelbaFinch,melba_finch,uncommon,savanna; jungle,True,2-4,1-4 blocks,65.0,12x9,"RGB(245,240,230)","RGB(55,115,62)","RGB(215,52,38)","RGB(55,115,62)","RGB(215,52,38)",normal,False
+AfricanSilverbill,african_silverbill,common,savanna; arid_steppe,True,3-7,1-4 blocks,65.0,10x8,"RGB(198,178,148)","RGB(128,110,88)","RGB(178,195,215)","RGB(168,148,118)","RGB(32,28,25)",normal,False
+LocustFinch,locust_finch,uncommon,wetland; savanna,True,3-8,1-4 blocks,68.0,10x8,"RGB(195,72,32)","RGB(28,25,22)","RGB(215,55,38)","RGB(195,72,32)","RGB(245,235,215)",normal,False
+DoubleToothBarbet,double_tooth_barbet,uncommon,jungle; tropical,False,N/A,2-6 blocks,62.0,14x10,"RGB(215,55,42)","RGB(28,25,32)","RGB(245,205,55)","RGB(28,25,32)","RGB(245,240,230)",normal,False
+BlackCollaredBarbet,black_collared_barbet,common,savanna; rolling_hills,False,N/A,2-6 blocks,62.0,14x10,"RGB(215,55,42)","RGB(32,28,25)","RGB(215,55,42)","RGB(215,55,42)","RGB(32,28,25)",normal,False
+RedYellowBarbet,red_yellow_barbet,uncommon,arid_steppe; savanna,False,N/A,2-5 blocks,60.0,14x10,"RGB(218,78,45)","RGB(32,28,25)","RGB(245,205,55)","RGB(218,78,45)","RGB(245,205,55)",normal,False
+AfricanGreenPigeon,african_green_pigeon,common,jungle; tropical,True,2-5,3-8 blocks,65.0,16x12,"RGB(95,155,68)","RGB(72,128,52)","RGB(215,195,55)","RGB(88,148,62)","RGB(168,145,72)",normal,False
+NamaquaDove,namaqua_dove,common,arid_steppe; desert,True,2-5,1-4 blocks,62.0,12x9,"RGB(195,178,148)","RGB(138,118,88)","RGB(215,195,55)","RGB(168,155,128)","RGB(32,28,25)",normal,False
+LaughingDove,laughing_dove,common,savanna; arid_steppe,True,2-5,1-4 blocks,60.0,12x9,"RGB(195,148,112)","RGB(88,118,158)","RGB(48,42,35)","RGB(188,142,108)","RGB(155,88,62)",normal,False
+MeyerParrot,meyer_parrot,uncommon,savanna; jungle,False,N/A,3-8 blocks,68.0,14x12,"RGB(72,105,88)","RGB(55,82,68)","RGB(38,32,28)","RGB(88,72,55)","RGB(225,188,42)",normal,False
+CapeParrot,cape_parrot,rare,rolling_hills; jungle,False,N/A,3-8 blocks,68.0,16x14,"RGB(82,118,82)","RGB(62,95,62)","RGB(38,32,28)","RGB(215,105,48)","RGB(225,188,42)",normal,False
+RosyFacedLovebird,rosy_faced_lovebird,uncommon,arid_steppe; desert,True,2-6,2-6 blocks,68.0,12x10,"RGB(72,155,88)","RGB(55,125,72)","RGB(215,158,78)","RGB(215,105,90)","RGB(72,118,215)",normal,False
+Ostrich,ostrich,common,savanna; arid_steppe; desert,False,N/A,0-1 blocks,130.0,20x32,"RGB(28,22,28)","RGB(245,242,238)","RGB(215,175,118)","RGB(215,135,108)","RGB(215,135,108)",bold,False
+KoriBustard,kori_bustard,uncommon,savanna; steppe,False,N/A,0-1 blocks,52.0,22x18,"RGB(185,165,118)","RGB(148,130,95)","RGB(218,195,118)","RGB(148,148,148)","RGB(32,28,25)",wary,False
+HelmettedGuineafowl,helmeted_guineafowl,common,savanna; rolling_hills,True,4-10,0-1 blocks,52.0,16x14,"RGB(58,55,62)","RGB(48,45,52)","RGB(215,195,118)","RGB(85,168,188)","RGB(215,52,38)",wary,False
+NamaquaSandgrouse,namaqua_sandgrouse,uncommon,desert; arid_steppe,True,3-7,1-5 blocks,72.0,14x10,"RGB(195,168,115)","RGB(165,138,88)","RGB(148,128,88)","RGB(188,148,88)","RGB(32,28,25)",normal,False
+FiscalShrike,fiscal_shrike,common,savanna; rolling_hills,False,N/A,2-6 blocks,68.0,14x10,"RGB(245,242,238)","RGB(28,25,32)","RGB(38,32,28)","RGB(28,25,32)","RGB(245,242,238)",normal,False
+RedBackedShrike,red_backed_shrike,common,savanna; steppe,False,N/A,2-6 blocks,65.0,14x10,"RGB(218,195,158)","RGB(155,88,48)","RGB(38,32,28)","RGB(148,148,158)","RGB(32,28,25)",normal,False
+PiedCrow,pied_crow,common,savanna; rolling_hills; wasteland,True,2-5,3-8 blocks,72.0,18x12,"RGB(245,242,238)","RGB(28,25,32)","RGB(38,32,28)","RGB(28,25,32)","RGB(245,242,238)",normal,False
+FanTailedRaven,fan_tailed_raven,uncommon,rocky_mountain; canyon; desert,False,N/A,4-10 blocks,75.0,20x14,"RGB(28,25,32)","RGB(28,25,32)","RGB(38,32,28)","RGB(28,25,32)","RGB(48,45,55)",normal,False
+ParadiseFlycatcher,paradise_flycatcher,uncommon,jungle; tropical; rolling_hills,False,N/A,3-7 blocks,70.0,16x10,"RGB(188,95,42)","RGB(158,72,32)","RGB(72,108,215)","RGB(28,25,32)","RGB(188,95,42)",normal,False
+Batis,batis,common,jungle; savanna,False,N/A,2-6 blocks,65.0,10x8,"RGB(245,242,238)","RGB(48,45,52)","RGB(38,32,28)","RGB(48,45,52)","RGB(188,112,38)",normal,False
+CapeRobinChat,cape_robin_chat,common,mediterranean; rolling_hills,False,N/A,1-4 blocks,62.0,12x9,"RGB(215,128,52)","RGB(78,82,88)","RGB(38,32,28)","RGB(78,82,88)","RGB(215,128,52)",normal,False
+AfricanStonechat,african_stonechat,common,rolling_hills; steppe,False,N/A,1-4 blocks,62.0,11x8,"RGB(205,128,65)","RGB(32,28,25)","RGB(32,28,25)","RGB(32,28,25)","RGB(245,242,238)",normal,False
+PennantWingedNightjar,pennant_winged_nightjar,rare,savanna,False,N/A,2-7 blocks,65.0,22x10,"RGB(128,108,78)","RGB(95,78,55)","RGB(88,72,52)","RGB(118,98,68)","RGB(245,242,238)",normal,False
+AlpineSwift,alpine_swift,uncommon,rocky_mountain; canyon,True,3-8,6-16 blocks,110.0,20x8,"RGB(55,52,58)","RGB(48,45,52)","RGB(38,35,32)","RGB(55,52,58)","RGB(245,242,238)",normal,False
+AfricanPalmSwift,african_palm_swift,common,savanna; tropical,True,3-8,5-14 blocks,105.0,18x8,"RGB(98,88,78)","RGB(78,70,62)","RGB(38,35,32)","RGB(108,98,88)","RGB(218,210,195)",normal,False
+RedKnobbedCoot,red_knobbed_coot,common,wetland,True,2-6,1-3 blocks,52.0,14x12,"RGB(52,50,58)","RGB(42,40,48)","RGB(245,242,238)","RGB(52,50,58)","RGB(215,55,42)",normal,False
+AfricanSnipe,african_snipe,uncommon,wetland; swamp,False,N/A,1-4 blocks,65.0,14x10,"RGB(128,98,62)","RGB(95,72,45)","RGB(148,128,88)","RGB(118,90,55)","RGB(218,195,128)",normal,False
+SpottedThickKnee,spotted_thick_knee,uncommon,savanna; steppe,False,N/A,1-3 blocks,55.0,16x12,"RGB(178,155,108)","RGB(148,125,85)","RGB(215,195,55)","RGB(178,155,108)","RGB(235,220,55)",normal,False
+WattledPlover,wattled_plover,common,wetland; savanna,False,N/A,1-4 blocks,62.0,16x14,"RGB(155,135,88)","RGB(28,25,32)","RGB(215,195,55)","RGB(245,242,238)","RGB(215,195,55)",normal,False
+BlacksmithLapwing,blacksmith_lapwing,common,savanna; wetland,False,N/A,1-4 blocks,65.0,14x10,"RGB(148,150,155)","RGB(28,25,32)","RGB(38,32,28)","RGB(245,242,238)","RGB(32,28,25)",normal,False
+ThreeBandedPlover,three_banded_plover,common,wetland; beach,False,N/A,1-4 blocks,62.0,12x9,"RGB(158,135,95)","RGB(128,108,75)","RGB(215,55,42)","RGB(32,28,25)","RGB(245,242,238)",normal,False
+AfricanFishOwl,african_fish_owl,rare,wetland; jungle,False,N/A,2-7 blocks,55.0,20x18,"RGB(195,148,78)","RGB(148,105,52)","RGB(218,195,118)","RGB(195,148,78)","RGB(245,240,218)",normal,False
+VerreauxsEagleOwl,verreauxs_eagle_owl,rare,savanna; rocky_mountain,False,N/A,2-8 blocks,55.0,22x18,"RGB(185,175,168)","RGB(145,135,128)","RGB(218,195,118)","RGB(185,175,168)","RGB(215,135,158)",normal,False
+SpeckledMousebird,speckled_mousebird,common,savanna; rolling_hills; mediterranean,True,3-7,1-5 blocks,60.0,14x14,"RGB(118,105,88)","RGB(98,85,70)","RGB(165,148,112)","RGB(108,95,80)","RGB(245,240,225)",normal,False
+GambelsQuail,gambels_quail,uncommon,desert; scrubland; arid_steppe; chaparral,True,3-8,0-1 blocks,65.0,13x11,"RGB(160,130,90)","RGB(130,105,75)","RGB(40,28,18)","RGB(55,40,20)","RGB(210,170,55)",wary,False
+TawnyFrogmouth,tawny_frogmouth,uncommon,jungle; east_asian; south_asian,False,N/A,2-6 blocks,52.0,18x12,"RGB(145,125,98)","RGB(118,98,72)","RGB(78,68,48)","RGB(135,115,88)","RGB(168,148,112)",normal,True
+CommonPotoo,common_potoo,rare,jungle; tropical,False,N/A,1-4 blocks,58.0,14x10,"RGB(148,128,95)","RGB(118,98,68)","RGB(58,48,38)","RGB(138,118,85)","RGB(175,155,108)",normal,True
+WhippoorWill,whip_poor_will,common,temperate; boreal; rolling_hills,False,N/A,1-5 blocks,72.0,16x8,"RGB(138,115,78)","RGB(108,88,58)","RGB(38,32,25)","RGB(128,105,68)","RGB(225,198,138)",normal,True
+CommonPoorwill,common_poorwill,common,desert; arid_steppe; steppe,False,N/A,1-4 blocks,68.0,14x7,"RGB(128,108,72)","RGB(98,82,52)","RGB(38,32,25)","RGB(118,98,62)","RGB(215,188,128)",normal,True
+ElfOwl,elf_owl,common,desert; canyon; arid_steppe,False,N/A,2-6 blocks,58.0,10x10,"RGB(218,185,128)","RGB(168,138,88)","RGB(195,162,52)","RGB(198,168,112)","RGB(235,215,168)",normal,True
+BurrowingOwl,burrowing_owl,uncommon,steppe; savanna; arid_steppe,False,N/A,0-1 blocks,55.0,10x14,"RGB(218,188,128)","RGB(168,142,88)","RGB(215,185,55)","RGB(188,158,98)","RGB(245,238,218)",bold,True
+BarredOwl,barred_owl,uncommon,temperate; boreal; birch_forest,False,N/A,3-9 blocks,52.0,18x20,"RGB(178,155,115)","RGB(138,112,78)","RGB(218,195,115)","RGB(168,148,108)","RGB(245,240,218)",normal,True
+SpectacledOwl,spectacled_owl,rare,jungle; tropical,False,N/A,3-9 blocks,50.0,18x20,"RGB(245,240,218)","RGB(42,38,45)","RGB(218,195,115)","RGB(42,38,45)","RGB(245,240,218)",normal,True
+LongEaredOwl,long_eared_owl,uncommon,boreal; temperate; steppe,False,N/A,3-9 blocks,54.0,16x20,"RGB(198,152,88)","RGB(152,112,58)","RGB(195,162,52)","RGB(188,142,78)","RGB(215,172,105)",normal,True
+ShortEaredOwl,short_eared_owl,uncommon,tundra; steppe; wetland,False,N/A,1-6 blocks,60.0,18x16,"RGB(215,182,128)","RGB(162,132,82)","RGB(195,162,52)","RGB(205,172,118)","RGB(228,195,138)",normal,True
+FerruginousPygmyOwl,ferruginous_pygmy_owl,common,savanna; tropical,False,N/A,2-6 blocks,62.0,10x12,"RGB(188,115,62)","RGB(148,88,42)","RGB(195,162,52)","RGB(178,105,55)","RGB(228,185,128)",normal,True
+Kiwi,kiwi,rare,jungle,False,N/A,0-1 blocks,45.0,14x12,"RGB(118,88,55)","RGB(98,72,42)","RGB(178,155,112)","RGB(108,80,48)","RGB(5,5,5)",timid,True
+NightParrot,night_parrot,rare,desert; arid_steppe,False,N/A,0-1 blocks,52.0,12x10,"RGB(88,132,58)","RGB(62,108,38)","RGB(128,108,38)","RGB(72,115,45)","RGB(218,205,65)",timid,True
+CommonScopsOwl,common_scops_owl,common,mediterranean; savanna; east_asian,False,N/A,2-7 blocks,56.0,14x16,"RGB(152,140,118)","RGB(118,108,88)","RGB(195,172,52)","RGB(142,130,108)","RGB(168,155,128)",normal,True
+EasternScreechOwl,eastern_screech_owl,common,temperate; rolling_hills; birch_forest,False,N/A,2-7 blocks,58.0,12x14,"RGB(158,148,128)","RGB(122,112,95)","RGB(195,172,52)","RGB(148,138,118)","RGB(222,198,152)",normal,True
+LittleBrownBat,little_brown_bat,common,temperate; boreal; birch_forest,True,3-8,2-7 blocks,80.0,12x6,"RGB(95,72,45)","RGB(62,45,28)","RGB(38,28,18)","RGB(95,72,45)","RGB(5,5,10)",normal,True
+BigBrownBat,big_brown_bat,uncommon,temperate; rolling_hills; mediterranean,False,N/A,2-7 blocks,75.0,16x7,"RGB(128,95,58)","RGB(85,62,35)","RGB(38,28,18)","RGB(128,95,58)","RGB(5,5,10)",normal,True
+FruitBat,fruit_bat,common,jungle; tropical,True,4-10,3-8 blocks,65.0,18x8,"RGB(138,85,35)","RGB(75,48,22)","RGB(48,32,18)","RGB(158,98,42)","RGB(5,5,10)",normal,True
+VampireBat,vampire_bat,rare,jungle; swamp,False,N/A,1-5 blocks,70.0,13x6,"RGB(55,35,28)","RGB(38,22,18)","RGB(188,35,35)","RGB(55,35,28)","RGB(245,242,238)",normal,True
+HorseshoeBat,horseshoe_bat,uncommon,rocky_mountain; canyon,True,2-6,1-6 blocks,60.0,12x6,"RGB(105,88,78)","RGB(72,58,48)","RGB(38,28,18)","RGB(105,88,78)","RGB(5,5,10)",normal,True
+PipistrelBat,pipistrel_bat,common,temperate; mediterranean; south_asian,True,3-7,2-7 blocks,85.0,11x5,"RGB(72,52,32)","RGB(45,32,18)","RGB(38,28,18)","RGB(72,52,32)","RGB(5,5,10)",normal,True
+NoctuleBat,noctule_bat,uncommon,boreal; temperate; redwood,False,N/A,3-9 blocks,90.0,18x7,"RGB(185,138,62)","RGB(128,92,38)","RGB(48,32,18)","RGB(185,138,62)","RGB(5,5,10)",normal,True
+LeafNosedBat,leaf_nosed_bat,uncommon,desert; arid_steppe; canyon,True,2-5,1-5 blocks,65.0,13x6,"RGB(148,128,105)","RGB(108,90,72)","RGB(78,62,45)","RGB(148,128,105)","RGB(5,5,10)",normal,True
+GhostBat,ghost_bat,rare,wasteland,False,N/A,2-7 blocks,70.0,16x7,"RGB(228,218,208)","RGB(195,182,168)","RGB(155,138,122)","RGB(228,218,208)","RGB(5,5,10)",normal,True
+HammerHeadedBat,hammer_headed_bat,rare,savanna; tropical,False,N/A,3-8 blocks,60.0,20x9,"RGB(88,65,42)","RGB(58,42,25)","RGB(48,32,18)","RGB(88,65,42)","RGB(5,5,10)",normal,True
+EmperorPenguin,emperor_penguin,rare,tundra; alpine_mountain,True,2-5,0-1 blocks,35.0,16x22,"RGB(245,242,238)","RGB(22,22,28)","RGB(205,155,55)","RGB(22,22,28)","RGB(235,195,85)",curious,False
+KingPenguin,king_penguin,uncommon,tundra; alpine_mountain,True,2-5,0-1 blocks,40.0,14x19,"RGB(245,242,238)","RGB(25,22,30)","RGB(215,145,48)","RGB(25,22,30)","RGB(225,175,65)",curious,False
+GentooPenguin,gentoo_penguin,common,tundra; alpine_mountain,True,3-7,0-1 blocks,45.0,13x17,"RGB(245,242,238)","RGB(28,25,32)","RGB(215,105,35)","RGB(28,25,32)","RGB(245,242,238)",curious,False
+ChinStrapPenguin,chin_strap_penguin,common,tundra; alpine_mountain,True,3-8,0-1 blocks,47.0,12x15,"RGB(245,242,238)","RGB(28,25,32)","RGB(35,30,25)","RGB(28,25,32)","RGB(245,242,238)",bold,False
+AdeliePenguin,adelie_penguin,common,tundra; alpine_mountain,True,4-9,0-1 blocks,50.0,11x14,"RGB(245,242,238)","RGB(22,20,28)","RGB(175,80,28)","RGB(22,20,28)","RGB(245,242,238)",bold,False
+MacaroniPenguin,macaroni_penguin,uncommon,tundra; alpine_mountain,True,2-6,0-1 blocks,42.0,12x16,"RGB(245,242,238)","RGB(28,25,32)","RGB(155,88,28)","RGB(22,20,28)","RGB(235,185,28)",curious,False
+RockHopperPenguin,rock_hopper_penguin,uncommon,tundra; alpine_mountain,True,2-6,0-1 blocks,50.0,11x13,"RGB(245,242,238)","RGB(28,25,32)","RGB(195,88,28)","RGB(22,20,28)","RGB(235,198,22)",bold,False
+SnaresPenguin,snares_penguin,uncommon,tundra; alpine_mountain,True,2-5,0-1 blocks,45.0,11x14,"RGB(245,242,238)","RGB(25,22,30)","RGB(35,28,22)","RGB(25,22,30)","RGB(235,195,28)",normal,False
+FjordlandPenguin,fjordland_penguin,uncommon,tundra; alpine_mountain,True,2-4,0-1 blocks,47.0,10x13,"RGB(245,242,238)","RGB(28,25,35)","RGB(42,32,22)","RGB(28,25,35)","RGB(225,182,22)",normal,False
+LittleBluePenguin,little_blue_penguin,common,tundra; beach,True,3-7,0-1 blocks,55.0,9x11,"RGB(245,242,238)","RGB(55,78,138)","RGB(38,32,28)","RGB(55,78,138)","RGB(245,242,238)",curious,False

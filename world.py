@@ -956,6 +956,7 @@ class World:
             "FarmerNPC", "VillagerNPC", "ChildNPC", "GuardNPC", "ElderNPC",
             "BeggarNPC", "NobleNPC", "PilgrimNPC", "DrunkardNPC",
             "DoctorNPC", "MusicianNPC", "TownCrierNPC",
+            "ScoutNPC", "MonkNPC", "VendorNPC", "SailorNPC", "CraftsmanNPC",
         }
         _dummy_rng = _rnd.Random(0)
         for e_data in data["entities"]:
