@@ -1,5 +1,5 @@
 {
-  "fullscreen": true,
-  "debug": true,
-  "show_all_resources": true
+  "fullscreen": false,
+  "debug": false,
+  "show_all_resources": false
 }

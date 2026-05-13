@@ -241,6 +241,21 @@ def apply_dye(textile: "Textile", dye_family: str):
     textile.state = "dyed"
 
 
+def apply_pigment_dye(textile: "Textile", pigment) -> None:
+    """Dye thread using a ground/refined Pigment object.
+
+    Uses the pigment's exact RGB rather than a generic family swatch, so
+    the stored dye_color reflects the true hue.  Purity boosts luster;
+    stability gives a small quality lift.
+    """
+    fam = dye_family_from_color(pigment.color_rgb)
+    textile.dye_family = fam
+    textile.dye_color  = list(pigment.color_rgb)
+    textile.luster     = _clamp(textile.luster  + pigment.purity   * 0.15)
+    textile.quality    = _clamp(textile.quality + pigment.stability * 0.05)
+    textile.state      = "dyed"
+
+
 def apply_weave(textile: "Textile", output_type: str, texture: str, pattern_quality: float):
     """Mutate textile to woven state with chosen output type, texture, and loom quality."""
     textile.output_type = output_type

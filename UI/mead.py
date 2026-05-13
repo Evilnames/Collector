@@ -607,7 +607,7 @@ class MeadMixin:
 
     # ── Codex ─────────────────────────────────────────────────────────────────
 
-    def _draw_mead_codex(self, player, gy0=58):
+    def _draw_mead_codex(self, player, gy0=58, gx_off=0):
         import pygame
         cx = SCREEN_W // 2
 

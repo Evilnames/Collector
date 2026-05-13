@@ -172,6 +172,10 @@ _CROP_MATURE_MAP = {
     POMEGRANATE_TREE_YOUNG:  POMEGRANATE_TREE_MATURE,
     OLIVE_TREE_YOUNG:        OLIVE_TREE_MATURE,
     SAFFRON_CROP_YOUNG:      SAFFRON_CROP_MATURE,
+    INDIGO_CROP_YOUNG:       INDIGO_CROP_MATURE,
+    MADDER_CROP_YOUNG:       MADDER_CROP_MATURE,
+    WELD_CROP_YOUNG:         WELD_CROP_MATURE,
+    WOAD_CROP_YOUNG:         WOAD_CROP_MATURE,
     STRAWBERRY_CROP_YOUNG_P: STRAWBERRY_CROP_MATURE_P,
     TOMATO_CROP_YOUNG_P:     TOMATO_CROP_MATURE_P,
     WATERMELON_CROP_YOUNG_P: WATERMELON_CROP_MATURE_P,
@@ -1123,7 +1127,8 @@ class World:
                                COTTON_BUSH,
                                DILL_BUSH, TARRAGON_BUSH, LEMON_BALM_BUSH, CATNIP_BUSH,
                                ST_JOHNS_WORT_BUSH, YARROW_BUSH, BERGAMOT_BUSH, WOOD_SORREL_BUSH,
-                               COMFREY_BUSH, HOP_VINE_BUSH, LENTIL_CROP_YOUNG, TEA_BUSH],
+                               COMFREY_BUSH, HOP_VINE_BUSH, LENTIL_CROP_YOUNG, TEA_BUSH,
+                               MADDER_CROP_YOUNG, WELD_CROP_YOUNG, WOAD_CROP_YOUNG],
             "boreal":         [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
                                TURNIP_BUSH, CABBAGE_BUSH, LEEK_BUSH, APPLE_BUSH,
                                RADISH_BUSH, PEA_BUSH, BROCCOLI_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
@@ -1138,7 +1143,7 @@ class World:
                                PEPPER_BUSH, EGGPLANT_BUSH, SCALLION_BUSH, SWEET_POTATO_BUSH,
                                CHILI_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
                                TEA_BUSH, TEA_BUSH, MINT_BUSH, BASIL_BUSH, BASIL_BUSH,
-                               SESAME_CROP_YOUNG],
+                               SESAME_CROP_YOUNG, INDIGO_CROP_YOUNG, INDIGO_CROP_YOUNG],
             "wetland":        [RICE_BUSH, GINGER_BUSH, BOK_CHOY_BUSH, LEEK_BUSH,
                                CELERY_BUSH, SCALLION_BUSH, PUMPKIN_BUSH, TOMATO_BUSH,
                                WATERMELON_BUSH, COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH,
@@ -1154,7 +1159,8 @@ class World:
                                TEA_BUSH, TEA_BUSH, TEA_BUSH, MINT_BUSH,
                                COTTON_BUSH, COTTON_BUSH,
                                BASIL_BUSH, BASIL_BUSH, LEMON_VERBENA_BUSH,
-                               SESAME_CROP_YOUNG, SESAME_CROP_YOUNG],
+                               SESAME_CROP_YOUNG, SESAME_CROP_YOUNG,
+                               INDIGO_CROP_YOUNG, INDIGO_CROP_YOUNG, INDIGO_CROP_YOUNG],
             "savanna":        [CORN_BUSH, CHILI_BUSH, PEPPER_BUSH, EGGPLANT_BUSH,
                                SWEET_POTATO_BUSH, WATERMELON_BUSH, ONION_BUSH, PUMPKIN_BUSH,
                                COFFEE_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
@@ -1177,7 +1183,9 @@ class World:
                                FLAX_BUSH, FLAX_BUSH, COTTON_BUSH,
                                THYME_BUSH, THYME_BUSH, OREGANO_BUSH, SAGE_BUSH, MARJORAM_BUSH,
                                YARROW_BUSH, ECHINACEA_BUSH, HYSSOP_BUSH, MUGWORT_BUSH,
-                               LENTIL_CROP_YOUNG, HOP_VINE_BUSH],
+                               LENTIL_CROP_YOUNG, HOP_VINE_BUSH,
+                               WELD_CROP_YOUNG, WELD_CROP_YOUNG, WELD_CROP_YOUNG,
+                               MADDER_CROP_YOUNG, WOAD_CROP_YOUNG],
             "steep_hills":    [STRAWBERRY_BUSH, CARROT_BUSH, POTATO_BUSH, BEET_BUSH,
                                APPLE_BUSH, CABBAGE_BUSH, BROCCOLI_BUSH, GRAPEVINE_BUSH,
                                LAVENDER_BUSH, ROSEMARY_BUSH, THYME_BUSH, SAVORY_BUSH, RUE_BUSH,
@@ -1187,7 +1195,8 @@ class World:
                                FLAX_BUSH, COTTON_BUSH, COTTON_BUSH,
                                THYME_BUSH, SAGE_BUSH, OREGANO_BUSH, WORMWOOD_BUSH,
                                YARROW_BUSH, MUGWORT_BUSH,
-                               CHICKPEA_CROP_YOUNG, LENTIL_CROP_YOUNG, LENTIL_CROP_YOUNG],
+                               CHICKPEA_CROP_YOUNG, LENTIL_CROP_YOUNG, LENTIL_CROP_YOUNG,
+                               WELD_CROP_YOUNG, WELD_CROP_YOUNG, WOAD_CROP_YOUNG],
             "arid_steppe":    [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, RADISH_BUSH,
                                SWEET_POTATO_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
                                COTTON_BUSH, COTTON_BUSH,
@@ -1203,7 +1212,8 @@ class World:
                                TEA_BUSH, TEA_BUSH, LAVENDER_BUSH, ROSEMARY_BUSH, THYME_BUSH,
                                SAGE_BUSH, FENNEL_BUSH, OREGANO_BUSH, MARJORAM_BUSH,
                                CHICKPEA_CROP_YOUNG, LENTIL_CROP_YOUNG, SAFFRON_CROP_YOUNG,
-                               POMEGRANATE_TREE_YOUNG, POMEGRANATE_TREE_YOUNG, OLIVE_TREE_YOUNG, OLIVE_TREE_YOUNG],
+                               POMEGRANATE_TREE_YOUNG, POMEGRANATE_TREE_YOUNG, OLIVE_TREE_YOUNG, OLIVE_TREE_YOUNG,
+                               MADDER_CROP_YOUNG, MADDER_CROP_YOUNG, WELD_CROP_YOUNG],
             "bamboo_forest":  [RICE_BUSH, BOK_CHOY_BUSH, SCALLION_BUSH, GINGER_BUSH,
                                TEA_BUSH, TEA_BUSH, TEA_BUSH, MINT_BUSH, BASIL_BUSH,
                                CHAMOMILE_BUSH, LEMON_VERBENA_BUSH],
@@ -1233,7 +1243,8 @@ class World:
                                TEA_BUSH, TEA_BUSH, TEA_BUSH,
                                SESAME_CROP_YOUNG, SESAME_CROP_YOUNG,
                                MINT_BUSH, BASIL_BUSH, MUGWORT_BUSH, MUGWORT_BUSH,
-                               LEMON_BALM_BUSH, LEMON_VERBENA_BUSH],
+                               LEMON_BALM_BUSH, LEMON_VERBENA_BUSH,
+                               INDIGO_CROP_YOUNG, WELD_CROP_YOUNG],
         }
         bush_rng = random.Random(hash((self.seed, cx, 'bushes')) & 0x7FFFFFFF)
         lx = 5
@@ -1387,9 +1398,80 @@ class World:
             }.get(biodome, (9, 18))
             lx += flower_rng.randint(lo, hi)
 
-        # Lakes (chunk-local)
+        # Lakes and caves (chunk-local)
         self._gen_chunk_lakes(cx, chunk)
         self._gen_chunk_oil_pockets(cx, chunk)
+        self._gen_chunk_caves(cx)
+
+    def _gen_chunk_caves(self, cx: int):
+        """Carve cave networks starting in this chunk; worms may wander into adjacent chunks."""
+        rng = random.Random(hash((self.seed, cx, 'caves')) & 0x7FFFFFFF)
+        impassable = {BEDROCK, GATE_MID, GATE_DEEP, GATE_CORE}
+        H = self.height
+        chunk_x_min = cx * CHUNK_W
+        chunk_x_max = chunk_x_min + CHUNK_W
+        # Worms may carve up to 2 chunks on either side (silently skips unloaded chunks)
+        carve_x_min = chunk_x_min - 2 * CHUNK_W
+        carve_x_max = chunk_x_max + 2 * CHUNK_W
+
+        # Per-zone spawn probability tuned to ~1/3 original density
+        # Original: (4, 6, 7, 5) worms per 21 initial chunks → per-chunk rates / 3
+        zones = [
+            # depth_min, depth_max, prob, min_len, max_len, r_min, r_max, branch_ch
+            (10,  38,  0.06,  30,  60,  1, 2, 0.25),
+            (42,  98,  0.10,  50, 100,  2, 3, 0.40),
+            (102, 158, 0.11,  70, 130,  2, 4, 0.50),
+            (162, 192, 0.08,  80, 150,  3, 5, 0.55),
+        ]
+
+        cave_cells = set()
+        for d_min, d_max, prob, min_len, max_len, r_min, r_max, branch_ch in zones:
+            if rng.random() >= prob:
+                continue
+            sx = chunk_x_min + rng.randint(2, CHUNK_W - 3)
+            sy = SURFACE_Y + rng.randint(d_min, d_max)
+            bm = self._biome_cave_params(sx)
+            r_actual = r_max * bm["size"]
+            l_actual = round(max_len * bm["size"])
+            stack = [(float(sx), float(sy), rng.uniform(0, 2 * pi), float(r_min), float(r_actual))]
+            max_segments = 8
+            segments = 0
+            while stack and segments < max_segments:
+                segments += 1
+                x, y, angle, radius, max_r = stack.pop()
+                length = rng.randint(min_len, l_actual)
+                for _ in range(length):
+                    angle += rng.uniform(-0.4, 0.4)
+                    x += cos(angle)
+                    y += sin(angle) * 0.5
+                    bx, by = int(x), int(y)
+                    if not (carve_x_min <= bx < carve_x_max and SURFACE_Y + 5 <= by < H - 2):
+                        break
+                    if self.get_block(bx, by) == WATER:
+                        continue
+                    radius += rng.uniform(-0.15, 0.2)
+                    radius = max(r_min, min(max_r, radius))
+                    ir = max(1, int(radius))
+                    for dx, dy in World._circle_offsets(ir):
+                        nx, ny = bx + dx, by + dy
+                        if (carve_x_min <= nx < carve_x_max
+                                and SURFACE_Y + 5 <= ny < H - 2
+                                and self.get_block(nx, ny) not in impassable
+                                and self.get_block(nx, ny) != WATER):
+                            self._cave_set(nx, ny, AIR)
+                            cave_cells.add((nx, ny))
+                    if rng.random() < branch_ch:
+                        ba = angle + rng.choice([-1.0, 1.0]) * rng.uniform(0.5, 1.2)
+                        stack.append((x, y, ba, max(r_min, radius - 0.5), max(r_min, max_r - 0.5)))
+
+        # Decorate only cells within this chunk; neighboring chunks decorate their own
+        local_cells = {(x, y) for x, y in cave_cells if chunk_x_min <= x < chunk_x_max}
+        if local_cells:
+            self._mark_cracked_ceilings(local_cells, impassable)
+            self._place_speleothems(local_cells, rng)
+            self._place_cave_flora(local_cells, rng)
+            self._place_gravel(local_cells, rng)
+            self._place_cave_mushrooms(local_cells, rng)
 
     def _gen_chunk_lakes(self, cx: int, chunk: list):
         """Carve small lakes within this chunk."""
@@ -1644,6 +1726,11 @@ class World:
         "igneous": 0.12, "sedimentary": 0.18, "crystal": 0.22, "ferrous": 0.10, "void": 0.08,
     }
 
+    def _cave_set(self, x, y, block_id):
+        chunk = self._chunks.get(x // CHUNK_W)
+        if chunk is not None:
+            chunk[y][x % CHUNK_W] = block_id
+
     def _gen_caves(self):
         def _ct(label, t):
             print(f"    cave/{label}: {(_time.perf_counter()-t)*1000:.0f}ms")
@@ -1653,48 +1740,48 @@ class World:
         impassable = {BEDROCK, GATE_MID, GATE_DEEP, GATE_CORE}
         t = _time.perf_counter()
 
-        # Pre-compute 3-block water-proximity guard using positions tracked by _gen_lakes
-        water_near = [[False] * self.width for _ in range(self.height)]
-        H, W = self.height, self.width
+        x_min = min(self._chunks) * CHUNK_W
+        x_max = (max(self._chunks) + 1) * CHUNK_W
+        H = self.height
+
+        # 3-block water-proximity guard as a set of (wx, wy) world coords
+        water_near = set()
         for wy, wx in self._lake_cells:
             for dy in range(-3, 4):
                 ny = wy + dy
                 if 0 <= ny < H:
-                    row = water_near[ny]
                     for dx in range(-3, 4):
-                        nx = wx + dx
-                        if 0 <= nx < W:
-                            row[nx] = True
+                        water_near.add((wx + dx, ny))
         t = _ct("water_near", t)
 
         # (depth_min, depth_max, n_nets, min_len, max_len, r_min, r_max, branch_chance)
+        # n_nets tuned to ~1/3rd of original (was 4, 6, 7, 5)
         zones = [
-            (10,  38,  4,  30,  60,  1, 2, 0.25),
-            (42,  98,  6,  50, 100,  2, 3, 0.40),
-            (102, 158, 7,  70, 130,  2, 4, 0.50),
-            (162, 192, 5,  80, 150,  3, 5, 0.55),
+            (10,  38,  2,  30,  60,  1, 2, 0.25),
+            (42,  98,  2,  50, 100,  2, 3, 0.40),
+            (102, 158, 2,  70, 130,  2, 4, 0.50),
+            (162, 192, 2,  80, 150,  3, 5, 0.55),
         ]
 
         cave_cells = set()
         for d_min, d_max, n_nets, min_len, max_len, r_min, r_max, branch_ch in zones:
             for _ in range(n_nets):
-                cx = rng.randint(10, self.width - 10)
+                cx = rng.randint(x_min + 10, x_max - 10)
                 cy = SURFACE_Y + rng.randint(d_min, d_max)
                 bm = self._biome_cave_params(cx)
-                n_actual = max(1, round(n_nets * bm["freq"]))
                 r_actual = r_max * bm["size"]
                 l_actual = round(max_len * bm["size"])
                 self._carve_network(
                     cx, cy, min_len, l_actual, r_min, r_actual,
-                    branch_ch, rng, impassable, water_near, cave_cells,
+                    branch_ch, rng, impassable, water_near, cave_cells, x_min, x_max,
                 )
         t = _ct("carve_networks", t)
 
-        self._carve_chimneys(rng, impassable, water_near, cave_cells)
+        self._carve_chimneys(rng, impassable, water_near, cave_cells, x_min, x_max)
         t = _ct("chimneys", t)
-        self._carve_geodes(rng, impassable, water_near, cave_cells)
+        self._carve_geodes(rng, impassable, water_near, cave_cells, x_min, x_max)
         t = _ct("geodes", t)
-        self._cave_ca_smooth(cave_cells, impassable)
+        self._cave_ca_smooth(cave_cells, impassable, x_min, x_max)
         t = _ct("ca_smooth", t)
         self._mark_cracked_ceilings(cave_cells, impassable)
         t = _ct("cracked_ceilings", t)
@@ -1727,9 +1814,8 @@ class World:
         return World._circle_cache[ir]
 
     def _carve_network(self, sx, sy, min_len, max_len, r_min, r_max,
-                       branch_chance, rng, impassable, water_near, cave_cells):
-        W, H = self.width, self.height
-        grid = self.grid
+                       branch_chance, rng, impassable, water_near, cave_cells, x_min, x_max):
+        H = self.height
         stack = [(float(sx), float(sy), rng.uniform(0, 2 * pi), float(r_min), float(r_max))]
         max_segments = 8
         segments = 0
@@ -1742,43 +1828,44 @@ class World:
                 x += cos(angle)
                 y += sin(angle) * 0.5
                 bx, by = int(x), int(y)
-                if not (1 <= bx < W - 1 and SURFACE_Y + 5 <= by < H - 2):
+                if not (x_min + 1 <= bx < x_max - 1 and SURFACE_Y + 5 <= by < H - 2):
                     break
-                if water_near[by][bx]:
+                if (bx, by) in water_near:
                     continue
                 radius += rng.uniform(-0.15, 0.2)
                 radius = max(r_min, min(max_r, radius))
                 ir = max(1, int(radius))
                 for dx, dy in World._circle_offsets(ir):
                     nx, ny = bx + dx, by + dy
-                    if (1 <= nx < W - 1
+                    if (x_min + 1 <= nx < x_max - 1
                             and SURFACE_Y + 5 <= ny < H - 2
-                            and not water_near[ny][nx]
-                            and grid[ny][nx] not in impassable):
-                        grid[ny][nx] = AIR
+                            and (nx, ny) not in water_near
+                            and self.get_block(nx, ny) not in impassable):
+                        self._cave_set(nx, ny, AIR)
                         cave_cells.add((nx, ny))
                 if rng.random() < branch_chance:
                     ba = angle + rng.choice([-1.0, 1.0]) * rng.uniform(0.5, 1.2)
                     stack.append((x, y, ba, max(r_min, radius - 0.5), max(r_min, max_r - 0.5)))
 
-    def _cave_ca_smooth(self, cave_cells, impassable):
+    def _cave_ca_smooth(self, cave_cells, impassable, x_min, x_max):
         neighbours8 = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)]
+        H = self.height
         candidates = set()
         for cx, cy in cave_cells:
             for dx, dy in neighbours8:
                 nx, ny = cx + dx, cy + dy
-                if (0 <= nx < self.width and 0 <= ny < self.height
-                        and self.grid[ny][nx] not in impassable
-                        and self.grid[ny][nx] != AIR):
+                b = self.get_block(nx, ny)
+                if (x_min <= nx < x_max and 0 <= ny < H
+                        and b not in impassable and b != AIR):
                     candidates.add((nx, ny))
         for bx, by in candidates:
             air_count = sum(
                 1 for dx, dy in neighbours8
-                if 0 <= bx + dx < self.width and 0 <= by + dy < self.height
-                and self.grid[by + dy][bx + dx] == AIR
+                if x_min <= bx + dx < x_max and 0 <= by + dy < H
+                and self.get_block(bx + dx, by + dy) == AIR
             )
             if air_count >= 5:
-                self.grid[by][bx] = AIR
+                self._cave_set(bx, by, AIR)
                 cave_cells.add((bx, by))
 
     def _mark_cracked_ceilings(self, cave_cells, impassable):
@@ -1797,10 +1884,10 @@ class World:
                     span = prev_x - run_start + 1
                     if span >= 7:
                         for cx2 in range(run_start, prev_x + 1):
-                            b = self.grid[ceiling_y][cx2]
+                            b = self.get_block(cx2, ceiling_y)
                             if b not in impassable and b != AIR:
                                 if (cx2 * 1031 + ceiling_y * 7919) % 2 == 0:
-                                    self.grid[ceiling_y][cx2] = CRACKED_STONE
+                                    self._cave_set(cx2, ceiling_y, CRACKED_STONE)
                     if x is not None:
                         run_start = x
                 prev_x = x if x is not None else prev_x
@@ -1830,118 +1917,117 @@ class World:
 
     def _try_place_column(self, bx, mid_y):
         ceiling_y = mid_y
-        while ceiling_y > 0 and self.grid[ceiling_y][bx] == AIR:
+        while ceiling_y > 0 and self.get_block(bx, ceiling_y) == AIR:
             ceiling_y -= 1
         floor_y = mid_y
-        while floor_y < self.height - 1 and self.grid[floor_y][bx] == AIR:
+        while floor_y < self.height - 1 and self.get_block(bx, floor_y) == AIR:
             floor_y += 1
         if floor_y - ceiling_y > 4:
             sy = self.surface_y_at(bx)
             for fy in range(ceiling_y + 1, floor_y):
-                if self.grid[fy][bx] == AIR:
-                    self.grid[fy][bx] = self._stone_for_depth(fy - sy)
+                if self.get_block(bx, fy) == AIR:
+                    self._cave_set(bx, fy, self._stone_for_depth(fy - sy))
 
     def _place_speleothems(self, cave_cells, rng):
         for cx, cy in cave_cells:
-            biome = self._biome_map[max(0, min(self.width - 1, cx))]
+            biome = self.biome_at(cx)
             freq = self._BIOME_STALA.get(biome, 0.12)
             if cy > 0:
-                above = self.grid[cy - 1][cx]
+                above = self.get_block(cx, cy - 1)
                 if above not in (AIR, CRACKED_STONE) and above != WATER:
                     if rng.random() < freq:
-                        self.grid[cy][cx] = STALACTITE
+                        self._cave_set(cx, cy, STALACTITE)
                         continue
             if cy < self.height - 1:
-                below = self.grid[cy + 1][cx]
-                if below not in (AIR,) and below != WATER and self.grid[cy][cx] == AIR:
+                below = self.get_block(cx, cy + 1)
+                if below not in (AIR,) and below != WATER and self.get_block(cx, cy) == AIR:
                     if rng.random() < freq * 0.7:
-                        self.grid[cy][cx] = STALAGMITE
+                        self._cave_set(cx, cy, STALAGMITE)
 
-    def _carve_chimneys(self, rng, impassable, water_near, cave_cells):
+    def _carve_chimneys(self, rng, impassable, water_near, cave_cells, x_min, x_max):
         # Narrow vertical shafts that punch between depth zones, linking them visually
-        n_chimneys = rng.randint(6, 10)
+        n_chimneys = rng.randint(2, 3)
         for _ in range(n_chimneys):
-            cx = rng.randint(10, self.width - 10)
+            cx = rng.randint(x_min + 10, x_max - 10)
             top_y = SURFACE_Y + rng.randint(15, 130)
-            bottom_y = top_y + rng.randint(20, 50)
-            bottom_y = min(bottom_y, self.height - 5)
+            bottom_y = min(top_y + rng.randint(20, 50), self.height - 5)
             radius = rng.randint(1, 2)
             for cy in range(top_y, bottom_y):
-                if water_near[cy][cx]:
+                if (cx, cy) in water_near:
                     break
                 for dx in range(-radius, radius + 1):
                     nx = cx + dx
-                    if (1 <= nx < self.width - 1
-                            and self.grid[cy][nx] not in impassable
-                            and not water_near[cy][nx]):
-                        self.grid[cy][nx] = AIR
+                    if (x_min + 1 <= nx < x_max - 1
+                            and self.get_block(nx, cy) not in impassable
+                            and (nx, cy) not in water_near):
+                        self._cave_set(nx, cy, AIR)
                         cave_cells.add((nx, cy))
 
-    def _carve_geodes(self, rng, impassable, water_near, cave_cells):
+    def _carve_geodes(self, rng, impassable, water_near, cave_cells, x_min, x_max):
         # Rare spherical chambers with crystal-lined walls; 2-4 per world
         n_geodes = rng.randint(2, 4)
         for _ in range(n_geodes):
-            cx = rng.randint(12, self.width - 12)
+            cx = rng.randint(x_min + 12, x_max - 12)
             cy = SURFACE_Y + rng.randint(80, 185)
             radius = rng.randint(5, 9)
-            if not (0 <= cy < self.height and 0 <= cx < self.width):
+            if not (0 <= cy < self.height):
                 continue
-            if water_near[cy][cx]:
+            if (cx, cy) in water_near:
                 continue
             # Carve sphere interior (r-2) as air, ring (r-2 to r) as crystal ore
+            inner = (radius - 2) ** 2
+            outer = radius * radius
             for dy in range(-radius, radius + 1):
                 for dx in range(-radius, radius + 1):
                     dist2 = dx * dx + dy * dy
                     ny, nx = cy + dy, cx + dx
-                    if not (1 <= nx < self.width - 1 and SURFACE_Y + 5 <= ny < self.height - 2):
+                    if not (x_min + 1 <= nx < x_max - 1 and SURFACE_Y + 5 <= ny < self.height - 2):
                         continue
-                    if self.grid[ny][nx] in impassable or water_near[ny][nx]:
+                    if self.get_block(nx, ny) in impassable or (nx, ny) in water_near:
                         continue
-                    inner = (radius - 2) ** 2
-                    outer = radius * radius
                     if dist2 <= inner:
-                        self.grid[ny][nx] = AIR
+                        self._cave_set(nx, ny, AIR)
                         cave_cells.add((nx, ny))
                     elif dist2 <= outer:
-                        self.grid[ny][nx] = CRYSTAL_ORE
+                        self._cave_set(nx, ny, CRYSTAL_ORE)
 
     def _place_cave_flora(self, cave_cells, rng):
         # Cave moss: floor cells in shallow/sedimentary; cave crystals: deep/crystal wall cells
         _moss_biomes    = {"sedimentary", "igneous"}
         _crystal_biomes = {"crystal", "void"}
+        H = self.height
         for cx, cy in cave_cells:
-            biome = self._biome_map[max(0, min(self.width - 1, cx))]
+            biome = self.biome_at(cx)
             depth = cy - SURFACE_Y
             # Cave moss on floors (solid block below, air above) in shallow zones
-            if (cy < self.height - 1 and self.grid[cy + 1][cx] not in (AIR, WATER)
-                    and self.grid[cy][cx] == AIR and depth < 80
+            if (cy < H - 1 and self.get_block(cx, cy + 1) not in (AIR, WATER)
+                    and self.get_block(cx, cy) == AIR and depth < 80
                     and biome in _moss_biomes and rng.random() < 0.18):
-                self.grid[cy][cx] = CAVE_MOSS
+                self._cave_set(cx, cy, CAVE_MOSS)
             # Cave crystal clusters on walls/floors in deep crystal zones
-            elif (depth >= 80 and biome in _crystal_biomes and self.grid[cy][cx] == AIR):
-                # Attach to any adjacent solid block
+            elif (depth >= 80 and biome in _crystal_biomes and self.get_block(cx, cy) == AIR):
                 has_solid_neighbour = any(
-                    0 <= cy + dy < self.height and 0 <= cx + dx < self.width
-                    and self.grid[cy + dy][cx + dx] not in (AIR, WATER)
+                    0 <= cy + dy < H
+                    and self.get_block(cx + dx, cy + dy) not in (AIR, WATER)
                     for dx, dy in ((0, 1), (0, -1), (1, 0), (-1, 0))
                 )
                 if has_solid_neighbour and rng.random() < 0.10:
-                    self.grid[cy][cx] = CAVE_CRYSTAL
+                    self._cave_set(cx, cy, CAVE_CRYSTAL)
 
     def _place_gravel(self, cave_cells, rng):
         # Gravel pockets along cave floors and in shallow sedimentary zones
         _gravel_biomes = {"sedimentary", "igneous", "ferrous"}
         solid = {STONE, COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, CRACKED_STONE}
+        H = self.height
         for cx, cy in cave_cells:
-            biome = self._biome_map[max(0, min(self.width - 1, cx))]
+            biome = self.biome_at(cx)
             depth = cy - SURFACE_Y
             if depth > 100 or biome not in _gravel_biomes:
                 continue
-            if (cy < self.height - 1 and self.grid[cy][cx] == AIR
-                    and self.grid[cy + 1][cx] in solid and rng.random() < 0.12):
-                # Chance to also convert the solid block below into gravel (pebble patch)
+            if (cy < H - 1 and self.get_block(cx, cy) == AIR
+                    and self.get_block(cx, cy + 1) in solid and rng.random() < 0.12):
                 if rng.random() < 0.4:
-                    self.grid[cy + 1][cx] = GRAVEL
+                    self._cave_set(cx, cy + 1, GRAVEL)
 
     def _place_cave_mushrooms(self, cave_cells, rng):
         _freq = {"igneous": 0.10, "sedimentary": 0.12, "crystal": 0.18, "ferrous": 0.06, "void": 0.16}
@@ -1956,24 +2042,25 @@ class World:
         solid = {STONE, COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN,
                  CRACKED_STONE, GRAVEL}
         placed = set()
+        H = self.height
         for cx, cy in cave_cells:
             if (cx, cy) in placed:
                 continue
-            if cy < 1 or cy + 1 >= self.height:
+            if cy < 1 or cy + 1 >= H:
                 continue
             depth = cy - SURFACE_Y
             if depth < 12:
                 continue
-            if self.grid[cy][cx] != AIR:
+            if self.get_block(cx, cy) != AIR:
                 continue
-            if self.grid[cy + 1][cx] not in solid:
+            if self.get_block(cx, cy + 1) not in solid:
                 continue
-            biome = self._biome_map[max(0, min(self.width - 1, cx))]
+            biome = self.biome_at(cx)
             freq = _freq.get(biome, 0.10)
             if rng.random() < freq:
                 pool = [m for m in _BIOME_POOL.get(biome, [CAVE_MUSHROOM])
                         if m not in _DEEP_ONLY or depth >= 80]
-                self.grid[cy][cx] = rng.choice(pool or [CAVE_MUSHROOM])
+                self._cave_set(cx, cy, rng.choice(pool or [CAVE_MUSHROOM]))
                 placed.add((cx, cy))
 
     # ---------------------------------------------------------------- /caves --
@@ -2011,6 +2098,21 @@ class World:
 
     def _pick_block(self, depth, rng, biome="igneous", bx=0, by=0):
         r = rng.random()
+        # Ochre deposits — near-surface iron-clay beds; warm savanna/steppe soils
+        if depth < 30 and biome in ("savanna", "steppe", "arid_steppe", "canyon", "wasteland"):
+            ochre_n = self._vein_noise(bx, by, 0xB8A420, scale=5)
+            if ochre_n >= 0.62 and r < 0.055:
+                return OCHRE_DEPOSIT
+        # Sienna deposits — warm iron-rich clay; arid & desert zones
+        if 10 <= depth < 50 and biome in ("arid_steppe", "desert", "canyon", "sedimentary"):
+            sienna_n = self._vein_noise(bx, by, 0xC87830, scale=5)
+            if sienna_n >= 0.63 and r < 0.040:
+                return SIENNA_DEPOSIT
+        # Umber deposits — manganese-iron earth; rocky mountain & canyon strata
+        if 30 <= depth < 90 and biome in ("rocky_mountain", "canyon", "alpine_mountain", "igneous"):
+            umber_n = self._vein_noise(bx, by, 0x8A5020, scale=4)
+            if umber_n >= 0.63 and r < 0.030:
+                return UMBER_DEPOSIT
         # Clay deposits — shallow pockets in sedimentary/temperate/wetland/river zones
         if depth < 35 and biome in ("sedimentary", "temperate", "wetland", "river", "swamp",
                                     "steppe", "arid_steppe", "savanna",
@@ -4453,6 +4555,11 @@ class World:
                 to_remove.append(item)
             elif item.in_range(player):
                 player._add_item(item.item_id, item.count)
+                from items import ITEMS as _ITEMS
+                idata = _ITEMS.get(item.item_id)
+                if idata:
+                    label = idata["name"] if item.count == 1 else f"{idata['name']} ×{item.count}"
+                    player.pending_notifications.append(("Item", label, None))
                 to_remove.append(item)
         for item in to_remove:
             self.dropped_items.remove(item)

@@ -141,8 +141,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX", "BEER CODEX", "GUARD SKETCHES", "GLADIATOR CODEX", "SEASHELL CODEX", "COIN CODEX", "HONEY CODEX", "MEAD CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165), (155, 215, 90), (150, 200, 240), (215, 185, 80), (210, 230, 240), (235, 205, 110), (255, 225, 120), (240, 200, 90)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX", "BEER CODEX", "GUARD SKETCHES", "GLADIATOR CODEX", "SEASHELL CODEX", "COIN CODEX", "HONEY CODEX", "MEAD CODEX", "CHARCUTERIE CODEX", "PIGMENT CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165), (155, 215, 90), (150, 200, 240), (215, 185, 80), (210, 230, 240), (235, 205, 110), (255, 225, 120), (240, 200, 90), (245, 165, 95), (210, 175, 240)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -186,6 +186,7 @@ class CollectionsMixin:
                 ("honey",      f"HONEY ({n_honey_owned})",                  (42, 32,  8), (210, 165, 35), (255, 225, 120)),
                 ("mead",         f"MEAD ({len(getattr(player,'mead_batches',[]))})",        (38, 28,  8), (190, 145,  40), (240, 200,  90)),
                 ("charcuterie",  f"CURED ({n_charcuterie_owned})",                            (28, 18, 10), (160,  90,  60), (220, 160, 110)),
+                ("pigments",     f"PIGMENTS ({len(getattr(player,'pigments',[]))})",            (50, 35, 65), (145,  90, 185), (210, 175, 240)),
             ]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._collection_filter_rects.clear()
@@ -255,9 +256,10 @@ class CollectionsMixin:
                 ((42, 30,  5),  (210, 165,  35), (255, 225, 120)),   # Honey
                 ((38, 28,  8),  (190, 145,  40), (240, 200,  90)),   # Mead
                 ((48, 22, 12),  (195, 110,  55), (245, 165,  95)),   # Charcuterie
+                ((50, 35, 65),  (145,  90, 185), (210, 175, 240)),   # Pigments
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
-                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER", "GUARDS", "GLADIATORS", "SEASHELLS", "COINS", "HONEY", "MEAD", "CHARCUTERIE"]
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER", "GUARDS", "GLADIATORS", "SEASHELLS", "COINS", "HONEY", "MEAD", "CHARCUTERIE", "PIGMENTS"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
             total_sb_h = len(enc_labels) * (SB_BTN_H + SB_GAP)
@@ -325,6 +327,7 @@ class CollectionsMixin:
                 self._draw_honey_codex,
                 self._draw_mead_codex,
                 self._draw_charcuterie_codex,
+                self._draw_pigment_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)
@@ -410,6 +413,8 @@ class CollectionsMixin:
             items.extend(("mead", i) for i in range(len(getattr(player, "mead_batches", []))))
         if flt in ("all", "charcuterie"):
             items.extend(("charcuterie", i) for i in range(len(getattr(player, "charcuterie_items", []))))
+        if flt in ("all", "pigments"):
+            items.extend(("pigment", i) for i in range(len(getattr(player, "pigments", []))))
 
         if not items:
             msg = self.font.render("Nothing collected yet!", True, (80, 80, 90))
@@ -837,6 +842,22 @@ class CollectionsMixin:
                 pygame.draw.rect(img, c_col, (10, 18, 38, 22), 2, border_radius=4)
                 label = f"{_CMDL.get(it.meat_source, '')} {_CT[it.cure_type]['label']}"
                 label_col = c_col
+            elif cat == "pigment":
+                from pigments import PIGMENT_TYPES as _PTYPES
+                it = getattr(player, "pigments", [])[key]
+                pig_col = tuple(it.color_rgb) if it.color_rgb else (145, 90, 185)
+                pygame.draw.rect(self.screen, (55, 38, 70) if selected else (32, 22, 42), rect)
+                pygame.draw.rect(self.screen, pig_col, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                pygame.draw.rect(img, pig_col, (8, 8, 42, 42), border_radius=4)
+                pygame.draw.rect(img, (255, 255, 255, 60), (8, 8, 42, 42), 1, border_radius=4)
+                q = it.quality()
+                qc = (100, 220, 110) if q >= 0.75 else (220, 200, 80) if q >= 0.45 else (220, 80, 70)
+                bar_fill = max(2, int(42 * q))
+                pygame.draw.rect(img, qc, (8, 46, bar_fill, 4))
+                label = _PTYPES.get(it.pigment_key, {}).get("display", it.pigment_key.replace("_", " ").title())
+                label_col = pig_col
             else:  # mushroom
                 count = player.mushrooms_found.get(key, 0)
                 pygame.draw.rect(self.screen, (40, 36, 20) if selected else (25, 22, 12), rect)
@@ -1506,6 +1527,36 @@ class CollectionsMixin:
                 dlabel("Notes:", (200, 175, 80))
                 for note in it.flavor_notes:
                     dlabel(f"  • {note.title()}", (220, 195, 100))
+        elif sel_cat == "pigment":
+            from pigments import PIGMENT_TYPES as _PTYPES2
+            it = getattr(player, "pigments", [])[sel_key]
+            pig_col = tuple(it.color_rgb) if it.color_rgb else (145, 90, 185)
+            pig_data = _PTYPES2.get(it.pigment_key, {})
+            pygame.draw.rect(self.screen, (32, 22, 42), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, pig_col, (dx, dy2, dw, dh), 2)
+            cx_p, cy_p = dx + dw // 2, dy2 + 30
+            pygame.draw.rect(self.screen, pig_col, (cx_p - 22, cy_p - 16, 44, 32), border_radius=4)
+            pygame.draw.rect(self.screen, (255, 255, 255, 80), (cx_p - 22, cy_p - 16, 44, 32), 1, border_radius=4)
+            iy[0] = dy2 + 66
+            pig_nm = pig_data.get("display", it.pigment_key.replace("_", " ").title())
+            dlabel(pig_nm, pig_col)
+            dlabel(f"Family: {it.color_family.title()}  |  Source: {it.source_type.title()}", (185, 160, 210))
+            dlabel(f"Biome: {it.origin_biome.replace('_', ' ').title()}", (160, 140, 185))
+            dlabel(f"State: {it.state.title()}", (140, 120, 165))
+            q = it.quality()
+            qc = (100, 220, 110) if q >= 0.75 else (220, 200, 80) if q >= 0.45 else (220, 80, 70)
+            stars = "★" * round(q * 5)
+            dlabel(f"Quality: {stars}", qc)
+            iy[0] += 4
+            stat_bar("Purity",   it.purity,       (145, 90, 185))
+            stat_bar("Opacity",  it.opacity,      (115, 75, 155))
+            stat_bar("Stability",it.stability,    (95,  65, 140))
+            stat_bar("Grind",    it.grind_quality,(165, 125, 205))
+            if it.notes:
+                iy[0] += 4
+                dlabel("Notes:", (185, 160, 210))
+                for note in it.notes:
+                    dlabel(f"  • {note}", (200, 180, 225))
         else:  # mushroom
             bid = sel_key
             pygame.draw.rect(self.screen, (16, 14, 8), (dx, dy2, dw, dh))
@@ -4250,3 +4301,102 @@ class CollectionsMixin:
                     pline(f"Sweetness {profile.get('sweetness',0):.0%}", _DIM)
                     pline(f"Floral    {profile.get('floral',0):.0%}", _DIM)
                     pline(f"Earthy    {profile.get('earthiness',0):.0%}", _DIM)
+
+    def _draw_pigment_codex(self, player, gy0=58, gx_off=130):
+        from pigments import PIGMENT_TYPES, PIGMENT_FAMILY_ORDER
+
+        disc = getattr(player, "discovered_pigments", set())
+
+        _CELL_BG = (28, 20, 38)
+        _TITLE_C = (240, 232, 255)
+        _LABEL_C = (185, 165, 215)
+        _DIM_C   = ( 80,  65, 100)
+        _ACCENT  = (145,  90, 185)
+
+        # Build family → pigment keys mapping
+        family_keys = {}
+        for k, v in PIGMENT_TYPES.items():
+            fam = v["family"]
+            family_keys.setdefault(fam, []).append(k)
+
+        disc_count = len(disc)
+        total = len(PIGMENT_TYPES)
+        sub = self.small.render(f"Discovered: {disc_count} / {total}", True, _LABEL_C)
+        self.screen.blit(sub, (gx_off + 8, gy0))
+
+        CELL_W, CELL_H, HGAP, VGAP = 130, 44, 6, 4
+        # Column headers — one per family
+        hdr_y = gy0 + 22
+        for ci, fam in enumerate(PIGMENT_FAMILY_ORDER):
+            hx = gx_off + 8 + ci * (CELL_W + HGAP)
+            # Representative color from first pigment in family
+            fam_pigs = family_keys.get(fam, [])
+            rep_rgb = PIGMENT_TYPES[fam_pigs[0]]["base_rgb"] if fam_pigs else (145, 90, 185)
+            hl = self.small.render(fam.upper(), True, rep_rgb)
+            self.screen.blit(hl, (hx + CELL_W // 2 - hl.get_width() // 2, hdr_y))
+
+        grid_y0 = hdr_y + 18
+        self._pigment_codex_rects.clear()
+
+        max_rows = max((len(v) for v in family_keys.values()), default=1)
+        for ci, fam in enumerate(PIGMENT_FAMILY_ORDER):
+            cx_ = gx_off + 8 + ci * (CELL_W + HGAP)
+            for ri, pig_key in enumerate(family_keys.get(fam, [])):
+                row_y = grid_y0 + ri * (CELL_H + VGAP)
+                crect = pygame.Rect(cx_, row_y, CELL_W, CELL_H)
+                self._pigment_codex_rects[pig_key] = crect
+                is_disc = pig_key in disc
+                pig_data = PIGMENT_TYPES[pig_key]
+                pig_rgb = pig_data["base_rgb"]
+                bg  = _CELL_BG if is_disc else (15, 10, 20)
+                brd = pig_rgb if is_disc else _DIM_C
+                pygame.draw.rect(self.screen, bg, crect)
+                pygame.draw.rect(self.screen, brd, crect, 2)
+                if is_disc:
+                    # Color strip on left
+                    pygame.draw.rect(self.screen, pig_rgb, (cx_ + 2, row_y + 2, 10, CELL_H - 4))
+                    nm = self.small.render(pig_data["display"], True, _TITLE_C)
+                    self.screen.blit(nm, (cx_ + 16, row_y + 6))
+                    src = self.small.render(pig_data["source_type"].title(), True, _DIM_C)
+                    self.screen.blit(src, (cx_ + 16, row_y + 24))
+                else:
+                    unk = self.font.render("?", True, _DIM_C)
+                    self.screen.blit(unk, (cx_ + CELL_W // 2 - unk.get_width() // 2,
+                                           row_y + CELL_H // 2 - unk.get_height() // 2))
+
+        # Detail panel for selected pigment
+        sel = self._pigment_codex_selected
+        if sel and sel in disc:
+            pig_data = PIGMENT_TYPES.get(sel, {})
+            pig_rgb  = pig_data.get("base_rgb", (145, 90, 185))
+            dpx = gx_off + 8 + len(PIGMENT_FAMILY_ORDER) * (CELL_W + HGAP) + 10
+            dpy = gy0 + 30
+            dw2 = SCREEN_W - dpx - 8
+            dh2 = 220
+            if dw2 < 100:
+                dpx = SCREEN_W - 180
+                dw2 = 172
+            pygame.draw.rect(self.screen, _CELL_BG, (dpx, dpy, dw2, dh2), border_radius=4)
+            pygame.draw.rect(self.screen, tuple(pig_rgb), (dpx, dpy, dw2, dh2), 2, border_radius=4)
+            # Swatch
+            pygame.draw.rect(self.screen, tuple(pig_rgb), (dpx + 6, dpy + 6, 20, 20), border_radius=2)
+            iy2 = dpy + 8
+
+            def dline(txt, col=_LABEL_C):
+                nonlocal iy2
+                s = self.small.render(txt, True, col)
+                self.screen.blit(s, (dpx + 32, iy2))
+                iy2 += 16
+
+            dline(pig_data.get("display", sel.replace("_", " ").title()), _TITLE_C)
+            iy2 = dpy + 32
+            dline(f"Family: {pig_data.get('family','').title()}", _LABEL_C)
+            dline(f"Source: {pig_data.get('source_type','').title()}", _LABEL_C)
+            dline(f"Rarity: {pig_data.get('rarity','').title()}", _LABEL_C)
+            biomes = ", ".join(b.replace("_"," ").title() for b in pig_data.get("biome_affinity", []))
+            dline(f"Biomes: {biomes}", _DIM_C)
+            iy2 += 4
+            base = pig_data.get("base_attrs", {})
+            for attr_nm, attr_key in [("Purity", "purity"), ("Opacity", "opacity"), ("Stability", "stability"), ("Granularity", "granularity")]:
+                val = base.get(attr_key, 0.5)
+                dline(f"{attr_nm}: {val:.0%}", _LABEL_C)

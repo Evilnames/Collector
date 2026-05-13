@@ -38,6 +38,8 @@ def _draw_insect(screen, ins, sx, sy):
         _draw_insect_firefly(screen, ins, sx, sy)
     elif wt == "beetle":
         _draw_insect_beetle(screen, ins, sx, sy)
+    elif wt == "bee":
+        _draw_insect_bee(screen, ins, sx, sy, wf)
     else:
         _draw_insect_generic(screen, ins, sx, sy, wf)
 
@@ -50,10 +52,12 @@ def _draw_insect_butterfly(screen, ins, sx, sy, wf):
     pygame.draw.ellipse(screen, ins.WING_COLOR,
                         (sx + W // 2, sy - wo, W // 2, H))
     # Accent spots
+    aw = max(1, W // 2 - 3)
+    ah = max(1, H // 2)
     pygame.draw.ellipse(screen, ins.ACCENT_COLOR,
-                        (sx + 2, sy - wo + 2, W // 2 - 3, H // 2))
+                        (sx + 2, sy - wo + 2, aw, ah))
     pygame.draw.ellipse(screen, ins.ACCENT_COLOR,
-                        (sx + W // 2 + 1, sy - wo + 2, W // 2 - 3, H // 2))
+                        (sx + W // 2 + 1, sy - wo + 2, aw, ah))
     # Body
     pygame.draw.ellipse(screen, ins.BODY_COLOR,
                         (sx + W // 2 - 1, sy, 3, H))
@@ -113,6 +117,25 @@ def _draw_insect_beetle(screen, ins, sx, sy):
     # Head
     pygame.draw.circle(screen, ins.ACCENT_COLOR,
                        (sx + W // 6, sy + H // 2), H // 3)
+
+def _draw_insect_bee(screen, ins, sx, sy, wf):
+    W, H = ins.W, ins.H
+    wo = int(wf)
+    # Two wings fanning out from each side of body
+    ww = max(4, W // 2)
+    wh = max(3, H - 1)
+    pygame.draw.ellipse(screen, ins.WING_COLOR, (sx, sy - wo, ww, wh))
+    pygame.draw.ellipse(screen, ins.WING_COLOR, (sx + W - ww, sy - wo, ww, wh))
+    # Abdomen: yellow base with dark stripes
+    bx = sx + W // 4
+    bw = max(4, W // 2)
+    pygame.draw.ellipse(screen, ins.ACCENT_COLOR, (bx, sy, bw, H))
+    s = max(1, H // 3)
+    pygame.draw.rect(screen, ins.BODY_COLOR, (bx + 1, sy + s,     bw - 2, s))
+    pygame.draw.rect(screen, ins.BODY_COLOR, (bx + 1, sy + s * 2, bw - 2, max(1, s - 1)))
+    # Head
+    pygame.draw.circle(screen, ins.BODY_COLOR,
+                       (bx - max(1, H // 4), sy + H // 2), max(1, H // 3))
 
 def _draw_insect_generic(screen, ins, sx, sy, wf):
     W, H = ins.W, ins.H

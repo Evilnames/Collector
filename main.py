@@ -91,6 +91,9 @@ INSECT_DROP_TABLE = {
     "atlas_moth":         "moth_dust",
     "comet_moth":         "moth_dust",
     "bogong_moth":        "moth_dust",
+    "cochineal_scale":    "raw_cochineal",
+    "kermes_scale":       "raw_kermes",
+    "murex_snail":        "raw_murex",
 }
 
 
@@ -111,7 +114,10 @@ def _save_settings(settings):
 
 
 def _apply_display_mode(settings):
-    flags = pygame.FULLSCREEN if settings.get("fullscreen", True) else 0
+    if settings.get("fullscreen", True):
+        flags = pygame.FULLSCREEN | pygame.SCALED
+    else:
+        flags = 0
     return pygame.display.set_mode((SCREEN_W, SCREEN_H), flags)
 
 
@@ -300,7 +306,7 @@ def _show_settings_screen(screen, settings):
 
 
 def _show_main_menu(screen, has_save, settings):
-    """Returns ('new'|'load', screen). Blocks until the player clicks a button."""
+    """Returns ('new'|'load', screen, settings). Blocks until the player clicks a button."""
     from UI.menu_scene import MenuScene
 
     W, H = screen.get_size()
@@ -341,9 +347,10 @@ def _show_main_menu(screen, has_save, settings):
     btn_x   = W // 2 - btn_w // 2
     btn_base_y = int(H * 0.54)
 
-    rect_new  = pygame.Rect(btn_x, btn_base_y,               btn_w, btn_h)
-    rect_load = pygame.Rect(btn_x, btn_base_y + btn_gap,     btn_w, btn_h)
-    rect_quit = pygame.Rect(btn_x, btn_base_y + btn_gap * 2, btn_w, btn_h)
+    rect_new      = pygame.Rect(btn_x, btn_base_y,               btn_w, btn_h)
+    rect_load     = pygame.Rect(btn_x, btn_base_y + btn_gap,     btn_w, btn_h)
+    rect_settings = pygame.Rect(btn_x, btn_base_y + btn_gap * 2, btn_w, btn_h)
+    rect_quit     = pygame.Rect(btn_x, btn_base_y + btn_gap * 3, btn_w, btn_h)
 
     _BTN_BG  = (12, 20, 12, 172)
     _BTN_HOV = (28, 45, 24, 210)
@@ -379,9 +386,10 @@ def _show_main_menu(screen, has_save, settings):
         dt = min(clock.tick(60) / 1000.0, 0.05)
 
         mx, my = pygame.mouse.get_pos()
-        hover_new  = rect_new.collidepoint(mx, my)
-        hover_load = rect_load.collidepoint(mx, my) and has_save
-        hover_quit = rect_quit.collidepoint(mx, my)
+        hover_new      = rect_new.collidepoint(mx, my)
+        hover_load     = rect_load.collidepoint(mx, my) and has_save
+        hover_settings = rect_settings.collidepoint(mx, my)
+        hover_quit     = rect_quit.collidepoint(mx, my)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -392,9 +400,12 @@ def _show_main_menu(screen, has_save, settings):
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if rect_new.collidepoint(mx, my):
-                    return "new", screen
+                    return "new", screen, settings
                 if has_save and rect_load.collidepoint(mx, my):
-                    return "load", screen
+                    return "load", screen, settings
+                if rect_settings.collidepoint(mx, my):
+                    screen, settings = _show_settings_screen(screen, settings)
+                    W, H = screen.get_size()
                 if rect_quit.collidepoint(mx, my):
                     pygame.quit()
                     sys.exit()
@@ -415,9 +426,10 @@ def _show_main_menu(screen, has_save, settings):
             cx += cs.get_width() + _CHAR_GAP
 
         # Buttons
-        draw_button(screen, rect_new,  "New Game",  hover_new,  True)
-        draw_button(screen, rect_load, "Load Game", hover_load, has_save)
-        draw_button(screen, rect_quit, "Quit",      hover_quit, True)
+        draw_button(screen, rect_new,      "New Game",  hover_new,      True)
+        draw_button(screen, rect_load,     "Load Game", hover_load,     has_save)
+        draw_button(screen, rect_settings, "Settings",  hover_settings, True)
+        draw_button(screen, rect_quit,     "Quit",      hover_quit,     True)
 
         # Fade-in overlay
         if fade_alpha > 0:
@@ -467,7 +479,7 @@ def main():
     save_mgr = SaveManager()
     t0 = _t("SaveManager", t0)
 
-    choice, screen = _show_main_menu(screen, save_mgr.has_save(), settings)
+    choice, screen, settings = _show_main_menu(screen, save_mgr.has_save(), settings)
     t0 = _t("menu choice: " + choice, t0)
 
     renderer = Renderer(screen)
@@ -566,6 +578,12 @@ def main():
         ui.research_open = ui.inventory_open = ui.crafting_open = False
         ui._inv_search = ""
         ui._inv_search_active = False
+        ui._craft_search = ""
+        ui._craft_search_active = False
+        ui._craft_show_craftable = False
+        ui._bakery_show_craftable = False
+        ui._artisan_show_craftable = False
+        ui._cook_station_craftable.clear()
         ui.collection_open = ui.refinery_open = ui.npc_open = False
         ui.breeding_open = False
         ui.reputation_screen_open = False
@@ -753,6 +771,11 @@ def main():
                     ui.handle_inventory_search_key(event)
                     continue
 
+                # Crafting screen search bar intercepts all keys while active
+                if ui.crafting_open and ui._craft_search_active:
+                    ui.handle_craft_search_key(event)
+                    continue
+
                 # Artisan bench search bar intercepts all keys while active
                 if ui.refinery_open and ui._artisan_search_active:
                     ui.handle_artisan_search_key(event)
@@ -909,6 +932,11 @@ def main():
                 if ui.refinery_open and ui.refinery_block_id == _FORGE_BLOCK:
                     ui.handle_forge_keydown(event.key, player)
 
+                # Pigment Mill: SPACE=grind hit, ENTER=confirm, ESC=back
+                from blocks import PIGMENT_MILL_BLOCK as _PIGMENT_MILL
+                if ui.refinery_open and ui.refinery_block_id == _PIGMENT_MILL:
+                    ui.handle_pigment_keydown(event.key, player)
+
                 # Gambling Table: ESC navigates phases or closes
                 if ui.gambling_open:
                     ui.handle_gambling_keydown(event.key, player)
@@ -1034,6 +1062,9 @@ def main():
                     ui.research_open = ui.inventory_open = False
                     ui.equipment_crafting_open = ui.collection_open = ui.refinery_open = False
                     ui._inv_search = ""; ui._inv_search_active = False
+                    if not ui.crafting_open:
+                        ui._craft_search = ""; ui._craft_search_active = False
+                        ui._craft_show_craftable = False
 
                 if event.key == pygame.K_g:
                     ui.collection_open = not ui.collection_open
@@ -2143,6 +2174,10 @@ def main():
         # Salting Rack: poll mouse held for zone filling
         if ui.refinery_open and ui.refinery_block_id == SALTING_RACK_BLOCK:
             ui.handle_charcuterie_keys(keys, dt, player)
+        # Pigment Mill: poll SPACE for grind rhythm
+        from blocks import PIGMENT_MILL_BLOCK as _PIGMENT_MILL_PF
+        if ui.refinery_open and ui.refinery_block_id == _PIGMENT_MILL_PF:
+            ui.handle_pigment_keys(keys, dt, player)
 
         # Sculptor's Bench: per-frame drag painting + hover tracking
         if ui.refinery_open and getattr(ui, '_sculpt_phase', 'idle') == 'carve':
@@ -2247,6 +2282,8 @@ def main():
 
         if not _any_ui_open() and not ui.cheat_open:
             player.handle_input(keys, mouse_btns, mouse_world, dt)
+        else:
+            player.vx = 0.0
         player.update(dt)
         player.update_aim(dt)
         for wx, wy, text, color in player.pending_harvest_floats:

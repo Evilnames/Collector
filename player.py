@@ -44,6 +44,9 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     OIL, BIRD_FEEDER_BLOCK, BIRD_BATH_BLOCK,
                     COFFEE_CROP_MATURE, GRAPEVINE_CROP_MATURE, GRAIN_CROP_MATURE, TEA_CROP_MATURE, HOP_VINE_MATURE,
                     FLAX_CROP_MATURE, COTTON_CROP_MATURE,
+                    INDIGO_CROP_MATURE, MADDER_CROP_MATURE, WELD_CROP_MATURE, WOAD_CROP_MATURE,
+                    OCHRE_DEPOSIT, UMBER_DEPOSIT, SIENNA_DEPOSIT,
+                    SAFFRON_CROP_MATURE,
                     CHAMOMILE_BUSH, LAVENDER_BUSH, MINT_BUSH, ROSEMARY_BUSH,
                     THYME_BUSH, SAGE_BUSH, BASIL_BUSH, OREGANO_BUSH,
                     DILL_BUSH, FENNEL_BUSH, TARRAGON_BUSH, LEMON_BALM_BUSH,
@@ -92,6 +95,7 @@ from textiles import TextileGenerator, Textile
 from cheese import CheeseGenerator, Cheese
 from jewelry import Jewelry
 from salt import SaltGenerator, SaltCrystal
+from pigments import PigmentGenerator, Pigment
 from coins import CoinGenerator, Coin
 from crossover import apply_pairing_to_buff, get_pollination_bonus, apply_aging_modifier
 from constants import (
@@ -291,6 +295,10 @@ class Player:
         self._pottery_gen         = PotteryGenerator(world.seed)
         self.unplaced_vases       = []   # PotteryPiece vases available to mount on a display pedestal
         self.pottery_buffs        = {}   # buff_name -> {"duration": float}
+        # Pigment collection
+        self.pigments             = []        # list of Pigment objects
+        self.discovered_pigments  = set()     # pigment_key strings
+        self._pigment_gen         = PigmentGenerator(world.seed)
         # Cross-system pairings discovered (see crossover.PAIRING_TABLE)
         self.discovered_pairings  = set()
         # Pottery aging vessels: list of dicts:
@@ -365,7 +373,7 @@ class Player:
         self.breath = MAX_BREATH
         # Hunger
         self.hunger             = 100.0
-        self._hunger_drain_rate = 100.0 / 600.0  # 100% over 10 minutes
+        self._hunger_drain_rate = 100.0 / 1500.0  # 100% over 25 minutes
         self._eat_cooldown      = 0.0
         # Nutrition buff timers
         self._well_fed_timer    = 0.0   # fiber: slower drain
@@ -587,6 +595,8 @@ class Player:
             if _civ_types and _civ_types.issubset(self.discovered_coin_types):
                 self.completed_coin_sets.add(_civ["name"])
         self.discovered_pairings    = set(d.get("discovered_pairings", []))
+        self.pigments               = [Pigment(**x) for x in d.get("pigments", [])]
+        self.discovered_pigments    = set(d.get("discovered_pigments", []))
         self.aging_vessels          = d.get("aging_vessels", [])
         self.drying_rack_slots      = d.get("drying_rack_slots", [])
         self.withering_rack_slots   = d.get("withering_rack_slots", [])
@@ -1297,6 +1307,11 @@ class Player:
                 self.discovered_types.add(rock.base_type)
                 self.pending_notifications.append(
                     ("Rock", rock.base_type.replace("_", " ").title(), rock.rarity))
+                # Some minerals yield a raw pigment material as a side-drop
+                from rocks import ROCK_TYPES as _ROCK_TYPES
+                _pdrop = _ROCK_TYPES.get(rock.base_type, {}).get("pigment_drop")
+                if _pdrop and random.random() < 0.50:
+                    self._add_item(_pdrop)
             elif block_id == WILDFLOWER_PATCH:
                 biodome = self.world.get_biodome(bx)
                 flower = self._flower_gen.generate(bx, by, biodome)
@@ -1410,6 +1425,74 @@ class Player:
                 self._add_item("cotton_fiber")
                 self._add_item("cotton_seed")
                 self.pending_notifications.append(("Textile", "Cotton Harvested", None))
+            elif block_id == INDIGO_CROP_MATURE:
+                biodome = self.world.get_biodome(bx)
+                pig = self._pigment_gen.generate("indigo", biodome)
+                self.pigments.append(pig)
+                self.discovered_pigments.add("indigo")
+                self._add_item("indigo_harvest")
+                self._add_item("indigo_seed")
+                self.pending_notifications.append(("Pigment", "Indigo Harvest", None))
+            elif block_id == MADDER_CROP_MATURE:
+                biodome = self.world.get_biodome(bx)
+                pig = self._pigment_gen.generate("madder_lake", biodome)
+                self.pigments.append(pig)
+                self.discovered_pigments.add("madder_lake")
+                self._add_item("madder_harvest")
+                self._add_item("madder_seed")
+                self.pending_notifications.append(("Pigment", "Madder Harvest", None))
+            elif block_id == WELD_CROP_MATURE:
+                biodome = self.world.get_biodome(bx)
+                pig = self._pigment_gen.generate("weld_yellow", biodome)
+                self.pigments.append(pig)
+                self.discovered_pigments.add("weld_yellow")
+                self._add_item("weld_harvest")
+                self._add_item("weld_seed")
+                self.pending_notifications.append(("Pigment", "Weld Harvest", None))
+            elif block_id == WOAD_CROP_MATURE:
+                biodome = self.world.get_biodome(bx)
+                pig = self._pigment_gen.generate("woad", biodome)
+                self.pigments.append(pig)
+                self.discovered_pigments.add("woad")
+                self._add_item("woad_harvest")
+                self._add_item("woad_seed")
+                self.pending_notifications.append(("Pigment", "Woad Harvest", None))
+            elif block_id == OCHRE_DEPOSIT:
+                biodome = self.world.get_biodome(bx)
+                import random as _r2
+                if _r2.random() < 0.5:
+                    self._add_item("raw_ochre")
+                    pig = self._pigment_gen.generate("yellow_ochre", biodome)
+                else:
+                    self._add_item("raw_ochre_red")
+                    pig = self._pigment_gen.generate("red_ochre", biodome)
+                self.pigments.append(pig)
+                self.discovered_pigments.add(pig.pigment_key)
+                self.pending_notifications.append(("Pigment", "Ochre Deposit", None))
+            elif block_id == UMBER_DEPOSIT:
+                biodome = self.world.get_biodome(bx)
+                self._add_item("raw_umber")
+                pig = self._pigment_gen.generate("umber", biodome)
+                self.pigments.append(pig)
+                self.discovered_pigments.add("umber")
+                self.pending_notifications.append(("Pigment", "Umber Deposit", None))
+            elif block_id == SIENNA_DEPOSIT:
+                biodome = self.world.get_biodome(bx)
+                self._add_item("raw_sienna")
+                pig = self._pigment_gen.generate("raw_sienna", biodome)
+                self.pigments.append(pig)
+                self.discovered_pigments.add("raw_sienna")
+                self.pending_notifications.append(("Pigment", "Sienna Deposit", None))
+            elif block_id == SAFFRON_CROP_MATURE:
+                # Saffron is both a food and a pigment source — generate pigment + drop food + seed
+                biodome = self.world.get_biodome(bx)
+                pig = self._pigment_gen.generate("saffron", biodome)
+                self.pigments.append(pig)
+                self.discovered_pigments.add("saffron")
+                self._add_item("saffron_harvest")
+                self._add_item("saffron")
+                self._add_item("saffron_seed")
+                self.pending_notifications.append(("Pigment", "Saffron Harvest", None))
             elif block_id in CAVE_MUSHROOMS:
                 self.mushrooms_found[block_id] = self.mushrooms_found.get(block_id, 0) + 1
                 self.discovered_mushroom_types.add(block_id)

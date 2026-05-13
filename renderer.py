@@ -1023,16 +1023,20 @@ class Renderer:
         draw_rain_particles(self.screen, self.cam_x, self.cam_y, self._rain_particles)
 
     def draw_snow_particles(self, world, dt):
-        from Render.snow import spawn_snow_particles, tick_snow_particles, draw_snow_particles
+        from Render.snow import (spawn_snow_particles, tick_snow_particles,
+                                  draw_snow_particles, draw_blizzard_overlay)
         tick_snow_particles(self._snow_particles, self.cam_y, dt)
         spawn_snow_particles(self._snow_particles, world, self.cam_x, self.cam_y, self._snow_rng, dt)
         draw_snow_particles(self.screen, self.cam_x, self.cam_y, self._snow_particles)
+        draw_blizzard_overlay(self.screen, world, self.cam_x)
 
     def draw_dust_particles(self, world, dt):
-        from Render.dust import spawn_dust_particles, tick_dust_particles, draw_dust_particles
+        from Render.dust import (spawn_dust_particles, tick_dust_particles,
+                                  draw_dust_particles, draw_sandstorm_overlay)
         tick_dust_particles(self._dust_particles, dt)
         spawn_dust_particles(self._dust_particles, world, self.cam_x, self.cam_y, self._dust_rng, dt)
         draw_dust_particles(self.screen, self.cam_x, self.cam_y, self._dust_particles)
+        draw_sandstorm_overlay(self.screen, world, self.cam_x)
 
     def draw_heat_shimmer(self, world, dt):
         from Render.biome_fx import draw_shimmer

@@ -181,24 +181,71 @@ class CraftingMixin:
         RCARD_H = MINIGW + 10
         RCARD_W = PW - 510 - 10
         rx0 = div_vx + 10
-        ry0 = py + 28
+        SEARCH_H = 22
+        SEARCH_Y = py + 28
+        ry0 = SEARCH_Y + SEARCH_H + 4
         RCARD_STEP = RCARD_H + 5
         HEADER_STEP = 20
         panel_bottom = py + PH - 6
 
-        # Build grouped display list
+        # Search box + Craftable toggle on the same row
+        BTN_W, BTN_GAP = 90, 6
+        search_w = RCARD_W - BTN_W - BTN_GAP
+        search_rect = pygame.Rect(rx0, SEARCH_Y, search_w, SEARCH_H)
+        self._craft_search_rect = search_rect
+        pygame.draw.rect(self.screen,
+                         (38, 38, 52) if self._craft_search_active else (28, 28, 38),
+                         search_rect)
+        pygame.draw.rect(self.screen,
+                         (140, 130, 80) if self._craft_search_active else (65, 65, 85),
+                         search_rect, 1)
+        disp = self._craft_search if self._craft_search else "Search recipes..."
+        stxt = self.small.render(disp, True,
+                                 (210, 200, 160) if self._craft_search else (80, 80, 100))
+        self.screen.blit(stxt, (rx0 + 6, SEARCH_Y + SEARCH_H // 2 - stxt.get_height() // 2))
+        if self._craft_search_active:
+            cur_x = rx0 + 6 + stxt.get_width() + 1
+            pygame.draw.line(self.screen, (200, 190, 120),
+                             (cur_x, SEARCH_Y + 4), (cur_x, SEARCH_Y + SEARCH_H - 4))
+
+        btn_x = rx0 + search_w + BTN_GAP
+        btn_rect = pygame.Rect(btn_x, SEARCH_Y, BTN_W, SEARCH_H)
+        self._craft_craftable_btn = btn_rect
+        if self._craft_show_craftable:
+            btn_bg, btn_br, btn_tc = (20, 70, 20), (55, 190, 55), (140, 240, 140)
+        else:
+            btn_bg, btn_br, btn_tc = (28, 28, 38), (65, 65, 85), (110, 110, 130)
+        pygame.draw.rect(self.screen, btn_bg, btn_rect)
+        pygame.draw.rect(self.screen, btn_br, btn_rect, 1)
+        bl = self.small.render("Craftable", True, btn_tc)
+        self.screen.blit(bl, (btn_x + BTN_W // 2 - bl.get_width() // 2,
+                               SEARCH_Y + SEARCH_H // 2 - bl.get_height() // 2))
+
+        # Build grouped display list (filtered by search and craftable toggle)
+        query = self._craft_search.lower()
+        only_craftable = self._craft_show_craftable
+
+        def _recipe_passes(ridx):
+            r = RECIPES[ridx]
+            if query and query not in r["name"].lower():
+                return False
+            if only_craftable and not can_craft(r["pattern"], player.inventory):
+                return False
+            return True
+
         rid_by_output = {r["output_id"]: i for i, r in enumerate(RECIPES)}
         display_list = []
         seen = set()
         for group_name in RECIPE_GROUPS_ORDER:
             group_items = [rid_by_output[oid] for oid in RECIPE_GROUPS.get(group_name, [])
-                           if oid in rid_by_output]
+                           if oid in rid_by_output and _recipe_passes(rid_by_output[oid])]
             if group_items:
                 display_list.append(("header", group_name))
                 for ridx in group_items:
                     display_list.append(("recipe", ridx))
                     seen.add(ridx)
-        ungrouped = [i for i in range(len(RECIPES)) if i not in seen]
+        ungrouped = [i for i in range(len(RECIPES))
+                     if i not in seen and _recipe_passes(i)]
         if ungrouped:
             display_list.append(("header", "Other"))
             for ridx in ungrouped:
@@ -332,27 +379,47 @@ class CraftingMixin:
                                  True, (120, 120, 130))
         self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 26))
 
+        # Craftable toggle (top-right)
+        CB_W, CB_H = 90, 22
+        cb_rect = pygame.Rect(SCREEN_W - CB_W - 16, 6, CB_W, CB_H)
+        self._bakery_craftable_btn = cb_rect
+        if self._bakery_show_craftable:
+            cb_bg, cb_br, cb_tc = (20, 70, 20), (55, 190, 55), (140, 240, 140)
+        else:
+            cb_bg, cb_br, cb_tc = (25, 25, 35), (65, 65, 85), (110, 110, 130)
+        pygame.draw.rect(self.screen, cb_bg, cb_rect)
+        pygame.draw.rect(self.screen, cb_br, cb_rect, 1)
+        cb_lbl = self.small.render("Craftable", True, cb_tc)
+        self.screen.blit(cb_lbl, (cb_rect.centerx - cb_lbl.get_width() // 2,
+                                   cb_rect.centery - cb_lbl.get_height() // 2))
+
         # --- Left panel: recipe list ---
         LIST_X, LIST_Y = 30, 55
         LIST_W, ROW_H, GAP = 260, 58, 4
         ICON_SZ = 28
         LIST_BOTTOM = SCREEN_H - 10
         visible_count = (LIST_BOTTOM - LIST_Y) // (ROW_H + GAP)
-        self._max_bakery_scroll = max(0, len(BAKERY_RECIPES) - visible_count)
+
+        bakery_indexed = [
+            (i, r) for i, r in enumerate(BAKERY_RECIPES)
+            if not self._bakery_show_craftable
+            or all(player.inventory.get(iid, 0) >= cnt for iid, cnt in r["ingredients"].items())
+        ]
+        self._max_bakery_scroll = max(0, len(bakery_indexed) - visible_count)
         self._bakery_scroll = max(0, min(self._max_bakery_scroll, self._bakery_scroll))
 
         # Scrollbar
         if self._max_bakery_scroll > 0:
             sb_x = LIST_X + LIST_W + 4
             sb_h = LIST_BOTTOM - LIST_Y
-            sb_th = max(20, sb_h * visible_count // len(BAKERY_RECIPES))
+            sb_th = max(20, sb_h * visible_count // len(bakery_indexed))
             sb_top = LIST_Y + (sb_h - sb_th) * self._bakery_scroll // self._max_bakery_scroll
             pygame.draw.rect(self.screen, (35, 25, 10), (sb_x, LIST_Y, 7, sb_h))
             pygame.draw.rect(self.screen, (160, 110, 50), (sb_x, sb_top, 7, sb_th))
 
         self._bakery_recipe_rects.clear()
-        for i, recipe in enumerate(BAKERY_RECIPES):
-            display_idx = i - self._bakery_scroll
+        for slot, (i, recipe) in enumerate(bakery_indexed):
+            display_idx = slot - self._bakery_scroll
             if display_idx < 0:
                 continue
             ry = LIST_Y + display_idx * (ROW_H + GAP)
@@ -488,6 +555,25 @@ class CraftingMixin:
                                  True, (120, 120, 130))
         self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, 26))
 
+        # Craftable toggle (top-right, always shown)
+        only_craftable = self._cook_station_craftable.get(block_id, False)
+        CB_W, CB_H = 90, 22
+        cb_x = SCREEN_W - CB_W - 16
+        cb_y = 6
+        if show_block_grid:
+            cb_y = 34   # shift down so it doesn't overlap the VIEW ALL button
+        cb_rect = pygame.Rect(cb_x, cb_y, CB_W, CB_H)
+        self._cook_station_craftable_btn = cb_rect
+        if only_craftable:
+            cb_bg, cb_br, cb_tc = (20, 70, 20), (55, 190, 55), (140, 240, 140)
+        else:
+            cb_bg, cb_br, cb_tc = (25, 25, 35), (65, 65, 85), (110, 110, 130)
+        pygame.draw.rect(self.screen, cb_bg, cb_rect)
+        pygame.draw.rect(self.screen, cb_br, cb_rect, 1)
+        cb_lbl = self.small.render("Craftable", True, cb_tc)
+        self.screen.blit(cb_lbl, (cb_x + CB_W // 2 - cb_lbl.get_width() // 2,
+                                   cb_y + CB_H // 2 - cb_lbl.get_height() // 2))
+
         if show_block_grid:
             vab_label = "VIEW RECIPES" if self._gw_view_all else "VIEW ALL BLOCKS"
             vab_s = self.small.render(vab_label, True, title_color)
@@ -563,7 +649,16 @@ class CraftingMixin:
         ICON_SZ = 28
         LIST_BOTTOM = SCREEN_H - 10
         visible_count = (LIST_BOTTOM - LIST_Y) // (ROW_H + GAP)
-        max_scroll = max(0, len(recipe_list) - visible_count)
+
+        all_sorted = sorted(enumerate(recipe_list), key=lambda x: x[1]["name"])
+        if only_craftable:
+            sorted_recipes = [(i, r) for i, r in all_sorted
+                              if all(player.inventory.get(iid, 0) >= cnt
+                                     for iid, cnt in r["ingredients"].items())]
+        else:
+            sorted_recipes = all_sorted
+
+        max_scroll = max(0, len(sorted_recipes) - visible_count)
         scroll = self._cook_station_scroll.get(block_id, 0)
         scroll = max(0, min(max_scroll, scroll))
         if block_id is not None:
@@ -573,12 +668,11 @@ class CraftingMixin:
         if max_scroll > 0:
             sb_x = LIST_X + LIST_W + 4
             sb_h = LIST_BOTTOM - LIST_Y
-            sb_th = max(20, sb_h * visible_count // len(recipe_list))
+            sb_th = max(20, sb_h * visible_count // len(sorted_recipes))
             sb_top = LIST_Y + (sb_h - sb_th) * scroll // max_scroll
             pygame.draw.rect(self.screen, (20, 35, 25), (sb_x, LIST_Y, 7, sb_h))
             pygame.draw.rect(self.screen, title_color, (sb_x, sb_top, 7, sb_th))
 
-        sorted_recipes = sorted(enumerate(recipe_list), key=lambda x: x[1]["name"])
         recipe_rects_dict.clear()
         for slot, (i, recipe) in enumerate(sorted_recipes):
             display_idx = slot - scroll
@@ -722,10 +816,12 @@ class CraftingMixin:
                                    tab_rect.centery - lbl.get_height() // 2))
             self._artisan_tab_rects.append(tab_rect)
 
-        # --- Search box ---
+        # --- Search box + Craftable toggle ---
         SEARCH_Y = 46 + TAB_H + 4
         SEARCH_H = 22
-        search_rect = pygame.Rect(LIST_X, SEARCH_Y, LIST_W, SEARCH_H)
+        CB_W, CB_GAP = 90, 6
+        search_w = LIST_W - CB_W - CB_GAP
+        search_rect = pygame.Rect(LIST_X, SEARCH_Y, search_w, SEARCH_H)
         self._artisan_search_rect = search_rect
         pygame.draw.rect(self.screen,
                          (45, 38, 22) if self._artisan_search_active else (30, 25, 15),
@@ -742,13 +838,29 @@ class CraftingMixin:
             pygame.draw.line(self.screen, TITLE_COLOR,
                              (cur_x, SEARCH_Y + 4), (cur_x, SEARCH_Y + SEARCH_H - 4))
 
+        cb_x = LIST_X + search_w + CB_GAP
+        cb_rect = pygame.Rect(cb_x, SEARCH_Y, CB_W, SEARCH_H)
+        self._artisan_craftable_btn = cb_rect
+        if self._artisan_show_craftable:
+            cb_bg, cb_br, cb_tc = (20, 70, 20), (55, 190, 55), (140, 240, 140)
+        else:
+            cb_bg, cb_br, cb_tc = (30, 25, 15), (80, 70, 50), (110, 110, 130)
+        pygame.draw.rect(self.screen, cb_bg, cb_rect)
+        pygame.draw.rect(self.screen, cb_br, cb_rect, 1)
+        cb_lbl = self.small.render("Craftable", True, cb_tc)
+        self.screen.blit(cb_lbl, (cb_x + CB_W // 2 - cb_lbl.get_width() // 2,
+                                   SEARCH_Y + SEARCH_H // 2 - cb_lbl.get_height() // 2))
+
         # --- Filter recipes ---
         query   = self._artisan_search.lower()
         tab_idx = self._artisan_tab
         filtered = sorted(
             [(fi, r) for fi, r in enumerate(ARTISAN_RECIPES)
              if (tab_idx == 0 or ARTISAN_RECIPE_TAB[fi] == tab_idx)
-             and (not query or query in r["name"].lower())],
+             and (not query or query in r["name"].lower())
+             and (not self._artisan_show_craftable
+                  or all(player.inventory.get(iid, 0) >= cnt
+                         for iid, cnt in r["ingredients"].items()))],
             key=lambda x: x[1]["name"]
         )
 
@@ -1171,6 +1283,10 @@ class CraftingMixin:
             return
         if self.refinery_block_id == SALT_GRINDER_BLOCK:
             self._draw_salt_grinder(player, dt)
+            return
+        from blocks import PIGMENT_MILL_BLOCK
+        if self.refinery_block_id == PIGMENT_MILL_BLOCK:
+            self._draw_pigment_mill(player, dt)
             return
         from blocks import BEEHIVE_BLOCK as _BHB_DRAW
         if self.refinery_block_id == _BHB_DRAW:

@@ -46,6 +46,7 @@ from .dynasty_tree import DynastyTreeMixin
 from .beekeeping import BeekeepingMixin
 from .mead import MeadMixin
 from .charcuterie import CharcuterieMixin
+from .pigments import PigmentMixin
 
 
 class UI(
@@ -57,6 +58,7 @@ class UI(
     BeekeepingMixin,
     MeadMixin,
     CharcuterieMixin,
+    PigmentMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -169,11 +171,16 @@ class UI(
         self._gc_reveal_timer   = 0.0
         self._gc_cut_rects      = {}        # cut_name → pygame.Rect
         self._gc_select_rects   = {}        # gem_idx → pygame.Rect
-        self._craft_btn     = None
-        self._craft_grid    = [[None] * 3 for _ in range(3)]
-        self._cell_rects    = {}
-        self._hotbar_rects  = []
-        self._recipe_scroll     = 0
+        self._craft_btn          = None
+        self._craft_grid         = [[None] * 3 for _ in range(3)]
+        self._cell_rects         = {}
+        self._hotbar_rects       = []
+        self._craft_search          = ""
+        self._craft_search_active   = False
+        self._craft_search_rect     = None
+        self._craft_show_craftable  = False
+        self._craft_craftable_btn   = None
+        self._recipe_scroll      = 0
         self._codex_scroll      = 0
         self._my_rocks_scroll   = 0
         self._max_recipe_scroll = 0
@@ -228,8 +235,14 @@ class UI(
         self._tanning_rack_recipe_rects       = {}
         self._assembler_selected_recipe       = 0
         self._assembler_recipe_rects          = {}
-        self._cook_station_scroll        = {}
-        self._cook_station_max_scroll    = {}
+        self._cook_station_scroll         = {}
+        self._cook_station_max_scroll     = {}
+        self._cook_station_craftable      = {}   # block_id -> bool
+        self._cook_station_craftable_btn  = None
+        self._bakery_show_craftable       = False
+        self._bakery_craftable_btn        = None
+        self._artisan_show_craftable      = False
+        self._artisan_craftable_btn       = None
         self.npc_open   = False
         self.active_npc = None
         self._trade_rects = {}
@@ -1123,6 +1136,21 @@ class UI(
         self._max_honey_codex_scroll = 0
         self._honey_codex_selected   = None
         self._honey_codex_rects      = {}
+
+        # ----- Pigment Mill state -----
+        self._pigment_phase          = "select_raw"
+        self._pigment_selected_raw   = None
+        self._pigment_selected_grind = None
+        self._pigment_grind_pos      = 0.0
+        self._pigment_grind_hits     = []
+        self._pigment_last_hit       = None
+        self._pigment_last_hit_timer = 0.0
+        self._pigment_result         = None
+        self._pigment_raw_rects      = {}
+        self._pigment_grind_rects    = {}
+        self._pigment_calc_rect      = None
+        self._pigment_codex_selected = None
+        self._pigment_codex_rects    = {}
 
         # ----- Bazaar state -----
         self.bazaar_open             = False

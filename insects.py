@@ -1911,7 +1911,7 @@ class Honeybee(Insect):
     BODY_COLOR   = (30, 25, 10)
     WING_COLOR   = (200, 225, 240)
     ACCENT_COLOR = (230, 185, 30)
-    WING_TYPE    = "other"
+    WING_TYPE    = "bee"
 
 class GiantHornet(Insect):
     SPECIES      = "giant_hornet"
@@ -1942,7 +1942,7 @@ class SonoranBumblebee(Insect):
     BODY_COLOR   = (25, 20, 10)
     WING_COLOR   = (210, 230, 245)
     ACCENT_COLOR = (225, 195, 35)
-    WING_TYPE    = "other"
+    WING_TYPE    = "bee"
 
 class DesertCicada(Insect):
     SPECIES      = "desert_cicada"
@@ -2138,7 +2138,7 @@ class ArabianBee(Insect):
     BODY_COLOR   = (30, 22, 8)
     WING_COLOR   = (205, 225, 240)
     ACCENT_COLOR = (200, 145, 20)
-    WING_TYPE    = "other"
+    WING_TYPE    = "bee"
 
 class ArabianAssassinBug(Insect):
     SPECIES      = "arabian_assassin_bug"
@@ -2350,7 +2350,7 @@ class TundraBumblebee(Insect):
     BODY_COLOR   = (28, 22, 8)
     WING_COLOR   = (210, 228, 242)
     ACCENT_COLOR = (218, 190, 30)
-    WING_TYPE    = "other"
+    WING_TYPE    = "bee"
 
 class CarpenterBee(Insect):
     SPECIES      = "carpenter_bee"
@@ -2360,7 +2360,7 @@ class CarpenterBee(Insect):
     BODY_COLOR   = (18, 18, 28)
     WING_COLOR   = (175, 195, 225)
     ACCENT_COLOR = (55, 55, 100)
-    WING_TYPE    = "other"
+    WING_TYPE    = "bee"
 
 class JungleAssassinBug(Insect):
     SPECIES      = "jungle_assassin_bug"
@@ -2405,7 +2405,7 @@ class ArcticBumblebee(Insect):
     BODY_COLOR   = (28, 22, 8)
     WING_COLOR   = (205, 225, 240)
     ACCENT_COLOR = (240, 230, 210)
-    WING_TYPE    = "other"
+    WING_TYPE    = "bee"
 
 class TropicalMantis(Insect):
     SPECIES      = "tropical_mantis"

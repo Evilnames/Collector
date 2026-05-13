@@ -187,6 +187,56 @@ BAKERY_RECIPES = [
     {"name": "Honey Almond Slice",    "ingredients": {"wheat": 1, "sesame_seeds": 2, "egg": 1, "honeycomb_raw": 1},   "output_id": "honey_almond_slice",     "output_count": 2},
     {"name": "Honey Strawberry Tart", "ingredients": {"strawberry": 2, "wheat": 1, "honeycomb_raw": 1},               "output_id": "honey_strawberry_tart",  "output_count": 1},
     {"name": "Honey Fig Roll",        "ingredients": {"fig": 1, "wheat": 2, "milk": 1, "honeycomb_raw": 1},           "output_id": "honey_fig_roll",         "output_count": 2},
+    # --- Cooked-food second-tier dishes ---
+    # Sandwiches
+    {"name": "Beef Sandwich",         "ingredients": {"bread": 1, "cooked_beef": 1, "onion": 1},                      "output_id": "beef_sandwich",          "output_count": 1},
+    {"name": "Chicken Sandwich",      "ingredients": {"bread": 1, "cooked_chicken": 1, "tomato": 1},                  "output_id": "chicken_sandwich",       "output_count": 1},
+    {"name": "Venison Roll",          "ingredients": {"bread": 1, "cooked_venison": 1, "mushroom": 1},                "output_id": "venison_roll",           "output_count": 1},
+    # Flatbread & wraps
+    {"name": "Chicken Flatbread",     "ingredients": {"flatbread": 1, "cooked_chicken": 1, "tomato": 1},              "output_id": "chicken_flatbread",      "output_count": 1},
+    {"name": "Beef Flatbread",        "ingredients": {"flatbread": 1, "cooked_beef": 1, "onion": 1},                  "output_id": "beef_flatbread",         "output_count": 1},
+    {"name": "Duck Wrap",             "ingredients": {"flatbread": 1, "cooked_duck": 1, "scallion": 1},               "output_id": "duck_wrap",              "output_count": 1},
+    {"name": "Labneh Flatbread",      "ingredients": {"flatbread": 1, "labneh": 1, "olive": 1},                       "output_id": "labneh_flatbread",       "output_count": 1},
+    {"name": "Falafel Wrap",          "ingredients": {"flatbread": 1, "hummus": 1, "falafel": 1},                     "output_id": "falafel_wrap",           "output_count": 1},
+    # Noodle bakes
+    {"name": "Mac & Cheese",          "ingredients": {"noodles": 2, "cheese": 2},                                     "output_id": "mac_and_cheese",         "output_count": 1},
+    {"name": "Beef Noodle Bake",      "ingredients": {"noodles": 1, "cooked_beef": 1, "cheese": 1},                   "output_id": "beef_noodle_bake",       "output_count": 1},
+    # Complex baked dishes
+    {"name": "Lasagna",               "ingredients": {"noodles": 2, "cooked_beef": 1, "cheese": 1, "tomato": 1},      "output_id": "lasagna",                "output_count": 1},
+    {"name": "Moussaka",              "ingredients": {"cooked_mutton": 1, "eggplant": 2, "cheese": 1},                "output_id": "moussaka",               "output_count": 1},
+    {"name": "Chicken Parmesan",      "ingredients": {"cooked_chicken": 1, "cheese": 1, "tomato_soup": 1},            "output_id": "chicken_parmesan",       "output_count": 1},
+    {"name": "Shepherd's Pie",        "ingredients": {"cooked_mutton": 1, "potato": 2, "cheese": 1},                  "output_id": "shepherds_pie",          "output_count": 1},
+    {"name": "Beef & Cheese Bake",    "ingredients": {"cooked_beef": 1, "cheese": 1, "potato": 2},                    "output_id": "beef_cheese_bake",       "output_count": 1},
+    {"name": "Venison Cheese Pie",    "ingredients": {"cooked_venison": 1, "cheese": 1, "wheat": 2},                  "output_id": "venison_cheese_pie",     "output_count": 1},
+    {"name": "Polenta Bake",          "ingredients": {"polenta": 1, "cheese": 1, "tomato": 1},                        "output_id": "polenta_bake",           "output_count": 1},
+    # --- Wave 4: deeper chains ---
+    {"name": "Pizza",                 "ingredients": {"flatbread": 1, "cheese": 1, "tomato_soup": 1},                  "output_id": "pizza",                  "output_count": 1},
+    {"name": "Calzone",               "ingredients": {"flatbread": 1, "cheese": 1, "cooked_beef": 1},                  "output_id": "calzone",                "output_count": 1},
+    {"name": "Chili Chicken Wrap",    "ingredients": {"flatbread": 1, "chili_chicken": 1, "scallion": 1},              "output_id": "chili_chicken_wrap",     "output_count": 1},
+    {"name": "Herb Chicken Wrap",     "ingredients": {"flatbread": 1, "herb_chicken": 1, "tomato": 1},                 "output_id": "herb_chicken_wrap",      "output_count": 1},
+    {"name": "Mutton Skewer Wrap",    "ingredients": {"flatbread": 1, "mutton_skewer": 1, "garlic": 1},                "output_id": "mutton_skewer_wrap",     "output_count": 1},
+    {"name": "BBQ Rib Sandwich",      "ingredients": {"bread": 1, "bbq_beef_ribs": 1, "onion": 1},                    "output_id": "bbq_rib_sandwich",       "output_count": 1},
+    {"name": "Chicken Pot Pie",       "ingredients": {"wheat": 2, "chicken_mushroom_pot": 1, "cheese": 1},             "output_id": "chicken_pot_pie",        "output_count": 1},
+    {"name": "Corn Cheese Bread",     "ingredients": {"corn_bread": 1, "cheese": 1},                                   "output_id": "corn_cheese_bread",      "output_count": 1},
+    {"name": "Ramen Burger",          "ingredients": {"ramen": 1, "cooked_beef": 1, "scallion": 1},                    "output_id": "ramen_burger",           "output_count": 1},
+    {"name": "Braised Chicken Pie",   "ingredients": {"braised_chicken": 1, "wheat": 2, "cheese": 1},                  "output_id": "braised_chicken_pie",    "output_count": 1},
+    {"name": "Dumpling Bake",         "ingredients": {"dumplings": 2, "cheese": 1, "tomato": 1},                       "output_id": "dumpling_bake",          "output_count": 1},
+    {"name": "Ginger Beef Roll",      "ingredients": {"bread": 1, "ginger_beef": 1, "scallion": 1},                    "output_id": "ginger_beef_roll",       "output_count": 1},
+    {"name": "Sesame Chicken Wrap",   "ingredients": {"flatbread": 1, "sesame_chicken": 1, "scallion": 1},             "output_id": "sesame_chicken_wrap",    "output_count": 1},
+    {"name": "Mapo Tofu Bake",        "ingredients": {"mapo_tofu": 1, "wheat": 1, "egg": 1},                           "output_id": "mapo_tofu_bake",         "output_count": 1},
+    # African-inspired — bakery
+    {"name": "Moroccan Couscous",     "ingredients": {"couscous": 2, "cooked_mutton": 1, "onion": 1},                   "output_id": "moroccan_couscous",      "output_count": 1},
+    {"name": "Bastilla",              "ingredients": {"cooked_chicken": 1, "egg": 1, "onion": 1, "wheat": 2},           "output_id": "bastilla",               "output_count": 1},
+    {"name": "Harira & Flatbread",    "ingredients": {"harira": 1, "flatbread": 1},                                     "output_id": "harira_with_flatbread",  "output_count": 1},
+    {"name": "Tagine Couscous",       "ingredients": {"lamb_tagine": 1, "couscous": 1},                                 "output_id": "tagine_couscous",        "output_count": 1},
+    {"name": "Suya Wrap",             "ingredients": {"flatbread": 1, "suya": 1, "onion": 1},                           "output_id": "suya_wrap",              "output_count": 1},
+    {"name": "Ugali",                 "ingredients": {"corn": 2, "wheat": 1},                                           "output_id": "ugali",                  "output_count": 2},
+    {"name": "Doro Wat & Flatbread",  "ingredients": {"doro_wat": 1, "flatbread": 2},                                   "output_id": "doro_wat_flatbread",     "output_count": 1},
+    {"name": "African Samosa",        "ingredients": {"flatbread": 1, "chickpea": 1, "onion": 1, "chili": 1},           "output_id": "african_samosa",         "output_count": 2},
+    {"name": "Bunny Chow",            "ingredients": {"beef_stew": 1, "wheat": 2},                                      "output_id": "bunny_chow",             "output_count": 1},
+    {"name": "Boerewors Roll",        "ingredients": {"flatbread": 1, "cooked_beef": 1, "garlic": 1, "onion": 1},       "output_id": "boerewors_roll",         "output_count": 1},
+    {"name": "Bobotie",               "ingredients": {"cooked_beef": 1, "egg": 2, "onion": 1, "lemon": 1},              "output_id": "bobotie",                "output_count": 1},
+    {"name": "Chakalaka Flatbread",   "ingredients": {"chakalaka": 1, "flatbread": 2},                                  "output_id": "chakalaka_flatbread",    "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -296,6 +346,63 @@ WOK_RECIPES = [
     {"name": "Honey Corn Chicken",    "ingredients": {"corn": 1, "raw_chicken": 1, "honeycomb_raw": 1},               "output_id": "honey_corn_chicken",     "output_count": 1},
     {"name": "Honey Sweet Potato",    "ingredients": {"sweet_potato": 2, "honeycomb_raw": 1, "ginger": 1},            "output_id": "honey_sweet_potato_wok", "output_count": 1},
     {"name": "Honey Beet Salad",      "ingredients": {"beet": 2, "honeycomb_raw": 1, "lemon": 1},                     "output_id": "honey_beet_salad",       "output_count": 1},
+    # --- Cooked-food second-tier dishes ---
+    {"name": "Grilled Cheese Sandwich","ingredients": {"bread": 1, "cheese": 1},                                      "output_id": "grilled_cheese_sandwich","output_count": 1},
+    {"name": "Croque Monsieur",       "ingredients": {"bread": 2, "cooked_chicken": 1, "cheese": 1},                  "output_id": "croque_monsieur",        "output_count": 1},
+    {"name": "Hummus Toast",          "ingredients": {"bread": 1, "hummus": 1},                                       "output_id": "hummus_toast",           "output_count": 2},
+    {"name": "Jam Toast",             "ingredients": {"bread": 1, "strawberry_jam": 1},                               "output_id": "jam_toast",              "output_count": 2},
+    {"name": "Fig Jam Toast",         "ingredients": {"bread": 1, "fig_jam": 1},                                      "output_id": "fig_jam_toast",          "output_count": 2},
+    {"name": "Lemon Curd Toast",      "ingredients": {"bread": 1, "lemon_curd": 1},                                   "output_id": "lemon_curd_toast",       "output_count": 2},
+    {"name": "Apple Butter Toast",    "ingredients": {"bread": 1, "apple_butter": 1},                                 "output_id": "apple_butter_toast",     "output_count": 2},
+    {"name": "Jam Crêpe",             "ingredients": {"strawberry_jam": 1, "wheat": 1, "egg": 1},                     "output_id": "jam_crepe",              "output_count": 2},
+    {"name": "Tofu Burger",           "ingredients": {"tofu": 1, "bread": 1},                                         "output_id": "tofu_burger",            "output_count": 1},
+    {"name": "Tofu Scramble",         "ingredients": {"tofu": 1, "egg": 1, "scallion": 1},                            "output_id": "tofu_scramble",          "output_count": 1},
+    {"name": "Tofu Katsu",            "ingredients": {"tofu": 1, "egg": 1, "wheat": 1},                               "output_id": "tofu_katsu",             "output_count": 1},
+    {"name": "Crispy Tofu Rice",      "ingredients": {"tofu": 1, "steamed_rice": 1, "soy_sauce": 1},                  "output_id": "crispy_tofu_rice",       "output_count": 1},
+    {"name": "Pasta Primavera",       "ingredients": {"noodles": 1, "olive_oil": 1, "broccoli": 2},                   "output_id": "pasta_primavera",        "output_count": 1},
+    {"name": "Duck Fried Noodles",    "ingredients": {"noodles": 1, "cooked_duck": 1, "scallion": 1},                 "output_id": "duck_fried_noodles",     "output_count": 1},
+    {"name": "Tahini Noodles",        "ingredients": {"noodles": 1, "tahini": 1, "scallion": 1},                      "output_id": "tahini_noodles",         "output_count": 1},
+    {"name": "Noodle Omelette",       "ingredients": {"noodles": 1, "egg": 2},                                        "output_id": "noodle_omelette",        "output_count": 1},
+    {"name": "Chicken Rice Bowl",     "ingredients": {"steamed_rice": 2, "cooked_chicken": 1, "scallion": 1},         "output_id": "chicken_rice_bowl",      "output_count": 1},
+    {"name": "Beef Rice Bowl",        "ingredients": {"steamed_rice": 2, "cooked_beef": 1, "soy_sauce": 1},           "output_id": "beef_rice_bowl",         "output_count": 1},
+    {"name": "Duck Rice Bowl",        "ingredients": {"steamed_rice": 2, "cooked_duck": 1, "scallion": 1},            "output_id": "duck_rice_bowl",         "output_count": 1},
+    {"name": "Polenta & Mushroom",    "ingredients": {"polenta": 1, "mushroom": 2, "garlic": 1},                      "output_id": "polenta_mushroom",       "output_count": 1},
+    {"name": "Cheesy Eggs",           "ingredients": {"cheese": 1, "egg": 3},                                         "output_id": "cheesy_eggs",            "output_count": 1},
+    {"name": "Falafel Plate",         "ingredients": {"hummus": 1, "falafel": 2, "tomato": 1},                        "output_id": "falafel_plate",          "output_count": 1},
+    # --- Wave 4: deeper chains ---
+    {"name": "Loaded Potato Wedges",  "ingredients": {"potato_wedges": 1, "cheese": 1, "chili": 1},                   "output_id": "loaded_potato_wedges",   "output_count": 1},
+    {"name": "Mushroom Toast",        "ingredients": {"grilled_mushroom": 1, "bread": 1},                              "output_id": "mushroom_toast",         "output_count": 1},
+    {"name": "Sesame Chicken Rice",   "ingredients": {"sesame_chicken": 1, "steamed_rice": 1},                         "output_id": "sesame_chicken_rice",    "output_count": 1},
+    {"name": "Beef Broccoli Rice",    "ingredients": {"beef_broccoli": 1, "steamed_rice": 1},                          "output_id": "beef_broccoli_rice",     "output_count": 1},
+    {"name": "Mapo Rice",             "ingredients": {"mapo_tofu": 1, "steamed_rice": 1},                              "output_id": "mapo_rice",              "output_count": 1},
+    {"name": "Scallion Duck Pancake", "ingredients": {"scallion_pancake": 1, "cooked_duck": 1},                        "output_id": "scallion_duck_pancake",  "output_count": 1},
+    {"name": "Beef Stew Rice",        "ingredients": {"beef_stew": 1, "steamed_rice": 1},                              "output_id": "beef_stew_rice",         "output_count": 1},
+    {"name": "Bibimbap",              "ingredients": {"steamed_rice": 2, "cooked_beef": 1, "egg": 1, "mushroom": 1},   "output_id": "bibimbap",               "output_count": 1},
+    {"name": "Stuffed Pepper Rice",   "ingredients": {"stuffed_pepper": 1, "steamed_rice": 1},                         "output_id": "stuffed_pepper_rice",    "output_count": 1},
+    {"name": "Pan-Fried Dumplings",   "ingredients": {"dumplings": 2, "soy_sauce": 1},                                 "output_id": "pan_fried_dumplings",    "output_count": 1},
+    {"name": "Omelette Rice",         "ingredients": {"omelette": 1, "steamed_rice": 1, "soy_sauce": 1},               "output_id": "omelette_rice",          "output_count": 1},
+    {"name": "Braised Chicken Rice",  "ingredients": {"braised_chicken": 1, "steamed_rice": 1},                        "output_id": "braised_chicken_rice",   "output_count": 1},
+    {"name": "Polenta & Eggs",        "ingredients": {"polenta": 1, "egg": 2},                                         "output_id": "polenta_eggs",           "output_count": 1},
+    {"name": "Ginger Beef Fried Rice","ingredients": {"egg_fried_rice": 1, "ginger_beef": 1},                          "output_id": "ginger_beef_fried_rice", "output_count": 1},
+    # African-inspired — wok
+    {"name": "Ful Medames",           "ingredients": {"chickpea": 2, "lemon": 1, "garlic": 1},                          "output_id": "ful_medames",            "output_count": 1},
+    {"name": "Shakshuka with Lamb",   "ingredients": {"shakshuka": 1, "cooked_mutton": 1},                              "output_id": "shakshuka_lamb",         "output_count": 1},
+    {"name": "Zaalouk",               "ingredients": {"tomato": 2, "garlic": 1, "lemon": 1, "olive_oil": 1},            "output_id": "zaalouk",                "output_count": 1},
+    {"name": "Jollof Rice",           "ingredients": {"rice": 2, "tomato": 2, "onion": 1, "pepper": 1},                 "output_id": "jollof_rice",            "output_count": 1},
+    {"name": "Fufu & Egusi",          "ingredients": {"polenta": 1, "egusi_soup": 1},                                   "output_id": "fufu_and_egusi",         "output_count": 1},
+    {"name": "Jollof Chicken",        "ingredients": {"jollof_rice": 1, "cooked_chicken": 1},                           "output_id": "jollof_chicken",         "output_count": 1},
+    {"name": "Akara",                 "ingredients": {"chickpea": 2, "onion": 1, "chili": 1, "egg": 1},                 "output_id": "akara",                  "output_count": 2},
+    {"name": "Pap & Stew",            "ingredients": {"polenta": 1, "beef_stew": 1},                                    "output_id": "pap_and_stew",           "output_count": 1},
+    {"name": "Groundnut Rice",        "ingredients": {"rice": 1, "groundnut_stew": 1},                                  "output_id": "groundnut_rice",         "output_count": 1},
+    {"name": "Suya Rice",             "ingredients": {"jollof_rice": 1, "suya": 1},                                     "output_id": "suya_rice",              "output_count": 1},
+    {"name": "Kitfo",                 "ingredients": {"cooked_beef": 1, "chili": 1, "ginger": 1, "garlic": 1},          "output_id": "kitfo",                  "output_count": 1},
+    {"name": "Tibs",                  "ingredients": {"cooked_beef": 1, "onion": 1, "pepper": 1, "garlic": 1},          "output_id": "tibs",                   "output_count": 1},
+    {"name": "Ugali & Sukuma",        "ingredients": {"ugali": 1, "tomato": 1, "onion": 1},                             "output_id": "ugali_sukuma",           "output_count": 1},
+    {"name": "Tibs & Rice",           "ingredients": {"tibs": 1, "steamed_rice": 1},                                    "output_id": "tibs_rice",              "output_count": 1},
+    {"name": "Pilau with Egg",        "ingredients": {"east_african_pilau": 1, "egg": 1},                               "output_id": "pilau_egg",              "output_count": 1},
+    {"name": "Chakalaka",             "ingredients": {"tomato": 2, "onion": 1, "chili": 1, "pepper": 1},                "output_id": "chakalaka",              "output_count": 1},
+    {"name": "Pap & Chakalaka",       "ingredients": {"polenta": 1, "chakalaka": 1},                                    "output_id": "pap_and_chakalaka",      "output_count": 1},
+    {"name": "Potjie Rice",           "ingredients": {"potjie": 1, "steamed_rice": 1},                                  "output_id": "potjie_rice",            "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -351,6 +458,19 @@ STEAMER_RECIPES = [
     {"name": "Pear Custard",         "ingredients": {"pear": 1, "milk": 2, "egg": 1},                 "output_id": "pear_custard",          "output_count": 1},
     # --- Pacific ---
     {"name": "Poi",                 "ingredients": {"taro": 2},                                      "output_id": "poi",                   "output_count": 1},
+    # --- Cooked-food second-tier dishes ---
+    {"name": "Stuffed Tofu Bao",    "ingredients": {"tofu": 1, "mushroom": 1, "wheat": 1},           "output_id": "stuffed_tofu_bao",       "output_count": 2},
+    {"name": "Chicken Rice Parcel", "ingredients": {"steamed_rice": 2, "cooked_chicken": 1, "mushroom": 1}, "output_id": "chicken_rice_parcel","output_count": 1},
+    {"name": "Cheese Bun",          "ingredients": {"cheese": 1, "wheat": 2},                        "output_id": "cheese_bun",             "output_count": 2},
+    {"name": "Duck Bao",            "ingredients": {"cooked_duck": 1, "wheat": 2, "scallion": 1},    "output_id": "duck_bao",               "output_count": 2},
+    {"name": "Beef Bao",            "ingredients": {"cooked_beef": 1, "wheat": 2, "onion": 1},       "output_id": "beef_bao",               "output_count": 2},
+    {"name": "Rice Omelette",       "ingredients": {"steamed_rice": 1, "egg": 2, "scallion": 1},     "output_id": "rice_omelette",          "output_count": 1},
+    # --- Wave 4: deeper chains ---
+    {"name": "Congee with Egg",     "ingredients": {"congee": 1, "egg": 2, "scallion": 1},           "output_id": "congee_with_egg",        "output_count": 1},
+    {"name": "Tofu Custard",        "ingredients": {"tofu": 1, "egg": 2, "soy_sauce": 1},            "output_id": "tofu_custard",           "output_count": 1},
+    {"name": "Duck Sticky Rice",    "ingredients": {"steamed_rice": 2, "cooked_duck": 1, "mushroom": 1}, "output_id": "duck_sticky_rice",    "output_count": 1},
+    {"name": "Sesame Noodle Parcel","ingredients": {"noodles": 1, "sesame_seeds": 1, "soy_sauce": 1}, "output_id": "sesame_noodle_parcel",  "output_count": 2},
+    {"name": "Meat Bun Deluxe",     "ingredients": {"meat_bun": 1, "mushroom": 1, "ginger": 1},      "output_id": "meat_bun_deluxe",        "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -410,6 +530,12 @@ NOODLE_POT_RECIPES = [
     {"name": "Artisan Loaf",   "ingredients": {"wheat": 3, "fleur_de_sel": 1},                       "output_id": "artisan_loaf",   "output_count": 1},
     # --- Salt seasoned ---
     {"name": "Seasoned Ramen", "ingredients": {"noodles": 1, "soy_sauce": 1, "fine_salt": 1},        "output_id": "seasoned_ramen", "output_count": 1},
+    # --- Wave 4: deeper chains ---
+    {"name": "Wonton Ramen",          "ingredients": {"wonton_soup": 1, "noodles": 1, "scallion": 1},                 "output_id": "wonton_ramen",           "output_count": 1},
+    {"name": "Ramen Deluxe",          "ingredients": {"ramen": 1, "cooked_beef": 1, "mushroom": 1},                   "output_id": "ramen_deluxe",           "output_count": 1},
+    {"name": "Ginger Beef Noodles",   "ingredients": {"ginger_beef": 1, "noodles": 1, "scallion": 1},                 "output_id": "ginger_beef_noodles",    "output_count": 1},
+    {"name": "Sesame Chicken Noodles","ingredients": {"sesame_chicken": 1, "noodles": 1, "scallion": 1},              "output_id": "sesame_chicken_noodles", "output_count": 1},
+    {"name": "Chili Chicken Noodles", "ingredients": {"chili_chicken": 1, "noodles": 1, "chili": 1},                  "output_id": "chili_chicken_noodles",  "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -537,6 +663,12 @@ BBQ_GRILL_RECIPES = [
     {"name": "Honey Glazed Eggplant", "ingredients": {"eggplant": 1, "honeycomb_raw": 1, "garlic": 1},                "output_id": "honey_eggplant_grill",   "output_count": 1},
     {"name": "Honey Glazed Duck",     "ingredients": {"raw_duck": 1, "honeycomb_raw": 1, "ginger": 1},                "output_id": "honey_duck_glaze",       "output_count": 1},
     {"name": "Honey Pepper Skewer",   "ingredients": {"raw_beef": 1, "pepper": 1, "honeycomb_raw": 1},                "output_id": "honey_pepper_skewer",    "output_count": 2},
+    # African-inspired — BBQ
+    {"name": "Suya",                  "ingredients": {"cooked_beef": 1, "chili": 1, "ginger": 1, "garlic": 1},          "output_id": "suya",                   "output_count": 1},
+    {"name": "Chermoula Chicken",     "ingredients": {"cooked_chicken": 1, "lemon": 1, "garlic": 1, "chili": 1},        "output_id": "chermoula_chicken",      "output_count": 1},
+    {"name": "Nyama Choma",           "ingredients": {"cooked_beef": 2, "garlic": 1, "chili": 1, "lemon": 1},           "output_id": "nyama_choma",            "output_count": 1},
+    {"name": "Braai Chicken",         "ingredients": {"cooked_chicken": 2, "garlic": 1, "lemon": 1, "chili": 1},        "output_id": "braai_chicken",          "output_count": 1},
+    {"name": "Braai Chops",           "ingredients": {"cooked_mutton": 2, "garlic": 1, "lemon": 1},                     "output_id": "braai_chops",            "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -671,6 +803,46 @@ CLAY_POT_RECIPES = [
     {"name": "Honey Apple Pork",      "ingredients": {"raw_mutton": 1, "apple": 1, "honeycomb_raw": 1},               "output_id": "honey_apple_pork",       "output_count": 1},
     {"name": "Honey Beet Braise",     "ingredients": {"beet": 2, "honeycomb_raw": 1, "onion": 1},                     "output_id": "honey_beet_braise",      "output_count": 1},
     {"name": "Honey Pomegranate Chicken","ingredients": {"raw_chicken": 1, "pomegranate": 1, "honeycomb_raw": 1},     "output_id": "honey_pomegranate_pot",  "output_count": 1},
+    # --- Cooked-food second-tier dishes ---
+    {"name": "French Onion Soup",     "ingredients": {"bread": 1, "cheese": 1, "onion": 3},                           "output_id": "french_onion_soup",      "output_count": 1},
+    {"name": "Bread Bowl Stew",       "ingredients": {"bread": 1, "beef_stew": 1},                                    "output_id": "bread_bowl_stew",        "output_count": 1},
+    {"name": "French Dip",            "ingredients": {"bread": 1, "cooked_beef": 1, "onion": 2},                      "output_id": "french_dip",             "output_count": 1},
+    {"name": "Duck Congee",           "ingredients": {"steamed_rice": 2, "cooked_duck": 1, "ginger": 1},              "output_id": "congee_duck",            "output_count": 1},
+    {"name": "Couscous Chicken",      "ingredients": {"couscous": 2, "cooked_chicken": 1, "carrot": 1},               "output_id": "couscous_chicken",       "output_count": 1},
+    {"name": "Bulgur Chicken Pot",    "ingredients": {"bulgur": 2, "cooked_chicken": 1, "onion": 1},                  "output_id": "bulgur_chicken_pot",     "output_count": 1},
+    {"name": "Lemon Chicken Rice",    "ingredients": {"steamed_rice": 2, "cooked_chicken": 1, "lemon": 1},            "output_id": "lemon_chicken_rice",     "output_count": 1},
+    {"name": "Venison Rice Pot",      "ingredients": {"steamed_rice": 2, "cooked_venison": 1, "mushroom": 1},         "output_id": "venison_rice_pot",       "output_count": 1},
+    {"name": "Tomato Bread Soup",     "ingredients": {"bread": 2, "tomato_soup": 1, "garlic": 1},                     "output_id": "tomato_bread_soup",      "output_count": 1},
+    {"name": "Noodle Casserole",      "ingredients": {"noodles": 1, "cheese": 1, "tomato_soup": 1},                   "output_id": "noodle_casserole",       "output_count": 1},
+    # --- Wave 4: deeper chains ---
+    {"name": "Risotto",               "ingredients": {"steamed_rice": 2, "cheese": 1, "olive_oil": 1, "mushroom": 1}, "output_id": "risotto",                "output_count": 1},
+    {"name": "Butter Chicken",        "ingredients": {"cooked_chicken": 1, "tomato_soup": 1, "olive_oil": 1},         "output_id": "butter_chicken",         "output_count": 1},
+    {"name": "Beef Stroganoff",       "ingredients": {"cooked_beef": 1, "noodles": 1, "mushroom": 1},                 "output_id": "beef_stroganoff",        "output_count": 1},
+    {"name": "Corn Bread Chili",      "ingredients": {"corn_bread": 1, "beef_stew": 1, "chili": 1},                   "output_id": "corn_bread_chili",       "output_count": 1},
+    {"name": "Hot Pot Noodles",       "ingredients": {"noodles": 2, "mutton_hotpot": 1},                              "output_id": "hot_pot_noodles",        "output_count": 1},
+    {"name": "Chicken Hotpot Ramen",  "ingredients": {"ramen": 1, "chicken_mushroom_pot": 1},                         "output_id": "chicken_hotpot_ramen",   "output_count": 1},
+    {"name": "Chicken Congee",        "ingredients": {"congee": 1, "cooked_chicken": 1, "ginger": 1},                 "output_id": "chicken_congee_pot",     "output_count": 1},
+    {"name": "Dumpling Broth",        "ingredients": {"dumplings": 2, "chicken_noodle_soup": 1, "ginger": 1},         "output_id": "dumpling_broth",         "output_count": 1},
+    {"name": "Grilled Corn Chowder",  "ingredients": {"grilled_corn": 1, "tomato_soup": 1, "onion": 1},               "output_id": "grilled_corn_chowder",   "output_count": 1},
+    {"name": "Creamy Tomato Soup",    "ingredients": {"tomato_soup": 1, "cheese": 1, "garlic": 1},                    "output_id": "creamy_tomato_soup",     "output_count": 1},
+    {"name": "Shakshuka with Bread",  "ingredients": {"shakshuka": 1, "bread": 1},                                    "output_id": "shakshuka_with_bread",   "output_count": 1},
+    {"name": "Stew Noodles",          "ingredients": {"beef_stew": 1, "noodles": 1},                                  "output_id": "stew_noodles",           "output_count": 1},
+    # African-inspired — clay pot
+    {"name": "Lamb Tagine",           "ingredients": {"cooked_mutton": 2, "onion": 1, "lemon": 1, "ginger": 1},         "output_id": "lamb_tagine",            "output_count": 1},
+    {"name": "Chicken Tagine",        "ingredients": {"cooked_chicken": 2, "onion": 1, "lemon": 1, "garlic": 1},        "output_id": "chicken_tagine",         "output_count": 1},
+    {"name": "Harira",                "ingredients": {"lentil": 2, "chickpea": 1, "tomato": 2, "onion": 1},             "output_id": "harira",                 "output_count": 1},
+    {"name": "Moroccan Lentil Soup",  "ingredients": {"lentil": 2, "tomato": 1, "ginger": 1, "lemon": 1},              "output_id": "moroccan_lentil_soup",   "output_count": 1},
+    {"name": "Egusi Soup",            "ingredients": {"chickpea": 2, "cooked_beef": 1, "onion": 1, "tomato": 1},        "output_id": "egusi_soup",             "output_count": 1},
+    {"name": "Groundnut Stew",        "ingredients": {"cooked_chicken": 1, "chickpea": 2, "onion": 1, "tomato": 1},    "output_id": "groundnut_stew",         "output_count": 1},
+    {"name": "Beef Pepper Soup",      "ingredients": {"cooked_beef": 1, "chili": 2, "ginger": 1, "onion": 1},           "output_id": "beef_pepper_soup",       "output_count": 1},
+    {"name": "Ewa Agoyin",            "ingredients": {"chickpea": 2, "onion": 1, "chili": 1, "tomato": 1},              "output_id": "ewa_agoyin",             "output_count": 1},
+    {"name": "Ogbono Chicken",        "ingredients": {"groundnut_stew": 1, "cooked_chicken": 1},                        "output_id": "ogbono_chicken",         "output_count": 1},
+    {"name": "Doro Wat",              "ingredients": {"cooked_chicken": 2, "onion": 2, "chili": 1, "garlic": 1},        "output_id": "doro_wat",               "output_count": 1},
+    {"name": "East African Pilau",    "ingredients": {"rice": 2, "cooked_chicken": 1, "ginger": 1, "garlic": 1},        "output_id": "east_african_pilau",     "output_count": 1},
+    {"name": "East African Goat Stew","ingredients": {"cooked_boar": 2, "tomato": 1, "onion": 1, "garlic": 1},          "output_id": "east_african_goat_stew", "output_count": 1},
+    {"name": "Potjiekos",             "ingredients": {"cooked_mutton": 2, "sweet_potato": 1, "onion": 1, "tomato": 1}, "output_id": "potjie",                 "output_count": 1},
+    {"name": "Samp & Beans",          "ingredients": {"corn": 2, "chickpea": 2, "onion": 1},                            "output_id": "samp_and_beans",         "output_count": 1},
+    {"name": "Venison Potjie",        "ingredients": {"cooked_venison": 2, "sweet_potato": 1, "onion": 1, "tomato": 1},"output_id": "venison_potjie",         "output_count": 1},
 ]
 
 # ---------------------------------------------------------------------------
@@ -2667,6 +2839,17 @@ RECIPES = [
         "output_id":    "aging_cave_item",
         "output_count": 1,
     },
+    # --- Pigment Mill ---
+    {
+        "name": "Pigment Mill",
+        "pattern": [
+            ["stone_chip",  "iron_chunk", "stone_chip" ],
+            ["stone_chip",  "lumber",     "stone_chip" ],
+            ["lumber",      "iron_chunk", "lumber"     ],
+        ],
+        "output_id":    "pigment_mill_item",
+        "output_count": 1,
+    },
     # --- Salt supply chain ---
     {
         "name": "Evaporation Pan",
@@ -3558,6 +3741,9 @@ RECIPE_GROUPS = {
     "Pottery": [
         "pottery_wheel_item", "pottery_kiln_item",
     ],
+    "Pigments": [
+        "pigment_mill_item",
+    ],
     "Dogs": [
         "dog_collar", "dog_treat", "dog_whistle", "kennel_item", "dog_bowl_item",
     ],
@@ -3573,7 +3759,7 @@ RECIPE_GROUPS_ORDER = [
     "Tools", "Farming", "Building", "Automation", "Rock & Gems", "Smelting",
     "Cooking Stations", "Coffee", "Wine", "Spirits", "Brewery", "Tea",
     "Herbalism", "Textiles", "Glassblowing", "Cheese", "Fishing", "Wildlife", "Horses", "Dogs", "Hunting", "Jewelry",
-    "Garden", "Sculpture", "Pottery", "Tapestry", "Blacksmithing", "Trapping",
+    "Garden", "Sculpture", "Pottery", "Tapestry", "Blacksmithing", "Trapping", "Pigments",
 ]
 
 
@@ -3644,6 +3830,7 @@ RESEARCH_LOCKED_RECIPES = {
     "pottery_kiln_item":       "kiln_mastery",
     "evap_pan_item":           "salt_basics",
     "salt_grinder_item":       "salt_basics",
+    "pigment_mill_item":       "pigment_basics",
     "dog_collar":              "dog_basics",
     "dog_treat":               "dog_basics",
     "dog_bowl_item":           "dog_basics",

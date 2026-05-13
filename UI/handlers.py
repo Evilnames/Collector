@@ -91,6 +91,16 @@ class HandlersMixin:
         elif event.unicode and event.unicode.isprintable():
             self._inv_search += event.unicode
 
+    def handle_craft_search_key(self, event):
+        if event.key == pygame.K_ESCAPE:
+            self._craft_search = ""
+            self._craft_search_active = False
+        elif event.key == pygame.K_BACKSPACE:
+            self._craft_search = self._craft_search[:-1]
+        elif event.unicode and event.unicode.isprintable():
+            self._craft_search += event.unicode
+        self._recipe_scroll = 0
+
     def handle_artisan_search_key(self, event):
         if event.key == pygame.K_ESCAPE:
             self._artisan_search = ""
@@ -147,6 +157,14 @@ class HandlersMixin:
             self._do_grid_craft(player, research, debug=debug)
             return
         if button == 1:
+            if self._craft_search_rect and self._craft_search_rect.collidepoint(pos):
+                self._craft_search_active = True
+                return
+            if self._craft_craftable_btn and self._craft_craftable_btn.collidepoint(pos):
+                self._craft_show_craftable = not self._craft_show_craftable
+                self._recipe_scroll = 0
+                return
+            self._craft_search_active = False
             for ridx, rect in self._recipe_rects.items():
                 if rect.collidepoint(pos):
                     self._craft_grid = [list(row) for row in RECIPES[ridx]["pattern"]]
@@ -318,6 +336,11 @@ class HandlersMixin:
                 for key, rect in self._salt_codex_rects.items():
                     if rect.collidepoint(pos):
                         self._salt_codex_selected = key if self._salt_codex_selected != key else None
+                        return
+            elif self._encyclopedia_cat == 32:
+                for key, rect in self._pigment_codex_rects.items():
+                    if rect.collidepoint(pos):
+                        self._pigment_codex_selected = key if self._pigment_codex_selected != key else None
                         return
             # cat 5 = bird codex (view only, no selection needed)
         # tab 2 (awards) has no click-to-select items
@@ -879,6 +902,10 @@ class HandlersMixin:
             self._handle_weapon_rack_click(pos, player)
             return
         if self.refinery_block_id == BAKERY_BLOCK:
+            if self._bakery_craftable_btn and self._bakery_craftable_btn.collidepoint(pos):
+                self._bakery_show_craftable = not self._bakery_show_craftable
+                self._bakery_scroll = 0
+                return
             for i, rect in self._bakery_recipe_rects.items():
                 if rect.collidepoint(pos):
                     self._bakery_selected_recipe = i
@@ -886,6 +913,14 @@ class HandlersMixin:
             if self._refine_btn and self._refine_btn.collidepoint(pos):
                 self._do_bake(player)
             return
+        # Shared craftable toggle for all _draw_cooking_station stations
+        if (self._cook_station_craftable_btn
+                and self._cook_station_craftable_btn.collidepoint(pos)):
+            bid = self.refinery_block_id
+            self._cook_station_craftable[bid] = not self._cook_station_craftable.get(bid, False)
+            self._cook_station_scroll[bid] = 0
+            return
+
         if self.refinery_block_id == WOK_BLOCK:
             for i, rect in self._wok_recipe_rects.items():
                 if rect.collidepoint(pos):
@@ -950,6 +985,10 @@ class HandlersMixin:
                     if rect.collidepoint(pos):
                         self._artisan_selected_recipe = i
                         return
+                return
+            if self._artisan_craftable_btn and self._artisan_craftable_btn.collidepoint(pos):
+                self._artisan_show_craftable = not self._artisan_show_craftable
+                self._cook_station_scroll[ARTISAN_BENCH_BLOCK] = 0
                 return
             if self._artisan_search_rect and self._artisan_search_rect.collidepoint(pos):
                 self._artisan_search_active = True
@@ -1052,6 +1091,10 @@ class HandlersMixin:
             return
         if self.refinery_block_id == SALT_GRINDER_BLOCK:
             self._handle_salt_grinder_click(pos, player)
+            return
+        from blocks import PIGMENT_MILL_BLOCK
+        if self.refinery_block_id == PIGMENT_MILL_BLOCK:
+            self._handle_pigment_mill_click(pos, player)
             return
         for idx, rect in self._refine_rects.items():
             if rect.collidepoint(pos):

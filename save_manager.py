@@ -98,6 +98,7 @@ class SaveManager:
             self._save_hive_progress(con, world)
             self._save_mead_batches(con, player)
             self._save_charcuterie_items(con, player)
+            self._save_pigments(con, player)
             self._save_salt_crystals(con, player)
             self._save_coins(con, player)
             self._save_crafted_weapons(con, player)
@@ -850,6 +851,23 @@ class SaveManager:
             flavor_notes     TEXT,
             seed             INTEGER,
             blend_components TEXT
+        );
+        CREATE TABLE IF NOT EXISTS pigments (
+            uid           TEXT PRIMARY KEY,
+            pigment_key   TEXT,
+            source_type   TEXT,
+            origin_biome  TEXT,
+            state         TEXT,
+            color_family  TEXT,
+            purity        REAL,
+            opacity       REAL,
+            stability     REAL,
+            granularity   REAL,
+            grind_quality REAL,
+            color_rgb     TEXT,
+            notes         TEXT,
+            seed          INTEGER,
+            blend_components TEXT DEFAULT '[]'
         );
         CREATE TABLE IF NOT EXISTS crafted_weapons (
             uid           TEXT PRIMARY KEY,
@@ -1955,6 +1973,20 @@ class SaveManager:
                     c.salt_penetration, c.spice_intensity, c.fat_content, c.age_quality,
                     c.age_start_time, c.age_total_days,
                     json.dumps(c.flavor_notes), c.seed, json.dumps(c.blend_components),
+                )
+            )
+
+    def _save_pigments(self, con, player):
+        con.execute("DELETE FROM pigments")
+        for p in player.pigments:
+            con.execute(
+                "INSERT OR REPLACE INTO pigments VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    p.uid, p.pigment_key, p.source_type, p.origin_biome, p.state,
+                    p.color_family, p.purity, p.opacity, p.stability, p.granularity,
+                    p.grind_quality,
+                    json.dumps(p.color_rgb), json.dumps(p.notes), p.seed,
+                    json.dumps(p.blend_components),
                 )
             )
 
@@ -3306,6 +3338,23 @@ class SaveManager:
             })
 
         try:
+            pigment_rows = con.execute("SELECT * FROM pigments").fetchall()
+        except Exception:
+            pigment_rows = []
+        pigment_data = []
+        for r in pigment_rows:
+            pigment_data.append({
+                "uid": r[0], "pigment_key": r[1], "source_type": r[2], "origin_biome": r[3],
+                "state": r[4], "color_family": r[5],
+                "purity": r[6], "opacity": r[7], "stability": r[8],
+                "granularity": r[9], "grind_quality": r[10],
+                "color_rgb": json.loads(r[11] or "[0,0,0]"),
+                "notes": json.loads(r[12] or "[]"),
+                "seed": r[13],
+                "blend_components": json.loads(r[14] or "[]"),
+            })
+
+        try:
             pottery_rows = con.execute(
                 "SELECT uid, clay_biome, shape, state, firing_level, firing_quality, "
                 "thickness, evenness, glaze_type, texture_notes, seed, profile, blend_components "
@@ -3556,6 +3605,8 @@ class SaveManager:
             }),
             "coins": coin_data,
             "discovered_coin_types": list({c["coin_type_id"] for c in coin_data}),
+            "pigments": pigment_data,
+            "discovered_pigments": list({p["pigment_key"] for p in pigment_data}),
         }
 
     def _load_automations(self, con):

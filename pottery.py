@@ -18,11 +18,12 @@ class PotteryPiece:
     firing_quality: float # 0.0–1.0
     thickness: float      # 0.0–1.0 (average wall presence)
     evenness: float       # 0.0–1.0 (1 = perfectly uniform)
-    glaze_type: str       # "" | "ruby" | "emerald" | "sapphire" | "amethyst" | "topaz"
+    glaze_type: str       # "" | "ruby" | "emerald" | "sapphire" | "amethyst" | "topaz" | "pigment"
     texture_notes: list
     seed: int
     profile: list         # list of WHEEL_ROWS int half-widths (top → bottom)
     blend_components: list = field(default_factory=list)
+    pigment_glaze_color: list = field(default_factory=list)  # [R,G,B] when glaze_type=="pigment"
 
 
 # Base clay attributes per biome
@@ -198,6 +199,21 @@ def apply_firing_result(piece: "PotteryPiece", temp_at_stop: float,
 
     piece.state = "fired"
     piece.evenness = _clamp(piece.evenness + temp_control_score * 0.1)
+
+
+def apply_pigment_glaze(piece: "PotteryPiece", pigment) -> None:
+    """Apply a ground/refined Pigment as a coloured slip glaze.
+
+    The pigment's stability determines how much the firing quality improves;
+    purity raises the piece one firing tier (intact→fine, fine→masterwork).
+    """
+    tier_up = {"intact": "fine", "fine": "masterwork", "masterwork": "masterwork"}
+    if pigment.purity >= 0.60:
+        piece.firing_level = tier_up.get(piece.firing_level, piece.firing_level)
+    piece.firing_quality   = _clamp(piece.firing_quality + pigment.stability * 0.12)
+    piece.glaze_type        = "pigment"
+    piece.pigment_glaze_color = list(pigment.color_rgb)
+    piece.state             = "glazed"
 
 
 def get_output_item(piece: "PotteryPiece") -> str:

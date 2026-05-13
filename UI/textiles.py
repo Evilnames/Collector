@@ -3,9 +3,10 @@ from constants import SCREEN_W, SCREEN_H
 from textiles import (
     FIBER_PROFILES, TEXTURE_PATTERNS, DYE_FAMILY_COLORS, DYE_FAMILY_DISPLAY,
     GARMENT_BUFFS, GARMENT_BUFF_DESCS, GARMENT_MAX_BONUS, OUTPUT_DISPLAY,
-    apply_dye, apply_weave, output_item_key, discovery_key, dye_family_from_color,
-    TOTAL_TEXTILE_TYPES,
+    apply_dye, apply_pigment_dye, apply_weave, output_item_key, discovery_key,
+    dye_family_from_color, TOTAL_TEXTILE_TYPES,
 )
+from pigments import PIGMENT_TYPES
 
 _ACCENT  = (160,  90, 190)
 _DARK_BG = ( 18,  10,  22)
@@ -247,7 +248,7 @@ class TextileMixin:
 
         # Tab bar
         self._dye_tab_rects = {}
-        tab_labels = [("extract", "Extract Dye"), ("dye", "Dye Thread")]
+        tab_labels = [("extract", "Extract Dye"), ("dye", "Dye Thread"), ("pigment", "Pigment Dye")]
         tw, th, tgap = 180, 30, 6
         tx0 = SCREEN_W // 2 - (len(tab_labels) * tw + (len(tab_labels) - 1) * tgap) // 2
         for ti, (tkey, tlabel) in enumerate(tab_labels):
@@ -261,6 +262,8 @@ class TextileMixin:
 
         if self._dye_tab == "extract":
             self._draw_dye_extract_tab(player)
+        elif self._dye_tab == "pigment":
+            self._draw_dye_pigment_tab(player)
         else:
             self._draw_dye_thread_tab(player)
 
@@ -294,6 +297,83 @@ class TextileMixin:
             self.screen.blit(fam_s, (rx + 5, ry + 24))
             rar = self.small.render(wf.rarity.title(), True, _DIM_C)
             self.screen.blit(rar, (rx + 5, ry + 41))
+
+    def _draw_dye_pigment_tab(self, player):
+        """Pigment Dye tab: select a ground/refined pigment to dye thread."""
+        if not hasattr(self, "_pigment_thread_rects"):
+            self._pigment_thread_rects = {}
+        if not hasattr(self, "_pigment_pig_rects"):
+            self._pigment_pig_rects = {}
+        if not hasattr(self, "_pigment_thread_idx"):
+            self._pigment_thread_idx = None
+        if not hasattr(self, "_pigment_pig_idx"):
+            self._pigment_pig_idx = None
+        if not hasattr(self, "_pigment_result_btn"):
+            self._pigment_result_btn = None
+
+        self._pigment_thread_rects.clear()
+        self._pigment_pig_rects.clear()
+
+        usable = [p for p in player.pigments if p.state in ("ground", "refined")]
+        threads = [(i, t) for i, t in enumerate(player.textiles) if t.state == "thread"]
+
+        if not threads:
+            msg = self.font.render("No thread! Spin fiber at the Spinning Wheel first.", True, _LABEL_C)
+            self.screen.blit(msg, (SCREEN_W // 2 - msg.get_width() // 2, SCREEN_H // 2))
+            return
+
+        # Thread list (left)
+        sub_t = self.small.render("Select thread:", True, _LABEL_C)
+        self.screen.blit(sub_t, (40, 68))
+        CELL_W, CELL_H, GAP = 220, 52, 6
+        for li, (bi, t) in enumerate(threads[:8]):
+            ry = 88 + li * (CELL_H + GAP)
+            rect = pygame.Rect(40, ry, CELL_W, CELL_H)
+            self._pigment_thread_rects[bi] = rect
+            sel = self._pigment_thread_idx == bi
+            pygame.draw.rect(self.screen, _CELL_BG, rect)
+            pygame.draw.rect(self.screen, _ACCENT if sel else _DIM_C, rect, 2 if sel else 1)
+            nt = self.small.render(f"{t.fiber_type.title()} Thread", True, _TITLE_C)
+            self.screen.blit(nt, (44, ry + 8))
+            qt = self.small.render(f"Quality {t.quality:.0%}", True, _LABEL_C)
+            self.screen.blit(qt, (44, ry + 26))
+
+        # Pigment list (right)
+        sub_p = self.small.render("Select pigment (ground or refined):", True, _LABEL_C)
+        self.screen.blit(sub_p, (SCREEN_W // 2 + 40, 68))
+        if not usable:
+            nm = self.small.render("No ground pigments — use the Pigment Mill first.", True, _DIM_C)
+            self.screen.blit(nm, (SCREEN_W // 2 + 40, 92))
+        else:
+            CELL_W2, CELL_H2, GAP2 = 220, 52, 6
+            rx0 = SCREEN_W // 2 + 40
+            for pi, pig in enumerate(usable[:8]):
+                ry = 88 + pi * (CELL_H2 + GAP2)
+                rect = pygame.Rect(rx0, ry, CELL_W2, CELL_H2)
+                self._pigment_pig_rects[pi] = rect
+                sel = self._pigment_pig_idx == pi
+                pig_col = tuple(pig.color_rgb)
+                pygame.draw.rect(self.screen, _CELL_BG, rect)
+                pygame.draw.rect(self.screen, pig_col if sel else _DIM_C, rect, 2 if sel else 1)
+                # small color swatch
+                pygame.draw.rect(self.screen, pig_col, (rx0 + CELL_W2 - 18, ry + 8, 14, 14))
+                pname = PIGMENT_TYPES.get(pig.pigment_key, {}).get("display", pig.pigment_key.title())
+                nm = self.small.render(f"{pname}  [{pig.state}]", True, _TITLE_C)
+                self.screen.blit(nm, (rx0 + 5, ry + 8))
+                ql = self.small.render(f"Q {pig.quality():.0%}  ·  purity {pig.purity:.0%}", True, _LABEL_C)
+                self.screen.blit(ql, (rx0 + 5, ry + 26))
+
+        # Apply button
+        if self._pigment_thread_idx is not None and self._pigment_pig_idx is not None:
+            if self._pigment_result_btn is None:
+                self._pigment_result_btn = pygame.Rect(SCREEN_W // 2 - 100, SCREEN_H - 60, 200, 40)
+            pygame.draw.rect(self.screen, _ACCENT, self._pigment_result_btn)
+            pygame.draw.rect(self.screen, _TITLE_C, self._pigment_result_btn, 1)
+            lbl = self.font.render("Apply Pigment Dye", True, (255, 255, 255))
+            self.screen.blit(lbl, (self._pigment_result_btn.centerx - lbl.get_width() // 2,
+                                   self._pigment_result_btn.centery - lbl.get_height() // 2))
+        else:
+            self._pigment_result_btn = None
 
     def _draw_dye_thread_tab(self, player):
         self._dye_thread_rects.clear()
@@ -390,6 +470,32 @@ class TextileMixin:
                     player._add_item(f"dye_extract_{fam}")
                     player.pending_notifications.append(("Textile", f"{DYE_FAMILY_DISPLAY.get(fam,'').title()} Dye Extract", None))
                     return
+        elif self._dye_tab == "pigment":
+            usable = [p for p in player.pigments if p.state in ("ground", "refined")]
+            threads = [(i, t) for i, t in enumerate(player.textiles) if t.state == "thread"]
+            for bi, rect in getattr(self, "_pigment_thread_rects", {}).items():
+                if rect.collidepoint(pos):
+                    self._pigment_thread_idx = bi
+                    self._pigment_result_btn = None
+                    return
+            for pi, rect in getattr(self, "_pigment_pig_rects", {}).items():
+                if rect.collidepoint(pos) and pi < len(usable):
+                    self._pigment_pig_idx = pi
+                    self._pigment_result_btn = None
+                    return
+            btn = getattr(self, "_pigment_result_btn", None)
+            if btn and btn.collidepoint(pos):
+                bi = getattr(self, "_pigment_thread_idx", None)
+                pi = getattr(self, "_pigment_pig_idx", None)
+                if bi is not None and pi is not None and pi < len(usable):
+                    pig = usable[pi]
+                    apply_pigment_dye(player.textiles[bi], pig)
+                    player.pigments.remove(pig)
+                    pname = PIGMENT_TYPES.get(pig.pigment_key, {}).get("display", pig.pigment_key.title())
+                    player.pending_notifications.append(("Textile", f"Thread dyed with {pname}", None))
+                    self._pigment_thread_idx = None
+                    self._pigment_pig_idx = None
+                    self._pigment_result_btn = None
         else:
             for bi, rect in self._dye_thread_rects.items():
                 if rect.collidepoint(pos):

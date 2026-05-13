@@ -1,10 +1,11 @@
 import pygame
 import math
 from constants import SCREEN_W, SCREEN_H
-from pottery import (apply_firing_result, get_output_item, classify_shape,
-                     profile_evenness, profile_thickness,
+from pottery import (apply_firing_result, apply_pigment_glaze, get_output_item,
+                     classify_shape, profile_evenness, profile_thickness,
                      CLAY_BIOME_PROFILES, BIOME_DISPLAY_NAMES, GLAZE_TYPES,
                      FIRING_LEVELS, WHEEL_ROWS, WHEEL_MAX_RAD, WHEEL_MIN_RAD)
+from pigments import PIGMENT_TYPES
 
 _CLAY_COLOR   = (155, 105, 75)
 _KILN_ORANGE  = (230, 110, 40)
@@ -472,17 +473,16 @@ class PotteryMixin:
                 self._glaze_piece_idx = None
                 return
 
-            sub = self.small.render("Choose a glaze (requires 2 gem dust):", True, _TEXT_DIM)
-            self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 58))
+            # ── Gem-dust glazes ───────────────────────────────────────────
+            sub = self.small.render("Gem glaze (2 dust each):", True, _TEXT_DIM)
+            self.screen.blit(sub, (40, 58))
 
             self._glaze_dust_rects = {}
             BTN_W, BTN_H = 130, 80
-            glaze_items = list(GLAZE_TYPES.items())
-            gx0 = (SCREEN_W - (len(glaze_items) * (BTN_W + 10))) // 2
-            for i, (gkey, gdata) in enumerate(glaze_items):
-                gx = gx0 + i * (BTN_W + 10)
-                gy = SCREEN_H // 2 - BTN_H // 2
-                grect = pygame.Rect(gx, gy, BTN_W, BTN_H)
+            gy_gem = 80
+            for i, (gkey, gdata) in enumerate(GLAZE_TYPES.items()):
+                gx = 40 + i * (BTN_W + 10)
+                grect = pygame.Rect(gx, gy_gem, BTN_W, BTN_H)
                 dust_id = gdata["dust_item"]
                 avail = player.inventory.get(dust_id, 0)
                 self._glaze_dust_rects[gkey] = grect
@@ -490,10 +490,38 @@ class PotteryMixin:
                 pygame.draw.rect(self.screen, _PANEL_BG if can else (22, 14, 7), grect)
                 pygame.draw.rect(self.screen, gdata["color"] if can else _TEXT_DIM, grect, 2)
                 gl = self.small.render(gdata["label"], True, _TEXT_MAIN if can else _TEXT_DIM)
-                self.screen.blit(gl, (gx + BTN_W // 2 - gl.get_width() // 2, gy + 10))
+                self.screen.blit(gl, (gx + BTN_W // 2 - gl.get_width() // 2, gy_gem + 10))
                 al = self.small.render(f"({avail} dust)", True, _TEXT_DIM)
-                self.screen.blit(al, (gx + BTN_W // 2 - al.get_width() // 2, gy + 42))
-                pygame.draw.rect(self.screen, gdata["color"], (gx + 10, gy + 60, BTN_W - 20, 10))
+                self.screen.blit(al, (gx + BTN_W // 2 - al.get_width() // 2, gy_gem + 42))
+                pygame.draw.rect(self.screen, gdata["color"], (gx + 10, gy_gem + 60, BTN_W - 20, 10))
+
+            # ── Pigment glazes ────────────────────────────────────────────
+            usable_pigs = [p for p in player.pigments if p.state in ("ground", "refined")]
+            sep_y = gy_gem + BTN_H + 16
+            sep_lbl = self.small.render("— or — Pigment glaze (consumes one pigment):", True, _TEXT_DIM)
+            self.screen.blit(sep_lbl, (40, sep_y))
+
+            self._glaze_pig_rects = {}
+            PIG_W, PIG_H, PIG_GAP = 170, 56, 8
+            pig_y = sep_y + 22
+            for pi, pig in enumerate(usable_pigs[:8]):
+                px = 40 + (pi % 5) * (PIG_W + PIG_GAP)
+                py = pig_y + (pi // 5) * (PIG_H + PIG_GAP)
+                prect = pygame.Rect(px, py, PIG_W, PIG_H)
+                self._glaze_pig_rects[pi] = prect
+                pig_col = tuple(pig.color_rgb)
+                pygame.draw.rect(self.screen, _PANEL_BG, prect)
+                pygame.draw.rect(self.screen, pig_col, prect, 2)
+                pygame.draw.rect(self.screen, pig_col, (px + PIG_W - 18, py + 8, 14, 14))
+                pname = PIGMENT_TYPES.get(pig.pigment_key, {}).get("display", pig.pigment_key.title())
+                nl = self.small.render(f"{pname}", True, _TEXT_MAIN)
+                self.screen.blit(nl, (px + 5, py + 8))
+                ql = self.small.render(f"Q {pig.quality():.0%}  [{pig.state}]", True, _TEXT_DIM)
+                self.screen.blit(ql, (px + 5, py + 28))
+
+            if not usable_pigs:
+                nm = self.small.render("No ground pigments available.", True, _TEXT_DIM)
+                self.screen.blit(nm, (40, pig_y))
 
             bk = pygame.Rect(10, SCREEN_H - 50, 80, 30)
             self._glaze_back_rect = bk
@@ -510,24 +538,39 @@ class PotteryMixin:
                 self._glaze_dust_key = None
                 return
 
-            gdata = GLAZE_TYPES.get(self._glaze_dust_key, {})
-            tier_up = {"intact": "fine", "fine": "masterwork", "masterwork": "masterwork"}
-            new_level = tier_up.get(piece.firing_level, piece.firing_level)
-
             biome_lbl = BIOME_DISPLAY_NAMES.get(piece.clay_biome, piece.clay_biome.title())
             shape_lbl = _SHAPE_LABELS.get(piece.shape, piece.shape.title())
 
             preview = self.font.render(f"{biome_lbl} {shape_lbl}", True, _TEXT_MAIN)
             self.screen.blit(preview, (SCREEN_W // 2 - preview.get_width() // 2, SCREEN_H // 2 - 60))
 
-            info = self.small.render(f"{piece.firing_level.title()} → {new_level.title()}  +  {gdata.get('label', '')} coating", True, _TEXT_DIM)
-            self.screen.blit(info, (SCREEN_W // 2 - info.get_width() // 2, SCREEN_H // 2 - 30))
+            if self._glaze_dust_key == "pigment":
+                usable_pigs = [p for p in player.pigments if p.state in ("ground", "refined")]
+                pig_idx = getattr(self, "_glaze_pig_idx", None)
+                pig = usable_pigs[pig_idx] if pig_idx is not None and pig_idx < len(usable_pigs) else None
+                pname = PIGMENT_TYPES.get(pig.pigment_key, {}).get("display", pig.pigment_key.title()) if pig else "?"
+                tier_up = {"intact": "fine", "fine": "masterwork", "masterwork": "masterwork"}
+                new_level = tier_up.get(piece.firing_level, piece.firing_level) if pig and pig.purity >= 0.60 else piece.firing_level
+                pig_col = tuple(pig.color_rgb) if pig else _TEXT_DIM
+                info = self.small.render(
+                    f"{piece.firing_level.title()} → {new_level.title()}  +  {pname} pigment glaze", True, pig_col)
+                self.screen.blit(info, (SCREEN_W // 2 - info.get_width() // 2, SCREEN_H // 2 - 30))
+                cost_lbl = self.small.render("Cost: 1 pigment", True, _TEXT_DIM)
+                # draw small color swatch
+                pygame.draw.rect(self.screen, pig_col, (SCREEN_W // 2 - 10, SCREEN_H // 2 - 4, 20, 20))
+            else:
+                gdata = GLAZE_TYPES.get(self._glaze_dust_key, {})
+                tier_up = {"intact": "fine", "fine": "masterwork", "masterwork": "masterwork"}
+                new_level = tier_up.get(piece.firing_level, piece.firing_level)
+                info = self.small.render(
+                    f"{piece.firing_level.title()} → {new_level.title()}  +  {gdata.get('label', '')} coating", True, _TEXT_DIM)
+                self.screen.blit(info, (SCREEN_W // 2 - info.get_width() // 2, SCREEN_H // 2 - 30))
+                cost_lbl = self.small.render("Cost: 2 gem dust", True, _TEXT_DIM)
 
-            cost_lbl = self.small.render("Cost: 2 gem dust", True, _TEXT_DIM)
-            self.screen.blit(cost_lbl, (SCREEN_W // 2 - cost_lbl.get_width() // 2, SCREEN_H // 2))
+            self.screen.blit(cost_lbl, (SCREEN_W // 2 - cost_lbl.get_width() // 2, SCREEN_H // 2 + 24))
 
-            conf_rect = pygame.Rect(SCREEN_W // 2 + 10, SCREEN_H // 2 + 35, 120, 34)
-            bk_rect   = pygame.Rect(SCREEN_W // 2 - 140, SCREEN_H // 2 + 35, 120, 34)
+            conf_rect = pygame.Rect(SCREEN_W // 2 + 10, SCREEN_H // 2 + 55, 120, 34)
+            bk_rect   = pygame.Rect(SCREEN_W // 2 - 140, SCREEN_H // 2 + 55, 120, 34)
             self._glaze_confirm_rect = conf_rect
             self._glaze_cancel_rect  = bk_rect
 
@@ -709,6 +752,12 @@ class PotteryMixin:
                     if player.inventory.get(dust_id, 0) >= 2:
                         self._glaze_dust_key = gkey
                     return
+            usable_pigs = [p for p in player.pigments if p.state in ("ground", "refined")]
+            for pi, prect in getattr(self, '_glaze_pig_rects', {}).items():
+                if prect.collidepoint(pos) and pi < len(usable_pigs):
+                    self._glaze_dust_key = "pigment"
+                    self._glaze_pig_idx  = pi
+                    return
 
         else:
             piece = fired[self._glaze_piece_idx] if self._glaze_piece_idx < len(fired) else None
@@ -722,28 +771,39 @@ class PotteryMixin:
 
     def _apply_glaze(self, piece, player):
         gkey = self._glaze_dust_key
-        gdata = GLAZE_TYPES.get(gkey, {})
-        dust_id = gdata.get("dust_item")
-        if dust_id and player.inventory.get(dust_id, 0) >= 2:
-            player.inventory[dust_id] -= 2
-            if player.inventory[dust_id] <= 0:
-                del player.inventory[dust_id]
 
-            tier_up = {"intact": "fine", "fine": "masterwork", "masterwork": "masterwork"}
-            piece.firing_level = tier_up.get(piece.firing_level, piece.firing_level)
-            piece.state = "glazed"
-            piece.glaze_type = gkey
-
-            # Swap for the new item
-            old_id = get_output_item(piece)
-            # Piece stays in pottery_pieces; buff item stays in inventory already granted
-            # Just update discovery
+        if gkey == "pigment":
+            usable_pigs = [p for p in player.pigments if p.state in ("ground", "refined")]
+            pig_idx = getattr(self, "_glaze_pig_idx", None)
+            if pig_idx is None or pig_idx >= len(usable_pigs):
+                self._glaze_piece_idx = None
+                self._glaze_dust_key  = None
+                return
+            pig = usable_pigs[pig_idx]
+            apply_pigment_glaze(piece, pig)
+            player.pigments.remove(pig)
+            pname = PIGMENT_TYPES.get(pig.pigment_key, {}).get("display", pig.pigment_key.title())
             key = f"{piece.clay_biome}_{piece.firing_level}"
             player.discovered_pottery.add(key)
-            player.pending_notifications.append(("Pottery", f"Glazed with {gdata.get('label', gkey)}", None))
+            player.pending_notifications.append(("Pottery", f"Glazed with {pname} pigment", None))
+        else:
+            gdata = GLAZE_TYPES.get(gkey, {})
+            dust_id = gdata.get("dust_item")
+            if dust_id and player.inventory.get(dust_id, 0) >= 2:
+                player.inventory[dust_id] -= 2
+                if player.inventory[dust_id] <= 0:
+                    del player.inventory[dust_id]
+                tier_up = {"intact": "fine", "fine": "masterwork", "masterwork": "masterwork"}
+                piece.firing_level = tier_up.get(piece.firing_level, piece.firing_level)
+                piece.state = "glazed"
+                piece.glaze_type = gkey
+                key = f"{piece.clay_biome}_{piece.firing_level}"
+                player.discovered_pottery.add(key)
+                player.pending_notifications.append(("Pottery", f"Glazed with {gdata.get('label', gkey)}", None))
 
         self._glaze_piece_idx = None
         self._glaze_dust_key  = None
+        self._glaze_pig_idx   = None
 
     # ── Keyboard Handlers ─────────────────────────────────────────────────────
 

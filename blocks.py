@@ -1563,6 +1563,24 @@ MEAD_CELLAR_BLOCK    = 1648   # mead cellar: conditioning + bottling station
 SALTING_RACK_BLOCK   = 1649   # charcuterie: salt-rub and massage station
 CURING_CELLAR_BLOCK  = 1650   # charcuterie: real-time aging cellar
 
+# ── Pigment crops ──────────────────────────────────────────────────────────
+INDIGO_CROP_YOUNG    = 1651   # indigo plant (growing)
+INDIGO_CROP_MATURE   = 1652   # indigo plant (ripe) — mine → Pigment object
+MADDER_CROP_YOUNG    = 1653   # madder root plant (growing)
+MADDER_CROP_MATURE   = 1654   # madder root plant (ripe) — mine → Pigment object
+WELD_CROP_YOUNG      = 1655   # weld herb (growing)
+WELD_CROP_MATURE     = 1656   # weld herb (ripe) — mine → Pigment object
+WOAD_CROP_YOUNG      = 1657   # woad plant (growing)
+WOAD_CROP_MATURE     = 1658   # woad plant (ripe) — mine → Pigment object
+
+# ── Earth pigment deposits ─────────────────────────────────────────────────
+OCHRE_DEPOSIT        = 1659   # ochre clay deposit — drops raw_ochre / raw_ochre_red
+UMBER_DEPOSIT        = 1660   # umber deposit — drops raw_umber
+SIENNA_DEPOSIT       = 1661   # sienna deposit — drops raw_sienna
+
+# ── Pigment Mill ───────────────────────────────────────────────────────────
+PIGMENT_MILL_BLOCK   = 1662   # pigment grinding station
+
 PIPE_DEVICE_BLOCKS = frozenset((HOPPER_BLOCK, PIPE_OUTPUT_BLOCK, PIPE_FILTER_BLOCK, PIPE_SORTER_BLOCK,
                                 PIPE_VALVE_CLOSED, PIPE_VALVE_OPEN, PIPE_BUFFER_BLOCK))
 
@@ -1610,9 +1628,11 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     SIGNAL_LAMP_OFF, SIGNAL_LAMP_ON,
                     PIPE_VALVE_CLOSED, PIPE_VALVE_OPEN,
                     PIPE_BUFFER_BLOCK,
-                    TRAPDOOR_OPEN}
+                    TRAPDOOR_OPEN,
+                    PIGMENT_MILL_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
-                    CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT}
+                    CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT,
+                    OCHRE_DEPOSIT, UMBER_DEPOSIT, SIENNA_DEPOSIT}
 
 LOGIC_SOURCE_BLOCKS  = {SWITCH_BLOCK_ON, LATCH_BLOCK_ON, PRESSURE_PLATE_ON, RS_LATCH_Q1}
 LOGIC_GATE_BLOCKS    = {AND_GATE_BLOCK, OR_GATE_BLOCK, NOT_GATE_BLOCK, XOR_GATE_BLOCK}
@@ -1692,7 +1712,8 @@ YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG,
                      STRAWBERRY_CROP_YOUNG_P, TOMATO_CROP_YOUNG_P, WATERMELON_CROP_YOUNG_P,
                      CORN_CROP_YOUNG_P, RICE_CROP_YOUNG_P,
                      FLAX_CROP_YOUNG, COTTON_CROP_YOUNG,
-                     TARO_CROP_YOUNG, BREADFRUIT_CROP_YOUNG, COCONUT_CROP_YOUNG}
+                     TARO_CROP_YOUNG, BREADFRUIT_CROP_YOUNG, COCONUT_CROP_YOUNG,
+                     INDIGO_CROP_YOUNG, MADDER_CROP_YOUNG, WELD_CROP_YOUNG, WOAD_CROP_YOUNG}
 # Desert plants that grow wild on SAND — bypass tilled-soil requirement
 WILD_DESERT_PLANT_BLOCKS = {
     CACTUS_YOUNG, SAGUARO_YOUNG, BARREL_CACTUS_YOUNG, OCOTILLO_YOUNG,
@@ -1720,7 +1741,8 @@ MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATU
                      STRAWBERRY_CROP_MATURE_P, TOMATO_CROP_MATURE_P, WATERMELON_CROP_MATURE_P,
                      CORN_CROP_MATURE_P, RICE_CROP_MATURE_P,
                      FLAX_CROP_MATURE, COTTON_CROP_MATURE,
-                     TARO_CROP_MATURE, BREADFRUIT_CROP_MATURE, COCONUT_CROP_MATURE}
+                     TARO_CROP_MATURE, BREADFRUIT_CROP_MATURE, COCONUT_CROP_MATURE,
+                     INDIGO_CROP_MATURE, MADDER_CROP_MATURE, WELD_CROP_MATURE, WOAD_CROP_MATURE}
 CROP_BLOCKS       = YOUNG_CROP_BLOCKS | MATURE_CROP_BLOCKS
 
 # Perennial crops regrow after harvest (each harvest has ~33% chance to die)
@@ -1743,6 +1765,7 @@ PERENNIAL_CROP_MATURE = {
     TARO_CROP_MATURE,
     BREADFRUIT_CROP_MATURE,
     COCONUT_CROP_MATURE,
+    INDIGO_CROP_MATURE, MADDER_CROP_MATURE, WELD_CROP_MATURE, WOAD_CROP_MATURE,
 }
 
 # Reverse mapping: mature → young, used for perennial regrowth
@@ -1833,6 +1856,10 @@ MATURE_TO_YOUNG_CROP = {
     TARO_CROP_MATURE:         TARO_CROP_YOUNG,
     BREADFRUIT_CROP_MATURE:   BREADFRUIT_CROP_YOUNG,
     COCONUT_CROP_MATURE:      COCONUT_CROP_YOUNG,
+    INDIGO_CROP_MATURE:       INDIGO_CROP_YOUNG,
+    MADDER_CROP_MATURE:       MADDER_CROP_YOUNG,
+    WELD_CROP_MATURE:         WELD_CROP_YOUNG,
+    WOAD_CROP_MATURE:         WOAD_CROP_YOUNG,
 }
 
 ALPINE_BALCONY_RAIL          = 1022  # alpine balcony rail
@@ -3960,6 +3987,24 @@ BLOCKS = {
     PIPE_BUFFER_BLOCK:   {"name": "Pipe Buffer",       "hardness": 2.0, "color": ( 80,  90,  70), "drop": "pipe_buffer_item"},
     TRAPDOOR_CLOSED:     {"name": "Trapdoor",          "hardness": 2.0, "color": ( 90,  75,  55), "drop": "trapdoor_item"},
     TRAPDOOR_OPEN:       {"name": "Trapdoor (Open)",   "hardness": 2.0, "color": ( 90,  75,  55), "drop": "trapdoor_item"},
+
+    # ── Pigment crops ──────────────────────────────────────────────────────
+    INDIGO_CROP_YOUNG:   {"name": "Indigo Plant",        "hardness": 0.5, "color": ( 55, 100,  70), "drop": "indigo_seed",    "drop_chance": 1.0},
+    INDIGO_CROP_MATURE:  {"name": "Indigo Plant (Ripe)", "hardness": 0.5, "color": ( 45,  55, 115), "drop": None},
+    MADDER_CROP_YOUNG:   {"name": "Madder Plant",        "hardness": 0.5, "color": ( 70, 120,  60), "drop": "madder_seed",    "drop_chance": 1.0},
+    MADDER_CROP_MATURE:  {"name": "Madder Plant (Ripe)", "hardness": 0.5, "color": (155,  55,  70), "drop": None},
+    WELD_CROP_YOUNG:     {"name": "Weld Herb",           "hardness": 0.5, "color": ( 90, 155,  65), "drop": "weld_seed",      "drop_chance": 1.0},
+    WELD_CROP_MATURE:    {"name": "Weld Herb (Ripe)",    "hardness": 0.5, "color": (185, 175,  50), "drop": None},
+    WOAD_CROP_YOUNG:     {"name": "Woad Plant",          "hardness": 0.5, "color": ( 70, 135,  80), "drop": "woad_seed",      "drop_chance": 1.0},
+    WOAD_CROP_MATURE:    {"name": "Woad Plant (Ripe)",   "hardness": 0.5, "color": ( 55,  80, 145), "drop": None},
+
+    # ── Earth pigment deposits ──────────────────────────────────────────────
+    OCHRE_DEPOSIT:       {"name": "Ochre Deposit",       "hardness": 1.5, "color": (185, 145,  45), "drop": "raw_ochre",      "drop_chance": 1.0},
+    UMBER_DEPOSIT:       {"name": "Umber Deposit",       "hardness": 1.5, "color": (100,  70,  35), "drop": "raw_umber",      "drop_chance": 1.0},
+    SIENNA_DEPOSIT:      {"name": "Sienna Deposit",      "hardness": 1.5, "color": (170, 105,  40), "drop": "raw_sienna",     "drop_chance": 1.0},
+
+    # ── Pigment Mill ────────────────────────────────────────────────────────
+    PIGMENT_MILL_BLOCK:  {"name": "Pigment Mill",        "hardness": 2.0, "color": (110,  95,  75), "drop": "pigment_mill_item", "drop_chance": 1.0, "equipment": True},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}
