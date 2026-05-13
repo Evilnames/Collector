@@ -252,12 +252,15 @@ class World:
         self.birds = []
         self.nests = []
         self.insects = []
+        self.reptiles = []
         self.live_fish = []
         self.spears = []
         self.dropped_items = []
-        self.chest_data = {}     # (bx, by) -> {item_id: count}
-        self.ruin_markers = {}   # (bx, by) -> dict (settlement lore for plaque UI)
-        self.banner_data = {}    # (bx, by) -> coat_of_arms dict
+        self.chest_data = {}             # (bx, by) -> {item_id: count}
+        self.ruin_markers = {}           # (bx, by) -> dict (settlement lore for plaque UI)
+        self.banner_data = {}            # (bx, by) -> coat_of_arms dict
+        self.ruin_artifact_chests = {}   # (bx, by) -> artifact uid
+        self.discovered_artifacts = set()  # uids of artifacts the player has found
         self.light_traps = {}    # (bx, by) -> {"accumulated": [species_id, ...]}
         self.animal_traps = {}   # (bx, by) -> {"accumulated": [(item_id, count), ...]}
         self.fish_traps = {}     # (bx, by) -> {"type": str, "bait": int, "fish": int}
@@ -383,6 +386,7 @@ class World:
         init_player_cities(self)
         self._spawn_birds()
         self._spawn_insects()
+        self._spawn_reptiles()
         self._spawn_live_fish()
 
     # ------------------------------------------------------------------
@@ -677,6 +681,7 @@ class World:
                     self._pipe_chunks[cx] = pipe_db_data[cx]
                 self._spawn_insects_for_chunk(cx)
                 self._spawn_garden_insects_in_chunk(cx)
+                self._spawn_reptiles_for_chunk(cx)
                 self._spawn_live_fish_for_chunk(cx)
             for cx in newly_generated:
                 self._spawn_animals_for_chunk(cx)
@@ -738,6 +743,12 @@ class World:
             tuple(int(v) for v in k.split(",")): coa
             for k, coa in raw_banners.items()
         }
+        raw_artifact_chests = data.get("ruin_artifact_chests", {})
+        self.ruin_artifact_chests = {
+            tuple(int(v) for v in k.split(",")): uid
+            for k, uid in raw_artifact_chests.items()
+        }
+        self.discovered_artifacts = set(data.get("discovered_artifacts", []))
         raw_animal_traps = data.get("animal_trap_data", {})
         self.animal_traps = {
             tuple(int(v) for v in k.split(",")): trap
@@ -4325,6 +4336,39 @@ class World:
         for cx in sorted(self._chunks.keys()):
             self._spawn_insects_for_chunk(cx)
             self._spawn_garden_insects_in_chunk(cx)
+
+    def _spawn_reptiles_for_chunk(self, cx):
+        from reptiles import ALL_REPTILE_SPECIES
+        from blocks import WATER
+        rng = random.Random(self.seed + 13371 + cx * 5003)
+        spacing = 10
+        base_x = cx * CHUNK_W
+        x = base_x + 2
+        while x < base_x + CHUNK_W - 2:
+            biodome = self.biodome_at(x)
+            candidates = [cls for cls in ALL_REPTILE_SPECIES
+                          if not cls.BIOMES or biodome in cls.BIOMES]
+            if not candidates:
+                x += rng.randint(spacing, spacing * 2)
+                continue
+            sy = self.surface_height(x)
+            # Skip if surface block is water (ocean / deep lake floor)
+            if self.get_block(x, sy) == WATER or self.get_block(x, sy - 1) == WATER:
+                x += rng.randint(spacing, spacing * 2)
+                continue
+            if rng.random() > 0.35:
+                x += rng.randint(spacing, spacing * 2)
+                continue
+            species_cls = rng.choice(candidates)
+            spawn_x = float(x * BLOCK_SIZE + rng.randint(-4, 4))
+            spawn_y = float(sy * BLOCK_SIZE - species_cls.H)
+            self.reptiles.append(species_cls(spawn_x, spawn_y, self))
+            x += rng.randint(spacing, spacing * 2)
+
+    def _spawn_reptiles(self):
+        self.reptiles.clear()
+        for cx in sorted(self._chunks.keys()):
+            self._spawn_reptiles_for_chunk(cx)
 
     def _spawn_live_fish_for_chunk(self, cx):
         from live_fish import LiveFish, LIVE_FISH_SPECIES

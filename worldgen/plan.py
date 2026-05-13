@@ -115,6 +115,7 @@ class WorldPlan:
     settlements: dict           # settlement_id -> Settlement (alive + ruined)
     dynasties: dict             # dynasty_id -> Dynasty
     chronicle: list             # list[Event] in year order
+    lost_artifacts: list = field(default_factory=list)   # list[LostArtifact dicts]
 
     # ----- coordinate helpers -----
     @property
@@ -193,6 +194,7 @@ def _plan_to_dict(p: WorldPlan) -> dict:
         "settlements": {str(k): asdict(v) for k, v in p.settlements.items()},
         "dynasties": {str(k): _dynasty_dict(v) for k, v in p.dynasties.items()},
         "chronicle": [asdict(e) for e in p.chronicle],
+        "lost_artifacts": p.lost_artifacts,
     }
 
 
@@ -249,4 +251,5 @@ def _plan_from_dict(d: dict) -> WorldPlan:
         settlements=settlements,
         dynasties=dynasties,
         chronicle=chronicle,
+        lost_artifacts=d.get("lost_artifacts", []),
     )

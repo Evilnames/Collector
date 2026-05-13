@@ -277,6 +277,8 @@ class Player:
         self.discovered_coin_types = set()      # coin_type_id strings
         self.completed_coin_sets   = set()      # civ names where all denoms found
         self._coin_gen = CoinGenerator(world.seed)
+        # Lost Heritage artifacts
+        self.lost_artifacts = []   # list of LostArtifact dicts (discovered)
         # Jewelry collection
         self.jewelry = []
         self.discovered_jewelry = set()          # jewelry_type strings
@@ -338,6 +340,9 @@ class Player:
         # Insect observations
         self.insects_observed = {}         # species_id -> {"count": int, "biome": str}
         self.discovered_insect_types = set()
+        # Reptile observations
+        self.reptiles_observed = {}        # species_id -> {"count": int, "biome": str}
+        self.discovered_reptile_types = set()
         # Food codex
         self.discovered_foods = set()      # output_id strings of crafted food items
         self.foods_cooked = {}             # output_id -> count crafted
@@ -528,6 +533,8 @@ class Player:
         self.discovered_bird_types = set(d.get("discovered_bird_types", []))
         self.insects_observed = d.get("insects_observed", {})
         self.discovered_insect_types = set(d.get("discovered_insect_types", []))
+        self.reptiles_observed = d.get("reptiles_observed", {})
+        self.discovered_reptile_types = set(d.get("discovered_reptile_types", []))
         self.discovered_foods = set(d.get("discovered_foods", []))
         self.jewelry = [Jewelry(**j) for j in d.get("jewelry", [])]
         self.discovered_jewelry = set(d.get("discovered_jewelry", []))
@@ -574,6 +581,7 @@ class Player:
         self.pending_tapestries = [Tapestry.from_dict(x) for x in d.get("pending_tapestries", [])]
         self.tapestries_created = [Tapestry.from_dict(x) for x in d.get("tapestries_created", [])]
         self.pottery_pieces     = [PotteryPiece(**x) for x in d.get("pottery_pieces", [])]
+        self.lost_artifacts     = d.get("lost_artifacts", [])
         self.discovered_pottery = set(d.get("discovered_pottery", []))
         self.honey_jars         = [HoneyJar(**x) for x in d.get("honey_jars", [])]
         self.discovered_honeys  = set(d.get("discovered_honeys", []))
@@ -1542,7 +1550,20 @@ class Player:
                         if bonus and random.random() < block_data.get("bonus_drop_chance", 0.0):
                             self._add_item(bonus)
                 if block_id == CHEST_BLOCK:
-                    for item_id, count in self.world.chest_data.pop((bx, by), {}).items():
+                    chest_inv = self.world.chest_data.pop((bx, by), {})
+                    # Resolve heritage artifact if this chest had one.
+                    artifact_uid = getattr(self.world, "ruin_artifact_chests", {}).pop((bx, by), None)
+                    if artifact_uid is not None:
+                        getattr(self.world, "discovered_artifacts", set()).add(artifact_uid)
+                        if not hasattr(self, "lost_artifacts"):
+                            self.lost_artifacts = []
+                        plan = getattr(self.world, "plan", None)
+                        if plan is not None:
+                            for a in plan.lost_artifacts:
+                                if a["uid"] == artifact_uid:
+                                    self.lost_artifacts.append(a)
+                                    break
+                    for item_id, count in chest_inv.items():
                         if count > 0:
                             self._add_item(item_id, count)
                 if block_id == BANNER_BLOCK:

@@ -16,6 +16,7 @@ from worldgen.kingdoms import seed_kingdoms
 from worldgen.history.sim import simulate_history
 from worldgen.materialize import build_plan
 from worldgen.plan import WorldPlan
+from lost_heritage import ArtifactGenerator
 
 
 def generate_world(seed: int, span=None, year_callback=None,
@@ -40,7 +41,9 @@ def generate_world(seed: int, span=None, year_callback=None,
         kingdoms, settlements, dynasties, next_ids = seed_kingdoms(cells, seed)
         chronicle = simulate_history(seed, cells, kingdoms, settlements, dynasties,
                                      next_ids, year_callback=year_callback)
-        return build_plan(seed, cells, kingdoms, settlements, dynasties, chronicle)
+        plan = build_plan(seed, cells, kingdoms, settlements, dynasties, chronicle)
+        plan.lost_artifacts = ArtifactGenerator().generate_for_world(plan)
+        return plan
     finally:
         for k, v in _saved.items():
             if v is None:

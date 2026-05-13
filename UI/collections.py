@@ -106,13 +106,15 @@ class CollectionsMixin:
         n_weapons_crafted  = len(getattr(player, "crafted_weapons", []))
         n_guard_sketches   = len(getattr(player, "guard_sketches", []))
         n_coins_owned = len(getattr(player, "coins", []))
+        n_heritage_owned = len(getattr(player, "lost_artifacts", []))
         total_collected = (len(player.rocks) + len(player.wildflowers) +
                            len(player.fossils) + len(player.gems) + n_mush_owned +
                            n_coffee_owned + n_wine_owned + n_spirits_owned + n_beer_owned + n_tea_owned +
                            n_potions_owned + n_textiles_owned + n_cheese_owned + n_jewelry_owned +
                            n_sculptures_owned + n_tapestries_owned + n_pottery_owned + n_salt_owned +
                            n_honey_owned + n_mead_owned +
-                           n_dogs_tamed + n_weapons_crafted + n_guard_sketches + n_coins_owned)
+                           n_dogs_tamed + n_weapons_crafted + n_guard_sketches + n_coins_owned +
+                           n_heritage_owned)
 
         # ---- 3 main tabs ----
         self._tab_rects.clear()
@@ -141,8 +143,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX", "BEER CODEX", "GUARD SKETCHES", "GLADIATOR CODEX", "SEASHELL CODEX", "COIN CODEX", "HONEY CODEX", "MEAD CODEX", "CHARCUTERIE CODEX", "PIGMENT CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165), (155, 215, 90), (150, 200, 240), (215, 185, 80), (210, 230, 240), (235, 205, 110), (255, 225, 120), (240, 200, 90), (245, 165, 95), (210, 175, 240)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "REPTILE CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX", "BEER CODEX", "GUARD SKETCHES", "GLADIATOR CODEX", "SEASHELL CODEX", "COIN CODEX", "HONEY CODEX", "MEAD CODEX", "CHARCUTERIE CODEX", "PIGMENT CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (165, 210, 95), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165), (155, 215, 90), (150, 200, 240), (215, 185, 80), (210, 230, 240), (235, 205, 110), (255, 225, 120), (240, 200, 90), (245, 165, 95), (210, 175, 240)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -187,6 +189,7 @@ class CollectionsMixin:
                 ("mead",         f"MEAD ({len(getattr(player,'mead_batches',[]))})",        (38, 28,  8), (190, 145,  40), (240, 200,  90)),
                 ("charcuterie",  f"CURED ({n_charcuterie_owned})",                            (28, 18, 10), (160,  90,  60), (220, 160, 110)),
                 ("pigments",     f"PIGMENTS ({len(getattr(player,'pigments',[]))})",            (50, 35, 65), (145,  90, 185), (210, 175, 240)),
+                ("heritage",     f"HERITAGE ({len(getattr(player,'lost_artifacts',[]))})",      (28, 22,  8), (185, 155,  80), (240, 210, 120)),
             ]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._collection_filter_rects.clear()
@@ -235,6 +238,7 @@ class CollectionsMixin:
                 ((40, 18, 28),  (175,  90, 115), (235, 160, 180)),
                 ((30, 22,  8),  (175, 115,  45), (230, 170,  80)),
                 ((20, 40, 22),  (70,  170,  80), (140, 230, 150)),
+                ((28, 38, 15),  (110, 150,  55), (165, 210,  95)),   # Reptiles
                 ((38, 24, 12),  (175, 105,  45), (235, 175, 105)),
                 ((38, 28, 14),  (160, 120,  55), (210, 175, 100)),
                 ((25, 45, 20),  ( 65, 160,  75), (130, 215, 140)),
@@ -259,7 +263,7 @@ class CollectionsMixin:
                 ((50, 35, 65),  (145,  90, 185), (210, 175, 240)),   # Pigments
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
-                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER", "GUARDS", "GLADIATORS", "SEASHELLS", "COINS", "HONEY", "MEAD", "CHARCUTERIE", "PIGMENTS"]
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "REPTILES", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER", "GUARDS", "GLADIATORS", "SEASHELLS", "COINS", "HONEY", "MEAD", "CHARCUTERIE", "PIGMENTS"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
             total_sb_h = len(enc_labels) * (SB_BTN_H + SB_GAP)
@@ -306,6 +310,7 @@ class CollectionsMixin:
                 self._draw_wine_codex,
                 self._draw_spirits_codex,
                 self._draw_insect_codex,
+                self._draw_reptile_codex,
                 self._draw_food_codex,
                 self._draw_horse_codex,
                 self._draw_tea_codex,
@@ -415,6 +420,8 @@ class CollectionsMixin:
             items.extend(("charcuterie", i) for i in range(len(getattr(player, "charcuterie_items", []))))
         if flt in ("all", "pigments"):
             items.extend(("pigment", i) for i in range(len(getattr(player, "pigments", []))))
+        if flt in ("all", "heritage"):
+            items.extend(("heritage", i) for i in range(len(getattr(player, "lost_artifacts", []))))
 
         if not items:
             msg = self.font.render("Nothing collected yet!", True, (80, 80, 90))
@@ -858,6 +865,54 @@ class CollectionsMixin:
                 pygame.draw.rect(img, qc, (8, 46, bar_fill, 4))
                 label = _PTYPES.get(it.pigment_key, {}).get("display", it.pigment_key.replace("_", " ").title())
                 label_col = pig_col
+            elif cat == "heritage":
+                from lost_heritage import RARITY_COLORS as _HAR_COLS
+                art = getattr(player, "lost_artifacts", [])[key]
+                rar_col = _HAR_COLS.get(art["rarity"], (210, 185, 120))
+                pygame.draw.rect(self.screen, (40, 32, 12) if selected else (24, 18, 6), rect)
+                pygame.draw.rect(self.screen, rar_col, rect, 3 if selected else 2)
+                img = pygame.Surface((58, 58), pygame.SRCALPHA)
+                img.fill((0, 0, 0, 0))
+                # Draw category icon
+                _CAT_ICONS = {
+                    "codex":      lambda s, c: (pygame.draw.rect(s, c, (14, 10, 30, 38), border_radius=2),
+                                                pygame.draw.line(s, c, (18, 18), (40, 18), 2),
+                                                pygame.draw.line(s, c, (18, 26), (40, 26), 2),
+                                                pygame.draw.line(s, c, (18, 34), (34, 34), 2)),
+                    "relic":      lambda s, c: (pygame.draw.polygon(s, c, [(29,8),(36,22),(50,24),(39,35),(42,50),(29,42),(16,50),(19,35),(8,24),(22,22)]),),
+                    "artwork":    lambda s, c: (pygame.draw.rect(s, c, (10, 10, 38, 30), 2),
+                                                pygame.draw.circle(s, c, (22, 24), 6),
+                                                pygame.draw.polygon(s, c, [(20,30),(36,16),(44,30)])),
+                    "instrument": lambda s, c: (pygame.draw.arc(s, c, (12, 8, 34, 42), 0, 3.14, 2),
+                                                pygame.draw.line(s, c, (29, 8), (29, 50), 2),
+                                                pygame.draw.line(s, c, (18, 36), (40, 36), 2)),
+                    "fragment":   lambda s, c: (pygame.draw.polygon(s, c, [(8,42),(16,10),(44,10),(50,42)], 2),
+                                                pygame.draw.line(s, c, (14, 26), (44, 26), 2),
+                                                pygame.draw.line(s, c, (24, 10), (20, 42), 2)),
+                    "blueprint":  lambda s, c: (pygame.draw.rect(s, c, (8, 8, 42, 42), 2),
+                                                pygame.draw.line(s, c, (8, 24), (50, 24), 1),
+                                                pygame.draw.line(s, c, (24, 8), (24, 50), 1)),
+                    "idol":       lambda s, c: (pygame.draw.circle(s, c, (29, 14), 8, 2),
+                                                pygame.draw.line(s, c, (29, 22), (29, 40), 2),
+                                                pygame.draw.line(s, c, (14, 30), (44, 30), 2),
+                                                pygame.draw.line(s, c, (29, 40), (18, 52), 2),
+                                                pygame.draw.line(s, c, (29, 40), (40, 52), 2)),
+                    "map":        lambda s, c: (pygame.draw.rect(s, c, (8, 10, 42, 38), 2),
+                                                pygame.draw.line(s, c, (29, 10), (23, 48), 1),
+                                                pygame.draw.line(s, c, (8, 28), (50, 28), 1),
+                                                pygame.draw.circle(s, c, (38, 20), 4, 2),
+                                                pygame.draw.line(s, c, (35, 17), (41, 23), 2)),
+                    "vessel":     lambda s, c: (pygame.draw.ellipse(s, c, (18, 6, 22, 8), 2),
+                                                pygame.draw.polygon(s, c, [(18,13),(12,44),(46,44),(40,13)], 2),
+                                                pygame.draw.ellipse(s, c, (12, 40, 34, 8), 2),
+                                                pygame.draw.line(s, c, (12, 22), (7, 28), 2),
+                                                pygame.draw.line(s, c, (46, 22), (51, 28), 2)),
+                }
+                icon_fn = _CAT_ICONS.get(art["category"])
+                if icon_fn:
+                    icon_fn(img, rar_col)
+                label = art["category"].title()
+                label_col = rar_col
             else:  # mushroom
                 count = player.mushrooms_found.get(key, 0)
                 pygame.draw.rect(self.screen, (40, 36, 20) if selected else (25, 22, 12), rect)
@@ -1557,6 +1612,66 @@ class CollectionsMixin:
                 dlabel("Notes:", (185, 160, 210))
                 for note in it.notes:
                     dlabel(f"  • {note}", (200, 180, 225))
+        elif sel_cat == "heritage":
+            from lost_heritage import RARITY_COLORS as _HAR_COLS
+            art = getattr(player, "lost_artifacts", [])[sel_key]
+            rar_col = _HAR_COLS.get(art["rarity"], (210, 185, 120))
+            pygame.draw.rect(self.screen, (28, 20, 6), (dx, dy2, dw, dh))
+            pygame.draw.rect(self.screen, rar_col, (dx, dy2, dw, dh), 2)
+            # Category badge at top
+            badge = art["category"].upper()
+            bs = self.small.render(badge, True, rar_col)
+            self.screen.blit(bs, (dx + dw // 2 - bs.get_width() // 2, dy2 + 10))
+            iy[0] = dy2 + 30
+            # Name (wrap if needed)
+            name = art["name"]
+            name_s = self.small.render(self._fit_label(name, dw - 16), True, rar_col)
+            self.screen.blit(name_s, (dx + 8, iy[0]))
+            iy[0] += 18
+            rar_label = art["rarity"].upper()
+            rs = self.small.render(rar_label, True, rar_col)
+            self.screen.blit(rs, (dx + 8, iy[0]))
+            iy[0] += 20
+            dlabel(f"Condition: {art.get('condition', 'intact').title()}", (185, 175, 145))
+            dlabel(f"Material: {art['material'].title()}", (200, 185, 150))
+            dlabel(f"Kingdom: {art['origin_kingdom']}", (170, 200, 155))
+            dlabel(f"Dynasty: {art['origin_dynasty']}", (155, 185, 200))
+            yr_c = art["year_created"]
+            yr_l = art["year_lost"]
+            dlabel(f"Created: Year {yr_c}  •  Lost: {'Year ' + str(yr_l) if yr_l != -1 else 'Unknown'}", (185, 175, 140))
+            iy[0] += 4
+            dlabel(f"Fate: {art['cause_of_loss'].capitalize()}", (190, 155, 115))
+            iy[0] += 6
+            dlabel(f"Value: {art['value']} gold", (220, 185, 80))
+            iy[0] += 6
+            # Description (word-wrap)
+            words = art["description"].split()
+            line, max_w = "", dw - 18
+            for word in words:
+                test = (line + " " + word).strip()
+                if self.small.size(test)[0] > max_w:
+                    dlabel(line, (195, 185, 160))
+                    line = word
+                else:
+                    line = test
+            if line:
+                dlabel(line, (195, 185, 160))
+            iy[0] += 6
+            dlabel(f"Hint: {art['location_hint']}", (155, 145, 120))
+            legend = art.get("legend", "")
+            if legend:
+                iy[0] += 8
+                dlabel("Legend:", (255, 220, 100))
+                words2, line2, max_w2 = legend.split(), "", dw - 18
+                for word in words2:
+                    test2 = (line2 + " " + word).strip()
+                    if self.small.size(test2)[0] > max_w2:
+                        dlabel(line2, (240, 210, 130))
+                        line2 = word
+                    else:
+                        line2 = test2
+                if line2:
+                    dlabel(line2, (240, 210, 130))
         else:  # mushroom
             bid = sel_key
             pygame.draw.rect(self.screen, (16, 14, 8), (dx, dy2, dw, dh))
@@ -2922,6 +3037,102 @@ class CollectionsMixin:
                 if morph:
                     ms = self.small.render(morph[:3].upper(), True, (210, 140, 255))
                     self.screen.blit(ms, (x + 3, y + CELL - 28))
+
+    # ------------------------------------------------------------------
+    # Reptile codex
+    # ------------------------------------------------------------------
+
+    def _draw_reptile_codex(self, player, gy0=58, gx_off=0):
+        from reptiles import ALL_REPTILE_SPECIES
+        RARITY_COLS = {"common": (165, 210, 95), "uncommon": (110, 180, 80),
+                       "rare": (80, 210, 100)}
+
+        CELL, GAP, COLS = 120, 10, 6
+        ROW_H = CELL + GAP
+        gx0 = gx_off + (SCREEN_W - gx_off - (COLS * CELL + (COLS - 1) * GAP)) // 2
+        visible_h = SCREEN_H - gy0 - 8
+
+        num_rows = (len(ALL_REPTILE_SPECIES) + COLS - 1) // COLS
+        total_h = num_rows * ROW_H
+        self._max_reptile_codex_scroll = max(0, total_h - visible_h)
+        self._reptile_codex_scroll = max(0, min(self._max_reptile_codex_scroll,
+                                                self._reptile_codex_scroll))
+
+        if self._max_reptile_codex_scroll > 0:
+            sb_x = gx0 + COLS * (CELL + GAP) - GAP + 8
+            sb_th = max(20, visible_h * visible_h // total_h)
+            sb_top = gy0 + (visible_h - sb_th) * self._reptile_codex_scroll // self._max_reptile_codex_scroll
+            pygame.draw.rect(self.screen, (28, 38, 18), (sb_x, gy0, 7, visible_h))
+            pygame.draw.rect(self.screen, (110, 150, 55), (sb_x, sb_top, 7, sb_th))
+
+        self._reptile_codex_rects.clear()
+        for idx, sp_cls in enumerate(ALL_REPTILE_SPECIES):
+            col = idx % COLS
+            row = idx // COLS
+            x = gx0 + col * (CELL + GAP)
+            y = gy0 + row * ROW_H - self._reptile_codex_scroll
+            if y + CELL <= gy0 or y >= SCREEN_H - 8:
+                continue
+            rect = pygame.Rect(x, y, CELL, CELL)
+            self._reptile_codex_rects[sp_cls.SPECIES] = rect
+
+            discovered = sp_cls.SPECIES in getattr(player, "reptiles_observed", {})
+            obs = getattr(player, "reptiles_observed", {}).get(sp_cls.SPECIES, {})
+            rar_col = RARITY_COLS.get(sp_cls.RARITY, (150, 150, 100))
+
+            bg_col = (18, 32, 10) if discovered else (20, 26, 14)
+            pygame.draw.rect(self.screen, bg_col, rect)
+            pygame.draw.rect(self.screen, rar_col if discovered else (45, 60, 30), rect, 2)
+
+            # Reptile icon
+            rw, rh = sp_cls.W * 3, sp_cls.H * 3
+            rep_surf = pygame.Surface((rw, rh), pygame.SRCALPHA)
+            rep_surf.fill((0, 0, 0, 0))
+            bc = sp_cls.BODY_COLOR if discovered else (50, 60, 40)
+            pc = sp_cls.PATTERN_COLOR if discovered else (40, 50, 30)
+            belly = sp_cls.BELLY_COLOR if discovered else (45, 55, 35)
+            bt = sp_cls.BODY_TYPE
+            if bt == "snake":
+                seg = rw // 3
+                pygame.draw.ellipse(rep_surf, bc, (0, rh // 4, seg + 2, rh // 2))
+                pygame.draw.ellipse(rep_surf, bc, (seg - 1, rh // 6, seg + 2, rh * 2 // 3))
+                pygame.draw.ellipse(rep_surf, bc, (seg * 2 - 1, rh // 4, seg + 3, rh // 2))
+                pygame.draw.ellipse(rep_surf, belly, (1, rh // 3, rw - 4, rh // 4))
+            elif bt == "turtle":
+                shell_pts = [
+                    (2, rh - 2), (0, rh // 2), (rw // 4, 1),
+                    (rw * 3 // 4, 1), (rw, rh // 2), (rw - 2, rh - 2),
+                ]
+                pygame.draw.polygon(rep_surf, bc, shell_pts)
+                pygame.draw.polygon(rep_surf, pc, shell_pts, 1)
+                pygame.draw.line(rep_surf, pc, (rw // 2, 2), (rw // 2, rh - 2), 1)
+                pygame.draw.line(rep_surf, pc, (2, rh // 2), (rw - 2, rh // 2), 1)
+                pygame.draw.ellipse(rep_surf, bc, (rw - 4, rh // 2 - 2, 5, 4))
+            else:  # lizard
+                body_w = rw - 6
+                pygame.draw.ellipse(rep_surf, bc, (3, rh // 4, body_w, rh // 2))
+                pygame.draw.ellipse(rep_surf, belly, (5, rh // 3, body_w - 6, rh // 4))
+                pygame.draw.circle(rep_surf, bc, (rw - 4, rh // 2), rh // 4)
+                pygame.draw.ellipse(rep_surf, bc, (0, rh // 3, rw // 4, rh // 3))
+            self.screen.blit(rep_surf, (x + CELL // 2 - rw // 2, y + 6))
+
+            if discovered:
+                name = sp_cls.SPECIES.replace("_", " ").title()
+                name_col = (165, 220, 100)
+            else:
+                name = "???"
+                name_col = (55, 70, 40)
+            ns = self.small.render(self._fit_label(name, CELL - 6), True, name_col)
+            self.screen.blit(ns, (x + CELL // 2 - ns.get_width() // 2, y + CELL - 28))
+
+            rs = self.small.render(sp_cls.RARITY.upper(), True,
+                                    rar_col if discovered else (50, 65, 35))
+            self.screen.blit(rs, (x + CELL // 2 - rs.get_width() // 2, y + CELL - 14))
+
+            if discovered:
+                cnt = obs.get("count", 0)
+                cb = self.small.render(f"×{cnt}", True, (150, 215, 90))
+                self.screen.blit(cb, (x + CELL - cb.get_width() - 3, y + 3))
 
     # ------------------------------------------------------------------
     # Fish codex

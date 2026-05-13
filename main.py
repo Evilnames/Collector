@@ -97,6 +97,34 @@ INSECT_DROP_TABLE = {
 }
 
 
+def _update_reptiles(reptiles, player, dt, block_size):
+    """Update all reptiles; return (species_id, biome) if one is discovered, else None."""
+    from reptiles import OBS_DURATION, OBS_SPEED_THRESH
+    discovered = None
+    for rep in reptiles:
+        rep.update(dt)
+        if rep.state in ("fleeing", "hidden"):
+            rep._obs_timer = 0.0
+            continue
+        dx_b = abs(player.x - rep.x) / block_size
+        dy_b = abs(player.y - rep.y) / block_size
+        if dx_b < rep.OBS_RADIUS and dy_b < rep.OBS_RADIUS * 0.6:
+            if abs(player.vx) < OBS_SPEED_THRESH:
+                rep._obs_timer += dt
+                if rep._obs_timer >= OBS_DURATION and discovered is None:
+                    biome = ""
+                    if hasattr(rep, 'world') and rep.world is not None:
+                        biome = rep.world.biodome_at(int(rep.x // block_size))
+                    rep._obs_timer = 0.0
+                    rep.flee()
+                    discovered = (rep.SPECIES, biome)
+            else:
+                rep._obs_timer = 0.0
+        else:
+            rep._obs_timer = 0.0
+    return discovered
+
+
 def _load_settings():
     try:
         if SETTINGS_PATH.exists():
@@ -497,6 +525,7 @@ def main():
     research = ResearchTree()
     t0 = _t("ResearchTree", t0)
 
+    overrides = {}
     if choice == "load":
         def _do_load():
             global t0
@@ -560,7 +589,7 @@ def main():
                 node.apply(player, world)
             research.apply_bonuses(player, world)
 
-    if settings.get("debug", False):
+    if settings.get("debug", False) or (choice == "new" and overrides.get("exploration_mode", False)):
         player.no_hunger = True
 
     t0 = _t("total after choice", t0)
@@ -2219,6 +2248,7 @@ def main():
             renderer.draw_nests(world.nests)
             renderer.draw_birds(world.birds)
             renderer.draw_insects(world.insects, world.time_of_day)
+            renderer.draw_reptiles(world.reptiles)
             renderer.draw_live_fish(world.live_fish)
             renderer.draw_spears(world.spears)
             renderer.draw_aim_preview(player, mouse_scr_pos)
@@ -2340,6 +2370,20 @@ def main():
             bird.update(dt)
         for ins in world.insects:
             ins.update(dt)
+        _reptile_discover = _update_reptiles(world.reptiles, player, dt, BLOCK_SIZE)
+        if _reptile_discover:
+            _sp, _biome = _reptile_discover
+            _existing = player.reptiles_observed.get(_sp)
+            if _existing is None:
+                player.reptiles_observed[_sp] = {"count": 1, "biome": _biome}
+            else:
+                _existing["count"] += 1
+            player.discovered_reptile_types.add(_sp)
+            from reptiles import ALL_REPTILE_SPECIES as _ALL_REPT
+            _rept_cls = next((c for c in _ALL_REPT if c.SPECIES == _sp), None)
+            _rarity = _rept_cls.RARITY if _rept_cls else "common"
+            player.pending_notifications.append(
+                ("Reptile", _sp.replace("_", " ").title(), _rarity))
         for lf in world.live_fish:
             lf.update(dt)
         world.live_fish = [lf for lf in world.live_fish if not lf.dead]
@@ -2464,6 +2508,7 @@ def main():
         renderer.draw_nests(world.nests)
         renderer.draw_birds(world.birds)
         renderer.draw_insects(world.insects)
+        renderer.draw_reptiles(world.reptiles)
         renderer.draw_live_fish(world.live_fish)
         renderer.draw_spears(world.spears)
         renderer.draw_aim_preview(player, mouse_scr_pos)

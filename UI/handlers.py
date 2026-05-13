@@ -217,6 +217,7 @@ class HandlersMixin:
                 self._wine_codex_scroll = 0
                 self._spirits_codex_scroll = 0
                 self._insect_codex_scroll = 0
+                self._reptile_codex_scroll = 0
                 self._food_codex_scroll = 0
                 self._horse_codex_scroll = 0
                 self._tea_codex_scroll = 0
@@ -256,6 +257,8 @@ class HandlersMixin:
                     self._fossil_codex_scroll = 0
                     self._gem_codex_scroll = 0
                     self._bird_codex_scroll = 0
+                    self._insect_codex_scroll = 0
+                    self._reptile_codex_scroll = 0
                     self._fish_codex_scroll = 0
                     self._coffee_codex_scroll = 0
                     self._wine_codex_scroll = 0
@@ -312,32 +315,32 @@ class HandlersMixin:
                     if rect.collidepoint(pos):
                         self._spirits_codex_selected = key if self._spirits_codex_selected != key else None
                         return
-            elif self._encyclopedia_cat == 13:
+            elif self._encyclopedia_cat == 14:
                 for key, rect in self._tea_codex_rects.items():
                     if rect.collidepoint(pos):
                         self._tea_codex_selected = key if self._tea_codex_selected != key else None
                         return
-            elif self._encyclopedia_cat == 14:
+            elif self._encyclopedia_cat == 15:
                 for key, rect in self._herb_codex_rects.items():
                     if rect.collidepoint(pos):
                         self._herb_codex_selected = key if self._herb_codex_selected != key else None
                         return
-            elif self._encyclopedia_cat == 15:
+            elif self._encyclopedia_cat == 16:
                 for key, rect in self._textile_codex_rects.items():
                     if rect.collidepoint(pos):
                         self._textile_codex_selected = key if self._textile_codex_selected != key else None
                         return
-            elif self._encyclopedia_cat == 16:
+            elif self._encyclopedia_cat == 17:
                 for key, rect in self._cheese_codex_rects.items():
                     if rect.collidepoint(pos):
                         self._cheese_codex_selected = key if self._cheese_codex_selected != key else None
                         return
-            elif self._encyclopedia_cat == 19:
+            elif self._encyclopedia_cat == 20:
                 for key, rect in self._salt_codex_rects.items():
                     if rect.collidepoint(pos):
                         self._salt_codex_selected = key if self._salt_codex_selected != key else None
                         return
-            elif self._encyclopedia_cat == 32:
+            elif self._encyclopedia_cat == 33:
                 for key, rect in self._pigment_codex_rects.items():
                     if rect.collidepoint(pos):
                         self._pigment_codex_selected = key if self._pigment_codex_selected != key else None
@@ -410,14 +413,16 @@ class HandlersMixin:
                 elif self._encyclopedia_cat == 10:
                     self._insect_codex_scroll = max(0, min(self._max_insect_codex_scroll, self._insect_codex_scroll - dy * 80))
                 elif self._encyclopedia_cat == 11:
-                    self._food_codex_scroll = max(0, min(self._max_food_codex_scroll, self._food_codex_scroll - dy * 60))
+                    self._reptile_codex_scroll = max(0, min(self._max_reptile_codex_scroll, self._reptile_codex_scroll - dy * 80))
                 elif self._encyclopedia_cat == 12:
-                    self._horse_codex_scroll = max(0, min(self._max_horse_codex_scroll, self._horse_codex_scroll - dy * 60))
+                    self._food_codex_scroll = max(0, min(self._max_food_codex_scroll, self._food_codex_scroll - dy * 60))
                 elif self._encyclopedia_cat == 13:
-                    self._tea_codex_scroll = max(0, min(self._max_tea_codex_scroll, self._tea_codex_scroll - dy * 60))
+                    self._horse_codex_scroll = max(0, min(self._max_horse_codex_scroll, self._horse_codex_scroll - dy * 60))
                 elif self._encyclopedia_cat == 14:
+                    self._tea_codex_scroll = max(0, min(self._max_tea_codex_scroll, self._tea_codex_scroll - dy * 60))
+                elif self._encyclopedia_cat == 15:
                     self._herb_codex_scroll = max(0, min(self._max_herb_codex_scroll, self._herb_codex_scroll - dy * 60))
-                elif self._encyclopedia_cat == 28:
+                elif self._encyclopedia_cat == 29:
                     self._coin_codex_scroll = max(0, getattr(self, "_coin_codex_scroll", 0) - dy * 30)
             elif self._collection_tab == 2:
                 self._achievement_scroll = max(0, min(self._max_achievement_scroll, self._achievement_scroll - dy * 60))

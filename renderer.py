@@ -1117,6 +1117,10 @@ class Renderer:
         night_alpha = self._sky_night_alpha(time_of_day)
         _draw_insects(self.screen, self.cam_x, self.cam_y, insects, night_alpha, time_of_day)
 
+    def draw_reptiles(self, reptiles):
+        from Render.reptiles import draw_reptiles as _draw_reptiles
+        _draw_reptiles(self.screen, self.cam_x, self.cam_y, reptiles)
+
     def draw_live_fish(self, fish_list):
         from Render.live_fish import draw_live_fish as _draw_live_fish
         _draw_live_fish(self.screen, self.cam_x, self.cam_y, fish_list)

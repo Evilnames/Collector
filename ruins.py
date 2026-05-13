@@ -60,6 +60,19 @@ _LOOT_RELICS = [
     ("coin_pouch", 1, 2),
 ]
 
+# Heritage artifact item ids — one placed when a matching lost artifact exists.
+_HERITAGE_ITEM_IDS = {
+    "artwork":    "lost_artwork",
+    "codex":      "lost_codex",
+    "relic":      "dynasty_relic",
+    "instrument": "cultural_instrument",
+    "fragment":   "sacred_fragment",
+    "blueprint":  "architectural_plan",
+    "idol":       "ancient_idol",
+    "map":        "ancient_map",
+    "vessel":     "antique_vessel",
+}
+
 
 def roll_chest_contents(rng: random.Random, agenda: str, age_years: int) -> dict:
     """Build a chest inventory dict {item_id: count} for one ruin chest."""
@@ -177,6 +190,39 @@ def _build_one_structure(world, rng, base_x: int, sy: int,
     chest_pos_out.append((x0 + width // 2, sy - 1))
 
 
+def _pick_heritage_artifact(rng, world, settlement, age_years: int):
+    """Return a lost artifact dict for this ruin, or None.
+
+    Chance scales with age. Artifacts already discovered or already placed
+    in another chest are excluded.
+    """
+    heritage_chance = min(0.40, 0.06 + age_years * 0.0009)
+    if rng.random() >= heritage_chance:
+        return None
+    plan = getattr(world, "plan", None)
+    if plan is None or not plan.lost_artifacts:
+        return None
+    kingdom = plan.kingdoms.get(settlement.original_kingdom_id)
+    if kingdom is None:
+        return None
+    already_placed = set(getattr(world, "ruin_artifact_chests", {}).values())
+    already_found  = getattr(world, "discovered_artifacts", set())
+    matching = [
+        a for a in plan.lost_artifacts
+        if a["origin_kingdom"] == kingdom.name
+        and a["uid"] not in already_placed
+        and a["uid"] not in already_found
+    ]
+    if not matching:
+        # Fall back to any undiscovered, unplaced artifact.
+        matching = [
+            a for a in plan.lost_artifacts
+            if a["uid"] not in already_placed
+            and a["uid"] not in already_found
+        ]
+    return rng.choice(matching) if matching else None
+
+
 def spawn_ruin_for_settlement(world, settlement) -> bool:
     """Build one ruin's worth of geometry + chests at this settlement.
 
@@ -230,9 +276,21 @@ def spawn_ruin_for_settlement(world, settlement) -> bool:
     age_years = max(0, plan.history_years - settlement.ruined_year) if settlement.ruined_year > 0 else 100
     n_chests = 1 if settlement.tier in ("hamlet", "village") else 2
     rng.shuffle(chest_candidates)
-    for cx_pos, cy_pos in chest_candidates[:n_chests]:
+
+    # Pick a heritage artifact for this ruin (at most one per ruin).
+    heritage_artifact = _pick_heritage_artifact(rng, world, settlement, age_years)
+
+    for i, (cx_pos, cy_pos) in enumerate(chest_candidates[:n_chests]):
         if _safe_set(world, cx_pos, cy_pos, CHEST_BLOCK):
             world.chest_data[(cx_pos, cy_pos)] = roll_chest_contents(rng, agenda, age_years)
+            # Slip the heritage artifact into the first chest.
+            if i == 0 and heritage_artifact is not None:
+                item_id = _HERITAGE_ITEM_IDS[heritage_artifact["category"]]
+                world.chest_data[(cx_pos, cy_pos)][item_id] = \
+                    world.chest_data[(cx_pos, cy_pos)].get(item_id, 0) + 1
+                if not hasattr(world, "ruin_artifact_chests"):
+                    world.ruin_artifact_chests = {}
+                world.ruin_artifact_chests[(cx_pos, cy_pos)] = heritage_artifact["uid"]
 
     # Place a weathered marker stone just outside the ruin footprint with a
     # lore plaque the player can read (E key). Lookup is by world_x against

@@ -3193,6 +3193,17 @@ ITEMS = {
     "olive_branch":            {"name": "Olive Branch", "color": ( 62,  98,  45), "place_block": OLIVE_BRANCH},
     "coin_pouch":              {"name": "Coin Pouch",          "color": (178, 148,  62), "place_block": None},
     "philosophers_scroll":     {"name": "Philosophers Scroll", "color": (215, 195, 150), "place_block": PHILOSOPHERS_SCROLL},
+
+    # --- Lost Heritage artifacts (instances tracked in world.plan.lost_artifacts) ---
+    "lost_artwork":        {"name": "Lost Artwork",          "color": (210, 185, 120), "place_block": None, "artifact": True},
+    "lost_codex":          {"name": "Lost Codex",            "color": (195, 175, 130), "place_block": None, "artifact": True},
+    "dynasty_relic":       {"name": "Dynasty Relic",         "color": (220, 175,  70), "place_block": None, "artifact": True},
+    "cultural_instrument": {"name": "Cultural Instrument",   "color": (190, 155, 110), "place_block": None, "artifact": True},
+    "sacred_fragment":     {"name": "Sacred Fragment",       "color": (200, 195, 175), "place_block": None, "artifact": True},
+    "architectural_plan":  {"name": "Architectural Plan",    "color": (215, 205, 160), "place_block": None, "artifact": True},
+    "ancient_idol":        {"name": "Ancient Idol",           "color": (175, 145,  85), "place_block": None, "artifact": True},
+    "ancient_map":         {"name": "Ancient Map",            "color": (205, 190, 140), "place_block": None, "artifact": True},
+    "antique_vessel":      {"name": "Antique Vessel",         "color": (195, 160, 110), "place_block": None, "artifact": True},
     "greek_theatre_mask":      {"name": "Greek Theatre Mask", "color": (230, 190, 140), "place_block": GREEK_THEATRE_MASK},
     "torch":                   {"name": "Torch",              "color": (200, 140,  50), "place_block": TORCH},
     "wall_sconce":             {"name": "Wall Sconce",        "color": ( 55,  55,  60), "place_block": WALL_SCONCE},

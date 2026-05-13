@@ -394,6 +394,10 @@ class UI(
         self._insect_codex_scroll      = 0
         self._max_insect_codex_scroll  = 0
         self._insect_codex_rects       = {}
+        # Reptile codex UI state
+        self._reptile_codex_scroll     = 0
+        self._max_reptile_codex_scroll = 0
+        self._reptile_codex_rects      = {}
         # Food codex UI state
         self._food_codex_scroll        = 0
         self._max_food_codex_scroll    = 0
@@ -1295,6 +1299,9 @@ class UI(
         self._fac_inv_scroll        = 0
         self._fac_cap_btns          = {}
         self._fac_close_btn         = None
+
+        self.ruin_plaque_open       = False
+        self.ruin_plaque_info       = None
 
 
     def open_hopper(self, world, pos):

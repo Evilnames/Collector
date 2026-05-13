@@ -17,6 +17,15 @@ _NORM = ( 38,  44,  58)
 
 _OPTIONS = [
     {
+        "key": "mode",
+        "label": "Game Mode",
+        "choices": ["standard",      "exploration"],
+        "labels":  ["Standard",      "Exploration"],
+        "descs":   ["Hunger is active — food matters",
+                    "No hunger — explore freely"],
+        "default": "standard",
+    },
+    {
         "key": "size",
         "label": "World Size",
         "choices": ["small",   "medium",  "large",         "huge",          "epic"],
@@ -66,6 +75,7 @@ _CIV_TO_KINGDOMS  = {"isolated": 0.8, "standard": 2.2, "fragmented": 4.5}
 def _build_overrides(sel: dict) -> dict:
     oc = _OCEANS_TO_COUNT[sel["oceans"]]
     return {
+        "exploration_mode":                sel["mode"] == "exploration",
         "world_span":                      _SIZE_TO_SPAN[sel["size"]],
         "history_years":                   _HISTORY_TO_YEARS[sel["history"]],
         "ocean_count_default":             oc,
@@ -78,7 +88,7 @@ def _build_overrides(sel: dict) -> dict:
 # Layout
 # ---------------------------------------------------------------------------
 
-_ROW_Y    = [148, 238, 328, 418]
+_ROW_Y    = [110, 190, 270, 350, 430]
 _BTN_H    = 44
 _LABEL_X  = 60
 _BTN_X0   = 310
@@ -136,9 +146,9 @@ def show_world_setup(screen, seed: int):
 
     selections = {opt["key"]: opt["default"] for opt in _OPTIONS}
 
-    seed_y      = 508
+    seed_y      = 522
     reroll_rect = pygame.Rect(_BTN_X0, seed_y, 110, 36)
-    begin_rect  = pygame.Rect(SCREEN_W // 2 - 120, SCREEN_H - 78, 240, 50)
+    begin_rect  = pygame.Rect(SCREEN_W // 2 - 120, SCREEN_H - 62, 240, 46)
 
     done = False
     while not done:
@@ -164,10 +174,10 @@ def show_world_setup(screen, seed: int):
 
         # Title
         title = font_l.render("New World", True, _FG)
-        screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 48))
+        screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 28))
         sub = font_s.render("Configure your world before generation begins", True, _DIM)
-        screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 80))
-        pygame.draw.line(screen, _DIM, (60, 112), (SCREEN_W - 60, 112), 1)
+        screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 60))
+        pygame.draw.line(screen, _DIM, (60, 88), (SCREEN_W - 60, 88), 1)
 
         # Option rows
         for ri, opt in enumerate(_OPTIONS):
@@ -178,7 +188,7 @@ def show_world_setup(screen, seed: int):
             _draw_row(screen, font_l, font_s, ri, selections[opt["key"]], hover_ci)
 
         # Divider before seed
-        pygame.draw.line(screen, _DIM, (60, seed_y - 18), (SCREEN_W - 60, seed_y - 18), 1)
+        pygame.draw.line(screen, _DIM, (60, seed_y - 14), (SCREEN_W - 60, seed_y - 14), 1)
 
         # Seed row
         sl = font_l.render("Seed", True, _FG)

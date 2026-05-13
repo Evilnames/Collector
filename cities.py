@@ -4305,6 +4305,106 @@ CITY_CONFIGS["bedouin_camp"] = {
                      (-2,  ["elder", "pilgrim", "none", "none"])],
 }
 
+CITY_CONFIGS["yurt_camp"] = {
+    "half_w": 14,
+    "buildings": [
+        (-12, (5, 7), (3, 5), ["yurt", "yurt"]),
+        ( -2, (4, 5), (3, 4), ["market_stall", "yurt"]),
+        (  6, (5, 7), (3, 5), ["yurt", "yurt"]),
+    ],
+    "npc_types": ["quest_rock", "trade", "restaurant_npc"],
+    "gardens":  [(-7, 2), (8, 2)],
+    "squares":  [(0, 3)],
+    "growth_slots_tier1": [( 12, (4, 5), (3, 4), ["yurt"]),
+                            (-12, (4, 5), (3, 4), ["yurt"])],
+    "growth_slots_tier2": [( 14, (5, 7), (3, 5), ["yurt", "market_stall"]),
+                            (-14, (4, 5), (3, 4), ["yurt"])],
+    "growth_slots_tier3": [( 16, (5, 7), (4, 5), ["yurt"]),
+                            (-16, (5, 6), (3, 4), ["yurt", "market_stall"])],
+    "farms":    [(-22, 4), (22, 4)],
+    "ambient_npcs": [(-8,  ["villager", "villager", "elder", "none"]),
+                     ( 2,  ["child", "none"]),
+                     ( 10, ["villager", "elder", "none"]),
+                     (-14, ["child", "none"]),
+                     ( 14, ["villager", "none", "none"]),
+                     ( -4, ["elder", "none", "none"])],
+}
+
+CITY_CONFIGS["yurt_settlement"] = {
+    "half_w": 24,
+    "buildings": [
+        (-22, (5, 7), (3, 5), ["yurt", "yurt", "market_stall"]),
+        (-13, (4, 5), (3, 4), ["yurt", "market_stall"]),
+        ( -4, (5, 6), (4, 5), ["yurt"]),
+        (  0, None,   None,   None),
+        ( 10, (4, 5), (3, 4), ["yurt", "market_stall"]),
+        ( 18, (5, 7), (3, 5), ["yurt", "yurt", "well"]),
+    ],
+    "npc_types": [["quest_rock", "merchant"], "trade",
+                  ["innkeeper", "beer_merchant"],
+                  "merchant",
+                  ["quest_gem", "apothecary"],
+                  ["restaurant_npc", "trade"]],
+    "gardens":  [(-18, 2), (-8, 2), (13, 2)],
+    "squares":  [(0, 4)],
+    "growth_slots_tier1": [( 22, (4, 5), (3, 4), ["yurt", "market_stall"]),
+                            (-22, (4, 5), (3, 4), ["yurt"])],
+    "growth_slots_tier2": [( 24, (5, 7), (4, 5), ["yurt", "yurt"]),
+                            (-24, (5, 7), (4, 5), ["yurt", "market_stall"])],
+    "growth_slots_tier3": [( 26, (6, 7), (5, 6), ["yurt"]),
+                            (-26, (4, 6), (3, 4), ["yurt", "market_stall"])],
+    "farms":    [(-34, 5), (34, 5)],
+    "ambient_npcs": [(-18, ["villager", "elder", "none"]),
+                     (-10, ["child", "child", "none"]),
+                     (  8, ["villager", "merchant", "none"]),
+                     ( 16, ["child", "guard", "none"]),
+                     ( -5, ["elder", "none"]),
+                     ( 12, ["craftsman", "none"]),
+                     ( -2, ["elder", "pilgrim", "none"]),
+                     (  2, ["child", "none", "none"])],
+}
+
+CITY_CONFIGS["yurt_city"] = {
+    "half_w": 34,
+    "buildings": [
+        (-32, (5, 7), (4, 5), ["yurt", "yurt", "longhouse"]),
+        (-23, (4, 6), (3, 5), ["market_stall", "yurt", "market_stall"]),
+        (-14, (4, 5), (3, 4), ["yurt", "inn"]),
+        ( -6, None,   None,   None),
+        (  0, (4, 5), (3, 4), ["yurt", "yurt"]),
+        (  8, (4, 5), (3, 4), ["yurt", "inn", "market_stall"]),
+        ( 15, None,   None,   None),
+        ( 21, (4, 6), (3, 5), ["library", "yurt", "smithy"]),
+        ( 29, (7, 9), (5, 7), ["yurt"]),
+    ],
+    "npc_types": [["quest_rock", "merchant"], "trade",
+                  ["innkeeper", "beer_merchant"],
+                  "merchant",
+                  ["quest_gem", "villager"],
+                  ["innkeeper", "coffee_merchant"],
+                  ["trade", "merchant"],
+                  ["scholar", "blacksmith"],
+                  "shrine_npc"],
+    "gardens":  [(-27, 2), (-18, 2), (24, 2)],
+    "squares":  [(-8, 4), (17, 4)],
+    "growth_slots_tier1": [( 32, (4, 6), (3, 4), ["yurt", "market_stall"]),
+                            (-32, (4, 6), (3, 4), ["yurt"])],
+    "growth_slots_tier2": [( 34, (5, 7), (4, 5), ["yurt", "yurt"]),
+                            (-34, (5, 7), (4, 5), ["yurt", "market_stall"])],
+    "growth_slots_tier3": [( 36, (6, 8), (5, 6), ["longhouse"]),
+                            (-36, (5, 7), (4, 6), ["yurt"])],
+    "farms":    [(-46, 7), (46, 7)],
+    "ambient_npcs": [(-26, ["villager", "elder", "none"]),
+                     (-18, ["child", "child", "none"]),
+                     (-12, ["villager", "merchant", "none"]),
+                     (  8, ["child", "child", "villager"]),
+                     ( 16, ["guard", "guard", "none"]),
+                     ( 22, ["villager", "craftsman", "none"]),
+                     ( -4, ["elder", "pilgrim", "none"]),
+                     ( 10, ["noble", "none", "none"]),
+                     ( -1, ["town_crier", "none", "none"])],
+}
+
 CITY_CONFIGS["atoll_village"] = {
     "half_w": 18,
     "buildings": [
@@ -4411,6 +4511,8 @@ _SIZE_BY_DIFFICULTY = {
 _SIZE_BY_BIOME = {
     "savanna":        ["bedouin_camp", "oasis", "oasis"],
     "pacific_island": ["atoll_village", "atoll_village", "island_town", "island_chiefdom"],
+    "steppe":         ["yurt_camp", "yurt_camp", "yurt_settlement", "yurt_city"],
+    "wasteland":      ["yurt_camp", "yurt_settlement", "yurt_settlement"],
 }
 
 _PLANT_BLOCKS = (ALL_LOGS | ALL_LEAVES | BUSH_BLOCKS |
@@ -5979,10 +6081,13 @@ def _place_bedouin_tent(world, left_x, sy, width, wall_height, rng):
     h        = max(3, min(4, wall_height))
     center_x = left_x + width // 2
 
-    # Corner support poles
+    # Corner support poles — bottom 2 rows of left pole are a door so the
+    # walkability pass doesn't fill in the entrance and shop NPCs can close.
     for wy in range(sy - h, sy):
         if 0 <= wy < world.height:
-            world.set_block(left_x,             wy, HOUSE_WALL_DARK)
+            is_door_row = (wy >= sy - 2)
+            left_block  = WOOD_DOOR_CLOSED if is_door_row else HOUSE_WALL_DARK
+            world.set_block(left_x,             wy, left_block)
             world.set_block(left_x + width - 1, wy, HOUSE_WALL_DARK)
 
     # Canopy: edges sit at pole-top height, centre sags one row down
@@ -6002,6 +6107,58 @@ def _place_bedouin_tent(world, left_x, sy, width, wall_height, rng):
                       TEXTILE_RUG_AMBER,   TEXTILE_RUG_IVORY))
     for wx in range(left_x + 1, left_x + width - 1):
         if 0 <= sy < world.height:
+            world.set_block(wx, sy, rug)
+
+
+def _place_yurt(world, left_x, sy, width, wall_height, rng):
+    """Central Asian yurt: low lattice-wall base, domed felt canopy, smoke hole, rug floor."""
+    felt = rng.choice((TEXTILE_TAPESTRY_NATURAL, TEXTILE_TAPESTRY_GOLDEN,
+                       TEXTILE_TAPESTRY_AMBER,   TEXTILE_TAPESTRY_CRIMSON,
+                       TEXTILE_TAPESTRY_IVORY))
+    h        = max(3, min(5, wall_height))
+    center_x = left_x + width // 2
+    dome_h   = max(2, h - 1)          # rows of dome above lattice wall row
+
+    # Lattice wall base — one row tall, with a 2-block entrance gap at centre-left.
+    # The entrance column gets a door (2 blocks tall) so the walkability pass
+    # won't fill it in and shop NPCs can close at night.
+    door_x = center_x - 1
+    for wx in range(left_x, left_x + width):
+        if not (0 <= sy - 1 < world.height and 0 <= wx < world.width):
+            continue
+        if wx == door_x:
+            world.set_block(wx, sy - 1, WOOD_DOOR_CLOSED)
+            if 0 <= sy - 2 < world.height:
+                world.set_block(wx, sy - 2, WOOD_DOOR_CLOSED)
+        elif abs(wx - center_x) <= 1:
+            pass   # entrance gap stays AIR
+        else:
+            world.set_block(wx, sy - 1, HOUSE_WALL_DARK)
+
+    # Domed canopy — semicircle of felt blocks.
+    # Skip the entrance column at the lowest dome row to keep a 2-tall opening.
+    for row in range(dome_h):
+        ry = sy - 2 - row
+        if not (0 <= ry < world.height):
+            continue
+        half = max(1, (width // 2) - row)
+        for wx in range(center_x - half, center_x + half + 1):
+            if not (0 <= wx < world.width):
+                continue
+            if row == 0 and abs(wx - center_x) <= 1:
+                continue   # keep entrance open at dome base
+            world.set_block(wx, ry, felt)
+
+    # Smoke hole at crown — clear the very top centre block
+    crown_y = sy - 2 - dome_h + 1
+    if 0 <= crown_y < world.height:
+        world.set_block(center_x, crown_y, AIR)
+
+    # Interior rug
+    rug = rng.choice((TEXTILE_RUG_NATURAL, TEXTILE_RUG_GOLDEN, TEXTILE_RUG_AMBER,
+                      TEXTILE_RUG_CRIMSON, TEXTILE_RUG_IVORY))
+    for wx in range(left_x + 1, left_x + width - 1):
+        if 0 <= sy < world.height and 0 <= wx < world.width:
             world.set_block(wx, sy, rug)
 
 
@@ -6701,6 +6858,8 @@ def _build_single_city(world, rng, city_bx, difficulty):
 
             if variant == "tent":
                 _place_bedouin_tent(world, left_x, item_sy, width, height, rng)
+            elif variant == "yurt":
+                _place_yurt(world, left_x, item_sy, width, height, rng)
             elif variant == "caravanserai":
                 _place_caravanserai(world, left_x, item_sy, width, height)
             elif variant == "dome":
