@@ -18,6 +18,15 @@ from worldgen.history import events as ev
 
 _TIER_PROGRESSION = ["hamlet", "village", "town", "city", "metropolis", "megalopolis"]
 
+# Years of protection a newly founded/reborn kingdom gets before war defeats,
+# revolts, and hollowed-out collapses can kill it. Lets fledgling realms stand
+# up rather than dying the same decade they're crowned.
+_NEW_KINGDOM_GRACE = 30
+
+
+def _in_grace(k, year: int) -> bool:
+    return (year - k.founded_year) < _NEW_KINGDOM_GRACE
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -269,7 +278,7 @@ def _try_war(k, year, rng, chronicle, kingdoms, settlements, dynasties):
             else:
                 _annex_settlement(tgt, k, enemy, year, chronicle, kingdoms, settlements, dynasties)
             # Check defender collapse.
-            if _kingdom_strength(enemy, settlements) <= 0:
+            if _kingdom_strength(enemy, settlements) <= 0 and not _in_grace(enemy, year):
                 enemy.fallen_year = year
                 chronicle.emit(year, "defeat_kingdom",
                                ev.text_defeat(k, enemy),
@@ -421,6 +430,8 @@ def _try_break_alliance(k, year, rng, chronicle, kingdoms):
 
 def _try_revolt(k, year, rng, chronicle, kingdoms, settlements, dynasties):
     """An outlying town rebels — either declares independence or defects to a neighbor."""
+    if _in_grace(k, year):
+        return
     members = [settlements[sid] for sid in k.member_settlement_ids
                if settlements[sid].state == "alive" and not settlements[sid].is_capital]
     if not members:
@@ -628,7 +639,7 @@ def _split_kingdom(parent, year, rng, chronicle, kingdoms, settlements, dynastie
             s.is_capital = False
 
     chronicle.emit(year, "kingdom_split",
-                   ev.text_kingdom_split(parent, new_kingdom, cadet_house),
+                   ev.text_kingdom_split(parent, new_kingdom, cadet_house, rebel_label),
                    actors={"parent": parent.kingdom_id, "breakaway": new_kid,
                            "cadet_dynasty": cadet_did},
                    attach_to=[parent, new_kingdom, parent_dyn, cadet_dyn])
@@ -640,22 +651,25 @@ def _try_kingdom_reborn(year, rng, chronicle, kingdoms, settlements, dynasties,
     and someone declares a new kingdom over them."""
     orphans = [s for s in settlements.values()
                if s.state == "alive" and s.kingdom_id == -1]
-    if len(orphans) < 3:
+    if len(orphans) < 2:
         return
     if rng.random() >= ev.EVENT_RATES["rebirth"]:
         return
-    # Pick a centroid orphan with at least 2 other orphans within ~12 cells.
+    # Pick a centroid orphan with at least 1 other orphan within ~12 cells.
     rng.shuffle(orphans)
     cluster = None
     for seed_s in orphans:
         nearby = [s for s in orphans if abs(s.cell_index - seed_s.cell_index) <= 12]
-        if len(nearby) >= 3:
+        if len(nearby) >= 2:
             cluster = nearby
             break
     if cluster is None:
         return
-    # New dynasty + kingdom.
+    # New dynasty + kingdom. Promote the chosen capital so the fledgling
+    # realm starts above the "weak kingdom" thresholds.
     cap = max(cluster, key=lambda s: _TIER_PROGRESSION.index(s.tier))
+    if _TIER_PROGRESSION.index(cap.tier) < _TIER_PROGRESSION.index("village"):
+        cap.tier = "village"
     dyn_id = next_dynasty_id[0]; next_dynasty_id[0] += 1
     pid = next_person_id[0]; next_person_id[0] += 1
     founder = Person(
@@ -808,7 +822,7 @@ def simulate_history(seed: int, cells: list, kingdoms: dict, settlements: dict,
             # Weak kingdoms collapse on their own — but only if hollowed-out
             # (no capital alive, or one settlement left). A wounded but
             # functioning kingdom can recover.
-            if year > 30:
+            if year > 30 and not _in_grace(k, year):
                 alive_members = [settlements[sid] for sid in k.member_settlement_ids
                                  if settlements[sid].state == "alive"]
                 cap_alive = (k.capital_settlement_id is not None

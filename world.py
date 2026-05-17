@@ -295,8 +295,12 @@ class World:
         self._weather_duration = 0.0  # set after soil_rng init below
         # Compost bins (Phase 2): (bx,by) -> {"input": {}, "progress": float, "output": int}
         self.compost_bin_data = {}
+        # Bookcases: (bx,by) -> list of 6 Manuscript objects (or None per slot)
+        self.bookcase_contents = {}
         # Chicken coops: (bx,by) -> {"eggs": int, "progress": float}
         self.chicken_coop_data = {}
+        # Feed troughs: (bx,by) -> {"contents": int, "progress": float} — units of feed remaining
+        self.feed_trough_data = {}
         # Trade blocks: (bx,by) -> {horse_uid, has_cart, linked_town_id, inventory, threshold, state, ticks_left}
         self.trade_block_data = {}
         # Sculpture data: root pos -> Sculpture obj; body pos -> {"root": (bx, root_y)}
@@ -382,8 +386,18 @@ class World:
         if preloaded:
             from outposts import init_outposts
             init_outposts(self)
+            if self._save_mgr is not None:
+                self._save_mgr._load_sommelier_requests()
         from player_cities import init_player_cities
         init_player_cities(self)
+        if preloaded and getattr(self, "_save_mgr", None) is not None:
+            self._save_mgr._load_guilds()
+            self._save_mgr._load_bonds()
+            self._save_mgr._load_knightly_orders()
+        from guild_worldgen import seed_guilds
+        seed_guilds(self)
+        from knightly_orders import seed_knightly_orders
+        seed_knightly_orders(self)
         self._spawn_birds()
         self._spawn_insects()
         self._spawn_reptiles()
@@ -447,11 +461,13 @@ class World:
     _OCEANIC = ("ocean", "coastal", "beach", "pacific_island")
 
     def _biodome_terrain_mod(self, x: int):
-        """Return (height_bias, amplitude_scale) blended from the two nearest plan cells.
+        """Return (offset, amplitude_scale, erosion) blended from the two nearest cells.
 
-        Land/ocean blending is one-way: oceanic bias never bleeds into land
-        cells (would push them below sea level). Land bias still smooths
-        adjacent oceanic cells (gentler shore transitions).
+        offset: pre-eroded mean surface offset from SURFACE_Y (the worldgen
+        preview reads the same number, so the sample map matches in-game).
+        Land/ocean blending is one-way: oceanic offset never bleeds into land
+        cells (would push them below sea level). Land offset still smooths
+        adjacent oceanic cells for gentler shore transitions.
         """
         plan = self.plan
         cell_w = plan.cell_width
@@ -461,48 +477,44 @@ class World:
         elif idx >= plan.span:
             idx = plan.span - 1
         cell = plan.cells[idx]
-        bias_a, scale_a = BIODOME_TERRAIN_MODS.get(cell.biodome, (0, 1.0))
+        off_a = cell.predicted_y_offset
+        _bias_a, scale_a = BIODOME_TERRAIN_MODS.get(cell.biodome, (0, 1.0))
+        ero_a = cell.erosion
         center = cell.world_x
         if x >= center and idx + 1 < plan.span:
             other = plan.cells[idx + 1]
         elif x < center and idx - 1 >= 0:
             other = plan.cells[idx - 1]
         else:
-            return bias_a, scale_a
+            return off_a, scale_a, ero_a
 
-        # If we're a land cell and the neighbor is oceanic, don't blend ocean
-        # bias in — keep our own bias so the surface stays above sea level.
         cell_oceanic = cell.biodome in self._OCEANIC
         other_oceanic = other.biodome in self._OCEANIC
         if not cell_oceanic and other_oceanic:
-            return bias_a, scale_a
+            return off_a, scale_a, ero_a
 
-        bias_b, scale_b = BIODOME_TERRAIN_MODS.get(other.biodome, (0, 1.0))
+        off_b = other.predicted_y_offset
+        _bias_b, scale_b = BIODOME_TERRAIN_MODS.get(other.biodome, (0, 1.0))
+        ero_b = other.erosion
         d_a = abs(x - cell.world_x)
         d_b = abs(x - other.world_x)
         if d_a + d_b == 0:
-            return bias_a, scale_a
+            return off_a, scale_a, ero_a
         w_a = d_b / (d_a + d_b)
         w_b = 1.0 - w_a
-        return (bias_a * w_a + bias_b * w_b,
-                scale_a * w_a + scale_b * w_b)
+        return (off_a * w_a + off_b * w_b,
+                scale_a * w_a + scale_b * w_b,
+                ero_a * w_a + ero_b * w_b)
 
     def surface_height(self, x: int) -> int:
         cached = self._surface_height_cache.get(x)
         if cached is not None:
             return cached
-        bias, scale = self._biodome_terrain_mod(x)
-        # Per-region drama: flat plains (0.3) vs dramatic peaks (1.0).
-        cell = self._plan_cell(x)
-        drama = cell.drama
-        # Drama also amplifies the bias for high-altitude biomes (alpine,
-        # rocky_mountain) so a "dramatic" mountain stretch towers higher
-        # than a "flat" one with the same biome.
-        if bias < 0:
-            bias *= (0.5 + drama * 0.8)
-        h = SURFACE_Y + bias
+        offset, scale, erosion = self._biodome_terrain_mod(x)
+        drama = self._plan_cell(x).drama
+        h = SURFACE_Y + offset
         for (freq, amp), phase in zip(self._surf_octaves, self._surf_phases):
-            h += amp * scale * drama * math.sin(x * freq + phase)
+            h += amp * scale * drama * erosion * math.sin(x * freq + phase)
         result = max(30, round(h))
         self._surface_height_cache[x] = result
         return result
@@ -649,6 +661,8 @@ class World:
                             if not any(x0 <= i.x < x1 for x0, x1 in unload_ranges)]
             self.live_fish = [f for f in self.live_fish
                               if not any(x0 <= f.x < x1 for x0, x1 in unload_ranges)]
+            self.reptiles = [r for r in self.reptiles
+                             if not any(x0 <= r.x < x1 for x0, x1 in unload_ranges)]
             unload_x_ranges = [(cx * CHUNK_W, (cx + 1) * CHUNK_W) for cx in to_unload]
             self._grow_lamps = {(lx, ly) for lx, ly in self._grow_lamps
                                 if not any(x0 <= lx < x1 for x0, x1 in unload_x_ranges)}
@@ -723,10 +737,33 @@ class World:
             tuple(int(v) for v in k.split(",")): bin_d
             for k, bin_d in raw_bins.items()
         }
+        # Bookcases: keys are (bx, by) tuples already; values are lists of dicts/None.
+        # Convert dict entries back into Manuscript objects.
+        from manuscripts import Manuscript as _Manu
+        raw_books = data.get("bookcases", {}) or {}
+        self.bookcase_contents = {}
+        for pos, slots in raw_books.items():
+            if not isinstance(pos, tuple):
+                continue
+            restored = []
+            for entry in slots:
+                if not entry:
+                    restored.append(None)
+                    continue
+                try:
+                    restored.append(_Manu(**entry))
+                except Exception:
+                    restored.append(None)
+            self.bookcase_contents[pos] = restored
         raw_coops = data.get("chicken_coop_data", {})
         self.chicken_coop_data = {
             tuple(int(v) for v in k.split(",")): coop_d
             for k, coop_d in raw_coops.items()
+        }
+        raw_troughs = data.get("feed_trough_data", {})
+        self.feed_trough_data = {
+            tuple(int(v) for v in k.split(",")): tr_d
+            for k, tr_d in raw_troughs.items()
         }
         raw_chests = data.get("chest_data", {})
         self.chest_data = {
@@ -843,10 +880,11 @@ class World:
         for boat_data in data.get("boats", []):
             self.boats.append(Boat.from_dict(boat_data))
 
-        from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion, Tiger
+        from animals import Sheep, Cow, Chicken, Goat, Llama, Yak, Pig, SnowLeopard, MountainLion, Tiger
         from horses import Horse
         from dogs import Dog
         _CLASS_MAP = {"Sheep": Sheep, "Cow": Cow, "Chicken": Chicken, "Goat": Goat,
+                      "Llama": Llama, "Yak": Yak, "Pig": Pig,
                       "SnowLeopard": SnowLeopard, "MountainLion": MountainLion,
                       "Tiger": Tiger, "Horse": Horse, "Dog": Dog}
         for e_data in data["entities"]:
@@ -857,6 +895,16 @@ class World:
             entity.facing = e_data["facing"]
             extra = e_data.get("extra", {})
             if isinstance(entity, Sheep):
+                if "has_wool" in extra:
+                    entity.has_wool = extra["has_wool"]
+                if "has_milk" in extra:
+                    entity.has_milk = extra["has_milk"]
+                entity.has_manure = extra.get("has_manure", False)
+            elif isinstance(entity, Llama):
+                if "has_wool" in extra:
+                    entity.has_wool = extra["has_wool"]
+                entity.has_manure = extra.get("has_manure", False)
+            elif isinstance(entity, Yak):
                 if "has_wool" in extra:
                     entity.has_wool = extra["has_wool"]
                 if "has_milk" in extra:
@@ -873,6 +921,8 @@ class World:
             elif isinstance(entity, Chicken):
                 if "has_egg" in extra:
                     entity.has_egg = extra["has_egg"]
+                entity.has_manure = extra.get("has_manure", False)
+            elif isinstance(entity, Pig):
                 entity.has_manure = extra.get("has_manure", False)
             elif isinstance(entity, Horse):
                 entity.stamina   = extra.get("stamina", 100.0)
@@ -911,6 +961,26 @@ class World:
                     entity.traits["wool_color"] = raw.get("wool_color", "white")
                     entity.traits["fleece"]     = raw.get("fleece", raw.get("productivity", 1.0))
                     entity.traits["birth"]      = raw.get("birth", "single")
+                elif isinstance(entity, Llama):
+                    entity.traits["breed"]          = raw.get("breed", "Classic Llama")
+                    entity.traits["coat_color"]     = raw.get("coat_color", "fawn")
+                    entity.traits["coat_pattern"]   = raw.get("coat_pattern", "solid")
+                    entity.traits["ear_type"]       = raw.get("ear_type", "banana")
+                    entity.traits["fleece_weight"]  = raw.get("fleece_weight", 1.5)
+                    entity.traits["fiber_fineness"] = raw.get("fiber_fineness", 1.0)
+                    entity.traits["fiber_length"]   = raw.get("fiber_length", 0.5)
+                    entity.traits["regrow_rate"]    = raw.get("regrow_rate", 1.0)
+                    entity.traits["birth"]          = raw.get("birth", "single")
+                elif isinstance(entity, Yak):
+                    entity.traits["breed"]          = raw.get("breed", "Domestic Yak")
+                    entity.traits["coat_color"]     = raw.get("coat_color", "black")
+                    entity.traits["horn_type"]      = raw.get("horn_type", "wide")
+                    entity.traits["skirt_length"]   = raw.get("skirt_length", "full")
+                    entity.traits["milk_volume"]    = raw.get("milk_volume", 1.2)
+                    entity.traits["milk_richness"]  = raw.get("milk_richness", 1.2)
+                    entity.traits["fleece_weight"]  = raw.get("fleece_weight", 1.5)
+                    entity.traits["fiber_length"]   = raw.get("fiber_length", 0.6)
+                    entity.traits["regrow_rate"]    = raw.get("regrow_rate", 1.0)
                 elif isinstance(entity, Cow):
                     entity.traits["milk_richness"] = raw.get("milk_richness", raw.get("productivity", 1.0))
                     entity.traits["hide"]          = raw.get("hide", "solid")
@@ -919,6 +989,16 @@ class World:
                     entity.traits["coat_color"]    = raw.get("coat_color", "tan")
                 elif isinstance(entity, Chicken):
                     entity.traits["lay_rate"] = raw.get("lay_rate", raw.get("productivity", 1.0))
+                elif isinstance(entity, Pig):
+                    entity.traits["breed"]        = raw.get("breed", "Large White")
+                    entity.traits["coat_color"]   = raw.get("coat_color", "pink")
+                    entity.traits["coat_pattern"] = raw.get("coat_pattern", "solid")
+                    entity.traits["ear_type"]     = raw.get("ear_type", "upright")
+                    entity.traits["snout_length"] = raw.get("snout_length", "medium")
+                    entity.traits["meat_yield"]   = raw.get("meat_yield", 1.0)
+                    entity.traits["fat"]          = raw.get("fat", 1.0)
+                    entity.traits["growth_rate"]  = raw.get("growth_rate", 1.0)
+                    entity.traits["litter_size"]  = raw.get("litter_size", 1.0)
                     entity.traits["plumage"]  = raw.get("plumage", "white")
                 elif isinstance(entity, Dog):
                     entity.traits["breed"]         = raw.get("breed", "Mixed")
@@ -954,6 +1034,11 @@ class World:
             entity._breed_cooldown = extra.get("_breed_cooldown", 60.0)
             entity.tamed           = extra.get("tamed", False)
             entity.tame_progress   = extra.get("tame_progress", 0)
+            entity.fullness        = extra.get("fullness", 1.0)
+            entity.hydration       = extra.get("hydration", 1.0)
+            entity.care_score      = extra.get("care_score", 1.0)
+            entity.salt_buff_timer = extra.get("salt_buff_timer", 0.0)
+            entity.kept_score      = extra.get("kept_score", 0.0)
             # Restore genotype; synthesize from traits for pre-genetics saves
             raw_geno = extra.get("genotype")
             if raw_geno:
@@ -1052,6 +1137,7 @@ class World:
             biodome = self.biodome_at(x)
             rocky = biodome in ("alpine_mountain", "rocky_mountain", "tundra", "canyon")
             sandy = biodome in ("desert", "beach", "coastal", "ocean")
+            red_rock = biodome == "red_rock"
             submerged = sy > SURFACE_Y and biodome in ("ocean", "coastal", "beach", "pacific_island")
             for y in range(WORLD_H):
                 if y < sy:
@@ -1067,12 +1153,16 @@ class World:
                         chunk[y][lx] = SNOW
                     elif sandy or submerged:
                         chunk[y][lx] = SAND
+                    elif red_rock:
+                        chunk[y][lx] = RED_SANDSTONE_BLOCK
                     elif biodome in ("canyon", "rocky_mountain"):
                         chunk[y][lx] = STONE
                     else:
                         chunk[y][lx] = GRASS
                 elif y < sy + 6:
-                    if rocky:
+                    if red_rock:
+                        chunk[y][lx] = RED_SANDSTONE_BLOCK
+                    elif rocky:
                         chunk[y][lx] = STONE
                     elif sandy:
                         chunk[y][lx] = SAND
@@ -1120,6 +1210,7 @@ class World:
                 "swamp":           (3, 7),  "beach":          (9, 16),
                 "coastal":         (9, 16),
                 "canyon":          (12, 22),
+                "red_rock":        (16, 28),   # sparse — mesa tops mostly bare
                 "pacific_island":  ( 6, 12),
             }.get(biodome, (5, 10))
             factor = self.biodome_tree_density(x)
@@ -1239,6 +1330,9 @@ class World:
             "canyon":         [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, TOMATO_BUSH, CORN_BUSH, COFFEE_BUSH, GRAPEVINE_BUSH, GRAPEVINE_BUSH, ROSEMARY_BUSH,
                                OREGANO_BUSH, FENNEL_BUSH, LEMON_VERBENA_BUSH, WORMWOOD_BUSH,
                                CHICKPEA_CROP_YOUNG, SESAME_CROP_YOUNG, POMEGRANATE_TREE_YOUNG, OLIVE_TREE_YOUNG],
+            "red_rock":       [AGAVE_BUSH, CACTUS_YOUNG, CACTUS_YOUNG, CHILI_BUSH, ONION_BUSH,
+                               ROSEMARY_BUSH, SAGE_BUSH, THYME_BUSH, OREGANO_BUSH,
+                               WORMWOOD_BUSH, YARROW_BUSH],
             "desert":         [ONION_BUSH, GARLIC_BUSH, CHILI_BUSH, WORMWOOD_BUSH, WORMWOOD_BUSH,
                                COTTON_BUSH, SESAME_CROP_YOUNG],
             "south_asian":    [RICE_BUSH, RICE_BUSH, GINGER_BUSH, CHILI_BUSH, CHILI_BUSH,
@@ -1405,7 +1499,7 @@ class World:
                 "steppe": (15, 28), "arid_steppe": (24, 46),
                 "desert": (35, 65), "tundra": (28, 50),
                 "swamp": (5, 10), "beach": (18, 34),
-                "canyon": (20, 38),
+                "canyon": (20, 38), "red_rock": (28, 50),
             }.get(biodome, (9, 18))
             lx += flower_rng.randint(lo, hi)
 
@@ -2156,6 +2250,46 @@ class World:
             onyx_n = self._vein_noise(bx, by, 0x1F1A2E, scale=5)
             if onyx_n >= 0.67 and r < 0.007:
                 return ONYX_VEIN
+        # Chalk veins — very shallow soft sedimentary; common in temperate/sedimentary
+        if 5 <= depth < 30 and biome in ("sedimentary", "temperate", "rolling_hills", "birch_forest"):
+            chalk_n = self._vein_noise(bx, by, 0xCA1C40, scale=6)
+            if chalk_n >= 0.60 and r < 0.045:
+                return CHALK_VEIN
+        # Shale veins — flaky dark gray sedimentary pockets
+        if 20 <= depth < 70 and biome in ("sedimentary", "temperate", "wetland", "swamp", "canyon"):
+            shale_n = self._vein_noise(bx, by, 0x54A1E2, scale=5)
+            if shale_n >= 0.60 and r < 0.040:
+                return SHALE_VEIN
+        # Slate veins — mid-depth metamorphic; rocky/mountain zones
+        if 40 <= depth < 100 and biome in ("rocky_mountain", "alpine_mountain", "sedimentary", "temperate"):
+            slate_n = self._vein_noise(bx, by, 0x70829E, scale=5)
+            if slate_n >= 0.62 and r < 0.030:
+                return SLATE_VEIN
+        # Andesite veins — mid-deep volcanic/igneous
+        if 50 <= depth < 130 and biome in ("igneous", "volcanic", "rocky_mountain", "alpine_mountain"):
+            and_n = self._vein_noise(bx, by, 0x828284, scale=5)
+            if and_n >= 0.60 and r < 0.035:
+                return ANDESITE_VEIN
+        # Tuff veins — welded volcanic ash; mid igneous/volcanic
+        if 40 <= depth < 110 and biome in ("igneous", "volcanic", "canyon"):
+            tuff_n = self._vein_noise(bx, by, 0xBCAC8E, scale=5)
+            if tuff_n >= 0.62 and r < 0.028:
+                return TUFF_VEIN
+        # Quartzite veins — mid-deep crystalline; broad biome spread
+        if 80 <= depth < 160 and biome in ("igneous", "rocky_mountain", "alpine_mountain", "sedimentary", "temperate"):
+            qz_n = self._vein_noise(bx, by, 0xE4D4D2, scale=5)
+            if qz_n >= 0.64 and r < 0.020:
+                return QUARTZITE_VEIN
+        # Gneiss veins — banded deep metamorphic
+        if 100 <= depth < 180 and biome in ("igneous", "volcanic", "alpine_mountain", "rocky_mountain"):
+            gn_n = self._vein_noise(bx, by, 0xAA9894, scale=5)
+            if gn_n >= 0.63 and r < 0.018:
+                return GNEISS_VEIN
+        # Gabbro veins — very deep plutonic; rare
+        if 160 <= depth and biome in ("igneous", "volcanic"):
+            gab_n = self._vein_noise(bx, by, 0x30383C, scale=5)
+            if gab_n >= 0.64 and r < 0.014:
+                return GABBRO_VEIN
         # Limestone layers — shallow to mid depth in sedimentary zones
         if 4 <= depth < 55 and biome in ("sedimentary", "temperate", "igneous"):
             lime_n = self._vein_noise(bx, by, 0xA7E23, scale=7)
@@ -2455,7 +2589,13 @@ class World:
             from towns import advance_day
             advance_day(self)
             from outposts import tick_outpost_day
-            tick_outpost_day(self.day_count)
+            tick_outpost_day(self.day_count, getattr(self, "seed", 0))
+            from guild_worldgen import seed_guilds as _seed_guilds
+            _seed_guilds(self)
+            from knightly_orders import seed_knightly_orders as _seed_orders
+            _seed_orders(self)
+            from stock_market import tick_market
+            tick_market(self, getattr(self, "_player_ref", None))
             from player_cities import tick_city_day
             tick_city_day(self)
             self._tick_training_day()
@@ -3357,6 +3497,8 @@ class World:
             # canyon: pomegranate and fig survive the dry heat; citrus in shaded slots
             "canyon":          [(self._grow_dead, 4),   (self._grow_pomegranate, 2), (self._grow_fig, 1),
                                 (self._grow_citrus, 1)],
+            # red_rock: scattered junipers/pines on the mesa tops; mostly dead snags
+            "red_rock":        [(self._grow_dead, 5),   (self._grow_pine, 2),    (self._grow_fig, 1)],
             "wasteland":       [(self._grow_dead, 1)],
             "arid_steppe":     [(self._grow_dead, 1)],
             "desert":          [(self._grow_dead, 1)],
@@ -3672,7 +3814,10 @@ class World:
                 and e.traits.get("sex") == "female"]
         if not hens:
             return
-        rate = sum(e.traits.get("lay_rate", 1.0) / self._COOP_REFILL_TIME for e in hens)
+        rate = sum(
+            e.traits.get("lay_rate", 1.0) * e._yield_mult() / self._COOP_REFILL_TIME
+            for e in hens
+        )
         for coop in self.chicken_coop_data.values():
             if coop["eggs"] >= self._COOP_MAX_EGGS:
                 continue
@@ -3680,6 +3825,42 @@ class World:
             while coop["progress"] >= 1.0 and coop["eggs"] < self._COOP_MAX_EGGS:
                 coop["progress"] -= 1.0
                 coop["eggs"] += 1
+
+    _GRASS_REGROW_INTERVAL = 8.0
+    _GRASS_REGROW_SAMPLES = 30      # random surface samples per loaded chunk per tick
+    _GRASS_REGROW_CHANCE = 0.35     # chance a qualifying dirt → grass per sample
+
+    def update_grass_regrowth(self, dt):
+        """Slowly convert exposed dirt back to grass if adjacent to existing grass."""
+        from blocks import DIRT as _DIRT, GRASS as _GRASS, AIR as _AIR
+        self._grass_regrow_timer = getattr(self, "_grass_regrow_timer", 0.0) + dt
+        if self._grass_regrow_timer < self._GRASS_REGROW_INTERVAL:
+            return
+        self._grass_regrow_timer = 0.0
+        if not self._chunks:
+            return
+        rng = random.Random()
+        for chunk_x in list(self._chunks.keys()):
+            base_x = chunk_x * CHUNK_W
+            for _ in range(self._GRASS_REGROW_SAMPLES):
+                lx = rng.randrange(CHUNK_W)
+                wx = base_x + lx
+                wy = self.surface_y_at(wx) if hasattr(self, "surface_y_at") else SURFACE_Y
+                # Scan a small band around the surface for dirt
+                for dy in range(-3, 4):
+                    by = wy + dy
+                    if self.get_block(wx, by) != _DIRT:
+                        continue
+                    if self.get_block(wx, by - 1) != _AIR:
+                        continue  # needs air above
+                    # Must have a grass neighbor
+                    has_grass_nbr = any(
+                        self.get_block(wx + nx, by + ny) == _GRASS
+                        for nx, ny in ((-1, 0), (1, 0), (0, -1), (0, 1))
+                    )
+                    if has_grass_nbr and rng.random() < self._GRASS_REGROW_CHANCE:
+                        self.set_block(wx, by, _GRASS)
+                    break  # one attempt per column sample
 
     def update_trade_blocks(self, dt, player):
         """Tick all trade blocks: dispatch horse, track position-based travel, deliver on arrival."""
@@ -3821,7 +4002,9 @@ class World:
                 self.dropped_items.append(DroppedItem(wx, wy, "sapling", 1))
 
     def _spawn_animals(self):
-        from animals import Sheep, Cow, Chicken, SnowLeopard, MountainLion, Tiger
+        from animals import (Sheep, Cow, Chicken, Llama, LLAMA_BIOME_MAP,
+                             Yak, YAK_BIOME_MAP, Pig, PIG_BIOME_MAP,
+                             SnowLeopard, MountainLion, Tiger)
         rng = random.Random(self.seed + 12345)
         for cx in sorted(self._chunks.keys()):
             chunk = self._chunks[cx]
@@ -3831,8 +4014,19 @@ class World:
             while x < x_end:
                 lx = x - base_x
                 sy = self.surface_height(x)
-                if 0 < sy < WORLD_H and chunk[sy][lx] == GRASS and chunk[sy - 1][lx] == AIR:
-                    animal_cls = rng.choice([Sheep, Sheep, Cow, Chicken])
+                if 0 < sy < WORLD_H and chunk[sy][lx] in (GRASS, STONE, SNOW) and chunk[sy - 1][lx] == AIR:
+                    biodome = self.biodome_at(x)
+                    if biodome in YAK_BIOME_MAP and rng.random() < 0.25:
+                        animal_cls = Yak
+                    elif biodome in LLAMA_BIOME_MAP and rng.random() < 0.35:
+                        animal_cls = Llama
+                    elif biodome in PIG_BIOME_MAP and chunk[sy][lx] == GRASS and rng.random() < 0.25:
+                        animal_cls = Pig
+                    elif chunk[sy][lx] == GRASS:
+                        animal_cls = rng.choice([Sheep, Sheep, Cow, Chicken])
+                    else:
+                        x += rng.randint(8, 20)
+                        continue
                     ax = x * BLOCK_SIZE + (BLOCK_SIZE - animal_cls.ANIMAL_W) // 2
                     ay = sy * BLOCK_SIZE - animal_cls.ANIMAL_H
                     self.entities.append(animal_cls(ax, ay, self))
@@ -3966,7 +4160,10 @@ class World:
                              Moose, Bighorn, Pheasant, Warthog, MuskOx, Crocodile, Goose, Hare,
                              MOOSE_BIOMES, BIGHORN_BIOMES, PHEASANT_BIOMES, WARTHOG_BIOMES,
                              MUSK_OX_BIOMES, CROC_BIOMES, GOOSE_BIOMES, HARE_BIOMES,
-                             ArcticFox, ARCTIC_FOX_BIOMES)
+                             ArcticFox, ARCTIC_FOX_BIOMES,
+                             Caribou, Antelope, Ibex, Lynx, Coyote, Beaver,
+                             CARIBOU_BIOMES, ANTELOPE_BIOMES, IBEX_BIOMES,
+                             LYNX_BIOMES, COYOTE_BIOMES, BEAVER_BIOMES)
         _HUNTABLE_MAP = [
             (Deer,      DEER_BIOMES,         0.06),
             (Boar,      BOAR_BIOMES,         0.05),
@@ -3987,9 +4184,15 @@ class World:
             (Crocodile, CROC_BIOMES,          0.04),
             (Goose,     GOOSE_BIOMES,         0.06),
             (Hare,      HARE_BIOMES,          0.07),
+            (Caribou,   CARIBOU_BIOMES,       0.05),
+            (Antelope,  ANTELOPE_BIOMES,      0.06),
+            (Ibex,      IBEX_BIOMES,          0.05),
+            (Lynx,      LYNX_BIOMES,          0.03),
+            (Coyote,    COYOTE_BIOMES,        0.04),
+            (Beaver,    BEAVER_BIOMES,        0.05),
         ]
         # Region.danger scales predator density: calm 0.5x, rough 1.0x, wild 1.5x.
-        _PREDATORS = (Wolf, Bear, Crocodile)
+        _PREDATORS = (Wolf, Bear, Crocodile, Lynx, Coyote)
         _DANGER_MULT = {"calm": 0.5, "rough": 1.0, "wild": 1.5}
         from towns import region_for_bx
         rng = random.Random(self.seed + 74193)
@@ -4084,13 +4287,15 @@ class World:
                 x += rng.randint(spacing, spacing * 2)
 
     def _spawn_animals_for_chunk(self, cx: int):
-        from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion, Tiger
+        from animals import (Sheep, Cow, Chicken, Goat, Llama, LLAMA_BIOME_MAP,
+                             Yak, YAK_BIOME_MAP, Pig, PIG_BIOME_MAP,
+                             SnowLeopard, MountainLion, Tiger)
         chunk = self._chunks.get(cx)
         if chunk is None:
             return
         base_x = cx * CHUNK_W
 
-        _GOAT_BIOMES = {"rocky_mountain", "alpine_mountain", "canyon", "arid_steppe", "boreal"}
+        _GOAT_BIOMES = {"rocky_mountain", "alpine_mountain", "canyon", "red_rock", "arid_steppe", "boreal"}
 
         rng = random.Random(self.seed + 12345 + cx * 6271)
         x = base_x + 5
@@ -4099,10 +4304,16 @@ class World:
             sy = self.surface_height(x)
             if 0 < sy < WORLD_H and chunk[sy][lx] in (GRASS, SNOW, STONE) and chunk[sy - 1][lx] == AIR:
                 biodome = self.biodome_at(x)
-                if biodome in _GOAT_BIOMES:
+                if biodome in YAK_BIOME_MAP and rng.random() < 0.25:
+                    animal_cls = rng.choice([Yak, Yak, Llama])
+                elif biodome in LLAMA_BIOME_MAP and rng.random() < 0.35:
+                    animal_cls = rng.choice([Llama, Llama, Goat])
+                elif biodome in _GOAT_BIOMES:
                     animal_cls = rng.choice([Goat, Goat, Sheep, Cow])
+                elif biodome in PIG_BIOME_MAP and chunk[sy][lx] == GRASS and rng.random() < 0.25:
+                    animal_cls = Pig
                 else:
-                    animal_cls = rng.choice([Sheep, Sheep, Cow, Chicken])
+                    animal_cls = rng.choice([Sheep, Sheep, Cow, Chicken, Pig])
                 ax = x * BLOCK_SIZE + (BLOCK_SIZE - animal_cls.ANIMAL_W) // 2
                 ay = sy * BLOCK_SIZE - animal_cls.ANIMAL_H
                 self.entities.append(animal_cls(ax, ay, self))
@@ -4162,7 +4373,10 @@ class World:
                              Moose, Bighorn, Pheasant, Warthog, MuskOx, Crocodile, Goose, Hare,
                              MOOSE_BIOMES, BIGHORN_BIOMES, PHEASANT_BIOMES, WARTHOG_BIOMES,
                              MUSK_OX_BIOMES, CROC_BIOMES, GOOSE_BIOMES, HARE_BIOMES,
-                             ArcticFox, ARCTIC_FOX_BIOMES)
+                             ArcticFox, ARCTIC_FOX_BIOMES,
+                             Caribou, Antelope, Ibex, Lynx, Coyote, Beaver,
+                             CARIBOU_BIOMES, ANTELOPE_BIOMES, IBEX_BIOMES,
+                             LYNX_BIOMES, COYOTE_BIOMES, BEAVER_BIOMES)
         _HUNTABLE_MAP = [
             (Deer,      DEER_BIOMES,         0.06),
             (Boar,      BOAR_BIOMES,         0.05),
@@ -4183,9 +4397,15 @@ class World:
             (Crocodile, CROC_BIOMES,          0.04),
             (Goose,     GOOSE_BIOMES,         0.06),
             (Hare,      HARE_BIOMES,          0.07),
+            (Caribou,   CARIBOU_BIOMES,       0.05),
+            (Antelope,  ANTELOPE_BIOMES,      0.06),
+            (Ibex,      IBEX_BIOMES,          0.05),
+            (Lynx,      LYNX_BIOMES,          0.03),
+            (Coyote,    COYOTE_BIOMES,        0.04),
+            (Beaver,    BEAVER_BIOMES,        0.05),
         ]
         # Region.danger scales predator density: calm 0.5x, rough 1.0x, wild 1.5x.
-        _PREDATORS = (Wolf, Bear, Crocodile)
+        _PREDATORS = (Wolf, Bear, Crocodile, Lynx, Coyote)
         _DANGER_MULT = {"calm": 0.5, "rough": 1.0, "wild": 1.5}
         from towns import region_for_bx
         hunt_rng = random.Random(self.seed + 74193 + cx * 8317)
@@ -4346,8 +4566,13 @@ class World:
         x = base_x + 2
         while x < base_x + CHUNK_W - 2:
             biodome = self.biodome_at(x)
+            # Require the column AND its immediate neighbors to share the biome,
+            # so a snake spawned near a cell boundary can't drift into the wrong zone.
+            if self.biodome_at(x - 1) != biodome or self.biodome_at(x + 1) != biodome:
+                x += rng.randint(spacing, spacing * 2)
+                continue
             candidates = [cls for cls in ALL_REPTILE_SPECIES
-                          if not cls.BIOMES or biodome in cls.BIOMES]
+                          if cls.BIOMES and biodome in cls.BIOMES]
             if not candidates:
                 x += rng.randint(spacing, spacing * 2)
                 continue
@@ -4362,6 +4587,11 @@ class World:
             species_cls = rng.choice(candidates)
             spawn_x = float(x * BLOCK_SIZE + rng.randint(-4, 4))
             spawn_y = float(sy * BLOCK_SIZE - species_cls.H)
+            # Final sanity check at the post-jitter column.
+            final_biodome = self.biodome_at(int(spawn_x // BLOCK_SIZE))
+            if final_biodome not in species_cls.BIOMES:
+                x += rng.randint(spacing, spacing * 2)
+                continue
             self.reptiles.append(species_cls(spawn_x, spawn_y, self))
             x += rng.randint(spacing, spacing * 2)
 

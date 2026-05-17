@@ -18,13 +18,11 @@ from gemstones import (render_rough_gem, render_gem, render_gem_codex_preview,
                        GEM_TYPE_DESCRIPTIONS, GEM_CUT_DESCS)
 from renderer import render_mushroom_preview
 from blocks import BLOCKS
-from coffee import (BIOME_DISPLAY_NAMES, ROAST_LEVEL_DESCS, ROAST_COLORS,
-                    COFFEE_TYPE_ORDER)
-from wine import (WINE_STYLE_DESCS, WINE_STYLE_COLORS, WINE_TYPE_ORDER,
+from coffee import (BIOME_DISPLAY_NAMES, ROAST_LEVEL_DESCS, ROAST_COLORS)
+from wine import (WINE_STYLE_DESCS, WINE_STYLE_COLORS,
                   WINE_STYLE_ORDER, VARIETY_DISPLAY_NAMES as WINE_VARIETY_NAMES,
                   BIOME_DISPLAY_NAMES as WINE_BIOME_NAMES)
-from spirits import SPIRIT_TYPE_ORDER
-from salt import SALT_TYPE_ORDER, BIOME_DISPLAY_NAMES as SALT_BIOME_NAMES, GRADES, OUTPUT_DESCS as SALT_OUTPUT_DESCS, OUTPUT_COLORS as SALT_OUTPUT_COLORS, _CODEX_BIOMES as SALT_CODEX_BIOMES
+from salt import SALT_TYPE_ORDER, BIOME_DISPLAY_NAMES as SALT_BIOME_NAMES, GRADES, OUTPUT_COLORS as SALT_OUTPUT_COLORS, _CODEX_BIOMES as SALT_CODEX_BIOMES
 from constants import SCREEN_W, SCREEN_H
 from ._data import (_MUSHROOM_ORDER, _MUSHROOM_BIOME, _MUSHROOM_DROP_COLOR,
                     _MUSHROOM_SHAPES, _MUSHROOM_NAMES, SPECIAL_DESCS, RARITY_LABEL)
@@ -103,6 +101,8 @@ class CollectionsMixin:
         n_mead_owned         = len(getattr(player, "mead_batches", []))
         n_charcuterie_owned  = len(getattr(player, "charcuterie_items", []))
         n_dogs_tamed       = getattr(player, "dogs_tamed", 0)
+        n_llamas_tamed     = getattr(player, "llamas_tamed", 0)
+        n_yaks_tamed       = getattr(player, "yaks_tamed", 0)
         n_weapons_crafted  = len(getattr(player, "crafted_weapons", []))
         n_guard_sketches   = len(getattr(player, "guard_sketches", []))
         n_coins_owned = len(getattr(player, "coins", []))
@@ -143,8 +143,8 @@ class CollectionsMixin:
         if self._collection_tab == 2:
             title_text, title_col = "AWARDS", (255, 215, 80)
         elif self._collection_tab == 1:
-            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "REPTILE CODEX", "FOOD CODEX", "HORSE CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX", "BEER CODEX", "GUARD SKETCHES", "GLADIATOR CODEX", "SEASHELL CODEX", "COIN CODEX", "HONEY CODEX", "MEAD CODEX", "CHARCUTERIE CODEX", "PIGMENT CODEX"]
-            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (165, 210, 95), (235, 175, 105), (210, 175, 100), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165), (155, 215, 90), (150, 200, 240), (215, 185, 80), (210, 230, 240), (235, 205, 110), (255, 225, 120), (240, 200, 90), (245, 165, 95), (210, 175, 240)]
+            enc_titles = ["ROCK CODEX", "FLOWER CODEX", "MUSHROOM CODEX", "FOSSIL CODEX", "GEM CODEX", "BIRD CODEX", "FISH CODEX", "COFFEE CODEX", "WINE CODEX", "SPIRITS CODEX", "INSECT CODEX", "REPTILE CODEX", "FOOD CODEX", "HORSE CODEX", "LLAMA CODEX", "YAK CODEX", "PIG CODEX", "TEA CODEX", "HERB CODEX", "TEXTILE CODEX", "CHEESE CODEX", "JEWELRY CODEX", "POTTERY CODEX", "SALT CODEX", "PAIRINGS CODEX", "DOG CODEX", "HUNTING LOG", "WEAPONS CODEX", "BEER CODEX", "GUARD SKETCHES", "GLADIATOR CODEX", "SEASHELL CODEX", "COIN CODEX", "HONEY CODEX", "MEAD CODEX", "CHARCUTERIE CODEX", "PIGMENT CODEX", "MANUSCRIPTS CODEX", "FALCONRY CODEX", "CHIVALRY CODEX"]
+            enc_cols   = [(180, 220, 255), (180, 255, 180), (220, 210, 140), (210, 185, 140), (180, 245, 225), (140, 210, 255), (120, 185, 240), (210, 145, 60), (220, 140, 160), (230, 170, 80), (140, 230, 150), (165, 210, 95), (235, 175, 105), (210, 175, 100), (235, 215, 175), (225, 195, 130), (245, 195, 195), (130, 215, 140), (140, 235, 200), (220, 160, 250), (245, 230, 160), (240, 205, 100), (210, 160, 110), (235, 232, 215), (225, 180, 255), (215, 180, 110), (220, 170, 100), (210, 195, 165), (155, 215, 90), (150, 200, 240), (215, 185, 80), (210, 230, 240), (235, 205, 110), (255, 225, 120), (240, 200, 90), (245, 165, 95), (210, 175, 240), (232, 212, 168), (220, 195, 130), (240, 200, 110)]
             title_text = enc_titles[self._encyclopedia_cat]
             title_col  = enc_cols[self._encyclopedia_cat]
         else:
@@ -182,6 +182,8 @@ class CollectionsMixin:
                 ("pottery",    f"POTTERY ({n_pottery_owned})",       (40, 25, 10),  (160, 110,  80), (210, 160, 110)),
                 ("salt",       f"SALT ({n_salt_owned})",             (32, 30, 28),  (190, 185, 165), (235, 232, 215)),
                 ("dogs",       f"DOGS ({n_dogs_tamed})",              (28, 20, 10),  (170, 130,  60), (215, 180, 110)),
+                ("llamas",     f"LLAMAS ({n_llamas_tamed})",           (40, 32, 22),  (180, 145,  95), (235, 215, 175)),
+                ("yaks",       f"YAKS ({n_yaks_tamed})",               (30, 24, 14),  (170, 130,  70), (225, 195, 130)),
                 ("weapons",    f"WEAPONS ({n_weapons_crafted})",      (30, 22, 12),  (155, 140, 120), (210, 195, 165)),
                 ("guards",     f"GUARDS ({n_guard_sketches})",        (22, 32, 48),  ( 80, 130, 185), (150, 200, 240)),
                 ("coins",      f"COINS ({len(getattr(player,'coins',[]))})", (38, 30, 8), (178, 148, 62), (235, 205, 110)),
@@ -241,6 +243,9 @@ class CollectionsMixin:
                 ((28, 38, 15),  (110, 150,  55), (165, 210,  95)),   # Reptiles
                 ((38, 24, 12),  (175, 105,  45), (235, 175, 105)),
                 ((38, 28, 14),  (160, 120,  55), (210, 175, 100)),
+                ((40, 32, 22),  (180, 145,  95), (235, 215, 175)),   # Llamas
+                ((30, 24, 14),  (170, 130,  70), (225, 195, 130)),   # Yaks
+                ((45, 28, 30),  (200, 130, 130), (245, 195, 195)),   # Pigs
                 ((25, 45, 20),  ( 65, 160,  75), (130, 215, 140)),
                 ((10, 28, 24),  ( 70, 175, 140), (140, 235, 200)),
                 ((25, 12, 32),  (160,  90, 190), (220, 160, 250)),
@@ -261,9 +266,12 @@ class CollectionsMixin:
                 ((38, 28,  8),  (190, 145,  40), (240, 200,  90)),   # Mead
                 ((48, 22, 12),  (195, 110,  55), (245, 165,  95)),   # Charcuterie
                 ((50, 35, 65),  (145,  90, 185), (210, 175, 240)),   # Pigments
+                ((55, 45, 30),  (170, 130,  70), (232, 212, 168)),   # Manuscripts
+                ((40, 30, 18),  (160, 120,  60), (220, 195, 130)),   # Falconry
+                ((35, 25, 10),  (175, 135,  60), (240, 200, 110)),   # Chivalry
             ]
             enc_labels = ["ROCKS", "FLOWERS", "MUSHROOMS", "FOSSILS", "GEMS",
-                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "REPTILES", "FOOD", "HORSES", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER", "GUARDS", "GLADIATORS", "SEASHELLS", "COINS", "HONEY", "MEAD", "CHARCUTERIE", "PIGMENTS"]
+                          "BIRDS", "FISH", "COFFEE", "WINE", "SPIRITS", "INSECTS", "REPTILES", "FOOD", "HORSES", "LLAMAS", "YAKS", "PIGS", "TEA", "HERBS", "TEXTILES", "CHEESE", "JEWELRY", "POTTERY", "SALT", "PAIRINGS", "DOGS", "HUNTING", "WEAPONS", "BEER", "GUARDS", "GLADIATORS", "SEASHELLS", "COINS", "HONEY", "MEAD", "CHARCUTERIE", "PIGMENTS", "MANUSCRIPTS", "FALCONRY", "CHIVALRY"]
             SB_X, SB_W, SB_BTN_H, SB_GAP = 4, SIDEBAR_W - 8, 26, 4
             self._encyclopedia_cat_rects.clear()
             total_sb_h = len(enc_labels) * (SB_BTN_H + SB_GAP)
@@ -313,6 +321,9 @@ class CollectionsMixin:
                 self._draw_reptile_codex,
                 self._draw_food_codex,
                 self._draw_horse_codex,
+                self._draw_llama_codex,
+                self._draw_yak_codex,
+                self._draw_pig_codex,
                 self._draw_tea_codex,
                 self._draw_herb_codex,
                 self._draw_textile_codex,
@@ -333,6 +344,9 @@ class CollectionsMixin:
                 self._draw_mead_codex,
                 self._draw_charcuterie_codex,
                 self._draw_pigment_codex,
+                self._draw_manuscripts_codex,
+                self._draw_falconry_codex,
+                self._draw_chivalry_codex,
             ]
             if 0 <= self._encyclopedia_cat < len(cat_draw):
                 cat_draw[self._encyclopedia_cat](player, gy0=GY0, gx_off=SIDEBAR_W)
@@ -653,7 +667,6 @@ class CollectionsMixin:
                 label = _TBDN.get(it.origin_biome, it.origin_biome)
                 label_col = (130, 215, 140)
             elif cat == "jewelry":
-                from jewelry import JEWELRY_TYPES as _JT, calculate_value
                 piece = getattr(player, "jewelry", [])[key]
                 jcol = (180, 150, 60)
                 pygame.draw.rect(self.screen, (30, 24, 8) if selected else (20, 16, 6), rect)
@@ -3773,6 +3786,202 @@ class CollectionsMixin:
                 self.screen.blit(unk, (bx_ + cell_w // 2 - unk.get_width() // 2,
                                         by_ + cell_h // 2 - unk.get_height() // 2))
 
+    def _draw_llama_codex(self, player, gy0=58, gx_off=0):
+        from animals import LLAMA_BREED_PROFILES
+        from constants import SCREEN_W, SCREEN_H
+
+        title_col = (235, 215, 175)
+        content_x = gx_off
+        content_w = SCREEN_W - content_x
+        lx = content_x + 6
+        y = gy0 + 8
+
+        records      = getattr(player, "llama_records", {})
+        tamed        = getattr(player, "llamas_tamed", 0)
+        bred         = getattr(player, "llamas_bred", 0)
+        disc_breeds  = getattr(player, "discovered_llama_breeds", set())
+        disc_biomes  = getattr(player, "discovered_llama_biomes", set())
+        best_fleece  = records.get("best_fleece", 0.0)
+        best_fine    = records.get("best_fineness", 0.0)
+
+        def stat_line(label, value_str, vy):
+            lbl = self.small.render(label, True, (170, 145, 105))
+            val = self.small.render(value_str, True, (235, 215, 175))
+            self.screen.blit(lbl, (lx, vy))
+            self.screen.blit(val, (lx + 130, vy))
+
+        hdr = self.font.render("RECORDS", True, title_col)
+        self.screen.blit(hdr, (lx, y));  y2 = y + 22
+        stat_line("Llamas Tamed:", str(tamed), y2);  y2 += 16
+        stat_line("Llamas Bred:",  str(bred),  y2);  y2 += 16
+        stat_line("Best Fleece:",     f"{best_fleece:.2f}" if best_fleece else "—", y2); y2 += 16
+        stat_line("Best Fineness:",   f"{best_fine:.2f}"   if best_fine   else "—", y2); y2 += 18
+
+        hdr2 = self.font.render("HOW TO RAISE", True, title_col)
+        self.screen.blit(hdr2, (lx, y2));  y2 += 20
+        for tip in [
+            "• Found in mountain, alpine and arid steppe biomes",
+            "• Tame by feeding wheat, carrots or apples",
+            "• Shear with shears for wool (regrows over time)",
+            "• Heavier fleece + finer fiber = better yields",
+            "• Two tamed llamas (m+f) breed nearby",
+        ]:
+            t = self.small.render(tip, True, (180, 155, 110))
+            self.screen.blit(t, (lx, y2));  y2 += 14
+
+        rx = content_x + content_w // 2 + 14
+        ry = gy0 + 8
+        hdr3 = self.font.render("BREEDS", True, title_col)
+        self.screen.blit(hdr3, (rx, ry));  ry += 22
+
+        cell_w, cell_h = 130, 36
+        for idx, breed in enumerate(LLAMA_BREED_PROFILES.keys()):
+            by_ = ry + idx * (cell_h + 4)
+            found = breed in disc_breeds
+            bg = (40, 32, 20) if found else (20, 16, 10)
+            bd = (180, 145, 95) if found else (60, 50, 32)
+            pygame.draw.rect(self.screen, bg, (rx, by_, cell_w, cell_h), border_radius=4)
+            pygame.draw.rect(self.screen, bd, (rx, by_, cell_w, cell_h), 1, border_radius=4)
+            label = breed if found else "???"
+            ts = self.small.render(label, True, (235, 215, 175) if found else (80, 70, 50))
+            self.screen.blit(ts, (rx + 8, by_ + cell_h // 2 - ts.get_height() // 2))
+
+        y2 += 6
+        biome_str = f"Biomes encountered: {len(disc_biomes)}"
+        self.screen.blit(self.small.render(biome_str, True, (170, 145, 105)), (lx, y2))
+
+    def _draw_yak_codex(self, player, gy0=58, gx_off=0):
+        from animals import YAK_BREED_PROFILES
+        from constants import SCREEN_W, SCREEN_H
+
+        title_col = (225, 195, 130)
+        content_x = gx_off
+        content_w = SCREEN_W - content_x
+        lx = content_x + 6
+        y = gy0 + 8
+
+        records     = getattr(player, "yak_records", {})
+        tamed       = getattr(player, "yaks_tamed", 0)
+        bred        = getattr(player, "yaks_bred", 0)
+        disc_breeds = getattr(player, "discovered_yak_breeds", set())
+        disc_biomes = getattr(player, "discovered_yak_biomes", set())
+        best_fleece = records.get("best_fleece", 0.0)
+        best_milk   = records.get("best_milk", 0.0)
+        best_rich   = records.get("best_richness", 0.0)
+
+        def stat_line(label, value_str, vy):
+            lbl = self.small.render(label, True, (165, 135, 80))
+            val = self.small.render(value_str, True, (225, 195, 130))
+            self.screen.blit(lbl, (lx, vy))
+            self.screen.blit(val, (lx + 130, vy))
+
+        hdr = self.font.render("RECORDS", True, title_col)
+        self.screen.blit(hdr, (lx, y));  y2 = y + 22
+        stat_line("Yaks Tamed:", str(tamed), y2);  y2 += 16
+        stat_line("Yaks Bred:",  str(bred),  y2);  y2 += 16
+        stat_line("Best Fleece:",   f"{best_fleece:.2f}" if best_fleece else "—", y2); y2 += 16
+        stat_line("Best Milk:",     f"{best_milk:.2f}"   if best_milk   else "—", y2); y2 += 16
+        stat_line("Best Richness:", f"{best_rich:.2f}"   if best_rich   else "—", y2); y2 += 18
+
+        hdr2 = self.font.render("HOW TO RAISE", True, title_col)
+        self.screen.blit(hdr2, (lx, y2));  y2 += 20
+        for tip in [
+            "• Found in alpine, rocky mountain and tundra biomes",
+            "• Tame by feeding wheat, carrots or apples",
+            "• Shear with shears for shaggy wool",
+            "• Milk females with a bucket (rich, high-quality)",
+            "• Two tamed yaks (m+f) breed nearby",
+        ]:
+            t = self.small.render(tip, True, (175, 145, 90))
+            self.screen.blit(t, (lx, y2));  y2 += 14
+
+        rx = content_x + content_w // 2 + 14
+        ry = gy0 + 8
+        hdr3 = self.font.render("BREEDS", True, title_col)
+        self.screen.blit(hdr3, (rx, ry));  ry += 22
+
+        cell_w, cell_h = 130, 36
+        for idx, breed in enumerate(YAK_BREED_PROFILES.keys()):
+            by_ = ry + idx * (cell_h + 4)
+            found = breed in disc_breeds
+            bg = (32, 26, 16) if found else (18, 14, 8)
+            bd = (170, 130, 70) if found else (55, 45, 28)
+            pygame.draw.rect(self.screen, bg, (rx, by_, cell_w, cell_h), border_radius=4)
+            pygame.draw.rect(self.screen, bd, (rx, by_, cell_w, cell_h), 1, border_radius=4)
+            label = breed if found else "???"
+            ts = self.small.render(label, True, (225, 195, 130) if found else (75, 60, 40))
+            self.screen.blit(ts, (rx + 8, by_ + cell_h // 2 - ts.get_height() // 2))
+
+        y2 += 6
+        biome_str = f"Biomes encountered: {len(disc_biomes)}"
+        self.screen.blit(self.small.render(biome_str, True, (165, 135, 80)), (lx, y2))
+
+    def _draw_pig_codex(self, player, gy0=58, gx_off=0):
+        from animals import PIG_BREED_PROFILES
+        from constants import SCREEN_W, SCREEN_H
+
+        title_col = (245, 195, 195)
+        content_x = gx_off
+        content_w = SCREEN_W - content_x
+        lx = content_x + 6
+        y = gy0 + 8
+
+        records     = getattr(player, "pig_records", {})
+        tamed       = getattr(player, "pigs_tamed", 0)
+        bred        = getattr(player, "pigs_bred", 0)
+        disc_breeds = getattr(player, "discovered_pig_breeds", set())
+        disc_biomes = getattr(player, "discovered_pig_biomes", set())
+        best_meat   = records.get("best_meat", 0.0)
+        best_fat    = records.get("best_fat", 0.0)
+        best_litter = records.get("best_litter", 0.0)
+
+        def stat_line(label, value_str, vy):
+            lbl = self.small.render(label, True, (175, 120, 120))
+            val = self.small.render(value_str, True, title_col)
+            self.screen.blit(lbl, (lx, vy))
+            self.screen.blit(val, (lx + 130, vy))
+
+        hdr = self.font.render("RECORDS", True, title_col)
+        self.screen.blit(hdr, (lx, y));  y2 = y + 22
+        stat_line("Pigs Tamed:", str(tamed), y2);  y2 += 16
+        stat_line("Pigs Bred:",  str(bred),  y2);  y2 += 16
+        stat_line("Best Meat Yield:", f"{best_meat:.2f}"   if best_meat   else "—", y2); y2 += 16
+        stat_line("Best Fat:",        f"{best_fat:.2f}"    if best_fat    else "—", y2); y2 += 16
+        stat_line("Best Litter:",     f"{best_litter:.2f}" if best_litter else "—", y2); y2 += 18
+
+        hdr2 = self.font.render("HOW TO RAISE", True, title_col)
+        self.screen.blit(hdr2, (lx, y2));  y2 += 20
+        for tip in [
+            "• Found in temperate, hills, forest & boreal biomes",
+            "• Tame by feeding apples, carrots, potatoes or wheat",
+            "• Slaughter with hunting knife for pork + lard",
+            "• Two tamed pigs (m+f) breed nearby — high litter",
+            "• Manure fertilizes fields better than cow manure",
+        ]:
+            t = self.small.render(tip, True, (190, 140, 140))
+            self.screen.blit(t, (lx, y2));  y2 += 14
+
+        rx = content_x + content_w // 2 + 14
+        ry = gy0 + 8
+        hdr3 = self.font.render("BREEDS", True, title_col)
+        self.screen.blit(hdr3, (rx, ry));  ry += 22
+
+        cell_w, cell_h = 130, 36
+        for idx, breed in enumerate(PIG_BREED_PROFILES.keys()):
+            by_ = ry + idx * (cell_h + 4)
+            found = breed in disc_breeds
+            bg = (40, 24, 28) if found else (20, 12, 14)
+            bd = (200, 130, 130) if found else (60, 38, 40)
+            pygame.draw.rect(self.screen, bg, (rx, by_, cell_w, cell_h), border_radius=4)
+            pygame.draw.rect(self.screen, bd, (rx, by_, cell_w, cell_h), 1, border_radius=4)
+            label = breed if found else "???"
+            ts = self.small.render(label, True, title_col if found else (75, 50, 55))
+            self.screen.blit(ts, (rx + 8, by_ + cell_h // 2 - ts.get_height() // 2))
+
+        y2 += 6
+        biome_str = f"Biomes encountered: {len(disc_biomes)}"
+        self.screen.blit(self.small.render(biome_str, True, (175, 120, 120)), (lx, y2))
+
     def _draw_textile_codex(self, player, gy0=58, gx_off=130):
         from textiles import (DYE_FAMILY_COLORS, DYE_FAMILY_DISPLAY, OUTPUT_DISPLAY,
                                _FIBERS, _DYE_FAMILIES, _OUTPUT_TYPES, TOTAL_TEXTILE_TYPES)
@@ -4238,6 +4447,12 @@ class CollectionsMixin:
             ("turkey",     "Turkey",     "beard_length",  "in"),
             ("warthog",    "Warthog",    "tusk_length",   "in"),
             ("wolf",       "Wolf",       "weight",        "lbs"),
+            ("antelope",   "Antelope",   "horn_length",   "in"),
+            ("beaver",     "Beaver",     "weight",        "lbs"),
+            ("caribou",    "Caribou",    "antler_spread", "in"),
+            ("coyote",     "Coyote",     "weight",        "lbs"),
+            ("ibex",       "Ibex",       "horn_curl",     "in"),
+            ("lynx",       "Lynx",       "weight",        "lbs"),
         ]
 
         STAT_LABELS = {
@@ -4246,6 +4461,8 @@ class CollectionsMixin:
             "tusk_length":   "Tusk length",
             "horn_score":    "Horn score",
             "horn_spread":   "Horn spread",
+            "horn_length":   "Horn length",
+            "horn_curl":     "Horn curl",
             "weight":        "Weight",
             "length":        "Body length",
             "tail_length":   "Tail length",
@@ -4427,7 +4644,7 @@ class CollectionsMixin:
 
     def _draw_honey_codex(self, player, gy0=58, gx_off=130):
         import pygame
-        from beekeeping import BIOME_HONEY_PROFILES, BIOME_DISPLAY_NAMES, HONEY_TYPE_ORDER, _CODEX_BIOMES
+        from beekeeping import BIOME_HONEY_PROFILES, BIOME_DISPLAY_NAMES, _CODEX_BIOMES
 
         _BG   = (30, 20, 5)
         _BDR  = (210, 165, 35)
@@ -4611,3 +4828,66 @@ class CollectionsMixin:
             for attr_nm, attr_key in [("Purity", "purity"), ("Opacity", "opacity"), ("Stability", "stability"), ("Granularity", "granularity")]:
                 val = base.get(attr_key, 0.5)
                 dline(f"{attr_nm}: {val:.0%}", _LABEL_C)
+
+    def _draw_manuscripts_codex(self, player, gy0=58, gx_off=130):
+        from manuscripts import (BIOME_PARCHMENT_PROFILES, CONTENT_CATEGORIES,
+                                  quality_stars, all_kingdom_names, UNKNOWN_KINGDOM)
+
+        disc = getattr(player, "discovered_manuscripts", set())
+        manuscripts = getattr(player, "manuscripts", [])
+        kingdoms = all_kingdom_names(getattr(player, "world", None))
+        # Always include the Wildlands fallback so off-territory parchments
+        # have a slot, and ensure any kingdom the player has actually collected
+        # from is listed (covers loaded saves whose plan has changed).
+        seen = set(kingdoms)
+        for m in manuscripts:
+            k = m.origin_kingdom or UNKNOWN_KINGDOM
+            if k not in seen:
+                kingdoms.append(k)
+                seen.add(k)
+        if UNKNOWN_KINGDOM not in seen:
+            kingdoms.append(UNKNOWN_KINGDOM)
+        total = len(kingdoms) * len(CONTENT_CATEGORIES)
+
+        _BG = (40, 32, 24)
+        _LABEL = (210, 195, 165)
+        _TITLE = (245, 230, 200)
+        _ACCENT = (170, 130, 70)
+
+        sub = self.small.render(f"Manuscripts owned: {len(manuscripts)}   Discovered: {len(disc)} / {total}",
+                                True, _LABEL)
+        self.screen.blit(sub, (gx_off + 8, gy0))
+
+        CELL_W, CELL_H, HGAP, VGAP = 110, 30, 4, 4
+        LABEL_W = 150
+        hdr_y = gy0 + 22
+        for ci, cat in enumerate(CONTENT_CATEGORIES):
+            hx = gx_off + LABEL_W + ci * (CELL_W + HGAP)
+            self.screen.blit(self.small.render(cat.upper(), True, _ACCENT), (hx + 8, hdr_y))
+
+        grid_y0 = hdr_y + 18
+        for ri, kingdom in enumerate(kingdoms):
+            ry = grid_y0 + ri * (CELL_H + VGAP)
+            self.screen.blit(self.small.render(kingdom, True, _TITLE), (gx_off + 8, ry + 8))
+            for ci, cat in enumerate(CONTENT_CATEGORIES):
+                cx = gx_off + LABEL_W + ci * (CELL_W + HGAP)
+                rect = pygame.Rect(cx, ry, CELL_W, CELL_H)
+                key = f"{kingdom}_{cat}"
+                revealed = key in disc
+                pygame.draw.rect(self.screen, _BG, rect)
+                pygame.draw.rect(self.screen, _ACCENT if revealed else (75, 65, 55), rect, 1)
+                if revealed:
+                    matching = [m for m in manuscripts
+                                if (m.origin_kingdom or UNKNOWN_KINGDOM) == kingdom
+                                and m.content_category == cat]
+                    star_count = max((quality_stars(m) for m in matching), default=1)
+                    tone = (180, 160, 130)
+                    if matching:
+                        tone = BIOME_PARCHMENT_PROFILES.get(
+                            matching[0].origin_biome, {}).get("tone", tone)
+                    pygame.draw.rect(self.screen, tone, (rect.x + 4, rect.y + 4, 22, 22))
+                    self.screen.blit(self.small.render("★" * star_count, True, (255, 220, 140)),
+                                     (rect.x + 30, rect.y + 7))
+                else:
+                    self.screen.blit(self.small.render("?", True, (80, 70, 60)),
+                                     (rect.x + CELL_W // 2 - 4, rect.y + 8))

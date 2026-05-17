@@ -13,11 +13,21 @@ class Jewelry:
 
 
 JEWELRY_TYPES = {
-    "ring":     {"label": "Ring",     "max_slots": 3, "base_value": 80},
-    "necklace": {"label": "Necklace", "max_slots": 4, "base_value": 120},
-    "bracelet": {"label": "Bracelet", "max_slots": 3, "base_value": 90},
-    "pendant":  {"label": "Pendant",  "max_slots": 2, "base_value": 70},
-    "crown":    {"label": "Crown",    "max_slots": 5, "base_value": 200},
+    "ring":      {"label": "Ring",      "max_slots": 3, "base_value": 80},
+    "necklace":  {"label": "Necklace",  "max_slots": 4, "base_value": 120},
+    "bracelet":  {"label": "Bracelet",  "max_slots": 3, "base_value": 90},
+    "pendant":   {"label": "Pendant",   "max_slots": 2, "base_value": 70},
+    "crown":     {"label": "Crown",     "max_slots": 5, "base_value": 200},
+    "earring":   {"label": "Earring",   "max_slots": 2, "base_value": 60},
+    "brooch":    {"label": "Brooch",    "max_slots": 3, "base_value": 85},
+    "tiara":     {"label": "Tiara",     "max_slots": 4, "base_value": 160},
+    "anklet":    {"label": "Anklet",    "max_slots": 3, "base_value": 75},
+    "cufflinks": {"label": "Cufflinks", "max_slots": 2, "base_value": 70},
+    "circlet":   {"label": "Circlet",   "max_slots": 3, "base_value": 130},
+    "choker":    {"label": "Choker",    "max_slots": 3, "base_value": 95},
+    "signet":    {"label": "Signet",    "max_slots": 1, "base_value": 65},
+    "amulet":    {"label": "Amulet",    "max_slots": 3, "base_value": 100},
+    "tiepin":    {"label": "Tiepin",    "max_slots": 1, "base_value": 50},
 }
 
 RARITY_VALUES = {

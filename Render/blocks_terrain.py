@@ -303,6 +303,108 @@ def build_terrain_surfs():
     pygame.draw.rect(s, _darken(c, 10), s.get_rect(), 1)
     surfs[bid] = s
 
+    # --- Additional stone vein pockets ---
+    bid = CHALK_VEIN
+    c = (236, 232, 220)
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+    dk = _darken(c, 10); lt = _lighter(c, 12)
+    for fx, fy in [(3,4),(11,2),(20,6),(27,3),(6,12),(17,14),(25,12),
+                   (4,21),(14,22),(22,24),(9,28),(28,27)]:
+        pygame.draw.rect(s, lt, (fx, fy, 3, 2))
+    for fx, fy in [(8,8),(19,10),(2,17),(23,18),(12,26)]:
+        pygame.draw.rect(s, dk, (fx, fy, 2, 1))
+    pygame.draw.rect(s, _darken(c, 18), s.get_rect(), 1)
+    surfs[bid] = s
+
+    bid = SHALE_VEIN
+    c = (78, 78, 82)
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+    dk = _darken(c, 30); lt = _lighter(c, 22)
+    # Tight horizontal flaky layers
+    for ly in [4, 8, 13, 18, 23, 28]:
+        pygame.draw.line(s, dk, (0, ly),   (BLOCK_SIZE, ly),   1)
+        pygame.draw.line(s, lt, (0, ly+1), (BLOCK_SIZE, ly+1), 1)
+    pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
+    surfs[bid] = s
+
+    bid = SLATE_VEIN
+    c = (70, 82, 98)
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+    dk = _darken(c, 28); lt = _lighter(c, 18)
+    # Diagonal cleavage planes
+    for off in (-12, -4, 4, 12, 20):
+        pygame.draw.line(s, dk, (0, off+BLOCK_SIZE), (BLOCK_SIZE, off), 1)
+        pygame.draw.line(s, lt, (0, off+BLOCK_SIZE+1), (BLOCK_SIZE, off+1), 1)
+    pygame.draw.rect(s, _darken(c, 22), s.get_rect(), 1)
+    surfs[bid] = s
+
+    bid = ANDESITE_VEIN
+    c = (130, 130, 132)
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+    dk = _darken(c, 22); lt = _lighter(c, 18)
+    # Speckled porphyritic feel
+    for fx, fy in [(3,3),(9,5),(16,2),(22,6),(27,4),(5,11),(13,13),(20,10),(26,14),
+                   (4,19),(11,21),(18,18),(24,22),(8,26),(15,28),(22,27),(28,25)]:
+        pygame.draw.rect(s, dk, (fx, fy, 2, 2))
+    for fx, fy in [(6,8),(17,7),(11,18),(23,16),(7,24)]:
+        pygame.draw.rect(s, lt, (fx, fy, 2, 2))
+    pygame.draw.rect(s, _darken(c, 25), s.get_rect(), 1)
+    surfs[bid] = s
+
+    bid = TUFF_VEIN
+    c = (188, 172, 142)
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+    dk = _darken(c, 22); lt = _lighter(c, 16)
+    # Pumice-like pitted texture
+    for fx, fy, fw, fh in [(3,3,4,3),(12,5,3,3),(20,2,4,4),(26,7,3,3),
+                            (5,12,3,3),(14,14,4,3),(22,11,3,4),
+                            (4,22,4,3),(13,20,3,4),(20,24,4,3),(27,21,2,3)]:
+        pygame.draw.rect(s, dk, (fx, fy, fw, fh))
+    for fx, fy in [(8,9),(18,8),(10,16),(24,18),(7,26)]:
+        pygame.draw.rect(s, lt, (fx, fy, 2, 2))
+    pygame.draw.rect(s, _darken(c, 26), s.get_rect(), 1)
+    surfs[bid] = s
+
+    bid = QUARTZITE_VEIN
+    c = (228, 212, 210)
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+    dk = _darken(c, 18); lt = _lighter(c, 14)
+    # Sugary crystalline glitter + faint veining
+    for fx, fy in [(4,3),(11,6),(18,2),(25,5),(7,11),(15,13),(22,10),(28,14),
+                   (3,18),(11,20),(19,17),(26,21),(6,25),(14,27),(22,25),(28,28)]:
+        pygame.draw.rect(s, lt, (fx, fy, 2, 2))
+    pygame.draw.line(s, dk, (0, 9), (BLOCK_SIZE, 12), 1)
+    pygame.draw.line(s, dk, (0, 22), (BLOCK_SIZE, 19), 1)
+    pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+    surfs[bid] = s
+
+    bid = GNEISS_VEIN
+    c = (170, 152, 148)
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+    dk = _darken(c, 28); lt = _lighter(c, 18)
+    # Banded foliation
+    bands = [(2, dk, 2), (6, lt, 1), (10, dk, 2), (15, lt, 2),
+             (20, dk, 1), (24, lt, 2), (28, dk, 1)]
+    for ly, col, thick in bands:
+        pygame.draw.line(s, col, (0, ly), (BLOCK_SIZE, ly), thick)
+    pygame.draw.rect(s, _darken(c, 24), s.get_rect(), 1)
+    surfs[bid] = s
+
+    bid = GABBRO_VEIN
+    c = (48, 56, 60)
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE)); s.fill(c)
+    dk = _darken(c, 30); lt = _lighter(c, 30)
+    # Coarse-grained plutonic — chunky crystal blocks
+    for fx, fy, fw, fh in [(2,2,5,5),(9,3,4,4),(15,2,6,5),(23,4,5,4),
+                            (3,11,4,5),(10,12,6,4),(18,11,5,5),(25,13,4,4),
+                            (2,20,5,5),(10,22,5,4),(18,21,5,5),(25,23,5,4)]:
+        col = dk if (fx + fy) % 2 == 0 else lt
+        pygame.draw.rect(s, col, (fx, fy, fw, fh), 1)
+    for fx, fy in [(5,5),(20,7),(13,15),(28,18),(8,24),(22,26)]:
+        pygame.draw.rect(s, lt, (fx, fy, 2, 2))
+    pygame.draw.rect(s, _darken(c, 20), s.get_rect(), 1)
+    surfs[bid] = s
+
     bid = ALABASTER_BLOCK
     # if bid == ALABASTER_BLOCK
     c = (235, 222, 204)

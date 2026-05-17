@@ -1027,6 +1027,12 @@ class WineMixin:
             dline(BIOME_DISPLAY_NAMES.get(g.origin_biome, g.origin_biome), (230, 180, 190))
             dline(VARIETY_DISPLAY_NAMES.get(g.variety, g.variety), (210, 170, 180))
             dline(WINE_STYLE_DESCS.get(g.style, g.style), col)
+            vy = getattr(g, "vintage_year", 0)
+            if vy or getattr(g, "weather", ""):
+                from wine import WEATHER_TYPES, SEASON_DISPLAY
+                wlabel = WEATHER_TYPES.get(getattr(g, "weather", "balanced"), {}).get("label", "")
+                slabel = SEASON_DISPLAY.get(getattr(g, "vintage_season", ""), "")
+                dline(f"Vintage Y{vy} {slabel} — {wlabel}", (210, 195, 130))
             if g.vessel:
                 dline(f"Aged: {VESSELS.get(g.vessel, {}).get('label', g.vessel)}", (170, 140, 150))
             dline(f"Alcohol {g.alcohol:.0%}  Complexity {g.complexity:.0%}", (190, 160, 170))

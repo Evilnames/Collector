@@ -450,11 +450,48 @@ def region_buff(region) -> Optional[str]:
     return LEADER_AGENDAS.get(region.agenda, {}).get("buff")
 
 
-def region_specialty(region) -> dict:
+def _biome_specialty(region) -> dict:
+    """Raw biome-group baseline — used as a fallback for regions whose
+    cities haven't been built yet or have no merchant NPCs."""
     if region is None:
         return {"exports": (), "imports": ()}
     return BIOME_GROUP_SPECIALTIES.get(region.biome_group,
                                        BIOME_GROUP_SPECIALTIES["highland"])
+
+
+def region_specialty(region) -> dict:
+    """Exports = tags inferred from merchants in the region's member cities,
+    so the Town Hall's Exports line lists what player-facing shops actually
+    sell. Imports = leader agenda demands plus biome baseline minus exports,
+    so they list what the leader is willing to pay a premium for.
+
+    Falls back entirely to the biome baseline when no member city contributes
+    any merchant tag (camps, ruins, world-gen-only regions).
+    """
+    if region is None:
+        return {"exports": (), "imports": ()}
+
+    baseline = _biome_specialty(region)
+
+    try:
+        from cities import derive_export_tags_for_size
+    except Exception:
+        return baseline
+
+    exports: set = set(baseline.get("exports", ()))
+    for tid in region.member_town_ids:
+        town = TOWNS.get(tid)
+        if town is None:
+            continue
+        exports |= derive_export_tags_for_size(town.size)
+
+    agenda_demands = set(LEADER_AGENDAS.get(region.agenda, {}).get("tags", ()))
+    imports = (agenda_demands | set(baseline.get("imports", ()))) - exports
+
+    return {
+        "exports": tuple(sorted(exports)),
+        "imports": tuple(sorted(imports)),
+    }
 
 
 def relation_between(rid_a: int, rid_b: int) -> str:
@@ -983,9 +1020,8 @@ _IMPORT_NATURAL_SUPPLY  = 0.85   # imports: region needs them, chronically scarc
 
 
 def _natural_supply(region, tag: str) -> float:
-    """Return the resting supply level for tag given the region's biome specialties."""
-    spec = BIOME_GROUP_SPECIALTIES.get(region.biome_group,
-                                       BIOME_GROUP_SPECIALTIES.get("highland", {}))
+    """Return the resting supply level for tag given the region's specialties."""
+    spec = region_specialty(region)
     if tag in spec.get("exports", ()):
         return _EXPORT_NATURAL_SUPPLY
     if tag in spec.get("imports", ()):
@@ -1160,6 +1196,7 @@ def init_towns(world) -> None:
     # TOWNS/REGIONS during city build. Don't wipe them — just stamp chronicles.
     # (Must check BEFORE TOWNS.clear() since the plan-registered towns live there.)
     if TOWNS and getattr(world, "plan", None) is not None:
+        _finalize_regions(world)
         _fill_missing_coat_of_arms(world.seed)
         for town in TOWNS.values():
             if town.is_capital:
@@ -1174,6 +1211,7 @@ def init_towns(world) -> None:
     if hasattr(world, '_save_mgr') and world._save_mgr is not None:
         rows = _load_from_db(world._save_mgr)
         if rows is not None:
+            _finalize_regions(world)
             _fill_missing_coat_of_arms(world.seed)
             _restore_world_city_metadata(world)
             _respawn_leader_npcs(world)
@@ -1291,6 +1329,10 @@ def init_towns(world) -> None:
 
     # Compute inter-region relations once all agendas are set
     compute_relations(world.seed)
+
+    # Final sweep: catch any town/region that drifted out of sync (missing
+    # capital, missing leader name, region_id pointing nowhere).
+    _finalize_regions(world)
 
     # Place castles + LeaderNPCs for each capital
     for town in TOWNS.values():
@@ -1522,16 +1564,23 @@ def _restore_world_city_metadata(world) -> None:
         world.city_zones.append((bx - half_w, bx + half_w))
         if town.is_capital:
             palace_left  = bx + half_w + 4
-            npc_offset   = PALACE_NPC_OFFSET[_palace_type_for(palace_left, world.seed)]
+            npc_offset   = PALACE_NPC_OFFSET[_palace_type_for(town.region_id, world.seed)]
             world.city_zones.append((palace_left, palace_left + npc_offset * 2 + 20))
             lm_right = bx - half_w - 4
             world.city_zones.append((lm_right - 48, lm_right + 2))
 
 
-def _palace_type_for(palace_left: int, world_seed: int) -> str:
-    """Deterministic palace type for a capital at palace_left.  Same inputs → same type."""
+def _palace_type_for(region_id: int, world_seed: int) -> str:
+    """Deterministic palace type for a kingdom/region. Same region across all towns
+    yields the same palace style, so non-capital buildings can match the capital."""
     from cities import PALACE_TYPES
-    return random.Random(palace_left ^ world_seed ^ 0xCAFEBABE).choice(PALACE_TYPES)
+    rng = random.Random((region_id * 0x9E3779B9) ^ (world_seed * 0xCAFEBABE) ^ 0xBADD157)
+    return rng.choice(PALACE_TYPES)
+
+
+def palace_type_for_town(town, world) -> str:
+    """Public helper: palace style for a town (matches its region's capital)."""
+    return _palace_type_for(town.region_id, world.seed)
 
 
 def _respawn_leader_npcs(world) -> None:
@@ -1549,7 +1598,7 @@ def _respawn_leader_npcs(world) -> None:
         if region is None:
             continue
         palace_left = town.center_bx + town.half_w + 4
-        ptype = _palace_type_for(palace_left, world.seed)
+        ptype = _palace_type_for(town.region_id, world.seed)
         npc_offset = PALACE_NPC_OFFSET[ptype]
         sy = world.surface_y_at(palace_left + npc_offset)
         npc_px = (palace_left + npc_offset) * BLOCK_SIZE
@@ -1647,7 +1696,7 @@ def _place_capital_structures(town: Town, world) -> None:
     sy = world.surface_y_at(palace_left)
 
     _entities_before = len(world.entities)
-    ptype = _palace_type_for(palace_left, world.seed)
+    ptype = _palace_type_for(town.region_id, world.seed)
 
     if ptype == "mediterranean":
         _place_mediterranean_palace(world, palace_left, sy)
@@ -1754,6 +1803,89 @@ def _coa_rng(world_seed: int, region_id: int, leader_color: tuple) -> random.Ran
     """Deterministic rng used only for back-filling missing COAs on old saves."""
     seed = (world_seed ^ (region_id * 0x9E3779B9) ^ hash(leader_color)) & 0x7FFFFFFF
     return random.Random(seed)
+
+
+def _finalize_regions(world) -> None:
+    """Final consistency pass before the player starts a session.
+
+    Every Town in TOWNS must point at a valid Region in REGIONS, every Region
+    must have a capital with a leader_name, and member_town_ids must reflect
+    actual membership. Plan-driven generation can leave gaps when a settlement
+    is registered before its kingdom (or a kingdom never spawned its capital);
+    this pass closes those gaps deterministically.
+    """
+    seed = world.seed
+
+    # 1. Rebuild membership from scratch so capital changes / load order
+    #    can't leave stale entries behind.
+    members_by_region: dict[int, list[int]] = {}
+    for town in TOWNS.values():
+        members_by_region.setdefault(town.region_id, []).append(town.town_id)
+
+    # 2. Create a Region for any town whose region_id is orphaned. Use the
+    #    town's own biome and let the deterministic per-region RNG fill
+    #    name / agenda / heraldry so re-runs are stable.
+    used_names = {r.name for r in REGIONS.values()}
+    for rid, tids in members_by_region.items():
+        if rid in REGIONS:
+            continue
+        first_town = TOWNS[tids[0]]
+        bg      = _biome_group_for(first_town.biome)
+        rng_r   = random.Random(seed + rid * 31337 + 88888)
+        rname   = _make_region_name(rng_r, used_names, bg)
+        used_names.add(rname)
+        lcolor  = rng_r.choice(_HERALDIC_COLORS)
+        tagline = _make_tagline(rng_r, bg)
+        title   = leader_title_for(bg, rng_r)
+        agenda  = pick_agenda(rng_r)
+        coa     = heraldry.generate(_coa_rng(seed, rid, lcolor), lcolor,
+                                    charge_pool=_CHARGES_BY_GROUP.get(bg))
+        REGIONS[rid] = Region(
+            region_id       = rid,
+            name            = rname,
+            capital_town_id = -1,
+            member_town_ids = [],
+            leader_color    = lcolor,
+            coat_of_arms    = coa,
+            biome_group     = bg,
+            tagline         = tagline,
+            leader_title    = title,
+            agenda          = agenda,
+            wealth          = derive_wealth(agenda, rid, seed),
+            danger          = derive_danger(bg, rid, seed),
+        )
+
+    # 3. Stamp authoritative membership + repair capital pointer + leader name.
+    for region in REGIONS.values():
+        tids = members_by_region.get(region.region_id, [])
+        region.member_town_ids = list(tids)
+
+        if not tids:
+            continue   # empty region — nothing more to fix
+
+        capital_valid = (region.capital_town_id in TOWNS
+                         and TOWNS[region.capital_town_id].region_id == region.region_id)
+        if not capital_valid:
+            # Prefer a town already flagged is_capital; otherwise pick the
+            # first member deterministically (sorted by town_id) and promote it.
+            promoted = next((tid for tid in tids if TOWNS[tid].is_capital), None)
+            if promoted is None:
+                promoted = sorted(tids)[0]
+                TOWNS[promoted].is_capital = True
+            region.capital_town_id = promoted
+
+        capital = TOWNS[region.capital_town_id]
+        if not capital.leader_name:
+            rng_r = random.Random(seed + region.region_id * 31337 + 88888)
+            # advance rng deterministically past the fields filled at gen time
+            _make_region_name(rng_r, set(), region.biome_group)
+            rng_r.choice(_HERALDIC_COLORS)
+            _make_tagline(rng_r, region.biome_group)
+            leader_title_for(region.biome_group, rng_r)
+            capital.leader_name = _make_leader_name(rng_r)
+
+    # 4. Recompute relations now that every region exists.
+    compute_relations(seed)
 
 
 def _fill_missing_coat_of_arms(world_seed: int) -> None:

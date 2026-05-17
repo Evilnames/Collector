@@ -6,6 +6,7 @@ DOG_MOVE_SPEED    = 1.3
 DOG_FLEE_SPEED    = 2.8
 DOG_FLEE_RADIUS   = 6     # blocks — wild dogs flee from player
 KENNEL_SEARCH_RADIUS = 6  # blocks from dog to look for KENNEL_BLOCK
+HERD_SEARCH_RADIUS = 12   # blocks — herding dog looks for herd animals within this range
 
 # Categorical gene dominance orders
 DOG_COAT_PATTERN_ORDER   = ["solid", "spotted", "merle", "brindle", "saddle", "ticked"]
@@ -14,7 +15,7 @@ DOG_COAT_TYPE_ORDER      = ["smooth", "wavy", "curly", "wire"]
 DOG_EAR_TYPE_ORDER       = ["erect", "semi-erect", "floppy"]
 DOG_TAIL_TYPE_ORDER      = ["long", "curled", "short", "bob"]
 DOG_EYE_COLOR_ORDER      = ["brown", "amber", "blue", "heterochromia"]
-DOG_SIZE_CLASS_ORDER     = ["medium", "large", "small", "giant", "toy"]
+DOG_SIZE_CLASS_ORDER     = ["medium", "large", "small", "giant", "toy", "tiny", "colossal"]
 
 # Color genetics ─────────────────────────────────────────────────────────────
 # Dominance: black > brown > red > yellow > cream  (index 0 = dominant)
@@ -856,7 +857,7 @@ BREED_PROFILES = {
     },
     "Saint Bernard": {
         "biomes": {"alpine_mountain", "tundra", "boreal"},
-        "size_class": "giant",
+        "size_class": "colossal",
         "race_style": "pacer",
         "genes": {
             "speed_gene":        (0.7, 0.9),
@@ -879,6 +880,656 @@ BREED_PROFILES = {
         "tail_type": "long",
         "coat_length": "long",
         "coat_type_weights": [50, 50, 0, 0],
+    },
+    "Pomeranian": {
+        "biomes": {"temperate", "rolling_hills", "birch_forest"},
+        "size_class": "tiny",
+        "race_style": "surger",
+        "genes": {
+            "speed_gene":        (0.7, 0.95),
+            "endurance_gene":    (0.6, 0.9),
+            "agility_gene":      (0.9, 1.1),
+            "strength_gene":     (0.5, 0.7),
+            "nose_gene":         (0.7, 1.0),
+            "alertness_gene":    (1.1, 1.3),
+            "loyalty_gene":      (0.7, 1.0),
+            "playfulness_gene":  (0.8, 1.0),
+            "stubbornness_gene": (0.5, 0.8),
+            "prey_drive_gene":   (0.4, 0.7),
+            "sprint_gene":       (0.75, 1.00),
+            "focus_gene":        (0.70, 0.95),
+        },
+        "abilities": {},
+        "coat_colors": [(205, 168, 55), (190, 75, 30), (248, 243, 232), (28, 22, 18)],
+        "coat_pattern_weights": [80, 0, 0, 0, 20, 0],
+        "ear_type": "erect",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [0, 70, 30, 0],
+    },
+    "Keeshond": {
+        "biomes": {"boreal", "birch_forest", "temperate"},
+        "size_class": "medium",
+        "race_style": "pacer",
+        "genes": {
+            "speed_gene":        (0.8, 1.05),
+            "endurance_gene":    (0.9, 1.15),
+            "agility_gene":      (0.9, 1.1),
+            "strength_gene":     (0.8, 1.0),
+            "nose_gene":         (0.8, 1.05),
+            "alertness_gene":    (1.0, 1.25),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.7, 0.95),
+            "stubbornness_gene": (0.3, 0.6),
+            "prey_drive_gene":   (0.5, 0.8),
+            "sprint_gene":       (0.80, 1.05),
+            "focus_gene":        (0.85, 1.10),
+        },
+        "abilities": {"guard": 0.30},
+        "coat_colors": [(95, 100, 115), (28, 22, 18), (235, 222, 192)],
+        "coat_pattern_weights": [30, 0, 0, 0, 70, 0],
+        "ear_type": "erect",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [20, 80, 0, 0],
+    },
+    "Newfoundland": {
+        "biomes": {"boreal", "redwood", "tundra", "beach"},
+        "size_class": "colossal",
+        "race_style": "pacer",
+        "genes": {
+            "speed_gene":        (0.7, 0.9),
+            "endurance_gene":    (1.1, 1.3),
+            "agility_gene":      (0.7, 0.9),
+            "strength_gene":     (1.2, 1.3),
+            "nose_gene":         (0.8, 1.1),
+            "alertness_gene":    (0.8, 1.1),
+            "loyalty_gene":      (0.9, 1.0),
+            "playfulness_gene":  (0.6, 0.9),
+            "stubbornness_gene": (0.2, 0.5),
+            "prey_drive_gene":   (0.4, 0.7),
+            "sprint_gene":       (0.70, 0.90),
+            "focus_gene":        (0.90, 1.15),
+        },
+        "abilities": {"retrieve": 0.45},
+        "coat_colors": [(28, 22, 18), (110, 58, 24), (248, 243, 232)],
+        "coat_pattern_weights": [80, 0, 0, 0, 20, 0],
+        "ear_type": "floppy",
+        "tail_type": "long",
+        "coat_length": "long",
+        "coat_type_weights": [30, 70, 0, 0],
+    },
+    "Tibetan Mastiff": {
+        "biomes": {"alpine_mountain", "rocky_mountain", "tundra"},
+        "size_class": "colossal",
+        "race_style": "pacer",
+        "genes": {
+            "speed_gene":        (0.7, 0.95),
+            "endurance_gene":    (1.0, 1.2),
+            "agility_gene":      (0.7, 0.9),
+            "strength_gene":     (1.2, 1.3),
+            "nose_gene":         (0.8, 1.1),
+            "alertness_gene":    (1.1, 1.3),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.3, 0.6),
+            "stubbornness_gene": (0.7, 1.0),
+            "prey_drive_gene":   (0.5, 0.8),
+            "sprint_gene":       (0.70, 0.90),
+            "focus_gene":        (0.85, 1.10),
+        },
+        "abilities": {"guard": 0.70},
+        "coat_colors": [(28, 22, 18), (110, 58, 24), (190, 75, 30)],
+        "coat_pattern_weights": [70, 0, 0, 0, 30, 0],
+        "ear_type": "floppy",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [20, 80, 0, 0],
+    },
+    "Old English Sheepdog": {
+        "biomes": {"temperate", "rolling_hills", "birch_forest"},
+        "size_class": "large",
+        "race_style": "pacer",
+        "genes": {
+            "speed_gene":        (0.8, 1.05),
+            "endurance_gene":    (1.0, 1.2),
+            "agility_gene":      (0.85, 1.05),
+            "strength_gene":     (1.0, 1.2),
+            "nose_gene":         (0.8, 1.05),
+            "alertness_gene":    (0.9, 1.15),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.7, 0.95),
+            "stubbornness_gene": (0.3, 0.6),
+            "prey_drive_gene":   (0.5, 0.8),
+            "sprint_gene":       (0.80, 1.05),
+            "focus_gene":        (0.90, 1.15),
+        },
+        "abilities": {"herding": 0.50},
+        "coat_colors": [(95, 100, 115), (248, 243, 232), (235, 222, 192)],
+        "coat_pattern_weights": [10, 0, 0, 0, 90, 0],
+        "ear_type": "floppy",
+        "tail_type": "bob",
+        "coat_length": "long",
+        "coat_type_weights": [0, 80, 20, 0],
+    },
+    "Bichon Frise": {
+        "biomes": {"temperate", "rolling_hills"},
+        "size_class": "small",
+        "race_style": "surger",
+        "genes": {
+            "speed_gene":        (0.8, 1.0),
+            "endurance_gene":    (0.7, 0.95),
+            "agility_gene":      (0.95, 1.15),
+            "strength_gene":     (0.5, 0.7),
+            "nose_gene":         (0.7, 0.95),
+            "alertness_gene":    (0.9, 1.15),
+            "loyalty_gene":      (0.8, 1.0),
+            "playfulness_gene":  (0.9, 1.0),
+            "stubbornness_gene": (0.3, 0.6),
+            "prey_drive_gene":   (0.3, 0.6),
+            "sprint_gene":       (0.80, 1.05),
+            "focus_gene":        (0.75, 1.00),
+        },
+        "abilities": {},
+        "coat_colors": [(248, 243, 232), (235, 222, 192)],
+        "coat_pattern_weights": [100, 0, 0, 0, 0, 0],
+        "ear_type": "floppy",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [0, 10, 90, 0],
+    },
+    "Pekingese": {
+        "biomes": {"temperate", "rolling_hills"},
+        "size_class": "tiny",
+        "race_style": "pacer",
+        "genes": {
+            "speed_gene":        (0.6, 0.85),
+            "endurance_gene":    (0.6, 0.85),
+            "agility_gene":      (0.7, 0.9),
+            "strength_gene":     (0.5, 0.7),
+            "nose_gene":         (0.6, 0.9),
+            "alertness_gene":    (0.9, 1.15),
+            "loyalty_gene":      (0.8, 1.0),
+            "playfulness_gene":  (0.4, 0.7),
+            "stubbornness_gene": (0.7, 1.0),
+            "prey_drive_gene":   (0.3, 0.6),
+            "sprint_gene":       (0.65, 0.90),
+            "focus_gene":        (0.70, 0.95),
+        },
+        "abilities": {},
+        "coat_colors": [(205, 168, 55), (190, 75, 30), (248, 243, 232), (28, 22, 18)],
+        "coat_pattern_weights": [70, 0, 0, 0, 30, 0],
+        "ear_type": "floppy",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [10, 80, 10, 0],
+    },
+    "Shih Tzu": {
+        "biomes": {"temperate", "rolling_hills"},
+        "size_class": "toy",
+        "race_style": "surger",
+        "genes": {
+            "speed_gene":        (0.65, 0.9),
+            "endurance_gene":    (0.65, 0.9),
+            "agility_gene":      (0.8, 1.0),
+            "strength_gene":     (0.5, 0.7),
+            "nose_gene":         (0.65, 0.9),
+            "alertness_gene":    (0.85, 1.1),
+            "loyalty_gene":      (0.8, 1.0),
+            "playfulness_gene":  (0.8, 1.0),
+            "stubbornness_gene": (0.5, 0.8),
+            "prey_drive_gene":   (0.3, 0.6),
+            "sprint_gene":       (0.70, 0.95),
+            "focus_gene":        (0.70, 0.95),
+        },
+        "abilities": {},
+        "coat_colors": [(248, 243, 232), (205, 168, 55), (28, 22, 18), (110, 58, 24)],
+        "coat_pattern_weights": [30, 0, 0, 0, 70, 0],
+        "ear_type": "floppy",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [0, 90, 10, 0],
+    },
+    "Maltese": {
+        "biomes": {"temperate", "rolling_hills", "beach"},
+        "size_class": "tiny",
+        "race_style": "surger",
+        "genes": {
+            "speed_gene":        (0.7, 0.95),
+            "endurance_gene":    (0.65, 0.9),
+            "agility_gene":      (0.9, 1.1),
+            "strength_gene":     (0.45, 0.65),
+            "nose_gene":         (0.7, 0.95),
+            "alertness_gene":    (1.0, 1.25),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.85, 1.0),
+            "stubbornness_gene": (0.4, 0.7),
+            "prey_drive_gene":   (0.3, 0.6),
+            "sprint_gene":       (0.75, 1.00),
+            "focus_gene":        (0.70, 0.95),
+        },
+        "abilities": {},
+        "coat_colors": [(248, 243, 232)],
+        "coat_pattern_weights": [100, 0, 0, 0, 0, 0],
+        "ear_type": "floppy",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [30, 70, 0, 0],
+    },
+    "Havanese": {
+        "biomes": {"tropical", "temperate", "beach"},
+        "size_class": "small",
+        "race_style": "surger",
+        "genes": {
+            "speed_gene":        (0.75, 1.0),
+            "endurance_gene":    (0.7, 0.95),
+            "agility_gene":      (0.9, 1.15),
+            "strength_gene":     (0.5, 0.7),
+            "nose_gene":         (0.7, 0.95),
+            "alertness_gene":    (0.9, 1.15),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.85, 1.0),
+            "stubbornness_gene": (0.3, 0.6),
+            "prey_drive_gene":   (0.3, 0.6),
+            "sprint_gene":       (0.80, 1.05),
+            "focus_gene":        (0.75, 1.00),
+        },
+        "abilities": {},
+        "coat_colors": [(248, 243, 232), (205, 168, 55), (110, 58, 24), (28, 22, 18)],
+        "coat_pattern_weights": [50, 0, 0, 0, 50, 0],
+        "ear_type": "floppy",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [0, 80, 20, 0],
+    },
+    "Lhasa Apso": {
+        "biomes": {"alpine_mountain", "rocky_mountain", "temperate"},
+        "size_class": "small",
+        "race_style": "pacer",
+        "genes": {
+            "speed_gene":        (0.7, 0.95),
+            "endurance_gene":    (0.75, 1.0),
+            "agility_gene":      (0.85, 1.05),
+            "strength_gene":     (0.55, 0.75),
+            "nose_gene":         (0.7, 0.95),
+            "alertness_gene":    (1.05, 1.3),
+            "loyalty_gene":      (0.8, 1.0),
+            "playfulness_gene":  (0.5, 0.8),
+            "stubbornness_gene": (0.7, 1.0),
+            "prey_drive_gene":   (0.3, 0.6),
+            "sprint_gene":       (0.75, 1.00),
+            "focus_gene":        (0.75, 1.00),
+        },
+        "abilities": {"guard": 0.25},
+        "coat_colors": [(205, 168, 55), (235, 222, 192), (28, 22, 18), (110, 58, 24)],
+        "coat_pattern_weights": [70, 0, 0, 0, 30, 0],
+        "ear_type": "floppy",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [10, 90, 0, 0],
+    },
+    "American Eskimo": {
+        "biomes": {"boreal", "birch_forest", "tundra"},
+        "size_class": "small",
+        "race_style": "surger",
+        "genes": {
+            "speed_gene":        (0.85, 1.1),
+            "endurance_gene":    (0.9, 1.15),
+            "agility_gene":      (1.0, 1.2),
+            "strength_gene":     (0.7, 0.9),
+            "nose_gene":         (0.8, 1.05),
+            "alertness_gene":    (1.0, 1.25),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.85, 1.0),
+            "stubbornness_gene": (0.4, 0.7),
+            "prey_drive_gene":   (0.5, 0.8),
+            "sprint_gene":       (0.85, 1.10),
+            "focus_gene":        (0.85, 1.10),
+        },
+        "abilities": {},
+        "coat_colors": [(248, 243, 232)],
+        "coat_pattern_weights": [100, 0, 0, 0, 0, 0],
+        "ear_type": "erect",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [10, 90, 0, 0],
+    },
+    "Finnish Lapphund": {
+        "biomes": {"boreal", "tundra", "alpine_mountain"},
+        "size_class": "medium",
+        "race_style": "pacer",
+        "genes": {
+            "speed_gene":        (0.85, 1.1),
+            "endurance_gene":    (1.0, 1.25),
+            "agility_gene":      (0.9, 1.15),
+            "strength_gene":     (0.85, 1.05),
+            "nose_gene":         (0.85, 1.1),
+            "alertness_gene":    (1.0, 1.25),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.7, 0.95),
+            "stubbornness_gene": (0.3, 0.6),
+            "prey_drive_gene":   (0.5, 0.85),
+            "sprint_gene":       (0.80, 1.05),
+            "focus_gene":        (0.90, 1.15),
+        },
+        "abilities": {"herding": 0.40},
+        "coat_colors": [(28, 22, 18), (110, 58, 24), (235, 222, 192), (205, 168, 55)],
+        "coat_pattern_weights": [40, 0, 0, 0, 60, 0],
+        "ear_type": "erect",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [20, 80, 0, 0],
+    },
+    "Norwegian Elkhound": {
+        "biomes": {"boreal", "alpine_mountain", "tundra"},
+        "size_class": "medium",
+        "race_style": "pacer",
+        "genes": {
+            "speed_gene":        (0.9, 1.15),
+            "endurance_gene":    (1.05, 1.3),
+            "agility_gene":      (0.95, 1.15),
+            "strength_gene":     (0.95, 1.15),
+            "nose_gene":         (1.0, 1.25),
+            "alertness_gene":    (1.05, 1.3),
+            "loyalty_gene":      (0.8, 1.0),
+            "playfulness_gene":  (0.5, 0.8),
+            "stubbornness_gene": (0.5, 0.8),
+            "prey_drive_gene":   (0.85, 1.15),
+            "sprint_gene":       (0.85, 1.10),
+            "focus_gene":        (0.85, 1.10),
+        },
+        "abilities": {"tracking": 0.45, "guard": 0.30},
+        "coat_colors": [(95, 100, 115), (28, 22, 18), (235, 222, 192)],
+        "coat_pattern_weights": [40, 0, 0, 0, 60, 0],
+        "ear_type": "erect",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [40, 60, 0, 0],
+    },
+    "Tibetan Terrier": {
+        "biomes": {"alpine_mountain", "rocky_mountain"},
+        "size_class": "small",
+        "race_style": "surger",
+        "genes": {
+            "speed_gene":        (0.8, 1.05),
+            "endurance_gene":    (0.85, 1.1),
+            "agility_gene":      (1.0, 1.2),
+            "strength_gene":     (0.65, 0.85),
+            "nose_gene":         (0.75, 1.0),
+            "alertness_gene":    (1.0, 1.25),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.7, 0.95),
+            "stubbornness_gene": (0.5, 0.8),
+            "prey_drive_gene":   (0.4, 0.7),
+            "sprint_gene":       (0.80, 1.05),
+            "focus_gene":        (0.80, 1.05),
+        },
+        "abilities": {},
+        "coat_colors": [(248, 243, 232), (28, 22, 18), (205, 168, 55), (110, 58, 24)],
+        "coat_pattern_weights": [40, 0, 0, 0, 60, 0],
+        "ear_type": "floppy",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [0, 80, 20, 0],
+    },
+    "Briard": {
+        "biomes": {"temperate", "rolling_hills", "steppe"},
+        "size_class": "large",
+        "race_style": "pacer",
+        "genes": {
+            "speed_gene":        (0.9, 1.15),
+            "endurance_gene":    (1.05, 1.25),
+            "agility_gene":      (0.95, 1.15),
+            "strength_gene":     (1.0, 1.2),
+            "nose_gene":         (0.8, 1.05),
+            "alertness_gene":    (1.0, 1.25),
+            "loyalty_gene":      (0.9, 1.0),
+            "playfulness_gene":  (0.6, 0.85),
+            "stubbornness_gene": (0.4, 0.7),
+            "prey_drive_gene":   (0.6, 0.9),
+            "sprint_gene":       (0.85, 1.10),
+            "focus_gene":        (0.90, 1.15),
+        },
+        "abilities": {"herding": 0.55, "guard": 0.25},
+        "coat_colors": [(28, 22, 18), (95, 100, 115), (205, 168, 55)],
+        "coat_pattern_weights": [70, 0, 0, 0, 30, 0],
+        "ear_type": "semi-erect",
+        "tail_type": "long",
+        "coat_length": "long",
+        "coat_type_weights": [10, 80, 10, 0],
+    },
+    "Komondor": {
+        "biomes": {"steppe", "arid_steppe", "rolling_hills"},
+        "size_class": "giant",
+        "race_style": "pacer",
+        "genes": {
+            "speed_gene":        (0.75, 1.0),
+            "endurance_gene":    (1.05, 1.25),
+            "agility_gene":      (0.8, 1.0),
+            "strength_gene":     (1.15, 1.3),
+            "nose_gene":         (0.8, 1.05),
+            "alertness_gene":    (1.1, 1.3),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.4, 0.7),
+            "stubbornness_gene": (0.7, 1.0),
+            "prey_drive_gene":   (0.5, 0.8),
+            "sprint_gene":       (0.75, 1.00),
+            "focus_gene":        (0.85, 1.10),
+        },
+        "abilities": {"guard": 0.70},
+        "coat_colors": [(248, 243, 232)],
+        "coat_pattern_weights": [100, 0, 0, 0, 0, 0],
+        "ear_type": "floppy",
+        "tail_type": "long",
+        "coat_length": "long",
+        "coat_type_weights": [0, 20, 80, 0],
+    },
+    "Puli": {
+        "biomes": {"steppe", "rolling_hills", "temperate"},
+        "size_class": "medium",
+        "race_style": "surger",
+        "genes": {
+            "speed_gene":        (0.9, 1.15),
+            "endurance_gene":    (1.0, 1.2),
+            "agility_gene":      (1.05, 1.25),
+            "strength_gene":     (0.8, 1.0),
+            "nose_gene":         (0.8, 1.05),
+            "alertness_gene":    (1.05, 1.3),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.7, 0.95),
+            "stubbornness_gene": (0.5, 0.8),
+            "prey_drive_gene":   (0.6, 0.9),
+            "sprint_gene":       (0.85, 1.10),
+            "focus_gene":        (0.90, 1.15),
+        },
+        "abilities": {"herding": 0.55},
+        "coat_colors": [(28, 22, 18), (95, 100, 115), (248, 243, 232)],
+        "coat_pattern_weights": [100, 0, 0, 0, 0, 0],
+        "ear_type": "floppy",
+        "tail_type": "curled",
+        "coat_length": "long",
+        "coat_type_weights": [0, 20, 80, 0],
+    },
+    "Spinone Italiano": {
+        "biomes": {"rolling_hills", "temperate", "steppe"},
+        "size_class": "large",
+        "race_style": "pacer",
+        "genes": {
+            "speed_gene":        (0.85, 1.1),
+            "endurance_gene":    (1.05, 1.25),
+            "agility_gene":      (0.85, 1.05),
+            "strength_gene":     (0.95, 1.15),
+            "nose_gene":         (1.05, 1.3),
+            "alertness_gene":    (0.9, 1.15),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.6, 0.9),
+            "stubbornness_gene": (0.3, 0.6),
+            "prey_drive_gene":   (0.8, 1.1),
+            "sprint_gene":       (0.80, 1.05),
+            "focus_gene":        (0.90, 1.15),
+        },
+        "abilities": {"tracking": 0.40, "retrieve": 0.35},
+        "coat_colors": [(235, 222, 192), (190, 75, 30), (248, 243, 232)],
+        "coat_pattern_weights": [40, 0, 0, 0, 30, 30],
+        "ear_type": "floppy",
+        "tail_type": "short",
+        "coat_length": "medium",
+        "coat_type_weights": [0, 0, 0, 100],
+    },
+    "Cocker Spaniel": {
+        "biomes": {"temperate", "rolling_hills", "birch_forest"},
+        "size_class": "small",
+        "race_style": "surger",
+        "genes": {
+            "speed_gene":        (0.85, 1.05),
+            "endurance_gene":    (0.9, 1.1),
+            "agility_gene":      (0.95, 1.15),
+            "strength_gene":     (0.65, 0.85),
+            "nose_gene":         (0.95, 1.2),
+            "alertness_gene":    (0.9, 1.15),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.85, 1.0),
+            "stubbornness_gene": (0.3, 0.6),
+            "prey_drive_gene":   (0.7, 1.0),
+            "sprint_gene":       (0.85, 1.05),
+            "focus_gene":        (0.80, 1.05),
+        },
+        "abilities": {"retrieve": 0.40, "tracking": 0.25},
+        "coat_colors": [(205, 168, 55), (110, 58, 24), (28, 22, 18), (248, 243, 232)],
+        "coat_pattern_weights": [40, 10, 0, 0, 40, 10],
+        "ear_type": "floppy",
+        "tail_type": "bob",
+        "coat_length": "long",
+        "coat_type_weights": [10, 90, 0, 0],
+    },
+    "Cavalier King Charles": {
+        "biomes": {"temperate", "rolling_hills"},
+        "size_class": "toy",
+        "race_style": "surger",
+        "genes": {
+            "speed_gene":        (0.75, 0.95),
+            "endurance_gene":    (0.75, 0.95),
+            "agility_gene":      (0.85, 1.05),
+            "strength_gene":     (0.5, 0.7),
+            "nose_gene":         (0.75, 1.0),
+            "alertness_gene":    (0.85, 1.1),
+            "loyalty_gene":      (0.9, 1.0),
+            "playfulness_gene":  (0.85, 1.0),
+            "stubbornness_gene": (0.2, 0.5),
+            "prey_drive_gene":   (0.4, 0.7),
+            "sprint_gene":       (0.75, 1.00),
+            "focus_gene":        (0.75, 1.00),
+        },
+        "abilities": {},
+        "coat_colors": [(190, 75, 30), (248, 243, 232), (28, 22, 18), (110, 58, 24)],
+        "coat_pattern_weights": [20, 0, 0, 0, 80, 0],
+        "ear_type": "floppy",
+        "tail_type": "long",
+        "coat_length": "medium",
+        "coat_type_weights": [20, 80, 0, 0],
+    },
+    "Brittany": {
+        "biomes": {"rolling_hills", "temperate", "birch_forest"},
+        "size_class": "medium",
+        "race_style": "sprinter",
+        "genes": {
+            "speed_gene":        (1.05, 1.25),
+            "endurance_gene":    (1.0, 1.2),
+            "agility_gene":      (1.0, 1.2),
+            "strength_gene":     (0.85, 1.05),
+            "nose_gene":         (1.05, 1.3),
+            "alertness_gene":    (1.0, 1.2),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.75, 1.0),
+            "stubbornness_gene": (0.3, 0.6),
+            "prey_drive_gene":   (0.85, 1.15),
+            "sprint_gene":       (0.95, 1.20),
+            "focus_gene":        (0.90, 1.15),
+        },
+        "abilities": {"tracking": 0.45, "retrieve": 0.35},
+        "coat_colors": [(190, 75, 30), (248, 243, 232), (205, 168, 55)],
+        "coat_pattern_weights": [10, 30, 0, 0, 40, 20],
+        "ear_type": "floppy",
+        "tail_type": "bob",
+        "coat_length": "medium",
+        "coat_type_weights": [40, 60, 0, 0],
+    },
+    "Boxer": {
+        "biomes": {"temperate", "rolling_hills"},
+        "size_class": "large",
+        "race_style": "sprinter",
+        "genes": {
+            "speed_gene":        (1.05, 1.25),
+            "endurance_gene":    (0.95, 1.15),
+            "agility_gene":      (1.0, 1.2),
+            "strength_gene":     (1.05, 1.25),
+            "nose_gene":         (0.8, 1.05),
+            "alertness_gene":    (1.0, 1.25),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.9, 1.0),
+            "stubbornness_gene": (0.4, 0.7),
+            "prey_drive_gene":   (0.7, 1.0),
+            "sprint_gene":       (1.00, 1.20),
+            "focus_gene":        (0.85, 1.10),
+        },
+        "abilities": {"guard": 0.50},
+        "coat_colors": [(205, 168, 55), (190, 75, 30), (28, 22, 18)],
+        "coat_pattern_weights": [20, 0, 0, 70, 10, 0],
+        "ear_type": "floppy",
+        "tail_type": "short",
+        "coat_length": "short",
+        "coat_type_weights": [100, 0, 0, 0],
+    },
+    "Schnauzer": {
+        "biomes": {"temperate", "rolling_hills", "birch_forest"},
+        "size_class": "medium",
+        "race_style": "surger",
+        "genes": {
+            "speed_gene":        (0.9, 1.15),
+            "endurance_gene":    (0.95, 1.15),
+            "agility_gene":      (1.0, 1.2),
+            "strength_gene":     (0.85, 1.05),
+            "nose_gene":         (0.95, 1.2),
+            "alertness_gene":    (1.05, 1.3),
+            "loyalty_gene":      (0.85, 1.0),
+            "playfulness_gene":  (0.7, 0.95),
+            "stubbornness_gene": (0.5, 0.8),
+            "prey_drive_gene":   (0.75, 1.05),
+            "sprint_gene":       (0.85, 1.10),
+            "focus_gene":        (0.85, 1.10),
+        },
+        "abilities": {"guard": 0.40, "tracking": 0.25},
+        "coat_colors": [(95, 100, 115), (28, 22, 18), (235, 222, 192)],
+        "coat_pattern_weights": [70, 0, 0, 0, 30, 0],
+        "ear_type": "semi-erect",
+        "tail_type": "short",
+        "coat_length": "medium",
+        "coat_type_weights": [0, 0, 0, 100],
+    },
+    "Cairn Terrier": {
+        "biomes": {"rolling_hills", "temperate", "alpine_mountain"},
+        "size_class": "small",
+        "race_style": "surger",
+        "genes": {
+            "speed_gene":        (0.95, 1.15),
+            "endurance_gene":    (0.85, 1.05),
+            "agility_gene":      (1.05, 1.25),
+            "strength_gene":     (0.65, 0.85),
+            "nose_gene":         (0.9, 1.15),
+            "alertness_gene":    (1.0, 1.25),
+            "loyalty_gene":      (0.8, 1.0),
+            "playfulness_gene":  (0.85, 1.0),
+            "stubbornness_gene": (0.6, 0.9),
+            "prey_drive_gene":   (0.9, 1.2),
+            "sprint_gene":       (0.85, 1.15),
+            "focus_gene":        (0.75, 1.00),
+        },
+        "abilities": {"tracking": 0.35},
+        "coat_colors": [(205, 168, 55), (235, 222, 192), (95, 100, 115), (110, 58, 24)],
+        "coat_pattern_weights": [50, 0, 0, 30, 20, 0],
+        "ear_type": "erect",
+        "tail_type": "short",
+        "coat_length": "medium",
+        "coat_type_weights": [0, 0, 0, 100],
     },
 }
 
@@ -1391,6 +2042,22 @@ class Dog(Animal):
             self._update_tracking_hint(dt)
             return
 
+        # Herding: when player holds the Shepherd's Crook and this dog has the herding trait,
+        # drive nearby herd animals toward the player.
+        if self.tamed and self.traits.get("has_herding"):
+            player = getattr(self.world, '_player_ref', None)
+            if player is not None:
+                held = player.hotbar[player.selected_slot] if player.hotbar else None
+                if held == "shepherds_crook":
+                    if self._try_herd(dt, player):
+                        return
+
+        # Retrieve: dogs with the retrieve trait grab nearby dropped items and bring them in.
+        if self.tamed and self.traits.get("has_retrieve"):
+            player = getattr(self.world, '_player_ref', None)
+            if player is not None and self._try_retrieve(dt, player):
+                return
+
         # Tamed: follow player with loyalty-scaled follow distance
         if self.tamed:
             player = getattr(self.world, '_player_ref', None)
@@ -1432,6 +2099,140 @@ class Dog(Animal):
             self.vy = min(self.vy + GRAVITY, MAX_FALL)
         self._move_x(self.vx)
         self._move_y(self.vy)
+
+    def _try_herd(self, dt, player):
+        """Drive nearest herd animal toward the player. Returns True if active."""
+        from animals import Sheep, Cow, Goat, Llama, Yak, Chicken
+        HERD_TYPES = (Sheep, Cow, Goat, Llama, Yak, Chicken)
+        # Find nearest herd target within radius
+        sx = self.x + self.W / 2
+        sy = self.y + self.H / 2
+        best = None
+        best_d2 = (HERD_SEARCH_RADIUS * BLOCK_SIZE) ** 2
+        for e in self.world.entities:
+            if not isinstance(e, HERD_TYPES) or e.dead:
+                continue
+            ex = e.x + e.W / 2
+            ey = e.y + e.H / 2
+            d2 = (ex - sx) ** 2 + (ey - sy) ** 2
+            if d2 < best_d2:
+                best_d2 = d2
+                best = e
+        if best is None:
+            return False
+        # Target a point on the FAR side of the animal (opposite the player), offset 1 block
+        target_x = best.x + best.W / 2
+        if player.x < target_x:
+            drive_anchor = target_x + BLOCK_SIZE
+            push_dir = -1  # push animal left toward player
+        else:
+            drive_anchor = target_x - BLOCK_SIZE
+            push_dir = 1
+        # Move toward drive anchor
+        dx = drive_anchor - sx
+        if abs(dx) > BLOCK_SIZE * 0.5:
+            self.vx = DOG_MOVE_SPEED * (1 if dx > 0 else -1)
+            self.facing = 1 if self.vx > 0 else -1
+        else:
+            self.vx = 0.0
+            # In position — nudge the animal
+            focus   = self.traits.get("focus", 1.0)
+            stub    = self.traits.get("stubbornness", 0.5)
+            xp      = self.traits.get("herd_xp", 0.0)
+            xp_bonus = min(0.5, xp / 200.0)   # caps at +0.5 after 100 successful nudges
+            drive = max(0.0, focus * (1.0 - stub * 0.5)) + xp_bonus
+            if random.random() < drive * dt * 2.0:
+                best._wander_dir = push_dir
+                best._wander_timer = max(best._wander_timer, 2.0)
+                # Reward the dog: each successful nudge bumps XP. Slow drip — caps via xp_bonus.
+                self.traits["herd_xp"] = xp + 1.0
+                # At big milestones, permanently raise focus a tad
+                if xp + 1.0 in (25.0, 75.0, 150.0):
+                    self.traits["focus"] = min(2.0, focus + 0.05)
+        # Gravity / movement
+        if self._in_water():
+            self.vy = min(self.vy + GRAVITY * 0.2, 2.5)
+            self.vx *= 0.8
+        else:
+            self.vy = min(self.vy + GRAVITY, MAX_FALL)
+        self._move_x(self.vx)
+        self._move_y(self.vy)
+        return True
+
+    RETRIEVE_RANGE = 12   # blocks: how far the dog will roam to fetch an item
+    RETRIEVE_HANDOFF_RANGE = 25   # blocks: must be near the player to bother fetching at all
+
+    def _try_retrieve(self, dt, player):
+        """Walk to a nearby dropped item, pick it up, then walk it to the player.
+
+        The dog stores the carried item on `self._carrying` until close enough
+        to the player to transfer it to the player's inventory.
+        """
+        carrying = getattr(self, "_carrying", None)
+        sx = self.x + self.W / 2
+        sy = self.y + self.H / 2
+
+        # Only operate near the player — otherwise resume normal follow behavior.
+        pdx = (player.x + PLAYER_W / 2) - sx
+        pdy = (player.y + PLAYER_H / 2) - sy
+        if (pdx * pdx + pdy * pdy) ** 0.5 > self.RETRIEVE_HANDOFF_RANGE * BLOCK_SIZE:
+            return False
+
+        if carrying is None:
+            # Find the nearest dropped item within range
+            items = getattr(self.world, "dropped_items", None)
+            if not items:
+                return False
+            best = None
+            best_d2 = (self.RETRIEVE_RANGE * BLOCK_SIZE) ** 2
+            for di in items:
+                if getattr(di, "expired", False):
+                    continue
+                dx = di.x - sx
+                dy = di.y - sy
+                d2 = dx * dx + dy * dy
+                if d2 < best_d2:
+                    best_d2 = d2
+                    best = di
+            if best is None:
+                return False
+            # Walk to it
+            dx = best.x - sx
+            if abs(dx) > BLOCK_SIZE * 0.6:
+                self.vx = DOG_MOVE_SPEED * (1 if dx > 0 else -1)
+                self.facing = 1 if self.vx > 0 else -1
+            else:
+                # Pick it up
+                self.vx = 0.0
+                self._carrying = (best.item_id, best.count)
+                try:
+                    self.world.dropped_items.remove(best)
+                except ValueError:
+                    pass
+        else:
+            # Walk to the player and deposit
+            if abs(pdx) > BLOCK_SIZE * 1.2:
+                self.vx = DOG_MOVE_SPEED * (1 if pdx > 0 else -1)
+                self.facing = 1 if self.vx > 0 else -1
+            else:
+                self.vx = 0.0
+                item_id, count = carrying
+                if hasattr(player, "_add_item"):
+                    for _ in range(count):
+                        player._add_item(item_id)
+                else:
+                    player.inventory[item_id] = player.inventory.get(item_id, 0) + count
+                self._carrying = None
+
+        # Gravity / motion
+        if self._in_water():
+            self.vy = min(self.vy + GRAVITY * 0.2, 2.5)
+            self.vx *= 0.8
+        else:
+            self.vy = min(self.vy + GRAVITY, MAX_FALL)
+        self._move_x(self.vx)
+        self._move_y(self.vy)
+        return True
 
     def _update_tracking_hint(self, dt):
         if not self.traits.get("has_tracking", False):
@@ -1508,6 +2309,31 @@ def _boost_pure_breed(offspring, breed):
         "Whippet":            "speed",
         "Basenji":            "nose",
         "Saint Bernard":      "endurance",
+        "Pomeranian":         "alertness",
+        "Keeshond":           "alertness",
+        "Newfoundland":       "strength",
+        "Tibetan Mastiff":    "strength",
+        "Old English Sheepdog":"loyalty",
+        "Bichon Frise":       "playfulness",
+        "Pekingese":          "loyalty",
+        "Shih Tzu":           "playfulness",
+        "Maltese":            "playfulness",
+        "Havanese":           "playfulness",
+        "Lhasa Apso":         "alertness",
+        "American Eskimo":    "agility",
+        "Finnish Lapphund":   "endurance",
+        "Norwegian Elkhound": "endurance",
+        "Tibetan Terrier":    "agility",
+        "Briard":             "loyalty",
+        "Komondor":           "strength",
+        "Puli":               "agility",
+        "Spinone Italiano":   "nose",
+        "Cocker Spaniel":     "nose",
+        "Cavalier King Charles":"loyalty",
+        "Brittany":           "nose",
+        "Boxer":              "strength",
+        "Schnauzer":          "alertness",
+        "Cairn Terrier":      "agility",
     }.get(breed)
     if char_trait and char_trait in offspring.traits:
         offspring.traits[char_trait] = round(

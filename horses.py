@@ -30,6 +30,275 @@ TEMPERAMENT_BREAK_TIME = {
     "wild":     24.0,
 }
 
+
+# ---------------------------------------------------------------------------
+# Horse barding registry. Each variant defines a textile base (cloth color +
+# pattern keyed off the guard-tabard vocabulary) plus optional plate/metal
+# layer. `pattern` values mirror Render/Guardsystem._draw_guard_tabard so the
+# heraldic vocabulary is the same: vertical_split, quartered, cross, etc.
+#
+# Mechanics:
+#   defense       — flat jousting defense bonus (replaces the old hardcoded 12)
+#   move_penalty  — multiplied onto base speed (0.0 = none, 1.0 = halt)
+#   research_gate — research key required to craft
+#   bulk          — "cloth" / "mail" / "plate" — drives renderer layering
+#   metal         — optional accent color (mail rings, plate edge)
+#   uses_heraldry — if True, trim color comes from the rider's order
+# ---------------------------------------------------------------------------
+
+BARDING_TYPES = {
+    "cloth_caparison": {
+        "name":          "Cloth Caparison",
+        "defense":       6,
+        "move_penalty":  0.02,
+        "research_gate": "chivalry_armor",
+        "bulk":          "cloth",
+        "base":          (190, 180, 160),
+        "pattern":       "quartered",
+        "metal":         None,
+        "uses_heraldry": True,
+    },
+    "linen_trapper": {
+        "name":          "Linen Trapper",
+        "defense":       4,
+        "move_penalty":  0.01,
+        "research_gate": "chivalry_armor",
+        "bulk":          "cloth",
+        "base":          (230, 222, 200),
+        "pattern":       "cross",
+        "metal":         None,
+        "uses_heraldry": True,
+    },
+    "padded_gambeson_barding": {
+        "name":          "Padded Gambeson Barding",
+        "defense":       9,
+        "move_penalty":  0.05,
+        "research_gate": "chivalry_armor",
+        "bulk":          "cloth",
+        "base":          (150, 130, 95),
+        "pattern":       "stripes",
+        "metal":         None,
+        "uses_heraldry": True,
+    },
+    "mail_trapper": {
+        "name":          "Mail Trapper",
+        "defense":       14,
+        "move_penalty":  0.10,
+        "research_gate": "chivalry_armor",
+        "bulk":          "mail",
+        "base":          (110, 115, 130),
+        "pattern":       "horizontal_band",
+        "metal":         (165, 170, 180),
+        "uses_heraldry": True,
+    },
+    "scale_barding": {
+        "name":          "Scale Barding",
+        "defense":       16,
+        "move_penalty":  0.12,
+        "research_gate": "chivalry_armor",
+        "bulk":          "mail",
+        "base":          (95, 100, 110),
+        "pattern":       "lozenge",
+        "metal":         (185, 175, 110),
+        "uses_heraldry": True,
+    },
+    "tournament_plate_barding": {
+        "name":          "Tournament Plate Barding",
+        "defense":       22,
+        "move_penalty":  0.18,
+        "research_gate": "chivalry_armor",
+        "bulk":          "plate",
+        "base":          (200, 205, 215),
+        "pattern":       "cross",
+        "metal":         (225, 225, 235),
+        "uses_heraldry": True,
+    },
+    "champron_and_peytral": {
+        "name":          "Champron & Peytral",
+        "defense":       11,
+        "move_penalty":  0.08,
+        "research_gate": "chivalry_armor",
+        "bulk":          "plate",
+        "base":          (190, 195, 210),
+        "pattern":       "pale",
+        "metal":         (220, 220, 230),
+        "uses_heraldry": True,
+    },
+    "silk_parade_caparison": {
+        "name":          "Silk Parade Caparison",
+        "defense":       3,
+        "move_penalty":  0.00,
+        "research_gate": "chivalry_armor",
+        "bulk":          "cloth",
+        "base":          (210, 60, 100),
+        "pattern":       "diamond",
+        "metal":         (230, 200, 110),
+        "uses_heraldry": True,
+    },
+    "crusader_trapper": {
+        "name":          "Crusader Trapper",
+        "defense":       12,
+        "move_penalty":  0.07,
+        "research_gate": "chivalry_armor",
+        "bulk":          "cloth",
+        "base":          (235, 235, 230),
+        "pattern":       "cross",
+        "metal":         None,
+        "uses_heraldry": True,
+    },
+    "berserker_hide_trapper": {
+        "name":          "Hide Trapper",
+        "defense":       7,
+        "move_penalty":  0.03,
+        "research_gate": "chivalry_armor",
+        "bulk":          "cloth",
+        "base":          (95, 60, 35),
+        "pattern":       "chevron_pattern",
+        "metal":         None,
+        "uses_heraldry": False,
+    },
+    "royal_cloth_of_gold": {
+        "name":          "Cloth of Gold",
+        "defense":       5,
+        "move_penalty":  0.01,
+        "research_gate": "chivalry_armor",
+        "bulk":          "cloth",
+        "base":          (220, 180, 70),
+        "pattern":       "starred",
+        "metal":         (245, 220, 130),
+        "uses_heraldry": True,
+    },
+    # ---- Cultural bardings (non-European) ----
+    "lamellar_horde": {
+        "name":          "Lamellar Horde Trapper",
+        "defense":       13,
+        "move_penalty":  0.08,
+        "research_gate": "chivalry_armor",
+        "bulk":          "mail",
+        "base":          (105, 90, 70),
+        "pattern":       "stripes",
+        "metal":         (175, 165, 130),
+        "uses_heraldry": True,
+    },
+    "silk_tassel_caparison": {
+        "name":          "Silk Tassel Caparison",
+        "defense":       4,
+        "move_penalty":  0.00,
+        "research_gate": "chivalry_armor",
+        "bulk":          "cloth",
+        "base":          (185, 50, 70),
+        "pattern":       "diamond",
+        "metal":         (245, 220, 130),
+        "uses_heraldry": True,
+    },
+    "gilt_peacock_barding": {
+        "name":          "Gilt Peacock Barding",
+        "defense":       20,
+        "move_penalty":  0.16,
+        "research_gate": "chivalry_armor",
+        "bulk":          "plate",
+        "base":          (55, 110, 130),
+        "pattern":       "lozenge",
+        "metal":         (235, 200, 90),
+        "uses_heraldry": True,
+    },
+    "samurai_horo": {
+        "name":          "Samurai Horo Cloak",
+        "defense":       6,
+        "move_penalty":  0.02,
+        "research_gate": "chivalry_armor",
+        "bulk":          "cloth",
+        "base":          (190, 170, 150),
+        "pattern":       "vertical_split",
+        "metal":         None,
+        "uses_heraldry": True,
+    },
+    "mughal_pakhar": {
+        "name":          "Mughal Pakhar",
+        "defense":       15,
+        "move_penalty":  0.10,
+        "research_gate": "chivalry_armor",
+        "bulk":          "mail",
+        "base":          (120, 110, 140),
+        "pattern":       "lozenge",
+        "metal":         (195, 175, 110),
+        "uses_heraldry": True,
+    },
+    # Second-pass cultural bardings — richer/heavier alternates per tradition.
+    "tug_caparison": {
+        "name":          "Tug Caparison",
+        "defense":       8,
+        "move_penalty":  0.03,
+        "research_gate": "chivalry_armor",
+        "bulk":          "cloth",
+        "base":          (135,  95,  55),
+        "pattern":       "horizontal_band",
+        "metal":         None,
+        "uses_heraldry": True,
+    },
+    "persepolis_chamfron": {
+        "name":          "Persepolis Chamfron",
+        "defense":       18,
+        "move_penalty":  0.14,
+        "research_gate": "chivalry_armor",
+        "bulk":          "plate",
+        "base":          (175, 155,  75),
+        "pattern":       "pale",
+        "metal":         (235, 200,  90),
+        "uses_heraldry": True,
+    },
+    "uma_yoroi": {
+        "name":          "Uma-Yoroi",
+        "defense":       14,
+        "move_penalty":  0.09,
+        "research_gate": "chivalry_armor",
+        "bulk":          "mail",
+        "base":          ( 55,  45,  60),
+        "pattern":       "vertical_split",
+        "metal":         (160, 145, 100),
+        "uses_heraldry": True,
+    },
+    "saffron_caparison": {
+        "name":          "Saffron Caparison",
+        "defense":       9,
+        "move_penalty":  0.04,
+        "research_gate": "chivalry_armor",
+        "bulk":          "cloth",
+        "base":          (235, 185,  80),
+        "pattern":       "chevron_pattern",
+        "metal":         None,
+        "uses_heraldry": True,
+    },
+    "tiger_pakhar": {
+        "name":          "Tiger Pakhar",
+        "defense":       17,
+        "move_penalty":  0.11,
+        "research_gate": "chivalry_armor",
+        "bulk":          "mail",
+        "base":          (190, 100,  45),
+        "pattern":       "stripes",
+        "metal":         (220, 200, 120),
+        "uses_heraldry": True,
+    },
+}
+
+
+def barding_defense(horse) -> int:
+    """Look up the defense bonus from whatever barding is equipped."""
+    bid = (horse.traits or {}).get("equipped_barding")
+    if not bid:
+        return 0
+    spec = BARDING_TYPES.get(bid)
+    return spec["defense"] if spec else 12   # legacy default
+
+
+def equip_barding(horse, barding_id: str) -> bool:
+    """Slot a barding by id. Returns True if it was a known variant."""
+    if barding_id not in BARDING_TYPES:
+        return False
+    horse.traits["equipped_barding"] = barding_id
+    return True
+
 # Coat color options keyed by biodome name (3 shades per biome)
 BIOME_COAT_COLORS = {
     "temperate":      [(180, 120, 60),  (210, 165, 100), (90, 60, 35)],
@@ -93,7 +362,9 @@ class Horse(Animal):
         self.traits["horseshoe_applied"] = False
         self.traits["equipped_saddle"]   = None
         self.traits["equipped_horseshoe"]= None
+        self.traits["equipped_barding"]  = None
         self.traits["training_bonuses"]  = {}
+        self.tournament_wins             = 0
 
         self.stamina    = 100.0
         self.rider      = None       # Player ref when mounted
@@ -347,6 +618,7 @@ class Horse(Animal):
         offspring.traits["horseshoe_applied"]  = False
         offspring.traits["equipped_saddle"]    = None
         offspring.traits["equipped_horseshoe"] = None
+        offspring.traits["equipped_barding"]   = None
         offspring.traits["training_bonuses"]   = {}
         offspring.parent_a_uid = self.uid
         offspring.parent_b_uid = other.uid

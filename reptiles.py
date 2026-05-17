@@ -136,7 +136,7 @@ class MilkSnake(Reptile):
 class Rattlesnake(Reptile):
     SPECIES       = "rattlesnake"
     RARITY        = "uncommon"
-    BIOMES        = ["desert", "canyon", "wasteland"]
+    BIOMES        = ["desert", "canyon", "red_rock", "wasteland"]
     BODY_TYPE     = "snake"
     SPEED         = 30.0
     W, H          = 20, 7
@@ -209,7 +209,7 @@ class BlueTonguedSkink(Reptile):
 class HornedLizard(Reptile):
     SPECIES       = "horned_lizard"
     RARITY        = "uncommon"
-    BIOMES        = ["desert", "canyon"]
+    BIOMES        = ["desert", "canyon", "red_rock"]
     BODY_TYPE     = "lizard"
     SPEED         = 28.0
     W, H          = 14, 9
@@ -495,7 +495,7 @@ class TimberRattlesnake(Reptile):
 class Sidewinder(Reptile):
     SPECIES       = "sidewinder"
     RARITY        = "uncommon"
-    BIOMES        = ["desert", "canyon"]
+    BIOMES        = ["desert", "canyon", "red_rock"]
     BODY_TYPE     = "snake"
     SPEED         = 38.0
     W, H          = 16, 6
@@ -849,7 +849,7 @@ class NightSnake(Reptile):
 class LyreSnake(Reptile):
     SPECIES       = "lyre_snake"
     RARITY        = "uncommon"
-    BIOMES        = ["desert", "canyon"]
+    BIOMES        = ["desert", "canyon", "red_rock"]
     BODY_TYPE     = "snake"
     SPEED         = 28.0
     W, H          = 16, 6
@@ -937,7 +937,7 @@ class CaliforniaKingsnake(Reptile):
 class DesertKingsnake(Reptile):
     SPECIES       = "desert_kingsnake"
     RARITY        = "common"
-    BIOMES        = ["desert", "canyon"]
+    BIOMES        = ["desert", "canyon", "red_rock"]
     BODY_TYPE     = "snake"
     SPEED         = 30.0
     W, H          = 18, 6
@@ -970,7 +970,7 @@ class PrairieKingsnake(Reptile):
 class GrayBandedKingsnake(Reptile):
     SPECIES       = "gray_banded_kingsnake"
     RARITY        = "uncommon"
-    BIOMES        = ["canyon", "desert"]
+    BIOMES        = ["canyon", "red_rock", "desert"]
     BODY_TYPE     = "snake"
     SPEED         = 28.0
     W, H          = 16, 6
@@ -1135,7 +1135,7 @@ class YellowRatSnake(Reptile):
 class BairdsRatSnake(Reptile):
     SPECIES       = "bairds_rat_snake"
     RARITY        = "uncommon"
-    BIOMES        = ["desert", "canyon"]
+    BIOMES        = ["desert", "canyon", "red_rock"]
     BODY_TYPE     = "snake"
     SPEED         = 32.0
     W, H          = 18, 7
@@ -1146,7 +1146,7 @@ class BairdsRatSnake(Reptile):
 class TransPecosRatSnake(Reptile):
     SPECIES       = "trans_pecos_rat_snake"
     RARITY        = "rare"
-    BIOMES        = ["desert", "canyon"]
+    BIOMES        = ["desert", "canyon", "red_rock"]
     BODY_TYPE     = "snake"
     SPEED         = 30.0
     W, H          = 18, 7
@@ -1290,7 +1290,7 @@ class AspiViper(Reptile):
 class LongNosedViper(Reptile):
     SPECIES       = "long_nosed_viper"
     RARITY        = "uncommon"
-    BIOMES        = ["mediterranean", "canyon"]
+    BIOMES        = ["mediterranean", "canyon", "red_rock"]
     BODY_TYPE     = "snake"
     SPEED         = 24.0
     W, H          = 16, 7
@@ -1394,7 +1394,7 @@ class CoachwhipSnake(Reptile):
 class LeopardGecko(Reptile):
     SPECIES       = "leopard_gecko"
     RARITY        = "common"
-    BIOMES        = ["desert", "canyon"]
+    BIOMES        = ["desert", "canyon", "red_rock"]
     BODY_TYPE     = "lizard"
     SPEED         = 35.0
     W, H          = 14, 7
@@ -1526,7 +1526,7 @@ class WhiptailLizard(Reptile):
 class CollaredLizard(Reptile):
     SPECIES       = "collared_lizard"
     RARITY        = "uncommon"
-    BIOMES        = ["desert", "canyon"]
+    BIOMES        = ["desert", "canyon", "red_rock"]
     BODY_TYPE     = "lizard"
     SPEED         = 42.0
     W, H          = 16, 8
@@ -1537,7 +1537,7 @@ class CollaredLizard(Reptile):
 class SpinyLizard(Reptile):
     SPECIES       = "spiny_lizard"
     RARITY        = "common"
-    BIOMES        = ["desert", "canyon"]
+    BIOMES        = ["desert", "canyon", "red_rock"]
     BODY_TYPE     = "lizard"
     SPEED         = 35.0
     W, H          = 15, 8
@@ -1604,7 +1604,7 @@ class RhinocerosIguana(Reptile):
 class Chuckwalla(Reptile):
     SPECIES       = "chuckwalla"
     RARITY        = "uncommon"
-    BIOMES        = ["desert", "canyon"]
+    BIOMES        = ["desert", "canyon", "red_rock"]
     BODY_TYPE     = "lizard"
     SPEED         = 25.0
     W, H          = 18, 10
@@ -1817,7 +1817,7 @@ class CaimanLizard(Reptile):
 class SpiderTailedViper(Reptile):  # ground lizard-like shape used
     SPECIES       = "spider_tailed_viper"
     RARITY        = "rare"
-    BIOMES        = ["desert", "canyon"]
+    BIOMES        = ["desert", "canyon", "red_rock"]
     BODY_TYPE     = "snake"
     SPEED         = 22.0
     W, H          = 18, 7
@@ -1839,7 +1839,7 @@ class LaceMonitor(Reptile):
 class ScalySandLizard(Reptile):
     SPECIES       = "scaly_sand_lizard"
     RARITY        = "common"
-    BIOMES        = ["desert", "canyon"]
+    BIOMES        = ["desert", "canyon", "red_rock"]
     BODY_TYPE     = "lizard"
     SPEED         = 38.0
     W, H          = 14, 6

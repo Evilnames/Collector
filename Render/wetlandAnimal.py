@@ -323,3 +323,147 @@ def draw_hare(screen, sx, sy, e):
     # Black ear tips
     pygame.draw.rect(screen, (50, 40, 30), (ex - 1, sy - int(8*s), 2, 2))
     pygame.draw.rect(screen, (50, 40, 30), (ex + 3, sy - int(7*s), 2, 2))
+
+
+def draw_caribou(screen, sx, sy, e):
+    W, H = e.W, e.H
+    s = e.traits.get("size", 1.0)
+    col = (155, 130, 95)
+    pale = (210, 195, 165)
+    pygame.draw.rect(screen, col, (sx, sy + int(H*0.28), W, int(H*0.5)))
+    pygame.draw.rect(screen, pale, (sx, sy + int(H*0.55), W, int(H*0.12)))
+    for i in range(4):
+        lx = sx + int(W * (0.12 + i * 0.24))
+        pygame.draw.rect(screen, (115, 95, 70), (lx, sy + int(H*0.75), max(2, int(3*s)), int(H*0.25)))
+    hx = (sx + W - int(8*s)) if e.facing == 1 else sx
+    pygame.draw.rect(screen, col, (hx, sy + int(H*0.08), int(8*s), int(H*0.34)))
+    pygame.draw.rect(screen, pale, (hx, sy + int(H*0.3), int(8*s), int(H*0.08)))
+    ax = hx + (int(8*s) - 2 if e.facing == 1 else 2)
+    for i in range(5):
+        ox = (i - 2) * 2 * (1 if e.facing == 1 else -1)
+        pygame.draw.line(screen, (210, 185, 145), (ax, sy + 2), (ax + ox, sy - int(7 + i)), 1)
+    if e.health < 3:
+        pygame.draw.rect(screen, (220, 50, 50), (sx, sy - 5, int(W * e.health / 3), 2))
+
+
+def draw_antelope(screen, sx, sy, e):
+    W, H = e.W, e.H
+    s = e.traits.get("size", 1.0)
+    col = (190, 150, 100)
+    pale = (235, 215, 175)
+    pygame.draw.ellipse(screen, col, (sx, sy + int(H*0.3), W, int(H*0.55)))
+    pygame.draw.rect(screen, pale, (sx + int(W*0.1), sy + int(H*0.6), int(W*0.8), int(H*0.12)))
+    for i in range(4):
+        lx = sx + int(W * (0.14 + i * 0.22))
+        pygame.draw.rect(screen, (75, 55, 35), (lx, sy + int(H*0.78), max(2, int(2*s)), int(H*0.22)))
+    nx = (sx + W - int(4*s)) if e.facing == 1 else sx
+    pygame.draw.rect(screen, col, (nx, sy + int(H*0.18), int(4*s), int(H*0.2)))
+    hx = nx + ((int(4*s)) if e.facing == 1 else -int(5*s))
+    pygame.draw.rect(screen, col, (hx, sy + int(H*0.1), int(5*s), int(H*0.22)))
+    horn_x = hx + (int(5*s) - 2 if e.facing == 1 else 1)
+    pygame.draw.line(screen, (50, 40, 28), (horn_x, sy + int(H*0.1)), (horn_x + (2 if e.facing == 1 else -2), sy - int(6*s)), 2)
+    pygame.draw.line(screen, (50, 40, 28), (horn_x - (1 if e.facing == 1 else -1), sy + int(H*0.1)), (horn_x + (1 if e.facing == 1 else -1), sy - int(5*s)), 2)
+    if e.health < 2:
+        pygame.draw.rect(screen, (220, 50, 50), (sx, sy - 5, int(W * e.health / 2), 2))
+
+
+def draw_ibex(screen, sx, sy, e):
+    W, H = e.W, e.H
+    s = e.traits.get("size", 1.0)
+    col = (130, 105, 75)
+    dark = (90, 70, 50)
+    pygame.draw.rect(screen, col, (sx, sy + int(H*0.3), W, int(H*0.52)))
+    for i in range(4):
+        lx = sx + int(W * (0.12 + i * 0.24))
+        pygame.draw.rect(screen, dark, (lx, sy + int(H*0.78), max(2, int(3*s)), int(H*0.22)))
+    hx = (sx + W - int(6*s)) if e.facing == 1 else sx
+    pygame.draw.rect(screen, col, (hx, sy + int(H*0.12), int(6*s), int(H*0.35)))
+    # Beard tuft
+    bx = hx + (1 if e.facing == 1 else int(6*s) - 2)
+    pygame.draw.rect(screen, dark, (bx, sy + int(H*0.42), 2, int(4*s)))
+    # Long curved horns sweeping back
+    base_x = hx + (int(5*s) if e.facing == 1 else 1)
+    for i in range(4):
+        x0 = base_x + (i * (-1 if e.facing == 1 else 1))
+        pygame.draw.line(screen, (95, 70, 40),
+                         (x0, sy + int(H*0.1) + i),
+                         (x0 + ((-2 - i) if e.facing == 1 else (2 + i)), sy - int(2 + i*2)),
+                         2)
+    if e.health < 2:
+        pygame.draw.rect(screen, (220, 50, 50), (sx, sy - 5, int(W * e.health / 2), 2))
+
+
+def draw_lynx(screen, sx, sy, e):
+    W, H = e.W, e.H
+    s = e.traits.get("size", 1.0)
+    col = (200, 175, 130)
+    spot = (135, 105, 70)
+    pygame.draw.ellipse(screen, col, (sx, sy + int(H*0.35), W, int(H*0.55)))
+    for i in range(5):
+        rx = sx + int(W * (0.15 + i * 0.17))
+        pygame.draw.rect(screen, spot, (rx, sy + int(H*0.45), 2, 2))
+    for i in range(4):
+        lx = sx + int(W * (0.14 + i * 0.22))
+        pygame.draw.rect(screen, (155, 130, 95), (lx, sy + int(H*0.8), max(2, int(3*s)), int(H*0.2)))
+    hx = (sx + W - int(6*s)) if e.facing == 1 else sx
+    pygame.draw.ellipse(screen, col, (hx, sy + int(H*0.2), int(6*s), int(H*0.32)))
+    # Tufted ears
+    ex = hx + (int(6*s*0.2) if e.facing == 1 else int(6*s*0.6))
+    pygame.draw.line(screen, (50, 40, 30), (ex, sy + int(H*0.2)), (ex - 1, sy + int(H*0.05)), 2)
+    pygame.draw.line(screen, (50, 40, 30), (ex + int(3*s), sy + int(H*0.2)), (ex + int(3*s) + 1, sy + int(H*0.05)), 2)
+    # Stub tail
+    tx = sx if e.facing == 1 else sx + W - 3
+    pygame.draw.rect(screen, col, (tx, sy + int(H*0.4), 3, int(H*0.12)))
+    if e.health < 2:
+        pygame.draw.rect(screen, (220, 50, 50), (sx, sy - 5, int(W * e.health / 2), 2))
+
+
+def draw_coyote(screen, sx, sy, e):
+    W, H = e.W, e.H
+    s = e.traits.get("size", 1.0)
+    col = (170, 145, 105)
+    pale = (210, 190, 155)
+    pygame.draw.ellipse(screen, col, (sx, sy + int(H*0.32), W, int(H*0.55)))
+    pygame.draw.rect(screen, pale, (sx + int(W*0.15), sy + int(H*0.6), int(W*0.7), int(H*0.1)))
+    for i in range(4):
+        lx = sx + int(W * (0.13 + i * 0.23))
+        pygame.draw.rect(screen, (120, 100, 70), (lx, sy + int(H*0.78), max(2, int(2*s)), int(H*0.22)))
+    hx = (sx + W - int(7*s)) if e.facing == 1 else sx
+    pygame.draw.rect(screen, col, (hx, sy + int(H*0.2), int(7*s), int(H*0.3)))
+    # Pointed snout
+    snout_x = hx + (int(7*s) if e.facing == 1 else -int(3*s))
+    pygame.draw.rect(screen, col, (snout_x, sy + int(H*0.3), int(3*s), int(H*0.14)))
+    # Ears
+    ex = hx + (1 if e.facing == 1 else int(7*s) - 3)
+    pygame.draw.line(screen, col, (ex, sy + int(H*0.22)), (ex + 1, sy + int(H*0.08)), 2)
+    pygame.draw.line(screen, col, (ex + int(4*s), sy + int(H*0.22)), (ex + int(4*s) - 1, sy + int(H*0.08)), 2)
+    # Bushy tail
+    tx = sx if e.facing == 1 else sx + W - int(5*s)
+    pygame.draw.ellipse(screen, col, (tx, sy + int(H*0.4), int(5*s), int(H*0.2)))
+    if e.health < 1:
+        pygame.draw.rect(screen, (220, 50, 50), (sx, sy - 5, int(W * e.health), 2))
+
+
+def draw_beaver(screen, sx, sy, e):
+    W, H = e.W, e.H
+    s = e.traits.get("size", 1.0)
+    col = (105, 70, 45)
+    dark = (75, 50, 32)
+    pygame.draw.ellipse(screen, col, (sx, sy + int(H*0.35), W, int(H*0.6)))
+    # Flat paddle tail
+    tx = sx if e.facing == 1 else sx + W - int(6*s)
+    pygame.draw.ellipse(screen, dark, (tx, sy + int(H*0.6), int(6*s), int(H*0.28)))
+    # Stubby legs
+    for i in range(4):
+        lx = sx + int(W * (0.18 + i * 0.2))
+        pygame.draw.rect(screen, dark, (lx, sy + int(H*0.85), max(2, int(2*s)), int(H*0.15)))
+    hx = (sx + W - int(6*s)) if e.facing == 1 else sx
+    pygame.draw.ellipse(screen, col, (hx, sy + int(H*0.25), int(6*s), int(H*0.42)))
+    # Buck teeth
+    tooth_x = hx + (int(6*s) - 2 if e.facing == 1 else 1)
+    pygame.draw.rect(screen, (235, 215, 130), (tooth_x, sy + int(H*0.5), 2, int(3*s)))
+    # Small round ear
+    ex = hx + (int(6*s*0.3) if e.facing == 1 else int(6*s*0.55))
+    pygame.draw.rect(screen, dark, (ex, sy + int(H*0.22), 2, 2))
+    if e.health < 1:
+        pygame.draw.rect(screen, (220, 50, 50), (sx, sy - 5, int(W * e.health), 2))

@@ -543,7 +543,7 @@ class CraftingMixin:
             pygame.draw.rect(self.screen, col, (bx + i * (SEG_W + SEG_GAP), y, SEG_W, SEG_H))
 
     def _draw_cooking_station(self, player, recipe_list, title_str, title_color,
-                               selected_idx, recipe_rects_dict, selected_attr, block_id=None,
+                               selected_idx, recipe_rects_dict, block_id=None,
                                action_label="COOK", show_block_grid=False):
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 220))
@@ -1062,7 +1062,7 @@ class CraftingMixin:
         if self.refinery_block_id == TANNING_RACK_BLOCK:
             self._draw_cooking_station(player, TANNING_RACK_RECIPES, "TANNING RACK",
                                        (145, 105, 60), self._tanning_rack_selected_recipe,
-                                       self._tanning_rack_recipe_rects, "_tanning_rack_selected_recipe",
+                                       self._tanning_rack_recipe_rects,
                                        block_id=TANNING_RACK_BLOCK,
                                        action_label="TAN")
             return
@@ -1074,6 +1074,16 @@ class CraftingMixin:
             return
         if self.refinery_block_id == ROASTER_BLOCK:
             self._draw_roaster(player, dt)
+            return
+        from blocks import SCRIBES_DESK_BLOCK, LECTERN_BLOCK, BOOKCASE_BLOCK
+        if self.refinery_block_id == SCRIBES_DESK_BLOCK:
+            self._draw_scribes_desk(player, dt)
+            return
+        if self.refinery_block_id == LECTERN_BLOCK:
+            self._draw_lectern(player, dt)
+            return
+        if self.refinery_block_id == BOOKCASE_BLOCK:
+            self._draw_bookcase(player, dt)
             return
         if self.refinery_block_id == BLEND_STATION_BLOCK:
             self._draw_blend_station(player)
@@ -1107,6 +1117,14 @@ class CraftingMixin:
             return
         if self.refinery_block_id == TAPROOM_BLOCK:
             self._draw_taproom(player, dt)
+            return
+        from blocks import FALCONER_PERCH, MEWS_BLOCK
+        if self.refinery_block_id in (FALCONER_PERCH, MEWS_BLOCK):
+            self.update_falconry(dt, player)
+            self.tick_raptor_cooldowns(dt, player)
+            self._draw_falconer_perch(player)
+            if getattr(self, "falconry_capture_open", False):
+                self._draw_falconry_capture(player)
             return
         if self.refinery_block_id == WITHERING_RACK_BLOCK:
             self._draw_withering_rack(player, dt)
@@ -1159,37 +1177,37 @@ class CraftingMixin:
         if self.refinery_block_id == WOK_BLOCK:
             self._draw_cooking_station(player, WOK_RECIPES, "WOK",
                                        (220, 100, 40), self._wok_selected_recipe,
-                                       self._wok_recipe_rects, "_wok_selected_recipe",
+                                       self._wok_recipe_rects,
                                        block_id=WOK_BLOCK)
             return
         if self.refinery_block_id == STEAMER_BLOCK:
             self._draw_cooking_station(player, STEAMER_RECIPES, "STEAMER",
                                        (160, 200, 180), self._steamer_selected_recipe,
-                                       self._steamer_recipe_rects, "_steamer_selected_recipe",
+                                       self._steamer_recipe_rects,
                                        block_id=STEAMER_BLOCK)
             return
         if self.refinery_block_id == NOODLE_POT_BLOCK:
             self._draw_cooking_station(player, NOODLE_POT_RECIPES, "NOODLE POT",
                                        (180, 140, 80), self._noodle_pot_selected_recipe,
-                                       self._noodle_pot_recipe_rects, "_noodle_pot_selected_recipe",
+                                       self._noodle_pot_recipe_rects,
                                        block_id=NOODLE_POT_BLOCK)
             return
         if self.refinery_block_id == BBQ_GRILL_BLOCK:
             self._draw_cooking_station(player, BBQ_GRILL_RECIPES, "BBQ GRILL",
                                        (210, 90, 30), self._bbq_grill_selected_recipe,
-                                       self._bbq_grill_recipe_rects, "_bbq_grill_selected_recipe",
+                                       self._bbq_grill_recipe_rects,
                                        block_id=BBQ_GRILL_BLOCK)
             return
         if self.refinery_block_id == CLAY_POT_BLOCK:
             self._draw_cooking_station(player, CLAY_POT_RECIPES, "CLAY POT",
                                        (175, 110, 65), self._clay_pot_selected_recipe,
-                                       self._clay_pot_recipe_rects, "_clay_pot_selected_recipe",
+                                       self._clay_pot_recipe_rects,
                                        block_id=CLAY_POT_BLOCK)
             return
         if self.refinery_block_id == DESERT_FORGE_BLOCK:
             self._draw_cooking_station(player, FORGE_RECIPES, "DESERT FORGE",
                                        (175, 95, 40), self._desert_forge_selected_recipe,
-                                       self._desert_forge_recipe_rects, "_desert_forge_selected_recipe",
+                                       self._desert_forge_recipe_rects,
                                        block_id=DESERT_FORGE_BLOCK)
             return
         if self.refinery_block_id == ARTISAN_BENCH_BLOCK:
@@ -1198,14 +1216,14 @@ class CraftingMixin:
         if self.refinery_block_id == BAIT_STATION_BLOCK:
             self._draw_cooking_station(player, BAIT_STATION_RECIPES, "BAIT STATION",
                                        (100, 70, 40), self._bait_station_selected_recipe,
-                                       self._bait_station_recipe_rects, "_bait_station_selected_recipe",
+                                       self._bait_station_recipe_rects,
                                        block_id=BAIT_STATION_BLOCK,
                                        action_label="CRAFT")
             return
         if self.refinery_block_id == FLETCHING_TABLE_BLOCK:
             self._draw_cooking_station(player, FLETCHING_RECIPES, "FLETCHING TABLE",
                                        (139, 110, 75), self._fletching_selected_recipe,
-                                       self._fletching_recipe_rects, "_fletching_selected_recipe",
+                                       self._fletching_recipe_rects,
                                        block_id=FLETCHING_TABLE_BLOCK,
                                        action_label="CRAFT")
             return
@@ -1215,7 +1233,7 @@ class CraftingMixin:
         if self.refinery_block_id == SMELTER_BLOCK:
             self._draw_cooking_station(player, SMELTER_RECIPES, "SMELTER",
                                        (160, 80, 50), self._smelter_selected_recipe,
-                                       self._smelter_recipe_rects, "_smelter_selected_recipe",
+                                       self._smelter_recipe_rects,
                                        block_id=SMELTER_BLOCK,
                                        action_label="SMELT")
             return
@@ -1225,28 +1243,28 @@ class CraftingMixin:
         if self.refinery_block_id == GLASS_KILN_BLOCK:
             self._draw_cooking_station(player, GLASS_KILN_RECIPES, "GLASS KILN",
                                        (180, 220, 240), self._glass_kiln_selected_recipe,
-                                       self._glass_kiln_recipe_rects, "_glass_kiln_selected_recipe",
+                                       self._glass_kiln_recipe_rects,
                                        block_id=GLASS_KILN_BLOCK,
                                        action_label="SMELT")
             return
         if self.refinery_block_id == GARDEN_WORKSHOP_BLOCK:
             self._draw_cooking_station(player, GARDEN_WORKSHOP_RECIPES, "GARDEN WORKSHOP",
                                        (100, 155, 80), self._garden_workshop_selected_recipe,
-                                       self._garden_workshop_recipe_rects, "_garden_workshop_selected_recipe",
+                                       self._garden_workshop_recipe_rects,
                                        block_id=GARDEN_WORKSHOP_BLOCK,
                                        action_label="CRAFT", show_block_grid=True)
             return
         if self.refinery_block_id == JUICER_BLOCK:
             self._draw_cooking_station(player, JUICER_RECIPES, "JUICER",
                                        (220, 160, 60), self._juicer_selected_recipe,
-                                       self._juicer_recipe_rects, "_juicer_selected_recipe",
+                                       self._juicer_recipe_rects,
                                        block_id=JUICER_BLOCK,
                                        action_label="JUICE")
             return
         if self.refinery_block_id == AUTOMATION_BENCH_BLOCK:
             self._draw_cooking_station(player, AUTOMATION_RECIPES, "AUTOMATION BENCH",
                                        (70, 90, 110), self._automation_selected_recipe,
-                                       self._automation_recipe_rects, "_automation_selected_recipe",
+                                       self._automation_recipe_rects,
                                        block_id=AUTOMATION_BENCH_BLOCK,
                                        action_label="CRAFT")
             return

@@ -342,7 +342,9 @@ register_system("textile", "Textiles", {
 }, _score_textile)
 
 register_system("jewelry", "Jewelry", {
-    "jewelry_type": ["ring", "necklace", "bracelet", "pendant", "crown"],
+    "jewelry_type": ["ring", "necklace", "bracelet", "pendant", "crown",
+                     "earring", "brooch", "tiara", "anklet", "cufflinks",
+                     "circlet", "choker", "signet", "amulet", "tiepin"],
 }, _score_jewelry)
 
 register_system("food", "Food", {

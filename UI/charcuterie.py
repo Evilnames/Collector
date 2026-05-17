@@ -5,7 +5,7 @@ from constants import SCREEN_W, SCREEN_H
 from charcuterie import (
     MEAT_SOURCES, CURE_TYPES, CURE_METHODS, CURE_METHOD_ORDER, CURE_ORDER,
     BUFF_DESCS, CURE_TYPE_BUFFS, OUTPUT_DESCS, OUTPUT_COLORS,
-    _CODEX_MEATS, TYPE_ORDER, DISPLAY_NAMES, MEAT_DISPLAY_NAMES,
+    _CODEX_MEATS, TYPE_ORDER, MEAT_DISPLAY_NAMES,
     apply_cure_method, start_aging, finish_aging,
     get_charcuterie_output_id, age_progress,
 )

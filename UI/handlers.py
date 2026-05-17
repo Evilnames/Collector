@@ -596,9 +596,12 @@ class HandlersMixin:
                             RoyalPaleontologistNPC, RoyalAnglerNPC,
                             WeaponArmorerNPC, QuartermasterNPC, GarrisonCommanderNPC,
                             DoctorNPC, CoinDealerNPC,
-                            NobleMaecenasNPC, WeaponOrderNPC)
+                            NobleMaecenasNPC, WeaponOrderNPC, ChapterMasterNPC)
         from outpost_npcs import OutpostKeeperNPC
         npc = self.active_npc
+        if isinstance(npc, ChapterMasterNPC):
+            self._handle_chapter_house_click(pos, player)
+            return
         if isinstance(npc, CoinDealerNPC):
             for key, rect in self._trade_rects.items():
                 if rect.collidepoint(pos):
@@ -613,6 +616,25 @@ class HandlersMixin:
                         elif action == "sell":
                             npc.execute_sell(idx, player)
                     break
+            return
+        # Auction / Money-Changer / Appraiser / Collector dispatch
+        from coin_npcs import (AuctioneerNPC, MoneyChangerNPC,
+                               CoinAppraiserNPC, CoinCollectorNPC)
+        if isinstance(npc, (AuctioneerNPC, MoneyChangerNPC,
+                            CoinAppraiserNPC, CoinCollectorNPC)):
+            for key, rect in self._trade_rects.items():
+                if not (isinstance(key, tuple) and rect.collidepoint(pos)):
+                    continue
+                action, idx = key
+                if   action == "auction_bid":   npc.place_bid(idx, player)
+                elif action == "auction_claim": npc.claim(idx, player)
+                elif action == "money_changer": npc.execute_sell(idx, player)
+                elif action == "appraise":      npc.execute_appraise(idx, player)
+                elif action == "regrade":       npc.execute_regrade(idx, player)
+                elif action == "collector":     npc.execute_sell(idx, player)
+                elif action == "coin_offer":    npc.execute_coin_offer(idx, player)
+                break
+            return
         elif isinstance(npc, RockQuestNPC):
             for quest_idx, rect in self._trade_rects.items():
                 if rect.collidepoint(pos):
@@ -787,6 +809,16 @@ class HandlersMixin:
         if self.refinery_block_id == ROASTER_BLOCK:
             self._handle_roaster_click(pos, player)
             return
+        from blocks import SCRIBES_DESK_BLOCK, LECTERN_BLOCK, BOOKCASE_BLOCK
+        if self.refinery_block_id == SCRIBES_DESK_BLOCK:
+            self._handle_scribes_desk_click(pos, player)
+            return
+        if self.refinery_block_id == LECTERN_BLOCK:
+            self._handle_lectern_click(pos, player)
+            return
+        if self.refinery_block_id == BOOKCASE_BLOCK:
+            self._handle_bookcase_click(pos, player)
+            return
         if self.refinery_block_id == BLEND_STATION_BLOCK:
             self._handle_blend_click(pos, player)
             return
@@ -819,6 +851,13 @@ class HandlersMixin:
             return
         if self.refinery_block_id == TAPROOM_BLOCK:
             self._handle_taproom_click(pos, player)
+            return
+        from blocks import FALCONER_PERCH, MEWS_BLOCK
+        if self.refinery_block_id in (FALCONER_PERCH, MEWS_BLOCK):
+            if getattr(self, "falconry_capture_open", False):
+                self.handle_falconry_capture_click(pos, player)
+            else:
+                self.handle_falconer_perch_click(pos, player)
             return
         if self.refinery_block_id == WITHERING_RACK_BLOCK:
             self._handle_withering_rack_click(pos, player)

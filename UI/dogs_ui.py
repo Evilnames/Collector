@@ -1,6 +1,6 @@
 import pygame
 from constants import SCREEN_W, SCREEN_H
-from dogs import BREED_PROFILES, expressed_color_name, BASE_COLOR_ORDER, DILUTE_ORDER, WHITE_SPOTTING_ORDER, _expressed_categorical
+from dogs import BREED_PROFILES, expressed_color_name, BASE_COLOR_ORDER, WHITE_SPOTTING_ORDER, _expressed_categorical
 
 
 class DogsMixin:

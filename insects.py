@@ -196,7 +196,7 @@ class Copper(Insect):
 class DesertSwallowtail(Insect):
     SPECIES      = "desert_swallowtail"
     RARITY       = "uncommon"
-    BIOMES       = ["desert", "canyon", "arid_steppe"]
+    BIOMES       = ["desert", "canyon", "red_rock", "arid_steppe"]
     W, H         = 13, 9
     BODY_COLOR   = (25, 20, 10)
     WING_COLOR   = (230, 215, 70)
@@ -206,7 +206,7 @@ class DesertSwallowtail(Insect):
 class ArizonaSkipper(Insect):
     SPECIES      = "arizona_skipper"
     RARITY       = "common"
-    BIOMES       = ["desert", "canyon", "arid_steppe"]
+    BIOMES       = ["desert", "canyon", "red_rock", "arid_steppe"]
     W, H         = 8, 6
     BODY_COLOR   = (80, 50, 20)
     WING_COLOR   = (190, 130, 50)
@@ -226,7 +226,7 @@ class CheckeredWhite(Insect):
 class MarineBlue(Insect):
     SPECIES      = "marine_blue"
     RARITY       = "uncommon"
-    BIOMES       = ["desert", "arid_steppe", "canyon"]
+    BIOMES       = ["desert", "arid_steppe", "canyon", "red_rock"]
     W, H         = 8, 6
     BODY_COLOR   = (30, 25, 50)
     WING_COLOR   = (130, 155, 220)
@@ -733,7 +733,7 @@ class JewelBeetle(Insect):
 class DungBeetle(Insect):
     SPECIES      = "dung_beetle"
     RARITY       = "common"
-    BIOMES       = ["savanna", "desert", "canyon"]
+    BIOMES       = ["savanna", "desert", "canyon", "red_rock"]
     W, H         = 9, 7
     BODY_COLOR   = (55, 45, 20)
     WING_COLOR   = (75, 60, 28)
@@ -773,7 +773,7 @@ class ClickBeetle(Insect):
 class PaloVerdeBeetle(Insect):
     SPECIES      = "palo_verde_beetle"
     RARITY       = "uncommon"
-    BIOMES       = ["desert", "canyon"]
+    BIOMES       = ["desert", "canyon", "red_rock"]
     W, H         = 14, 7
     BODY_COLOR   = (55, 35, 15)
     WING_COLOR   = (90, 58, 25)
@@ -803,7 +803,7 @@ class DesertBlisterBeetle(Insect):
 class SonoranDarkling(Insect):
     SPECIES      = "sonoran_darkling"
     RARITY       = "common"
-    BIOMES       = ["desert", "canyon", "arid_steppe"]
+    BIOMES       = ["desert", "canyon", "red_rock", "arid_steppe"]
     W, H         = 9, 6
     BODY_COLOR   = (20, 20, 20)
     WING_COLOR   = (30, 30, 30)
@@ -813,7 +813,7 @@ class SonoranDarkling(Insect):
 class CactusLonghorn(Insect):
     SPECIES      = "cactus_longhorn"
     RARITY       = "uncommon"
-    BIOMES       = ["desert", "canyon"]
+    BIOMES       = ["desert", "canyon", "red_rock"]
     W, H         = 12, 6
     BODY_COLOR   = (75, 60, 45)
     WING_COLOR   = (105, 85, 65)
@@ -853,7 +853,7 @@ class AsianLonghornBeetle(Insect):
 class TigerBeetle(Insect):
     SPECIES      = "tiger_beetle"
     RARITY       = "common"
-    BIOMES       = ["beach", "desert", "canyon"]
+    BIOMES       = ["beach", "desert", "canyon", "red_rock"]
     W, H         = 9, 6
     BODY_COLOR   = (30, 80, 30)
     WING_COLOR   = (50, 130, 50)
@@ -884,7 +884,7 @@ class EgyptianFlowerChafer(Insect):
 class ArabicDarkling(Insect):
     SPECIES      = "arabic_darkling"
     RARITY       = "common"
-    BIOMES       = ["desert", "arid_steppe", "canyon"]
+    BIOMES       = ["desert", "arid_steppe", "canyon", "red_rock"]
     W, H         = 9, 6
     BODY_COLOR   = (18, 18, 18)
     WING_COLOR   = (28, 28, 26)
@@ -894,7 +894,7 @@ class ArabicDarkling(Insect):
 class DesertRoveBeetle(Insect):
     SPECIES      = "desert_rove"
     RARITY       = "common"
-    BIOMES       = ["desert", "canyon", "arid_steppe"]
+    BIOMES       = ["desert", "canyon", "red_rock", "arid_steppe"]
     W, H         = 9, 5
     BODY_COLOR   = (110, 80, 45)
     WING_COLOR   = (140, 105, 60)
@@ -1214,7 +1214,7 @@ class BandedDemoiselle(Insect):
 class DesertWhitetail(Insect):
     SPECIES      = "desert_whitetail"
     RARITY       = "uncommon"
-    BIOMES       = ["desert", "canyon"]
+    BIOMES       = ["desert", "canyon", "red_rock"]
     W, H         = 13, 6
     BODY_COLOR   = (200, 200, 205)
     WING_COLOR   = (220, 235, 255)
@@ -1225,7 +1225,7 @@ class DesertWhitetail(Insect):
 class VarMeadowhawk(Insect):
     SPECIES      = "variegated_meadowhawk"
     RARITY       = "common"
-    BIOMES       = ["desert", "arid_steppe", "canyon"]
+    BIOMES       = ["desert", "arid_steppe", "canyon", "red_rock"]
     W, H         = 12, 6
     BODY_COLOR   = (180, 50, 20)
     WING_COLOR   = (220, 210, 190)
@@ -1277,7 +1277,7 @@ class BlackTippedGroundling(Insect):
 class DesertDarter(Insect):
     SPECIES      = "desert_darter"
     RARITY       = "uncommon"
-    BIOMES       = ["desert", "arid_steppe", "canyon"]
+    BIOMES       = ["desert", "arid_steppe", "canyon", "red_rock"]
     W, H         = 11, 5
     BODY_COLOR   = (155, 75, 25)
     WING_COLOR   = (220, 210, 190)
@@ -1564,7 +1564,7 @@ class PepperedMoth(Insect):
 class WhiteLinedSphinx(Insect):
     SPECIES      = "white_lined_sphinx"
     RARITY       = "uncommon"
-    BIOMES       = ["desert", "arid_steppe", "canyon"]
+    BIOMES       = ["desert", "arid_steppe", "canyon", "red_rock"]
     W, H         = 15, 9
     BODY_COLOR   = (70, 65, 40)
     WING_COLOR   = (100, 90, 55)
@@ -1575,7 +1575,7 @@ class WhiteLinedSphinx(Insect):
 class CactusMoth(Insect):
     SPECIES      = "cactus_moth"
     RARITY       = "common"
-    BIOMES       = ["desert", "canyon"]
+    BIOMES       = ["desert", "canyon", "red_rock"]
     W, H         = 11, 7
     BODY_COLOR   = (90, 75, 55)
     WING_COLOR   = (140, 120, 90)
@@ -1926,7 +1926,7 @@ class GiantHornet(Insect):
 class TarantulaHawk(Insect):
     SPECIES      = "tarantula_hawk"
     RARITY       = "rare"
-    BIOMES       = ["desert", "canyon"]
+    BIOMES       = ["desert", "canyon", "red_rock"]
     W, H         = 12, 7
     BODY_COLOR   = (15, 15, 15)
     WING_COLOR   = (210, 100, 20)
@@ -1937,7 +1937,7 @@ class TarantulaHawk(Insect):
 class SonoranBumblebee(Insect):
     SPECIES      = "sonoran_bumblebee"
     RARITY       = "common"
-    BIOMES       = ["desert", "arid_steppe", "canyon"]
+    BIOMES       = ["desert", "arid_steppe", "canyon", "red_rock"]
     W, H         = 9, 7
     BODY_COLOR   = (25, 20, 10)
     WING_COLOR   = (210, 230, 245)
@@ -1947,7 +1947,7 @@ class SonoranBumblebee(Insect):
 class DesertCicada(Insect):
     SPECIES      = "desert_cicada"
     RARITY       = "common"
-    BIOMES       = ["desert", "canyon", "arid_steppe"]
+    BIOMES       = ["desert", "canyon", "red_rock", "arid_steppe"]
     W, H         = 11, 7
     BODY_COLOR   = (80, 95, 60)
     WING_COLOR   = (160, 180, 140)
@@ -1957,7 +1957,7 @@ class DesertCicada(Insect):
 class VelvetAnt(Insect):
     SPECIES      = "velvet_ant"
     RARITY       = "uncommon"
-    BIOMES       = ["desert", "canyon"]
+    BIOMES       = ["desert", "canyon", "red_rock"]
     W, H         = 9, 6
     BODY_COLOR   = (20, 10, 10)
     WING_COLOR   = (180, 30, 20)
@@ -1978,7 +1978,7 @@ class AntLion(Insect):
 class DesertLocust(Insect):
     SPECIES      = "desert_locust"
     RARITY       = "common"
-    BIOMES       = ["desert", "arid_steppe", "steppe", "canyon"]
+    BIOMES       = ["desert", "arid_steppe", "steppe", "canyon", "red_rock"]
     W, H         = 12, 6
     BODY_COLOR   = (100, 115, 40)
     WING_COLOR   = (160, 175, 80)
@@ -1990,7 +1990,7 @@ class DesertLocust(Insect):
 class GiantMesquiteBug(Insect):
     SPECIES      = "giant_mesquite_bug"
     RARITY       = "uncommon"
-    BIOMES       = ["desert", "canyon"]
+    BIOMES       = ["desert", "canyon", "red_rock"]
     W, H         = 11, 7
     BODY_COLOR   = (20, 15, 10)
     WING_COLOR   = (45, 35, 20)
@@ -2111,7 +2111,7 @@ class SahariCricket(Insect):
 class DesertKatydid(Insect):
     SPECIES      = "desert_katydid"
     RARITY       = "common"
-    BIOMES       = ["desert", "arid_steppe", "canyon"]
+    BIOMES       = ["desert", "arid_steppe", "canyon", "red_rock"]
     W, H         = 11, 7
     BODY_COLOR   = (175, 155, 95)
     WING_COLOR   = (205, 185, 130)
@@ -2143,7 +2143,7 @@ class ArabianBee(Insect):
 class ArabianAssassinBug(Insect):
     SPECIES      = "arabian_assassin_bug"
     RARITY       = "uncommon"
-    BIOMES       = ["desert", "arid_steppe", "canyon"]
+    BIOMES       = ["desert", "arid_steppe", "canyon", "red_rock"]
     W, H         = 10, 6
     BODY_COLOR   = (30, 15, 12)
     WING_COLOR   = (55, 28, 22)
@@ -2546,7 +2546,7 @@ class NocturnalGroundBeetle(Insect):
 class CaveCricket(Insect):
     SPECIES      = "cave_cricket"
     RARITY       = "uncommon"
-    BIOMES       = ["canyon", "rocky_mountain"]
+    BIOMES       = ["canyon", "red_rock", "rocky_mountain"]
     W, H         = 13, 7
     BODY_COLOR   = (195, 168, 128)
     WING_COLOR   = (178, 152, 112)
@@ -2722,7 +2722,7 @@ class MountainFirefly(Insect):
 class CaveGlowworm(Insect):
     SPECIES      = "cave_glowworm"
     RARITY       = "rare"
-    BIOMES       = ["canyon", "rocky_mountain"]
+    BIOMES       = ["canyon", "red_rock", "rocky_mountain"]
     W, H         = 8, 4
     BODY_COLOR   = (25, 30, 22)
     WING_COLOR   = (35, 42, 30)

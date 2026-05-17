@@ -60,6 +60,111 @@ _LOOT_RELICS = [
     ("coin_pouch", 1, 2),
 ]
 
+# Dynasty heirlooms found in ruined-kingdom palaces, mausoleums, and chapter
+# vaults. Rolled with a separate chance from _LOOT_RELICS so a single ruin
+# can yield both a relic and a dynastic artifact. Heavier on portraits +
+# regalia + funerary items (the things left behind when a kingdom falls).
+_LOOT_DYNASTY = [
+    # Regalia (common in ruined palaces)
+    ("dynasty_throne_fragment", 1, 1),
+    ("dynasty_throne_cushion", 1, 1),
+    ("dynasty_state_mantle", 1, 1),
+    ("dynasty_lesser_crown", 1, 1),
+    ("dynasty_consort_crown", 1, 1),
+    ("dynasty_royal_scepter", 1, 1),
+    ("dynasty_orb_state", 1, 1),
+    # Funerary (most ruins ARE mausoleums of fallen lines)
+    ("dynasty_urn_gold", 1, 1),
+    ("dynasty_urn_ivory", 1, 1),
+    ("dynasty_urn_lacquer", 1, 1),
+    ("dynasty_urn_jade", 1, 1),
+    ("dynasty_death_mask_silver", 1, 1),
+    ("dynasty_death_mask_gold", 1, 1),
+    ("dynasty_ash_reliquary", 1, 1),
+    ("dynasty_bone_casket", 1, 1),
+    ("dynasty_grave_goods_set", 1, 1),
+    ("dynasty_catafalque_plaque", 1, 1),
+    ("dynasty_tombstone_rubbing", 1, 1),
+    # Portraits & busts left in throne halls
+    ("dynasty_founder_portrait", 1, 1),
+    ("dynasty_bust_marble", 1, 1),
+    ("dynasty_bust_bronze", 1, 1),
+    ("dynasty_family_tree", 1, 1),
+    ("dynasty_posthumous_portrait", 1, 1),
+    ("dynasty_locket_miniature", 1, 1),
+    # Heirlooms & signets
+    ("dynasty_signet_founder", 1, 1),
+    ("dynasty_signet_heir", 1, 1),
+    ("dynasty_dowager_ring", 1, 1),
+    ("dynasty_house_seal_stamp", 1, 1),
+    ("dynasty_wax_seal_matrix", 1, 1),
+    ("dynasty_lock_of_hair", 1, 1),
+    ("dynasty_blood_vial", 1, 1),
+    ("dynasty_frayed_banner", 1, 1),
+    # Books / lineage / decree
+    ("dynasty_book_lineage", 1, 1),
+    ("dynasty_book_annals", 1, 1),
+    ("dynasty_book_succession", 1, 1),
+    ("dynasty_book_will", 1, 1),
+    ("dynasty_book_decrees", 1, 1),
+    ("dynasty_book_heraldry", 1, 1),
+    # Jewelry
+    ("dynasty_mourning_ring", 1, 1),
+    ("dynasty_jade_pin", 1, 1),
+    ("dynasty_diadem", 1, 1),
+    ("dynasty_pearl_choker", 1, 1),
+    ("dynasty_emerald_brooch", 1, 1),
+    # Ceremonial arms
+    ("dynasty_hereditary_longsword", 1, 1),
+    ("dynasty_investiture_dagger", 1, 1),
+    ("dynasty_gilded_mace", 1, 1),
+    ("dynasty_ancestor_warhammer", 1, 1),
+    # Court & toy heirlooms
+    ("dynasty_music_box", 1, 1),
+    ("dynasty_chess_board", 1, 1),
+    ("dynasty_court_lute", 1, 1),
+    ("dynasty_toy_horse", 1, 1),
+    ("dynasty_toy_soldier_set", 1, 1),
+    # Prophecy & oracle
+    ("dynasty_founder_prophecy", 1, 1),
+    ("dynasty_oracle_bones", 1, 1),
+    ("dynasty_doom_prophecy", 1, 1),
+    # Correspondence
+    ("dynasty_love_letters", 1, 1),
+    ("dynasty_sealed_letter", 1, 1),
+    ("dynasty_court_decree", 1, 1),
+    # Bastard tokens
+    ("dynasty_bastard_quarter", 1, 1),
+    ("dynasty_disinheritance_seal", 1, 1),
+]
+
+# Tier-2 high-value dynastic finds. Rolled only in older / capital ruins.
+_LOOT_DYNASTY_GREAT = [
+    ("dynasty_founders_crown", 1, 1),
+    ("dynasty_state_crown", 1, 1),
+    ("dynasty_coronation_crown", 1, 1),
+    ("dynasty_sun_scepter", 1, 1),
+    ("dynasty_tug_scepter", 1, 1),
+    ("dynasty_lotus_scepter", 1, 1),
+    ("dynasty_cross_orb", 1, 1),
+    ("dynasty_sun_orb", 1, 1),
+    ("dynasty_lotus_orb", 1, 1),
+    ("dynasty_bust_jade", 1, 1),
+    ("dynasty_bust_ivory", 1, 1),
+    ("dynasty_death_mask_jade", 1, 1),
+    ("dynasty_urn_jade", 1, 1),
+    ("dynasty_coronation_sword", 1, 1),
+    ("dynasty_khan_bow_state", 1, 1),
+    ("dynasty_shogun_tachi", 1, 1),
+    ("dynasty_sultan_tulwar", 1, 1),
+    ("dynasty_maharana_khanda", 1, 1),
+    ("dynasty_shah_kontos", 1, 1),
+    ("dynasty_pectoral_plate", 1, 1),
+    ("dynasty_state_portrait", 1, 1),
+    ("dynasty_coronation_portrait", 1, 1),
+    ("dynasty_equestrian_portrait", 1, 1),
+]
+
 # Heritage artifact item ids — one placed when a matching lost artifact exists.
 _HERITAGE_ITEM_IDS = {
     "artwork":    "lost_artwork",
@@ -91,6 +196,17 @@ def roll_chest_contents(rng: random.Random, agenda: str, age_years: int) -> dict
     if rng.random() < relic_chance:
         item, lo, hi = rng.choice(_LOOT_RELICS)
         contents[item] = contents.get(item, 0) + rng.randint(lo, hi)
+    # Dynasty heirloom chance: ruined kingdoms leave behind regalia + funerary
+    # gear. Scales steeply with age — a 600-year-old ruin is almost guaranteed.
+    dynasty_chance = min(0.85, 0.20 + age_years * 0.0015)
+    if rng.random() < dynasty_chance:
+        item, lo, hi = rng.choice(_LOOT_DYNASTY)
+        contents[item] = contents.get(item, 0) + rng.randint(lo, hi)
+        # Older ruins occasionally roll a great-tier dynastic find on top.
+        great_chance = max(0.0, (age_years - 200) * 0.00075)
+        if rng.random() < min(0.55, great_chance):
+            item, lo, hi = rng.choice(_LOOT_DYNASTY_GREAT)
+            contents[item] = contents.get(item, 0) + rng.randint(lo, hi)
     return contents
 
 

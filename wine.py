@@ -25,6 +25,75 @@ class Grape:
     crush_style: str = ""    # "whole_cluster" | "destemmed" | "rose_bleed" | "skin_fermented"
     yeast: str = ""          # "wild" | "champagne" | "bordeaux" | "burgundy"
     vessel: str = ""         # "oak" | "steel" | "amphora"
+    vintage_year: int = 0    # in-game day_count when harvested
+    vintage_season: str = "" # "spring" | "summer" | "autumn" | "winter"
+    weather: str = "balanced"  # weather pattern that year/biome (see WEATHER_TYPES)
+    weather_quality: float = 0.5  # 0..1, vintage prestige rating from weather
+
+
+# ---------------------------------------------------------------------------
+# Seasons & vintage weather
+# ---------------------------------------------------------------------------
+
+SEASONS = ["spring", "summer", "autumn", "winter"]
+DAYS_PER_SEASON = 7
+DAYS_PER_YEAR = DAYS_PER_SEASON * len(SEASONS)
+
+SEASON_DISPLAY = {
+    "spring": "Spring",
+    "summer": "Summer",
+    "autumn": "Autumn",
+    "winter": "Winter",
+}
+
+
+def get_season(day_count: int) -> str:
+    return SEASONS[(day_count // DAYS_PER_SEASON) % len(SEASONS)]
+
+
+def get_vintage_year(day_count: int) -> int:
+    """Return the calendar year for a given day_count."""
+    return day_count // DAYS_PER_YEAR
+
+
+WEATHER_TYPES = {
+    "balanced":  {"label": "Balanced",  "weight": 50, "quality": 0.50,
+                  "desc": "Steady sun and timely rains — a clean vintage.",
+                  "sweetness": 0.00, "acidity": 0.00, "tannin": 0.00,
+                  "body": 0.00, "aromatics": 0.00},
+    "drought":   {"label": "Drought",   "weight": 15, "quality": 0.75,
+                  "desc": "Hot, dry year. Concentrated and structured.",
+                  "sweetness": +0.10, "acidity": -0.10, "tannin": +0.15,
+                  "body": +0.10, "aromatics": -0.05},
+    "wet":       {"label": "Wet Year",  "weight": 15, "quality": 0.30,
+                  "desc": "Rain-swollen clusters. Diluted but aromatic.",
+                  "sweetness": -0.08, "acidity": +0.08, "tannin": -0.10,
+                  "body": -0.10, "aromatics": +0.05},
+    "frost":     {"label": "Late Frost","weight": 10, "quality": 0.70,
+                  "desc": "Frost-pinched. Small yield, intense sweetness & acid.",
+                  "sweetness": +0.20, "acidity": +0.15, "tannin": -0.05,
+                  "body": -0.05, "aromatics": +0.10},
+    "heat_wave": {"label": "Heat Wave", "weight": 10, "quality": 0.55,
+                  "desc": "Sun-scorched. Lush and ripe, low acid.",
+                  "sweetness": +0.15, "acidity": -0.20, "tannin": +0.05,
+                  "body": +0.05, "aromatics": -0.10},
+}
+
+WEATHER_KEYS = list(WEATHER_TYPES.keys())
+
+
+def weather_for_vintage(world_seed: int, biome: str, year: int) -> str:
+    """Deterministic weather per (world, biome, year). Same vintage everywhere shares it."""
+    rng = random.Random((world_seed * 9176 + hash(biome) * 31 + year * 6151) & 0xFFFFFFFF)
+    weights = [WEATHER_TYPES[k]["weight"] for k in WEATHER_KEYS]
+    total = sum(weights)
+    pick = rng.uniform(0, total)
+    acc = 0
+    for k, w in zip(WEATHER_KEYS, weights):
+        acc += w
+        if pick <= acc:
+            return k
+    return "balanced"
 
 
 # Base grape profiles per biome. Same biome keys as coffee.
@@ -240,10 +309,13 @@ def apply_press_result(grape: "Grape", avg_pressure: float,
         total_time = 0.1
     green_frac  = time_in_green / total_time
     yellow_frac = time_in_yellow / total_time
+    # Pressure shapes extraction: gentle press (low pressure) favors aromatics,
+    # firm press (high pressure) extracts more tannin and body from the skins.
+    pressure = max(0.0, min(1.0, avg_pressure))
     quality = _clamp(green_frac * 0.8 + yellow_frac * 0.3 - over_press_penalty * 0.15)
-    # Yellow band adds tannin but reduces softness
-    grape.tannin = _clamp(grape.tannin + yellow_frac * 0.15)
-    grape.body   = _clamp(grape.body   + yellow_frac * 0.08)
+    grape.tannin     = _clamp(grape.tannin     + yellow_frac * 0.15 + pressure * 0.10)
+    grape.body       = _clamp(grape.body       + yellow_frac * 0.08 + pressure * 0.08)
+    grape.aromatics  = _clamp(grape.aromatics  + (1.0 - pressure) * 0.10)
     grape.press_quality = quality
     grape.state = "crushed"
 
@@ -371,6 +443,8 @@ def make_blend(components: list) -> "Grape":
             if note not in all_notes:
                 all_notes.append(note)
 
+    oldest_year = min((g.vintage_year for g in components), default=0)
+    best_weather = max(components, key=lambda g: getattr(g, "weather_quality", 0.0))
     return Grape(
         uid=uid,
         origin_biome="blend",
@@ -389,6 +463,10 @@ def make_blend(components: list) -> "Grape":
         flavor_notes=all_notes[:6],
         seed=seed,
         blend_components=[g.uid for g in components],
+        vintage_year=oldest_year,
+        vintage_season=getattr(best_weather, "vintage_season", ""),
+        weather=getattr(best_weather, "weather", "balanced"),
+        weather_quality=getattr(best_weather, "weather_quality", 0.5),
     )
 
 
@@ -417,7 +495,7 @@ class WineGenerator:
         self._world_seed = world_seed
         self._counter = 0
 
-    def generate(self, biodome: str) -> "Grape":
+    def generate(self, biodome: str, day_count: int = 0) -> "Grape":
         self._counter += 1
         seed = (self._world_seed * 37 + self._counter * 6151) & 0xFFFFFFFF
         uid = hashlib.md5(f"grape_{seed}_{self._counter}".encode()).hexdigest()[:12]
@@ -428,21 +506,30 @@ class WineGenerator:
         def jitter(base):
             return _clamp(base + rng.gauss(0, 0.08))
 
+        year    = get_vintage_year(day_count)
+        season  = get_season(day_count)
+        weather = weather_for_vintage(self._world_seed, biodome, year)
+        wmods   = WEATHER_TYPES[weather]
+
         return Grape(
             uid=uid,
             origin_biome=biodome,
             variety=profile["variety"],
             state="raw",
             style="",
-            sweetness=jitter(profile["sweetness"]),
-            acidity=jitter(profile["acidity"]),
-            tannin=jitter(profile["tannin"]),
-            body=jitter(profile["body"]),
-            aromatics=jitter(profile["aromatics"]),
+            sweetness=_clamp(jitter(profile["sweetness"]) + wmods["sweetness"]),
+            acidity=_clamp(jitter(profile["acidity"])     + wmods["acidity"]),
+            tannin=_clamp(jitter(profile["tannin"])       + wmods["tannin"]),
+            body=_clamp(jitter(profile["body"])           + wmods["body"]),
+            aromatics=_clamp(jitter(profile["aromatics"]) + wmods["aromatics"]),
             alcohol=0.0,
             complexity=0.0,
             press_quality=0.0,
             ferment_quality=0.0,
             flavor_notes=[],
             seed=seed,
+            vintage_year=year,
+            vintage_season=season,
+            weather=weather,
+            weather_quality=wmods["quality"],
         )

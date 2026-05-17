@@ -2,10 +2,10 @@ import pygame
 from constants import SCREEN_W, SCREEN_H
 from beer import (
     apply_brew_result, apply_ferment_result, apply_condition_result,
-    make_beer_blend, get_bottle_output_id,
+    get_bottle_output_id,
     MASH_TYPES, HOP_ADDITIONS, YEAST_TYPES, VESSEL_TYPES, CONDITION_DURATIONS,
     BUFF_DESCS, BEER_BUFFS, BEER_TYPE_DESCS, BEER_TYPE_COLORS, BIOME_DISPLAY_NAMES,
-    _CODEX_BIOMES, BEER_TYPE_ORDER,
+    _CODEX_BIOMES,
 )
 
 _SECS_PER_AGING_DAY = 5.0

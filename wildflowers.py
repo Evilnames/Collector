@@ -1616,6 +1616,8 @@ WILDFLOWER_BIODOME_AFFINITY = {
                         "daisy", "clover", "poppy", "cornflower"},
     "canyon":          {"canyon_columbine", "cliff_penstemon", "rock_cress",
                         "poppy", "desert_rose", "marigold", "cornflower", "foxglove"},
+    "red_rock":        {"canyon_columbine", "cliff_penstemon", "rock_cress",
+                        "desert_rose", "marigold", "poppy"},
 }
 
 BIODOME_RARITY_WEIGHTS = {
@@ -1640,6 +1642,7 @@ BIODOME_RARITY_WEIGHTS = {
     "swamp":           {"common": 50, "uncommon": 30, "rare": 15, "epic": 4,  "legendary": 1},
     "beach":           {"common": 65, "uncommon": 28, "rare": 7,  "epic": 0,  "legendary": 0},
     "canyon":          {"common": 30, "uncommon": 35, "rare": 25, "epic": 8,  "legendary": 2},
+    "red_rock":        {"common": 30, "uncommon": 35, "rare": 25, "epic": 8,  "legendary": 2},
 }
 
 BLOOM_STAGES = ["bud", "open", "full"]

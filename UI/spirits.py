@@ -698,7 +698,7 @@ class SpiritsMixin:
     # ------------------------------------------------------------------ #
 
     def _draw_spirits_codex(self, player, gy0=58, gx_off=0):
-        from spirits import SPIRIT_TYPE_ORDER, BIOME_SPIRIT_PROFILES, BIOME_DISPLAY_NAMES as BDN
+        from spirits import BIOME_SPIRIT_PROFILES, BIOME_DISPLAY_NAMES as BDN
         import pygame as _pg
 
         CX = (gx_off + SCREEN_W) // 2

@@ -563,3 +563,188 @@ def generate_trader_stock(gen: CoinGenerator, day: int, town_seed: int,
         else:
             coins.append(gen.generate("trader"))
     return coins
+
+
+# ---------------------------------------------------------------------------
+# Money-changer melt price — based on metal weight, ignores rarity & condition
+# ---------------------------------------------------------------------------
+
+# Relative bullion value per metal type
+_METAL_BULLION = {
+    "copper":   1,
+    "bronze":   1,
+    "billon":   3,
+    "silver":   8,
+    "electrum": 16,
+    "gold":     24,
+}
+
+def coin_melt_price(coin: Coin) -> int:
+    """Flat 'melt down' price by metal × face_value. Sets a floor below collector value."""
+    metal = coin_metal(coin.denomination_key)
+    bullion = _METAL_BULLION.get(metal, 1)
+    # Face value scales lightly — common coins still get a small bullion floor
+    return max(1, int(bullion * (1 + coin.face_value ** 0.5) * 0.6))
+
+
+# ---------------------------------------------------------------------------
+# Auctioneer stock — small weekly rotating set biased to high rarity
+# ---------------------------------------------------------------------------
+
+def _force_rarity_pick(gen: CoinGenerator, rng: random.Random,
+                       min_rarity: str) -> Coin:
+    """Generate a coin whose rarity is at least min_rarity (best-effort)."""
+    min_idx = RARITY_ORDER.index(min_rarity)
+    for _ in range(8):
+        coin = gen.generate("trader")
+        if RARITY_ORDER.index(coin.rarity) >= min_idx:
+            return coin
+    return coin  # fall through with last roll
+
+def generate_auction_lots(gen: CoinGenerator, week: int, town_seed: int,
+                          lot_count: int = 3) -> list:
+    """Return a list of auction lots:
+        [{coin, starting_bid, ai_max, ai_bidders}, ...]
+    Lots refresh weekly; bidders are simulated.
+    """
+    rng = random.Random(town_seed ^ (week * 0x5BD1CE) ^ 0xAAA01)
+    lots = []
+    for i in range(lot_count):
+        min_rar = "rare" if i == 0 else ("uncommon" if i == 1 else "uncommon")
+        coin = _force_rarity_pick(gen, rng, min_rar)
+        base = coin_price(coin)
+        starting_bid = max(2, int(base * rng.uniform(0.55, 0.85)))
+        ai_max       = max(starting_bid + 4, int(base * rng.uniform(1.05, 1.65)))
+        ai_bidders   = rng.randint(2, 5)
+        lots.append({
+            "coin":          coin,
+            "starting_bid":  starting_bid,
+            "ai_max":        ai_max,
+            "ai_bidders":    ai_bidders,
+            "current_bid":   starting_bid,
+            "leader":        "house",   # "house" or "player"
+        })
+    return lots
+
+
+# ---------------------------------------------------------------------------
+# Appraiser — fees for adding provenance or regrading
+# ---------------------------------------------------------------------------
+
+_APPRAISE_BASE = {"common": 6, "uncommon": 12, "rare": 25, "epic": 55, "legendary": 110}
+
+def appraise_fee(coin: Coin) -> int:
+    """Cost to attempt provenance research on a coin."""
+    return _APPRAISE_BASE.get(coin.rarity, 10)
+
+def regrade_fee(coin: Coin) -> int:
+    """Cost to attempt a single condition re-grade. ~3x appraisal."""
+    return _APPRAISE_BASE.get(coin.rarity, 10) * 3
+
+def attempt_provenance(coin: Coin, rng: random.Random) -> bool:
+    """Try to produce a provenance line for a coin that has none.
+    Returns True if a provenance was added."""
+    if coin.provenance:
+        return False
+    # Higher-rarity coins have richer history available
+    odds = {"common": 0.25, "uncommon": 0.45, "rare": 0.65,
+            "epic":   0.80, "legendary": 0.95}.get(coin.rarity, 0.4)
+    if rng.random() > odds:
+        return False
+    tmpl = rng.choice(_PROVENANCE_TEMPLATES)
+    coin.provenance = tmpl.format(
+        era_label         = coin.era_label,
+        mint_city         = coin.mint_city,
+        ruler_name        = coin.ruler_name,
+        civilization_name = coin.civilization_name,
+    )
+    return True
+
+def attempt_regrade(coin: Coin, rng: random.Random) -> str:
+    """Try to bump a coin's condition up by one step. May also damage it.
+    Returns 'upgraded' | 'damaged' | 'unchanged'."""
+    idx = CONDITIONS.index(coin.condition)
+    # 55% upgrade, 15% damage, 30% unchanged (top grade can't upgrade)
+    roll = rng.random()
+    if idx < len(CONDITIONS) - 1 and roll < 0.55:
+        coin.condition = CONDITIONS[idx + 1]
+        return "upgraded"
+    if idx > 0 and roll < 0.70:
+        coin.condition = CONDITIONS[idx - 1]
+        return "damaged"
+    return "unchanged"
+
+
+# ---------------------------------------------------------------------------
+# NPC coin interest — some NPCs find specific coins fascinating
+# ---------------------------------------------------------------------------
+
+# What an NPC can be interested in
+_INTEREST_KINDS = ("civilization", "era", "metal", "denomination", "motif")
+
+# Pulled from reverse_motif keywords (matches UI/coins._reverse_category)
+_INTEREST_MOTIFS = [
+    "eagle", "lion", "bull", "horse", "fish", "griffin", "phoenix", "serpent",
+    "owl", "temple", "castle", "ship", "wreath", "wheat", "crescent",
+    "trident", "scales", "flower", "cornucopia", "hammer",
+]
+
+_INTEREST_ERAS = list(_ERAS.keys())
+_INTEREST_METALS = ["copper", "bronze", "billon", "silver", "electrum", "gold"]
+
+def derive_npc_coin_interest(npc_seed: int, gen: CoinGenerator | None = None) -> dict | None:
+    """Return None if NPC has no coin interest (~70% of NPCs), else a dict like:
+        {"kind": "civilization", "value": "Aurum", "label": "Aurum coins",
+         "premium": 1.6}
+    """
+    rng = random.Random(npc_seed ^ 0xC01ABEEF)
+    if rng.random() > 0.30:
+        return None
+    kind = rng.choice(_INTEREST_KINDS)
+    if kind == "civilization" and gen and gen.civilizations:
+        civ = rng.choice(gen.civilizations)
+        return {"kind": "civilization", "value": civ["name"],
+                "label": f"{civ['name']} coins", "premium": 1.6}
+    if kind == "era":
+        era = rng.choice(_INTEREST_ERAS)
+        return {"kind": "era", "value": era,
+                "label": f"{_ERAS[era]['label']} era coins", "premium": 1.4}
+    if kind == "metal":
+        m = rng.choice(_INTEREST_METALS)
+        return {"kind": "metal", "value": m,
+                "label": f"{m.title()} coins", "premium": 1.35}
+    if kind == "denomination" and gen and gen.coin_types:
+        denom = rng.choice(list({td["denomination_key"]
+                                for td in gen.coin_types.values()}))
+        return {"kind": "denomination", "value": denom,
+                "label": f"{denom.replace('_',' ').title()} denominations",
+                "premium": 1.45}
+    if kind == "motif":
+        motif = rng.choice(_INTEREST_MOTIFS)
+        return {"kind": "motif", "value": motif,
+                "label": f"coins depicting a {motif}", "premium": 1.5}
+    return None
+
+def coin_matches_interest(coin: Coin, interest: dict) -> bool:
+    if not interest:
+        return False
+    k = interest["kind"]; v = interest["value"]
+    if k == "civilization":
+        return coin.civilization_name == v
+    if k == "era":
+        return _ERAS.get(v, {}).get("label", "") == coin.era_label
+    if k == "metal":
+        return coin_metal(coin.denomination_key) == v
+    if k == "denomination":
+        return coin.denomination_key == v
+    if k == "motif":
+        m = coin.reverse_motif.lower()
+        return v in m
+    return False
+
+def npc_coin_offer(coin: Coin, interest: dict) -> int:
+    """Gold offer an interested NPC will make for a matching coin."""
+    if not coin_matches_interest(coin, interest):
+        return 0
+    base = coin_price(coin)
+    return max(2, int(base * interest.get("premium", 1.4)))

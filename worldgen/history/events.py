@@ -45,8 +45,9 @@ def text_revolt_defect(settlement, old_k, new_k):
 def text_civil_war(kingdom, faction_a, faction_b):
     return f"Civil war tore {kingdom.name} as {faction_a} rose against {faction_b}."
 
-def text_kingdom_split(parent, breakaway, new_dynasty):
-    return (f"{breakaway.name} broke away from {parent.name} under {new_dynasty}, "
+def text_kingdom_split(parent, breakaway, new_dynasty, rebel_label: str = ""):
+    rebel = f" led by {rebel_label}" if rebel_label else ""
+    return (f"{breakaway.name} broke away from {parent.name} under {new_dynasty}{rebel}, "
             f"ending the war by drawing a new border.")
 
 def text_kingdom_reborn(kingdom, settlement_count: int):

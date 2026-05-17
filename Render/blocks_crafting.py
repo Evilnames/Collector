@@ -580,6 +580,50 @@ def build_crafting_surfs():
     pygame.draw.rect(s, dark, s.get_rect(), 1)
     surfs[bid] = s
 
+    bid = SALT_LICK_BLOCK
+    # if bid == SALT_LICK_BLOCK
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    base = (230, 220, 200)
+    dark = _darken(base, 25)
+    s.fill(dark)
+    # Stone/log base
+    pygame.draw.rect(s, (100,  75,  55), (4, 22, 24, 8))
+    # Salt block (textured chunk)
+    pygame.draw.rect(s, base, (8, 10, 16, 14))
+    pygame.draw.rect(s, _lighter(base, 18), (8, 10, 16, 3))
+    # Crystal facets — small triangular highlights
+    for fx, fy in ((10, 14), (14, 17), (18, 13), (20, 19)):
+        pygame.draw.polygon(s, _lighter(base, 30),
+                            [(fx, fy), (fx + 3, fy + 2), (fx, fy + 3)])
+    pygame.draw.rect(s, dark, s.get_rect(), 1)
+    surfs[bid] = s
+
+    bid = FEED_TROUGH_BLOCK
+    # if bid == FEED_TROUGH_BLOCK
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    base = BLOCKS[bid]["color"]
+    dark = _darken(base, 30)
+    wood = _darken(base, 20)
+    hay  = (210, 180,  90)
+    hay_dark = (175, 140,  60)
+    s.fill(dark)
+    # Trough wooden body
+    pygame.draw.rect(s, wood, (2, 12, 28, 16))
+    pygame.draw.rect(s, base, (4, 14, 24, 12))
+    # Hay/feed inside — stipple
+    for hx, hy in ((6, 16), (10, 15), (14, 17), (18, 15), (22, 16), (26, 17),
+                    (8, 19), (16, 20), (24, 19), (12, 22), (20, 22)):
+        pygame.draw.rect(s, hay, (hx, hy, 2, 2))
+        pygame.draw.line(s, hay_dark, (hx, hy + 2), (hx + 1, hy + 3), 1)
+    # Wood slat lines
+    for wx2 in [9, 16, 23]:
+        pygame.draw.line(s, _darken(wood, 30), (wx2, 12), (wx2, 28), 1)
+    # Support legs
+    pygame.draw.rect(s, wood, (3, 28, 4, 4))
+    pygame.draw.rect(s, wood, (25, 28, 4, 4))
+    pygame.draw.rect(s, dark, s.get_rect(), 1)
+    surfs[bid] = s
+
     bid = WITHERING_RACK_BLOCK
     # if bid == WITHERING_RACK_BLOCK
     s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))

@@ -21,6 +21,8 @@ class CuredMeat:
     flavor_notes:     list
     seed:             int
     blend_components: list = field(default_factory=list)
+    smoke_wood:       str = ""     # "apple" | "hickory" | "cherry" | "oak" (only when method=smoke)
+    breed_bonus:      float = 0.0  # 0.0–0.3 quality bonus from prize pig breeding
 
 
 # ---------------------------------------------------------------------------
@@ -31,7 +33,19 @@ MEAT_SOURCES = {
         "display":        "Boar",
         "fat":            0.65,
         "protein":        0.60,
-        "eligible_cures": ["prosciutto", "salami", "jerky", "lardo"],
+        "eligible_cures": ["prosciutto", "salami", "jerky", "lardo", "pancetta"],
+    },
+    "raw_pork": {
+        "display":        "Pork",
+        "fat":            0.45,
+        "protein":        0.55,
+        "eligible_cures": ["prosciutto", "salami", "jerky", "pancetta"],
+    },
+    "lard": {
+        "display":        "Lard (Fatback)",
+        "fat":            0.95,
+        "protein":        0.05,
+        "eligible_cures": ["lardo"],
     },
     "raw_beef": {
         "display":        "Beef",
@@ -100,11 +114,35 @@ CURE_TYPES = {
         "desc":           "Pure fatback cured with herbs and spice. Silky and aromatic.",
         "salt_req":       0.35,
         "age_days":       12,
-        "eligible_meats": {"raw_boar_meat"},
+        "eligible_meats": {"raw_boar_meat", "lard"},
+    },
+    "pancetta":   {
+        "label":          "Pancetta",
+        "desc":           "Cured pork belly, rolled and aged. Rich, buttery, peppery.",
+        "salt_req":       0.45,
+        "age_days":       10,
+        "eligible_meats": {"raw_boar_meat", "raw_pork"},
+    },
+    "bacon":      {
+        "label":          "Bacon",
+        "desc":           "Smoke-cured pork belly. Fast cure, savoury and crisp.",
+        "salt_req":       0.50,
+        "age_days":       3,
+        "eligible_meats": {"raw_pork", "raw_boar_meat"},
+        "required_method": "smoke",  # smoke method is mandatory
+    },
+    "sausage":    {
+        "label":          "Sausage",
+        "desc":           "Ground meat packed in casings. Quick fermentation.",
+        "salt_req":       0.35,
+        "age_days":       5,
+        "eligible_meats": {"raw_pork", "raw_boar_meat", "raw_beef",
+                           "raw_venison", "raw_bison_meat"},
+        "required_extra": "sausage_casing",  # one casing per sausage
     },
 }
 
-CURE_ORDER = ["prosciutto", "salami", "jerky", "lardo"]
+CURE_ORDER = ["prosciutto", "salami", "jerky", "lardo", "pancetta", "bacon", "sausage"]
 
 
 # ---------------------------------------------------------------------------
@@ -141,6 +179,51 @@ CURE_METHOD_ORDER = ["dry_salt", "spice_rub", "herb_cure", "smoke"]
 
 
 # ---------------------------------------------------------------------------
+# Smoking woods — only consulted when cure_method == "smoke"
+# ---------------------------------------------------------------------------
+SMOKE_WOODS = {
+    "apple":   {
+        "label":            "Applewood",
+        "item":             "smoking_chips_apple",
+        "desc":             "Mild, fruity, slightly sweet. Pairs beautifully with pork.",
+        "salt_penetration": +0.02,
+        "spice_intensity":  +0.04,
+        "quality_bonus":    +0.04,
+        "notes":            ["sweet applewood", "fruit smoke", "mellow sweetness"],
+    },
+    "hickory": {
+        "label":            "Hickory",
+        "item":             "smoking_chips_hickory",
+        "desc":             "Strong, bold, classic bacon smoke.",
+        "salt_penetration": +0.06,
+        "spice_intensity":  +0.06,
+        "quality_bonus":    +0.05,
+        "notes":            ["bold hickory", "deep smoke", "savory char"],
+    },
+    "cherry":  {
+        "label":            "Cherry",
+        "item":             "smoking_chips_cherry",
+        "desc":             "Subtle fruit-sweet smoke with a rosy hue on the meat.",
+        "salt_penetration": +0.03,
+        "spice_intensity":  +0.05,
+        "quality_bonus":    +0.06,
+        "notes":            ["cherry smoke", "rose-tinted bark", "stone-fruit warmth"],
+    },
+    "oak":     {
+        "label":            "Oak",
+        "item":             "smoking_chips_oak",
+        "desc":             "Balanced, traditional, long-lasting smoke flavour.",
+        "salt_penetration": +0.05,
+        "spice_intensity":  +0.05,
+        "quality_bonus":    +0.05,
+        "notes":            ["oak smoke", "tannin warmth", "barrel-room depth"],
+    },
+}
+
+SMOKE_WOOD_ORDER = ["apple", "hickory", "cherry", "oak"]
+
+
+# ---------------------------------------------------------------------------
 # Buffs
 # ---------------------------------------------------------------------------
 BUFF_DESCS = {
@@ -148,6 +231,9 @@ BUFF_DESCS = {
     "sustenance":   "Sustenance — hunger restore +15%",
     "vitality":     "Vitality — movement speed +12% for 60 s",
     "fortitude":    "Fortitude — mining speed +18% for 60 s",
+    "decadence":    "Decadence — XP gain +25% for 90 s",
+    "hearty":       "Hearty — health regen +0.5/s for 60 s",
+    "stamina":      "Stamina — sprint stamina drain −30% for 60 s",
 }
 
 CURE_TYPE_BUFFS = {
@@ -155,6 +241,9 @@ CURE_TYPE_BUFFS = {
     "salami":     "sustenance",
     "jerky":      "vitality",
     "lardo":      "fortitude",
+    "pancetta":   "decadence",
+    "bacon":      "hearty",
+    "sausage":    "stamina",
 }
 
 
@@ -174,6 +263,15 @@ OUTPUT_DESCS = {
     "lardo":                "Lardo — silky herb-cured fatback, aromatic",
     "lardo_fine":           "Lardo (Fine) — fragrant cured fat with herbal notes",
     "lardo_superior":       "Lardo (Superior) — reserved fatback, floral and rich",
+    "pancetta":             "Pancetta — rolled cured pork belly, peppery edge",
+    "pancetta_fine":        "Pancetta (Fine) — buttery belly with spiced crust",
+    "pancetta_superior":    "Pancetta (Superior) — silken artisan-rolled reserve",
+    "bacon":                "Bacon — smoke-cured pork belly strips",
+    "bacon_fine":           "Bacon (Fine) — applewood-rich, lacquered edges",
+    "bacon_superior":       "Bacon (Superior) — perfectly streaked artisan reserve",
+    "sausage":              "Sausage — fermented links, garlicky and savoury",
+    "sausage_fine":         "Sausage (Fine) — well-spiced fermented links",
+    "sausage_superior":     "Sausage (Superior) — heirloom-grind reserve links",
 }
 
 OUTPUT_COLORS = {
@@ -189,6 +287,15 @@ OUTPUT_COLORS = {
     "lardo":                (235, 220, 205),
     "lardo_fine":           (245, 232, 218),
     "lardo_superior":       (252, 242, 230),
+    "pancetta":             (200, 110,  95),
+    "pancetta_fine":        (215, 125, 105),
+    "pancetta_superior":    (230, 140, 115),
+    "bacon":                (180,  90,  60),
+    "bacon_fine":           (195, 100,  70),
+    "bacon_superior":       (215, 115,  80),
+    "sausage":              (170,  85,  65),
+    "sausage_fine":         (185,  95,  75),
+    "sausage_superior":     (200, 110,  85),
 }
 
 
@@ -248,8 +355,9 @@ def age_progress(item: CuredMeat) -> float:
 def compute_age_quality(item: CuredMeat) -> float:
     rng = random.Random(item.seed ^ 0xC4A3)
     base = item.salt_penetration * 0.50 + item.spice_intensity * 0.30
+    wood_bonus = SMOKE_WOODS.get(item.smoke_wood, {}).get("quality_bonus", 0.0)
     jit  = rng.gauss(0, 0.06)
-    return _clamp(base + jit)
+    return _clamp(base + wood_bonus + item.breed_bonus + jit)
 
 
 def generate_flavor_notes(item: CuredMeat) -> list:
@@ -265,6 +373,8 @@ def generate_flavor_notes(item: CuredMeat) -> list:
         notes.append(rng.choice(_FLAVOR_POOLS["age"]))
     if item.cure_method in _CURE_METHOD_NOTES:
         notes.append(rng.choice(_CURE_METHOD_NOTES[item.cure_method]))
+    if item.smoke_wood in SMOKE_WOODS:
+        notes.append(rng.choice(SMOKE_WOODS[item.smoke_wood]["notes"]))
     seen: list[str] = []
     for n in notes:
         if n not in seen:
@@ -275,13 +385,18 @@ def generate_flavor_notes(item: CuredMeat) -> list:
 # ---------------------------------------------------------------------------
 # Processing
 # ---------------------------------------------------------------------------
-def apply_cure_method(item: CuredMeat, method_key: str) -> None:
+def apply_cure_method(item: CuredMeat, method_key: str, smoke_wood: str = "") -> None:
     mods = CURE_METHODS.get(method_key)
     if not mods:
         return
     item.cure_method      = method_key
     item.salt_penetration = _clamp(item.salt_penetration + mods["salt_penetration"])
     item.spice_intensity  = _clamp(item.spice_intensity  + mods["spice_intensity"])
+    if method_key == "smoke" and smoke_wood in SMOKE_WOODS:
+        wm = SMOKE_WOODS[smoke_wood]
+        item.smoke_wood       = smoke_wood
+        item.salt_penetration = _clamp(item.salt_penetration + wm["salt_penetration"])
+        item.spice_intensity  = _clamp(item.spice_intensity  + wm["spice_intensity"])
 
 
 def start_aging(item: CuredMeat) -> None:
@@ -306,7 +421,9 @@ class CharcuterieGenerator:
         self._world_seed = world_seed
         self._counter    = 0
 
-    def generate(self, meat_source: str, cure_type: str) -> CuredMeat:
+    def generate(self, meat_source: str, cure_type: str, breed_quality: float = 0.0) -> CuredMeat:
+        """breed_quality: 0.0–1.0 normalized score from butchered pig genetics.
+        Pork/lard meats translate this into salt/fat boosts plus a final quality bonus."""
         self._counter += 1
         seed = (self._world_seed * 37 + self._counter * 6971) & 0xFFFFFFFF
         uid  = hashlib.md5(f"char_{seed}_{self._counter}".encode()).hexdigest()[:12]
@@ -317,18 +434,24 @@ class CharcuterieGenerator:
         def jitter(base: float) -> float:
             return _clamp(base + rng.gauss(0, 0.08))
 
+        bq        = _clamp(breed_quality)
+        fat_boost = bq * 0.20 if meat_source in ("raw_pork", "lard") else 0.0
+        salt_boost = bq * 0.10 if meat_source in ("raw_pork", "lard") else 0.0
+        breed_bon = bq * 0.18 if meat_source in ("raw_pork", "lard") else 0.0
+
         return CuredMeat(
             uid              = uid,
             meat_source      = meat_source,
             cure_type        = cure_type,
             state            = "salted",
-            salt_penetration = jitter(CURE_TYPES[cure_type]["salt_req"]),
+            salt_penetration = jitter(CURE_TYPES[cure_type]["salt_req"] + salt_boost),
             spice_intensity  = jitter(0.30),
-            fat_content      = jitter(profile["fat"]),
+            fat_content      = jitter(profile["fat"] + fat_boost),
             age_quality      = 0.0,
             cure_method      = "",
             age_start_time   = 0.0,
             age_total_days   = 0,
             flavor_notes     = [],
             seed             = seed,
+            breed_bonus      = breed_bon,
         )

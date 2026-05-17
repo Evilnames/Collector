@@ -17,7 +17,8 @@ from blocks import (BLOCKS, AIR, ROCK_DEPOSIT, WILDFLOWER_PATCH, FOSSIL_DEPOSIT,
                     SANDALWOOD_DOOR_CLOSED, SANDALWOOD_DOOR_OPEN,
                     STONE_SLAB_DOOR_CLOSED, STONE_SLAB_DOOR_OPEN,
                     WOOD_FENCE, IRON_FENCE, WOOD_FENCE_OPEN, IRON_FENCE_OPEN,
-                    SAPLING, GRASS, DIRT, ALL_LOGS, ALL_LEAVES,
+                    SAPLING, GRASS, DIRT, ALL_LOGS, ALL_LEAVES, TREE_LEAVES,
+                    BOOKCASE_BLOCK,
                     ALL_FRUIT_CLUSTERS, LEAF_FRUIT_CLUSTER_MAP,
                     YOUNG_CROP_BLOCKS, MATURE_CROP_BLOCKS, BUSH_BLOCKS,
                     STRAWBERRY_BUSH, WHEAT_BUSH,
@@ -80,6 +81,7 @@ from fossils import FossilGenerator, Fossil
 from gemstones import GemGenerator, Gemstone
 from fish import FishGenerator, Fish, FISH_TYPES
 from coffee import CoffeeGenerator, CoffeeBean
+from manuscripts import ManuscriptGenerator, Manuscript
 from wine import WineGenerator, Grape
 from beekeeping import HoneyGenerator, HoneyJar
 from mead import MeadGenerator, MeadBatch
@@ -167,6 +169,7 @@ class Player:
         self.selected_slot = 0
         self.shape_idx = 0          # index into block_shapes.SHAPE_VARIANTS
         self.money = 0
+        self.guild_debt = 0
         self.blessing_timer = 0.0
         self.blessing_mult  = 1.0
         # Rock collection
@@ -208,6 +211,14 @@ class Player:
         self.discovered_coffee_origins = set()  # "biome_roastlevel" strings
         self._coffee_gen = CoffeeGenerator(world.seed)
         self.roast_profiles = []  # [{name, biome, roast_level, curve: [(t, temp), ...]}]
+        # Manuscripts / scribing
+        self.manuscripts = []                 # finished bound Manuscript objects
+        self.raw_parchments = []              # mid-process parchments awaiting scribing
+        self.discovered_manuscripts = set()   # "biome_category" strings
+        self._manuscript_gen = ManuscriptGenerator(world.seed)
+        # Library bonus refreshed by library.update_player_library_bonus()
+        self.library_quality_bonus = 0.0
+        self.library_score_summary = None
         # Active buffs from drinking coffee
         self.active_buffs = {}  # buff_name -> {"duration": float}
         # Wine collection
@@ -234,6 +245,7 @@ class Player:
         self.discovered_charcuterie = set()  # "raw_boar_meat_prosciutto" strings
         self._charcuterie_gen       = CharcuterieGenerator(world.seed)
         self.charcuterie_buffs      = {}  # buff_name -> {"duration": float}
+        self.pork_quality_queue     = []  # 0.0–1.0 floats, FIFO; pushed on pig slaughter, popped on cure
         self.discovered_honeys = set()  # "biome_tier" strings e.g. "temperate_artisan"
         self._honey_gen = HoneyGenerator(world.seed)
         self.honey_buffs = {}  # buff_name -> {"duration": float}
@@ -440,8 +452,39 @@ class Player:
         # Horse codex tracking
         self.horses_tamed           = 0
         self.horses_bred            = 0
+        self.tournament_record      = {"wins": 0, "podium": 0, "entries": 0}
+        # Knightly Order membership — one order at a time, can leave.
+        self.order_id               = 0       # 0 = unaffiliated
+        self.order_prestige         = 0
+        self.order_quest            = None    # active quest dict or None
+        self.order_quests_done      = 0
+        self.order_joust_wins       = 0       # used for joust_win quests
+        self.order_reroll_count     = 0       # rerolls used to shift quest seed
+        self.order_vows             = []      # list[str] — chosen at petition
+        self.order_trial            = None    # {"rank": int, "kind": str, "count": int,
+                                              #  "item_id": str|None, "progress": int,
+                                              #  "baseline": int}
+        self.order_passed_trials    = 0       # how many rank-trials passed (caps effective rank)
         self.horse_records          = {"best_speed": 0.0, "best_stamina": 0.0}
         self.discovered_coat_biomes = set()
+        # Llama codex tracking
+        self.llamas_tamed             = 0
+        self.llamas_bred              = 0
+        self.llama_records            = {"best_fleece": 0.0, "best_fineness": 0.0}
+        self.discovered_llama_breeds  = set()
+        self.discovered_llama_biomes  = set()
+        # Yak codex tracking
+        self.yaks_tamed               = 0
+        self.yaks_bred                = 0
+        self.yak_records              = {"best_fleece": 0.0, "best_milk": 0.0, "best_richness": 0.0}
+        self.discovered_yak_breeds    = set()
+        self.discovered_yak_biomes    = set()
+        # Pig codex tracking
+        self.pigs_tamed               = 0
+        self.pigs_bred                = 0
+        self.pig_records              = {"best_meat": 0.0, "best_fat": 0.0, "best_litter": 0.0}
+        self.discovered_pig_breeds    = set()
+        self.discovered_pig_biomes    = set()
         # Horse racing tracking
         self.races_entered          = 0
         self.races_won              = 0
@@ -484,6 +527,12 @@ class Player:
         self.dog_ability_chance     = 0.0
         self.kennel_capacity        = 4
         self.pure_breed_bonus       = False
+        # Falconry
+        self.tamed_raptors          = []     # list of falconry.Raptor
+        self.discovered_raptor_species = set()
+        self.raptor_records         = {"best_hunts": 0, "best_bond": 0.0}
+        self._raptor_counter        = 0
+        self._pending_raptor_capture = None  # (species_key, biome) set when capture mini-game succeeds
 
     def apply_save(self, d):
         self.x, self.y = d["x"], d["y"]
@@ -491,6 +540,7 @@ class Player:
         self.facing = d["facing"]
         self.health, self.hunger = d["health"], d["hunger"]
         self.pick_power, self.money = d["pick_power"], d["money"]
+        self.guild_debt = d.get("guild_debt", 0)
         self.selected_slot = d["selected_slot"]
         self.inventory = d["inventory"]
         self.hotbar = d["hotbar"]
@@ -510,6 +560,9 @@ class Player:
         self.fish_bests  = d.get("fish_bests", {})
         self.coffee_beans = [CoffeeBean(**cb) for cb in d.get("coffee_beans", [])]
         self.discovered_coffee_origins = set(d.get("discovered_coffee_origins", []))
+        self.manuscripts = [Manuscript(**m) for m in d.get("manuscripts", [])]
+        self.raw_parchments = [Manuscript(**m) for m in d.get("raw_parchments", [])]
+        self.discovered_manuscripts = set(d.get("discovered_manuscripts", []))
         self.roast_profiles = d.get("roast_profiles", [])
         self.wine_grapes = [Grape(**g) for g in d.get("wine_grapes", [])]
         self.discovered_wine_origins = set(d.get("discovered_wine_origins", []))
@@ -550,8 +603,33 @@ class Player:
         self.spawn_y = d.get("spawn_y")
         self.horses_tamed           = d.get("horses_tamed", 0)
         self.horses_bred            = d.get("horses_bred", 0)
+        self.tournament_record      = d.get("tournament_record", {"wins": 0, "podium": 0, "entries": 0})
+        self.order_id               = d.get("order_id", 0)
+        self.order_prestige         = d.get("order_prestige", 0)
+        self.order_quest            = d.get("order_quest", None)
+        self.order_quests_done      = d.get("order_quests_done", 0)
+        self.order_joust_wins       = d.get("order_joust_wins", 0)
+        self.order_reroll_count     = d.get("order_reroll_count", 0)
+        self.order_vows             = d.get("order_vows", [])
+        self.order_trial            = d.get("order_trial", None)
+        self.order_passed_trials    = d.get("order_passed_trials", 0)
         self.horse_records          = d.get("horse_records", {"best_speed": 0.0, "best_stamina": 0.0})
         self.discovered_coat_biomes = set(d.get("discovered_coat_biomes", []))
+        self.llamas_tamed             = d.get("llamas_tamed", 0)
+        self.llamas_bred              = d.get("llamas_bred", 0)
+        self.llama_records            = d.get("llama_records", {"best_fleece": 0.0, "best_fineness": 0.0})
+        self.discovered_llama_breeds  = set(d.get("discovered_llama_breeds", []))
+        self.discovered_llama_biomes  = set(d.get("discovered_llama_biomes", []))
+        self.yaks_tamed               = d.get("yaks_tamed", 0)
+        self.yaks_bred                = d.get("yaks_bred", 0)
+        self.yak_records              = d.get("yak_records", {"best_fleece": 0.0, "best_milk": 0.0, "best_richness": 0.0})
+        self.discovered_yak_breeds    = set(d.get("discovered_yak_breeds", []))
+        self.discovered_yak_biomes    = set(d.get("discovered_yak_biomes", []))
+        self.pigs_tamed               = d.get("pigs_tamed", 0)
+        self.pigs_bred                = d.get("pigs_bred", 0)
+        self.pig_records              = d.get("pig_records", {"best_meat": 0.0, "best_fat": 0.0, "best_litter": 0.0})
+        self.discovered_pig_breeds    = set(d.get("discovered_pig_breeds", []))
+        self.discovered_pig_biomes    = set(d.get("discovered_pig_biomes", []))
         self.races_entered          = d.get("races_entered", 0)
         self.races_won              = d.get("races_won", 0)
         self.gold_won_racing        = d.get("gold_won_racing", 0)
@@ -565,6 +643,15 @@ class Player:
         self.dog_races_won          = d.get("dog_races_won", 0)
         self.gold_won_dog_racing    = d.get("gold_won_dog_racing", 0)
         self.dog_race_pbs                = d.get("dog_race_pbs", {})
+        from falconry import Raptor as _Raptor
+        self.tamed_raptors               = [_Raptor(**r) for r in d.get("tamed_raptors", [])]
+        # tuple round-trips through JSON as list; restore perch_pos to tuple
+        for _r in self.tamed_raptors:
+            if isinstance(_r.perch_pos, list):
+                _r.perch_pos = tuple(_r.perch_pos)
+        self.discovered_raptor_species   = set(d.get("discovered_raptor_species", []))
+        self.raptor_records              = d.get("raptor_records", {"best_hunts": 0, "best_bond": 0.0})
+        self._raptor_counter             = d.get("_raptor_counter", len(self.tamed_raptors))
         self.active_circuit              = d.get("active_circuit", None)
         self.completed_circuits          = d.get("completed_circuits", [])
         self.circuits_completed_by_tier  = d.get("circuits_completed_by_tier", {1:0, 2:0, 3:0, 4:0})
@@ -878,6 +965,8 @@ class Player:
         if weapon is None:
             return False
         wtype = WEAPON_TYPES[weapon.weapon_type]
+        if wtype.get("mounted_only") and self.mounted_horse is None:
+            return False
         dmg = weapon_damage(weapon)
         drops = target_entity.on_arrow_hit(dmg)   # reuse on_arrow_hit for damage dispatch
         self._melee_cooldown = wtype["cooldown"]
@@ -925,6 +1014,9 @@ class Player:
         linen_n = self.get_fiber_count("linen")
         if linen_n > 0 and self.world.time_of_day < 480.0:  # linen daytime speed
             speed *= (1.0 + linen_n * 0.04)
+        armor_penalty = self.get_armor_move_penalty()
+        if armor_penalty > 0:
+            speed *= max(0.4, 1.0 - armor_penalty)
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
             self.vx = -speed
             self.facing = -1
@@ -1067,6 +1159,9 @@ class Player:
                                 feed_target.rider = self
                             else:
                                 self._pending_horse_break = feed_target
+                        elif (isinstance(feed_target, _Horse) and feed_target.tamed
+                              and held and self._try_equip_horse_barding(feed_target, held)):
+                            pass
                         elif isinstance(feed_target, _Dog) and feed_target.tamed:
                             if held is None:
                                 self._pending_dog_view = feed_target
@@ -1074,6 +1169,8 @@ class Player:
                                 feed_target.stay_mode = not feed_target.stay_mode
                             else:
                                 feed_target.try_feed(self)
+                        elif held == "falconer_gauntlet" and self._try_falconry_capture(feed_target):
+                            pass
                         elif hasattr(feed_target, 'try_feed'):
                             feed_target.try_feed(self)
                     else:
@@ -1117,6 +1214,36 @@ class Player:
         if (keys[pygame.K_w] or keys[pygame.K_UP]) and horse.on_ground:
             horse.vy = JUMP_FORCE * 0.9
             horse.on_ground = False
+
+    def _try_falconry_capture(self, target):
+        """If the right-clicked entity is a wild raptor species we recognise,
+        queue a capture mini-game for the UI layer to pick up."""
+        from falconry import BIRD_CLASS_TO_RAPTOR
+        cls_name = type(target).__name__
+        species_key = BIRD_CLASS_TO_RAPTOR.get(cls_name)
+        if not species_key:
+            return False
+        try:
+            bx = int(target.x // BLOCK_SIZE)
+            biome = self.world.get_biodome(bx)
+        except Exception:
+            biome = ""
+        self._pending_raptor_capture = (species_key, biome, target)
+        return True
+
+    def _try_equip_horse_barding(self, horse, item_id) -> bool:
+        """Equip a barding item onto a tame horse and consume the stack slot."""
+        from items import ITEMS
+        spec = ITEMS.get(item_id)
+        if not spec or "horse_equipment" not in spec:
+            return False
+        from horses import equip_barding
+        barding_id = spec["horse_equipment"]
+        if not equip_barding(horse, barding_id):
+            return False
+        # Consume one from the selected hotbar slot.
+        self.hotbar[self.selected_slot] = None
+        return True
 
     def _find_animal_at(self, mx, my):
         for entity in getattr(self.world, 'entities', []):
@@ -1376,6 +1503,14 @@ class Player:
                 self.discovered_coin_types.add(coin.coin_type_id)
                 self._check_coin_set_complete(coin.civilization_name)
                 self.pending_notifications.append(("Coin", coin.display_name, coin.rarity))
+            elif block_id == TREE_LEAVES:
+                # Oak leaves occasionally drop an oak gall used in scribing inks.
+                if random.random() < 0.08:
+                    self._add_item("oak_gall")
+                block_data = BLOCKS[block_id]
+                drop = block_data["drop"]
+                if drop and random.random() < block_data.get("drop_chance", 1.0):
+                    self._add_item(drop)
             elif block_id == COFFEE_CROP_MATURE:
                 biodome = self.world.get_biodome(bx)
                 # Farmed crops: compute terroir from soil below the crop tile.
@@ -1397,13 +1532,14 @@ class Player:
                     self.coffee_beans.append(extra_bean)
             elif block_id == GRAPEVINE_CROP_MATURE:
                 biodome = self.world.get_biodome(bx)
-                grape = self._wine_gen.generate(biodome)
+                day_count = getattr(self.world, "day_count", 0)
+                grape = self._wine_gen.generate(biodome, day_count=day_count)
                 self.wine_grapes.append(grape)
                 self._add_item("grape_seed")
                 self.pending_notifications.append(("Wine", "Grape Cluster", None))
                 bonus = get_pollination_bonus(self, biodome, GRAPEVINE_CROP_MATURE)
                 if random.random() < bonus["yield"]:
-                    self.wine_grapes.append(self._wine_gen.generate(biodome))
+                    self.wine_grapes.append(self._wine_gen.generate(biodome, day_count=day_count))
             elif block_id == GRAIN_CROP_MATURE:
                 biodome = self.world.get_biodome(bx)
                 spirit = self._spirit_gen.generate(biodome)
@@ -1549,6 +1685,11 @@ class Player:
                         bonus = block_data.get("bonus_drop")
                         if bonus and random.random() < block_data.get("bonus_drop_chance", 0.0):
                             self._add_item(bonus)
+                if block_id == BOOKCASE_BLOCK:
+                    slots = self.world.bookcase_contents.pop((bx, by), [])
+                    for m in slots:
+                        if m is not None:
+                            self.manuscripts.append(m)
                 if block_id == CHEST_BLOCK:
                     chest_inv = self.world.chest_data.pop((bx, by), {})
                     # Resolve heritage artifact if this chest had one.
@@ -2519,6 +2660,10 @@ class Player:
     def get_armor_defense(self):
         from items import ITEMS
         return sum(ITEMS[v]["defense"] for v in self.worn_armor.values() if v and v in ITEMS)
+
+    def get_armor_move_penalty(self):
+        from items import ITEMS
+        return sum(ITEMS[v].get("move_penalty", 0.0) for v in self.worn_armor.values() if v and v in ITEMS)
 
     def has_diving_helmet(self):
         return self.worn_armor.get("helmet") == "armor_diving_helmet"

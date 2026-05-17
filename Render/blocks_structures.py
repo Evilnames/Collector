@@ -5724,7 +5724,7 @@ def build_structure_surfs():
         if shape == 0: pygame.draw.circle(s, dk, (sx2, sy2+3), 3, 1)
         elif shape == 1: pygame.draw.polygon(s, dk, [(sx2,sy2),(sx2+5,sy2+6),(sx2-1,sy2+6)], 1)
         elif shape == 2: pygame.draw.rect(s, dk, (sx2-2, sy2, 5, 5), 1)
-        else: pygame.draw.line(s, dk, (sx2-2,sy2+6),(sx2+2,sy2),(sx2+3,sy2+6), 1) if False else pygame.draw.lines(s, dk, False, [(sx2-2,sy2+6),(sx2,sy2),(sx2+2,sy2+6)], 1)
+        else: pygame.draw.lines(s, dk, False, [(sx2-2,sy2+6),(sx2,sy2),(sx2+2,sy2+6)], 1)
     pygame.draw.line(s, dk, (0, 22), (BLOCK_SIZE, 22), 1)
     # Papyrus band at base
     for px2 in [3, 11, 19, 27]:

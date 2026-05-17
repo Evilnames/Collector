@@ -1,7 +1,7 @@
 import pygame
 from constants import SCREEN_W, SCREEN_H
 from herbalism import (
-    match_recipe, get_dried_item, can_press_flower, recipe_requires_research,
+    match_recipe, recipe_requires_research,
     DRYING_TABLE, DRYABLE_ITEMS, RECIPES, RECIPE_ORDER,
     POTION_DESCS, POTION_COLORS, TIER_LABELS, BUFF_DESCS,
     INGREDIENT_DISPLAY_NAMES, ALL_POTION_IDS,
@@ -389,11 +389,16 @@ class HerbalismMixin:
         inv_rects.clear()
         CELL_W, CELL_H, GAP, COLS = 180, 44, 6, 6
         gx0 = (SCREEN_W - (COLS * CELL_W + (COLS - 1) * GAP)) // 2
+        skip = max(0, int(inv_scroll)) * COLS
         col_i = 0
         row_i = 0
+        skipped = 0
         for ikey in HERB_KEYS:
             count = player.inventory.get(ikey, 0)
             if count <= 0:
+                continue
+            if skipped < skip:
+                skipped += 1
                 continue
             cx = gx0 + col_i * (CELL_W + GAP)
             cy = inv_y0 + row_i * (CELL_H + GAP)

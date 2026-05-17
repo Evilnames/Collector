@@ -159,7 +159,14 @@ class HirePanelMixin:
 
         def upkeep_row(label, days, threshold_warn=2, threshold_bad=3):
             nonlocal y
-            col = _GREEN if days == 0 else (_YELLOW if days < threshold_bad else _RED)
+            if days == 0:
+                col = _GREEN
+            elif days < threshold_warn:
+                col = _DIM_C
+            elif days < threshold_bad:
+                col = _YELLOW
+            else:
+                col = _RED
             status = "OK" if days == 0 else f"{days} day{'s' if days != 1 else ''} missed"
             self.screen.blit(self.small.render(label, True, _DIM_C),   (px + 20, y))
             self.screen.blit(self.small.render(status, True, col),     (px + 170, y))

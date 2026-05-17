@@ -655,3 +655,418 @@ def draw_capybara(screen, sx, sy, cap):
     eye_color = (25, 18, 10)
     eye_x = (hx + int(7 * s)) if cap.facing == 1 else (hx + int(5 * s))
     pygame.draw.rect(screen, eye_color, (eye_x, hy + int(2 * s), max(1, int(2 * s)), max(1, int(2 * s))))
+
+
+_LLAMA_COAT = {
+    "white": (235, 230, 220),
+    "fawn":  (200, 165, 115),
+    "brown": (135,  90,  55),
+    "black": ( 50,  45,  42),
+    "grey":  (165, 155, 145),
+}
+_LLAMA_SHORN = {
+    "white": (180, 165, 140),
+    "fawn":  (155, 125,  85),
+    "brown": (105,  70,  45),
+    "black": ( 42,  38,  34),
+    "grey":  (130, 122, 115),
+}
+
+
+def draw_llama(screen, sx, sy, llama):
+    W, H = llama.W, llama.H
+    traits      = getattr(llama, 'traits', {})
+    shift       = traits.get("color_shift", (0, 0, 0))
+    s           = traits.get("size", 1.0)
+    coat_color  = traits.get("coat_color", "fawn")
+    pattern     = traits.get("coat_pattern", "solid")
+    ear_type    = traits.get("ear_type", "banana")
+    fiber_len   = traits.get("fiber_length", 0.5)
+
+    base   = _LLAMA_COAT.get(coat_color, _LLAMA_COAT["fawn"])
+    shorn  = _LLAMA_SHORN.get(coat_color, _LLAMA_SHORN["fawn"])
+    active = base if llama.has_wool else shorn
+
+    # Llama body — taller, narrower than sheep. Body sits at upper 60% of H.
+    body_h = int(H * 0.55)
+    body_y = sy + int(H * 0.15)
+    leg_top = body_y + body_h
+    leg_h   = sy + H - leg_top
+
+    # Fluff outline behind body when unshorn and long fibre
+    if llama.has_wool and fiber_len > 0.4:
+        puff = max(1, int((fiber_len - 0.35) * 5 * s))
+        puff_col = _tinted(tuple(min(255, c + 12) for c in base), shift)
+        pygame.draw.rect(screen, puff_col,
+                         (sx - puff, body_y - puff, W + puff * 2, body_h + puff))
+
+    # Legs — long, four of them
+    leg_color = _tinted(tuple(max(0, c - 35) for c in active), shift)
+    leg_w = max(2, int(3 * s))
+    for lx_off in (int(2*s), int(8*s), W - int(8*s) - leg_w, W - int(2*s) - leg_w):
+        pygame.draw.rect(screen, leg_color, (sx + lx_off, leg_top, leg_w, leg_h))
+
+    # Body
+    body_color = _tinted(active, shift)
+    pygame.draw.rect(screen, body_color, (sx, body_y, W, body_h))
+
+    # Pattern markings (only when unshorn)
+    if llama.has_wool:
+        if pattern == "tipped":
+            tip = _tinted(tuple(max(0, c - 50) for c in base), shift)
+            pygame.draw.rect(screen, tip, (sx, body_y, W, int(body_h * 0.3)))
+        elif pattern == "spotted":
+            spot = _tinted(tuple(max(0, c - 70) for c in base), shift)
+            pygame.draw.rect(screen, spot, (sx + int(4*s),  body_y + int(2*s), int(5*s), int(4*s)))
+            pygame.draw.rect(screen, spot, (sx + int(13*s), body_y + int(4*s), int(5*s), int(4*s)))
+        elif pattern == "appaloosa":
+            spot = _tinted(tuple(max(0, c - 70) for c in base), shift)
+            for ox, oy in ((3, 2), (10, 5), (17, 3), (8, 10), (16, 9)):
+                px = sx + int(ox * s)
+                py = body_y + int(oy * s)
+                pygame.draw.rect(screen, spot, (px, py, max(1, int(2*s)), max(1, int(2*s))))
+
+    # Neck — long upright, sloping forward
+    neck_w = int(5 * s)
+    neck_h = int(H * 0.30)
+    if llama.facing == 1:
+        neck_x = sx + W - neck_w - int(1 * s)
+    else:
+        neck_x = sx + int(1 * s)
+    neck_y = body_y - neck_h + int(2 * s)
+    neck_color = _tinted(active, shift)
+    pygame.draw.rect(screen, neck_color, (neck_x, neck_y, neck_w, neck_h))
+
+    # Head — square muzzle perched atop the neck
+    head_w = int(6 * s)
+    head_h = int(6 * s)
+    if llama.facing == 1:
+        hx = neck_x + neck_w - int(1 * s)
+    else:
+        hx = neck_x - head_w + int(1 * s)
+    hy = neck_y - head_h + int(1 * s)
+    face_color = _tinted(tuple(max(0, c - 25) for c in active), shift)
+    pygame.draw.rect(screen, face_color, (hx, hy, head_w, head_h))
+
+    # Muzzle stub forward
+    muzzle_w = int(3 * s)
+    muzzle_h = int(3 * s)
+    mx = (hx + head_w - int(1 * s)) if llama.facing == 1 else (hx - muzzle_w + int(1 * s))
+    my = hy + int(head_h - muzzle_h - 1)
+    pygame.draw.rect(screen, face_color, (mx, my, muzzle_w, muzzle_h))
+
+    # Ears — banana ears are the llama signature
+    ear_color = _tinted(tuple(max(0, c - 18) for c in face_color), shift)
+    if ear_type == "banana":
+        eh = int(5 * s)
+        ew = max(1, int(2 * s))
+        pygame.draw.rect(screen, ear_color, (hx + int(1*s), hy - eh, ew, eh))
+        pygame.draw.rect(screen, ear_color, (hx + head_w - int(2*s), hy - eh, ew, eh))
+        # Curved tip — small inward nub
+        pygame.draw.rect(screen, ear_color, (hx + int(2*s), hy - eh, max(1, int(s)), max(1, int(s))))
+        pygame.draw.rect(screen, ear_color, (hx + head_w - int(3*s), hy - eh, max(1, int(s)), max(1, int(s))))
+    elif ear_type == "upright":
+        pygame.draw.rect(screen, ear_color, (hx + int(1*s), hy - int(3*s), max(1, int(2*s)), int(3*s)))
+        pygame.draw.rect(screen, ear_color, (hx + head_w - int(3*s), hy - int(3*s), max(1, int(2*s)), int(3*s)))
+    else:  # short
+        pygame.draw.rect(screen, ear_color, (hx + int(1*s), hy - int(2*s), max(1, int(2*s)), int(2*s)))
+        pygame.draw.rect(screen, ear_color, (hx + head_w - int(3*s), hy - int(2*s), max(1, int(2*s)), int(2*s)))
+
+    # Eye
+    eye_x = (hx + head_w - int(2 * s)) if llama.facing == 1 else (hx + max(1, int(1 * s)))
+    pygame.draw.rect(screen, (25, 22, 18), (eye_x, hy + int(2 * s), 2, 2))
+
+    # Tail — short tuft pointing away from head
+    tail_color = _tinted(active, shift)
+    if llama.facing == 1:
+        tx = sx - int(2 * s)
+    else:
+        tx = sx + W
+    pygame.draw.rect(screen, tail_color, (tx, body_y + int(1 * s), int(3 * s), int(4 * s)))
+
+    if getattr(llama, 'tamed', False):
+        pygame.draw.circle(screen, (255, 80, 120), (sx + W // 2, sy - 12), 4)
+
+    if llama.being_harvested:
+        if llama._kill_timer > 0:
+            progress = llama._kill_timer / 0.5
+            pygame.draw.rect(screen, (40, 40, 40), (sx, sy - 7, W, 4))
+            pygame.draw.rect(screen, (220, 60, 60), (sx, sy - 7, int(W * progress), 4))
+        elif llama._harvest_time > 0:
+            progress = llama._harvest_time / llama.HARVEST_TIME
+            pygame.draw.rect(screen, (40, 40, 40), (sx, sy - 7, W, 4))
+            pygame.draw.rect(screen, (100, 220, 100), (sx, sy - 7, int(W * progress), 4))
+
+    if llama.health < 3:
+        pygame.draw.rect(screen, (40, 40, 40), (sx, sy - 13, W, 3))
+        pygame.draw.rect(screen, (220, 50, 50), (sx, sy - 13, int(W * llama.health / 3), 3))
+
+
+_YAK_COAT = {
+    "black":   ( 45,  40,  38),
+    "brown":   (110,  75,  50),
+    "white":   (225, 220, 210),
+    "piebald": ( 60,  55,  50),   # base; piebald patches drawn on top
+    "golden":  (200, 165,  85),
+}
+_YAK_SHORN = {
+    "black":   ( 55,  50,  46),
+    "brown":   ( 95,  68,  45),
+    "white":   (180, 168, 150),
+    "piebald": ( 70,  65,  60),
+    "golden":  (165, 135,  70),
+}
+_YAK_SKIRT_HEIGHT = {"full": 0.65, "medium": 0.45, "short": 0.25}
+
+
+def draw_yak(screen, sx, sy, yak):
+    W, H = yak.W, yak.H
+    traits     = getattr(yak, 'traits', {})
+    shift      = traits.get("color_shift", (0, 0, 0))
+    s          = traits.get("size", 1.0)
+    coat_color = traits.get("coat_color", "black")
+    horn_type  = traits.get("horn_type", "wide")
+    skirt      = traits.get("skirt_length", "full")
+    fiber_len  = traits.get("fiber_length", 0.6)
+
+    base   = _YAK_COAT.get(coat_color, _YAK_COAT["black"])
+    shorn  = _YAK_SHORN.get(coat_color, _YAK_SHORN["black"])
+    active = base if yak.has_wool else shorn
+
+    # Body — broad and low
+    body_h = int(H * 0.55)
+    body_y = sy + int(H * 0.18)
+    leg_top = body_y + body_h
+    leg_h   = sy + H - leg_top
+
+    # Shaggy skirt — long body hair hanging over the legs (only when unshorn)
+    if yak.has_wool:
+        skirt_h = int(leg_h * _YAK_SKIRT_HEIGHT.get(skirt, 0.5))
+        skirt_col = _tinted(tuple(max(0, c - 10) for c in base), shift)
+        pygame.draw.rect(screen, skirt_col, (sx + int(1 * s), leg_top, W - int(2 * s), skirt_h))
+
+    # Fluff outline behind body when long fibre
+    if yak.has_wool and fiber_len > 0.4:
+        puff = max(1, int((fiber_len - 0.35) * 5 * s))
+        puff_col = _tinted(tuple(min(255, c + 10) for c in base), shift)
+        pygame.draw.rect(screen, puff_col,
+                         (sx - puff, body_y - puff, W + puff * 2, body_h + puff))
+
+    # Legs — thick and stubby
+    leg_color = _tinted(tuple(max(0, c - 30) for c in active), shift)
+    leg_w = max(3, int(4 * s))
+    for lx_off in (int(3*s), int(10*s), W - int(10*s) - leg_w, W - int(3*s) - leg_w):
+        pygame.draw.rect(screen, leg_color, (sx + lx_off, leg_top, leg_w, leg_h))
+
+    # Body
+    body_color = _tinted(active, shift)
+    pygame.draw.rect(screen, body_color, (sx, body_y, W, body_h))
+
+    # Hump — characteristic yak shoulder hump, on the front-shoulder side
+    hump_w = int(W * 0.35)
+    hump_h = int(body_h * 0.45)
+    if yak.facing == 1:
+        hump_x = sx + W - hump_w - int(2 * s)
+    else:
+        hump_x = sx + int(2 * s)
+    hump_y = body_y - hump_h + int(2 * s)
+    hump_color = _tinted(tuple(max(0, c - 8) for c in base), shift) if yak.has_wool else body_color
+    pygame.draw.rect(screen, hump_color, (hump_x, hump_y, hump_w, hump_h))
+
+    # Piebald patches (only when unshorn)
+    if yak.has_wool and coat_color == "piebald":
+        patch = _tinted((220, 215, 205), shift)
+        pygame.draw.rect(screen, patch, (sx + int(5*s),  body_y + int(2*s), int(8*s), int(5*s)))
+        pygame.draw.rect(screen, patch, (sx + int(18*s), body_y + int(4*s), int(7*s), int(4*s)))
+
+    # Head — broad, low-slung
+    head_w = int(10 * s)
+    head_h = int(9 * s)
+    if yak.facing == 1:
+        hx = sx + W - int(2 * s)
+    else:
+        hx = sx - head_w + int(2 * s)
+    hy = body_y + int(body_h * 0.25)
+    face_color = _tinted(tuple(max(0, c - 20) for c in active), shift)
+    pygame.draw.rect(screen, face_color, (hx, hy, head_w, head_h))
+
+    # Forehead tuft — shaggy fringe between horns
+    if yak.has_wool:
+        tuft_col = _tinted(tuple(max(0, c - 5) for c in base), shift)
+        pygame.draw.rect(screen, tuft_col, (hx + int(2*s), hy - int(3*s), head_w - int(4*s), int(3*s)))
+
+    # Horns — characteristic curved spread
+    horn_color = _tinted((90, 78, 55), shift)
+    if horn_type != "polled":
+        if horn_type == "wide":
+            # Long sweeping horns curving out and forward
+            for side, sx_off in ((-1, int(1*s)), (1, head_w - int(2*s))):
+                base_x = hx + sx_off
+                pygame.draw.rect(screen, horn_color, (base_x, hy - int(2*s), max(1, int(2*s)), int(2*s)))
+                pygame.draw.rect(screen, horn_color, (base_x + side * int(2*s), hy - int(4*s),
+                                                       int(3*s), max(1, int(2*s))))
+                pygame.draw.rect(screen, horn_color, (base_x + side * int(4*s), hy - int(6*s),
+                                                       max(1, int(2*s)), int(3*s)))
+        elif horn_type == "curved":
+            for side, sx_off in ((-1, int(1*s)), (1, head_w - int(2*s))):
+                base_x = hx + sx_off
+                pygame.draw.rect(screen, horn_color, (base_x, hy - int(4*s), max(1, int(2*s)), int(4*s)))
+                pygame.draw.rect(screen, horn_color, (base_x + side * int(2*s), hy - int(5*s),
+                                                       int(2*s), max(1, int(2*s))))
+        else:  # short
+            for sx_off in (int(2*s), head_w - int(3*s)):
+                pygame.draw.rect(screen, horn_color, (hx + sx_off, hy - int(2*s), max(1, int(2*s)), int(2*s)))
+
+    # Eye
+    eye_x = (hx + head_w - int(3 * s)) if yak.facing == 1 else (hx + max(1, int(1 * s)))
+    pygame.draw.rect(screen, (20, 18, 14), (eye_x, hy + int(3 * s), 2, 2))
+
+    # Tail tuft — opposite the head
+    tail_color = _tinted(base if yak.has_wool else active, shift)
+    if yak.facing == 1:
+        tx = sx - int(3 * s)
+    else:
+        tx = sx + W
+    pygame.draw.rect(screen, tail_color, (tx, body_y + int(2 * s), int(4 * s), int(7 * s)))
+
+    if getattr(yak, 'tamed', False):
+        pygame.draw.circle(screen, (255, 80, 120), (sx + W // 2, sy - 12), 4)
+
+    if yak.being_harvested:
+        if yak._kill_timer > 0:
+            progress = yak._kill_timer / 0.5
+            pygame.draw.rect(screen, (40, 40, 40), (sx, sy - 7, W, 4))
+            pygame.draw.rect(screen, (220, 60, 60), (sx, sy - 7, int(W * progress), 4))
+        elif yak._harvest_time > 0:
+            progress = yak._harvest_time / yak.HARVEST_TIME
+            pygame.draw.rect(screen, (40, 40, 40), (sx, sy - 7, W, 4))
+            pygame.draw.rect(screen, (100, 220, 100), (sx, sy - 7, int(W * progress), 4))
+
+    max_health = max(3, getattr(yak, 'health', 3))
+    if yak.health < 4:
+        pygame.draw.rect(screen, (40, 40, 40), (sx, sy - 13, W, 3))
+        pygame.draw.rect(screen, (220, 50, 50), (sx, sy - 13, int(W * yak.health / max(4, max_health)), 3))
+
+
+_PIG_BASE = {
+    "pink":    (235, 175, 165),
+    "black":   ( 45,  38,  35),
+    "red":     (170,  90,  55),
+    "white":   (235, 225, 215),
+    "spotted": (220, 175, 160),
+    "blonde":  (215, 190, 130),
+}
+
+
+def draw_pig(screen, sx, sy, pig):
+    W, H = pig.W, pig.H
+    traits  = getattr(pig, 'traits', {})
+    shift   = traits.get("color_shift", (0, 0, 0))
+    s       = traits.get("size", 1.0)
+    color   = traits.get("coat_color", "pink")
+    pattern = traits.get("coat_pattern", "solid")
+    ear     = traits.get("ear_type", "upright")
+    snout   = traits.get("snout_length", "medium")
+    fat     = traits.get("fat", 1.0)
+
+    base_rgb   = _PIG_BASE.get(color, _PIG_BASE["pink"])
+    body_color = _tinted(base_rgb, shift)
+    belly_col  = _tinted(tuple(min(255, c + 18) for c in base_rgb), shift)
+    leg_color  = _tinted(tuple(max(0, c - 25) for c in base_rgb), shift)
+    ear_color  = _tinted(tuple(max(0, c - 18) for c in base_rgb), shift)
+    snout_color = _tinted(tuple(max(0, c - 8) for c in base_rgb), shift)
+
+    body_h = H - int(6 * s)
+    leg_y  = sy + body_h
+
+    # Legs — short and stocky
+    for lx_off in [2, 8, 16, 22]:
+        pygame.draw.rect(screen, leg_color,
+                         (sx + int(lx_off * s), leg_y, max(1, int(3 * s)), int(6 * s)))
+
+    # Fat halo — extra girth for high-fat breeds (Mangalitsa)
+    if fat > 1.2:
+        bulge = max(1, int((fat - 1.2) * 5 * s))
+        pygame.draw.rect(screen, body_color, (sx - bulge, sy + 1, W + bulge * 2, body_h))
+
+    # Body — rounded rectangle look
+    pygame.draw.rect(screen, body_color, (sx, sy, W, body_h))
+    # Belly highlight
+    pygame.draw.rect(screen, belly_col,
+                     (sx + int(2 * s), sy + body_h - int(4 * s), W - int(4 * s), int(3 * s)))
+
+    # Patterns
+    if pattern == "belted":
+        belt = _tinted((245, 240, 230), shift) if color != "white" else _tinted((40, 40, 40), shift)
+        belt_w = int(W * 0.32)
+        belt_x = sx + (W - belt_w) // 2
+        pygame.draw.rect(screen, belt, (belt_x, sy, belt_w, body_h))
+    elif pattern == "spotted":
+        spot = _tinted(tuple(max(0, c - 55) for c in base_rgb), shift)
+        pygame.draw.rect(screen, spot, (sx + int(4 * s), sy + int(2 * s), int(3 * s), int(3 * s)))
+        pygame.draw.rect(screen, spot, (sx + int(11 * s), sy + int(4 * s), int(3 * s), int(3 * s)))
+        pygame.draw.rect(screen, spot, (sx + int(17 * s), sy + int(2 * s), int(3 * s), int(3 * s)))
+    elif pattern == "piebald":
+        patch = _tinted((245, 235, 220), shift)
+        pygame.draw.rect(screen, patch, (sx + int(3 * s), sy + int(1 * s), int(7 * s), int(5 * s)))
+        pygame.draw.rect(screen, patch, (sx + int(14 * s), sy + int(3 * s), int(6 * s), int(4 * s)))
+
+    # Curly Mangalitsa coat dots
+    if color == "blonde" and pattern == "solid":
+        curl = _tinted(tuple(min(255, c + 12) for c in base_rgb), shift)
+        for dx_off in range(1, W - 1, max(2, int(3 * s))):
+            pygame.draw.rect(screen, curl, (sx + dx_off, sy + 1, 1, 1))
+            pygame.draw.rect(screen, curl, (sx + dx_off, sy + int(4 * s), 1, 1))
+
+    # Head — at the front
+    head_w = int(10 * s)
+    head_h = int(9 * s)
+    hx = (sx + W - int(2 * s)) if pig.facing == 1 else (sx - head_w + int(2 * s))
+    hy = sy + int(1 * s)
+    pygame.draw.rect(screen, _tinted(tuple(max(0, c - 10) for c in base_rgb), shift),
+                     (hx, hy, head_w, head_h))
+
+    # Snout — flat disk
+    snout_w = {"short": int(3 * s), "medium": int(4 * s), "long": int(6 * s)}.get(snout, int(4 * s))
+    snout_h = int(4 * s)
+    sx_pos = (hx + head_w - 1) if pig.facing == 1 else (hx - snout_w + 1)
+    pygame.draw.rect(screen, snout_color, (sx_pos, hy + int(3 * s), snout_w, snout_h))
+    # Nostrils
+    nx = sx_pos + (snout_w - 2 if pig.facing == 1 else 0)
+    pygame.draw.rect(screen, (40, 25, 25), (nx, hy + int(4 * s), 1, 1))
+    pygame.draw.rect(screen, (40, 25, 25), (nx, hy + int(5 * s), 1, 1))
+
+    # Ears
+    if ear == "upright":
+        pygame.draw.rect(screen, ear_color, (hx + int(1 * s), hy - int(3 * s), max(1, int(2 * s)), int(3 * s)))
+        pygame.draw.rect(screen, ear_color, (hx + int(6 * s), hy - int(3 * s), max(1, int(2 * s)), int(3 * s)))
+    elif ear == "lop":
+        pygame.draw.rect(screen, ear_color, (hx + int(1 * s), hy, max(1, int(2 * s)), int(5 * s)))
+        pygame.draw.rect(screen, ear_color, (hx + int(6 * s), hy, max(1, int(2 * s)), int(5 * s)))
+    else:  # semi_lop
+        pygame.draw.rect(screen, ear_color, (hx + int(1 * s), hy - int(1 * s), max(1, int(2 * s)), int(4 * s)))
+        pygame.draw.rect(screen, ear_color, (hx + int(6 * s), hy - int(1 * s), max(1, int(2 * s)), int(4 * s)))
+
+    # Eye
+    eye_x = (hx + head_w - int(3 * s)) if pig.facing == 1 else (hx + max(1, int(1 * s)))
+    pygame.draw.rect(screen, (20, 12, 5), (eye_x, hy + int(3 * s), 2, 2))
+
+    # Curly tail
+    tail_x = (sx - int(2 * s)) if pig.facing == 1 else (sx + W)
+    tail_col = _tinted(tuple(max(0, c - 18) for c in base_rgb), shift)
+    pygame.draw.rect(screen, tail_col, (tail_x, sy + int(1 * s), max(1, int(2 * s)), max(1, int(2 * s))))
+    pygame.draw.rect(screen, tail_col, (tail_x + (1 if pig.facing != 1 else -1), sy + int(3 * s), 1, 1))
+
+    if getattr(pig, 'has_manure', False):
+        pygame.draw.rect(screen, (85, 55, 30), (sx + W - int(3 * s), leg_y + int(1 * s), 2, 2))
+
+    if getattr(pig, 'being_harvested', False):
+        if getattr(pig, '_kill_timer', 0) > 0:
+            progress = pig._kill_timer / 0.5
+            pygame.draw.rect(screen, (40, 40, 40), (sx, sy - 7, W, 4))
+            pygame.draw.rect(screen, (220, 80, 80), (sx, sy - 7, int(W * progress), 4))
+
+    max_health = max(3, getattr(pig, 'health', 3))
+    if pig.health < 4:
+        pygame.draw.rect(screen, (40, 40, 40), (sx, sy - 13, W, 3))
+        pygame.draw.rect(screen, (220, 50, 50), (sx, sy - 13, int(W * pig.health / max(4, max_health)), 3))

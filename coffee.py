@@ -319,7 +319,7 @@ def get_brew_quality_bonus(water_quality: str) -> float:
 
 
 BREW_METHODS = {
-    "drip":         {"label": "Drip",         "buff": "focus",     "amplifies": ("sweetness", "brightness"), "suppresses": ("earthiness",)},
+    "drip_coffee":  {"label": "Drip",         "buff": "focus",     "amplifies": ("sweetness", "brightness"), "suppresses": ("earthiness",)},
     "espresso":     {"label": "Espresso",      "buff": "rush",      "amplifies": ("body", "acidity"),         "suppresses": ("brightness",)},
     "pour_over":    {"label": "Pour Over",     "buff": "clarity",   "amplifies": ("acidity", "brightness"),   "suppresses": ("body",)},
     "cold_brew":    {"label": "Cold Brew",     "buff": "endurance", "amplifies": ("sweetness", "body"),       "suppresses": ("brightness",)},

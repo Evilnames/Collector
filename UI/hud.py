@@ -172,6 +172,37 @@ class HUDMixin:
     def _draw_money(self, player):
         txt = self.font.render(f"$ {player.money}", True, (240, 210, 50))
         self.screen.blit(txt, (SCREEN_W - txt.get_width() - 10, 48))
+        self._draw_order_chip(player)
+
+    def _draw_order_chip(self, player):
+        oid = getattr(player, "order_id", 0)
+        if not oid:
+            return
+        try:
+            import knightly_orders as ko
+        except Exception:
+            return
+        order = ko.order(oid)
+        if order is None:
+            return
+        eff_idx = ko.player_effective_rank_idx(player)
+        rank = ko.player_rank_label(oid, player.order_prestige, rank_idx=eff_idx)
+        standing = ko.standing_label(player.order_prestige)
+        line1 = self.small.render(order.name, True, (200, 185, 140))
+        line2 = self.small.render(
+            f"{rank}  ·  {standing}  ·  {player.order_prestige}p",
+            True, (240, 210, 110))
+        w = max(line1.get_width(), line2.get_width()) + 12
+        x = SCREEN_W - w - 10
+        y = 70
+        self.screen.blit(line1, (x + 6, y))
+        self.screen.blit(line2, (x + 6, y + 14))
+        q = getattr(player, "order_quest", None)
+        if q is not None:
+            tag = self.small.render(
+                f"Quest: {q.get('kind','?').title()} T{q.get('tier',0)}",
+                True, (180, 200, 140))
+            self.screen.blit(tag, (SCREEN_W - tag.get_width() - 10, y + 30))
 
     def _draw_hints(self, research, player):
         nearby_bed = player.get_nearby_bed()

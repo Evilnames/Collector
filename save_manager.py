@@ -21,7 +21,7 @@ def _wf_to_dict(wf):
         "fragrance": wf.fragrance, "vibrancy": wf.vibrancy,
         "specials": wf.specials, "biodome_found": wf.biodome_found, "seed": wf.seed,
     }
-SAVE_VERSION = 5
+SAVE_VERSION = 8
 
 
 class SaveManager:
@@ -36,10 +36,11 @@ class SaveManager:
                 for tbl in ("save_meta", "chunks", "bg_chunks", "wire_chunks", "pipe_chunks", "world_meta", "player",
                             "rocks", "wildflowers", "fossils", "gems", "bird_observations",
                             "insect_observations", "reptile_observations",
-                            "fish", "coffee_beans", "wine_grapes", "spirits",
+                            "fish", "coffee_beans", "wine_grapes", "spirits", "manuscripts",
                             "tea_leaves", "textiles", "cheese_wheels", "jewelry", "sculptures", "custom_tapestries", "pottery_pieces", "salt_crystals", "coins",
                             "research", "automations",
                             "towns", "regions", "outposts", "player_cities", "world_plan",
+                            "guilds", "guild_chapters", "share_holdings",
                             "farm_bots", "backhoes", "elevator_cars", "minecarts", "boats", "entities", "dropped_items", "chests", "banners"):
                     # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
@@ -73,6 +74,10 @@ class SaveManager:
             self._save_towns(con)
             self._save_regions(con)
             self._save_outposts(con)
+            self._save_sommelier_requests(con)
+            self._save_guilds(con)
+            self._save_bonds(con)
+            self._save_knightly_orders(con, player)
             self._save_player_cities(con)
             self._save_player(con, player)
             self._save_npc_relationships(con, player)
@@ -84,9 +89,12 @@ class SaveManager:
             self._save_gems(con, player)
             self._save_fish(con, player)
             self._save_coffee_beans(con, player)
+            self._save_manuscripts(con, player)
+            self._save_bookcases(con, player)
             self._save_wine_grapes(con, player)
             self._save_spirits(con, player)
             self._save_beers(con, player)
+            self._save_tamed_raptors(con, player)
             self._save_tea_leaves(con, player)
             self._save_textiles(con, player)
             self._save_cheese_wheels(con, player)
@@ -583,6 +591,30 @@ class SaveManager:
             blend_components   TEXT,
             processing_method  TEXT DEFAULT ''
         );
+        CREATE TABLE IF NOT EXISTS bookcases (
+            bx INTEGER, by INTEGER, slots TEXT,
+            PRIMARY KEY (bx, by)
+        );
+        CREATE TABLE IF NOT EXISTS manuscripts (
+            uid                  TEXT PRIMARY KEY,
+            origin_biome         TEXT,
+            parchment_variety    TEXT,
+            state                TEXT,
+            ink_key              TEXT,
+            pigment_keys         TEXT,
+            illumination_grid    TEXT,
+            penmanship           REAL,
+            illumination_quality REAL,
+            page_condition       REAL,
+            binding              TEXT,
+            content_category     TEXT,
+            title                TEXT,
+            scribe_name          TEXT,
+            seed                 INTEGER,
+            blend_components     TEXT,
+            kind                 TEXT DEFAULT 'finished',
+            origin_kingdom       TEXT DEFAULT ''
+        );
         CREATE TABLE IF NOT EXISTS wine_grapes (
             uid                TEXT PRIMARY KEY,
             origin_biome       TEXT,
@@ -603,7 +635,11 @@ class SaveManager:
             blend_components   TEXT,
             crush_style        TEXT DEFAULT '',
             yeast              TEXT DEFAULT '',
-            vessel             TEXT DEFAULT ''
+            vessel             TEXT DEFAULT '',
+            vintage_year       INTEGER DEFAULT 0,
+            vintage_season     TEXT DEFAULT '',
+            weather            TEXT DEFAULT 'balanced',
+            weather_quality    REAL DEFAULT 0.5
         );
         CREATE TABLE IF NOT EXISTS spirits (
             uid               TEXT PRIMARY KEY,
@@ -647,6 +683,10 @@ class SaveManager:
             yeast_type        TEXT DEFAULT '',
             vessel            TEXT DEFAULT '',
             condition_duration TEXT DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS tamed_raptors (
+            uid          TEXT PRIMARY KEY,
+            data         TEXT
         );
         CREATE TABLE IF NOT EXISTS tea_leaves (
             uid               TEXT PRIMARY KEY,
@@ -948,12 +988,170 @@ class SaveManager:
             npcs_json        TEXT,
             PRIMARY KEY (bx, by)
         );
+        CREATE TABLE IF NOT EXISTS guilds (
+            guild_id          TEXT PRIMARY KEY,
+            name              TEXT,
+            industry          TEXT,
+            home_region_id    INTEGER,
+            treasury          INTEGER,
+            share_count       INTEGER,
+            share_price       REAL,
+            price_history_json TEXT,
+            dividend_rate     REAL,
+            last_week_profit  INTEGER,
+            profit_ema        REAL,
+            charter_json      TEXT,
+            state             TEXT,
+            days_negative     INTEGER,
+            active_effects_json TEXT DEFAULT NULL,
+            rivalry_target    TEXT DEFAULT NULL,
+            founded_year      INTEGER DEFAULT 0,
+            founder_name      TEXT DEFAULT '',
+            founder_house     TEXT DEFAULT '',
+            historical_ledger_json TEXT DEFAULT '[]',
+            legendary_events_json  TEXT DEFAULT '[]'
+        );
+        CREATE TABLE IF NOT EXISTS guild_chapters (
+            chapter_id        TEXT PRIMARY KEY,
+            guild_id          TEXT,
+            region_id         INTEGER,
+            capital_town_id   INTEGER,
+            outpost_ids_json  TEXT,
+            local_treasury    INTEGER,
+            local_price_mult  REAL,
+            shuttered_outpost_ids_json TEXT DEFAULT '[]',
+            pending_expansions INTEGER DEFAULT 0
+        );
+        CREATE TABLE IF NOT EXISTS share_holdings (
+            owner_id          TEXT,
+            guild_id          TEXT,
+            shares            INTEGER,
+            avg_buy_price     REAL,
+            PRIMARY KEY (owner_id, guild_id)
+        );
         """)
         for col, default in [("spawn_x", "NULL"), ("spawn_y", "NULL")]:
             try:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} REAL DEFAULT {default}")
             except Exception:
                 pass
+        # v6 → v6.1 schema bump: guild_chapters gained Phase 3 dynamics fields.
+        for col, default in [
+            ("shuttered_outpost_ids_json", "'[]'"),
+            ("pending_expansions",         "0"),
+        ]:
+            try:
+                con.execute(f"ALTER TABLE guild_chapters ADD COLUMN {col} TEXT DEFAULT {default}"
+                            if col.endswith("_json")
+                            else f"ALTER TABLE guild_chapters ADD COLUMN {col} INTEGER DEFAULT {default}")
+            except Exception:
+                pass
+        # v6 → v6.2: Phase 6 industry events.
+        for col in ("active_effects_json", "rivalry_target"):
+            try:
+                con.execute(f"ALTER TABLE guilds ADD COLUMN {col} TEXT DEFAULT NULL")
+            except Exception:
+                pass
+        # v7 → v8: worldgen-era historical ledger (founder + ledger + events).
+        for col, default in [
+            ("founded_year",            "0"),
+            ("founder_name",            "''"),
+            ("founder_house",           "''"),
+            ("historical_ledger_json",  "'[]'"),
+            ("legendary_events_json",   "'[]'"),
+        ]:
+            try:
+                col_type = "INTEGER" if col == "founded_year" else "TEXT"
+                con.execute(f"ALTER TABLE guilds ADD COLUMN {col} {col_type} DEFAULT {default}")
+            except Exception:
+                pass
+        try:
+            con.execute("""CREATE TABLE IF NOT EXISTS guild_newswire (
+                row_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                day INTEGER, headline TEXT, kind TEXT
+            )""")
+        except Exception:
+            pass
+        # v6 → v6.3: Phase 7 finance instruments.
+        try:
+            con.execute("""CREATE TABLE IF NOT EXISTS guild_bonds (
+                bond_id          INTEGER PRIMARY KEY,
+                issuer_guild_id  TEXT,
+                face_value       INTEGER,
+                coupon_rate      REAL,
+                issued_day       INTEGER,
+                maturity_day     INTEGER,
+                owner_id         TEXT,
+                coupons_paid     INTEGER,
+                state            TEXT
+            )""")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN guild_debt INTEGER DEFAULT 0")
+        except Exception:
+            pass
+        # v7: knightly orders + jousting persistence
+        try:
+            con.execute("""CREATE TABLE IF NOT EXISTS knightly_orders (
+                order_id      INTEGER PRIMARY KEY,
+                name          TEXT,
+                motto         TEXT,
+                heraldry_json TEXT,
+                home_region   INTEGER,
+                founded_year  INTEGER,
+                prestige      INTEGER
+            )""")
+        except Exception:
+            pass
+        try:
+            con.execute("""CREATE TABLE IF NOT EXISTS knight_npcs (
+                knight_id        INTEGER PRIMARY KEY,
+                name             TEXT,
+                order_id         INTEGER,
+                personal_arms_json TEXT,
+                mount_breed      TEXT,
+                kit              TEXT,
+                tournament_wins  INTEGER,
+                skill            REAL
+            )""")
+        except Exception:
+            pass
+        # Orders gained tradition/seat/vows/patron/relic/doctrine/chronicle/rival;
+        # knights gained rank + quirks.
+        for col, ddl in (
+            ("tradition",              "TEXT DEFAULT 'errant'"),
+            ("seat",                   "TEXT DEFAULT ''"),
+            ("vows_json",              "TEXT DEFAULT '[]'"),
+            ("patron",                 "TEXT DEFAULT ''"),
+            ("relic",                  "TEXT DEFAULT ''"),
+            ("doctrine",               "TEXT DEFAULT ''"),
+            ("founding_chronicle",     "TEXT DEFAULT ''"),
+            ("rival_id",               "INTEGER"),
+            ("kingdom_alignment_json", "TEXT DEFAULT '{}'"),
+            ("patron_dynasty_id",      "INTEGER"),
+            ("historical_events_json", "TEXT DEFAULT '[]'"),
+        ):
+            try:
+                con.execute(f"ALTER TABLE knightly_orders ADD COLUMN {col} {ddl}")
+            except Exception:
+                pass
+        for col, ddl in (
+            ("rank",        "TEXT DEFAULT 'Knight-Errant'"),
+            ("quirks_json", "TEXT DEFAULT '[]'"),
+            ("is_noble",    "INTEGER DEFAULT 0"),
+            ("noble_title", "TEXT DEFAULT ''"),
+            ("dynasty_id",  "INTEGER DEFAULT -1"),
+            ("person_id",   "INTEGER DEFAULT -1"),
+        ):
+            try:
+                con.execute(f"ALTER TABLE knight_npcs ADD COLUMN {col} {ddl}")
+            except Exception:
+                pass
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN tournament_record TEXT DEFAULT '{}'")
+        except Exception:
+            pass
         try:
             con.execute("ALTER TABLE player ADD COLUMN discovered_fossil_types TEXT DEFAULT '[]'")
         except Exception:
@@ -980,6 +1178,10 @@ class SaveManager:
             pass
         try:
             con.execute("ALTER TABLE player ADD COLUMN worn_armor_dye TEXT DEFAULT '{}'")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE manuscripts ADD COLUMN origin_kingdom TEXT DEFAULT ''")
         except Exception:
             pass
         for col in ("water_reservoir", "compost_slot"):
@@ -1009,6 +1211,10 @@ class SaveManager:
             pass
         try:
             con.execute("ALTER TABLE world_meta ADD COLUMN chicken_coop_data TEXT")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE world_meta ADD COLUMN feed_trough_data TEXT")
         except Exception:
             pass
         for col in ("pipe_state", "pipe_buffers", "pipe_in_transit", "factory_data", "water_sources", "block_shapes"):
@@ -1125,6 +1331,16 @@ class SaveManager:
         for col in ("crush_style", "yeast", "vessel"):
             try:
                 con.execute(f"ALTER TABLE wine_grapes ADD COLUMN {col} TEXT DEFAULT ''")
+            except Exception:
+                pass
+        for col, decl in [
+            ("vintage_year",    "INTEGER DEFAULT 0"),
+            ("vintage_season",  "TEXT DEFAULT ''"),
+            ("weather",         "TEXT DEFAULT 'balanced'"),
+            ("weather_quality", "REAL DEFAULT 0.5"),
+        ]:
+            try:
+                con.execute(f"ALTER TABLE wine_grapes ADD COLUMN {col} {decl}")
             except Exception:
                 pass
         for col in ("barrel_type", "age_duration"):
@@ -1462,6 +1678,10 @@ class SaveManager:
             f"{bx},{by}": d
             for (bx, by), d in getattr(world, "chicken_coop_data", {}).items()
         }
+        trough_data_out = {
+            f"{bx},{by}": d
+            for (bx, by), d in getattr(world, "feed_trough_data", {}).items()
+        }
         pipe_state_out = {
             f"{bx},{by}": v
             for (bx, by), v in getattr(world, "pipe_state", {}).items()
@@ -1495,14 +1715,14 @@ class SaveManager:
         con.execute("DELETE FROM world_meta")
         con.execute(
             "INSERT INTO world_meta "
-            "(water_level, water_sources, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, tapestry_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids, day_count, trade_block_data, logic_state, chicken_coop_data, pipe_state, pipe_buffers, pipe_in_transit, factory_data, block_shapes, ruin_artifact_chests, discovered_artifacts) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "(water_level, water_sources, soil_moisture, crop_progress, crop_care_sum, soil_fertility, compost_bin_data, garden_data, sculpture_positions, tapestry_positions, wildflower_display_data, pottery_display_data, unplaced_vase_uids, day_count, trade_block_data, logic_state, chicken_coop_data, feed_trough_data, pipe_state, pipe_buffers, pipe_in_transit, factory_data, block_shapes, ruin_artifact_chests, discovered_artifacts) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (json.dumps(water), json.dumps(water_srcs), json.dumps(moisture), json.dumps(progress),
              json.dumps(care_sum), json.dumps(fertility), json.dumps(compost_bins),
              json.dumps(garden_flowers), json.dumps(sculpture_pos), json.dumps(tapestry_pos),
              json.dumps(wf_displays), json.dumps(pottery_displays), json.dumps(unplaced_uids),
              getattr(world, 'day_count', 0), json.dumps(trade_blocks),
-             json.dumps(logic_state_out), json.dumps(coop_data_out),
+             json.dumps(logic_state_out), json.dumps(coop_data_out), json.dumps(trough_data_out),
              json.dumps(pipe_state_out), json.dumps(pipe_buffers_out), json.dumps(pipe_transit_out),
              json.dumps(factory_data_out), json.dumps(block_shapes_out),
              json.dumps(ruin_artifact_chests_out), json.dumps(discovered_artifacts_out)),
@@ -1678,6 +1898,131 @@ class SaveManager:
             (json.dumps(getattr(player, "lost_artifacts", [])),)
         )
 
+        # Knightly Order membership (added 2026-05-16).
+        for col, default, ctype in [
+            ("order_id",            "0",     "INTEGER"),
+            ("order_prestige",      "0",     "INTEGER"),
+            ("order_quest",         "'null'", "TEXT"),
+            ("order_quests_done",   "0",     "INTEGER"),
+            ("order_joust_wins",    "0",     "INTEGER"),
+            ("order_reroll_count",  "0",     "INTEGER"),
+            ("order_vows",          "'[]'",  "TEXT"),
+            ("order_trial",         "'null'", "TEXT"),
+            ("order_passed_trials", "0",     "INTEGER"),
+        ]:
+            try:
+                con.execute(f"ALTER TABLE player ADD COLUMN {col} {ctype} DEFAULT {default}")
+            except Exception:
+                pass
+        con.execute(
+            "UPDATE player SET order_id=?, order_prestige=?, order_quest=?, "
+            "order_quests_done=?, order_joust_wins=?, order_reroll_count=?, "
+            "order_vows=?, order_trial=?, order_passed_trials=?",
+            (
+                int(getattr(player, "order_id", 0)),
+                int(getattr(player, "order_prestige", 0)),
+                json.dumps(getattr(player, "order_quest", None)),
+                int(getattr(player, "order_quests_done", 0)),
+                int(getattr(player, "order_joust_wins", 0)),
+                int(getattr(player, "order_reroll_count", 0)),
+                json.dumps(getattr(player, "order_vows", [])),
+                json.dumps(getattr(player, "order_trial", None)),
+                int(getattr(player, "order_passed_trials", 0)),
+            )
+        )
+
+        for col, default, ctype in [
+            ("llamas_tamed",            "0",   "INTEGER"),
+            ("llamas_bred",             "0",   "INTEGER"),
+            ("llama_records",           "'{}'","TEXT"),
+            ("discovered_llama_breeds", "'[]'","TEXT"),
+            ("discovered_llama_biomes", "'[]'","TEXT"),
+            ("yaks_tamed",              "0",   "INTEGER"),
+            ("yaks_bred",                "0",   "INTEGER"),
+            ("yak_records",              "'{}'","TEXT"),
+            ("discovered_yak_breeds",    "'[]'","TEXT"),
+            ("discovered_yak_biomes",    "'[]'","TEXT"),
+            ("pigs_tamed",               "0",   "INTEGER"),
+            ("pigs_bred",                "0",   "INTEGER"),
+            ("pig_records",              "'{}'","TEXT"),
+            ("discovered_pig_breeds",    "'[]'","TEXT"),
+            ("discovered_pig_biomes",    "'[]'","TEXT"),
+        ]:
+            try:
+                con.execute(f"ALTER TABLE player ADD COLUMN {col} {ctype} DEFAULT {default}")
+            except Exception:
+                pass
+        con.execute(
+            """UPDATE player SET
+                 llamas_tamed=?, llamas_bred=?, llama_records=?,
+                 discovered_llama_breeds=?, discovered_llama_biomes=?,
+                 yaks_tamed=?, yaks_bred=?, yak_records=?,
+                 discovered_yak_breeds=?, discovered_yak_biomes=?,
+                 pigs_tamed=?, pigs_bred=?, pig_records=?,
+                 discovered_pig_breeds=?, discovered_pig_biomes=?""",
+            (
+                getattr(player, "llamas_tamed", 0),
+                getattr(player, "llamas_bred", 0),
+                json.dumps(getattr(player, "llama_records", {})),
+                json.dumps(list(getattr(player, "discovered_llama_breeds", set()))),
+                json.dumps(list(getattr(player, "discovered_llama_biomes", set()))),
+                getattr(player, "yaks_tamed", 0),
+                getattr(player, "yaks_bred", 0),
+                json.dumps(getattr(player, "yak_records", {})),
+                json.dumps(list(getattr(player, "discovered_yak_breeds", set()))),
+                json.dumps(list(getattr(player, "discovered_yak_biomes", set()))),
+                getattr(player, "pigs_tamed", 0),
+                getattr(player, "pigs_bred", 0),
+                json.dumps(getattr(player, "pig_records", {})),
+                json.dumps(list(getattr(player, "discovered_pig_breeds", set()))),
+                json.dumps(list(getattr(player, "discovered_pig_biomes", set()))),
+            ),
+        )
+        # Phase 7 — margin loan debt
+        try:
+            con.execute("UPDATE player SET guild_debt=?",
+                        (int(getattr(player, "guild_debt", 0)),))
+        except Exception:
+            pass
+
+    def _save_bonds(self, con):
+        import bonds as _b
+        con.execute("DELETE FROM guild_bonds")
+        for b in _b.BONDS.values():
+            con.execute(
+                "INSERT OR REPLACE INTO guild_bonds VALUES (?,?,?,?,?,?,?,?,?)",
+                (b.bond_id, b.issuer_guild_id, b.face_value, b.coupon_rate,
+                 b.issued_day, b.maturity_day, b.owner_id, b.coupons_paid, b.state),
+            )
+
+    def _load_bonds(self) -> None:
+        import bonds as _b
+        _b.reset_bonds()
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                rows = con.execute(
+                    "SELECT bond_id, issuer_guild_id, face_value, coupon_rate, "
+                    "issued_day, maturity_day, owner_id, coupons_paid, state "
+                    "FROM guild_bonds"
+                ).fetchall()
+        except Exception:
+            return
+        for r in rows:
+            b = _b.Bond(
+                bond_id        = r[0],
+                issuer_guild_id = r[1],
+                face_value     = r[2] or _b.BOND_FACE_VALUE,
+                coupon_rate    = r[3] if r[3] is not None else _b.BOND_COUPON_RATE,
+                issued_day     = r[4] or 0,
+                maturity_day   = r[5] or 0,
+                owner_id       = r[6] or "float",
+                coupons_paid   = r[7] or 0,
+                state          = r[8] or "active",
+            )
+            _b.BONDS[b.bond_id] = b
+            if b.bond_id >= _b._NEXT_ID[0]:
+                _b._NEXT_ID[0] = b.bond_id + 1
+
     def _save_npc_relationships(self, con, player):
         con.execute("DELETE FROM npc_relationships")
         for uid, score in getattr(player, "npc_relationships", {}).items():
@@ -1822,11 +2167,57 @@ class SaveManager:
                 )
             )
 
+    def _save_manuscripts(self, con, player):
+        con.execute("DELETE FROM manuscripts")
+        def _write(m, kind):
+            con.execute(
+                "INSERT OR REPLACE INTO manuscripts VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    m.uid, m.origin_biome, m.parchment_variety, m.state, m.ink_key,
+                    json.dumps(m.pigment_keys),
+                    json.dumps(m.illumination_grid),
+                    m.penmanship, m.illumination_quality, m.page_condition,
+                    m.binding, m.content_category, m.title, m.scribe_name, m.seed,
+                    json.dumps(m.blend_components),
+                    kind,
+                    getattr(m, "origin_kingdom", "") or "",
+                )
+            )
+        for m in player.manuscripts:
+            _write(m, "finished")
+        for m in player.raw_parchments:
+            _write(m, "parchment")
+
+    def _load_bookcases(self, con):
+        try:
+            rows = con.execute("SELECT bx, by, slots FROM bookcases").fetchall()
+        except Exception:
+            return {}
+        result = {}
+        for bx, by, slots_json in rows:
+            try:
+                raw_slots = json.loads(slots_json) if slots_json else []
+            except Exception:
+                raw_slots = []
+            result[(bx, by)] = raw_slots
+        return result
+
+    def _save_bookcases(self, con, player):
+        from dataclasses import asdict
+        con.execute("DELETE FROM bookcases")
+        world = player.world
+        for (bx, by), slots in (getattr(world, "bookcase_contents", {}) or {}).items():
+            serialised = [asdict(m) if m is not None else None for m in slots]
+            con.execute(
+                "INSERT OR REPLACE INTO bookcases VALUES (?,?,?)",
+                (bx, by, json.dumps(serialised))
+            )
+
     def _save_wine_grapes(self, con, player):
         con.execute("DELETE FROM wine_grapes")
         for g in player.wine_grapes:
             con.execute(
-                "INSERT OR REPLACE INTO wine_grapes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT OR REPLACE INTO wine_grapes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     g.uid, g.origin_biome, g.variety, g.state, g.style,
                     g.sweetness, g.acidity, g.tannin, g.body, g.aromatics,
@@ -1836,6 +2227,10 @@ class SaveManager:
                     getattr(g, "crush_style", ""),
                     getattr(g, "yeast", ""),
                     getattr(g, "vessel", ""),
+                    getattr(g, "vintage_year", 0),
+                    getattr(g, "vintage_season", ""),
+                    getattr(g, "weather", "balanced"),
+                    getattr(g, "weather_quality", 0.5),
                 )
             )
 
@@ -1873,6 +2268,15 @@ class SaveManager:
                     getattr(b, "vessel", ""),
                     getattr(b, "condition_duration", ""),
                 )
+            )
+
+    def _save_tamed_raptors(self, con, player):
+        con.execute("DELETE FROM tamed_raptors")
+        from dataclasses import asdict
+        for r in getattr(player, "tamed_raptors", []):
+            con.execute(
+                "INSERT OR REPLACE INTO tamed_raptors VALUES (?,?)",
+                (r.uid, json.dumps(asdict(r))),
             )
 
     def _save_tea_leaves(self, con, player):
@@ -2226,6 +2630,42 @@ class SaveManager:
                  r.get("supply_last_day", -1)),
             )
 
+    def _save_sommelier_requests(self, con):
+        import json as _json
+        from sommelier import SOMMELIER_REQUESTS
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sommelier_requests (
+                request_id INTEGER PRIMARY KEY,
+                outpost_id INTEGER NOT NULL,
+                data_json  TEXT    NOT NULL
+            )
+        """)
+        con.execute("DELETE FROM sommelier_requests")
+        for outpost_id, reqs in SOMMELIER_REQUESTS.items():
+            for r in reqs:
+                con.execute(
+                    "INSERT OR REPLACE INTO sommelier_requests VALUES (?,?,?)",
+                    (r["request_id"], outpost_id, _json.dumps(r)),
+                )
+
+    def _load_sommelier_requests(self):
+        import json as _json
+        from sommelier import SOMMELIER_REQUESTS
+        SOMMELIER_REQUESTS.clear()
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                rows = con.execute(
+                    "SELECT outpost_id, data_json FROM sommelier_requests"
+                ).fetchall()
+        except Exception:
+            return
+        for outpost_id, data_json in rows:
+            try:
+                r = _json.loads(data_json)
+            except Exception:
+                continue
+            SOMMELIER_REQUESTS.setdefault(outpost_id, []).append(r)
+
     def _save_outposts(self, con):
         from outposts import OUTPOSTS
         import json as _json
@@ -2257,9 +2697,15 @@ class SaveManager:
             return []
         result = []
         for r in rows:
+            otype = r[1]
+            # Migration: chapter_house moved from outpost to in-city building
+            # in May 2026. Repurpose old chapter_house outposts as scriptoriums
+            # so the keeper NPC still has a working shop instead of crashing.
+            if otype == "chapter_house":
+                otype = "scriptorium"
             result.append({
                 "outpost_id":        r[0],
-                "outpost_type":      r[1],
+                "outpost_type":      otype,
                 "center_bx":         r[2],
                 "slot_x":            r[3],
                 "biome":             r[4],
@@ -2271,6 +2717,318 @@ class SaveManager:
                 "stock":             _json.loads(r[10]) if r[10] else {},
             })
         return result
+
+    def _save_knightly_orders(self, con, player):
+        import json as _json
+        from dataclasses import asdict
+        try:
+            import knightly_orders as ko
+        except Exception:
+            return
+        try:
+            con.execute("DELETE FROM knightly_orders")
+            con.execute("DELETE FROM knight_npcs")
+        except Exception:
+            return
+        for o in ko.ORDERS.values():
+            align = getattr(o, "kingdom_alignment", {}) or {}
+            # JSON keys must be strings.
+            align_dump = _json.dumps({str(k): v for k, v in align.items()})
+            con.execute(
+                "INSERT OR REPLACE INTO knightly_orders "
+                "(order_id, name, motto, heraldry_json, home_region, founded_year, prestige, "
+                "tradition, seat, vows_json, patron, relic, doctrine, "
+                "founding_chronicle, rival_id, kingdom_alignment_json, "
+                "patron_dynasty_id, historical_events_json) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (o.order_id, o.name, o.motto,
+                 _json.dumps(asdict(o.heraldry)),
+                 o.home_region, o.founded_year, o.prestige,
+                 getattr(o, "tradition", "errant"),
+                 getattr(o, "seat", ""),
+                 _json.dumps(getattr(o, "vows", [])),
+                 getattr(o, "patron", ""),
+                 getattr(o, "relic", ""),
+                 getattr(o, "doctrine", ""),
+                 getattr(o, "founding_chronicle", ""),
+                 getattr(o, "rival_id", None),
+                 align_dump,
+                 getattr(o, "patron_dynasty_id", None),
+                 _json.dumps(list(getattr(o, "historical_events", [])))),
+            )
+        for k in ko.KNIGHTS.values():
+            con.execute(
+                "INSERT OR REPLACE INTO knight_npcs "
+                "(knight_id, name, order_id, personal_arms_json, mount_breed, kit, "
+                "tournament_wins, skill, rank, quirks_json, "
+                "is_noble, noble_title, dynasty_id, person_id) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (k.knight_id, k.name, k.order_id,
+                 _json.dumps(asdict(k.personal_arms)),
+                 k.mount_breed, k.kit, k.tournament_wins, k.skill,
+                 getattr(k, "rank", "Knight-Errant"),
+                 _json.dumps(getattr(k, "quirks", [])),
+                 1 if getattr(k, "is_noble", False) else 0,
+                 getattr(k, "noble_title", ""),
+                 getattr(k, "dynasty_id", -1),
+                 getattr(k, "person_id", -1)),
+            )
+        # Player record column
+        rec = getattr(player, "tournament_record", {})
+        try:
+            con.execute("UPDATE player SET tournament_record = ?",
+                        (_json.dumps(rec),))
+        except Exception:
+            pass
+
+    def _load_knightly_orders(self) -> None:
+        import json as _json
+        try:
+            import knightly_orders as ko
+            import heraldry as _h
+        except Exception:
+            return
+        ko.reset_registries()
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                order_rows = con.execute(
+                    "SELECT order_id, name, motto, heraldry_json, home_region, "
+                    "founded_year, prestige, tradition, seat, vows_json, "
+                    "patron, relic, doctrine, founding_chronicle, rival_id, "
+                    "kingdom_alignment_json, patron_dynasty_id, "
+                    "historical_events_json "
+                    "FROM knightly_orders"
+                ).fetchall()
+                knight_rows = con.execute(
+                    "SELECT knight_id, name, order_id, personal_arms_json, "
+                    "mount_breed, kit, tournament_wins, skill, rank, quirks_json, "
+                    "is_noble, noble_title, dynasty_id, person_id "
+                    "FROM knight_npcs"
+                ).fetchall()
+        except Exception:
+            return
+        max_oid, max_kid = 0, 0
+        for r in order_rows:
+            coa = _h.CoatOfArms(**_json.loads(r[3])) if r[3] else None
+            raw_align = _json.loads(r[15]) if r[15] else {}
+            # Keys were stringified for JSON — restore to int.
+            kingdom_alignment = {int(k): v for k, v in raw_align.items()}
+            o = ko.KnightlyOrder(
+                order_id           = r[0], name = r[1], motto = r[2],
+                heraldry           = coa,
+                home_region        = r[4] or 0,
+                founded_year       = r[5] or 0,
+                prestige           = r[6] or 20,
+                member_ids         = [],
+                tradition          = r[7] or "errant",
+                seat               = r[8] or "",
+                vows               = _json.loads(r[9]) if r[9] else [],
+                patron             = r[10] or "",
+                relic              = r[11] or "",
+                doctrine           = r[12] or "",
+                founding_chronicle = r[13] or "",
+                rival_id           = r[14],
+                kingdom_alignment  = kingdom_alignment,
+                patron_dynasty_id  = r[16],
+                historical_events  = (_json.loads(r[17]) if len(r) > 17 and r[17] else []),
+            )
+            ko.ORDERS[o.order_id] = o
+            max_oid = max(max_oid, o.order_id)
+        for r in knight_rows:
+            arms = _h.CoatOfArms(**_json.loads(r[3])) if r[3] else None
+            k = ko.Knight(
+                knight_id     = r[0], name = r[1], order_id = r[2],
+                personal_arms = arms,
+                mount_breed   = r[4] or "horse",
+                kit           = r[5] or "lancer",
+                tournament_wins = r[6] or 0,
+                skill         = r[7] or 1.0,
+                rank          = r[8] or "Knight-Errant",
+                quirks        = _json.loads(r[9]) if r[9] else [],
+                is_noble      = bool(r[10]),
+                noble_title   = r[11] or "",
+                dynasty_id    = r[12] if r[12] is not None else -1,
+                person_id     = r[13] if r[13] is not None else -1,
+            )
+            ko.KNIGHTS[k.knight_id] = k
+            if k.order_id in ko.ORDERS:
+                ko.ORDERS[k.order_id].member_ids.append(k.knight_id)
+            max_kid = max(max_kid, k.knight_id)
+        ko._NEXT_ORDER_ID  = max_oid + 1
+        ko._NEXT_KNIGHT_ID = max_kid + 1
+
+    def _save_guilds(self, con):
+        import json as _json
+        from guilds import GUILDS, CHAPTERS, SHARE_HOLDINGS
+        con.execute("DELETE FROM guilds")
+        con.execute("DELETE FROM guild_chapters")
+        con.execute("DELETE FROM share_holdings")
+        for g in GUILDS.values():
+            from dataclasses import asdict as _asdict
+            ledger_dicts = []
+            for row in getattr(g, "historical_ledger", []) or []:
+                try:
+                    ledger_dicts.append(_asdict(row))
+                except TypeError:
+                    ledger_dicts.append(dict(row) if isinstance(row, dict) else {})
+            con.execute(
+                "INSERT OR REPLACE INTO guilds "
+                "(guild_id, name, industry, home_region_id, treasury, share_count, "
+                "share_price, price_history_json, dividend_rate, last_week_profit, "
+                "profit_ema, charter_json, state, days_negative, "
+                "active_effects_json, rivalry_target, "
+                "founded_year, founder_name, founder_house, "
+                "historical_ledger_json, legendary_events_json) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    g.guild_id, g.name, g.industry, g.home_region_id,
+                    g.treasury, g.share_count, g.share_price,
+                    _json.dumps(list(g.price_history)),
+                    g.dividend_rate, g.last_week_profit, g.profit_ema,
+                    _json.dumps(g.charter),
+                    g.state, g.days_negative,
+                    _json.dumps(g.active_effects),
+                    g.rivalry_target,
+                    int(getattr(g, "founded_year", 0)),
+                    getattr(g, "founder_name", ""),
+                    getattr(g, "founder_house", ""),
+                    _json.dumps(ledger_dicts),
+                    _json.dumps(list(getattr(g, "legendary_events", []))),
+                ),
+            )
+        # Newswire — wipe and rewrite.
+        try:
+            from industry_events import NEWSWIRE as _NW
+            con.execute("DELETE FROM guild_newswire")
+            for n in reversed(_NW):
+                con.execute(
+                    "INSERT INTO guild_newswire (day, headline, kind) VALUES (?,?,?)",
+                    (n.get("day", 0), n.get("headline", ""), n.get("kind", "event")),
+                )
+        except Exception:
+            pass
+        for ch in CHAPTERS.values():
+            con.execute(
+                "INSERT OR REPLACE INTO guild_chapters VALUES (?,?,?,?,?,?,?,?,?)",
+                (
+                    ch.chapter_id, ch.guild_id, ch.region_id, ch.capital_town_id,
+                    _json.dumps(ch.outpost_ids),
+                    ch.local_treasury, ch.local_price_mult,
+                    _json.dumps(ch.shuttered_outpost_ids),
+                    ch.pending_expansions,
+                ),
+            )
+        for h in SHARE_HOLDINGS:
+            con.execute(
+                "INSERT OR REPLACE INTO share_holdings VALUES (?,?,?,?)",
+                (h.owner_id, h.guild_id, h.shares, h.avg_buy_price),
+            )
+
+    def _load_guilds(self) -> None:
+        """Repopulate the in-memory guild registries from the DB."""
+        import json as _json
+        from collections import deque
+        import guilds as _g
+        _g.reset_registries()
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                guild_rows = con.execute(
+                    "SELECT guild_id, name, industry, home_region_id, treasury, "
+                    "share_count, share_price, price_history_json, dividend_rate, "
+                    "last_week_profit, profit_ema, charter_json, state, days_negative, "
+                    "active_effects_json, rivalry_target, "
+                    "founded_year, founder_name, founder_house, "
+                    "historical_ledger_json, legendary_events_json "
+                    "FROM guilds"
+                ).fetchall()
+                chapter_rows = con.execute(
+                    "SELECT chapter_id, guild_id, region_id, capital_town_id, "
+                    "outpost_ids_json, local_treasury, local_price_mult, "
+                    "shuttered_outpost_ids_json, pending_expansions "
+                    "FROM guild_chapters"
+                ).fetchall()
+                holding_rows = con.execute(
+                    "SELECT owner_id, guild_id, shares, avg_buy_price FROM share_holdings"
+                ).fetchall()
+        except Exception:
+            return
+        for r in guild_rows:
+            history = _json.loads(r[7]) if r[7] else []
+            ledger_raw = _json.loads(r[19]) if len(r) > 19 and r[19] else []
+            ledger = []
+            for row in ledger_raw:
+                try:
+                    ledger.append(_g.HistoricalYear(**row))
+                except TypeError:
+                    ledger.append(_g.HistoricalYear(
+                        year        = row.get("year", 0),
+                        treasury    = row.get("treasury", 0),
+                        share_price = row.get("share_price", 10.0),
+                        income      = row.get("income", 0),
+                        members     = row.get("members", 1),
+                        event       = row.get("event", ""),
+                    ))
+            legendary = _json.loads(r[20]) if len(r) > 20 and r[20] else []
+            g = _g.Guild(
+                guild_id         = r[0],
+                name             = r[1],
+                industry         = r[2],
+                home_region_id   = r[3] or 0,
+                treasury         = r[4] or 0,
+                share_count      = r[5] or 1000,
+                share_price      = r[6] or 10.0,
+                price_history    = deque(history, maxlen=_g.PRICE_HISTORY_LEN),
+                dividend_rate    = r[8] if r[8] is not None else 0.02,
+                last_week_profit = r[9] or 0,
+                profit_ema       = r[10] or 0.0,
+                charter          = _json.loads(r[11]) if r[11] else {},
+                state            = r[12] or "active",
+                days_negative    = r[13] or 0,
+                active_effects   = _json.loads(r[14]) if len(r) > 14 and r[14] else [],
+                rivalry_target   = r[15] if len(r) > 15 else None,
+                founded_year     = (r[16] or 0) if len(r) > 16 else 0,
+                founder_name     = (r[17] or "") if len(r) > 17 else "",
+                founder_house    = (r[18] or "") if len(r) > 18 else "",
+                historical_ledger= ledger,
+                legendary_events = list(legendary),
+            )
+            _g.GUILDS[g.guild_id] = g
+        # Rehydrate newswire if the table exists.
+        try:
+            import industry_events as _ie
+            _ie.clear_newswire()
+            with sqlite3.connect(self.db_path) as con:
+                rows = con.execute(
+                    "SELECT day, headline, kind FROM guild_newswire ORDER BY row_id DESC"
+                ).fetchall()
+            for day_v, headline, kind in rows:
+                _ie.NEWSWIRE.append({"day": day_v, "headline": headline, "kind": kind})
+            del _ie.NEWSWIRE[_ie.NEWSWIRE_MAX:]
+        except Exception:
+            pass
+        for r in chapter_rows:
+            ch = _g.GuildChapter(
+                chapter_id            = r[0],
+                guild_id              = r[1],
+                region_id             = r[2] or 0,
+                capital_town_id       = r[3] or 0,
+                outpost_ids           = _json.loads(r[4]) if r[4] else [],
+                local_treasury        = r[5] or 0,
+                local_price_mult      = r[6] if r[6] is not None else 1.0,
+                shuttered_outpost_ids = _json.loads(r[7]) if len(r) > 7 and r[7] else [],
+                pending_expansions    = r[8] if len(r) > 8 and r[8] is not None else 0,
+            )
+            _g.CHAPTERS[ch.chapter_id] = ch
+            g = _g.GUILDS.get(ch.guild_id)
+            if g is not None and ch.chapter_id not in g.chapter_ids:
+                g.chapter_ids.append(ch.chapter_id)
+        for r in holding_rows:
+            _g.SHARE_HOLDINGS.append(_g.ShareHolding(
+                owner_id      = r[0],
+                guild_id      = r[1],
+                shares        = r[2] or 0,
+                avg_buy_price = r[3] or 0.0,
+            ))
 
     def _save_player_cities(self, con):
         from player_cities import PLAYER_CITIES
@@ -2399,7 +3157,7 @@ class SaveManager:
         return [{"x": r[0], "y": r[1], "boat_type": r[2]} for r in rows]
 
     def _save_entities(self, con, world):
-        from animals import Sheep, Cow, Chicken, Goat, SnowLeopard, MountainLion, Tiger
+        from animals import Sheep, Cow, Chicken, Goat, Llama, Yak, Pig, SnowLeopard, MountainLion, Tiger
         from horses import Horse
         from dogs import Dog
         from cities import (NPC, LeaderNPC, LandmarkNPC, RoyalSpouseNPC, RoyalChildNPC)
@@ -2463,6 +3221,26 @@ class SaveManager:
                     traits_dict["wool_color"] = e.traits.get("wool_color", "white")
                     traits_dict["fleece"]     = e.traits.get("fleece", 1.0)
                     traits_dict["birth"]      = e.traits.get("birth", "single")
+                elif isinstance(e, Llama):
+                    traits_dict["breed"]          = e.traits.get("breed", "Classic Llama")
+                    traits_dict["coat_color"]     = e.traits.get("coat_color", "fawn")
+                    traits_dict["coat_pattern"]   = e.traits.get("coat_pattern", "solid")
+                    traits_dict["ear_type"]       = e.traits.get("ear_type", "banana")
+                    traits_dict["fleece_weight"]  = e.traits.get("fleece_weight", 1.5)
+                    traits_dict["fiber_fineness"] = e.traits.get("fiber_fineness", 1.0)
+                    traits_dict["fiber_length"]   = e.traits.get("fiber_length", 0.5)
+                    traits_dict["regrow_rate"]    = e.traits.get("regrow_rate", 1.0)
+                    traits_dict["birth"]          = e.traits.get("birth", "single")
+                elif isinstance(e, Yak):
+                    traits_dict["breed"]          = e.traits.get("breed", "Domestic Yak")
+                    traits_dict["coat_color"]     = e.traits.get("coat_color", "black")
+                    traits_dict["horn_type"]      = e.traits.get("horn_type", "wide")
+                    traits_dict["skirt_length"]   = e.traits.get("skirt_length", "full")
+                    traits_dict["milk_volume"]    = e.traits.get("milk_volume", 1.2)
+                    traits_dict["milk_richness"]  = e.traits.get("milk_richness", 1.2)
+                    traits_dict["fleece_weight"]  = e.traits.get("fleece_weight", 1.5)
+                    traits_dict["fiber_length"]   = e.traits.get("fiber_length", 0.6)
+                    traits_dict["regrow_rate"]    = e.traits.get("regrow_rate", 1.0)
                 elif isinstance(e, Cow):
                     traits_dict["milk_richness"] = e.traits.get("milk_richness", 1.0)
                     traits_dict["hide"]          = e.traits.get("hide", "solid")
@@ -2472,6 +3250,16 @@ class SaveManager:
                 elif isinstance(e, Chicken):
                     traits_dict["lay_rate"] = e.traits.get("lay_rate", 1.0)
                     traits_dict["plumage"]  = e.traits.get("plumage", "white")
+                elif isinstance(e, Pig):
+                    traits_dict["breed"]        = e.traits.get("breed", "Large White")
+                    traits_dict["coat_color"]   = e.traits.get("coat_color", "pink")
+                    traits_dict["coat_pattern"] = e.traits.get("coat_pattern", "solid")
+                    traits_dict["ear_type"]     = e.traits.get("ear_type", "upright")
+                    traits_dict["snout_length"] = e.traits.get("snout_length", "medium")
+                    traits_dict["meat_yield"]   = e.traits.get("meat_yield", 1.0)
+                    traits_dict["fat"]          = e.traits.get("fat", 1.0)
+                    traits_dict["growth_rate"]  = e.traits.get("growth_rate", 1.0)
+                    traits_dict["litter_size"]  = e.traits.get("litter_size", 1.0)
                 elif isinstance(e, Dog):
                     for tk in ("breed", "generation", "coat_pattern", "coat_length", "coat_type",
                                "ear_type", "tail_type", "eye_color", "size_class",
@@ -2479,6 +3267,7 @@ class SaveManager:
                                "loyalty", "playfulness", "stubbornness", "prey_drive",
                                "sprint", "focus", "race_style",
                                "has_tracking", "has_herding", "has_guard", "has_retrieve",
+                               "herd_xp",
                                "collar_applied", "dog_name",
                                "base_color", "dilute_expressed", "dilute_carrier", "white_spotting",
                                "equipped_collar", "equipped_blinkers"):
@@ -2497,8 +3286,20 @@ class SaveManager:
                 "_breed_cooldown": getattr(e, '_breed_cooldown', 60.0),
                 "tamed":           getattr(e, 'tamed', False),
                 "tame_progress":   getattr(e, 'tame_progress', 0),
+                "fullness":        getattr(e, 'fullness', 1.0),
+                "hydration":       getattr(e, 'hydration', 1.0),
+                "care_score":      getattr(e, 'care_score', 1.0),
+                "salt_buff_timer": getattr(e, 'salt_buff_timer', 0.0),
+                "kept_score":      getattr(e, 'kept_score', 0.0),
             }
             if isinstance(e, Sheep):
+                extra["has_wool"]   = e.has_wool
+                extra["has_milk"]   = e.has_milk
+                extra["has_manure"] = e.has_manure
+            elif isinstance(e, Llama):
+                extra["has_wool"]   = e.has_wool
+                extra["has_manure"] = e.has_manure
+            elif isinstance(e, Yak):
                 extra["has_wool"]   = e.has_wool
                 extra["has_milk"]   = e.has_milk
                 extra["has_manure"] = e.has_manure
@@ -2510,6 +3311,8 @@ class SaveManager:
                 extra["has_manure"] = e.has_manure
             elif isinstance(e, Chicken):
                 extra["has_egg"]    = e.has_egg
+                extra["has_manure"] = e.has_manure
+            elif isinstance(e, Pig):
                 extra["has_manure"] = e.has_manure
             elif isinstance(e, Horse):
                 extra["stamina"] = e.stamina
@@ -2741,6 +3544,19 @@ class SaveManager:
                 bx, by = key.split(",")
                 coop_data_loaded[(int(bx), int(by))] = val
 
+        raw_troughs = None
+        try:
+            r = con.execute("SELECT feed_trough_data FROM world_meta LIMIT 1").fetchone()
+            if r:
+                raw_troughs = r[0]
+        except Exception:
+            pass
+        trough_data_loaded = {}
+        if raw_troughs:
+            for key, val in json.loads(raw_troughs).items():
+                bx, by = key.split(",")
+                trough_data_loaded[(int(bx), int(by))] = val
+
         raw_pipe_state = None
         try:
             r = con.execute("SELECT pipe_state FROM world_meta LIMIT 1").fetchone()
@@ -2853,6 +3669,7 @@ class SaveManager:
             "trade_block_data":       json.loads(row[13]) if len(row) > 13 and row[13] else {},
             "logic_state":            logic_state_loaded,
             "chicken_coop_data":      coop_data_loaded,
+            "feed_trough_data":       trough_data_loaded,
             "pipe_state":             pipe_state_loaded,
             "pipe_buffers":           pipe_buffers_loaded,
             "pipe_in_transit":        pipe_transit_loaded,
@@ -3135,6 +3952,43 @@ class SaveManager:
             })
 
         try:
+            manu_rows = con.execute("""
+                SELECT uid, origin_biome, parchment_variety, state, ink_key,
+                       pigment_keys, illumination_grid,
+                       penmanship, illumination_quality, page_condition,
+                       binding, content_category, title, scribe_name, seed,
+                       blend_components,
+                       COALESCE(kind, 'finished'),
+                       COALESCE(origin_kingdom, '')
+                FROM manuscripts
+            """).fetchall()
+        except Exception:
+            manu_rows = []
+        manuscripts_data = []
+        raw_parchments_data = []
+        for m in manu_rows:
+            entry = {
+                "uid": m[0], "origin_biome": m[1], "parchment_variety": m[2],
+                "state": m[3], "ink_key": m[4] or "",
+                "pigment_keys": json.loads(m[5]) if m[5] else [],
+                "illumination_grid": json.loads(m[6]) if m[6] else [],
+                "penmanship": m[7] or 0.0,
+                "illumination_quality": m[8] or 0.0,
+                "page_condition": m[9] or 0.0,
+                "binding": m[10] or "",
+                "content_category": m[11] or "",
+                "title": m[12] or "",
+                "scribe_name": m[13] or "",
+                "seed": m[14] or 0,
+                "blend_components": json.loads(m[15]) if m[15] else [],
+                "origin_kingdom": m[17] or "",
+            }
+            if (m[16] or "finished") == "parchment":
+                raw_parchments_data.append(entry)
+            else:
+                manuscripts_data.append(entry)
+
+        try:
             wine_rows = con.execute("""
                 SELECT uid, origin_biome, variety, state, style,
                        sweetness, acidity, tannin, body, aromatics,
@@ -3142,7 +3996,11 @@ class SaveManager:
                        flavor_notes, seed, blend_components,
                        COALESCE(crush_style, ''),
                        COALESCE(yeast, ''),
-                       COALESCE(vessel, '')
+                       COALESCE(vessel, ''),
+                       COALESCE(vintage_year, 0),
+                       COALESCE(vintage_season, ''),
+                       COALESCE(weather, 'balanced'),
+                       COALESCE(weather_quality, 0.5)
                 FROM wine_grapes
             """).fetchall()
         except Exception:
@@ -3161,6 +4019,10 @@ class SaveManager:
                 "crush_style": w[17] or "",
                 "yeast": w[18] or "",
                 "vessel": w[19] or "",
+                "vintage_year": w[20] or 0,
+                "vintage_season": w[21] or "",
+                "weather": w[22] or "balanced",
+                "weather_quality": w[23] if w[23] is not None else 0.5,
             })
 
         try:
@@ -3249,6 +4111,17 @@ class SaveManager:
                 "vessel": b[19] or "",
                 "condition_duration": b[20] or "",
             })
+
+        try:
+            raptor_rows = con.execute("SELECT data FROM tamed_raptors").fetchall()
+        except Exception:
+            raptor_rows = []
+        raptor_data = []
+        for row in raptor_rows:
+            try:
+                raptor_data.append(json.loads(row[0]))
+            except Exception:
+                pass
 
         try:
             textile_rows = con.execute(
@@ -3509,10 +4382,15 @@ class SaveManager:
                 "refine_grade": r[13] or "",
             })
 
-        return {
+        try:
+            debt_row = con.execute("SELECT guild_debt FROM player LIMIT 1").fetchone()
+            guild_debt_v = int(debt_row[0]) if debt_row and debt_row[0] is not None else 0
+        except Exception:
+            guild_debt_v = 0
+        result = {
             "x": x, "y": y, "vx": vx, "vy": vy, "facing": facing,
             "health": health, "hunger": hunger, "pick_power": pick_power,
-            "money": money, "selected_slot": selected_slot,
+            "money": money, "guild_debt": guild_debt_v, "selected_slot": selected_slot,
             "inventory": json.loads(inventory),
             "hotbar": json.loads(hotbar),
             "hotbar_uses": json.loads(hotbar_uses),
@@ -3549,6 +4427,13 @@ class SaveManager:
                 f"{c['origin_biome']}_{c['roast_level']}"
                 for c in coffee_data if c["state"] != "raw"
             }),
+            "manuscripts": manuscripts_data,
+            "raw_parchments": raw_parchments_data,
+            "discovered_manuscripts": list({
+                f"{m['origin_kingdom'] or 'Wildlands'}_{m['content_category']}"
+                for m in manuscripts_data if m["content_category"]
+            }),
+            "bookcases": self._load_bookcases(con),
             "wine_grapes": wine_data,
             "tea_leaves": tea_data,
             "discovered_tea_origins": list({
@@ -3569,6 +4454,8 @@ class SaveManager:
                 f"{b['origin_biome']}_{('reserve' if b['condition_quality'] >= 0.70 else 'fine' if b['condition_quality'] >= 0.40 else 'standard')}"
                 for b in beer_data if b["state"] in ("conditioned", "blended")
             }),
+            "tamed_raptors": raptor_data,
+            "discovered_raptor_species": list({r["species"] for r in raptor_data}),
             "textiles": textile_data,
             "discovered_textiles": list({
                 f"{t['fiber_type']}_{t['dye_family']}_{t['output_type']}"
@@ -3678,6 +4565,90 @@ class SaveManager:
             "discovered_pigments": list({p["pigment_key"] for p in pigment_data}),
             "lost_artifacts": json.loads(lost_artifacts_raw or "[]"),
         }
+
+        order_defaults = {
+            "order_id": 0, "order_prestige": 0, "order_quest": None,
+            "order_quests_done": 0, "order_joust_wins": 0,
+            "order_reroll_count": 0, "order_vows": [], "order_trial": None,
+            "order_passed_trials": 0,
+        }
+        try:
+            o_row = con.execute("""
+                SELECT COALESCE(order_id, 0), COALESCE(order_prestige, 0),
+                       COALESCE(order_quest, 'null'),
+                       COALESCE(order_quests_done, 0),
+                       COALESCE(order_joust_wins, 0),
+                       COALESCE(order_reroll_count, 0),
+                       COALESCE(order_vows, '[]'),
+                       COALESCE(order_trial, 'null'),
+                       COALESCE(order_passed_trials, 0)
+                FROM player LIMIT 1
+            """).fetchone()
+            if o_row:
+                (oid, opres, oq_raw, oqd, ojw, orr,
+                 ov_raw, ot_raw, opt) = o_row
+                result["order_id"]           = int(oid or 0)
+                result["order_prestige"]     = int(opres or 0)
+                result["order_quest"]        = json.loads(oq_raw or "null")
+                result["order_quests_done"]  = int(oqd or 0)
+                result["order_joust_wins"]   = int(ojw or 0)
+                result["order_reroll_count"] = int(orr or 0)
+                result["order_vows"]         = json.loads(ov_raw or "[]")
+                result["order_trial"]        = json.loads(ot_raw or "null")
+                result["order_passed_trials"] = int(opt or 0)
+            else:
+                result.update(order_defaults)
+        except Exception:
+            result.update(order_defaults)
+
+        llama_yak_defaults = {
+            "llamas_tamed": 0, "llamas_bred": 0,
+            "llama_records": {}, "discovered_llama_breeds": [], "discovered_llama_biomes": [],
+            "yaks_tamed": 0, "yaks_bred": 0,
+            "yak_records": {}, "discovered_yak_breeds": [], "discovered_yak_biomes": [],
+            "pigs_tamed": 0, "pigs_bred": 0,
+            "pig_records": {}, "discovered_pig_breeds": [], "discovered_pig_biomes": [],
+        }
+        try:
+            ly_row = con.execute("""
+                SELECT COALESCE(llamas_tamed, 0), COALESCE(llamas_bred, 0),
+                       COALESCE(llama_records, '{}'),
+                       COALESCE(discovered_llama_breeds, '[]'),
+                       COALESCE(discovered_llama_biomes, '[]'),
+                       COALESCE(yaks_tamed, 0), COALESCE(yaks_bred, 0),
+                       COALESCE(yak_records, '{}'),
+                       COALESCE(discovered_yak_breeds, '[]'),
+                       COALESCE(discovered_yak_biomes, '[]'),
+                       COALESCE(pigs_tamed, 0), COALESCE(pigs_bred, 0),
+                       COALESCE(pig_records, '{}'),
+                       COALESCE(discovered_pig_breeds, '[]'),
+                       COALESCE(discovered_pig_biomes, '[]')
+                FROM player LIMIT 1
+            """).fetchone()
+            if ly_row:
+                (lt, lb, lr_raw, ldb_raw, llb_raw,
+                 yt, yb, yr_raw, ydb_raw, ylb_raw,
+                 pt, pb, pr_raw, pdb_raw, plb_raw) = ly_row
+                result["llamas_tamed"]             = int(lt or 0)
+                result["llamas_bred"]              = int(lb or 0)
+                result["llama_records"]            = json.loads(lr_raw or "{}")
+                result["discovered_llama_breeds"]  = json.loads(ldb_raw or "[]")
+                result["discovered_llama_biomes"]  = json.loads(llb_raw or "[]")
+                result["yaks_tamed"]               = int(yt or 0)
+                result["yaks_bred"]                = int(yb or 0)
+                result["yak_records"]              = json.loads(yr_raw or "{}")
+                result["discovered_yak_breeds"]    = json.loads(ydb_raw or "[]")
+                result["discovered_yak_biomes"]    = json.loads(ylb_raw or "[]")
+                result["pigs_tamed"]               = int(pt or 0)
+                result["pigs_bred"]                = int(pb or 0)
+                result["pig_records"]              = json.loads(pr_raw or "{}")
+                result["discovered_pig_breeds"]    = json.loads(pdb_raw or "[]")
+                result["discovered_pig_biomes"]    = json.loads(plb_raw or "[]")
+            else:
+                result.update(llama_yak_defaults)
+        except Exception:
+            result.update(llama_yak_defaults)
+        return result
 
     def _load_automations(self, con):
         rows = con.execute("""

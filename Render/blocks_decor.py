@@ -6040,6 +6040,341 @@ def build_decor_surfs():
     pygame.draw.circle(s, (230, 200,  90), (BS // 2 - 1, 2), 2)
     surfs[bid] = s
 
+    bid = GUILD_FLAG_BLOCK
+    # if bid == GUILD_FLAG_BLOCK — small violet banner with gold trim,
+    # planted above guild-owned outposts.
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    pole = (110,  90,  60)
+    pygame.draw.rect(s, pole, (BS // 2 - 2, 0, 3, BS))
+    flag_col = (140, 110, 200)
+    trim_col = (220, 180,  80)
+    pts = [(BS // 2 + 1, 2), (BS - 3, 7), (BS // 2 + 1, 13)]
+    pygame.draw.polygon(s, flag_col, pts)
+    pygame.draw.polygon(s, trim_col, pts, 1)
+    # Two-stripe inset → distinguishes guild flags from town/outpost flags
+    pygame.draw.line(s, trim_col, (BS // 2 + 2, 5), (BS - 6, 7), 1)
+    pygame.draw.line(s, trim_col, (BS // 2 + 2, 9), (BS - 6, 10), 1)
+    surfs[bid] = s
+
+    bid = GUILD_HALL_BLOCK
+    # if bid == GUILD_HALL_BLOCK — a chunky stone-and-stained-glass facade for
+    # the regional Stock Exchange. Single block tall (placed at ground level).
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    stone_lt = (180, 165, 140)
+    stone_dk = (130, 115,  95)
+    trim     = (220, 180,  80)
+    glass    = (140, 110, 200)
+    # Wall background with weathered stone
+    pygame.draw.rect(s, stone_lt, (0, 0, BS, BS))
+    pygame.draw.rect(s, stone_dk, (0, BS - 4, BS, 4))
+    # Doorway arch (central, taller)
+    door_w = max(6, BS // 2 - 2)
+    door_x = BS // 2 - door_w // 2
+    door_h = BS - 6
+    pygame.draw.rect(s, (60, 40, 30), (door_x, 6, door_w, door_h))
+    pygame.draw.arc(s, trim, (door_x - 1, 2, door_w + 2, 10), 0, 3.14159, 2)
+    # Stained-glass roundel above the door
+    cx = BS // 2
+    pygame.draw.circle(s, glass, (cx, 4), 3)
+    pygame.draw.circle(s, trim,  (cx, 4), 3, 1)
+    # Corner stones (pilasters)
+    pygame.draw.rect(s, stone_dk, (0, 0, 2, BS))
+    pygame.draw.rect(s, stone_dk, (BS - 2, 0, 2, BS))
+    # Banner stripe along the top
+    pygame.draw.rect(s, glass, (0, 0, BS, 3))
+    pygame.draw.line(s, trim, (0, 3), (BS, 3), 1)
+    surfs[bid] = s
+
+    # -------- Guild Hall biome variants (Phase 9) --------
+
+    def _draw_hall_base(s, stone_lt, stone_dk, glass, trim):
+        BS_ = BLOCK_SIZE
+        pygame.draw.rect(s, stone_lt, (0, 0, BS_, BS_))
+        pygame.draw.rect(s, stone_dk, (0, BS_ - 4, BS_, 4))
+        door_w = max(6, BS_ // 2 - 2)
+        door_x = BS_ // 2 - door_w // 2
+        pygame.draw.rect(s, (60, 40, 30), (door_x, 6, door_w, BS_ - 6))
+        pygame.draw.arc(s, trim, (door_x - 1, 2, door_w + 2, 10), 0, 3.14159, 2)
+        pygame.draw.circle(s, glass, (BS_ // 2, 4), 3)
+        pygame.draw.circle(s, trim,  (BS_ // 2, 4), 3, 1)
+        pygame.draw.rect(s, stone_dk, (0, 0, 2, BS_))
+        pygame.draw.rect(s, stone_dk, (BS_ - 2, 0, 2, BS_))
+        pygame.draw.rect(s, glass, (0, 0, BS_, 3))
+        pygame.draw.line(s, trim, (0, 3), (BS_, 3), 1)
+
+    bid = GUILD_HALL_FOREST
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    _draw_hall_base(s, (175, 145, 105), (115,  80,  55),
+                    glass=(110, 170, 110), trim=(210, 175,  85))
+    BS = BLOCK_SIZE
+    pygame.draw.line(s, (105,  70,  45), (3, BS - 5), (BS - 4, 6), 1)
+    pygame.draw.line(s, (105,  70,  45), (BS - 4, BS - 5), (3, 6), 1)
+    surfs[bid] = s
+
+    bid = GUILD_HALL_EAST_ASIAN
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    _draw_hall_base(s, (200,  70,  60), (135,  35,  35),
+                    glass=( 90, 170, 130), trim=(225, 195,  90))
+    BS = BLOCK_SIZE
+    eave = (155,  35,  35)
+    pygame.draw.polygon(s, eave, [(0, 3), (4, 0), (4, 4)])
+    pygame.draw.polygon(s, eave, [(BS, 3), (BS - 4, 0), (BS - 4, 4)])
+    surfs[bid] = s
+
+    bid = GUILD_HALL_MEDITERRANEAN
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    _draw_hall_base(s, (225, 205, 165), (170, 140, 100),
+                    glass=( 70, 130, 195), trim=(200,  95,  60))
+    BS = BLOCK_SIZE
+    pygame.draw.rect(s, (190,  95,  60), (0, 4, BS, 2))
+    for x in range(2, BS, 3):
+        pygame.draw.line(s, (155,  70,  45), (x, 4), (x, 5), 1)
+    surfs[bid] = s
+
+    bid = GUILD_HALL_DESERT
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    _draw_hall_base(s, (220, 190, 130), (165, 130,  80),
+                    glass=(195, 150,  85), trim=(190, 115,  60))
+    BS = BLOCK_SIZE
+    streak = (175, 145,  90)
+    for x in (5, BS - 6):
+        pygame.draw.line(s, streak, (x, 6), (x, BS - 5), 1)
+    surfs[bid] = s
+
+    bid = GUILD_HALL_JUNGLE
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    _draw_hall_base(s, (115, 145,  85), ( 65,  95,  55),
+                    glass=(225, 180,  85), trim=(190, 165,  90))
+    BS = BLOCK_SIZE
+    for x in (2, BS // 2, BS - 3):
+        pygame.draw.line(s, ( 55, 110,  55), (x, 0), (x, 5), 1)
+    surfs[bid] = s
+
+    # -------- Industry banner variants (Phase 9) --------
+
+    def _draw_banner(s, flag_col, trim_col=(220, 180, 80)):
+        BS_ = BLOCK_SIZE
+        pole = (110, 90, 60)
+        pygame.draw.rect(s, pole, (BS_ // 2 - 2, 0, 3, BS_))
+        pts = [(BS_ // 2 + 1, 2), (BS_ - 3, 7), (BS_ // 2 + 1, 13)]
+        pygame.draw.polygon(s, flag_col, pts)
+        pygame.draw.polygon(s, trim_col, pts, 1)
+        pygame.draw.line(s, trim_col, (BS_ // 2 + 2, 5), (BS_ - 6, 7), 1)
+        pygame.draw.line(s, trim_col, (BS_ // 2 + 2, 9), (BS_ - 6, 10), 1)
+
+    for bid_var, color in (
+        (GUILD_FLAG_WINE,    (170,  35,  55)),
+        (GUILD_FLAG_COFFEE,  (110,  70,  40)),
+        (GUILD_FLAG_TEA,     ( 80, 150,  90)),
+        (GUILD_FLAG_SPIRITS, (215, 165,  60)),
+        (GUILD_FLAG_FORGE,   (210, 110,  50)),
+        (GUILD_FLAG_TEXTILE, (180,  90, 165)),
+    ):
+        s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+        _draw_banner(s, color)
+        surfs[bid_var] = s
+
+    # Miners banner — pick + hammer silhouette over a tan flag
+    bid = GUILD_FLAG_MINING
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    _draw_banner(s, (170, 140,  85))
+    BS = BLOCK_SIZE
+    iron = (90, 90, 95)
+    handle = (110, 75, 40)
+    # Crossed pick (\) and hammer (/) — tiny but readable at 1 block
+    pygame.draw.line(s, handle, (BS // 2 + 2, 5),  (BS - 5, 11), 1)
+    pygame.draw.line(s, iron,   (BS - 6, 4),       (BS - 3, 7),  1)
+    pygame.draw.line(s, handle, (BS // 2 + 2, 11), (BS - 5, 5),  1)
+    pygame.draw.rect(s, iron,   (BS - 6, 4, 3, 3))
+    surfs[bid] = s
+
+    # Mine entrance — timber-framed arched mine head; placed at the opening
+    bid = MINE_ENTRANCE_BLOCK
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    timber_lt = (150, 110, 65)
+    timber_dk = (95, 65, 35)
+    dark      = (25, 18, 12)
+    # Stone surround
+    pygame.draw.rect(s, (90, 80, 70), (0, 0, BS, BS))
+    pygame.draw.rect(s, (60, 52, 45), (0, BS - 3, BS, 3))
+    # Black tunnel opening (rounded top)
+    pygame.draw.rect(s, dark, (3, 6, BS - 6, BS - 6))
+    pygame.draw.circle(s, dark, (BS // 2, 6), BS // 2 - 3)
+    # Timber frame around the opening
+    pygame.draw.rect(s, timber_lt, (2, 5, 2, BS - 5))         # left post
+    pygame.draw.rect(s, timber_lt, (BS - 4, 5, 2, BS - 5))    # right post
+    pygame.draw.rect(s, timber_lt, (2, 3, BS - 4, 2))         # lintel
+    pygame.draw.line(s, timber_dk, (2, 5), (BS - 3, 5), 1)
+    surfs[bid] = s
+
+    # Mine support beam — vertical timber post (bg, lines tunnel walls)
+    bid = MINE_SUPPORT_BEAM
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    pygame.draw.rect(s, (135, 95, 55), (BS // 2 - 2, 0, 4, BS))
+    pygame.draw.line(s, (95, 65, 35), (BS // 2 - 2, 0), (BS // 2 - 2, BS), 1)
+    pygame.draw.line(s, (170, 130, 80), (BS // 2 + 1, 0), (BS // 2 + 1, BS), 1)
+    # Iron bands quartering the post
+    for y in (BS // 4, 3 * BS // 4):
+        pygame.draw.rect(s, (90, 90, 95), (BS // 2 - 3, y, 6, 2))
+    surfs[bid] = s
+
+    # Mine timber frame — horizontal ceiling beam (bg, top row of tunnel)
+    bid = MINE_TIMBER_FRAME
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    pygame.draw.rect(s, (130, 90, 50), (0, 0, BS, 5))
+    pygame.draw.line(s, (95, 65, 35), (0, 4), (BS, 4), 1)
+    pygame.draw.line(s, (170, 125, 75), (0, 1), (BS, 1), 1)
+    # Plank grain
+    for x in (4, BS - 4):
+        pygame.draw.line(s, (95, 65, 35), (x, 1), (x, 4), 1)
+    surfs[bid] = s
+
+    # Mine rail — floor track running along tunnel
+    bid = MINE_RAIL
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    tie = (95, 65, 35)
+    rail = (165, 155, 145)
+    # Wooden ties spanning the floor row
+    for x in (1, 8, 15, 22, BS - 4):
+        pygame.draw.rect(s, tie, (x, BS - 5, 3, 4))
+    # Two parallel rails
+    pygame.draw.line(s, rail, (0, BS - 5), (BS, BS - 5), 1)
+    pygame.draw.line(s, rail, (0, BS - 2), (BS, BS - 2), 1)
+    surfs[bid] = s
+
+    # Mine cart — static minecart parked at chamber end
+    bid = MINE_CART_DECOR
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    cart_dk = (75, 55, 35)
+    cart_lt = (130, 95, 55)
+    iron = (90, 90, 95)
+    coal = (35, 32, 35)
+    # Cart body (trapezoidal bucket)
+    pts = [(4, BS - 10), (BS - 4, BS - 10),
+           (BS - 6, BS - 4), (6, BS - 4)]
+    pygame.draw.polygon(s, cart_lt, pts)
+    pygame.draw.polygon(s, cart_dk, pts, 1)
+    # Coal heap inside
+    pygame.draw.rect(s, coal, (7, BS - 13, BS - 14, 4))
+    # Two wheels
+    pygame.draw.circle(s, iron, (9, BS - 3), 2)
+    pygame.draw.circle(s, iron, (BS - 9, BS - 3), 2)
+    pygame.draw.circle(s, (30, 30, 35), (9, BS - 3), 2, 1)
+    pygame.draw.circle(s, (30, 30, 35), (BS - 9, BS - 3), 2, 1)
+    # Tie-bar / chassis
+    pygame.draw.line(s, iron, (9, BS - 3), (BS - 9, BS - 3), 1)
+    surfs[bid] = s
+
+    # Mine scaffold — cross-braced wood scaffolding flanking chamber openings
+    bid = MINE_SCAFFOLD
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    wood_lt = (165, 125, 75)
+    wood_dk = (95, 65, 35)
+    # Two vertical uprights
+    for x in (4, BS - 5):
+        pygame.draw.rect(s, wood_lt, (x, 0, 2, BS))
+        pygame.draw.line(s, wood_dk, (x, 0), (x, BS), 1)
+    # Two horizontal rails (top + middle)
+    for y in (BS // 4, 3 * BS // 4):
+        pygame.draw.rect(s, wood_lt, (4, y, BS - 8, 2))
+    # X-brace
+    pygame.draw.line(s, wood_dk, (5, BS // 4 + 1), (BS - 6, 3 * BS // 4), 1)
+    pygame.draw.line(s, wood_dk, (BS - 6, BS // 4 + 1), (5, 3 * BS // 4), 1)
+    surfs[bid] = s
+
+    # Mine debris — irregular rubble pile on tunnel floor
+    bid = MINE_DEBRIS
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    rubble = (115, 105, 90)
+    rubble_dk = (75, 70, 60)
+    rubble_lt = (155, 145, 130)
+    # Layered uneven pile silhouette
+    pygame.draw.polygon(s, rubble,
+        [(2, BS - 1), (6, BS - 7), (12, BS - 5),
+         (18, BS - 9), (24, BS - 6), (BS - 3, BS - 4), (BS - 1, BS - 1)])
+    # Individual rocks for texture
+    for cx, cy, r in ((7, BS - 6, 2), (14, BS - 7, 2), (20, BS - 8, 2),
+                      (BS - 8, BS - 5, 2)):
+        pygame.draw.circle(s, rubble_lt, (cx, cy), r)
+        pygame.draw.circle(s, rubble_dk, (cx, cy), r, 1)
+    surfs[bid] = s
+
+    # Mine ore heap — neat sorted pile (looks like saleable inventory)
+    bid = MINE_ORE_HEAP
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    crate = (115, 80, 45)
+    crate_dk = (75, 50, 25)
+    coal = (35, 32, 35)
+    iron = (175, 130, 100)
+    gold = (218, 182, 55)
+    # Wooden crate base
+    pygame.draw.rect(s, crate, (3, BS - 9, BS - 6, 8))
+    pygame.draw.rect(s, crate_dk, (3, BS - 9, BS - 6, 8), 1)
+    pygame.draw.line(s, crate_dk, (BS // 2, BS - 9), (BS // 2, BS - 2), 1)
+    # Sorted ore lumps mounded on top
+    pygame.draw.circle(s, coal, (8, BS - 11), 2)
+    pygame.draw.circle(s, coal, (11, BS - 12), 2)
+    pygame.draw.circle(s, iron, (BS // 2, BS - 12), 2)
+    pygame.draw.circle(s, iron, (BS // 2 + 3, BS - 11), 2)
+    pygame.draw.circle(s, gold, (BS - 10, BS - 12), 2)
+    pygame.draw.circle(s, (190, 155, 40), (BS - 10, BS - 12), 2, 1)
+    surfs[bid] = s
+
+    # Mine pillar — fluted carved stone column for grand halls
+    bid = MINE_PILLAR_BLOCK
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    stone = (175, 165, 150)
+    stone_lt = (200, 190, 175)
+    stone_dk = (115, 105,  95)
+    # Column shaft (wider, with capital + base flares)
+    pygame.draw.rect(s, stone, (BS // 2 - 5, 4, 10, BS - 8))
+    # Fluted grooves — three vertical lines for stone texture
+    for x in (BS // 2 - 3, BS // 2, BS // 2 + 3):
+        pygame.draw.line(s, stone_dk, (x, 5), (x, BS - 5), 1)
+    # Capital (top flare)
+    pygame.draw.rect(s, stone_lt, (BS // 2 - 7, 1, 14, 3))
+    pygame.draw.rect(s, stone_dk, (BS // 2 - 7, 1, 14, 3), 1)
+    # Base flare
+    pygame.draw.rect(s, stone_lt, (BS // 2 - 7, BS - 4, 14, 3))
+    pygame.draw.rect(s, stone_dk, (BS // 2 - 7, BS - 4, 14, 3), 1)
+    surfs[bid] = s
+
+    # Mine lantern — wall-mounted lantern; warm amber glow
+    bid = MINE_LANTERN_BLOCK
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE), pygame.SRCALPHA)
+    BS = BLOCK_SIZE
+    bracket = (80, 80, 85)
+    frame   = (130, 110, 80)
+    glow    = (245, 215, 110)
+    glow_dk = (200, 160,  60)
+    # Wall bracket arm
+    pygame.draw.rect(s, bracket, (0, 6, 4, 2))
+    pygame.draw.rect(s, bracket, (4, 4, 2, 6))
+    # Lantern body (rectangular cage)
+    body_x, body_y = 6, 9
+    body_w, body_h = 10, 11
+    pygame.draw.rect(s, frame, (body_x, body_y, body_w, body_h))
+    pygame.draw.rect(s, glow,  (body_x + 1, body_y + 1, body_w - 2, body_h - 2))
+    pygame.draw.line(s, glow_dk, (body_x + 1, body_y + body_h - 2),
+                                 (body_x + body_w - 2, body_y + body_h - 2), 1)
+    # Cage bars
+    pygame.draw.line(s, frame, (body_x + body_w // 2, body_y + 1),
+                               (body_x + body_w // 2, body_y + body_h - 2), 1)
+    pygame.draw.line(s, frame, (body_x + 1, body_y + body_h // 2),
+                               (body_x + body_w - 2, body_y + body_h // 2), 1)
+    surfs[bid] = s
+
     bid = RUIN_MARKER_BLOCK
     # if bid == RUIN_MARKER_BLOCK — weathered stone obelisk; tilts slightly,
     # mossy at the base, hint of carved face on the front
@@ -6192,6 +6527,55 @@ def build_decor_surfs():
     cy2 = by0 + bh // 2
     pygame.draw.rect(s, gold, (cx2 - 1, by0 + 4, 2, bh - 8))
     pygame.draw.rect(s, gold, (bx0 + 3, cy2 - 1, bw - 6, 2))
+    surfs[bid] = s
+
+    # ── Scribing blocks ──────────────────────────────────────────────────
+    bid = SCRIBES_DESK_BLOCK
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    wood = BLOCKS[bid]["color"]
+    s.fill(wood)
+    BS = BLOCK_SIZE
+    # Sloped desk top + parchment + ink pot
+    pygame.draw.polygon(s, _darken(wood, 30), [(2, 14), (BS - 2, 8), (BS - 2, 20), (2, 20)])
+    pygame.draw.rect(s, (240, 226, 194), (6, 11, BS - 14, 7))     # parchment sheet
+    pygame.draw.line(s, (60, 50, 40), (8, 14), (BS - 12, 14), 1)  # ruled line
+    pygame.draw.line(s, (60, 50, 40), (8, 16), (BS - 12, 16), 1)
+    pygame.draw.rect(s, (40, 32, 28), (BS - 9, 12, 5, 6))         # ink pot
+    pygame.draw.rect(s, _darken(wood, 60), (2, 20, BS - 4, BS - 22))  # desk body
+    pygame.draw.rect(s, _darken(wood, 60), s.get_rect(), 1)
+    surfs[bid] = s
+
+    bid = LECTERN_BLOCK
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    wood = BLOCKS[bid]["color"]
+    s.fill(_darken(wood, 50))
+    # Stand + angled book rest
+    pygame.draw.rect(s, wood, (BS // 2 - 2, 14, 4, BS - 16))      # column
+    pygame.draw.polygon(s, _darken(wood, 20), [(4, 10), (BS - 4, 4), (BS - 4, 14), (4, 16)])  # sloped top
+    pygame.draw.rect(s, (240, 226, 194), (7, 8, BS - 14, 6))      # open book
+    pygame.draw.line(s, (60, 50, 40), (BS // 2, 8), (BS // 2, 13), 1)  # spine
+    pygame.draw.rect(s, _darken(wood, 60), s.get_rect(), 1)
+    surfs[bid] = s
+
+    bid = BOOKCASE_BLOCK
+    s = pygame.Surface((BLOCK_SIZE, BLOCK_SIZE))
+    wood = BLOCKS[bid]["color"]
+    s.fill(_darken(wood, 50))
+    # Outer frame
+    pygame.draw.rect(s, wood, (1, 1, BS - 2, BS - 2), 2)
+    # Two shelves with 3 colored book spines each
+    shelf_y = [4, 16]
+    palette = [(170, 38, 50), (40, 70, 168), (200, 142, 50),
+               (60, 132, 70), (110, 60, 160), (38, 50, 110)]
+    for row, sy in enumerate(shelf_y):
+        # shelf board
+        pygame.draw.rect(s, _darken(wood, 30), (2, sy + 9, BS - 4, 2))
+        for i in range(3):
+            sx = 3 + i * 9
+            spine_color = palette[row * 3 + i]
+            pygame.draw.rect(s, spine_color, (sx, sy, 6, 9))
+            pygame.draw.rect(s, _darken(spine_color, 40), (sx, sy, 6, 9), 1)
+    pygame.draw.rect(s, _darken(wood, 70), s.get_rect(), 1)
     surfs[bid] = s
 
     return surfs

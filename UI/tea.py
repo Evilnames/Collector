@@ -1548,7 +1548,6 @@ class TeaMixin:
     # ─────────────────────────────────────────────────────────────────────────
 
     def _draw_tea_codex(self, player, gy0=58, gx_off=0):
-        from tea import TEA_TYPE_ORDER
         TEA_TYPES = _CODEX_TEA_TYPES
         BIOMES    = _CODEX_BIOMES
         COLS      = len(TEA_TYPES)

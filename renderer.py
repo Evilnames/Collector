@@ -181,7 +181,7 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER, GRASS, DIRT, SA
                     FOSSIL_TABLE_BLOCK, ARTISAN_BENCH_BLOCK,
                     GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, WINE_CELLAR_BLOCK,
                     STILL_BLOCK, BARREL_ROOM_BLOCK, BOTTLING_BLOCK, COMPOST_BIN_BLOCK,
-                    STABLE_BLOCK, HORSE_TROUGH_BLOCK,
+                    STABLE_BLOCK, HORSE_TROUGH_BLOCK, FEED_TROUGH_BLOCK, SALT_LICK_BLOCK,
                     TEA_BUSH, TEA_CROP_YOUNG, TEA_CROP_MATURE,
                     WITHERING_RACK_BLOCK, OXIDATION_STATION_BLOCK, TEA_CELLAR_BLOCK, ROASTING_KILN_BLOCK,
                     DRYING_RACK_BLOCK, BAIT_STATION_BLOCK,
@@ -242,6 +242,8 @@ from blocks import (BLOCKS, AIR, COAL_ORE, LADDER, STONE, WATER, GRASS, DIRT, SA
                     GROTTO_ARCH, PERGOLA_BEAM, LOGGIA_ARCH, GARDEN_WALL_NICHE,
                     ORANGERY_WINDOW, BELVEDERE_PANEL, BOSCO_TREE, GIARDINO_SEGRETO,
                     MARBLE_VEIN, ALABASTER_VEIN, VERDITE_VEIN, ONYX_VEIN,
+                    CHALK_VEIN, SHALE_VEIN, SLATE_VEIN, ANDESITE_VEIN,
+                    TUFF_VEIN, QUARTZITE_VEIN, GNEISS_VEIN, GABBRO_VEIN,
                     ALABASTER_BLOCK, VERDITE_BLOCK, ONYX_BLOCK,
                     PIETRA_SERENA, TRAVERTINE_WALL, MARBLE_FACADE, RUSTICATED_QUOIN,
                     BICOLOR_MARBLE, PINK_GRANITE_BASE, BLIND_ARCH, CONSOLE_CORNICE,
@@ -730,6 +732,30 @@ class Renderer:
         from Render.wetlandAnimal import draw_hare
         draw_hare(self.screen, sx, sy, e)
 
+    def _draw_caribou(self, sx, sy, e):
+        from Render.wetlandAnimal import draw_caribou
+        draw_caribou(self.screen, sx, sy, e)
+
+    def _draw_antelope(self, sx, sy, e):
+        from Render.wetlandAnimal import draw_antelope
+        draw_antelope(self.screen, sx, sy, e)
+
+    def _draw_ibex(self, sx, sy, e):
+        from Render.wetlandAnimal import draw_ibex
+        draw_ibex(self.screen, sx, sy, e)
+
+    def _draw_lynx(self, sx, sy, e):
+        from Render.wetlandAnimal import draw_lynx
+        draw_lynx(self.screen, sx, sy, e)
+
+    def _draw_coyote(self, sx, sy, e):
+        from Render.wetlandAnimal import draw_coyote
+        draw_coyote(self.screen, sx, sy, e)
+
+    def _draw_beaver(self, sx, sy, e):
+        from Render.wetlandAnimal import draw_beaver
+        draw_beaver(self.screen, sx, sy, e)
+
     # ------------------------------------------------------------------
     # Arrow drawing
     # ------------------------------------------------------------------
@@ -856,6 +882,10 @@ class Renderer:
         from Render.Guardsystem import draw_npc_guard
         draw_npc_guard(self.screen, sx, sy, npc)
 
+    def _draw_npc_knight(self, sx, sy, npc):
+        from Render.Guardsystem import draw_npc_knight
+        draw_npc_knight(self.screen, sx, sy, npc)
+
     def _draw_npc_elder(self, sx, sy, npc):
         from Render.Socialnpcs import draw_npc_elder
         draw_npc_elder(self.screen, sx, sy, npc)
@@ -896,21 +926,68 @@ class Renderer:
         from Render.Socialnpcs import draw_npc_royal_child
         draw_npc_royal_child(self.screen, sx, sy, npc)
 
+    def _draw_needs_icon(self, sx, sy, animal):
+        """Overhead glyphs: meat if hungry, droplet if thirsty, Z if sleeping. Skip dead."""
+        import pygame as _pg
+        if getattr(animal, "dead", False):
+            return
+        ix = int(sx + animal.W / 2)
+        iy = int(sy - 12)
+        if getattr(animal, "_sleeping", False):
+            # Tiny "Z" letter
+            _pg.draw.line(self.screen, (240, 240, 255), (ix - 3, iy + 1), (ix + 3, iy + 1), 2)
+            _pg.draw.line(self.screen, (240, 240, 255), (ix + 3, iy + 1), (ix - 3, iy + 5), 2)
+            _pg.draw.line(self.screen, (240, 240, 255), (ix - 3, iy + 5), (ix + 3, iy + 5), 2)
+            return
+        hungry = getattr(animal, "fullness", 1.0) < 0.30
+        thirsty = getattr(animal, "hydration", 1.0) < 0.30
+        if not (hungry or thirsty):
+            return
+        if hungry:
+            _pg.draw.rect(self.screen, (200, 80, 60), (ix - 8, iy, 6, 6))
+            _pg.draw.rect(self.screen, (255, 200, 160), (ix - 7, iy + 1, 4, 2))
+            _pg.draw.rect(self.screen, (40, 30, 25), (ix - 8, iy, 6, 6), 1)
+        if thirsty:
+            ox = 2 if hungry else -3
+            _pg.draw.polygon(self.screen, (90, 160, 220),
+                             [(ix + ox, iy + 6), (ix + ox - 3, iy + 1), (ix + ox + 3, iy + 1)])
+            _pg.draw.polygon(self.screen, (40, 60, 100),
+                             [(ix + ox, iy + 6), (ix + ox - 3, iy + 1), (ix + ox + 3, iy + 1)], 1)
+
     def _draw_sheep(self, sx, sy, sheep):
         from Render.farmanimal import draw_sheep
         draw_sheep(self.screen, sx, sy, sheep)
+        self._draw_needs_icon(sx, sy, sheep)
+
+    def _draw_llama(self, sx, sy, llama):
+        from Render.farmanimal import draw_llama
+        draw_llama(self.screen, sx, sy, llama)
+        self._draw_needs_icon(sx, sy, llama)
+
+    def _draw_yak(self, sx, sy, yak):
+        from Render.farmanimal import draw_yak
+        draw_yak(self.screen, sx, sy, yak)
+        self._draw_needs_icon(sx, sy, yak)
+
+    def _draw_pig(self, sx, sy, pig):
+        from Render.farmanimal import draw_pig
+        draw_pig(self.screen, sx, sy, pig)
+        self._draw_needs_icon(sx, sy, pig)
 
     def _draw_goat(self, sx, sy, goat):
         from Render.farmanimal import draw_goat
         draw_goat(self.screen, sx, sy, goat)
+        self._draw_needs_icon(sx, sy, goat)
 
     def _draw_cow(self, sx, sy, cow):
         from Render.farmanimal import draw_cow
         draw_cow(self.screen, sx, sy, cow)
+        self._draw_needs_icon(sx, sy, cow)
 
     def _draw_chicken(self, sx, sy, chicken):
         from Render.farmanimal import draw_chicken
         draw_chicken(self.screen, sx, sy, chicken)
+        self._draw_needs_icon(sx, sy, chicken)
 
     def _draw_horse(self, sx, sy, horse):
         from Render.largeAnimal import draw_horse

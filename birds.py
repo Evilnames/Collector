@@ -522,7 +522,7 @@ class BlueJay(Bird):
 class Eagle(Bird):
     SPECIES          = "eagle"
     RARITY           = "rare"
-    BIOMES           = ["alpine_mountain", "rocky_mountain", "canyon"]
+    BIOMES           = ["alpine_mountain", "rocky_mountain", "canyon", "red_rock"]
     IS_FLOCK         = False
     FLOCK_SIZE_RANGE = (1, 1)
     ALTITUDE_BLOCKS  = (6, 14)
@@ -716,7 +716,7 @@ class Puffin(Bird):
 class Vulture(Bird):
     SPECIES          = "vulture"
     RARITY           = "uncommon"
-    BIOMES           = ["desert", "canyon", "wasteland", "arid_steppe"]
+    BIOMES           = ["desert", "canyon", "red_rock", "wasteland", "arid_steppe"]
     IS_FLOCK         = True
     FLOCK_SIZE_RANGE = (2, 3)
     ALTITUDE_BLOCKS  = (8, 16)
@@ -732,7 +732,7 @@ class Vulture(Bird):
 class Roadrunner(GroundBird):
     SPECIES          = "roadrunner"
     RARITY           = "uncommon"
-    BIOMES           = ["desert", "arid_steppe", "canyon", "scrubland"]
+    BIOMES           = ["desert", "arid_steppe", "canyon", "red_rock", "scrubland"]
     IS_FLOCK         = False
     FLOCK_SIZE_RANGE = (1, 1)
     SPEED            = 115.0
@@ -892,7 +892,7 @@ class Pheasant(GroundBird):
 class Condor(Bird):
     SPECIES          = "condor"
     RARITY           = "rare"
-    BIOMES           = ["alpine_mountain", "rocky_mountain", "canyon", "redwood"]
+    BIOMES           = ["alpine_mountain", "rocky_mountain", "canyon", "red_rock", "redwood"]
     IS_FLOCK         = False
     FLOCK_SIZE_RANGE = (1, 1)
     ALTITUDE_BLOCKS  = (10, 20)
@@ -1052,7 +1052,7 @@ class Spoonbill(Bird):
 class PeregrineFalcon(Bird):
     SPECIES          = "peregrine_falcon"
     RARITY           = "rare"
-    BIOMES           = ["alpine_mountain", "rocky_mountain", "canyon", "steep_hills"]
+    BIOMES           = ["alpine_mountain", "rocky_mountain", "canyon", "red_rock", "steep_hills"]
     IS_FLOCK         = False
     FLOCK_SIZE_RANGE = (1, 1)
     ALTITUDE_BLOCKS  = (8, 16)
@@ -2124,7 +2124,7 @@ class SecretaryBird(GroundBird):
 class MartialEagle(Bird):
     SPECIES          = "martial_eagle"
     RARITY           = "rare"
-    BIOMES           = ["savanna", "arid_steppe", "canyon"]
+    BIOMES           = ["savanna", "arid_steppe", "canyon", "red_rock"]
     IS_FLOCK         = False
     FLOCK_SIZE_RANGE = (1, 1)
     ALTITUDE_BLOCKS  = (7, 15)
@@ -2288,7 +2288,7 @@ class CarmineBeeEater(Bird):
 class WhiteFrontedBeeEater(Bird):
     SPECIES          = "white_fronted_bee_eater"
     RARITY           = "uncommon"
-    BIOMES           = ["canyon", "savanna"]
+    BIOMES           = ["canyon", "red_rock", "savanna"]
     IS_FLOCK         = True
     FLOCK_SIZE_RANGE = (2, 5)
     ALTITUDE_BLOCKS  = (3, 8)
@@ -2448,7 +2448,7 @@ class TawnyEagle(Bird):
 class VerreauxsEagle(Bird):
     SPECIES          = "verreauxs_eagle"
     RARITY           = "rare"
-    BIOMES           = ["rocky_mountain", "canyon"]
+    BIOMES           = ["rocky_mountain", "canyon", "red_rock"]
     IS_FLOCK         = False
     FLOCK_SIZE_RANGE = (1, 1)
     ALTITUDE_BLOCKS  = (8, 18)
@@ -2512,7 +2512,7 @@ class AfricanCrownedEagle(Bird):
 class LannerFalcon(Bird):
     SPECIES          = "lanner_falcon"
     RARITY           = "uncommon"
-    BIOMES           = ["savanna", "canyon", "desert"]
+    BIOMES           = ["savanna", "canyon", "red_rock", "desert"]
     IS_FLOCK         = False
     FLOCK_SIZE_RANGE = (1, 1)
     ALTITUDE_BLOCKS  = (5, 12)
@@ -2608,7 +2608,7 @@ class WhiteBackedVulture(Bird):
 class EgyptianVulture(Bird):
     SPECIES          = "egyptian_vulture"
     RARITY           = "uncommon"
-    BIOMES           = ["desert", "savanna", "canyon"]
+    BIOMES           = ["desert", "savanna", "canyon", "red_rock"]
     IS_FLOCK         = False
     FLOCK_SIZE_RANGE = (1, 1)
     ALTITUDE_BLOCKS  = (5, 12)
@@ -3584,7 +3584,7 @@ class PiedCrow(Bird):
 class FanTailedRaven(Bird):
     SPECIES          = "fan_tailed_raven"
     RARITY           = "uncommon"
-    BIOMES           = ["rocky_mountain", "canyon", "desert"]
+    BIOMES           = ["rocky_mountain", "canyon", "red_rock", "desert"]
     IS_FLOCK         = False
     FLOCK_SIZE_RANGE = (1, 1)
     ALTITUDE_BLOCKS  = (4, 10)
@@ -3680,7 +3680,7 @@ class PennantWingedNightjar(Bird):
 class AlpineSwift(Bird):
     SPECIES          = "alpine_swift"
     RARITY           = "uncommon"
-    BIOMES           = ["rocky_mountain", "canyon"]
+    BIOMES           = ["rocky_mountain", "canyon", "red_rock"]
     IS_FLOCK         = True
     FLOCK_SIZE_RANGE = (3, 8)
     ALTITUDE_BLOCKS  = (6, 16)
@@ -3944,7 +3944,7 @@ class VampireBat(Bird):
 class HorseshoeBat(Bird):
     SPECIES          = "horseshoe_bat"
     RARITY           = "uncommon"
-    BIOMES           = ["rocky_mountain", "canyon"]
+    BIOMES           = ["rocky_mountain", "canyon", "red_rock"]
     NOCTURNAL        = True
     IS_FLOCK         = True
     FLOCK_SIZE_RANGE = (2, 6)
@@ -3995,7 +3995,7 @@ class NoctuleBat(Bird):
 class LeafNosedBat(Bird):
     SPECIES          = "leaf_nosed_bat"
     RARITY           = "uncommon"
-    BIOMES           = ["desert", "arid_steppe", "canyon"]
+    BIOMES           = ["desert", "arid_steppe", "canyon", "red_rock"]
     NOCTURNAL        = True
     IS_FLOCK         = True
     FLOCK_SIZE_RANGE = (2, 5)
@@ -4118,7 +4118,7 @@ class CommonPoorwill(Bird):
 class ElfOwl(Bird):
     SPECIES          = "elf_owl"
     RARITY           = "common"
-    BIOMES           = ["desert", "canyon", "arid_steppe"]
+    BIOMES           = ["desert", "canyon", "red_rock", "arid_steppe"]
     NOCTURNAL        = True
     IS_FLOCK         = False
     FLOCK_SIZE_RANGE = (1, 1)

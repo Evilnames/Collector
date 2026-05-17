@@ -54,6 +54,7 @@ class DynastyTreeMixin:
 
         chronicle  = getattr(npc, "dynasty_chronicle", None) or {}
         region_id  = getattr(npc, "dynasty_id", None)
+        self._tree_region_id = region_id
         world_seed = getattr(world, "seed", 0)
         family     = (getattr(npc, "dynasty_name", "House ?")).replace("House ", "")
 
@@ -384,6 +385,54 @@ class DynastyTreeMixin:
                 self.screen.blit(self.small.render(ln, True, _TXT_C),
                                  (x + 10, cy))
                 cy += 15
+
+        # ---- Knightly orders based in this house's homeland ----
+        region_id = getattr(self, "_tree_region_id", None)
+        if region_id is not None:
+            try:
+                import knightly_orders as _ko
+                orders = _ko.orders_for_region(region_id)
+            except Exception:
+                orders = []
+            if orders:
+                cy += 8
+                pygame.draw.line(self.screen, _LINE,
+                                 (x + 10, cy), (x + w - 10, cy))
+                cy += 8
+                self.screen.blit(self.small.render(
+                    "KNIGHTLY ORDERS OF THIS HOUSE", True, (170, 150, 200)),
+                    (x + 10, cy))
+                cy += 16
+                for o in orders[:4]:
+                    pygame.draw.rect(self.screen, o.heraldry.primary,
+                                     (x + 10, cy + 2, 8, 8))
+                    self.screen.blit(self.small.render(
+                        f"{o.name}", True, _TITLE_C), (x + 24, cy))
+                    cy += 15
+                    self.screen.blit(self.small.render(
+                        f"   {o.tradition.title()}  ·  prestige {o.prestige}",
+                        True, _DIM_C), (x + 24, cy))
+                    cy += 14
+                    if o.motto:
+                        for ln in _wrap_text(f'   "{o.motto}"',
+                                             self.small, w - 30):
+                            self.screen.blit(self.small.render(ln, True,
+                                                               (160, 150, 120)),
+                                             (x + 24, cy))
+                            cy += 13
+                    # Members hailing from this house (via dynasty_id linkage)
+                    if o.patron_dynasty_id is not None:
+                        try:
+                            nobles = _ko.knights_from_dynasty(o.patron_dynasty_id)
+                        except Exception:
+                            nobles = []
+                        for k in nobles[:2]:
+                            rank_lbl = _ko.cultural_rank_label(o.tradition, k.rank)
+                            self.screen.blit(self.small.render(
+                                f"   • {k.name}, {rank_lbl}",
+                                True, (200, 185, 140)), (x + 24, cy))
+                            cy += 13
+                    cy += 2
 
     # ---- input -----------------------------------------------------------
 

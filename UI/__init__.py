@@ -29,6 +29,7 @@ from .salt import SaltMixin
 from .coins import CoinsMixin
 from .town_menu import TownMenuMixin
 from .outpost_menu import OutpostMenuMixin
+from .chapter_house import ChapterHouseMixin
 from .landmark_menu import LandmarkMenuMixin
 from .city_block_menu import CityBlockMenuMixin
 from .coat_of_arms import CoatOfArmsDesignerMixin
@@ -41,24 +42,31 @@ from .gambling import GamblingMixin
 from .racing import RacingMixin
 from .arena import ArenaUIMixin
 from .bazaar import BazaarUIMixin
+from .stock_exchange import StockExchangeMixin
 from .tea_house import TeaHouseMixin
 from .dynasty_tree import DynastyTreeMixin
 from .beekeeping import BeekeepingMixin
 from .mead import MeadMixin
 from .charcuterie import CharcuterieMixin
 from .pigments import PigmentMixin
+from .manuscripts import ManuscriptMixin
+from .falconry import FalconryMixin
+from .jousting import JoustingMixin
 
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
     CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, BeerMixin, MinigamesMixin, CollectionsMixin,
     HelpMixin, HorseMixin, DogsMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin, CoinsMixin,
-    TownMenuMixin, OutpostMenuMixin, LandmarkMenuMixin, CityBlockMenuMixin, CoatOfArmsDesignerMixin, HirePanelMixin, JobPanelMixin, ReputationScreenMixin, SmithingMixin, GamblingMixin, RacingMixin, ArenaUIMixin, BazaarUIMixin, TeaHouseMixin,
+    TownMenuMixin, OutpostMenuMixin, ChapterHouseMixin, LandmarkMenuMixin, CityBlockMenuMixin, CoatOfArmsDesignerMixin, HirePanelMixin, JobPanelMixin, ReputationScreenMixin, SmithingMixin, GamblingMixin, RacingMixin, ArenaUIMixin, BazaarUIMixin, StockExchangeMixin, TeaHouseMixin,
     DynastyTreeMixin,
     BeekeepingMixin,
     MeadMixin,
     CharcuterieMixin,
     PigmentMixin,
+    ManuscriptMixin,
+    FalconryMixin,
+    JoustingMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -85,7 +93,6 @@ class UI(
         self._compost_collect_btn    = None
         self.active_coop_pos         = None   # (bx, by) when chicken coop is open
         self._coop_collect_btn       = None
-        self.npc_inspect_open        = False   # I: NPC inspect overlay
         self.trade_block_open        = False
         self.active_trade_pos        = None   # (bx, by) of open trade block
         self._trade_goods_rects      = {}     # item_id -> Rect for stored goods grid
@@ -410,6 +417,23 @@ class UI(
         self._max_coffee_codex_scroll  = 0
         self._coffee_codex_selected    = None   # "biome_roast" string or None
         self._coffee_codex_rects       = {}
+        # Manuscript / Scribe's Desk state
+        self._manu_phase         = "parchment"
+        self._manu_selected      = None
+        self._manu_ink           = "ink_black"
+        self._manu_pigments      = set()
+        self._manu_grid          = [[None] * 12 for _ in range(8)]
+        self._manu_active_color  = 0
+        self._manu_binding       = ""
+        self._manu_category      = ""
+        self._manu_rects         = {}
+        self._lectern_rects      = {}
+        self._lectern_selected   = None
+        # Bookcase
+        self.active_bookcase_pos = None
+        self._bookcase_rects     = {}
+        self._bookcase_sel_slot  = None
+        self._bookcase_scroll    = 0
         # Roaster mini-game state
         self._roast_phase          = "select_bean"  # "select_bean" | "select_processing" | "roasting" | "result"
         self._roast_bean_idx       = None
@@ -669,6 +693,27 @@ class UI(
         self._max_beer_codex_scroll  = 0
         self._beer_codex_selected    = None
         self._beer_codex_rects       = {}
+        # ----- Falconry UI state -----
+        self.falconry_open           = False
+        self.falconry_capture_open   = False
+        self.active_perch_pos        = None
+        self._fy_selected_uid        = None
+        self._fy_state               = "idle"
+        self._fy_drill               = None
+        self._fy_quarry              = None
+        self._fy_timer               = 0.0
+        self._fy_marker              = 0.0
+        self._fy_marker_dir          = 1
+        self._fy_result_msg          = ""
+        self._fy_result_color        = (210, 200, 160)
+        self._fy_btn_rects           = {}
+        self._fy_list_rects          = {}
+        self._fy_capture_species     = None
+        self._fy_capture_biome       = ""
+        self._fy_capture_source      = None
+        # Falconry codex UI state
+        self._falconry_codex_selected = None
+        self._falconry_codex_rects    = {}
         # Fossil prep table mini-game state
         self._fprep_phase      = "select"   # "select" | "prep" | "reveal"
         self._fprep_fossil     = None       # Fossil being prepared
@@ -1009,6 +1054,10 @@ class UI(
         self._tapestry_symmetry       = False
         self._tapestry_drag_mode      = None   # "weave" | "unweave" | None
         self._tapestry_hover_cell     = None   # (ri, ci) | None
+        self._tapestry_pigment        = None   # Pigment instance selected as dye, or None
+        self._tapestry_ink            = None   # Pigment instance selected as ink, or None
+        self._tapestry_dye_rects      = {}     # ui hit rects for select_dye phase
+        self._tapestry_dye_scroll     = 0      # scroll offset within dye list
 
         # Pottery Wheel
         self._wheel_phase        = "select_clay"
@@ -1158,6 +1207,25 @@ class UI(
 
         # ----- Bazaar state -----
         self.bazaar_open             = False
+
+        # ----- Stock Exchange state -----
+        self.stock_exchange_open     = False
+        self._stock_tab              = "market"
+        self._stock_selected_gid     = None
+        self._stock_buy_qty          = 1
+        self._stock_status_msg       = ""
+        self._stock_rects            = {}
+        self._stock_scroll           = 0
+
+        # ----- Jousting state -----
+        self.jousting_open           = False
+        self._jousting_phase         = "lobby"
+        self._jousting_t             = None
+        self._jousting_bout          = None
+        self._jousting_rects         = {}
+        self._jousting_result        = None
+        self._jousting_message       = ""
+        self._jousting_pending_opp   = None
 
         # ----- Arena state -----
         self.arena_open              = False
@@ -1426,8 +1494,12 @@ class UI(
             self._draw_gambling(player, dt)
         if self.arena_open:
             self._draw_arena(player, dt)
+        if self.jousting_open:
+            self._draw_jousting(player, dt)
         if self.bazaar_open:
             self._draw_bazaar(player, dt)
+        if self.stock_exchange_open:
+            self._draw_stock_exchange(player)
         if self.racing_open:
             self._draw_racing(player, dt)
         if getattr(self, "training_paddock_open", False):

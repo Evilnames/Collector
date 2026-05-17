@@ -5,6 +5,10 @@ from tapestry import (
     WEAVABLE_THREADS, TEMPLATES, BASE_TEMPLATES, THREAD_COLORS,
     TAPESTRY_COLS_PER_BLOCK, TAPESTRY_ROWS_PER_BLOCK,
 )
+from pigments import PIGMENT_TYPES, PIGMENT_DISPLAY_NAMES
+
+# Pigment families allowed as ink-outline. Inks need to read dark on cloth.
+_INK_FAMILIES = ("dark", "earth")
 
 _ACCENT   = (215, 190, 145)
 _DIM      = (115, 100, 75)
@@ -56,6 +60,8 @@ class TapestryMixin:
 
         if self._tapestry_phase == "select_thread":
             self._draw_tapestry_select_thread(player)
+        elif self._tapestry_phase == "select_dye":
+            self._draw_tapestry_select_dye(player)
         elif self._tapestry_phase == "select_template":
             self._draw_tapestry_select_template(player)
         elif self._tapestry_phase == "weave":
@@ -66,9 +72,10 @@ class TapestryMixin:
     def _draw_tapestry_breadcrumb(self):
         steps = [
             ("select_thread",   "1 · Thread"),
-            ("select_template", "2 · Pattern"),
-            ("weave",           "3 · Weave"),
-            ("confirm",         "4 · Done"),
+            ("select_dye",      "2 · Dye"),
+            ("select_template", "3 · Pattern"),
+            ("weave",           "4 · Weave"),
+            ("confirm",         "5 · Done"),
         ]
         phase_order = [s[0] for s in steps]
         current_idx = phase_order.index(self._tapestry_phase) if self._tapestry_phase in phase_order else 0
@@ -203,7 +210,7 @@ class TapestryMixin:
             tc3  = (155, 235, 115) if can_proceed else _DIM
             pygame.draw.rect(self.screen, bg3,  btn_rect)
             pygame.draw.rect(self.screen, brd3, btn_rect, 2)
-            lbl3 = self.font.render("Choose Pattern  →", True, tc3)
+            lbl3 = self.font.render("Choose Dye  →", True, tc3)
             self.screen.blit(lbl3, (btn_rect.centerx - lbl3.get_width() // 2, btn_rect.y + 8))
             self._tapestry_thread_rects["_confirm"] = btn_rect
 
@@ -281,6 +288,201 @@ class TapestryMixin:
                 py = y + ri * ch
                 cell_c = (hi if ri % 2 == 0 else lo) if filled else _EMPTY
                 pygame.draw.rect(surf, cell_c, (px, py, cw, ch))
+
+    # ── Phase 2.5: Dye Bath ──────────────────────────────────────────────────
+
+    def _group_player_pigments(self, player):
+        """Return list of (pigment_key, best_pigment, count) grouped by key."""
+        groups = {}
+        for pig in getattr(player, "pigments", []):
+            key = pig.pigment_key
+            cur = groups.get(key)
+            if cur is None or pig.quality() > cur[0].quality():
+                groups[key] = (pig, groups[key][1] + 1 if cur else 1)
+            else:
+                groups[key] = (cur[0], cur[1] + 1)
+        return sorted(
+            ((k, best, cnt) for k, (best, cnt) in groups.items()),
+            key=lambda t: (PIGMENT_TYPES.get(t[0], {}).get("family", "zz"), t[0]),
+        )
+
+    def _draw_tapestry_select_dye(self, player):
+        self._tapestry_dye_rects.clear()
+        groups = self._group_player_pigments(player)
+
+        sub = self.small.render(
+            "Optional dye bath — tint your thread with a pigment, and pick an ink for outlines.",
+            True, _ACCENT)
+        self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 48))
+
+        # Slot indicators
+        slot_y = 70
+        slot_w, slot_h, slot_gap = 240, 46, 18
+        slot_total = slot_w * 2 + slot_gap
+        slot_x0 = SCREEN_W // 2 - slot_total // 2
+
+        for i, (label, pig, label_color) in enumerate([
+            ("Dye",     self._tapestry_pigment, _ACCENT),
+            ("Ink",     self._tapestry_ink,     (220, 200, 160)),
+        ]):
+            sx = slot_x0 + i * (slot_w + slot_gap)
+            pygame.draw.rect(self.screen, _BTN_BG, (sx, slot_y, slot_w, slot_h))
+            pygame.draw.rect(self.screen, _DIM, (sx, slot_y, slot_w, slot_h), 1)
+            tag = self.small.render(label, True, label_color)
+            self.screen.blit(tag, (sx + 8, slot_y + 4))
+            if pig is not None:
+                swatch = pygame.Rect(sx + 10, slot_y + 22, 18, 18)
+                pygame.draw.rect(self.screen, tuple(pig.color_rgb), swatch)
+                pygame.draw.rect(self.screen, _DIM, swatch, 1)
+                name = PIGMENT_DISPLAY_NAMES.get(pig.pigment_key, pig.pigment_key)
+                nm_lbl = self.small.render(name, True, _ACCENT)
+                self.screen.blit(nm_lbl, (sx + 34, slot_y + 22))
+                clr = pygame.Rect(sx + slot_w - 60, slot_y + 22, 52, 18)
+                pygame.draw.rect(self.screen, (60, 22, 22), clr)
+                pygame.draw.rect(self.screen, (180, 80, 70), clr, 1)
+                cl_lbl = self.small.render("Clear", True, (240, 200, 180))
+                self.screen.blit(cl_lbl, (clr.centerx - cl_lbl.get_width() // 2, clr.y + 3))
+                self._tapestry_dye_rects[f"_clear_{label.lower()}"] = clr
+            else:
+                none_lbl = self.small.render("— none —", True, _DIM)
+                self.screen.blit(none_lbl, (sx + 10, slot_y + 22))
+
+        hint = self.small.render(
+            "Click: set as Dye   ·   Right-click: set as Ink (dark/earth only)",
+            True, _DIM)
+        self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, slot_y + slot_h + 6))
+
+        # Pigment grid
+        CARD_W, CARD_H, GAP = 168, 88, 8
+        COLS = 6
+        gx0 = max(8, (SCREEN_W - (COLS * CARD_W + (COLS - 1) * GAP)) // 2)
+        gy0 = slot_y + slot_h + 30
+
+        max_rows = max(1, (SCREEN_H - gy0 - 80) // (CARD_H + GAP))
+        total_rows = (len(groups) + COLS - 1) // COLS
+        if self._tapestry_dye_scroll > max(0, total_rows - max_rows):
+            self._tapestry_dye_scroll = max(0, total_rows - max_rows)
+        start_idx = self._tapestry_dye_scroll * COLS
+        end_idx   = start_idx + max_rows * COLS
+
+        if not groups:
+            msg = self.small.render(
+                "No pigments yet — grind raw materials at a Pigment Mill to dye your tapestry.",
+                True, _DIM)
+            self.screen.blit(msg, (SCREEN_W // 2 - msg.get_width() // 2, gy0 + 20))
+        else:
+            for gi, (key, pig, count) in enumerate(groups[start_idx:end_idx]):
+                idx = gi
+                ci = idx % COLS
+                ri = idx // COLS
+                cx = gx0 + ci * (CARD_W + GAP)
+                cy = gy0 + ri * (CARD_H + GAP)
+                ptype = PIGMENT_TYPES.get(key, {})
+                family = ptype.get("family", "?")
+                is_ink_eligible = family in _INK_FAMILIES
+                sel_dye = self._tapestry_pigment is not None and self._tapestry_pigment.pigment_key == key
+                sel_ink = self._tapestry_ink     is not None and self._tapestry_ink.pigment_key == key
+                bg = _BTN_HL if (sel_dye or sel_ink) else _BTN_BG
+                brd = tuple(pig.color_rgb) if sel_dye else ((220, 200, 160) if sel_ink else _DIM)
+                pygame.draw.rect(self.screen, bg, (cx, cy, CARD_W, CARD_H))
+                pygame.draw.rect(self.screen, brd, (cx, cy, CARD_W, CARD_H), 2 if (sel_dye or sel_ink) else 1)
+
+                sw = pygame.Rect(cx + 8, cy + 8, 24, 24)
+                pygame.draw.rect(self.screen, tuple(pig.color_rgb), sw)
+                pygame.draw.rect(self.screen, _DIM, sw, 1)
+
+                name = PIGMENT_DISPLAY_NAMES.get(key, key)
+                nm = self.small.render(name, True, _ACCENT)
+                self.screen.blit(nm, (cx + 38, cy + 8))
+                cnt_lbl = self.small.render(f"×{count}", True, _DIM)
+                self.screen.blit(cnt_lbl, (cx + 38, cy + 22))
+
+                fam_lbl = self.small.render(family, True, (140, 130, 105))
+                self.screen.blit(fam_lbl, (cx + CARD_W - fam_lbl.get_width() - 6, cy + 8))
+
+                # Stat bars: purity / opacity / stability
+                bar_x = cx + 8
+                bar_y = cy + 42
+                for li, (lbl, val) in enumerate([
+                    ("Pur", pig.purity),
+                    ("Opa", pig.opacity),
+                    ("Stb", pig.stability),
+                ]):
+                    by = bar_y + li * 12
+                    lbs = self.small.render(lbl, True, _DIM)
+                    self.screen.blit(lbs, (bar_x, by))
+                    track = pygame.Rect(bar_x + 30, by + 3, CARD_W - 50, 6)
+                    pygame.draw.rect(self.screen, (28, 24, 18), track)
+                    pygame.draw.rect(self.screen, tuple(pig.color_rgb),
+                                     (track.x, track.y, int(track.w * val), track.h))
+
+                if not is_ink_eligible:
+                    note = self.small.render("(dye only)", True, (90, 80, 60))
+                    self.screen.blit(note, (cx + CARD_W - note.get_width() - 6, cy + CARD_H - 14))
+
+                self._tapestry_dye_rects[f"_pig_{key}"] = pygame.Rect(cx, cy, CARD_W, CARD_H)
+
+        # Scroll buttons
+        if total_rows > max_rows:
+            up_r   = pygame.Rect(SCREEN_W - 40, gy0, 28, 28)
+            down_r = pygame.Rect(SCREEN_W - 40, gy0 + 36, 28, 28)
+            for r, lbl in ((up_r, "▲"), (down_r, "▼")):
+                pygame.draw.rect(self.screen, _BTN_BG, r)
+                pygame.draw.rect(self.screen, _DIM, r, 1)
+                ls = self.small.render(lbl, True, _ACCENT)
+                self.screen.blit(ls, (r.centerx - ls.get_width() // 2, r.y + 5))
+            self._tapestry_dye_rects["_scroll_up"]   = up_r
+            self._tapestry_dye_rects["_scroll_down"] = down_r
+
+        # Continue button (always available — dye is optional)
+        cont_r = pygame.Rect(SCREEN_W // 2 - 110, SCREEN_H - 50, 220, 36)
+        pygame.draw.rect(self.screen, (48, 68, 30), cont_r)
+        pygame.draw.rect(self.screen, (105, 185, 72), cont_r, 2)
+        cl = self.font.render("Continue  →", True, (155, 235, 115))
+        self.screen.blit(cl, (cont_r.centerx - cl.get_width() // 2, cont_r.y + 8))
+        self._tapestry_dye_rects["_continue"] = cont_r
+
+    def _handle_tapestry_dye_click(self, pos, player, right=False):
+        # Continue
+        cr = self._tapestry_dye_rects.get("_continue")
+        if cr and cr.collidepoint(pos):
+            self._tapestry_phase = "select_template"
+            return
+        # Clear slot buttons
+        for slot_key, attr in (("_clear_dye", "_tapestry_pigment"),
+                               ("_clear_ink", "_tapestry_ink")):
+            r = self._tapestry_dye_rects.get(slot_key)
+            if r and r.collidepoint(pos):
+                setattr(self, attr, None)
+                return
+        # Scrolling
+        up = self._tapestry_dye_rects.get("_scroll_up")
+        if up and up.collidepoint(pos):
+            self._tapestry_dye_scroll = max(0, self._tapestry_dye_scroll - 1)
+            return
+        down = self._tapestry_dye_rects.get("_scroll_down")
+        if down and down.collidepoint(pos):
+            self._tapestry_dye_scroll += 1
+            return
+        # Pigment card pick
+        groups = {k: (best, cnt) for k, best, cnt in self._group_player_pigments(player)}
+        for hit_key, rect in self._tapestry_dye_rects.items():
+            if not str(hit_key).startswith("_pig_"):
+                continue
+            if not rect.collidepoint(pos):
+                continue
+            pig_key = hit_key[len("_pig_"):]
+            best_cnt = groups.get(pig_key)
+            if best_cnt is None:
+                return
+            best, _ = best_cnt
+            family = PIGMENT_TYPES.get(pig_key, {}).get("family", "")
+            if right:
+                if family in _INK_FAMILIES:
+                    self._tapestry_ink = best
+            else:
+                self._tapestry_pigment = best
+            return
 
     # ── Phase 3: Weaving ─────────────────────────────────────────────────────
 
@@ -452,10 +654,29 @@ class TapestryMixin:
                              (px + 2, line_y), (px + 2 + grid_px_w, line_y))
         pygame.draw.rect(self.screen, thread_color, (px, py, grid_px_w + 4, grid_px_h + 4), 1)
 
+    # ── Preview helpers ──────────────────────────────────────────────────────
+
+    def _tapestry_preview_color(self):
+        """Approximate the dyed thread colour for confirm/weave previews."""
+        base = THREAD_COLORS.get(self._tapestry_thread, (200, 195, 175))
+        pig = self._tapestry_pigment
+        if pig is None:
+            return base
+        blend = 0.30 + 0.65 * pig.opacity
+        pig_rgb = tuple(pig.color_rgb)
+        return tuple(int(base[i] + (pig_rgb[i] - base[i]) * blend) for i in range(3))
+
+    def _tapestry_preview_ink_color(self):
+        ink = self._tapestry_ink
+        if ink is None:
+            return None
+        ir, ig, ib = ink.color_rgb
+        return (max(0, ir - 25), max(0, ig - 25), max(0, ib - 25))
+
     # ── Phase 4: Confirm ─────────────────────────────────────────────────────
 
     def _draw_tapestry_confirm(self, player):
-        col  = THREAD_COLORS.get(self._tapestry_thread, (200, 195, 175))
+        col = self._tapestry_preview_color()
         rows = len(self._tapestry_grid)
         actual_cols = len(self._tapestry_grid[0]) if self._tapestry_grid else TAPESTRY_COLS_PER_BLOCK
 
@@ -472,12 +693,18 @@ class TapestryMixin:
 
         hi = tuple(min(255, c + 35) for c in col)
         lo = tuple(max(0,   c - 42) for c in col)
+        from tapestry import make_outline_grid
+        ink_color   = self._tapestry_preview_ink_color()
+        outline     = make_outline_grid(self._tapestry_grid) if ink_color else None
         for ri, row in enumerate(self._tapestry_grid):
             for ci, filled in enumerate(row):
                 r = pygame.Rect(gx + ci * CELL_SIZE, gy + ri * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                 if filled:
-                    cell_col = hi if ri % 2 == 0 else lo
-                    _weave_cell(self.screen, cell_col, r)
+                    if outline and outline[ri][ci]:
+                        _weave_cell(self.screen, ink_color, r)
+                    else:
+                        cell_col = hi if ri % 2 == 0 else lo
+                        _weave_cell(self.screen, cell_col, r)
                 else:
                     pygame.draw.rect(self.screen, _EMPTY, r)
 
@@ -501,7 +728,23 @@ class TapestryMixin:
             True, _DIM)
         self.screen.blit(info, (SCREEN_W // 2 - info.get_width() // 2, gy + grid_h + 10))
 
-        btn_y = gy + grid_h + 32
+        # Second line: dye/ink summary (only if something is selected).
+        if self._tapestry_pigment or self._tapestry_ink:
+            parts = []
+            if self._tapestry_pigment:
+                pk = self._tapestry_pigment.pigment_key
+                parts.append(
+                    f"dye: {PIGMENT_DISPLAY_NAMES.get(pk, pk)} "
+                    f"(Q {self._tapestry_pigment.quality():.2f})"
+                )
+            if self._tapestry_ink:
+                ik = self._tapestry_ink.pigment_key
+                parts.append(f"ink: {PIGMENT_DISPLAY_NAMES.get(ik, ik)}")
+            dye_info = self.small.render("  ·  ".join(parts), True, _ACCENT)
+            self.screen.blit(dye_info,
+                             (SCREEN_W // 2 - dye_info.get_width() // 2, gy + grid_h + 24))
+
+        btn_y = gy + grid_h + (48 if (self._tapestry_pigment or self._tapestry_ink) else 32)
         accept_r = pygame.Rect(SCREEN_W // 2 - 104, btn_y, 96, 34)
         back_r   = pygame.Rect(SCREEN_W // 2 + 8,   btn_y, 96, 34)
         pygame.draw.rect(self.screen, (32, 52, 24), accept_r)
@@ -520,6 +763,8 @@ class TapestryMixin:
     def _handle_tapestry_frame_click(self, pos, player, right=False):
         if self._tapestry_phase == "select_thread":
             self._handle_tapestry_thread_click(pos, player)
+        elif self._tapestry_phase == "select_dye":
+            self._handle_tapestry_dye_click(pos, player, right)
         elif self._tapestry_phase == "select_template":
             self._handle_tapestry_template_click(pos, player)
         elif self._tapestry_phase == "weave":
@@ -533,7 +778,8 @@ class TapestryMixin:
             if self._tapestry_thread and self._tapestry_count > 0:
                 cost = self._tapestry_count * self._tapestry_width
                 if player.inventory.get(self._tapestry_thread, 0) >= cost:
-                    self._tapestry_phase = "select_template"
+                    self._tapestry_phase = "select_dye"
+                    self._tapestry_dye_scroll = 0
             return
         # Height buttons
         for key, rect in self._tapestry_thread_rects.items():
@@ -670,9 +916,13 @@ class TapestryMixin:
         if key == pygame.K_ESCAPE:
             if self._tapestry_phase in ("select_thread", "idle"):
                 self._tapestry_phase = "idle"
+                self._tapestry_pigment = None
+                self._tapestry_ink = None
                 self.refinery_open = False
-            elif self._tapestry_phase == "select_template":
+            elif self._tapestry_phase == "select_dye":
                 self._tapestry_phase = "select_thread"
+            elif self._tapestry_phase == "select_template":
+                self._tapestry_phase = "select_dye"
             elif self._tapestry_phase == "weave":
                 self._tapestry_phase = "select_template"
             elif self._tapestry_phase == "confirm":
@@ -703,12 +953,31 @@ class TapestryMixin:
     # ── Completion ───────────────────────────────────────────────────────────
 
     def _complete_tapestry(self, player):
+        # Consume selected pigments by uid from the player's pigment list.
+        def _consume(pig_ref):
+            if pig_ref is None:
+                return None
+            for i, p in enumerate(player.pigments):
+                if p.uid == pig_ref.uid:
+                    return player.pigments.pop(i)
+            # uid match failed (e.g. duplicate-key but stale) — fall back to
+            # first matching key so the dye still gets applied visually.
+            for i, p in enumerate(player.pigments):
+                if p.pigment_key == pig_ref.pigment_key:
+                    return player.pigments.pop(i)
+            return None
+
+        pigment = _consume(self._tapestry_pigment)
+        ink     = _consume(self._tapestry_ink)
+
         tp = player._tapestry_gen.generate(
             thread   = self._tapestry_thread,
             height   = self._tapestry_count,
             width    = self._tapestry_width,
             grid     = copy.deepcopy(self._tapestry_grid),
             template = self._tapestry_template or "custom",
+            pigment  = pigment,
+            ink      = ink,
         )
         player.pending_tapestries.append(tp)
         player.tapestries_created.append(tp)
@@ -755,4 +1024,6 @@ class TapestryMixin:
         self._tapestry_phase      = "idle"
         self._tapestry_drag_mode  = None
         self._tapestry_hover_cell = None
+        self._tapestry_pigment    = None
+        self._tapestry_ink        = None
         self.refinery_open        = False

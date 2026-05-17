@@ -1,7 +1,7 @@
 import pygame
 from constants import SCREEN_W, SCREEN_H
 from mead import (
-    MEAD_ADDITIVES, MEAD_STYLE_NAMES, MEAD_TYPE_DESCS, MEAD_TYPE_COLORS,
+    MEAD_ADDITIVES, MEAD_STYLE_NAMES,
     YEAST_TYPES, BIOME_DISPLAY_NAMES, BUFF_DESCS, MEAD_BUFFS, _CODEX_BIOMES,
     apply_stir_result, apply_condition_result, get_bottle_output_id,
 )

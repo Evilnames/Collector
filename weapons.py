@@ -29,6 +29,7 @@ WEAPON_TYPES = {
     "rapier":  {"name": "Rapier",  "parts": ["rapier_blade"],  "base_damage": 3, "attack_range": 1, "cooldown": 0.35},
     "trident": {"name": "Trident", "parts": ["trident_head"],  "base_damage": 4, "attack_range": 2, "cooldown": 0.80},
     "scythe":  {"name": "Scythe",  "parts": ["scythe_blade"],  "base_damage": 6, "attack_range": 2, "cooldown": 1.30},
+    "lance":   {"name": "Lance",   "parts": ["lance_head"],    "base_damage": 5, "attack_range": 3, "cooldown": 1.40, "mounted_only": True},
 }
 
 # ── Smithing styles ───────────────────────────────────────────────────────────
@@ -103,10 +104,11 @@ ASSEMBLY_HANDLES = {
     "rapier":  "rapier_grip",
     "trident": "trident_shaft",
     "scythe":  "scythe_snath",
+    "lance":   "lance_shaft",
 }
 
 WEAPON_TYPE_ORDER = ["dagger", "sword", "spear", "axe", "mace", "halberd", "glaive",
-                     "rapier", "trident", "scythe"]
+                     "rapier", "trident", "scythe", "lance"]
 MATERIAL_ORDER    = ["iron", "gold", "steel"]
 
 QUALITY_TIERS = [
@@ -307,6 +309,18 @@ PART_TEMPLATES = {
         _row(( 5,  7)),  # tang
         _row(( 5,  7)),
         _row(( 5,  7)),
+    ],
+    "lance_head": [
+        _row((7,  8)),   # point
+        _row((7,  8)),
+        _row((6,  9)),
+        _row((6,  9)),
+        _row((5, 10)),   # widest part of conical head
+        _row((5, 10)),
+        _row((6,  9)),
+        _row((6,  9)),
+        _row((6,  9)),   # socket
+        _row((6,  9)),
     ],
 }
 

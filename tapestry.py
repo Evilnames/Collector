@@ -9,9 +9,17 @@ class Tapestry:
     height: int            # 1–4 blocks tall
     width: int             # 1–4 blocks wide
     grid: list             # list[list[bool]] — height*8 rows × width*16 cols; True = thread present
-    color: tuple           # base thread RGB as (r,g,b)
+    color: tuple           # base thread RGB as (r,g,b), already pigment-tinted if dyed
     template: str          # "custom" or template name
     seed: int
+    # ── Dye Bath fields (all optional; default to undyed) ─────────────────
+    pigment_key: str = ""      # key into PIGMENT_TYPES, "" if undyed
+    purity: float = 0.0        # 0–1, from the pigment used
+    opacity: float = 0.0       # 0–1, blend weight applied to thread color
+    stability: float = 0.0     # 0–1, lightfastness (used for value/aging later)
+    ink_key: str = ""          # pigment key used as outline ink, "" if none
+    ink_color: tuple = (0, 0, 0)
+    ink_grid: list = None      # same shape as grid; True = outline cell
 
     def to_dict(self):
         return {
@@ -23,10 +31,18 @@ class Tapestry:
             "color": list(self.color),
             "template": self.template,
             "seed": self.seed,
+            "pigment_key": self.pigment_key,
+            "purity": self.purity,
+            "opacity": self.opacity,
+            "stability": self.stability,
+            "ink_key": self.ink_key,
+            "ink_color": list(self.ink_color),
+            "ink_grid": self.ink_grid,
         }
 
     @classmethod
     def from_dict(cls, d):
+        ink_color = d.get("ink_color", [0, 0, 0])
         return cls(
             uid=d["uid"],
             thread=d["thread"],
@@ -36,7 +52,26 @@ class Tapestry:
             color=tuple(d["color"]),
             template=d["template"],
             seed=d["seed"],
+            pigment_key=d.get("pigment_key", ""),
+            purity=d.get("purity", 0.0),
+            opacity=d.get("opacity", 0.0),
+            stability=d.get("stability", 0.0),
+            ink_key=d.get("ink_key", ""),
+            ink_color=tuple(ink_color) if ink_color else (0, 0, 0),
+            ink_grid=d.get("ink_grid"),
         )
+
+    def has_dye(self) -> bool:
+        return bool(self.pigment_key)
+
+    def has_ink(self) -> bool:
+        return bool(self.ink_key) and self.ink_grid is not None
+
+    def quality(self) -> float:
+        """Combined visual quality (0–1) based on pigment attributes."""
+        if not self.pigment_key:
+            return 0.0
+        return round(self.purity * 0.45 + self.opacity * 0.30 + self.stability * 0.25, 3)
 
 
 THREAD_COLORS = {
@@ -400,20 +435,78 @@ TEMPLATES = {
 BASE_TEMPLATES = list(TEMPLATES.keys())
 
 
+def make_outline_grid(grid):
+    """Return a binary grid the same shape as `grid`. True for filled cells
+    that touch the empty void on any 4-neighbour side (or the boundary)."""
+    if not grid or not grid[0]:
+        return None
+    rows = len(grid)
+    cols = len(grid[0])
+    out = [[False] * cols for _ in range(rows)]
+    for r in range(rows):
+        for c in range(cols):
+            if not grid[r][c]:
+                continue
+            on_edge = (r == 0 or r == rows - 1 or c == 0 or c == cols - 1)
+            if on_edge:
+                out[r][c] = True
+                continue
+            if (not grid[r - 1][c]) or (not grid[r + 1][c]) \
+               or (not grid[r][c - 1]) or (not grid[r][c + 1]):
+                out[r][c] = True
+    return out
+
+
+def _lerp_color(a, b, t):
+    t = max(0.0, min(1.0, t))
+    return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
+
+
 class TapestryGenerator:
     def __init__(self, world_seed: int):
         self._world_seed = world_seed
         self._counter    = 0
 
-    def generate(self, thread: str, height: int, width: int, grid: list, template: str) -> Tapestry:
+    def generate(self, thread: str, height: int, width: int, grid: list,
+                 template: str, pigment=None, ink=None) -> Tapestry:
         self._counter += 1
         seed = (self._world_seed * 31 + self._counter * 6271) & 0xFFFFFFFF
         uid  = hashlib.md5(f"tapestry_{seed}_{self._counter}".encode()).hexdigest()[:12]
         base_color = THREAD_COLORS.get(thread, (220, 210, 190))
         import random
         rng = random.Random(seed)
-        jitter = lambda c: max(0, min(255, c + rng.randint(-6, 6)))
+
+        # ── Apply dye bath ────────────────────────────────────────────────
+        pigment_key = ""
+        purity = opacity = stability = 0.0
+        if pigment is not None:
+            pigment_key = pigment.pigment_key
+            purity      = pigment.purity
+            opacity     = pigment.opacity
+            stability   = pigment.stability
+            pig_rgb     = tuple(pigment.color_rgb)
+            # Opacity acts as blend weight: opaque pigments overwrite thread color,
+            # transparent ones (e.g. lakes) tint subtly.
+            blend = 0.30 + 0.65 * opacity
+            base_color = _lerp_color(base_color, pig_rgb, blend)
+
+        # Purity inversely controls colour jitter — pure pigments give cleaner colour.
+        amp = int(round(8 - purity * 6)) if pigment_key else 6
+        amp = max(1, amp)
+        jitter = lambda c: max(0, min(255, c + rng.randint(-amp, amp)))
         color = tuple(jitter(c) for c in base_color)
+
+        # ── Apply ink outline ─────────────────────────────────────────────
+        ink_key   = ""
+        ink_color = (0, 0, 0)
+        ink_grid  = None
+        if ink is not None:
+            ink_key   = ink.pigment_key
+            ir, ig, ib = ink.color_rgb
+            # Inks always render dark — clamp brightness regardless of source colour.
+            ink_color = (max(0, ir - 25), max(0, ig - 25), max(0, ib - 25))
+            ink_grid  = make_outline_grid(grid)
+
         return Tapestry(
             uid=uid,
             thread=thread,
@@ -423,4 +516,11 @@ class TapestryGenerator:
             color=color,
             template=template,
             seed=seed,
+            pigment_key=pigment_key,
+            purity=round(purity, 3),
+            opacity=round(opacity, 3),
+            stability=round(stability, 3),
+            ink_key=ink_key,
+            ink_color=ink_color,
+            ink_grid=ink_grid,
         )

@@ -3,7 +3,10 @@ import random
 from dataclasses import dataclass
 
 from constants import CHUNK_W, BLOCK_SIZE, SURFACE_Y
-from blocks import STONE, BEDROCK, AIR, OUTPOST_FLAG_BLOCK, COBBLESTONE
+from blocks import (STONE, BEDROCK, AIR, OUTPOST_FLAG_BLOCK, COBBLESTONE,
+                    WOOD_FENCE, BANNER_BLOCK,
+                    HOUSE_WALL, HOUSE_ROOF, HOUSE_WALL_STONE,
+                    BAMBOO_FENCE_JP)
 
 # ---------------------------------------------------------------------------
 # Spawn constants
@@ -20,6 +23,200 @@ OUTPOST_SPAWN_CHANCE = 0.20 # 20% → avg ~1 outpost per 400 blocks
 # ---------------------------------------------------------------------------
 
 OUTPOST_TYPES = {
+
+    "scriptorium": {
+        "display_name":    "Scriptorium",
+        "eligible_biomes": ["temperate", "rolling_hills", "highlands", "river_delta",
+                            "alpine_mountain", "rocky_mountain", "grassland"],
+        "sells": [("manuscript_rare", 240), ("manuscript_fine", 90),
+                  ("manuscript_common", 50),
+                  ("ink_indigo", 28), ("ink_cobalt", 28), ("parchment_fine", 14)],
+        "buys":  [("flax_fiber", 3, 30), ("oak_gall", 5, 15),
+                  ("ink_black", 18, 8), ("parchment", 6, 20)],
+        "needs": [("lumber", 25), ("leather", 8)],
+        "base_stock": 5, "clothing_key": "monk",
+        "building_style": "shrine", "half_w": 15, "layout": "monastery",
+    },
+
+    "tournament_grounds": {
+        "display_name":    "Tournament Grounds",
+        "eligible_biomes": ["temperate", "rolling_hills", "grassland", "steppe",
+                            "savanna", "mediterranean"],
+        "sells": [("lance_shaft", 20), ("tournament_lance_head", 35),
+                  ("horse_barding", 220),
+                  ("armor_jousting_helmet", 180), ("armor_jousting_chestplate", 260),
+                  ("armor_jousting_leggings", 210), ("armor_jousting_boots", 140),
+                  ("training_wooden_lance", 22), ("training_riding_pad", 30),
+                  ("tournament_blunt_arrow", 6),
+                  ("pennant_kings_lists", 38), ("pennant_pay_day", 36),
+                  ("coin_champion_medallion", 28), ("coin_first_blood", 18),
+                  ("coin_unhorsed_penny", 14), ("trophy_first_pass_token", 22),
+                  ("victory_garland", 35), ("rite_blade", 240),
+                  ("knight_dossier", 75), ("muster_horn", 95),
+                  ("field_marching_tent", 110), ("field_pavilion_pole", 60),
+                  ("field_lance_rack", 70), ("field_arrow_chest", 65),
+                  ("medicine_battlefield_kit", 90), ("medicine_horse_liniment", 25)],
+        "buys":  [("tournament_pennant", 45, 6), ("lance_shaft", 8, 10),
+                  ("trophy_broken_lance", 28, 8),
+                  ("trophy_splintered_shield", 30, 6),
+                  ("trophy_unhorsed_stirrup", 38, 5),
+                  ("trophy_grandmaster_glove", 120, 2)],
+        "needs": [("lumber", 18), ("iron_chunk", 6)],
+        "base_stock": 4, "clothing_key": "soldier",
+        "building_style": "house", "half_w": 22, "layout": "tournament",
+    },
+
+    "horde_ordu": {
+        "display_name":    "Horde Ordu",
+        "eligible_biomes": ["steppe", "arid_steppe", "savanna", "wasteland", "tundra"],
+        "sells": [("mongol_composite_bow", 180), ("turkish_recurve", 165),
+                  ("birch_bark_quiver", 28), ("mongol_arrow", 4),
+                  ("saddle_nomad", 110), ("barding_lamellar_horde", 240),
+                  ("barding_tug_caparison", 130),
+                  ("armor_horde_lamellar_helm", 95),
+                  ("livery_horde_deel", 55), ("nine_tail_standard", 320),
+                  ("horsetail_charm", 28), ("mares_milk_drum", 45),
+                  ("naadam_medal", 35), ("silver_stirrup", 110),
+                  ("felt_of_a_hundred_winters", 65), ("coin_horde_tug", 16),
+                  ("book_horde_yasa", 260), ("map_steppe_range", 70),
+                  ("training_steppe_practice_bow", 22),
+                  ("standard_nine_tail", 280), ("pennant_naadam", 38),
+                  ("feast_naadam_dumplings", 14), ("feast_horde_buuz", 11),
+                  ("feast_aaruul_curd", 7), ("drink_kumis", 6),
+                  ("drink_airag", 7), ("drink_clan_butter_tea", 5),
+                  ("instrument_naadam_drum", 90), ("instrument_morin_khuur", 140),
+                  ("field_ger_panels", 75), ("field_water_skin", 22)],
+        "buys":  [("trophy_khan_arrow", 40, 6), ("tournament_pennant", 50, 4),
+                  ("wool", 5, 30)],
+        "needs": [("lumber", 10), ("leather", 8)],
+        "base_stock": 5, "clothing_key": "trapper",
+        "building_style": "house", "half_w": 16, "layout": "estate",
+    },
+
+    "cataphract_sun_court": {
+        "display_name":    "Cataphract Sun-Court",
+        "eligible_biomes": ["mediterranean", "rolling_hills", "savanna",
+                            "desert", "arid_steppe"],
+        "sells": [("persian_horsebow", 175), ("kontos_lance_head", 60),
+                  ("saddle_cataphract", 145),
+                  ("barding_gilt_peacock", 360),
+                  ("barding_persepolis_chamfron", 320),
+                  ("armor_cataphract_spangenhelm", 130),
+                  ("livery_silk_cloak", 95), ("standard_sun_banner", 280),
+                  ("sun_disc_chamfron", 140), ("peacock_feather_crest", 75),
+                  ("cedar_throne_shard", 110), ("lion_pommel", 90),
+                  ("klivanion_scale", 35), ("mithras_lamp", 120),
+                  ("coin_cataphract_sun", 22),
+                  ("book_cataphract_strategikon", 280),
+                  ("pennant_nowruz", 40), ("feast_nowruz_rice", 13),
+                  ("feast_persian_kebab", 16), ("feast_sun_lord_pomegranate", 8),
+                  ("drink_nowruz_sharbat", 6), ("drink_persian_doogh", 5),
+                  ("instrument_kettle_drum", 110),
+                  ("ink_cataphract_gold", 35),
+                  ("training_padded_target", 45)],
+        "buys":  [("trophy_cataphract_scale", 35, 8),
+                  ("tournament_pennant", 50, 4),
+                  ("gold_nugget", 15, 12)],
+        "needs": [("lumber", 16), ("iron_chunk", 8)],
+        "base_stock": 4, "clothing_key": "scholar",
+        "building_style": "house", "half_w": 20, "layout": "estate",
+    },
+
+    "bushi_dojo": {
+        "display_name":    "Bushi Dojo",
+        "eligible_biomes": ["east_asian", "rolling_hills", "alpine_mountain",
+                            "rocky_mountain", "temperate"],
+        "sells": [("yumi_longbow", 195), ("katana_blade", 80),
+                  ("wakizashi_blade", 50), ("lacquered_quiver", 32),
+                  ("saddle_samurai", 130),
+                  ("barding_uma_yoroi", 280),
+                  ("barding_samurai_horo", 165),
+                  ("armor_bushi_kabuto", 140),
+                  ("livery_kataginu", 55), ("livery_haori", 50),
+                  ("mon_banner", 200), ("standard_mon_banner", 280),
+                  ("tea_bowl_first_vassal", 85), ("sashimono", 65),
+                  ("wakizashi_keepsake", 320),
+                  ("lacquered_helm_keepsake", 240),
+                  ("death_poem_scroll", 40), ("sageo_cord", 18),
+                  ("obi_cloth", 24), ("coin_bushi_mon", 20),
+                  ("book_bushi_bushido", 280), ("pennant_mon", 40),
+                  ("feast_bushi_onigiri", 9), ("feast_lord_tasted_rice", 11),
+                  ("feast_mochi_celebration", 8),
+                  ("feast_sashimi_set", 14), ("drink_sake_temple", 7),
+                  ("drink_matcha_ceremony", 6),
+                  ("instrument_taiko", 130), ("instrument_shakuhachi", 95),
+                  ("ink_bushi_sumi", 32),
+                  ("training_bokken", 22), ("training_makiwara", 38),
+                  ("training_practice_yumi", 26)],
+        "buys":  [("trophy_mon_torn", 35, 6), ("tournament_pennant", 50, 4)],
+        "needs": [("lumber", 14), ("iron_chunk", 5)],
+        "base_stock": 5, "clothing_key": "monk",
+        "building_style": "shrine", "half_w": 18, "layout": "monastery",
+    },
+
+    "furusiyya_madrasa": {
+        "display_name":    "Furusiyya Madrasa",
+        "eligible_biomes": ["desert", "savanna", "mediterranean", "rolling_hills",
+                            "arid_steppe"],
+        "sells": [("turkish_recurve", 165), ("scimitar_blade", 55),
+                  ("tulwar_blade", 60), ("saffron_quiver", 30),
+                  ("saddle_mamluk", 140),
+                  ("barding_saffron_caparison", 175),
+                  ("barding_silk_parade", 110),
+                  ("barding_crusader", 200),
+                  ("armor_furusiyya_turban_helm", 110),
+                  ("livery_jubbah", 55), ("livery_keffiyeh", 30),
+                  ("standard_crescent", 280), ("crescent_pennant_relic", 130),
+                  ("madrasa_astrolabe", 145), ("prayer_rope", 25),
+                  ("mamluk_brand_iron", 80), ("damascened_pommel", 105),
+                  ("saffron_saddle_cloth", 60), ("crescent_seal", 70),
+                  ("faris_treatise", 90), ("coin_furusiyya_dinar", 24),
+                  ("book_furusiyya_treatise", 280),
+                  ("book_archery_treatise", 110), ("pennant_crescent", 42),
+                  ("feast_crescent_lamb", 14), ("feast_madrasa_flatbread", 7),
+                  ("feast_saffron_pilaf", 11),
+                  ("drink_arak_madrasa", 7), ("drink_rosewater", 5),
+                  ("instrument_oud", 120),
+                  ("ink_furusiyya_saffron", 32),
+                  ("training_blunted_tulwar", 28),
+                  ("incense_oud", 18)],
+        "buys":  [("trophy_crescent_torn", 35, 6),
+                  ("tournament_pennant", 50, 4),
+                  ("gold_nugget", 14, 12)],
+        "needs": [("lumber", 14), ("iron_chunk", 5)],
+        "base_stock": 5, "clothing_key": "scholar",
+        "building_style": "shrine", "half_w": 19, "layout": "monastery",
+    },
+
+    "rajput_garh": {
+        "display_name":    "Rajput Garh",
+        "eligible_biomes": ["south_asian", "savanna", "rolling_hills",
+                            "mediterranean"],
+        "sells": [("rajput_dhanush", 180), ("khanda_blade", 85),
+                  ("tulwar_blade", 60), ("saddle_rajput", 135),
+                  ("barding_tiger_pakhar", 270),
+                  ("barding_mughal_pakhar", 245),
+                  ("armor_rajput_pagri", 95),
+                  ("livery_jama", 60), ("livery_angavastram", 45),
+                  ("standard_saffron_banner", 280),
+                  ("vermilion_paint_pot", 22), ("saffron_sash", 32),
+                  ("marigold_garland", 18), ("rudraksha_rosary", 28),
+                  ("tiger_claw_gauntlet", 165),
+                  ("sun_disc_shield", 195), ("lotus_seal", 110),
+                  ("sandalwood_charm", 26), ("coin_rajput_mohur", 26),
+                  ("book_rajput_charter", 280), ("pennant_dussehra", 44),
+                  ("feast_dussehra_thali", 18), ("feast_rajput_laal_maas", 17),
+                  ("feast_marigold_sweet", 6), ("drink_lassi_saffron", 6),
+                  ("drink_chai_masala", 5),
+                  ("ink_rajput_vermilion", 32), ("incense_sandalwood", 16),
+                  ("prayer_beads_rudraksha", 30)],
+        "buys":  [("trophy_rajput_sash_taken", 38, 5),
+                  ("tournament_pennant", 50, 4),
+                  ("gold_nugget", 14, 10)],
+        "needs": [("lumber", 14), ("iron_chunk", 5)],
+        "base_stock": 5, "clothing_key": "scholar",
+        "building_style": "house", "half_w": 20, "layout": "estate",
+    },
 
     "wine_estate": {
         "display_name":    "Wine Estate",
@@ -393,6 +590,125 @@ OUTPOST_TYPES = {
         "building_style": "house", "half_w": 14, "layout": "market",
     },
 
+    "creamery": {
+        "display_name":    "Creamery",
+        "eligible_biomes": ["temperate", "rolling_hills", "birch_forest",
+                            "grassland", "river_delta"],
+        "sells": [("cheese", 16), ("bread", 8)],
+        "buys":  [("milk", 6, 25), ("sheep_milk", 8, 20), ("goat_milk", 8, 20),
+                  ("egg", 5, 30), ("golden_milk", 32, 6), ("golden_egg", 36, 6)],
+        "needs": [("lumber", 12), ("coarse_salt", 6)],
+        "base_stock": 5, "clothing_key": "weaver",
+        "building_style": "house", "half_w": 13, "layout": "default",
+    },
+
+    "carders_cottage": {
+        "display_name":    "Carders' Cottage",
+        "eligible_biomes": ["rolling_hills", "temperate", "alpine_mountain",
+                            "steep_hills", "boreal", "tundra", "birch_forest"],
+        "sells": [("textile_cloth", 22), ("dye_extract_ivory", 16),
+                  ("dye_extract_ochre", 18)],
+        "buys":  [("wool", 6, 25), ("golden_wool", 22, 8),
+                  ("cashmere_fiber", 14, 12), ("sheep_droppings", 2, 20)],
+        "needs": [("lumber", 10), ("coal", 4)],
+        "base_stock": 5, "clothing_key": "weaver",
+        "building_style": "house", "half_w": 12, "layout": "default",
+    },
+
+    "smokehouse": {
+        "display_name":    "Smokehouse",
+        "eligible_biomes": ["temperate", "rolling_hills", "boreal",
+                            "redwood", "birch_forest", "grassland"],
+        "sells": [("salt_cured_beef", 28), ("salt_cured_mutton", 24),
+                  ("lardo", 22), ("cooked_beef", 14)],
+        "buys":  [("raw_pork", 7, 20), ("lard", 9, 15),
+                  ("raw_mutton", 7, 20), ("raw_beef", 8, 20),
+                  ("raw_chicken", 6, 25)],
+        "needs": [("lumber", 14), ("coarse_salt", 10), ("coal", 8)],
+        "base_stock": 5, "clothing_key": "trapper",
+        "building_style": "house", "half_w": 13, "layout": "default",
+    },
+
+    "rug_merchant": {
+        "display_name":    "Rug Merchant",
+        "eligible_biomes": ["south_asian", "east_asian", "mediterranean",
+                            "arid_steppe", "desert"],
+        "sells": [("dye_extract_crimson", 22), ("dye_extract_indigo", 22),
+                  ("dye_extract_amber", 18)],
+        "buys":  [("textile_cloth", 18, 12),
+                  ("textile_rug_amber", 28, 6), ("textile_rug_crimson", 28, 6),
+                  ("textile_tapestry_amber", 34, 4),
+                  ("textile_tapestry_crimson", 34, 4),
+                  ("andean_textile", 24, 8)],
+        "needs": [("lumber", 8), ("coal", 4)],
+        "base_stock": 5, "clothing_key": "silk_master",
+        "building_style": "house", "half_w": 14, "layout": "market",
+    },
+
+    "highland_dairy": {
+        "display_name":    "Highland Dairy",
+        "eligible_biomes": ["alpine_mountain", "rocky_mountain", "steep_hills",
+                            "tundra", "boreal"],
+        "sells": [("cheese_cured_fine", 38), ("cheese", 16), ("coarse_salt", 9)],
+        "buys":  [("milk", 7, 25), ("sheep_milk", 9, 20), ("goat_milk", 9, 20),
+                  ("cheese", 14, 12), ("golden_milk", 36, 6)],
+        "needs": [("lumber", 12), ("coal", 6), ("coarse_salt", 6)],
+        "base_stock": 5, "clothing_key": "alpine",
+        "building_style": "house", "half_w": 13, "layout": "default",
+    },
+
+    "charcuterie_house": {
+        "display_name":    "Charcuterie House",
+        "eligible_biomes": ["mediterranean", "rolling_hills", "temperate",
+                            "birch_forest", "rocky_mountain"],
+        "sells": [("cheese_cured_superior", 60), ("salt_cured_venison", 36),
+                  ("dye_extract_amber", 18)],
+        "buys":  [("salt_cured_beef", 34, 6), ("salt_cured_mutton", 30, 6),
+                  ("lardo", 26, 8), ("lardo_fine", 38, 5),
+                  ("lardo_superior", 52, 3),
+                  ("cheese_cured_fine", 30, 6),
+                  ("cheese_cured_superior", 48, 4),
+                  ("cooked_beef", 16, 10), ("cooked_mutton", 14, 10),
+                  ("cooked_pork", 16, 10), ("cooked_chicken", 12, 12)],
+        "needs": [("lumber", 12), ("coarse_salt", 10)],
+        "base_stock": 6, "clothing_key": "mediterranean",
+        "building_style": "house", "half_w": 14, "layout": "market",
+    },
+
+    "compost_yard": {
+        "display_name":    "Compost Yard",
+        "eligible_biomes": ["rolling_hills", "temperate", "river_delta",
+                            "grassland", "birch_forest", "wetland"],
+        "sells": [("bread", 8)],
+        "buys":  [("cow_manure", 3, 30), ("pig_manure", 3, 30),
+                  ("sheep_droppings", 3, 30)],
+        "needs": [("lumber", 8)],
+        "base_stock": 3, "clothing_key": "lumberjack",
+        "building_style": "house", "half_w": 11, "layout": "default",
+    },
+
+    "carpet_caravan": {
+        "display_name":    "Carpet Caravan",
+        "eligible_biomes": ["south_asian", "east_asian", "arid_steppe",
+                            "desert", "mediterranean", "savanna"],
+        "sells": [("dye_extract_violet", 22), ("dye_extract_verdant", 20),
+                  ("dye_extract_cobalt", 22), ("dye_extract_rose", 20)],
+        "buys":  [("textile_rug_natural",  22, 6), ("textile_rug_golden",  26, 6),
+                  ("textile_rug_rose",     26, 6), ("textile_rug_cobalt",  26, 6),
+                  ("textile_rug_violet",   28, 6), ("textile_rug_verdant", 26, 6),
+                  ("textile_rug_ivory",    24, 6),
+                  ("textile_tapestry_natural",  28, 4),
+                  ("textile_tapestry_golden",   32, 4),
+                  ("textile_tapestry_rose",     32, 4),
+                  ("textile_tapestry_cobalt",   32, 4),
+                  ("textile_tapestry_violet",   34, 4),
+                  ("textile_tapestry_verdant",  32, 4),
+                  ("textile_tapestry_ivory",    30, 4)],
+        "needs": [("lumber", 8), ("coal", 4)],
+        "base_stock": 5, "clothing_key": "steppe_nomad",
+        "building_style": "house", "half_w": 14, "layout": "market",
+    },
+
     "incense_lodge": {
         "display_name":    "Incense Lodge",
         "eligible_biomes": ["south_asian", "tropical", "jungle", "east_asian"],
@@ -480,10 +796,140 @@ OUTPOST_TYPES = {
         "base_stock": 5, "clothing_key": "beekeeper",
         "building_style": "house", "half_w": 14, "layout": "default",
     },
+
+    "deep_mine_camp": {
+        "display_name":    "Deep Mine Camp",
+        "eligible_biomes": ["rocky_mountain", "alpine_mountain", "canyon",
+                            "steep_hills", "wasteland"],
+        "sells": [("iron_pickaxe", 90), ("tempered_pickaxe", 220),
+                  ("torch", 4), ("mining_potion", 55),
+                  ("mining_post_item", 140), ("coal_miner_item", 320)],
+        "buys":  [("coal", 5, 30), ("iron_chunk", 9, 20),
+                  ("raw_galena", 14, 10), ("raw_hematite", 16, 10),
+                  ("raw_copper_ore", 14, 10), ("raw_cobalt_ore", 28, 6)],
+        "needs": [("lumber", 25), ("coal", 12), ("iron_chunk", 6)],
+        "base_stock": 5, "clothing_key": "blacksmith",
+        "building_style": "smithy", "half_w": 16, "layout": "default",
+    },
+
+    "quarry_camp": {
+        "display_name":    "Quarry Camp",
+        "eligible_biomes": ["rocky_mountain", "canyon", "steep_hills",
+                            "rolling_hills", "wasteland", "arid_steppe"],
+        "sells": [("stone_pickaxe", 25), ("iron_pickaxe", 95),
+                  ("rough_stone_wall", 6), ("torch", 4)],
+        "buys":  [("hornfels", 28, 6), ("gneiss", 22, 6),
+                  ("mica_schist", 36, 4), ("raw_ochre", 10, 12),
+                  ("raw_umber", 10, 12), ("raw_sienna", 10, 12)],
+        "needs": [("lumber", 18), ("iron_chunk", 4)],
+        "base_stock": 6, "clothing_key": "blacksmith",
+        "building_style": "smithy", "half_w": 15, "layout": "default",
+    },
+
+    "prospector_post": {
+        "display_name":    "Prospector Post",
+        "eligible_biomes": ["canyon", "wasteland", "arid_steppe", "desert",
+                            "rocky_mountain", "steep_hills"],
+        "sells": [("stone_pickaxe", 22), ("torch", 4),
+                  ("mining_potion", 55), ("mining_potion_fine", 110)],
+        "buys":  [("raw_lapis", 32, 6), ("raw_azurite", 30, 6),
+                  ("raw_malachite", 26, 6), ("raw_cinnabar", 36, 4),
+                  ("raw_realgar", 30, 4), ("raw_chrome_ore", 28, 6),
+                  ("raw_antimony", 24, 6)],
+        "needs": [("lumber", 12), ("coal", 8)],
+        "base_stock": 5, "clothing_key": "trapper",
+        "building_style": "house", "half_w": 13, "layout": "default",
+    },
+
+    "lapidary_atelier": {
+        "display_name":    "Lapidary Atelier",
+        "eligible_biomes": ["rocky_mountain", "alpine_mountain", "canyon",
+                            "mediterranean", "east_asian", "steep_hills"],
+        "sells": [("gem_cutter_item", 240), ("cut_crystal", 65),
+                  ("ruby_dust", 30), ("amethyst_dust", 28),
+                  ("topaz_dust", 26), ("sapphire_dust", 30)],
+        "buys":  [("ruby", 110, 4), ("amethyst_gem", 85, 4),
+                  ("diamond", 180, 2), ("obsidian_slab", 28, 8),
+                  ("cut_crystal", 35, 4), ("gold_nugget", 45, 6)],
+        "needs": [("lumber", 14), ("coal", 10), ("iron_chunk", 4)],
+        "base_stock": 4, "clothing_key": "artisan",
+        "building_style": "shrine", "half_w": 14, "layout": "default",
+    },
+
+    "coal_pit": {
+        "display_name":    "Coal Pit",
+        "eligible_biomes": ["boreal", "wasteland", "redwood", "rocky_mountain",
+                            "steep_hills", "tundra"],
+        "sells": [("torch", 3), ("coal", 8), ("iron_chunk", 12),
+                  ("stone_pickaxe", 24)],
+        "buys":  [("coal", 4, 60), ("raw_coal_dust", 6, 30),
+                  ("raw_lignite", 8, 20), ("iron_chunk", 8, 25)],
+        "needs": [("lumber", 30), ("iron_chunk", 5)],
+        "base_stock": 8, "clothing_key": "blacksmith",
+        "building_style": "smithy", "half_w": 14, "layout": "default",
+    },
+
+    "marble_quarry": {
+        "display_name":    "Marble Quarry",
+        "eligible_biomes": ["mediterranean", "rolling_hills", "steep_hills",
+                            "canyon", "rocky_mountain", "east_asian"],
+        "sells": [("limestone_block", 6), ("granite_slab", 7),
+                  ("marble_chunk", 12), ("slate_tile", 5),
+                  ("rough_stone_wall", 6), ("chisel", 35)],
+        "buys":  [("marble_chunk", 9, 20), ("slate_chunk", 7, 20),
+                  ("limestone_chip", 4, 30), ("granite_slab", 5, 20),
+                  ("hornfels", 22, 6)],
+        "needs": [("lumber", 22), ("iron_chunk", 6)],
+        "base_stock": 7, "clothing_key": "mediterranean",
+        "building_style": "shrine", "half_w": 17, "layout": "default",
+    },
+
+    "dwarven_hold": {
+        "display_name":    "Dwarven Hold",
+        "eligible_biomes": ["alpine_mountain", "rocky_mountain", "canyon"],
+        "sells": [("gold_pickaxe", 320), ("tempered_pickaxe", 240),
+                  ("mining_elixir", 280), ("obsidian_slab", 65),
+                  ("ruby", 140), ("amethyst_gem", 110)],
+        "buys":  [("gold_nugget", 55, 12), ("obsidian_slab", 32, 8),
+                  ("iron_chunk", 11, 40), ("ruby", 95, 4),
+                  ("diamond", 165, 2), ("marble_chunk", 14, 10)],
+        "needs": [("lumber", 28), ("coal", 15), ("iron_chunk", 10)],
+        "base_stock": 4, "clothing_key": "blacksmith",
+        "building_style": "smithy", "half_w": 18, "layout": "estate",
+        "spawn_chance_mult": 0.4,
+    },
+
+    "sulfur_pit": {
+        "display_name":    "Sulfur Pit",
+        "eligible_biomes": ["wasteland", "canyon", "arid_steppe", "desert"],
+        "sells": [("torch", 3), ("mining_potion_fine", 105),
+                  ("coal", 7), ("iron_pickaxe", 95)],
+        "buys":  [("raw_realgar", 38, 6), ("raw_cinnabar", 42, 4),
+                  ("raw_antimony", 30, 6), ("raw_coal_dust", 9, 20),
+                  ("coal", 6, 25)],
+        "needs": [("lumber", 14), ("iron_chunk", 5)],
+        "base_stock": 5, "clothing_key": "alchemist",
+        "building_style": "smithy", "half_w": 13, "layout": "default",
+        "spawn_chance_mult": 0.7,
+    },
+
+    "gold_panning_camp": {
+        "display_name":    "Gold Panning Camp",
+        "eligible_biomes": ["wetland", "jungle", "tropical", "swamp", "savanna"],
+        "sells": [("stone_pickaxe", 24), ("torch", 4), ("clay", 3),
+                  ("mining_potion", 55)],
+        "buys":  [("gold_nugget", 58, 10), ("raw_ochre", 11, 15),
+                  ("raw_sienna", 11, 15), ("raw_umber", 11, 15),
+                  ("clay", 2, 40)],
+        "needs": [("lumber", 12), ("coal", 5)],
+        "base_stock": 6, "clothing_key": "trapper",
+        "building_style": "house", "half_w": 13, "layout": "default",
+    },
 }
 
 # Flag pennant color per outpost type (RGB)
 OUTPOST_FLAG_COLORS = {
+    "scriptorium":       (175, 135,  70),
     "wine_estate":       (140,  20,  55),
     "herb_monastery":    (110,  55, 170),
     "trapper_post":      (130,  75,  35),
@@ -524,6 +970,28 @@ OUTPOST_FLAG_COLORS = {
     "polynesian_shrine_outpost": (120, 80, 160),
     "mountain_lodge":            (100, 120, 155),
     "apiary":                    (210, 175,  55),
+    "deep_mine_camp":            ( 75,  70,  78),
+    "quarry_camp":               (160, 150, 135),
+    "prospector_post":           (175, 130,  55),
+    "lapidary_atelier":          (180,  80, 180),
+    "coal_pit":                  ( 40,  38,  42),
+    "marble_quarry":             (230, 226, 218),
+    "dwarven_hold":              (135,  85,  35),
+    "sulfur_pit":                (215, 195,  45),
+    "gold_panning_camp":         (220, 185,  70),
+    "horde_ordu":                (130,  95,  55),
+    "cataphract_sun_court":      (235, 200,  85),
+    "bushi_dojo":                ( 35,  35,  45),
+    "furusiyya_madrasa":         (220, 175,  60),
+    "rajput_garh":               (210,  55,  70),
+    "creamery":                  (245, 240, 220),
+    "carders_cottage":           (220, 200, 175),
+    "smokehouse":                (140,  90,  70),
+    "rug_merchant":              (180,  90, 160),
+    "highland_dairy":            (230, 235, 245),
+    "charcuterie_house":         (170,  85,  75),
+    "compost_yard":              (105,  80,  50),
+    "carpet_caravan":            (200, 120, 180),
 }
 
 _MILITARY_OUTPOST_TYPES = {
@@ -534,41 +1002,91 @@ _MILITARY_OUTPOST_TYPES = {
 # Maps each biodome to its eligible outpost types
 BIOME_OUTPOST_TYPES = {
     "temperate":       ("wine_estate",        "herb_monastery",    "border_garrison",
-                        "timber_camp",         "apiary"),
+                        "timber_camp",         "apiary",            "scriptorium",
+                        "tournament_grounds",  "tournament_grounds",
+                        "creamery",            "smokehouse",        "carders_cottage",
+                        "charcuterie_house",   "compost_yard"),
     "boreal":          ("trapper_post",        "boreal_distillery", "timber_camp",
-                        "glacier_camp"),
+                        "glacier_camp",        "coal_pit",
+                        "smokehouse",          "carders_cottage",
+                        "highland_dairy"),
     "birch_forest":    ("herb_monastery",      "hillside_vineyard", "border_garrison",
-                        "timber_camp",         "apiary"),
+                        "timber_camp",         "apiary",
+                        "creamery",            "smokehouse",        "carders_cottage",
+                        "charcuterie_house",   "compost_yard"),
     "jungle":          ("coffee_plantation",   "jungle_herbalist",  "silk_pavilion",
-                        "incense_lodge",       "apiary"),
+                        "incense_lodge",       "apiary",            "gold_panning_camp"),
     "wetland":         ("fungal_grove",        "fishing_outpost",   "reed_weaver",
-                        "bog_apothecary"),
-    "redwood":         ("herb_monastery",      "trapper_post",      "timber_camp"),
+                        "bog_apothecary",      "gold_panning_camp",
+                        "compost_yard"),
+    "redwood":         ("herb_monastery",      "trapper_post",      "timber_camp",
+                        "coal_pit",            "smokehouse"),
     "tropical":        ("coffee_plantation",   "spice_market",      "coastal_citadel",
-                        "incense_lodge",       "reed_weaver"),
-    "savanna":         ("nomad_camp",          "spirit_distillery", "desert_legion"),
-    "wasteland":       ("nomad_camp",          "canyon_forge",      "steppe_warcamp"),
+                        "incense_lodge",       "reed_weaver",       "gold_panning_camp"),
+    "savanna":         ("nomad_camp",          "spirit_distillery", "desert_legion",
+                        "gold_panning_camp",
+                        "tournament_grounds",
+                        "furusiyya_madrasa",   "rajput_garh",
+                        "cataphract_sun_court","horde_ordu",
+                        "carpet_caravan"),
+    "wasteland":       ("nomad_camp",          "canyon_forge",      "steppe_warcamp",
+                        "deep_mine_camp",      "prospector_post",   "coal_pit",
+                        "sulfur_pit",          "horde_ordu"),
     "alpine_mountain": ("alpine_monastery",    "cheese_cave",       "highland_fortress",
-                        "glacier_camp",        "mountain_lodge",    "apiary"),
+                        "glacier_camp",        "mountain_lodge",    "apiary",
+                        "deep_mine_camp",      "lapidary_atelier",  "dwarven_hold",
+                        "carders_cottage",     "highland_dairy"),
     "rocky_mountain":  ("cheese_cave",         "canyon_forge",      "highland_fortress",
-                        "mountain_lodge"),
+                        "mountain_lodge",      "deep_mine_camp",    "quarry_camp",
+                        "prospector_post",     "lapidary_atelier",  "coal_pit",
+                        "marble_quarry",       "dwarven_hold",
+                        "highland_dairy",      "charcuterie_house"),
     "rolling_hills":   ("hillside_vineyard",   "pottery_workshop",  "border_garrison",
-                        "mountain_lodge",      "apiary"),
+                        "mountain_lodge",      "apiary",            "scriptorium",
+                        "quarry_camp",         "marble_quarry",
+                        "tournament_grounds",  "tournament_grounds",
+                        "creamery",            "smokehouse",        "carders_cottage",
+                        "charcuterie_house",   "compost_yard"),
     "steep_hills":     ("hillside_vineyard",   "sculpture_atelier", "highland_fortress",
-                        "mountain_lodge"),
-    "steppe":          ("nomad_camp",          "spirit_distillery", "steppe_warcamp"),
-    "arid_steppe":     ("nomad_camp",          "desert_glassworks", "desert_legion"),
-    "desert":          ("desert_glassworks",   "canyon_forge",      "desert_legion"),
-    "tundra":          ("boreal_distillery",   "alpine_monastery",  "glacier_camp"),
+                        "mountain_lodge",      "quarry_camp",       "prospector_post",
+                        "lapidary_atelier",    "coal_pit",          "marble_quarry",
+                        "carders_cottage",     "highland_dairy"),
+    "steppe":          ("nomad_camp",          "spirit_distillery", "steppe_warcamp",
+                        "tournament_grounds",  "tournament_grounds",
+                        "horde_ordu",          "horde_ordu",        "horde_ordu"),
+    "arid_steppe":     ("nomad_camp",          "desert_glassworks", "desert_legion",
+                        "quarry_camp",         "prospector_post",   "sulfur_pit",
+                        "horde_ordu",          "cataphract_sun_court",
+                        "furusiyya_madrasa",   "rug_merchant",
+                        "carpet_caravan"),
+    "desert":          ("desert_glassworks",   "canyon_forge",      "desert_legion",
+                        "prospector_post",     "sulfur_pit",
+                        "furusiyya_madrasa",   "furusiyya_madrasa",
+                        "cataphract_sun_court","carpet_caravan"),
+    "tundra":          ("boreal_distillery",   "alpine_monastery",  "glacier_camp",
+                        "coal_pit",            "carders_cottage",
+                        "highland_dairy"),
     "swamp":           ("swamp_alchemist",     "salt_works",        "reed_weaver",
-                        "bog_apothecary"),
+                        "bog_apothecary",      "gold_panning_camp"),
     "beach":           ("fishing_outpost",     "coastal_saltworks", "coastal_citadel"),
-    "canyon":          ("canyon_forge",        "desert_glassworks", "highland_fortress"),
-    "mediterranean":   ("olive_press",         "wine_estate",       "coastal_citadel"),
+    "canyon":          ("canyon_forge",        "desert_glassworks", "highland_fortress",
+                        "deep_mine_camp",      "quarry_camp",       "prospector_post",
+                        "lapidary_atelier",    "marble_quarry",     "dwarven_hold",
+                        "sulfur_pit"),
+    "mediterranean":   ("olive_press",         "wine_estate",       "coastal_citadel",
+                        "marble_quarry",
+                        "tournament_grounds",  "tournament_grounds",
+                        "cataphract_sun_court","furusiyya_madrasa",
+                        "rug_merchant",        "charcuterie_house",
+                        "carpet_caravan"),
     "east_asian":      ("tea_house",           "pottery_workshop",  "silk_pavilion",
-                        "incense_lodge"),
+                        "incense_lodge",       "lapidary_atelier",  "marble_quarry",
+                        "bushi_dojo",          "bushi_dojo",        "bushi_dojo",
+                        "rug_merchant",        "carpet_caravan"),
     "south_asian":     ("spice_market",        "textile_guild",     "silk_pavilion",
-                        "incense_lodge"),
+                        "incense_lodge",
+                        "rajput_garh",         "rajput_garh",       "rajput_garh",
+                        "rug_merchant",        "carpet_caravan"),
     "pacific_island":  ("pearl_diving_camp",   "canoe_trading_post",
                         "polynesian_shrine_outpost"),
 }
@@ -667,6 +1185,7 @@ _NAME_PLACE = {
 }
 
 _TYPE_SUFFIXES = {
+    "scriptorium":       ["Scriptorium", "Library", "Manuscript House"],
     "wine_estate":       ["Vineyard", "Wine Estate", "Winery"],
     "herb_monastery":    ["Monastery", "Abbey", "Herb House"],
     "trapper_post":      ["Trading Post", "Trapper's Lodge", "Fur Post"],
@@ -703,6 +1222,29 @@ _TYPE_SUFFIXES = {
     "glacier_camp":      ["Glacier Camp", "Ice Station", "Frost Outpost", "Cold Camp"],
     "bog_apothecary":    ["Bog Apothecary", "Marsh Steepery", "Peat Tea House", "Mire Apothecary"],
     "apiary":            ["Apiary", "Bee Garden", "Honey House", "Meadow Apiary"],
+    "deep_mine_camp":    ["Deep Mine", "Pit Camp", "Shaft Camp", "Lodebreak"],
+    "quarry_camp":       ["Quarry", "Stoneworks", "Cutters' Camp", "Block Quarry"],
+    "prospector_post":   ["Prospector Post", "Strike Camp", "Vein Camp", "Sluice Camp"],
+    "lapidary_atelier":  ["Lapidary", "Gem Atelier", "Jewel Cutters", "Faceting House"],
+    "coal_pit":          ["Coal Pit", "Collier Camp", "Sootworks", "Pit Head"],
+    "marble_quarry":     ["Marble Quarry", "Stoneyard", "Cutter's Reach", "White Quarry"],
+    "dwarven_hold":      ["Dwarven Hold", "Underhall", "Stonefast", "Deeproot Hold"],
+    "sulfur_pit":        ["Sulfur Pit", "Brimstone Camp", "Cinder Works", "Yellow Pit"],
+    "gold_panning_camp": ["Panning Camp", "Sluice Camp", "Riverstrike", "Gravel Bend"],
+    "creamery":          ["Creamery", "Dairy", "Milk House", "Butter Cottage"],
+    "carders_cottage":   ["Carders' Cottage", "Spinners' Cottage", "Wool House",
+                          "Fleece Hall", "Distaff Cottage"],
+    "smokehouse":        ["Smokehouse", "Butcher's Yard", "Curing House", "Meat Hall"],
+    "rug_merchant":      ["Rug Merchant", "Carpet Bazaar", "Tapestry House",
+                          "Loom Bazaar"],
+    "highland_dairy":    ["Highland Dairy", "Mountain Creamery", "Alm Dairy",
+                          "Shepherd's Cellar"],
+    "charcuterie_house": ["Charcuterie House", "Cured Meats Hall", "Salumi House",
+                          "Larder Market"],
+    "compost_yard":      ["Compost Yard", "Manure Pits", "Dung Works",
+                          "Field-Hand's Yard"],
+    "carpet_caravan":    ["Carpet Caravan", "Dye-Loom Caravan", "Tapestry Caravan",
+                          "Weavers' Caravan"],
 }
 
 def _make_outpost_name(rng, otype: str, biodome: str) -> str:
@@ -771,6 +1313,36 @@ _CAMP_LONGHOUSE_BIOMES = {
 }
 
 
+def _place_tilt_rail(world, left_x, sy, width, biodome, tournament=False):
+    """Jousting tilt-rail: two end posts with a horizontal rail between them.
+
+    Used by tournament_grounds (long lane with pennanted end-posts).
+    East-asian / south-asian biomes use bamboo rails; everywhere else uses
+    plain wood. Tournament lanes get a heraldic banner at each end-post.
+    """
+    if width < 3:
+        return
+    rail_block = BAMBOO_FENCE_JP if biodome in _EASTERN_CHAPTER_BIOMES else WOOD_FENCE
+    rail_y     = sy - 1
+    post_y_top = sy - 3
+    # End posts — two-tall, foreground so they read as solid pillars
+    for px in (left_x, left_x + width - 1):
+        if not (0 <= px < world.width):
+            continue
+        for py in range(post_y_top, sy):
+            if 0 <= py < world.height:
+                world.set_block(px, py, rail_block)
+        if tournament:
+            banner_y = post_y_top - 1
+            if 0 <= banner_y < world.height:
+                world.set_bg_block(px, banner_y, BANNER_BLOCK)
+    # Single rail row spanning between the posts — bg so the player can walk
+    # the full length of the lane without snagging on it.
+    for bx in range(left_x + 1, left_x + width - 1):
+        if 0 <= bx < world.width and 0 <= rail_y < world.height:
+            world.set_bg_block(bx, rail_y, rail_block)
+
+
 def _place_mine_shaft(world, left_x, sy, width, depth):
     """Carve an open mine shaft downward from the surface."""
     for d in range(1, depth + 1):
@@ -831,6 +1403,9 @@ def _dispatch_piece(world, rng, piece, left_x, sy, biodome, wall, roof):
         _place_farm_plot(world, rng, left_x + width // 2, biodome, width // 2)
     elif ptype == "mine":
         _place_mine_shaft(world, left_x, sy, width, piece.get("depth", 12))
+    elif ptype == "tilt_rail":
+        _place_tilt_rail(world, left_x, sy, width, biodome,
+                         tournament=piece.get("tournament", False))
 
 
 def _place_outpost_pieces(world, rng, start_x, sy, biodome, wall, roof, pieces,
@@ -958,6 +1533,31 @@ def _layout_monastery(half_w, wall, roof, rng, biodome, cfg):
     ]
 
 
+# Biome groups feeding tournament/jousting flavor. East-asian / south-asian
+# biomes get bamboo rails on tilt-yards; everywhere else gets plain wood.
+_EASTERN_CHAPTER_BIOMES = {"east_asian", "south_asian"}
+
+
+def _layout_tournament(half_w, wall, roof, rng, biodome, cfg):
+    """Tournament Grounds: viewing stand + jousting lane + stables.
+
+    The long tilt-rail with pennanted end-posts is the unmistakable silhouette
+    here — once spawned, it reads as a tilt-yard from across the chunk.
+    """
+    avail   = half_w * 2 - 1
+    barn_w  = 6
+    stand_w = 7
+    lane_w  = max(13, avail - (stand_w + 2 + 2 + barn_w + 2))
+    return [
+        {"type": "house_2story", "width": stand_w, "floor1": 3, "floor2": 3,
+                                 "npc": True, "flag": True},
+        {"type": "gap",          "width": 2},
+        {"type": "tilt_rail",    "width": lane_w, "tournament": True},
+        {"type": "gap",          "width": 2},
+        {"type": "barn",         "width": barn_w, "height": 4},
+    ]
+
+
 def _layout_watchtower(half_w, wall, roof, rng, biodome, cfg):
     trail = max(1, half_w * 2 - 12)
     return [
@@ -1000,6 +1600,7 @@ _LAYOUT_FNS = {
     "warcamp":       _layout_warcamp,
     "estate":        _layout_estate,
     "monastery":     _layout_monastery,
+    "tournament":    _layout_tournament,
     "watchtower":    _layout_watchtower,
     "market":        _layout_market,
     "underground":   _layout_underground,
@@ -1115,6 +1716,16 @@ def _build_outpost(world, rng, out_bx: int, otype: str, slot_x: int) -> None:
                 MilitarySoldierNPC(sol_px, sol_py, world, otype, clothing, patrol_half)
             )
 
+    # Miners' Guild outposts get a branching underground mineshaft beneath
+    # them — entrance offset from the building footprint so it doesn't punch
+    # through a wall; depths/galleries randomized inside mine_structures.
+    from guilds import OUTPOST_TYPE_TO_INDUSTRY, INDUSTRY_MINING
+    if OUTPOST_TYPE_TO_INDUSTRY.get(otype) == INDUSTRY_MINING:
+        from mine_structures import generate_mine
+        mine_bx = out_bx + half_w - 4
+        mine_sy = terrain_profile.get(mine_bx, sy)
+        generate_mine(world, mine_bx, mine_sy, rng, outpost_type=otype)
+
 # ---------------------------------------------------------------------------
 # Chunk-streaming spawn (called from world.py alongside generate_city_for_chunk)
 # ---------------------------------------------------------------------------
@@ -1167,7 +1778,7 @@ def get_outpost_for_block(bx: int, by: int) -> Outpost | None:
 # Day tick (called from world.py alongside advance_day)
 # ---------------------------------------------------------------------------
 
-def tick_outpost_day(world_day: int) -> None:
+def tick_outpost_day(world_day: int, world_seed: int = 0) -> None:
     for op in OUTPOSTS.values():
         cfg = OUTPOST_TYPES[op.outpost_type]
         all_met = all(nd["supplied"] >= nd["required"] for nd in op.needs.values())
@@ -1187,6 +1798,13 @@ def tick_outpost_day(world_day: int) -> None:
         # Reset supplied for the new day
         for nd in op.needs.values():
             nd["supplied"] = 0
+
+    # Refresh sommelier request boards for wine outposts
+    try:
+        from sommelier import tick_sommelier_day
+        tick_sommelier_day(world_seed, world_day)
+    except Exception:
+        pass
 
 # ---------------------------------------------------------------------------
 # Init / restore on load

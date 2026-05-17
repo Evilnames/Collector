@@ -89,10 +89,15 @@ def draw_tapestry_at(screen, cam_x, cam_y, tp, root_bx, root_by):
         world_y  = root_by - block_offset
         screen_x = root_bx * BLOCK_SIZE - cam_xi
         screen_y = world_y  * BLOCK_SIZE - cam_yi + local_row * CELL_H
+        ink_row = tp.ink_grid[row_idx] if getattr(tp, "ink_grid", None) else None
+        ink_color = getattr(tp, "ink_color", None)
         for col_idx, filled in enumerate(row):
             if not filled:
                 continue
-            color = hi_color if row_idx % 2 == 0 else lo_color
+            if ink_row is not None and ink_row[col_idx] and ink_color:
+                color = ink_color
+            else:
+                color = hi_color if row_idx % 2 == 0 else lo_color
             pygame.draw.rect(screen, color,
                              (screen_x + col_idx * CELL_W, screen_y, CELL_W, CELL_H))
             if CELL_H >= 3 and CELL_W >= 2:

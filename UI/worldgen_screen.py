@@ -46,6 +46,7 @@ _BIODOME_COLOR = {
     "ocean":           ( 35,  85, 145),
     "pacific_island":  (180, 200, 140),
     "canyon":          (170, 110,  80),
+    "red_rock":        (195, 100,  60),
     "mediterranean":   (190, 175, 110),
     "east_asian":      (110, 140, 110),
     "south_asian":     (160, 140,  90),
@@ -163,13 +164,31 @@ def _build_year_states(plan):
 # Drawing helpers
 # ---------------------------------------------------------------------------
 
-def _sea_level_y(strip_rect):
-    """Y at which the ocean surface sits within the silhouette area."""
+_OFFSET_RANGE = 30.0   # |predicted_y_offset| roughly fits in ±30 blocks
+_SILHOUETTE_LO = 0.20  # frac of silhouette_h above the highest peak
+_SILHOUETTE_HI = 0.90  # frac of silhouette_h above the deepest ocean basin
+
+
+def _offset_to_frac(offset: float) -> float:
+    """Map a predicted_y_offset (in blocks, neg=peak, pos=basin) → 0..1 silhouette frac."""
+    norm = max(-_OFFSET_RANGE, min(_OFFSET_RANGE, offset)) / _OFFSET_RANGE
+    # norm: -1 (peak) .. +1 (basin) → frac 0 (top) .. 1 (bottom of silhouette)
+    return (norm + 1.0) * 0.5
+
+
+def _frac_to_y(strip_rect, frac: float) -> int:
     _, y0, _, h = strip_rect
     band_h = h // 4
     silhouette_h = h - band_h
-    # Matches the terrain formula at e≈0.4 — typical coast elevation.
-    return y0 + band_h + int(silhouette_h * (0.20 + 0.70 * (1 - 0.40)))
+    return y0 + band_h + int(silhouette_h * (_SILHOUETTE_LO + (_SILHOUETTE_HI - _SILHOUETTE_LO) * frac))
+
+
+def _sea_level_y(strip_rect):
+    """Y at which the ocean surface sits within the silhouette area.
+
+    Sea level corresponds to offset=0 (SURFACE_Y in the game).
+    """
+    return _frac_to_y(strip_rect, _offset_to_frac(0.0))
 
 
 def _draw_strip(surface, plan, strip_rect, cells_visible: int):
@@ -193,39 +212,49 @@ def _draw_strip(surface, plan, strip_rect, cells_visible: int):
         color = _BIODOME_COLOR.get(c.biodome, (120, 120, 120))
         pygame.draw.rect(surface, color, (cx, y0, cw, band_h))
 
-        # Elevation silhouette under the band.
-        e = c.elevation
+        # Elevation silhouette under the band — driven by the same
+        # predicted_y_offset the game uses, so the sample map and the
+        # generated terrain match.
+        top_y = _frac_to_y(strip_rect, _offset_to_frac(c.predicted_y_offset))
         if c.biodome == "ocean":
-            # Water sits at sea level — only the lower portion is blue,
-            # the upper portion is sky.
+            # Ocean floor sits at the predicted (eroded) basin depth; water
+            # fills from sea level down.
+            pygame.draw.rect(surface, _GROUND, (cx, top_y, cw, y0 + h - top_y))
             pygame.draw.rect(surface, _BIODOME_COLOR["ocean"],
-                             (cx, sea_y, cw, y0 + h - sea_y))
+                             (cx, sea_y, cw, max(0, top_y - sea_y)))
         else:
-            terrain_h = int(silhouette_h * (0.20 + 0.70 * (1 - e)))
-            pygame.draw.rect(surface, _GROUND,
-                             (cx, y0 + band_h + terrain_h, cw, silhouette_h - terrain_h))
+            pygame.draw.rect(surface, _GROUND, (cx, top_y, cw, y0 + h - top_y))
 
 
 def _draw_kingdom_flags(surface, plan, strip_rect, alpha_progress: float, kingdoms_visible: list):
-    """Phase 2: drop a flag at each capital position with the kingdom's color."""
+    """Phase 2: drop a flag at each capital position with the kingdom's color.
+
+    alpha_progress (0..1) fades the flag in as the phase plays so capitals
+    don't pop into existence — pole grows from base, flag fades up.
+    """
     x0, y0, w, h = strip_rect
     band_h = h // 4
     span = plan.span
     cell_px = w / span
+    a = max(0.0, min(1.0, alpha_progress))
     for k in kingdoms_visible:
         cap = plan.settlements.get(k.capital_settlement_id)
         if cap is None:
             continue
         col = tuple(k.color)
-        # Convert capital world_x → cell_index → screen x
         idx = (cap.world_x - plan.world_min_x) / plan.cell_width
         sx = x0 + int(idx * cell_px)
-        # Pole.
-        pole_top = y0 - 18
+        # Pole grows from base to full height.
+        pole_full_top = y0 - 18
+        pole_top = int(y0 + (pole_full_top - y0) * a)
         pygame.draw.line(surface, _FG, (sx, y0), (sx, pole_top), 2)
-        # Flag triangle.
-        pygame.draw.polygon(surface, col,
-                            [(sx, pole_top), (sx + 12, pole_top + 6), (sx, pole_top + 12)])
+        # Flag triangle fades in via alpha-blended overlay.
+        if a > 0.4:
+            flag_a = int(255 * min(1.0, (a - 0.4) / 0.6))
+            flag_surf = pygame.Surface((14, 14), pygame.SRCALPHA)
+            pygame.draw.polygon(flag_surf, (*col, flag_a),
+                                [(0, 0), (12, 6), (0, 12)])
+            surface.blit(flag_surf, (sx, pole_full_top))
 
 
 def _draw_settlement_dots(surface, plan, strip_rect, year_state: dict, kingdom_colors: dict):

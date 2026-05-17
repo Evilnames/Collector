@@ -118,10 +118,160 @@ def draw_horse_traits(screen, sx, sy, traits, W=40, H=26, facing=1):
                        (sx + 4, sy - 6), 3)
 
 
+def _rider_heraldry_color(rider):
+    """Return an order primary color for the rider, or None."""
+    try:
+        import knightly_orders
+    except Exception:
+        return None
+    # Player riders carry a `champion_order_id` or rely on `_jousting_order`.
+    oid = (getattr(rider, "champion_order_id", None)
+           or getattr(rider, "_jousting_order", None)
+           or getattr(rider, "order_id", None))
+    if oid is None:
+        return None
+    o = knightly_orders.order(oid)
+    if o is None:
+        return None
+    return o.heraldry.primary
+
+
+def _draw_horse_pattern(screen, sx, sy, w, h, pattern, trim, accent):
+    """Replicates the guard-tabard vocabulary on the rectangular horse body."""
+    if pattern == "vertical_split":
+        pygame.draw.rect(screen, accent, (sx,            sy, w // 2, h))
+        pygame.draw.rect(screen, trim,   (sx + w // 2,   sy, w - w // 2, h))
+    elif pattern == "quartered":
+        pygame.draw.rect(screen, trim,   (sx,           sy,           w // 2, h // 2))
+        pygame.draw.rect(screen, accent, (sx + w // 2,  sy,           w - w // 2, h // 2))
+        pygame.draw.rect(screen, accent, (sx,           sy + h // 2,  w // 2, h - h // 2))
+        pygame.draw.rect(screen, trim,   (sx + w // 2,  sy + h // 2,  w - w // 2, h - h // 2))
+    elif pattern == "horizontal_band":
+        band_h = max(2, h // 3)
+        pygame.draw.rect(screen, trim, (sx, sy + (h - band_h) // 2, w, band_h))
+    elif pattern == "cross":
+        pygame.draw.rect(screen, trim, (sx + w // 2 - 2, sy, 4, h))
+        pygame.draw.rect(screen, trim, (sx, sy + h // 2 - 2, w, 4))
+    elif pattern == "saltire":
+        for i in range(min(w, h)):
+            pygame.draw.rect(screen, trim,
+                             (sx + i * w // max(1, h - 1), sy + i, 2, 1))
+            pygame.draw.rect(screen, trim,
+                             (sx + w - 2 - i * w // max(1, h - 1), sy + i, 2, 1))
+    elif pattern == "pale":
+        pygame.draw.rect(screen, trim, (sx + w // 2 - max(2, w // 8),
+                                        sy, max(4, w // 4), h))
+    elif pattern == "chevron_pattern":
+        step = max(3, h // 3)
+        for i in range(0, h, step):
+            pygame.draw.polygon(screen, trim,
+                                [(sx + 1, sy + i + step // 2),
+                                 (sx + w // 2, sy + i),
+                                 (sx + w - 1, sy + i + step // 2),
+                                 (sx + w - 1, sy + i + step // 2 + 2),
+                                 (sx + w // 2, sy + i + 2),
+                                 (sx + 1, sy + i + step // 2 + 2)])
+    elif pattern == "stripes":
+        for i in range(0, h, 4):
+            pygame.draw.rect(screen, trim, (sx, sy + i, w, 2))
+    elif pattern == "lozenge":
+        rows = max(2, h // 4)
+        cols = max(3, w // 6)
+        cw = w / cols
+        rh = h / rows
+        for r in range(rows):
+            for col in range(cols):
+                if (r + col) % 2 == 0:
+                    cx = sx + int(col * cw)
+                    cy = sy + int(r * rh)
+                    pygame.draw.polygon(screen, trim,
+                                        [(cx + cw // 2, cy),
+                                         (cx + cw,      cy + rh // 2),
+                                         (cx + cw // 2, cy + rh),
+                                         (cx,           cy + rh // 2)])
+    elif pattern == "diamond":
+        cx, cy = sx + w // 2, sy + h // 2
+        rx, ry = max(3, w // 4), max(3, h // 3)
+        pygame.draw.polygon(screen, trim,
+                            [(cx, cy - ry), (cx + rx, cy),
+                             (cx, cy + ry), (cx - rx, cy)])
+    elif pattern == "starred":
+        cx, cy = sx + w // 2, sy + h // 2
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1), (0, 0)]:
+            pygame.draw.rect(screen, trim,
+                             (cx + dx * 3 - 1, cy + dy * 3 - 1, 2, 2))
+
+
+def _draw_horse_barding(screen, sx, sy, W, H, traits, spec, facing, trim):
+    """Render the textile body of the barding, then optional metal accents."""
+    s = traits.get("size", 1.0)
+    body_h = int(H * 0.65)
+    base   = spec["base"]
+    metal  = spec.get("metal")
+    bulk   = spec.get("bulk", "cloth")
+    pattern = spec.get("pattern", "solid")
+    if trim is None:
+        # Use the metal accent for the pattern if no rider heraldry; else darken base.
+        trim = metal or tuple(max(0, c - 50) for c in base)
+    accent = tuple(min(255, c + 35) for c in base)
+
+    # Body skirt: the caparison hangs slightly past the legs.
+    skirt_extra = 3 if bulk == "cloth" else 1
+    pygame.draw.rect(screen, base, (sx + 2, sy + 4, W - 4, body_h + skirt_extra))
+    # Pattern atop the cloth body.
+    _draw_horse_pattern(screen, sx + 2, sy + 4, W - 4, body_h + skirt_extra,
+                        pattern, trim, accent)
+
+    # Metal layers — mail rings or plate edges.
+    if metal and bulk == "mail":
+        for ring_y in range(sy + 5, sy + body_h + 2, 3):
+            for ring_x in range(sx + 3, sx + W - 3, 4):
+                pygame.draw.rect(screen, metal, (ring_x, ring_y, 2, 1))
+    elif metal and bulk == "plate":
+        # Plate edges along the top and bottom of the skirt
+        pygame.draw.rect(screen, metal, (sx + 2, sy + 4, W - 4, 2))
+        pygame.draw.rect(screen, metal,
+                         (sx + 2, sy + 4 + body_h + skirt_extra - 2, W - 4, 2))
+        # Cuirass plate over horse chest (front-facing)
+        chest_x = sx + W - 8 if facing == 1 else sx
+        pygame.draw.rect(screen, metal, (chest_x, sy + 6, 6, body_h - 4))
+
+    # Champron — small plate on the horse's head (plate barding only).
+    if bulk == "plate":
+        head_w = int(12 * s)
+        hx = (sx + W - int(2 * s)) if facing == 1 else (sx - head_w + int(2 * s))
+        hy = sy - int(4 * s)
+        pygame.draw.rect(screen, metal or base, (hx, hy, head_w, 4))
+        pygame.draw.polygon(screen, trim,
+                            [(hx + head_w // 2 - 2, hy - 4),
+                             (hx + head_w // 2 + 2, hy - 4),
+                             (hx + head_w // 2,     hy)])  # crest plume
+
+
 def draw_horse(screen, sx, sy, horse):
     W, H   = horse.W, horse.H
     traits = getattr(horse, 'traits', {})
-    draw_horse_traits(screen, sx, sy, traits, W=W, H=H, facing=getattr(horse, 'facing', 1))
+    facing = getattr(horse, 'facing', 1)
+    draw_horse_traits(screen, sx, sy, traits, W=W, H=H, facing=facing)
+
+    # Barding layer — drawn after coat, before saddle, so the saddle perches
+    # on top of the cloth. Reuses the guard-tabard pattern vocabulary.
+    barding_id = traits.get("equipped_barding")
+    if barding_id:
+        try:
+            from horses import BARDING_TYPES
+        except Exception:
+            BARDING_TYPES = {}
+        spec = BARDING_TYPES.get(barding_id) if isinstance(barding_id, str) else None
+        if spec is None and barding_id:
+            # Legacy save: equipped_barding was True before BARDING_TYPES existed.
+            spec = BARDING_TYPES.get("cloth_caparison")
+        if spec is not None:
+            trim = None
+            rider = getattr(horse, "rider", None)
+            if spec.get("uses_heraldry") and rider is not None:
+                trim = _rider_heraldry_color(rider)
+            _draw_horse_barding(screen, sx, sy, W, H, traits, spec, facing, trim)
 
     if getattr(horse, 'tamed', False) and getattr(horse, '_broken', False):
         s = traits.get("size", 1.0)

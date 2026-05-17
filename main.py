@@ -13,7 +13,7 @@ from constants import SCREEN_W, SCREEN_H, FPS, BLOCK_SIZE
 from automations import Automation, AUTOMATION_DEFS, AUTOMATION_ITEM, FARM_BOT_ITEM, Backhoe
 from constants import PLAYER_W
 from save_manager import SaveManager
-from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK, BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK, CHICKEN_COOP_BLOCK, GAMBLING_TABLE, BET_COUNTER, TEA_HOUSE_BLOCK, TRAINING_PADDOCK_BLOCK, BEEHIVE_BLOCK, MEAD_VAT_BLOCK, MEAD_CELLAR_BLOCK, SALTING_RACK_BLOCK, CURING_CELLAR_BLOCK
+from blocks import GEM_CUTTER_BLOCK, ROASTER_BLOCK, GRAPE_PRESS_BLOCK, FERMENTATION_BLOCK, COMPOST_BIN_BLOCK, STILL_BLOCK, STABLE_BLOCK, KENNEL_BLOCK, OXIDATION_STATION_BLOCK, SPINNING_WHEEL_BLOCK, LOOM_BLOCK, DAIRY_VAT_BLOCK, AGING_CAVE_BLOCK, FLETCHING_TABLE_BLOCK, ELEVATOR_STOP_BLOCK, WILDFLOWER_DISPLAY_BLOCK, WINE_CELLAR_BLOCK, BARREL_ROOM_BLOCK, TRADE_BLOCK, BREW_KETTLE_BLOCK, FERM_VESSEL_BLOCK, TAPROOM_BLOCK, CHICKEN_COOP_BLOCK, GAMBLING_TABLE, BET_COUNTER, TEA_HOUSE_BLOCK, TRAINING_PADDOCK_BLOCK, BEEHIVE_BLOCK, MEAD_VAT_BLOCK, MEAD_CELLAR_BLOCK, SALTING_RACK_BLOCK, CURING_CELLAR_BLOCK, BOOKCASE_BLOCK, FALCONER_PERCH, MEWS_BLOCK, FEED_TROUGH_BLOCK
 from elevators import ElevatorCar
 from minecarts import Minecart
 
@@ -30,6 +30,23 @@ def _nearby_light_trap(world, player):
             bx, by = px + dx, py + dy
             if world.get_block(bx, by) == _LTB:
                 return (bx, by)
+    return None
+
+
+def _nearby_guild_hall(world, player):
+    """Return (bx, by, guild_id) of the nearest Guild Hall within 3 blocks, or None.
+
+    `guild_id` is None if the Hall predates the per-guild registry (older save).
+    """
+    from blocks import GUILD_HALL_VARIANTS as _GHV
+    from guild_worldgen import guild_at_hall
+    px = int(player.x // BLOCK_SIZE)
+    py = int(player.y // BLOCK_SIZE)
+    for dy in range(-3, 4):
+        for dx in range(-3, 4):
+            bx, by = px + dx, py + dy
+            if world.get_block(bx, by) in _GHV:
+                return (bx, by, guild_at_hall(bx, by))
     return None
 
 
@@ -567,7 +584,7 @@ def main():
         research.apply_bonuses(player, world)
         t0 = _t("research.apply_save", t0)
     else:
-        seed = random.randint(0, 2**31 - 1)
+        seed = random.SystemRandom().randint(0, 2**31 - 1)
         # Animated worldgen: shows phases 1-4 (geography → kingdoms → 500-year
         # history → finalize) and returns the baked WorldPlan for the new World.
         from UI.world_setup import show_world_setup
@@ -980,9 +997,21 @@ def main():
                 if ui.arena_open:
                     ui.handle_arena_keydown(event.key, player)
 
+                # Jousting: arrow keys pick aim during CLOSE phase, ESC exits
+                if getattr(ui, "jousting_open", False):
+                    if event.key == pygame.K_ESCAPE:
+                        ui.close_jousting()
+                    else:
+                        ui.handle_jousting_key(event, player)
+
                 # Bazaar: ESC skips resolve or closes
                 if ui.bazaar_open:
                     ui.handle_bazaar_keydown(event.key, player)
+
+                # Stock Exchange: ESC closes, TAB switches tabs, text input for charter name
+                if getattr(ui, "stock_exchange_open", False):
+                    ui.handle_stock_exchange_keydown(event.key, player,
+                                                    unicode=getattr(event, "unicode", ""))
 
                 # Milking mini-game: SPACE pulls the currently lit teat
                 if event.key == pygame.K_SPACE and not _any_ui_open():
@@ -1121,6 +1150,15 @@ def main():
                         ui.collection_open = ui.refinery_open = ui.breeding_open = False
                         ui._inv_search = ""; ui._inv_search_active = False
 
+                if event.key == pygame.K_F9:
+                    if research.nodes.get("stock_exchange_access") and research.nodes["stock_exchange_access"].unlocked:
+                        if ui.stock_exchange_open:
+                            ui.stock_exchange_open = False
+                        else:
+                            ui.open_stock_exchange(research)
+                            ui.research_open = ui.inventory_open = ui.crafting_open = False
+                            ui.collection_open = ui.refinery_open = ui.breeding_open = False
+
                 if event.key == pygame.K_i:
                     nearby_any = _find_any_nearby_npc(world, player)
                     if nearby_any is not None:
@@ -1186,6 +1224,17 @@ def main():
                         player.x = horse.x + horse.W + 4
                         player.y = horse.y
                         player.mounted_horse = None
+                        continue
+
+                    # Guild Hall — open Stock Exchange focused on that hall's guild
+                    hall = _nearby_guild_hall(world, player)
+                    if hall is not None:
+                        if ui.stock_exchange_open:
+                            ui.stock_exchange_open = False
+                        else:
+                            ui.open_stock_exchange(research, focus_guild_id=hall[2])
+                            ui.research_open = ui.inventory_open = ui.crafting_open = False
+                            ui.collection_open = ui.refinery_open = ui.breeding_open = False
                         continue
 
                     # Dismount backhoe if currently riding
@@ -1547,6 +1596,13 @@ def main():
                                         ui.refinery_open = False
                                 elif equip == COMPOST_BIN_BLOCK:
                                     ui.active_compost_bin_pos = player.get_nearby_equipment_pos(COMPOST_BIN_BLOCK)
+                                elif equip in (FALCONER_PERCH, MEWS_BLOCK):
+                                    perch_pos = player.get_nearby_equipment_pos(equip)
+                                    ui.open_falconer_perch(perch_pos, player)
+                                elif equip == BOOKCASE_BLOCK:
+                                    ui.active_bookcase_pos = player.get_nearby_equipment_pos(BOOKCASE_BLOCK)
+                                    if ui.active_bookcase_pos is not None:
+                                        world.bookcase_contents.setdefault(ui.active_bookcase_pos, [None] * 6)
                                 elif equip == STABLE_BLOCK:
                                     # Find two nearby tamed horses to populate the breeding panel
                                     from horses import Horse as _Horse
@@ -1572,6 +1628,24 @@ def main():
                                     ui.refinery_open = False
                                 elif equip == CHICKEN_COOP_BLOCK:
                                     ui.active_coop_pos = player.get_nearby_equipment_pos(CHICKEN_COOP_BLOCK)
+                                elif equip == FEED_TROUGH_BLOCK:
+                                    trough_pos = player.get_nearby_equipment_pos(FEED_TROUGH_BLOCK)
+                                    if trough_pos is not None:
+                                        held = player.hotbar[player.selected_slot]
+                                        _FEED_UNITS = {"wheat": 1, "carrot": 1, "hay_bale": 4}
+                                        units = _FEED_UNITS.get(held, 0)
+                                        if units and player.inventory.get(held, 0) > 0:
+                                            data = world.feed_trough_data.setdefault(
+                                                trough_pos, {"contents": 0, "progress": 0.0})
+                                            if data["contents"] + units <= 16:
+                                                player.inventory[held] -= 1
+                                                if player.inventory[held] <= 0:
+                                                    del player.inventory[held]
+                                                    for _i in range(len(player.hotbar)):
+                                                        if player.hotbar[_i] == held:
+                                                            player.hotbar[_i] = None
+                                                            break
+                                                data["contents"] += units
                                 elif equip == TEA_HOUSE_BLOCK:
                                     _close_all_ui()
                                     ui.open_tea_house()
@@ -1711,7 +1785,9 @@ def main():
                         ui._chronicle_scroll = max(0, min(_max,
                             getattr(ui, '_chronicle_scroll', 0) - event.y * 20))
                     elif ui.active_npc is not None:
-                        from cities import CoinDealerNPC
+                        from cities import CoinDealerNPC, ChapterMasterNPC
+                        from coin_npcs import (MoneyChangerNPC, CoinAppraiserNPC,
+                                                CoinCollectorNPC)
                         if isinstance(ui.active_npc, CoinDealerNPC):
                             tab = getattr(ui, "_coin_dealer_tab", "buy")
                             if tab == "buy":
@@ -1720,6 +1796,19 @@ def main():
                             else:
                                 ui._coin_dealer_sell_scroll = max(0,
                                     getattr(ui, "_coin_dealer_sell_scroll", 0) - event.y)
+                        elif isinstance(ui.active_npc, MoneyChangerNPC):
+                            ui._money_changer_scroll = max(0,
+                                getattr(ui, "_money_changer_scroll", 0) - event.y)
+                        elif isinstance(ui.active_npc, CoinAppraiserNPC):
+                            ui._appraiser_scroll = max(0,
+                                getattr(ui, "_appraiser_scroll", 0) - event.y)
+                        elif isinstance(ui.active_npc, CoinCollectorNPC):
+                            ui._collector_scroll = max(0,
+                                getattr(ui, "_collector_scroll", 0) - event.y)
+                        elif (isinstance(ui.active_npc, ChapterMasterNPC)
+                              and getattr(ui, "_ch_tab", "quests") == "shop"):
+                            ui._ch_shop_scroll = max(0,
+                                getattr(ui, "_ch_shop_scroll", 0) - event.y)
                     elif (player.inspecting_npc is not None
                           and not getattr(player, 'dynasty_panel_open', False)):
                         _max = getattr(ui, '_inspect_scroll_max', 0)
@@ -1841,7 +1930,7 @@ def main():
                 elif ui.reputation_screen_open:
                     ui.handle_reputation_screen_click(event.pos)
                 elif ui.outpost_menu_open:
-                    pass  # diplomatic-only — clicks consumed but do nothing
+                    ui.handle_sommelier_click(event.pos, player)
                 elif getattr(player, "inspecting_npc", None) is not None:
                     ui.handle_inspect_click(event.pos, player, world)
                 elif ui.npc_open:
@@ -1890,8 +1979,12 @@ def main():
                     ui.handle_training_paddock_click(event.pos, player, world)
                 elif ui.arena_open:
                     ui.handle_arena_click(event.pos, player)
+                elif getattr(ui, "jousting_open", False):
+                    ui.handle_jousting_click(*event.pos, player)
                 elif ui.bazaar_open:
                     ui.handle_bazaar_click(event.pos, player)
+                elif getattr(ui, "stock_exchange_open", False):
+                    ui.handle_stock_exchange_click(event.pos, player)
                 elif ui.wardrobe_open:
                     ui.handle_wardrobe_click(event.pos, player)
                 elif ui.trade_block_open:
@@ -2170,6 +2263,10 @@ def main():
             mouse_scr_pos[1] + renderer.cam_y,
         )
 
+        # Jousting: poll SPACE during the CHARGE phase
+        if getattr(ui, "jousting_open", False):
+            ui.update_jousting_input(keys, player)
+
         # Roaster: poll SPACE for heat
         if ui.refinery_open and ui.refinery_block_id == ROASTER_BLOCK:
             ui.handle_roaster_keys(keys)
@@ -2295,6 +2392,17 @@ def main():
         if getattr(player, '_pending_dog_view', None) is not None:
             ui.open_dog_view(player._pending_dog_view)
             player._pending_dog_view = None
+
+        # Pending falconry capture trigger
+        if getattr(player, '_pending_raptor_capture', None) is not None:
+            species_key, biome, src = player._pending_raptor_capture
+            player._pending_raptor_capture = None
+            # Open the perch panel implicitly so capture UI has a container
+            ui.refinery_open = True
+            ui.refinery_block_id = FALCONER_PERCH
+            if not hasattr(ui, "_fy_selected_uid"):
+                ui.open_falconer_perch(None, player)
+            ui.open_falconry_capture(species_key, biome, src)
 
         # Horse breaking minigame tick
         if ui._hb_active:
@@ -2475,6 +2583,7 @@ def main():
         world.update_soil(dt)
         world.update_compost_bins(dt)
         world.update_chicken_coops(dt)
+        world.update_grass_regrowth(dt)
         world.update_trade_blocks(dt, player)
         world.update_tea_house_visitors(dt, player)
         import logic as _ltm

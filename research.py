@@ -40,7 +40,7 @@ def _noop(player, world):
 
 
 class ResearchTree:
-    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship", "Tea Cultivation", "Herbalism", "Textile Arts", "Dairy Arts", "Hunting", "Jewelry Arts", "Garden Arts", "Masonry Arts", "Ceramics", "Cynology", "Smithing Arts", "Brewing", "Salting Arts", "Fishing", "Logistics"]
+    COLUMNS = ["Mining Speed", "Zone Access", "Farming", "Coffee", "Birding", "Winemaking", "Distillation", "Entomology", "Horsemanship", "Tea Cultivation", "Herbalism", "Textile Arts", "Dairy Arts", "Hunting", "Jewelry Arts", "Garden Arts", "Masonry Arts", "Ceramics", "Cynology", "Smithing Arts", "Brewing", "Salting Arts", "Fishing", "Logistics", "Commerce & Charters"]
 
     def __init__(self):
         self.nodes = {}    # id -> ResearchNode
@@ -703,6 +703,61 @@ class ResearchTree:
             "Programmable processing — unlocks Factory Block and Crystal Pipe",
             {"tempered_iron": 6, "gold_nugget": 2, "wire": 4}, ["advanced_pipes"],
             _noop, money_cost=120), 23, 2)
+
+        # --- Commerce & Charters (column 24) ---
+        self._add(ResearchNode(
+            "stock_exchange_access", "Stock Exchange Charter",
+            "Petition the regional capitals to recognize your trading license — unlocks the Stock Exchange (F9) to view and invest in regional guilds",
+            {"gold_nugget": 2}, [],
+            _noop, money_cost=40), 24, 0)
+
+        self._add(ResearchNode(
+            "board_seat_view", "Board Seat Privileges",
+            "Hold ≥25% of a guild to attend its board — view private financials and the chapter's local price policy",
+            {"gold_nugget": 5, "iron_chunk": 4}, ["stock_exchange_access"],
+            _noop, money_cost=120), 24, 1)
+
+        self._add(ResearchNode(
+            "majority_control", "Majority Control",
+            "Hold ≥51% of a guild to set its charter — adjust regional price multiplier and dividend payout policy",
+            {"gold_nugget": 12, "ruby": 2}, ["board_seat_view"],
+            _noop, money_cost=300), 24, 2)
+
+        self._add(ResearchNode(
+            "insider_information", "Insider Information",
+            "Tap a network of guild scribes — view a next-day price forecast for every active guild on the exchange",
+            {"gold_nugget": 18, "ruby": 4, "crystal_shard": 6}, ["majority_control"],
+            _noop, money_cost=600), 24, 3)
+
+        self._add(ResearchNode(
+            "founders_charter", "Founder's Charter",
+            "Petition for a Founder's Seal — unlocks the Charter tab to incorporate your own guild and offer it as an IPO on the exchange",
+            {"gold_nugget": 25, "ruby": 6, "obsidian_slab": 2}, ["insider_information"],
+            _noop, money_cost=1200), 24, 4)
+
+        # --- Falconry (column 25) ---
+        self._add(ResearchNode(
+            "falconry_basics", "Falconry",
+            "The noble sport of hawking — unlocks Falconer's Gauntlet, Lure, Jesses, Hood, Perch, and Mews",
+            {"leather": 4, "feather": 8}, [],
+            _noop, money_cost=40), 25, 0)
+
+        # --- Chivalry (column 26) ---
+        self._add(ResearchNode(
+            "chivalry_basics", "Chivalry",
+            "Code of the lists — unlocks lance smithing and access to tournament_grounds outposts.",
+            {"iron_chunk": 6, "lumber": 8}, [],
+            _noop, money_cost=80), 26, 0)
+        self._add(ResearchNode(
+            "chivalry_armor", "Jousting Plate",
+            "Heavy ceremonial armor for the tilt-yard. Unlocks jousting plate set and horse barding recipes.",
+            {"tempered_iron": 12, "gold_nugget": 4}, ["chivalry_basics"],
+            _noop, money_cost=220), 26, 1)
+        self._add(ResearchNode(
+            "chivalry_orders", "Knightly Orders",
+            "Earn an invitation to ride for a regional order. Boosts pennant rewards and prestige gains.",
+            {"tournament_pennant": 1, "gold_nugget": 12}, ["chivalry_armor"],
+            _noop, money_cost=500), 26, 2)
 
     def prereqs_met(self, node_id):
         return all(self.nodes[p].unlocked for p in self.nodes[node_id].prerequisites)

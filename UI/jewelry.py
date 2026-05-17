@@ -63,6 +63,47 @@ def _slot_positions(jtype, n, cx, cy, radius=80):
         # Spread horizontally
         total_w = (n - 1) * 60
         return [(cx - total_w // 2 + i * 60, cy - 20) for i in range(n)]
+    if jtype == "earring":
+        # Vertical drops
+        step = 45
+        return [(cx, cy - 20 + i * step) for i in range(n)]
+    if jtype == "brooch":
+        # Star arrangement
+        if n == 1:
+            return [(cx, cy)]
+        angles = [math.pi * 1.5 + 2 * math.pi * i / n for i in range(n)]
+        return [(int(cx + radius * 0.6 * math.cos(a)), int(cy + radius * 0.6 * math.sin(a))) for a in angles]
+    if jtype == "tiara":
+        # Arc across the top, points raised slightly
+        spread = min(180, n * 50)
+        angles = [math.pi + math.radians(180 - spread // 2 + i * spread // max(n - 1, 1)) for i in range(n)]
+        return [(int(cx + radius * 0.95 * math.cos(a)), int(cy + radius * 0.85 * math.sin(a)) - 10) for a in angles]
+    if jtype == "anklet":
+        # Lower half-circle
+        angles = [math.radians(20 + i * 140 // max(n - 1, 1)) for i in range(n)]
+        return [(int(cx + radius * 0.8 * math.cos(a)), int(cy + radius * 0.5 * math.sin(a))) for a in angles]
+    if jtype == "cufflinks":
+        # Two squares side-by-side; slot n=2 maps to a pair
+        offset = 50
+        return [(cx - offset + i * (2 * offset // max(n - 1, 1) if n > 1 else 0), cy) for i in range(n)]
+    if jtype == "circlet":
+        # Thin band; spread across narrow arc
+        total_w = (n - 1) * 50
+        return [(cx - total_w // 2 + i * 50, cy - 10) for i in range(n)]
+    if jtype == "choker":
+        # Tight horizontal band
+        total_w = (n - 1) * 42
+        return [(cx - total_w // 2 + i * 42, cy + 5) for i in range(n)]
+    if jtype == "signet":
+        # Single centered slot
+        return [(cx, cy) for _ in range(n)]
+    if jtype == "amulet":
+        # Vertical teardrop
+        step = 42
+        return [(cx, cy - (n - 1) * step // 2 + i * step) for i in range(n)]
+    if jtype == "tiepin":
+        # Single slot at top of vertical bar
+        return [(cx, cy - radius // 2) for _ in range(n)]
     return [(cx + i * 50, cy) for i in range(n)]
 
 
@@ -110,13 +151,21 @@ class JewelryMixin:
         self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 34))
 
         CARD_W, CARD_H, GAP = 190, 130, 18
-        total_w = len(JEWELRY_TYPES) * CARD_W + (len(JEWELRY_TYPES) - 1) * GAP
-        gx0 = (SCREEN_W - total_w) // 2
-        cy = SCREEN_H // 2 - CARD_H // 2
+        n_total = len(JEWELRY_TYPES)
+        per_row = max(1, min(n_total, (SCREEN_W - 40) // (CARD_W + GAP)))
+        rows = (n_total + per_row - 1) // per_row
+        grid_h = rows * CARD_H + (rows - 1) * GAP
+        cy0 = (SCREEN_H - grid_h) // 2
 
         self._jw_type_rects.clear()
         for i, (jkey, jdata) in enumerate(JEWELRY_TYPES.items()):
-            rx = gx0 + i * (CARD_W + GAP)
+            row = i // per_row
+            col = i % per_row
+            cols_in_row = per_row if row < rows - 1 else (n_total - per_row * (rows - 1))
+            row_w = cols_in_row * CARD_W + (cols_in_row - 1) * GAP
+            gx0 = (SCREEN_W - row_w) // 2
+            rx = gx0 + col * (CARD_W + GAP)
+            cy = cy0 + row * (CARD_H + GAP)
             rect = pygame.Rect(rx, cy, CARD_W, CARD_H)
             self._jw_type_rects[jkey] = rect
             hov = rect.collidepoint(pygame.mouse.get_pos())
@@ -629,6 +678,45 @@ class JewelryMixin:
             pts = [(cx - size, cy), (cx - size // 2, cy - size), (cx, cy - size // 2),
                    (cx + size // 2, cy - size), (cx + size, cy)]
             pygame.draw.lines(self.screen, _GOLD, False, pts, 2)
+        elif jtype == "earring":
+            pygame.draw.circle(self.screen, _GOLD, (cx, cy - size // 2), max(2, size // 3), 2)
+            pygame.draw.circle(self.screen, _GOLD, (cx, cy + size // 3), max(3, size // 2), 2)
+        elif jtype == "brooch":
+            pts = []
+            import math
+            for i in range(10):
+                a = math.pi * 1.5 + i * math.pi / 5
+                r = size if i % 2 == 0 else size // 2
+                pts.append((int(cx + r * math.cos(a)), int(cy + r * math.sin(a))))
+            pygame.draw.polygon(self.screen, _GOLD, pts, 2)
+        elif jtype == "tiara":
+            pts = [(cx - size, cy + size // 2), (cx - size // 2, cy - size // 2),
+                   (cx - size // 4, cy), (cx, cy - size),
+                   (cx + size // 4, cy), (cx + size // 2, cy - size // 2),
+                   (cx + size, cy + size // 2)]
+            pygame.draw.lines(self.screen, _GOLD, False, pts, 2)
+        elif jtype == "anklet":
+            pygame.draw.arc(self.screen, _GOLD, (cx - size, cy - size, size * 2, size * 2),
+                            3.14, 6.28, 2)
+        elif jtype == "cufflinks":
+            half = size // 2
+            pygame.draw.rect(self.screen, _GOLD, (cx - size, cy - half, size, size), 2)
+            pygame.draw.rect(self.screen, _GOLD, (cx, cy - half, size, size), 2)
+        elif jtype == "circlet":
+            pygame.draw.ellipse(self.screen, _GOLD, (cx - size, cy - size // 3, size * 2, size * 2 // 3), 2)
+        elif jtype == "choker":
+            pygame.draw.ellipse(self.screen, _GOLD, (cx - size, cy - size // 4, size * 2, size // 2), 2)
+        elif jtype == "signet":
+            pygame.draw.rect(self.screen, _GOLD, (cx - size, cy - size, size * 2, size * 2), 2)
+            pygame.draw.circle(self.screen, _GOLD, (cx, cy), size // 2, 1)
+        elif jtype == "amulet":
+            pts = [(cx, cy - size), (cx + size, cy), (cx, cy + size), (cx - size, cy)]
+            pygame.draw.polygon(self.screen, _GOLD, pts, 2)
+            pygame.draw.arc(self.screen, _GOLD, (cx - size, cy - size * 2, size * 2, size * 2),
+                            0, 3.14, 2)
+        elif jtype == "tiepin":
+            pygame.draw.line(self.screen, _GOLD, (cx, cy - size), (cx, cy + size), 2)
+            pygame.draw.circle(self.screen, _GOLD, (cx, cy - size), max(2, size // 3), 2)
 
     def _draw_jw_silhouette(self, jtype, cx, cy, size):
         """Draw a faint background silhouette of the jewelry type."""
@@ -647,3 +735,39 @@ class JewelryMixin:
             pts = [(cx - size, cy + size // 4), (cx - size // 2, cy - size // 2),
                    (cx, cy), (cx + size // 2, cy - size // 2), (cx + size, cy + size // 4)]
             pygame.draw.lines(self.screen, col, False, pts, 8)
+        elif jtype == "earring":
+            pygame.draw.circle(self.screen, col, (cx, cy - size // 2), max(4, size // 3), 6)
+            pygame.draw.circle(self.screen, col, (cx, cy + size // 3), max(6, size // 2), 8)
+        elif jtype == "brooch":
+            import math
+            pts = []
+            for i in range(10):
+                a = math.pi * 1.5 + i * math.pi / 5
+                r = size if i % 2 == 0 else size // 2
+                pts.append((int(cx + r * math.cos(a)), int(cy + r * math.sin(a))))
+            pygame.draw.polygon(self.screen, col, pts, 6)
+        elif jtype == "tiara":
+            pts = [(cx - size, cy + size // 2), (cx - size // 2, cy - size // 3),
+                   (cx - size // 4, cy + size // 4), (cx, cy - size),
+                   (cx + size // 4, cy + size // 4), (cx + size // 2, cy - size // 3),
+                   (cx + size, cy + size // 2)]
+            pygame.draw.lines(self.screen, col, False, pts, 8)
+        elif jtype == "anklet":
+            pygame.draw.arc(self.screen, col, (cx - size, cy - size, size * 2, size * 2),
+                            3.14, 6.28, 8)
+        elif jtype == "cufflinks":
+            half = size // 2
+            pygame.draw.rect(self.screen, col, (cx - size - 4, cy - half, size, size), 6)
+            pygame.draw.rect(self.screen, col, (cx + 4, cy - half, size, size), 6)
+        elif jtype == "circlet":
+            pygame.draw.ellipse(self.screen, col, (cx - size, cy - size // 3, size * 2, size * 2 // 3), 6)
+        elif jtype == "choker":
+            pygame.draw.ellipse(self.screen, col, (cx - size, cy - size // 4, size * 2, size // 2), 6)
+        elif jtype == "signet":
+            pygame.draw.rect(self.screen, col, (cx - size, cy - size, size * 2, size * 2), 6)
+        elif jtype == "amulet":
+            pts = [(cx, cy - size), (cx + size // 2, cy), (cx, cy + size), (cx - size // 2, cy)]
+            pygame.draw.polygon(self.screen, col, pts, 6)
+        elif jtype == "tiepin":
+            pygame.draw.line(self.screen, col, (cx, cy - size), (cx, cy + size), 8)
+            pygame.draw.circle(self.screen, col, (cx, cy - size), max(4, size // 3), 6)

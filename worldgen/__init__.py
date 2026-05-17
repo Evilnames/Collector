@@ -14,6 +14,7 @@ from worldgen.config import WORLDGEN_CONFIG, resolve_span
 from worldgen.geography import build_geography
 from worldgen.kingdoms import seed_kingdoms
 from worldgen.history.sim import simulate_history
+from worldgen.history.economy import simulate_economy
 from worldgen.materialize import build_plan
 from worldgen.plan import WorldPlan
 from lost_heritage import ArtifactGenerator
@@ -41,7 +42,11 @@ def generate_world(seed: int, span=None, year_callback=None,
         kingdoms, settlements, dynasties, next_ids = seed_kingdoms(cells, seed)
         chronicle = simulate_history(seed, cells, kingdoms, settlements, dynasties,
                                      next_ids, year_callback=year_callback)
+        guild_histories = simulate_economy(
+            seed, kingdoms, dynasties, settlements, cells,
+            chronicle.to_list(), WORLDGEN_CONFIG["history_years"])
         plan = build_plan(seed, cells, kingdoms, settlements, dynasties, chronicle)
+        plan.guild_histories = guild_histories
         plan.lost_artifacts = ArtifactGenerator().generate_for_world(plan)
         return plan
     finally:

@@ -116,8 +116,10 @@ from blocks import (STONE, BEDROCK, DIRT, HOUSE_WALL, HOUSE_ROOF, AIR, LADDER, W
                     BED, CHEST_BLOCK, BAKERY_BLOCK, STABLE_BLOCK, STORAGE_PITHOS,
                     TAPESTRY_BLOCK, WOVEN_TEXTILE, OAK_PANEL, TEAK_PLANK,
                     GAMBLING_TABLE,
-                    RACING_RAIL, BET_COUNTER, STARTING_GATE, WINNERS_POST)
-from constants import (BLOCK_SIZE, PLAYER_W, PLAYER_H, CITY_SPACING, CITY_COUNT,
+                    RACING_RAIL, BET_COUNTER, STARTING_GATE, WINNERS_POST,
+                    HALF_TIMBER_WALL, TUDOR_BEAM, CHIMNEY_BREAST_REN, ALARM_BELL_OFF,
+                    BANNER_BLOCK, WEAPON_RACK_BLOCK, WOOD_FENCE)
+from constants import (BLOCK_SIZE, PLAYER_W, PLAYER_H, CITY_SPACING,
                        NPC_INTERACT_RANGE, CHUNK_W, GRAVITY, MAX_FALL, SURFACE_Y)
 from rocks import ROCK_TYPES
 
@@ -815,7 +817,11 @@ class AmbientNPC(NPC):
         self._state      = "walk"
         self._state_timer = random.uniform(1.0, 4.0)
         style = _CLOTHING_STYLE_BY_BIODOME.get(biodome, "temperate")
-        self.clothing = _CLOTHING_PALETTES.get(style, _CLOTHING_DEFAULT)
+        self.clothing = dict(_CLOTHING_PALETTES.get(style, _CLOTHING_DEFAULT))
+        self.skin_tone = random.choice(_AMBIENT_SKIN_TONE_POOLS.get(style, _AMBIENT_SKIN_TONE_POOLS["temperate"]))
+        self.clothing["skin"] = self.skin_tone
+        self.hair_color = random.choice(_AMBIENT_HAIR_COLORS)
+        self.build = random.choice(_AMBIENT_BUILDS)
         # Ensure spawn is not inside solid terrain
         self._snap_to_surface()
 
@@ -943,18 +949,75 @@ _GUARD_KIT_POOL = (["spearman"] * 5 + ["swordsman"] * 5
                    + ["axeman"] * 3 + ["macer"] * 3
                    + ["archer"] * 3 + ["pikeman"] * 2
                    + ["lancer"] * 2 + ["watchman"] * 3
+                   + ["billhook_bearer"] * 2 + ["warhammer"] * 2
+                   + ["bardiche_bearer"] * 2 + ["glaive_bearer"] * 2
+                   + ["rondel_bearer"] * 1 + ["claymore_bearer"] * 2
+                   + ["falchion_bearer"] * 2 + ["boar_spear_bearer"] * 2
+                   + ["flamberge_bearer"] * 1 + ["estoc_bearer"] * 1
+                   + ["javelin_thrower"] * 2 + ["slinger"] * 2
+                   + ["cudgeler"] * 2 + ["partisan_bearer"] * 2
+                   + ["whip_bearer"] * 1 + ["net_thrower"] * 1
+                   + ["torchbearer"] * 2 + ["buckler_duelist"] * 2
                    + ["captain"] * 1)
-_GUARD_HELMETS  = ["pot", "pot", "kettle", "sallet", "plumed", "coif", "horned"]
-_GUARD_EMBLEMS  = ["none", "none", "none", "cross", "star", "circle", "chevron"]
+_GUARD_HELMETS  = ["pot", "pot", "kettle", "sallet", "plumed", "coif", "horned",
+                   "barbute", "bascinet", "armet", "morion", "nasal_helm",
+                   "frog_mouth", "lobstertail", "skull_cap",
+                   "great_helm", "cervelliere", "spangenhelm",
+                   "cabasset", "phrygian", "hood",
+                   "crested", "feathered", "visor_open", "turban_helm",
+                   "winged_helm", "fur_cap", "wolf_pelt", "wide_brim",
+                   "tricorn", "shako", "mitre", "closed_visor",
+                   "burgonet", "bandana", "straw_hat", "crowned_helm",
+                   "peaked_cap", "antlered", "tasseled", "forked_crest",
+                   "earflaps", "ridge_helm", "mask_helm", "veiled_helm"]
+_GUARD_EMBLEMS  = ["none", "none", "none", "cross", "star", "circle", "chevron",
+                   "fleur", "anchor", "wing", "eye", "sun", "moon", "lion", "wolf",
+                   "eagle", "crown", "tower", "oak", "serpent",
+                   "hammer", "key", "fish", "flame", "horn"]
 _GUARD_BEARDS   = ["none", "none", "short", "full", "mustache"]
-_GUARD_CAPES    = ["none", "none", "none", "none", "trim", "dark", "trim"]
-_GUARD_FINISHES = ["steel", "steel", "bronze", "blackened", "burnished"]
-_GUARD_TABARDS  = ["solid", "solid", "vertical_split", "quartered", "horizontal_band"]
+_GUARD_CAPES    = ["none", "none", "none", "none", "trim", "dark", "trim",
+                   "fur", "royal", "striped", "long",
+                   "tattered", "white", "forest"]
+_GUARD_FINISHES = ["steel", "steel", "bronze", "blackened", "burnished",
+                   "gilded", "rusted", "tarnished", "ivory",
+                   "lacquered_red", "lacquered_black", "patina", "frost",
+                   "verdigris", "sooted", "silvered",
+                   "copper", "inlaid", "enameled_blue",
+                   "enameled_green", "enameled_white", "oiled",
+                   "pitted", "damascened", "horsehair",
+                   "brass", "obsidian", "moonstone", "crimson_enamel",
+                   "cobalt", "midnight", "blooded", "weathered",
+                   "polished_iron", "quenched", "nickeled", "pewter",
+                   "tin", "mercury", "opal", "ember",
+                   "ash_gray", "shadowed", "mossed", "bone",
+                   "coal", "iridescent", "saffron", "ruby_inlay", "jade"]
+_GUARD_TABARDS  = ["solid", "solid", "vertical_split", "quartered", "horizontal_band",
+                   "diagonal_split", "checkered", "diamond", "pale",
+                   "cross", "saltire", "lozenge", "bordered",
+                   "chevron_pattern", "stripes", "starred"]
 _GUARD_SKINS    = [(245, 215, 175), (230, 195, 155), (200, 160, 120),
-                   (160, 120,  85), (115,  80,  55)]
+                   (160, 120,  85), (115,  80,  55),
+                   (250, 225, 200), (215, 180, 140), (185, 145, 105),
+                   (140, 100,  70), (95,  65,  45),
+                   (235, 205, 170), (220, 190, 150), (175, 135, 100),
+                   (130,  95,  65), (80,   55,  40),
+                   (240, 210, 180), (205, 170, 135),
+                   (255, 230, 205), (190, 155, 115), (150, 110,  75),
+                   (110,  75,  55), (70,   45,  30)]
 _GUARD_SHIELD_COLORS = [(140,  35,  35), (40,  60, 130), (35, 110,  60),
-                       (180, 145,  35), (45,  45,  55), (140, 100,  35)]
-_GUARD_BOOTS    = [(60, 45, 30), (80, 55, 30), (40, 35, 30), (95, 75, 50)]
+                       (180, 145,  35), (45,  45,  55), (140, 100,  35),
+                       (95,  60, 140), (200, 110,  40),
+                       (60, 130, 130), (155,  40,  90), (30,  90,  60),
+                       (110,  60,  30), (210, 200, 195),
+                       (70,  90, 145), (40,  40,  80),
+                       (175, 145, 100), (220, 165,  60), (90,  30,  30),
+                       (50, 105, 165), (140, 165,  90)]
+_GUARD_BOOTS    = [(60, 45, 30), (80, 55, 30), (40, 35, 30), (95, 75, 50),
+                   (30, 25, 20), (70, 55, 40), (110, 85, 55),
+                   (50, 35, 25), (85, 70, 50), (55, 45, 35),
+                   (75, 50, 30), (40, 30, 25), (100, 80, 55),
+                   (65, 55, 45), (90, 70, 45), (125, 100, 75),
+                   (35, 30, 30), (115, 90, 60)]
 
 # Chinese / east_asian guard pools
 _CHINESE_KIT_POOL  = (["spearman"] * 3 + ["ji_bearer"] * 4
@@ -1051,6 +1114,148 @@ class GuardNPC(AmbientNPC):
             self.shield_color   = random.choice(_GUARD_SHIELD_COLORS)
             self.boots          = random.choice(_GUARD_BOOTS)
             self.sash           = random.random() < 0.15
+
+
+# Maps a KnightlyOrder kit to the guard render kit. This lets the knight reuse
+# every guard primitive (weapon, back-gear, shield) without forking.
+_KNIGHT_KIT_TO_GUARD_KIT = {
+    "lancer":       "lancer",
+    "champion":     "swordsman",   # heavy sword + heater shield
+    "squire_elect": "spearman",    # apprentice — polearm only
+}
+_KNIGHT_KITS_BY_TRADITION = {
+    "cavalier":    ["lancer", "swordsman", "warhammer"],
+    "templar":     ["swordsman", "macer", "warhammer"],
+    "hospitaller": ["swordsman", "spearman", "macer"],
+    "mercenary":   ["swordsman", "lancer", "falchion_bearer"],
+    "marcher":     ["lancer", "spearman", "swordsman"],
+    "magisterial": ["estoc_bearer", "swordsman", "rondel_bearer"],
+    "berserker":   ["claymore_bearer", "warhammer", "flamberge_bearer"],
+    "errant":      ["swordsman", "lancer", "spearman"],
+    # New cultural traditions
+    "horde":       ["horse_archer", "yumi_archer", "javelin_thrower", "lancer"],
+    "cataphract":  ["cataphract_lancer", "lancer", "macer"],
+    "bushi":       ["katana_samurai", "naginata_bearer", "yumi_archer"],
+    "furusiyya":   ["tulwar_bearer", "lancer", "yumi_archer"],
+    "rajput":      ["tulwar_bearer", "lancer", "macer", "swordsman"],
+}
+# Knight-flavored tabard patterns — drawn from the same vocabulary as guards
+# but skewed toward heraldic shapes that read well on full plate.
+_KNIGHT_TABARDS = ["solid", "vertical_split", "quartered", "cross",
+                   "saltire", "pale", "chevron_pattern", "bordered",
+                   "diamond", "horizontal_band"]
+_KNIGHT_HELMETS = ["great_helm", "great_helm", "great_helm", "sallet",
+                   "plumed", "horned"]
+_KNIGHT_FINISHES = ["polished", "polished", "blackened", "burnished",
+                    "bronze", "steel"]
+
+# Per-tradition overrides — when present these replace the defaults above.
+_KNIGHT_HELMETS_BY_TRADITION = {
+    "horde":       ["fur_cap", "fur_cap", "pot"],
+    "cataphract":  ["spangenhelm", "spangenhelm", "great_helm"],
+    "bushi":       ["kabuto", "kabuto", "jingasa"],
+    "furusiyya":   ["turban_helm", "turban_helm", "spangenhelm"],
+    "rajput":      ["pagri", "pagri", "turban_helm"],
+}
+_KNIGHT_TABARDS_BY_TRADITION = {
+    "horde":       ["horizontal_band", "stripes", "horizontal_band", "solid"],
+    "cataphract":  ["quartered", "lozenge", "lozenge", "pale"],
+    "bushi":       ["vertical_split", "pale", "solid", "diamond"],
+    "furusiyya":   ["chevron_pattern", "stripes", "bordered", "diamond"],
+    "rajput":      ["vertical_split", "starred", "solid", "diamond"],
+}
+
+
+class KnightNPC(AmbientNPC):
+    """Chivalric knight tied to a regional KnightlyOrder. Found only in large
+    cities and tournament_grounds outposts.
+
+    Uses the same armor system as GuardNPC (clothing palette + kit + helmet +
+    tabard + emblem + cape) so guard render primitives draw the body; only
+    knight-specific defaults differ (always heavy plate, great-helm-leaning,
+    surcoat patterns picked from heraldic shapes).
+    """
+    def __init__(self, x, y, world, patrol_half=36, biodome="temperate", kit=None,
+                 order_id=None, knight_id=None):
+        super().__init__(x, y, world, "npc_knight", patrol_half, biodome)
+        self._walk_speed = 22.0
+        self._pause_max  = 3.5
+        self.order_id        = order_id
+        self.knight_id       = knight_id
+
+        # ---- Look up the linked order/knight before deciding kit + tabard ----
+        order = None
+        if self.order_id is None:
+            try:
+                from knightly_orders import ORDERS
+                from towns import region_for_bx
+                bx = int(x // BLOCK_SIZE)
+                region = region_for_bx(world, bx)
+                if region:
+                    candidates = [o for o in ORDERS.values()
+                                  if o.home_region == region.region_id]
+                    if candidates:
+                        order = random.choice(candidates)
+                        self.order_id = order.order_id
+                        if order.member_ids:
+                            self.knight_id = random.choice(order.member_ids)
+            except Exception:
+                pass
+        else:
+            try:
+                from knightly_orders import ORDERS
+                order = ORDERS.get(self.order_id)
+            except Exception:
+                pass
+
+        # ---- Resolve guard-system kit from order tradition or fallback ----
+        tradition = order.tradition if order is not None else "errant"
+        if kit is None:
+            # Prefer the linked knight's order-kit; map through the table.
+            knight_kit = None
+            if self.knight_id is not None:
+                try:
+                    from knightly_orders import KNIGHTS
+                    k = KNIGHTS.get(self.knight_id)
+                    if k:
+                        knight_kit = k.kit
+                except Exception:
+                    pass
+            if knight_kit and knight_kit in _KNIGHT_KIT_TO_GUARD_KIT:
+                kit = _KNIGHT_KIT_TO_GUARD_KIT[knight_kit]
+            else:
+                kit = random.choice(_KNIGHT_KITS_BY_TRADITION.get(
+                    tradition, _KNIGHT_KITS_BY_TRADITION["errant"]))
+        self.kit = kit
+
+        # ---- Standard guard-system fields (same as GuardNPC) ----
+        self.clothing       = _npc_clothing(biodome)
+        self.helmet         = random.choice(_KNIGHT_HELMETS_BY_TRADITION.get(
+                                                tradition, _KNIGHT_HELMETS))
+        self.helmet_finish  = random.choice(_KNIGHT_FINISHES)
+        self.cape           = random.choice(["trim", "trim", "none", "lined"])
+        self.tabard         = random.choice(_KNIGHT_TABARDS_BY_TRADITION.get(
+                                                tradition, _KNIGHT_TABARDS))
+        self.beard          = random.choice(["none", "short", "full"])
+        self.emblem         = random.choice(["cross", "star", "circle",
+                                             "chevron", "none"])
+        self.tint           = random.randint(-8, 12)
+        self.weapon_variant = random.randint(0, 2)
+        self.skin_tone      = random.choice(_GUARD_SKINS)
+        self.boots          = random.choice(_GUARD_BOOTS)
+        self.sash           = random.random() < 0.25
+
+        # ---- Heraldic tincture: the order's primary color drives trim ----
+        self.shield_color   = (140, 60, 60)
+        if order is not None:
+            self.shield_color = order.heraldry.primary
+            # Override clothing trim so the guard primitives paint surcoat
+            # and shield in the order's color.
+            self.clothing = dict(self.clothing)
+            self.clothing["trim"] = order.heraldry.primary
+            # Heavy plate — knights always look better-armored than line guards.
+            self.clothing["armor"] = (185, 190, 200)
+            self.clothing["plate"] = (220, 222, 230)
 
 
 class ElderNPC(AmbientNPC):
@@ -1160,8 +1365,82 @@ class RockQuestNPC(NPC):
         return True
 
 
+_DYNASTY_HEIRLOOM_POOL = [
+    # Ceremonies & state events
+    "dynasty_acclamation_horn", "dynasty_anointing_oil", "dynasty_anointing_spoon",
+    "dynasty_coronation_carpet", "dynasty_coronation_cup", "dynasty_coronation_cushion",
+    "dynasty_coronation_dish", "dynasty_coronation_robe", "dynasty_coronation_trumpet",
+    "dynasty_crown_bearer_cushion", "dynasty_dowager_crown", "dynasty_procession_banner",
+    "dynasty_investiture_cap", "dynasty_investiture_cloak", "dynasty_investiture_sword",
+    "dynasty_herald_tabard", "dynasty_parade_lance", "dynasty_tournament_sash",
+    # Marriage & lineage
+    "dynasty_betrothal_brooch", "dynasty_bridal_dagger", "dynasty_bridal_feast_recipe",
+    "dynasty_bridal_gown", "dynasty_bridal_portrait", "dynasty_engagement_necklace",
+    "dynasty_engagement_proposal", "dynasty_first_marriage_locket",
+    "dynasty_marriage_bangles", "dynasty_signet_bridal", "dynasty_wedding_band_pair",
+    "dynasty_cadet_brooch", "dynasty_cadet_robe", "dynasty_signet_cadet",
+    "dynasty_concubine_ring", "dynasty_consort_robe",
+    # Heir & succession
+    "dynasty_heir_bracelet", "dynasty_heir_first_letter", "dynasty_heir_first_robe",
+    "dynasty_heir_horoscope", "dynasty_recognition_locket", "dynasty_succession_decree",
+    "dynasty_abdication_letter", "dynasty_acknowledgment_letter",
+    "dynasty_disinheritance", "dynasty_legitimization", "dynasty_recall_heir",
+    "dynasty_bastard_signet", "dynasty_book_bastard_roll",
+    # State documents & books
+    "dynasty_diplomatic_missive", "dynasty_oath_of_fealty",
+    "dynasty_rival_treaty", "dynasty_cipher_key", "dynasty_pigeon_tube",
+    "dynasty_book_births", "dynasty_book_cadet_roll", "dynasty_book_coronations",
+    "dynasty_book_court_etiquette", "dynasty_book_deaths", "dynasty_book_dynastic_law",
+    "dynasty_book_heir_roll", "dynasty_book_marriages", "dynasty_dream_journal",
+    "dynasty_omens_book", "dynasty_royal_recipe_book",
+    # Court culture & ritual
+    "dynasty_astrologer_chart", "dynasty_augur_liver", "dynasty_diviner_coin",
+    "dynasty_iching_stalks", "dynasty_jester_bells", "dynasty_storyteller_drum",
+    "dynasty_lineage_mural", "dynasty_court_pipa", "dynasty_court_sketch",
+    "dynasty_painted_fan", "dynasty_masquerade_mask",
+    "dynasty_backgammon_set", "dynasty_chaturanga_board", "dynasty_go_board",
+    "dynasty_pachisi_cloth", "dynasty_shogi_board", "dynasty_bust_lacquer",
+    # Royal regalia & jewelry
+    "dynasty_ancestral_spurs", "dynasty_ceremonial_bow", "dynasty_court_anklet",
+    "dynasty_court_chopsticks", "dynasty_court_slippers",
+    "dynasty_crescent_pendant", "dynasty_lotus_pendant", "dynasty_sun_pendant",
+    "dynasty_ruby_pin_of_state", "dynasty_sapphire_earrings", "dynasty_topaz_circlet",
+    "dynasty_hawk_glove", "dynasty_hunting_cloak", "dynasty_imperial_tea_set",
+    "dynasty_queen_gown", "dynasty_royal_boots", "dynasty_royal_goblet",
+    "dynasty_royal_saltcellar", "dynasty_state_plate", "dynasty_state_robe",
+    "dynasty_throne_footstool", "dynasty_walking_cane",
+    "dynasty_reception_tureen", "dynasty_tasting_spoon",
+    # Mourning & death
+    "dynasty_death_shroud", "dynasty_funeral_sweet", "dynasty_mourning_robe",
+    "dynasty_mourning_veil", "dynasty_pyre_ashes", "dynasty_royal_shroud",
+    # Childhood / heir toys
+    "dynasty_toy_crib_coverlet", "dynasty_toy_doll", "dynasty_toy_first_book",
+    "dynasty_toy_kite", "dynasty_toy_locket",
+    "dynasty_toy_practice_sword", "dynasty_toy_rattle",
+    # Sites & access
+    "dynasty_garden_pavilion_key",
+]
+
+
+def _roll_dynasty_drops(player, rng, count: int = 3) -> list:
+    """Pick `count` distinct dynasty heirlooms the player has the fewest of and add them."""
+    inv = getattr(player, "inventory", None)
+    if inv is None:
+        return []
+    # Prefer items the player hasn't seen — sort by current owned count
+    ranked = sorted(_DYNASTY_HEIRLOOM_POOL, key=lambda k: (inv.get(k, 0), rng.random()))
+    picks = ranked[:count]
+    for item_id in picks:
+        inv[item_id] = inv.get(item_id, 0) + 1
+    return picks
+
+
 class RoyalCuratorNPC(RockQuestNPC):
-    """Royal vault curator — collects legendary rocks and rare specials for the king."""
+    """Royal vault curator — collects legendary rocks and rare specials for the king.
+
+    Quest completions reward gold AND a handful of dynasty heirlooms from the
+    royal vault — over many completions the player fills the dynasty collection.
+    """
     def __init__(self, x, y, world, rng, biodome="temperate"):
         NPC.__init__(self, x, y, world, "npc_royal_curator")
         self.clothing  = _npc_clothing(biodome)
@@ -1179,6 +1458,7 @@ class RoyalCuratorNPC(RockQuestNPC):
         for i in sorted(matching[:needed], reverse=True):
             player.rocks.pop(i)
         player.money += int(quest["reward"] * getattr(player, "blessing_mult", 1.0))
+        _roll_dynasty_drops(player, self._rng, count=3)
         self.quests[quest_idx] = _build_royal_rock_quest(self._rng)
         return True
 
@@ -1524,6 +1804,20 @@ class WeaponOrderNPC(NPC):
         return True
 
 
+class ChapterMasterNPC(NPC):
+    """Chapter Master — opens the Knightly Order petition / quest UI.
+
+    Knights' Hall building's resident. Linked to a Knightly Order via
+    knightly_orders.order_for_city using the NPC's town_id (its region's
+    locally-seated order).
+    """
+    SHOP_HOURS = True
+
+    def __init__(self, x, y, world, biodome="temperate"):
+        super().__init__(x, y, world, "npc_monk")
+        self.clothing = _npc_clothing(biodome)
+
+
 class TradeNPC(NPC):
     def __init__(self, x, y, world, rng, biodome="temperate"):
         super().__init__(x, y, world, "npc_trade")
@@ -1567,8 +1861,12 @@ class TradeNPC(NPC):
         return True
 
     def boosted_gold(self, trade_idx):
-        _, _, receive_gold = self.trades[trade_idx]
-        return max(1, round(receive_gold * _rep_buy_bonus(self._town_rep()) * _wealth_price_mult(self)))
+        item_id, _, receive_gold = self.trades[trade_idx]
+        price = round(receive_gold * _rep_buy_bonus(self._town_rep()) * _wealth_price_mult(self))
+        from guild_policies import apply_chapter_pricing
+        region = _region_for_npc(self)
+        region_id = region.region_id if region is not None else None
+        return max(1, apply_chapter_pricing(item_id, price, region_id, side="sell"))
 
     def rep_bonus_pct(self):
         return round((_rep_buy_bonus(self._town_rep()) - 1.0) * 100)
@@ -1610,6 +1908,31 @@ MERCHANT_SHOP_TABLE = [
     ("ruby",          70,  "Ruby",          "spirits",      4),
     ("milk",          18,  "Milk",          "wool",         4),
     ("tempered_iron", 60,  "Tempered Iron", "iron_chunk",  10),
+]
+
+SCRIBE_SHOP_TABLE = [
+    # (item_id, gold_cost, display_name, barter_item, barter_qty)
+    ("parchment",           10, "Parchment",            "flax_fiber",    4),
+    ("parchment_fine",      18, "Fine Parchment",       "flax_fiber",    8),
+    ("ink_black",           22, "Iron Gall Ink",        "oak_gall",      3),
+    ("ink_crimson",         34, "Crimson Ink",          "dye_extract_crimson", 2),
+    ("ink_cobalt",          34, "Cobalt Ink",           "dye_extract_cobalt",  2),
+    ("ink_indigo",          34, "Indigo Ink",           "dye_extract_indigo",  2),
+    ("manuscript_common",   60, "Manuscript",           "wheat",        20),
+    ("manuscript_fine",    140, "Fine Manuscript",      "lumber",       30),
+    ("manuscript_rare",    320, "Rare Codex",           "gold_nugget",   3),
+    ("scribes_desk_item",  220, "Scribe's Desk",        "lumber",       40),
+    ("lectern_item",        90, "Lectern",              "lumber",       18),
+]
+
+# City Scribe commission menu. The first slot holds a Manuscript tier instead of
+# an item id; ScribeNPC.execute_purchase/_barter convert that into a finished
+# Manuscript collectible attributed to the scribe.
+SCRIBE_COMMISSION_TABLE = [
+    # (tier,    gold_cost, display_name,                 barter_item,     barter_qty)
+    ("common",   80, "Commission: Manuscript",      "parchment",      2),
+    ("fine",    220, "Commission: Fine Manuscript", "parchment_fine", 2),
+    ("rare",    520, "Commission: Rare Codex",      "parchment_fine", 5),
 ]
 
 COFFEE_SHOP_TABLE = [
@@ -2408,6 +2731,69 @@ class CoffeeMerchantNPC(MerchantNPC):
         self.clothing["body"] = (101, 67, 33) # Coffee brown
         n = rng.randint(4, 5)
         self.shop = rng.sample(COFFEE_SHOP_TABLE, min(n, len(COFFEE_SHOP_TABLE)))
+
+
+class ScribeMerchantNPC(MerchantNPC):
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, rng, biodome)
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = (50, 60, 110)   # ink-blue robe
+        self.clothing["pants"] = (55, 45, 38)
+        n = rng.randint(5, 7)
+        self.shop = rng.sample(SCRIBE_SHOP_TABLE, min(n, len(SCRIBE_SHOP_TABLE)))
+
+
+class ScribeNPC(MerchantNPC):
+    """City Scribe — accepts gold (or barter parchment) and pens a Manuscript
+    collectible attributed to themselves. The player walks away with a finished
+    bound Manuscript in their codex instead of a generic item.
+    """
+    def __init__(self, x, y, world, rng, biodome="temperate"):
+        super().__init__(x, y, world, rng, biodome)
+        self.clothing = _npc_clothing(biodome)
+        self.clothing["body"] = ( 70,  50,  95)   # violet robe
+        self.clothing["trim"] = (190, 170,  60)   # gold trim
+        self.display_name = "City Scribe"
+        self.biodome = biodome
+        # Reuse MerchantNPC shop UI; first slot is a tier string, not item_id.
+        self.shop = list(SCRIBE_COMMISSION_TABLE)
+
+    def execute_purchase(self, idx, player):
+        if not self.can_buy(idx, player):
+            return False
+        tier = self.shop[idx][0]
+        player.money -= self.discounted_cost(idx, player)
+        self._commission_manuscript(player, tier)
+        return True
+
+    def execute_barter(self, idx, player):
+        if not self.can_barter(idx, player):
+            return False
+        tier, _, _, barter_item, barter_qty = self.shop[idx]
+        player.inventory[barter_item] -= barter_qty
+        if player.inventory[barter_item] <= 0:
+            del player.inventory[barter_item]
+            for i in range(len(player.hotbar)):
+                if player.hotbar[i] == barter_item:
+                    player.hotbar[i] = None
+        self._commission_manuscript(player, tier)
+        return True
+
+    def _commission_manuscript(self, player, tier):
+        from manuscripts import kingdom_for_world_x
+        biome = getattr(self, "biodome", "plains")
+        scribe_name = getattr(self, "display_name", "City Scribe")
+        ident = getattr(self, "identity", None)
+        if isinstance(ident, dict) and ident.get("display_name"):
+            scribe_name = ident["display_name"]
+        kingdom = kingdom_for_world_x(getattr(self, "world", None), int(getattr(self, "x", 0)) // BLOCK_SIZE)
+        manuscript = player._manuscript_gen.generate_shop_manuscript(
+            tier, biome_hint=biome, scribe_name=scribe_name, kingdom=kingdom)
+        player.manuscripts.append(manuscript)
+        player.discovered_manuscripts.add(
+            f"{manuscript.origin_kingdom}_{manuscript.content_category}")
+        player.pending_notifications.append(
+            ("Manuscript", manuscript.title, tier))
 
 
 class WineMerchantNPC(MerchantNPC):
@@ -3213,9 +3599,9 @@ def _pick_contract_for_region(rng, region):
     pool = LEADER_CONTRACT_TABLE
     preferred: set = set()
     if region is not None:
-        from towns import LEADER_AGENDAS, BIOME_GROUP_SPECIALTIES
+        from towns import LEADER_AGENDAS, region_specialty
         preferred.update(LEADER_AGENDAS.get(region.agenda, {}).get("tags", ()))
-        preferred.update(BIOME_GROUP_SPECIALTIES.get(region.biome_group, {}).get("imports", ()))
+        preferred.update(region_specialty(region).get("imports", ()))
 
     if preferred:
         weighted = []
@@ -3240,9 +3626,9 @@ def _pick_contract_for_region(rng, region):
 
     # Supply-driven contract reward: scarce imports pay more, flooded imports pay less.
     if region is not None:
-        from towns import get_region_supply, supply_contract_mult, BIOME_GROUP_SPECIALTIES
+        from towns import get_region_supply, supply_contract_mult, region_specialty
         item_tags = set(_CONTRACT_TAGS.get(contract[0], ()))
-        import_tags = set(BIOME_GROUP_SPECIALTIES.get(region.biome_group, {}).get("imports", ()))
+        import_tags = set(region_specialty(region).get("imports", ()))
         check_tags = item_tags & import_tags if item_tags & import_tags else item_tags
         if check_tags:
             min_s = min(get_region_supply(region, t) for t in check_tags)
@@ -3251,7 +3637,7 @@ def _pick_contract_for_region(rng, region):
     # Rival-export smuggling premium: if the contract item is an export of any
     # region this leader rivals, the reward gets +50% and the name is marked.
     if region is not None and region.relations:
-        from towns import REGIONS, BIOME_GROUP_SPECIALTIES
+        from towns import REGIONS, region_specialty
         item_tags = set(_CONTRACT_TAGS.get(contract[0], ()))
         for rid, rel in region.relations.items():
             if rel != "rival":
@@ -3259,7 +3645,7 @@ def _pick_contract_for_region(rng, region):
             rival = REGIONS.get(rid)
             if rival is None:
                 continue
-            rival_exports = set(BIOME_GROUP_SPECIALTIES.get(rival.biome_group, {}).get("exports", ()))
+            rival_exports = set(region_specialty(rival).get("exports", ()))
             if item_tags & rival_exports:
                 contract[2] = int(contract[2] * 1.5)
                 contract[3] = f"⚔ {contract[3]}"   # ⚔ marks smuggling premium
@@ -3498,6 +3884,210 @@ BUILDING_PALETTES = [
 ]
 
 # ---------------------------------------------------------------------------
+# Palace-style → city-building palette mapping.
+# Each town inherits its palace type from its kingdom's capital, so every
+# town in a region shares an architectural look that matches the palace.
+# Format: palace_type → {"palettes": [(wall, roof), ...], "swaps": {variant: variant}}
+# ---------------------------------------------------------------------------
+
+_PAGODA_SWAP = {"house": "pagoda_house", "two_story": "pagoda_house",
+                "three_story": "pagoda_house", "shrine": "temple"}
+_NORSE_SWAP  = {"house": "longhouse", "two_story": "longhouse",
+                "three_story": "longhouse"}
+_GOTHIC_SWAP = {"house": "gothic_house", "two_story": "gothic_house",
+                "three_story": "gothic_house"}
+_MESO_SWAP   = {"house": "mesoamerican_house", "two_story": "mesoamerican_house",
+                "three_story": "mesoamerican_house"}
+_POLY_SWAP   = {"house": "polynesian_hut", "two_story": "polynesian_hut",
+                "three_story": "polynesian_hut", "longhouse": "polynesian_hut"}
+_BYZ_SWAP    = {"house": "byzantine_house", "two_story": "byzantine_house",
+                "three_story": "byzantine_house"}
+_FR_BAROQUE_SWAP = {"house": "french_baroque_house", "two_story": "french_baroque_house",
+                    "three_story": "french_baroque_house"}
+_AFRICAN_SWAP = {"house": "african_hut", "two_story": "african_hut",
+                 "three_story": "african_hut", "longhouse": "african_hut"}
+_INCAN_SWAP  = {"house": "incan_house", "two_story": "incan_house",
+                "three_story": "incan_house"}
+_PERSIAN_SWAP = {"house": "persian_house", "two_story": "persian_house",
+                 "three_story": "persian_house"}
+
+_MEDIEVAL_POOL = ["half_timber_house", "chimney_townhouse", "dormer_house",
+                  "crow_step_house", "oriel_townhouse", "tower_house",
+                  "trellis_cottage", "shutter_cottage", "tudor_lodge",
+                  "tudor_inn", "shutter_inn", "salt_chimney_cabin",
+                  "crow_step_chimney", "tall_chimney_lodge", "mansard_townhouse",
+                  "gambrel_chimney", "mansard_dormer", "heraldic_townhouse",
+                  "a_frame_chimney", "a_frame_shutter", "a_frame_lodge",
+                  "a_frame_dormer", "weather_vane_cottage", "weather_vane_lodge",
+                  "gablet_cottage", "gablet_dormer", "gablet_chimney",
+                  "double_chimney_lodge", "double_chimney_townhouse",
+                  "corbel_oriel", "corbel_chimney", "window_grid_townhouse",
+                  "window_grid_balcony"]
+_GOTHIC_POOL = ["gothic_house", "bell_cot_house", "crow_step_house", "tower_house",
+                "lancet_priory", "crow_step_lancet", "crow_step_bell", "bell_chapel",
+                "rose_window_chapel", "tall_lancet_townhouse", "spired_oriel",
+                "spire_chapel_house", "spire_lancet", "fortified_house",
+                "fortress_townhouse", "tower_oriel",
+                "bell_roof_chapel", "bell_porch_chapel", "bell_lancet_chapel",
+                "bell_rose_chapel", "bell_oriel", "bell_spire_chapel",
+                "turret_top_house", "turret_lookout", "turret_corbel",
+                "lookout_house", "lookout_arcade", "lookout_balcony"]
+_NORSE_POOL = ["longhouse", "half_timber_house", "saltbox_house", "tudor_lodge",
+               "shed_cabin", "salt_chimney_cabin", "saltbox_oriel",
+               "chimney_townhouse", "stilt_cottage",
+               "a_frame_cabin", "a_frame_lodge", "a_frame_chimney",
+               "a_frame_lookout", "weather_vane_cottage", "double_chimney_lodge"]
+_MED_POOL = ["arcade_shophouse", "balcony_house", "trellis_cottage",
+             "oriel_townhouse", "arcade_villa", "balcony_villa", "trellised_villa",
+             "porch_villa", "awning_townhouse", "cupola_villa", "terrace_villa",
+             "plinth_balcony_villa", "plinth_arcade_villa", "mansard_villa",
+             "porch_townhouse", "clerestory_villa", "rose_window_villa",
+             "tower_corner_villa", "shutter_cottage", "dome_villa",
+             "arch_loggia_villa", "loggia_villa", "loggia_balcony",
+             "loggia_cupola", "loggia_dome", "corbel_townhouse",
+             "undercroft_villa", "undercroft_arcade", "undercroft_balcony",
+             "undercroft_loggia", "undercroft_dome", "swept_loggia"]
+_ITALIAN_POOL = ["arcade_shophouse", "balcony_house", "oriel_townhouse",
+                 "dormer_house", "arcade_villa", "balcony_villa", "porch_villa",
+                 "cupola_villa", "plinth_balcony_villa", "plinth_arcade_villa",
+                 "rose_window_villa", "tower_corner_villa", "mansard_villa",
+                 "domed_oriel", "spired_oriel",
+                 "loggia_villa", "loggia_balcony", "loggia_cupola",
+                 "arch_loggia_villa", "corbel_townhouse", "corbel_oriel",
+                 "undercroft_loggia", "undercroft_balcony", "undercroft_arcade"]
+_FR_BAROQUE_POOL = ["french_baroque_house", "garret_house", "dormer_house",
+                    "chimney_townhouse", "oriel_townhouse", "mansard_townhouse",
+                    "mansard_villa", "mansard_dormer", "mansard_oriel",
+                    "mansard_porch", "tall_oriel_townhouse", "tall_chimney_lodge",
+                    "rose_window_villa", "tower_oriel", "tower_corner_villa",
+                    "double_chimney_townhouse", "double_chimney_lodge",
+                    "gablet_dormer", "gablet_chimney", "corbel_oriel",
+                    "corbel_chimney", "weather_vane_lodge", "loggia_balcony",
+                    "lookout_balcony"]
+_EAST_ASIAN_POOL = ["pagoda_house", "hipped_house", "clerestory_house",
+                    "minka_house", "shoin_house", "tea_pavilion", "veranda_house",
+                    "high_pagoda_house", "dual_eave_house", "tall_tea_house",
+                    "bamboo_house", "clerestory_pagoda", "moonlit_courtyard",
+                    "low_eave_house", "swept_gable_house", "lantern_house",
+                    "swept_double_eave", "moon_gate_house",
+                    "swept_eave_pavilion", "swept_porch_pavilion",
+                    "swept_moon_pavilion", "swept_lantern", "swept_vine_house",
+                    "swept_stilt_pavilion", "swept_balcony", "swept_trellis",
+                    "swept_loggia"]
+_ARABIA_POOL = ["barrel_vault_house", "arcade_shophouse", "cupola_cottage",
+                "domed_arcade_villa", "courtyard_villa", "minaret_house",
+                "onion_dome_villa", "tall_onion_villa", "moon_gate_arcade",
+                "tower_arcade_villa", "plinth_dome_villa", "plinth_onion_villa",
+                "domed_cupola_villa", "crenellated_house", "dual_dome_villa",
+                "moorish_tower", "dome_townhouse",
+                "kasbah_block_house", "kasbah_jali", "kasbah_loggia",
+                "kasbah_mashrabiya", "kasbah_undercroft", "kasbah_tower",
+                "kasbah_double_tower", "jali_screen_villa", "jali_balcony",
+                "jali_dome", "jali_onion", "jali_undercroft",
+                "mashrabiya_house", "mashrabiya_arcade", "mashrabiya_dome",
+                "mashrabiya_undercroft", "undercroft_villa", "undercroft_dome"]
+_TROPICAL_POOL = ["stilt_cottage", "high_stilt_lodge", "stilt_veranda_house",
+                  "stilt_trellis_house", "stilt_arcade_villa", "stilt_shed_hut",
+                  "high_stilt_double", "high_stilt_tent", "tented_hut",
+                  "shed_porch_hut",
+                  "papyrus_roof_hut", "papyrus_stilt", "papyrus_high_stilt",
+                  "papyrus_porch", "papyrus_vine", "papyrus_trellis",
+                  "papyrus_undercroft"]
+_ANDEAN_POOL = ["plinth_pyramid_villa", "plinth_crow_step", "tiered_stone_house",
+                "step_temple_house", "stone_heraldic_villa", "terraced_pyramid",
+                "plinth_clerestory", "plinth_villa", "pyramid_roof_house",
+                "porch_cottage",
+                "pyramidion_villa", "pyramidion_plinth", "pyramidion_arcade",
+                "pyramidion_corbel", "pyramidion_heraldic", "pyramidion_spire",
+                "undercroft_pyramid"]
+_AFRICAN_POOL = ["african_hut", "plinth_villa", "trellis_cottage", "vine_cottage",
+                 "porch_cottage", "heraldic_townhouse", "awning_shop",
+                 "shed_cabin", "stilt_cottage", "stone_heraldic_villa",
+                 "papyrus_roof_hut", "papyrus_porch", "papyrus_vine",
+                 "papyrus_stilt"]
+_TIBETAN_POOL = ["plinth_villa", "hipped_house", "shed_cabin", "tented_cottage",
+                 "porch_cottage", "shutter_cottage", "tiered_stone_house",
+                 "a_frame_cabin", "a_frame_porch", "a_frame_shutter",
+                 "a_frame_dormer", "lookout_house", "turret_top_house"]
+
+
+PALACE_BUILDING_STYLES = {
+    "castle":         {"palettes": BUILDING_PALETTES, "swaps": {},
+                       "house_pool": _MEDIEVAL_POOL},
+    "mediterranean":  {"palettes": _MEDITERRANEAN_PALETTES, "swaps": {},
+                       "house_pool": _MED_POOL},
+    "east_asian":     {"palettes": [_EAST_ASIAN_PALETTE], "swaps": _EAST_ASIAN_SWAP,
+                       "house_pool": _EAST_ASIAN_POOL},
+    "south_asian":    {"palettes": _SOUTH_ASIAN_PALETTES, "swaps": {},
+                       "house_pool": ["pyramid_roof_house", "balcony_house",
+                                      "trellis_cottage", "pyramid_porch",
+                                      "pyramid_dormer", "pyramid_lancet",
+                                      "vine_cottage", "stilt_trellis_house",
+                                      "plinth_pyramid_villa", "tiered_stone_house"]},
+    "italian":        {"palettes": [(LIMESTONE_BLOCK, SPANISH_ROOF_TILE),
+                                    (WHITE_PLASTER_WALL, TERRACOTTA_ROOF_TILE)],
+                       "swaps": {}, "house_pool": _ITALIAN_POOL},
+    "moorish":        {"palettes": [(WHITE_PLASTER_WALL, ADOBE_BRICK),
+                                    (ADOBE_BRICK, SPANISH_ROOF_TILE)],
+                       "swaps": _DOME_SWAP, "house_pool": _ARABIA_POOL},
+    "middle_eastern": {"palettes": [_ARABIA_PALETTE], "swaps": _ARABIA_SWAP,
+                       "house_pool": _ARABIA_POOL},
+    "norse":          {"palettes": [(HOUSE_WALL_DARK, HOUSE_ROOF_DARK),
+                                    (PINE_PLANK_WALL, HOUSE_ROOF_DARK)],
+                       "swaps": _NORSE_SWAP, "house_pool": _NORSE_POOL},
+    "gothic":         {"palettes": [(GRANITE_ASHLAR, SLATE_SHINGLE),
+                                    (LIMESTONE_BLOCK, SLATE_SHINGLE)],
+                       "swaps": _GOTHIC_SWAP, "house_pool": _GOTHIC_POOL},
+    "african":        {"palettes": [(AFRICAN_MUD_BRICK, REED_BLOCK),
+                                    (AFRICAN_MUD_BRICK, ADOBE_BRICK)],
+                       "swaps": _AFRICAN_SWAP, "house_pool": _AFRICAN_POOL},
+    "byzantine":      {"palettes": [(LIMESTONE_BLOCK, TERRACOTTA_ROOF_TILE),
+                                    (WHITE_PLASTER_WALL, HOUSE_ROOF_STONE)],
+                       "swaps": _BYZ_SWAP,
+                       "house_pool": ["byzantine_house", "cupola_cottage",
+                                      "arcade_shophouse", "dome_townhouse",
+                                      "domed_oriel", "domed_chimney",
+                                      "domed_arcade_villa", "dome_villa",
+                                      "rose_window_villa", "rose_window_chapel",
+                                      "tower_corner_villa"]},
+    "tibetan":        {"palettes": [_HIMALAYAN_PALETTE], "swaps": _HIMALAYAN_SWAP,
+                       "house_pool": _TIBETAN_POOL},
+    "japanese":       {"palettes": [_EAST_ASIAN_PALETTE], "swaps": _PAGODA_SWAP,
+                       "house_pool": _EAST_ASIAN_POOL},
+    "chinese":        {"palettes": [_EAST_ASIAN_PALETTE], "swaps": _PAGODA_SWAP,
+                       "house_pool": _EAST_ASIAN_POOL},
+    "tang_imperial":  {"palettes": [_EAST_ASIAN_PALETTE], "swaps": _PAGODA_SWAP,
+                       "house_pool": _EAST_ASIAN_POOL},
+    "song_palace":    {"palettes": [_EAST_ASIAN_PALETTE], "swaps": _PAGODA_SWAP,
+                       "house_pool": _EAST_ASIAN_POOL + ["dutch_gable_house",
+                                                          "swept_gable_house"]},
+    "han_palace":     {"palettes": [_EAST_ASIAN_PALETTE], "swaps": _PAGODA_SWAP,
+                       "house_pool": _EAST_ASIAN_POOL + ["pyramid_roof_house"]},
+    "east_african":   {"palettes": [(AFRICAN_MUD_BRICK, AFRICAN_MUD_BRICK),
+                                    (AFRICAN_MUD_BRICK, ADOBE_BRICK)],
+                       "swaps": _AFRICAN_SWAP, "house_pool": _AFRICAN_POOL},
+    "mesoamerican":   {"palettes": [(LIMESTONE_BLOCK, LIMESTONE_BLOCK),
+                                    (ROUGH_STONE_WALL, LIMESTONE_BLOCK)],
+                       "swaps": _MESO_SWAP,
+                       "house_pool": ["mesoamerican_house"] + _ANDEAN_POOL},
+    "french_baroque": {"palettes": [(WHITE_PLASTER_WALL, SLATE_SHINGLE),
+                                    (LIMESTONE_BLOCK, SLATE_SHINGLE)],
+                       "swaps": _FR_BAROQUE_SWAP, "house_pool": _FR_BAROQUE_POOL},
+    "incan":          {"palettes": [(GRANITE_ASHLAR, ROUGH_STONE_WALL),
+                                    (ROUGH_STONE_WALL, HOUSE_ROOF_STONE)],
+                       "swaps": _INCAN_SWAP,
+                       "house_pool": ["incan_house"] + _ANDEAN_POOL},
+    "persian":        {"palettes": [(SANDSTONE_BLOCK, POLISHED_MARBLE),
+                                    (ADOBE_BRICK, TERRACOTTA_ROOF_TILE)],
+                       "swaps": _PERSIAN_SWAP,
+                       "house_pool": ["persian_house"] + _ARABIA_POOL},
+    "polynesian":     {"palettes": [(PINE_PLANK_WALL, REED_BLOCK),
+                                    (HOUSE_WALL, REED_BLOCK)],
+                       "swaps": _POLY_SWAP,
+                       "house_pool": ["polynesian_hut"] + _TROPICAL_POOL},
+}
+
+# ---------------------------------------------------------------------------
 # City wall styles
 # Each entry: (base_block, top_block, height, has_crenellations).
 # Wood/adobe styles set has_crenellations=False and reuse the base block as
@@ -3586,7 +4176,8 @@ _FACADE_FLOWER_BOXES = (FLOWER_BOX, GERANIUM_BOX)
 # Appraisal base prices per weapon type (gold)
 _WEAPON_ARMORER_BASE = {"dagger": 20, "sword": 35, "spear": 30, "axe": 40,
                         "mace": 45, "halberd": 55, "glaive": 48,
-                        "rapier": 32, "trident": 42, "scythe": 60}
+                        "rapier": 32, "trident": 42, "scythe": 60,
+                        "lance": 65}
 _WEAPON_MATERIAL_MULT = {"iron": 1.0, "gold": 1.6, "steel": 2.0}
 
 
@@ -3681,7 +4272,7 @@ def _build_garrison_quest(rng, difficulty):
     count     = rng.randint(1, 1 + min(difficulty, 2))
     min_tier  = _TIER_ORDER[min(difficulty, 2)]
     wtype     = rng.choice(["dagger", "sword", "spear", "axe", "mace", "halberd", "glaive",
-                            "rapier", "trident", "scythe", None])
+                            "rapier", "trident", "scythe", "lance", None])
     reward    = (35 + difficulty * 20) * count
     return {"count": count, "min_tier": min_tier, "weapon_type": wtype, "reward": reward}
 
@@ -4083,12 +4674,13 @@ CITY_CONFIGS = {
                                     "longhouse", "ruin", "pavilion", "apothecary", "coffee_shop"]),
             ( 19, (6, 7), (5, 7), ["shrine"]),
             ( 28, (7, 9), (4, 5), ["racing_ring"]),
+            ( 36, (6, 7), (4, 5), ["chapter_house"]),
         ],
         "npc_types": ["quest_rock", "blacksmith", "innkeeper", "merchant",
-                      ["quest_gem", "quest_gem", "noble_maecenas", "villager", "sweet_shop", "cartographer", "farrier", "candlemaker"],
+                      ["quest_gem", "quest_gem", "noble_maecenas", "villager", "sweet_shop", "cartographer", "farrier", "candlemaker", "scribe_merchant"],
                       ["scholar", "villager", "villager", "coffee_merchant", "beer_merchant", "pastry_chef",
-                       "herb_merchant", "tea_merchant", "salt_merchant", "honey_merchant", "coin_dealer"],
-                      "shrine_npc", "racing_bookkeeper"],
+                       "herb_merchant", "tea_merchant", "salt_merchant", "honey_merchant", "coin_dealer", "money_changer", "coin_appraiser", "coin_collector", "scribe_merchant", "scribe"],
+                      "shrine_npc", "racing_bookkeeper", "chapter_master"],
         "gardens": [(-21, 2), (-12, 2), (16, 2)],
         # (center_offset, half_w) — paved plaza with a centre sculpture.
         "squares": [(0, 4)],
@@ -4131,6 +4723,7 @@ CITY_CONFIGS = {
                                     "two_story", "market_stall", "apothecary", "barn", "vignette"]),
             ( 26, (7, 9), (5, 7), ["shrine"]),
             ( 38, (7, 10), (4, 5), ["racing_ring"]),
+            ( 48, (6, 8), (4, 5), ["chapter_house"]),
         ],
         "npc_types": [["quest_rock", "doctor", "weapon_order"], "blacksmith",
                       ["quest_wildflower", "quest_wildflower", "villager", "wine_merchant", "pastry_chef",
@@ -4141,10 +4734,11 @@ CITY_CONFIGS = {
                       ["innkeeper", "innkeeper", "tavern"],
                       ["trade", "merchant", "villager", "beer_merchant", "pastry_chef",
                        "candlemaker", "spirits_distiller", "dyer", "honey_merchant"],
-                      ["scholar", "scholar", "noble_maecenas", "villager", "herb_merchant", "tea_merchant"],
+                      ["scholar", "scholar", "noble_maecenas", "villager", "herb_merchant", "tea_merchant", "scribe"],
                       "shrine_npc",
                       "racing_bookkeeper",
-                      ["jewelry_merchant", "villager", "coin_dealer", "sweet_shop"]],
+                      ["jewelry_merchant", "villager", "coin_dealer", "auctioneer", "money_changer", "coin_appraiser", "coin_collector", "sweet_shop"],
+                      "chapter_master"],
         "gardens": [(-31, 2), (-23, 2), (22, 2)],
         "squares": [(-10, 4), (13, 4)],
         "growth_slots_tier1": [( 32, (4, 6), (3, 4), ["house", "two_story"]),
@@ -4170,7 +4764,10 @@ CITY_CONFIGS = {
                          (12,  ["drunkard", "none", "none"]),
                          (-20, ["craftsman", "vendor", "none", "none"]),
                          (30,  ["scout", "none", "none", "none"]),
-                         (20,  ["sailor", "none", "none"])],
+                         (20,  ["sailor", "none", "none"]),
+                         (-18, ["knight", "knight", "noble", "none"]),
+                         (18,  ["knight", "guard", "noble"]),
+                         (-8,  ["knight", "none", "none"])],
     },
     # Tier-3 metropolis (capital after max growth)
     "metropolitan": {
@@ -4190,11 +4787,12 @@ CITY_CONFIGS = {
             ( 38, None,   None,   None),    # Outdoor noble
             ( 46, (7, 10), (6, 9), ["shrine", "shrine"]),
             ( 56, (8, 11), (4, 6), ["racing_ring"]),
+            ( 66, (6, 8), (4, 5), ["chapter_house"]),
         ],
         "npc_types": [["scholar", "doctor"], ["innkeeper", "tavern"], ["blacksmith", "weapon_order"], "scholar",
                       "scholar", "shrine_npc", ["restaurant_npc", "pastry_chef"], ["merchant", "beer_merchant", "sweet_shop"],
                       "villager", ["scholar", "library_npc", "villager", "wine_merchant"], "jewelry_merchant",
-                      "noble_maecenas", "shrine_npc", "racing_bookkeeper"],
+                      "noble_maecenas", "shrine_npc", "racing_bookkeeper", "chapter_master"],
         "gardens": [(-46, 3), (-22, 2), (10, 2), (34, 3)],
         "squares": [(-30, 5), (0, 6), (26, 5)],
         "growth_slots_tier1": [( 50, (4, 6), (3, 4), ["house", "two_story"]),
@@ -4211,7 +4809,8 @@ CITY_CONFIGS = {
                          (35,  ["villager", "drunkard", "beggar", "sailor"]),
                          (45,  ["guard", "guard", "scout"]),
                          (-10, ["scholar", "monk", "none"]),
-                         (25,  ["noble", "none", "none"]),
+                         (25,  ["noble", "knight", "none"]),
+                         (-20, ["knight", "knight", "guard"]),
                          (-35, ["beggar", "none", "none"]),
                          (10,  ["pilgrim", "elder", "monk"])],
     },
@@ -4238,9 +4837,9 @@ CITY_CONFIGS = {
         "ambient_npcs": [(-25, "guard"),
                          (-7,  ["guard", "guard", "drunkard", "none"]),
                          (0,   "guard"),
-                         (7,   ["guard", "none"]),
+                         (7,   ["guard", "knight", "none"]),
                          (20,  "guard"),
-                         (-15, ["guard", "drunkard", "none"]),
+                         (-15, ["guard", "knight", "drunkard", "none"]),
                          (15,  ["guard", "elder", "none"]),
                          (12,  ["drunkard", "none", "none"])],
     },
@@ -4688,6 +5287,70 @@ _CLOTHING_PALETTES = {
 }
 _CLOTHING_DEFAULT = _CLOTHING_PALETTES["temperate"]
 
+# Per-style skin tone pools — used by AmbientNPC to vary skin colour
+# from the single hard-coded value baked into each clothing palette.
+_AMBIENT_SKIN_TONE_POOLS = {
+    "temperate": [
+        (255, 215, 160), (240, 200, 150), (220, 180, 135),
+        (190, 150, 110), (155, 120,  85), (120,  90,  65),
+        ( 90,  65,  45),
+    ],
+    "desert": [
+        (220, 180, 130), (205, 160, 105), (185, 140,  90),
+        (160, 115,  75), (135,  95,  60), (105,  75,  45),
+    ],
+    "alpine": [
+        (250, 220, 180), (245, 205, 160), (230, 190, 150),
+        (210, 170, 130), (180, 140, 105),
+    ],
+    "boreal": [
+        (245, 215, 180), (230, 195, 160), (215, 180, 140),
+        (195, 160, 120), (165, 130,  95),
+    ],
+    "mediterranean": [
+        (235, 200, 155), (220, 180, 125), (200, 160, 110),
+        (175, 135,  95), (145, 110,  75),
+    ],
+    "east_asian": [
+        (245, 215, 170), (235, 205, 160), (220, 188, 145),
+        (200, 170, 130), (180, 150, 110),
+    ],
+    "japanese": [
+        (245, 215, 170), (235, 205, 160), (220, 188, 145),
+        (200, 170, 130),
+    ],
+    "south_asian": [
+        (210, 165, 120), (185, 140,  95), (160, 115,  75),
+        (135,  95,  60), (110,  80,  50),
+    ],
+    "jungle": [
+        (190, 145, 100), (165, 120,  80), (140,  95,  60),
+        (115,  80,  50), ( 90,  60,  40),
+    ],
+    "steppe": [
+        (235, 200, 155), (215, 180, 135), (190, 155, 115),
+        (160, 125,  90), (130, 100,  70),
+    ],
+    "coastal": [
+        (235, 200, 160), (215, 180, 140), (190, 155, 115),
+        (160, 125,  90),
+    ],
+    "polynesian": [
+        (215, 170, 125), (195, 150, 105), (170, 125,  85),
+        (140, 100,  65), (115,  80,  50),
+    ],
+}
+
+_AMBIENT_HAIR_COLORS = [
+    (40,  30,  20), (60,  45,  30), (75,  55,  35),  # blacks/dark browns
+    (95,  70,  45), (115,  85,  55), (140, 105,  65),  # medium browns
+    (165, 130,  80), (190, 155,  95),                  # lights/blondes
+    (130,  80,  50), (160, 100,  60),                  # reds/auburn
+    (210, 210, 200), (180, 180, 175), (140, 140, 135),  # greys/whites
+]
+
+_AMBIENT_BUILDS = ["slim", "slim", "average", "average", "average", "stout"]
+
 # Maps biodome string → clothing style key
 _CLOTHING_STYLE_BY_BIODOME = {
     "temperate": "temperate", "birch_forest": "temperate", "redwood": "temperate",
@@ -4768,6 +5431,69 @@ _EXPORT_NPC_MAP: dict[str, str] = {
     "food":    "restaurant_npc",
     "tea":     "tavern",
 }
+
+# Inverse map: which export tag does a given merchant NPC type represent?
+# Used by towns.region_specialty() to derive a region's exports from the
+# merchants that actually live in its cities — so the Town Hall's
+# "Exports: …" line reflects what shops are present, not just biome flavour.
+MERCHANT_EXPORT_TAGS: dict[str, str] = {
+    "wine_merchant":     "wine",
+    "coffee_merchant":   "coffee",
+    "beer_merchant":     "beer",
+    "tea_merchant":      "tea",
+    "spirits_distiller": "spirits",
+    "herb_merchant":     "herbs",
+    "doctor":            "herbs",
+    "apothecary":        "herbs",
+    "jewelry_merchant":  "gems",
+    "blacksmith":        "metal",
+    "weapon_armorer":    "metal",
+    "weapon_order":      "metal",
+    "quartermaster":     "metal",
+    "fishmonger":        "food",
+    "pastry_chef":       "food",
+    "sweet_shop":        "food",
+    "restaurant_npc":    "food",
+    "honey_merchant":    "food",
+    "tavern":            "beer",
+    "innkeeper":         "food",
+    "dyer":              "textiles",
+    "salt_merchant":     "spices",
+    "scribe":            "paper",
+    "scribe_merchant":   "paper",
+    "candlemaker":       "wax",
+}
+
+
+def _walk_npc_slot(slot):
+    """Yield each concrete NPC type name from a CITY_CONFIGS npc_types slot.
+
+    Slots may be a bare string or a list (the city picks one at gen time, but
+    for export inference we treat every option as something the city *could*
+    showcase).
+    """
+    if isinstance(slot, str):
+        yield slot
+    elif isinstance(slot, (list, tuple)):
+        for sub in slot:
+            yield from _walk_npc_slot(sub)
+
+
+def derive_export_tags_for_size(size: str) -> set:
+    """Return the set of export tags implied by the merchant NPCs in a city
+    of the given CITY_CONFIGS size. Empty if the size is unknown or has no
+    recognised merchants (e.g. tiny camps that only host a quest_rock).
+    """
+    cfg = CITY_CONFIGS.get(size)
+    if not cfg:
+        return set()
+    tags: set = set()
+    for slot in cfg.get("npc_types", []):
+        for npc_type in _walk_npc_slot(slot):
+            tag = MERCHANT_EXPORT_TAGS.get(npc_type)
+            if tag:
+                tags.add(tag)
+    return tags
 
 # Maps young crop block → its mature variant for visual variety in pre-grown fields.
 _YOUNG_TO_MATURE = {
@@ -5949,6 +6675,1189 @@ def _place_house_three_story(world, rng, left_x, sy, width, floor1_h, floor2_h, 
             world.set_block(rx, peak_y, roof_block)
 
 
+def _place_gothic_house(world, left_x, sy, width, wall_height,
+                        wall_block=GRANITE_ASHLAR, roof_block=SLATE_SHINGLE, rng=None):
+    """Tall narrow stone house with a steeply pitched gable and lancet windows."""
+    if rng is None:
+        rng = random.Random(left_x ^ sy)
+    _build_modular_building(world, rng, left_x, sy, width, wall_height,
+                            wall_block, roof_block, "house")
+
+    # Steep stepped gable above the standard roof — 3 narrowing tiers
+    base_y = sy - wall_height - 2
+    for tier in range(1, 4):
+        shrink = tier
+        ty = base_y - tier
+        lo = left_x + shrink
+        hi = left_x + width - shrink
+        if lo >= hi:
+            break
+        for rx in range(lo, hi):
+            if 0 <= ty < world.height:
+                world.set_block(rx, ty, roof_block)
+
+    # Lancet windows along the facade at mid-height (bg, every 2 cols)
+    win_y = sy - wall_height + 2
+    for bx in range(left_x + 2, left_x + width - 1, 3):
+        if 0 <= win_y < world.height:
+            world.set_bg_block(bx, win_y, LANCET_WINDOW)
+
+
+def _place_mesoamerican_house(world, left_x, sy, width, wall_height,
+                              wall_block=LIMESTONE_BLOCK, roof_block=LIMESTONE_BLOCK,
+                              rng=None):
+    """Stepped stone house with terraced silhouette — wide base + recessed upper tier."""
+    if rng is None:
+        rng = random.Random(left_x ^ sy)
+    _build_modular_building(world, rng, left_x, sy, width, wall_height,
+                            wall_block, roof_block, "house")
+
+    # Drop a smaller "upper temple" block on top — 2 blocks high, ~half width
+    inset = max(1, width // 4)
+    top_lo = left_x + inset
+    top_hi = left_x + width - inset
+    base_y = sy - wall_height - 1  # one row above existing roof
+    for ty in range(base_y - 2, base_y):
+        for rx in range(top_lo, top_hi):
+            if 0 <= ty < world.height:
+                if rx == top_lo or rx == top_hi - 1 or ty == base_y - 2:
+                    world.set_block(rx, ty, wall_block)
+                else:
+                    world.set_block(rx, ty, AIR)
+                    world.set_bg_block(rx, ty, wall_block)
+
+    # Step accent: a single block jutting out on each side at the eave line
+    if 0 <= base_y < world.height:
+        world.set_block(left_x - 1, base_y, roof_block)
+        world.set_block(left_x + width, base_y, roof_block)
+
+
+def _place_polynesian_hut(world, left_x, sy, width, wall_height,
+                          wall_block=PINE_PLANK_WALL, roof_block=REED_BLOCK, rng=None):
+    """Raised stilt hut with a steeply pitched thatched roof."""
+    if rng is None:
+        rng = random.Random(left_x ^ sy)
+
+    # Stilts: a row of posts at sy supporting a floor at sy-1
+    for px in range(left_x, left_x + width, 2):
+        if 0 <= sy < world.height:
+            world.set_block(px, sy, wall_block)
+
+    # Raised floor + walls (slightly shorter than wall_height since we lifted)
+    floor_y = sy - 1
+    for wy in range(floor_y - wall_height, floor_y):
+        for wx in range(left_x, left_x + width):
+            if not (0 <= wy < world.height):
+                continue
+            is_top   = (wy == floor_y - wall_height)
+            is_left  = (wx == left_x)
+            is_right = (wx == left_x + width - 1)
+            is_door  = (wy >= floor_y - 2) and (is_left or is_right)
+            if is_door:
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
+            elif is_top or is_left or is_right:
+                world.set_block(wx, wy, wall_block)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, wall_block)
+        # Floor plank
+        if 0 <= floor_y < world.height:
+            pass  # floor is already implied by wall row above; leave open
+
+    # Steep thatched gable — 3 narrowing tiers
+    base_y = floor_y - wall_height - 1
+    for tier in range(3):
+        shrink = tier
+        ty = base_y - tier
+        for rx in range(left_x - 1 + shrink, left_x + width + 1 - shrink):
+            if 0 <= ty < world.height:
+                world.set_block(rx, ty, roof_block)
+
+
+def _place_pagoda_house(world, left_x, sy, width, wall_height,
+                        wall_block=PINE_PLANK_WALL, roof_block=SLATE_SHINGLE, rng=None):
+    """Small home with a multi-tier pagoda eave roof."""
+    if rng is None:
+        rng = random.Random(left_x ^ sy)
+    _build_modular_building(world, rng, left_x, sy, width, wall_height,
+                            wall_block, roof_block, "house")
+
+    # Replace the flat overhang with 2-3 narrowing tiers of curved eaves.
+    base_y = sy - wall_height - 1
+    n_tiers = 2 if width < 8 else 3
+    for tier in range(n_tiers):
+        ty = base_y - tier * 2
+        # Wider overhang at the bottom tier; each tier above narrows by 1 per side.
+        overhang = max(0, 2 - tier)
+        lo = left_x - overhang
+        hi = left_x + width + overhang
+        for rx in range(lo, hi):
+            if 0 <= ty < world.height:
+                world.set_block(rx, ty, roof_block)
+        # Peak row above each tier
+        peak_y = ty - 1
+        for rx in range(lo + 1, hi - 1):
+            if 0 <= peak_y < world.height:
+                world.set_block(rx, peak_y, roof_block)
+
+
+def _place_byzantine_house(world, left_x, sy, width, wall_height,
+                           wall_block=LIMESTONE_BLOCK, roof_block=TERRACOTTA_ROOF_TILE,
+                           rng=None):
+    """Limestone box capped with a small central dome — modest Byzantine townhouse."""
+    if rng is None:
+        rng = random.Random(left_x ^ sy)
+    _build_modular_building(world, rng, left_x, sy, width, wall_height,
+                            wall_block, roof_block, "house")
+
+    # Small dome over the center, 3-4 blocks wide. Use POLISHED_MARBLE for the dome.
+    base_y = sy - wall_height - 2
+    dome_w = max(3, min(5, width // 2))
+    dome_lo = left_x + (width - dome_w) // 2
+    dome_hi = dome_lo + dome_w
+    # base row (widest)
+    for rx in range(dome_lo, dome_hi):
+        if 0 <= base_y < world.height:
+            world.set_block(rx, base_y, POLISHED_MARBLE)
+    # peak (1 block narrower each side)
+    peak_y = base_y - 1
+    for rx in range(dome_lo + 1, dome_hi - 1):
+        if 0 <= peak_y < world.height:
+            world.set_block(rx, peak_y, POLISHED_MARBLE)
+
+
+def _place_french_baroque_house(world, left_x, sy, width, wall_height,
+                                wall_block=WHITE_PLASTER_WALL, roof_block=SLATE_SHINGLE,
+                                rng=None):
+    """Mansard-roofed townhouse — steep slate lower slope + flat upper deck."""
+    if rng is None:
+        rng = random.Random(left_x ^ sy)
+    _build_modular_building(world, rng, left_x, sy, width, wall_height,
+                            wall_block, roof_block, "house")
+
+    # Steep mansard sides — 2 rows of slate descending from eave inward
+    base_y = sy - wall_height - 1
+    for tier in range(2):
+        ty = base_y - tier
+        for rx in (left_x - 1 + tier, left_x + width - tier):
+            if 0 <= ty < world.height and 0 <= rx:
+                world.set_block(rx, ty, roof_block)
+
+    # Flat upper deck
+    deck_y = base_y - 2
+    for rx in range(left_x + 1, left_x + width - 1):
+        if 0 <= deck_y < world.height:
+            world.set_block(rx, deck_y, roof_block)
+
+    # Dormer windows on the slope
+    if 0 <= base_y < world.height and width >= 5:
+        world.set_bg_block(left_x + 2,             base_y, LANCET_WINDOW)
+        world.set_bg_block(left_x + width - 3,     base_y, LANCET_WINDOW)
+
+
+def _place_african_hut(world, left_x, sy, width, wall_height,
+                       wall_block=AFRICAN_MUD_BRICK, roof_block=REED_BLOCK, rng=None):
+    """Mud-brick walls capped by a tall conical thatched roof."""
+    if rng is None:
+        rng = random.Random(left_x ^ sy)
+
+    # Plain hollow box, doors on both sides
+    for wy in range(sy - wall_height, sy):
+        for wx in range(left_x, left_x + width):
+            if not (0 <= wy < world.height):
+                continue
+            is_top   = (wy == sy - wall_height)
+            is_left  = (wx == left_x)
+            is_right = (wx == left_x + width - 1)
+            is_door  = (wy >= sy - 2) and (is_left or is_right)
+            if is_door:
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
+            elif is_top or is_left or is_right:
+                world.set_block(wx, wy, wall_block)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, wall_block)
+
+    # Conical thatched roof — narrows by 1 per row to a point
+    base_y = sy - wall_height - 1
+    half = (width + 1) // 2
+    for tier in range(half):
+        ty = base_y - tier
+        shrink = tier
+        lo = left_x + shrink
+        hi = left_x + width - shrink
+        if lo >= hi:
+            break
+        for rx in range(lo, hi):
+            if 0 <= ty < world.height:
+                world.set_block(rx, ty, roof_block)
+
+
+def _place_incan_house(world, left_x, sy, width, wall_height,
+                       wall_block=GRANITE_ASHLAR, roof_block=ROUGH_STONE_WALL, rng=None):
+    """Trapezoidal stone walls that taper inward (battered) with a low flat thatch top."""
+    if rng is None:
+        rng = random.Random(left_x ^ sy)
+
+    # Walls taper inward: every 3 rows up, walls move in by 1 on each side.
+    taper = max(0, wall_height // 4)
+    for wy in range(sy - wall_height, sy):
+        offset = (sy - 1 - wy) // 3 if (sy - 1 - wy) // 3 <= taper else taper
+        row_lo = left_x + offset
+        row_hi = left_x + width - offset
+        for wx in range(row_lo, row_hi):
+            if not (0 <= wy < world.height):
+                continue
+            is_top   = (wy == sy - wall_height)
+            is_left  = (wx == row_lo)
+            is_right = (wx == row_hi - 1)
+            is_door  = (wy >= sy - 2) and (is_left or is_right)
+            if is_door:
+                world.set_block(wx, wy, WOOD_DOOR_CLOSED)
+            elif is_top or is_left or is_right:
+                world.set_block(wx, wy, wall_block)
+            else:
+                world.set_block(wx, wy, AIR)
+                world.set_bg_block(wx, wy, wall_block)
+
+    # Low flat thatch/stone cap — single row across the narrowed top
+    cap_y = sy - wall_height - 1
+    cap_lo = left_x + taper
+    cap_hi = left_x + width - taper
+    for rx in range(cap_lo, cap_hi):
+        if 0 <= cap_y < world.height:
+            world.set_block(rx, cap_y, roof_block)
+
+
+def _place_persian_house(world, left_x, sy, width, wall_height,
+                         wall_block=SANDSTONE_BLOCK, roof_block=POLISHED_MARBLE, rng=None):
+    """Recessed-arch (iwan) facade with a flat parapet roof, sandstone walls."""
+    if rng is None:
+        rng = random.Random(left_x ^ sy)
+    _build_modular_building(world, rng, left_x, sy, width, wall_height,
+                            wall_block, roof_block, "house")
+
+    # Carve a recessed iwan in the center of the facade — bg arch behind, no fg blocks
+    arch_w = max(3, width // 3)
+    arch_lo = left_x + (width - arch_w) // 2
+    arch_hi = arch_lo + arch_w
+    arch_top = sy - wall_height + 1
+    for ay in range(arch_top, sy - 1):
+        for ax in range(arch_lo, arch_hi):
+            if 0 <= ay < world.height:
+                world.set_bg_block(ax, ay, ARCH_STONE)
+
+    # Flat parapet — replace peaked ridge with a level crenellation row.
+    base_y = sy - wall_height - 1
+    peak_y = base_y - 1
+    for rx in range(left_x, left_x + width):
+        if 0 <= peak_y < world.height:
+            world.set_block(rx, peak_y, AIR)
+    # Add merlons (every other block) on the eave row for parapet feel
+    for rx in range(left_x - 1, left_x + width + 1, 2):
+        if 0 <= base_y - 1 < world.height:
+            world.set_block(rx, base_y - 1, roof_block)
+
+
+# ---------------------------------------------------------------------------
+# Data-driven house generator
+#
+# Each variant is a small spec dict describing optional features. The
+# generator builds a base hollow box and then layers roof/facade/upper
+# accents on top. New visual variants can be added by editing data only.
+#
+# Spec keys (all optional, sensible defaults applied):
+#   roof:        "peak" (default), "flat", "stepped_gable", "saltbox",
+#                "dutch_gable", "crow_step", "pyramid", "hipped",
+#                "clerestory", "gambrel", "parapet", "barrel_vault"
+#   facade:      "oriel", "arcade", "balcony", "bell_cot", "cupola",
+#                "dormer", "chimney", "half_timber", "trellis",
+#                "shutters", "lancet"
+#   foundation:  "ground" (default), "plinth"
+#   upper:       "tower", "step_pyramid"
+#   height_bonus: int — extra wall_height rows added
+# ---------------------------------------------------------------------------
+
+HOUSE_VARIANT_SPECS = {
+    # --- Original 20 (Wave 1) ---
+    "saltbox_house":       {"roof": "saltbox"},
+    "dutch_gable_house":   {"roof": "dutch_gable"},
+    "crow_step_house":     {"roof": "crow_step"},
+    "pyramid_roof_house":  {"roof": "pyramid"},
+    "hipped_house":        {"roof": "hipped"},
+    "clerestory_house":    {"roof": "clerestory"},
+    "gambrel_barn_house":  {"roof": "gambrel"},
+    "barrel_vault_house":  {"roof": "barrel_vault"},
+    "oriel_townhouse":     {"facade": "oriel"},
+    "arcade_shophouse":    {"facade": "arcade"},
+    "balcony_house":       {"facade": "balcony"},
+    "bell_cot_house":      {"facade": "bell_cot"},
+    "cupola_cottage":      {"roof": "flat", "facade": "cupola"},
+    "dormer_house":        {"facade": "dormer"},
+    "chimney_townhouse":   {"facade": "chimney"},
+    "half_timber_house":   {"facade": "half_timber"},
+    "trellis_cottage":     {"facade": "trellis"},
+    "tower_house":         {"roof": "parapet", "upper": "tower", "height_bonus": 1},
+    "plinth_villa":        {"foundation": "plinth", "roof": "parapet"},
+    "garret_house":        {"facade": "dormer", "height_bonus": 1, "roof": "crow_step"},
+
+    # --- Wave 2: single-primitive showcases (new roof/facade/foundation types) ---
+    "shed_cabin":          {"roof": "shed"},
+    "tented_cottage":      {"roof": "tented"},
+    "double_peak_villa":   {"roof": "double_peak"},
+    "spire_chapel_house":  {"roof": "spire"},
+    "onion_dome_house":    {"roof": "onion_dome"},
+    "mansard_townhouse":   {"roof": "mansard"},
+    "dome_townhouse":      {"roof": "dome"},
+    "rose_window_chapel":  {"facade": "rose_window", "roof": "stepped_gable"},
+    "moon_gate_house":     {"facade": "moon_gate"},
+    "awning_shop":         {"roof": "flat", "facade": "awning"},
+    "porch_cottage":       {"facade": "porch"},
+    "heraldic_townhouse":  {"facade": "heraldic"},
+    "vine_cottage":        {"facade": "vines"},
+    "shutter_cottage":     {"facade": "shutters"},
+    "stilt_cottage":       {"foundation": "stilts"},
+    "high_stilt_lodge":    {"foundation": "high_stilts"},
+    "spired_house":        {"upper": "spire_top"},
+    "double_tower_keep":   {"roof": "parapet", "upper": "double_tower"},
+    "dome_top_house":      {"roof": "flat", "upper": "dome_top"},
+
+    # --- Wave 3: castle / medieval mixes ---
+    "salt_chimney_cabin":  {"roof": "saltbox", "facade": "chimney"},
+    "tudor_lodge":         {"roof": "gambrel", "facade": "half_timber"},
+    "tudor_inn":           {"roof": "gambrel", "facade": "half_timber", "height_bonus": 1},
+    "shutter_inn":         {"roof": "peak", "facade": "shutters", "height_bonus": 1},
+    "tower_oriel":         {"roof": "parapet", "facade": "oriel", "upper": "tower"},
+    "fortified_house":     {"roof": "parapet", "facade": "heraldic", "upper": "tower"},
+    "fortress_townhouse":  {"roof": "parapet", "facade": "heraldic"},
+    "crow_step_chimney":   {"roof": "crow_step", "facade": "chimney"},
+    "crow_step_bell":      {"roof": "crow_step", "facade": "bell_cot"},
+    "crow_step_lancet":    {"roof": "crow_step", "facade": "lancet"},
+    "lancet_priory":       {"roof": "stepped_gable", "facade": "lancet"},
+    "bell_chapel":         {"roof": "spire", "facade": "bell_cot"},
+    "tall_chimney_lodge":  {"roof": "peak", "facade": "chimney", "height_bonus": 1},
+    "tall_oriel_townhouse":{"facade": "oriel", "height_bonus": 1},
+    "tall_lancet_townhouse":{"facade": "lancet", "height_bonus": 2},
+
+    # --- Wave 4: classical / mediterranean / italian ---
+    "arcade_villa":        {"roof": "flat", "facade": "arcade"},
+    "balcony_villa":       {"roof": "peak", "facade": "balcony"},
+    "trellised_villa":     {"roof": "peak", "facade": "trellis"},
+    "porch_villa":         {"roof": "peak", "facade": "porch"},
+    "awning_townhouse":    {"roof": "peak", "facade": "awning"},
+    "cupola_villa":        {"roof": "flat", "facade": "cupola"},
+    "terrace_villa":       {"foundation": "plinth", "roof": "flat", "facade": "trellis"},
+    "plinth_balcony_villa":{"foundation": "plinth", "facade": "balcony"},
+    "plinth_arcade_villa": {"foundation": "plinth", "facade": "arcade"},
+    "mansard_villa":       {"roof": "mansard", "facade": "shutters"},
+    "dome_villa":          {"roof": "dome", "facade": "arcade"},
+    "tower_corner_villa":  {"roof": "peak", "upper": "tower"},
+    "porch_townhouse":     {"facade": "porch"},
+    "clerestory_villa":    {"roof": "clerestory"},
+    "rose_window_villa":   {"facade": "rose_window"},
+
+    # --- Wave 5: east asian ---
+    "minka_house":         {"roof": "hipped"},
+    "shoin_house":         {"roof": "gambrel", "facade": "shutters"},
+    "tea_pavilion":        {"roof": "hipped", "facade": "trellis"},
+    "veranda_house":       {"roof": "hipped", "facade": "porch"},
+    "high_pagoda_house":   {"roof": "pyramid", "upper": "spire_top"},
+    "dual_eave_house":     {"roof": "double_peak"},
+    "tall_tea_house":      {"roof": "hipped", "height_bonus": 1},
+    "bamboo_house":        {"roof": "peak", "facade": "vines"},
+    "high_stilt_pavilion": {"foundation": "high_stilts", "roof": "hipped"},
+    "clerestory_pagoda":   {"roof": "clerestory", "facade": "moon_gate"},
+    "moonlit_courtyard":   {"roof": "flat", "facade": "moon_gate"},
+    "low_eave_house":      {"roof": "shed"},
+    "swept_gable_house":   {"roof": "dutch_gable"},
+    "lantern_house":       {"roof": "flat", "upper": "dome_top"},
+    "swept_double_eave":   {"roof": "double_peak", "facade": "moon_gate"},
+
+    # --- Wave 6: desert / moorish / persian ---
+    "domed_arcade_villa":  {"roof": "dome", "facade": "arcade"},
+    "courtyard_villa":     {"roof": "flat", "facade": "arcade"},
+    "minaret_house":       {"roof": "parapet", "upper": "spire_top"},
+    "onion_dome_villa":    {"roof": "onion_dome"},
+    "tall_onion_villa":    {"roof": "onion_dome", "height_bonus": 1},
+    "moon_gate_arcade":    {"roof": "flat", "facade": "moon_gate"},
+    "tower_arcade_villa":  {"roof": "parapet", "facade": "arcade", "upper": "tower"},
+    "plinth_dome_villa":   {"foundation": "plinth", "roof": "dome"},
+    "plinth_onion_villa":  {"foundation": "plinth", "roof": "onion_dome"},
+    "domed_cupola_villa":  {"roof": "dome", "facade": "cupola"},
+    "crenellated_house":   {"roof": "parapet", "facade": "shutters"},
+    "dual_dome_villa":     {"roof": "dome", "upper": "double_tower"},
+    "moorish_tower":       {"roof": "onion_dome", "upper": "tower"},
+
+    # --- Wave 7: tropical / coastal / stilt ---
+    "stilt_veranda_house": {"foundation": "stilts", "facade": "porch"},
+    "stilt_trellis_house": {"foundation": "stilts", "facade": "trellis"},
+    "stilt_arcade_villa":  {"foundation": "stilts", "facade": "arcade"},
+    "stilt_shed_hut":      {"foundation": "stilts", "roof": "shed"},
+    "high_stilt_double":   {"foundation": "high_stilts", "roof": "double_peak"},
+    "high_stilt_tent":     {"foundation": "high_stilts", "roof": "tented"},
+    "tented_hut":          {"roof": "tented"},
+    "shed_porch_hut":      {"roof": "shed", "facade": "porch"},
+
+    # --- Wave 8: andean / mesoamerican stone ---
+    "plinth_pyramid_villa":{"foundation": "plinth", "roof": "pyramid"},
+    "plinth_crow_step":    {"foundation": "plinth", "roof": "crow_step"},
+    "tiered_stone_house":  {"foundation": "plinth", "roof": "stepped_gable"},
+    "step_temple_house":   {"roof": "crow_step", "height_bonus": 1},
+    "stone_heraldic_villa":{"foundation": "plinth", "facade": "heraldic"},
+    "terraced_pyramid":    {"foundation": "plinth", "roof": "pyramid", "height_bonus": 1},
+    "plinth_clerestory":   {"foundation": "plinth", "roof": "clerestory"},
+
+    # --- Wave 9: free-form combos for variety ---
+    "spired_oriel":        {"upper": "spire_top", "facade": "oriel"},
+    "domed_oriel":         {"roof": "dome", "facade": "oriel"},
+    "domed_chimney":       {"roof": "dome", "facade": "chimney"},
+    "saltbox_oriel":       {"roof": "saltbox", "facade": "oriel"},
+    "mansard_oriel":       {"roof": "mansard", "facade": "oriel"},
+    "mansard_porch":       {"roof": "mansard", "facade": "porch"},
+    "mansard_dormer":      {"roof": "mansard", "facade": "dormer"},
+    "gambrel_lancet":      {"roof": "gambrel", "facade": "lancet"},
+    "gambrel_chimney":     {"roof": "gambrel", "facade": "chimney"},
+    "pyramid_porch":       {"roof": "pyramid", "facade": "porch"},
+    "pyramid_lancet":      {"roof": "pyramid", "facade": "lancet"},
+    "pyramid_dormer":      {"roof": "pyramid", "facade": "dormer"},
+    "spire_lancet":        {"roof": "spire", "facade": "lancet"},
+    "dome_porch":          {"roof": "dome", "facade": "porch"},
+    "tower_chimney_house": {"upper": "tower", "facade": "chimney"},
+    "window_box_cottage":  {"roof": "peak", "facade": "shutters"},
+    "flower_balcony_house":{"facade": "balcony", "height_bonus": 1},
+    "shed_lancet":         {"roof": "shed", "facade": "lancet"},
+    "double_peak_lancet":  {"roof": "double_peak", "facade": "lancet"},
+
+    # --- Wave 10: new primitives ---
+    "a_frame_cabin":       {"roof": "a_frame"},
+    "swept_eave_pavilion": {"roof": "swept_eave"},
+    "bell_roof_chapel":    {"roof": "bell_roof"},
+    "turret_top_house":    {"roof": "turret_top"},
+    "kasbah_block_house":  {"roof": "kasbah_block"},
+    "papyrus_roof_hut":    {"roof": "papyrus_roof"},
+    "pyramidion_villa":    {"roof": "pyramidion"},
+    "window_grid_townhouse": {"facade": "window_grid"},
+    "jali_screen_villa":   {"facade": "jali_screen"},
+    "arch_loggia_villa":   {"facade": "arch_loggia"},
+    "corbel_townhouse":    {"facade": "corbel_row"},
+    "mashrabiya_house":    {"facade": "mashrabiya"},
+    "weather_vane_cottage":{"facade": "weather_vane"},
+    "gablet_cottage":      {"upper": "gablet"},
+    "double_chimney_lodge":{"upper": "chimney_stack"},
+    "lookout_house":       {"upper": "lookout"},
+    "undercroft_villa":    {"foundation": "arched_undercroft"},
+
+    # --- Wave 11: a_frame / mountain combos ---
+    "a_frame_chimney":     {"roof": "a_frame", "facade": "chimney"},
+    "a_frame_shutter":     {"roof": "a_frame", "facade": "shutters"},
+    "a_frame_porch":       {"roof": "a_frame", "facade": "porch"},
+    "a_frame_lodge":       {"roof": "a_frame", "facade": "half_timber"},
+    "a_frame_lookout":     {"roof": "a_frame", "upper": "lookout"},
+    "a_frame_dormer":      {"roof": "a_frame", "facade": "dormer"},
+
+    # --- Wave 12: swept-eave / east-asian combos ---
+    "swept_porch_pavilion":{"roof": "swept_eave", "facade": "porch"},
+    "swept_moon_pavilion": {"roof": "swept_eave", "facade": "moon_gate"},
+    "swept_lantern":       {"roof": "swept_eave", "upper": "dome_top"},
+    "swept_vine_house":    {"roof": "swept_eave", "facade": "vines"},
+    "swept_stilt_pavilion":{"roof": "swept_eave", "foundation": "high_stilts"},
+    "swept_balcony":       {"roof": "swept_eave", "facade": "balcony"},
+    "swept_loggia":        {"roof": "swept_eave", "facade": "arch_loggia"},
+    "swept_trellis":       {"roof": "swept_eave", "facade": "trellis"},
+
+    # --- Wave 13: bell-roof / chapel combos ---
+    "bell_porch_chapel":   {"roof": "bell_roof", "facade": "porch"},
+    "bell_lancet_chapel":  {"roof": "bell_roof", "facade": "lancet"},
+    "bell_rose_chapel":    {"roof": "bell_roof", "facade": "rose_window"},
+    "bell_oriel":          {"roof": "bell_roof", "facade": "oriel"},
+    "bell_spire_chapel":   {"roof": "bell_roof", "upper": "spire_top"},
+
+    # --- Wave 14: turret / fortified combos ---
+    "turret_lookout":      {"roof": "turret_top", "upper": "lookout"},
+    "turret_balcony":      {"roof": "turret_top", "facade": "balcony"},
+    "turret_arcade":       {"roof": "turret_top", "facade": "arcade"},
+    "turret_corbel":       {"roof": "turret_top", "facade": "corbel_row"},
+    "turret_weather":      {"roof": "turret_top", "facade": "weather_vane"},
+
+    # --- Wave 15: kasbah / desert ---
+    "kasbah_jali":         {"roof": "kasbah_block", "facade": "jali_screen"},
+    "kasbah_loggia":       {"roof": "kasbah_block", "facade": "arch_loggia"},
+    "kasbah_mashrabiya":   {"roof": "kasbah_block", "facade": "mashrabiya"},
+    "kasbah_undercroft":   {"roof": "kasbah_block", "foundation": "arched_undercroft"},
+    "kasbah_tower":        {"roof": "kasbah_block", "upper": "tower"},
+    "kasbah_double_tower": {"roof": "kasbah_block", "upper": "double_tower"},
+
+    # --- Wave 16: papyrus / tropical ---
+    "papyrus_stilt":       {"roof": "papyrus_roof", "foundation": "stilts"},
+    "papyrus_high_stilt":  {"roof": "papyrus_roof", "foundation": "high_stilts"},
+    "papyrus_porch":       {"roof": "papyrus_roof", "facade": "porch"},
+    "papyrus_vine":        {"roof": "papyrus_roof", "facade": "vines"},
+    "papyrus_trellis":     {"roof": "papyrus_roof", "facade": "trellis"},
+    "papyrus_undercroft":  {"roof": "papyrus_roof", "foundation": "arched_undercroft"},
+
+    # --- Wave 17: pyramidion / stone ---
+    "pyramidion_plinth":   {"roof": "pyramidion", "foundation": "plinth"},
+    "pyramidion_arcade":   {"roof": "pyramidion", "facade": "arcade"},
+    "pyramidion_corbel":   {"roof": "pyramidion", "facade": "corbel_row"},
+    "pyramidion_heraldic": {"roof": "pyramidion", "facade": "heraldic"},
+    "pyramidion_spire":    {"roof": "pyramidion", "upper": "spire_top"},
+
+    # --- Wave 18: jali / mashrabiya combos ---
+    "jali_balcony":        {"facade": "jali_screen", "height_bonus": 1},
+    "jali_dome":           {"roof": "dome", "facade": "jali_screen"},
+    "jali_onion":          {"roof": "onion_dome", "facade": "jali_screen"},
+    "jali_undercroft":     {"foundation": "arched_undercroft", "facade": "jali_screen"},
+    "mashrabiya_arcade":   {"facade": "mashrabiya"},
+    "mashrabiya_dome":     {"roof": "dome", "facade": "mashrabiya"},
+    "mashrabiya_undercroft":{"foundation": "arched_undercroft", "facade": "mashrabiya"},
+
+    # --- Wave 19: arch_loggia / loggia ---
+    "loggia_villa":        {"facade": "arch_loggia"},
+    "loggia_balcony":      {"facade": "arch_loggia", "height_bonus": 1},
+    "loggia_cupola":       {"roof": "flat", "facade": "arch_loggia",
+                            "upper": "dome_top"},
+    "loggia_dome":         {"roof": "dome", "facade": "arch_loggia"},
+
+    # --- Wave 20: corbel / weather_vane / window_grid ---
+    "corbel_oriel":        {"facade": "corbel_row", "height_bonus": 1},
+    "corbel_chimney":      {"facade": "corbel_row", "upper": "chimney_stack"},
+    "corbel_lookout":      {"facade": "corbel_row", "upper": "lookout"},
+    "window_grid_balcony": {"facade": "window_grid", "height_bonus": 1},
+    "weather_vane_lodge":  {"facade": "weather_vane", "roof": "gambrel"},
+
+    # --- Wave 21: gablet / chimney_stack / lookout ---
+    "gablet_dormer":       {"upper": "gablet", "facade": "dormer"},
+    "gablet_chimney":      {"upper": "gablet", "facade": "chimney"},
+    "double_chimney_townhouse": {"upper": "chimney_stack", "height_bonus": 1},
+    "lookout_arcade":      {"upper": "lookout", "facade": "arcade"},
+    "lookout_balcony":     {"upper": "lookout", "facade": "balcony"},
+
+    # --- Wave 22: undercroft variations ---
+    "undercroft_arcade":   {"foundation": "arched_undercroft", "facade": "arcade"},
+    "undercroft_balcony":  {"foundation": "arched_undercroft", "facade": "balcony"},
+    "undercroft_loggia":   {"foundation": "arched_undercroft", "facade": "arch_loggia"},
+    "undercroft_dome":     {"foundation": "arched_undercroft", "roof": "dome"},
+    "undercroft_pyramid":  {"foundation": "arched_undercroft", "roof": "pyramid"},
+}
+
+
+def _build_house_box(world, rng, left_x, sy, width, wall_height,
+                     wall_block, roof_block):
+    """Walls + doors + interior shell; caller adds the roof."""
+    _build_modular_building(world, rng, left_x, sy, width, wall_height,
+                            wall_block, roof_block, "house")
+    # _build_modular_building places a peak roof. Strip it so the generator
+    # can put down its own; if the spec wants 'peak' anyway, we put it back.
+    roof_y = sy - wall_height - 1
+    peak_y = roof_y - 1
+    for rx in range(left_x - 1, left_x + width + 1):
+        if 0 <= roof_y < world.height:
+            world.set_block(rx, roof_y, AIR)
+        if 0 <= peak_y < world.height:
+            world.set_block(rx, peak_y, AIR)
+
+
+# --- Foundations ------------------------------------------------------------
+
+def _apply_foundation(world, kind, left_x, sy, width, wall_block):
+    """Returns the effective floor_y for the building above. Mutates terrain."""
+    if kind == "plinth":
+        for px in range(left_x - 1, left_x + width + 1):
+            for py in (sy, sy + 1):
+                if 0 <= py < world.height:
+                    world.set_block(px, py, wall_block)
+        return sy - 2
+    if kind == "stilts":
+        # A row of posts at sy supporting a floor 2 rows up
+        for px in range(left_x, left_x + width, 2):
+            if 0 <= sy < world.height:
+                world.set_block(px, sy, wall_block)
+        return sy - 1
+    if kind == "high_stilts":
+        # Taller posts (3 rows) for coastal/jungle huts
+        for px in range(left_x, left_x + width, 2):
+            for py in (sy, sy - 1, sy - 2):
+                if 0 <= py < world.height:
+                    world.set_block(px, py, wall_block)
+        return sy - 3
+    if kind == "arched_undercroft":
+        # Stone arches as the base, lifting the floor 2 rows up
+        for px in range(left_x, left_x + width):
+            for py in (sy, sy + 1):
+                if 0 <= py < world.height:
+                    world.set_block(px, py, wall_block)
+        for ax in range(left_x + 1, left_x + width - 1, 2):
+            if 0 <= sy < world.height:
+                world.set_bg_block(ax, sy, ARCH_STONE)
+                world.set_bg_block(ax, sy + 1, ARCH_STONE)
+        return sy - 2
+    return sy
+
+
+# --- Roofs ------------------------------------------------------------------
+
+_ROOF_BUILDERS = {}      # filled below after primitive defs
+
+def _apply_roof(world, kind, left_x, sy, width, wall_height,
+                wall_block, roof_block, rng):
+    """Apply a roof of the given kind on top of a built wall shell."""
+    base_y = sy - wall_height - 1
+    fn = _ROOF_BUILDERS.get(kind, _ROOF_BUILDERS["peak"])
+    fn(world, left_x, base_y, width, roof_block, wall_block)
+
+
+def _row(world, lo, hi, y, block):
+    if not (0 <= y < world.height):
+        return
+    for rx in range(lo, hi):
+        world.set_block(rx, y, block)
+
+
+def _roof_peak(world, left_x, base_y, width, roof_block, wall_block=None):
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    _row(world, left_x, left_x + width, base_y - 1, roof_block)
+
+
+def _roof_flat(world, left_x, base_y, width, roof_block, wall_block=None):
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+
+
+def _roof_stepped_gable(world, left_x, base_y, width, roof_block, wall_block=None):
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    for t in range(1, 4):
+        lo = left_x + t
+        hi = left_x + width - t
+        if lo >= hi:
+            break
+        _row(world, lo, hi, base_y - t, roof_block)
+
+
+def _roof_saltbox(world, left_x, base_y, width, roof_block, wall_block=None):
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    _row(world, left_x, left_x + width - 1, base_y - 1, roof_block)
+    _row(world, left_x + 1, left_x + width - 2, base_y - 2, roof_block)
+
+
+def _roof_dutch_gable(world, left_x, base_y, width, roof_block, wall_block=None):
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    _row(world, left_x + 1, left_x + width - 1, base_y - 1, roof_block)
+    _row(world, left_x, left_x + width, base_y - 2, roof_block)
+    _row(world, left_x + 2, left_x + width - 2, base_y - 3, roof_block)
+
+
+def _roof_crow_step(world, left_x, base_y, width, roof_block, wall_block=None):
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    steps = max(2, min(5, width // 2))
+    for s in range(1, steps + 1):
+        ly = base_y - s
+        if 0 <= ly < world.height:
+            world.set_block(left_x - 1 + s, ly, roof_block)
+            world.set_block(left_x + width - s, ly, roof_block)
+
+
+def _roof_pyramid(world, left_x, base_y, width, roof_block, wall_block=None):
+    half = (width + 1) // 2
+    for t in range(half + 1):
+        lo = left_x + t
+        hi = left_x + width - t
+        if lo >= hi:
+            break
+        _row(world, lo, hi, base_y - t, roof_block)
+
+
+def _roof_hipped(world, left_x, base_y, width, roof_block, wall_block=None):
+    half = max(1, (width - 2) // 2)
+    for t in range(half + 1):
+        lo = left_x + t
+        hi = left_x + width - t
+        if lo >= hi:
+            break
+        _row(world, lo, hi, base_y - t, roof_block)
+    ridge_y = base_y - half - 1
+    _row(world, left_x + width // 2 - 1, left_x + width // 2 + 2, ridge_y, roof_block)
+
+
+def _roof_clerestory(world, left_x, base_y, width, roof_block, wall_block):
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    center_lo = left_x + width // 4
+    center_hi = left_x + width - width // 4
+    for cy in (base_y - 1, base_y - 2):
+        if 0 <= cy < world.height:
+            world.set_block(center_lo, cy, wall_block)
+            world.set_block(center_hi - 1, cy, wall_block)
+    win_y = base_y - 1
+    for wx in range(center_lo + 1, center_hi - 1):
+        if 0 <= win_y < world.height:
+            world.set_bg_block(wx, win_y, LANCET_WINDOW)
+    _row(world, center_lo, center_hi, base_y - 3, roof_block)
+
+
+def _roof_gambrel(world, left_x, base_y, width, roof_block, wall_block=None):
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    _row(world, left_x, left_x + width, base_y - 1, roof_block)
+    _row(world, left_x + 2, left_x + width - 2, base_y - 2, roof_block)
+    _row(world, left_x + 2, left_x + width - 2, base_y - 3, roof_block)
+
+
+def _roof_parapet(world, left_x, base_y, width, roof_block, wall_block=None):
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    for rx in range(left_x - 1, left_x + width + 1, 2):
+        if 0 <= base_y - 1 < world.height:
+            world.set_block(rx, base_y - 1, CRENELLATION)
+
+
+def _roof_barrel_vault(world, left_x, base_y, width, roof_block, wall_block=None):
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    _row(world, left_x, left_x + width, base_y - 1, roof_block)
+    _row(world, left_x + 1, left_x + width - 1, base_y - 2, roof_block)
+
+
+def _roof_dome(world, left_x, base_y, width, roof_block, wall_block=None):
+    # Small central dome over a flat eave
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    dome_w = max(3, min(5, width // 2))
+    dome_lo = left_x + (width - dome_w) // 2
+    dome_hi = dome_lo + dome_w
+    _row(world, dome_lo, dome_hi, base_y - 1, roof_block)
+    _row(world, dome_lo + 1, dome_hi - 1, base_y - 2, roof_block)
+
+
+def _roof_mansard(world, left_x, base_y, width, roof_block, wall_block=None):
+    # Steep slate sides + flat upper deck
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    for rx in (left_x, left_x + width - 1):
+        if 0 <= base_y - 1 < world.height:
+            world.set_block(rx, base_y - 1, roof_block)
+    _row(world, left_x + 1, left_x + width - 1, base_y - 2, roof_block)
+
+
+def _roof_shed(world, left_x, base_y, width, roof_block, wall_block=None):
+    # Single slope rising right-to-left
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    for t in range(1, max(2, width // 3) + 1):
+        lo = left_x + t * 2
+        hi = left_x + width
+        if lo >= hi:
+            break
+        _row(world, lo, hi, base_y - t, roof_block)
+
+
+def _roof_tented(world, left_x, base_y, width, roof_block, wall_block=None):
+    # Tall narrow peak — pyramid-like but taller
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    for t in range(1, width + 1):
+        lo = left_x + t
+        hi = left_x + width - t
+        if lo >= hi:
+            break
+        _row(world, lo, hi, base_y - t, roof_block)
+
+
+def _roof_double_peak(world, left_x, base_y, width, roof_block, wall_block=None):
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    # Two peaks: split eave + valley
+    half = width // 2
+    _row(world, left_x, left_x + half, base_y - 1, roof_block)
+    _row(world, left_x + half, left_x + width, base_y - 1, roof_block)
+    if 0 <= base_y - 1 < world.height:
+        world.set_block(left_x + half, base_y - 1, roof_block)
+    # Peak rows for each
+    if half >= 3:
+        _row(world, left_x + 1, left_x + half - 1, base_y - 2, roof_block)
+        _row(world, left_x + half + 1, left_x + width - 1, base_y - 2, roof_block)
+
+
+def _roof_spire(world, left_x, base_y, width, roof_block, wall_block=None):
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    _row(world, left_x, left_x + width, base_y - 1, roof_block)
+    mid = left_x + width // 2
+    for dy in range(2, 6):
+        if 0 <= base_y - dy < world.height:
+            world.set_block(mid, base_y - dy, roof_block)
+
+
+def _roof_onion_dome(world, left_x, base_y, width, roof_block, wall_block=None):
+    # Bulb shape: wider at middle than at base
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    dome_w = max(3, min(5, width // 2))
+    dome_lo = left_x + (width - dome_w) // 2
+    dome_hi = dome_lo + dome_w
+    # Narrow base
+    _row(world, dome_lo + 1, dome_hi - 1, base_y - 1, roof_block)
+    # Bulge
+    _row(world, dome_lo, dome_hi, base_y - 2, roof_block)
+    # Narrow neck
+    _row(world, dome_lo + 1, dome_hi - 1, base_y - 3, roof_block)
+    # Point
+    mid = (dome_lo + dome_hi) // 2
+    if 0 <= base_y - 4 < world.height:
+        world.set_block(mid, base_y - 4, roof_block)
+
+
+def _roof_a_frame(world, left_x, base_y, width, roof_block, wall_block=None):
+    # Steep peak running all the way down — no eave overhang
+    half = (width + 1) // 2
+    for t in range(half + 1):
+        lo = left_x + t
+        hi = left_x + width - t
+        if lo >= hi:
+            break
+        if 0 <= base_y - t < world.height:
+            world.set_block(lo, base_y - t, roof_block)
+            world.set_block(hi - 1, base_y - t, roof_block)
+
+
+def _roof_swept_eave(world, left_x, base_y, width, roof_block, wall_block=None):
+    # Asian curved eave — wider overhang at base than at peak
+    _row(world, left_x - 2, left_x + width + 2, base_y, roof_block)
+    _row(world, left_x - 1, left_x + width + 1, base_y - 1, roof_block)
+    _row(world, left_x + 1, left_x + width - 1, base_y - 2, roof_block)
+
+
+def _roof_bell_roof(world, left_x, base_y, width, roof_block, wall_block=None):
+    # Bell-curve silhouette: wide → narrow → bulge → point
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    _row(world, left_x + 1, left_x + width - 1, base_y - 1, roof_block)
+    _row(world, left_x, left_x + width, base_y - 2, roof_block)
+    _row(world, left_x + 2, left_x + width - 2, base_y - 3, roof_block)
+    mid = left_x + width // 2
+    if 0 <= base_y - 4 < world.height:
+        world.set_block(mid, base_y - 4, roof_block)
+
+
+def _roof_turret_top(world, left_x, base_y, width, roof_block, wall_block=None):
+    # Conical turret at center over a flat eave
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    mid = left_x + width // 2
+    for t in range(1, 4):
+        for dx in range(-2 + t, 3 - t):
+            if 0 <= base_y - t < world.height:
+                world.set_block(mid + dx, base_y - t, roof_block)
+
+
+def _roof_kasbah_block(world, left_x, base_y, width, roof_block, wall_block=None):
+    # Flat top + corner turrets (mini-towers at each end)
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    for cx in (left_x - 1, left_x + width):
+        for cy in (base_y - 1, base_y - 2):
+            if 0 <= cy < world.height:
+                world.set_block(cx, cy, roof_block)
+
+
+def _roof_papyrus_roof(world, left_x, base_y, width, roof_block, wall_block=None):
+    # Thick reed bundle roof — multi-row thatch with flared eaves
+    _row(world, left_x - 2, left_x + width + 2, base_y, roof_block)
+    _row(world, left_x - 1, left_x + width + 1, base_y - 1, roof_block)
+    _row(world, left_x, left_x + width, base_y - 2, roof_block)
+
+
+def _roof_pyramidion(world, left_x, base_y, width, roof_block, wall_block=None):
+    # Sharp narrow point on a flat top
+    _row(world, left_x - 1, left_x + width + 1, base_y, roof_block)
+    mid = left_x + width // 2
+    for dy in range(1, 4):
+        lo = mid - max(0, 2 - dy)
+        hi = mid + max(0, 2 - dy) + 1
+        for rx in range(lo, hi):
+            if 0 <= base_y - dy < world.height:
+                world.set_block(rx, base_y - dy, roof_block)
+
+
+_ROOF_BUILDERS.update({
+    "peak":          _roof_peak,
+    "flat":          _roof_flat,
+    "stepped_gable": _roof_stepped_gable,
+    "saltbox":       _roof_saltbox,
+    "dutch_gable":   _roof_dutch_gable,
+    "crow_step":     _roof_crow_step,
+    "pyramid":       _roof_pyramid,
+    "hipped":        _roof_hipped,
+    "clerestory":    _roof_clerestory,
+    "gambrel":       _roof_gambrel,
+    "parapet":       _roof_parapet,
+    "barrel_vault":  _roof_barrel_vault,
+    "dome":          _roof_dome,
+    "mansard":       _roof_mansard,
+    "shed":          _roof_shed,
+    "tented":        _roof_tented,
+    "double_peak":   _roof_double_peak,
+    "spire":         _roof_spire,
+    "onion_dome":    _roof_onion_dome,
+    "a_frame":       _roof_a_frame,
+    "swept_eave":    _roof_swept_eave,
+    "bell_roof":     _roof_bell_roof,
+    "turret_top":    _roof_turret_top,
+    "kasbah_block":  _roof_kasbah_block,
+    "papyrus_roof":  _roof_papyrus_roof,
+    "pyramidion":    _roof_pyramidion,
+})
+
+
+# --- Facade accents ---------------------------------------------------------
+
+def _apply_facade(world, kind, left_x, sy, width, wall_height,
+                  wall_block, roof_block, rng):
+    if kind == "oriel":
+        # Projecting bay window — single bg row jutting out at mid-height
+        win_y = sy - wall_height + 2
+        mid = left_x + width // 2
+        for dx in (-1, 0, 1):
+            if 0 <= win_y < world.height:
+                world.set_bg_block(mid + dx, win_y, LANCET_WINDOW)
+        if 0 <= win_y - 1 < world.height:
+            world.set_bg_block(mid, win_y - 1, FLOWER_BOX)
+    elif kind == "arcade":
+        # Arched bg openings along the ground floor between door columns
+        arch_y = sy - 2
+        for bx in range(left_x + 2, left_x + width - 1, 2):
+            if 0 <= arch_y < world.height:
+                world.set_bg_block(bx, arch_y, ARCH_STONE)
+                world.set_bg_block(bx, arch_y - 1, ARCH_STONE)
+    elif kind == "balcony":
+        # Single balcony slab + railing 2 rows above ground floor
+        bal_y = sy - 3
+        mid_lo = left_x + width // 2 - 1
+        mid_hi = left_x + width // 2 + 2
+        for rx in range(mid_lo, mid_hi):
+            if 0 <= bal_y < world.height:
+                world.set_bg_block(rx, bal_y, PALAZZO_BALCONY)
+        if 0 <= bal_y - 1 < world.height:
+            world.set_bg_block(mid_lo, bal_y - 1, IRON_FENCE)
+            world.set_bg_block(mid_hi - 1, bal_y - 1, IRON_FENCE)
+    elif kind == "bell_cot":
+        # Small bell tower above the center of the roof
+        base = sy - wall_height - 2
+        mid = left_x + width // 2
+        for dy in (0, 1):
+            if 0 <= base - dy < world.height:
+                world.set_block(mid, base - dy, wall_block)
+        if 0 <= base - 2 < world.height:
+            world.set_block(mid, base - 2, ALARM_BELL_OFF)
+    elif kind == "cupola":
+        # Tiny tower on a flat roof: 1 wide, 3 tall, capped
+        base = sy - wall_height - 1
+        mid = left_x + width // 2
+        for dy in range(1, 4):
+            if 0 <= base - dy < world.height:
+                world.set_block(mid, base - dy, wall_block)
+        if 0 <= base - 4 < world.height:
+            world.set_block(mid, base - 4, roof_block)
+    elif kind == "dormer":
+        # Small attic window protruding from the roof slope
+        base = sy - wall_height - 1
+        mid = left_x + width // 2
+        if 0 <= base - 1 < world.height:
+            world.set_block(mid - 1, base - 1, wall_block)
+            world.set_block(mid + 1, base - 1, wall_block)
+            world.set_bg_block(mid, base - 1, LANCET_WINDOW)
+        if 0 <= base - 2 < world.height:
+            world.set_block(mid, base - 2, roof_block)
+    elif kind == "chimney":
+        # Tall chimney rising from one side of the roof
+        base = sy - wall_height - 1
+        cx = left_x + width // 3
+        for dy in range(1, 4):
+            if 0 <= base - dy < world.height:
+                world.set_block(cx, base - dy, CHIMNEY_BREAST_REN)
+    elif kind == "half_timber":
+        # Tudor crossed timber pattern as bg accents on the facade
+        for wx in range(left_x + 1, left_x + width - 1):
+            for wy in range(sy - wall_height + 1, sy - 1):
+                # Bg accent every 3rd cell in an X-pattern
+                if (wx + wy) % 3 == 0 and 0 <= wy < world.height:
+                    world.set_bg_block(wx, wy, TUDOR_BEAM)
+    elif kind == "trellis":
+        # Climbing-plant trellis flanking the door
+        for wy in range(sy - wall_height + 1, sy):
+            if 0 <= wy < world.height:
+                world.set_bg_block(left_x + 1, wy, TRELLIS_ARCH)
+                world.set_bg_block(left_x + width - 2, wy, TRELLIS_ARCH)
+    elif kind == "shutters":
+        win_y = sy - wall_height + 2
+        for bx in range(left_x + 1, left_x + width - 1, 3):
+            if 0 <= win_y < world.height:
+                world.set_bg_block(bx, win_y, CARVED_SHUTTER)
+                world.set_bg_block(bx, win_y + 1, FLOWER_BOX)
+    elif kind == "lancet":
+        win_y = sy - wall_height + 2
+        for bx in range(left_x + 2, left_x + width - 1, 3):
+            if 0 <= win_y < world.height:
+                world.set_bg_block(bx, win_y, LANCET_WINDOW)
+    elif kind == "rose_window":
+        win_y = sy - wall_height + 2
+        mid = left_x + width // 2
+        if 0 <= win_y < world.height:
+            world.set_bg_block(mid, win_y, ROSE_WINDOW)
+    elif kind == "moon_gate":
+        gate_y = sy - 2
+        mid = left_x + width // 2
+        for dx in (-1, 0, 1):
+            if 0 <= gate_y < world.height:
+                world.set_bg_block(mid + dx, gate_y, MOON_GATE)
+            if 0 <= gate_y - 1 < world.height:
+                world.set_bg_block(mid + dx, gate_y - 1, MOON_GATE)
+    elif kind == "awning":
+        # Horizontal awning above the door on each side
+        awn_y = sy - 3
+        for rx in (left_x - 1, left_x, left_x + 1,
+                   left_x + width - 2, left_x + width - 1, left_x + width):
+            if 0 <= awn_y < world.height:
+                world.set_block(rx, awn_y, RESTAURANT_AWNING)
+    elif kind == "porch":
+        # Two columns flanking the door with a small overhanging cover
+        for cy in range(sy - 3, sy):
+            if 0 <= cy < world.height:
+                world.set_bg_block(left_x - 1, cy, GARDEN_COLUMN)
+                world.set_bg_block(left_x + width, cy, GARDEN_COLUMN)
+        if 0 <= sy - 4 < world.height:
+            for rx in range(left_x - 1, left_x + width + 1):
+                world.set_block(rx, sy - 4, roof_block)
+    elif kind == "heraldic":
+        mid = left_x + width // 2
+        for dy in (2, 3):
+            if 0 <= sy - dy < world.height:
+                world.set_bg_block(mid, sy - dy, HERALDIC_PANEL)
+    elif kind == "vines":
+        # Climbing greenery as bg accent on facade
+        for wx in range(left_x + 1, left_x + width - 1, 2):
+            for wy in range(sy - wall_height + 1, sy):
+                if 0 <= wy < world.height and (wx + wy) % 2 == 0:
+                    world.set_bg_block(wx, wy, BAMBOO_CLUMP)
+    elif kind == "window_grid":
+        # Regular grid of small windows across the facade
+        for wy in (sy - wall_height + 2, sy - wall_height + 4):
+            for wx in range(left_x + 1, left_x + width - 1, 2):
+                if 0 <= wy < world.height:
+                    world.set_bg_block(wx, wy, CARVED_SHUTTER)
+    elif kind == "jali_screen":
+        # Latticed stone screen across facade mid-height
+        for wy in range(sy - wall_height + 2, sy - 1):
+            for wx in range(left_x + 1, left_x + width - 1, 2):
+                if 0 <= wy < world.height:
+                    world.set_bg_block(wx, wy, MUGHAL_JALI)
+    elif kind == "arch_loggia":
+        # Open arched loggia across the upper facade
+        for wx in range(left_x + 1, left_x + width - 1, 2):
+            for wy in (sy - wall_height + 2, sy - wall_height + 3):
+                if 0 <= wy < world.height:
+                    world.set_bg_block(wx, wy, ROMAN_ARCH_REN)
+    elif kind == "corbel_row":
+        # Decorative corbel course beneath the eaves
+        course_y = sy - wall_height + 1
+        for rx in range(left_x, left_x + width):
+            if 0 <= course_y < world.height:
+                world.set_bg_block(rx, course_y, CORBEL_COURSE)
+    elif kind == "mashrabiya":
+        # Projecting latticed bay window above the door
+        bay_y = sy - 3
+        mid = left_x + width // 2
+        for dx in (-1, 0, 1):
+            if 0 <= bay_y < world.height:
+                world.set_bg_block(mid + dx, bay_y, MUGHAL_JALI)
+            if 0 <= bay_y - 1 < world.height:
+                world.set_bg_block(mid + dx, bay_y - 1, MUGHAL_JALI)
+    elif kind == "weather_vane":
+        # Slim flag on a short pole above the roof peak
+        base = sy - wall_height - 2
+        mid = left_x + width // 2
+        for dy in (0, 1):
+            if 0 <= base - dy < world.height:
+                world.set_block(mid, base - dy, wall_block)
+        if 0 <= base - 2 < world.height:
+            world.set_bg_block(mid, base - 2, TOWN_FLAG_BLOCK)
+
+
+# --- Upper-tier additions ---------------------------------------------------
+
+def _apply_upper(world, kind, left_x, sy, width, wall_height,
+                 wall_block, roof_block):
+    base = sy - wall_height - 1
+    if kind == "tower":
+        _tower_at(world, left_x + width - 2, base, 2, 3, wall_block, cap=CRENELLATION)
+    elif kind == "double_tower":
+        _tower_at(world, left_x, base, 2, 3, wall_block, cap=CRENELLATION)
+        _tower_at(world, left_x + width - 2, base, 2, 3, wall_block, cap=CRENELLATION)
+    elif kind == "spire_top":
+        mid = left_x + width // 2
+        for dy in range(1, 5):
+            if 0 <= base - dy < world.height:
+                world.set_block(mid, base - dy, roof_block)
+    elif kind == "dome_top":
+        mid = left_x + width // 2
+        for dx in (-1, 0, 1):
+            if 0 <= base - 1 < world.height:
+                world.set_block(mid + dx, base - 1, roof_block)
+        if 0 <= base - 2 < world.height:
+            world.set_block(mid, base - 2, roof_block)
+    elif kind == "gablet":
+        # Small triangular gable atop the roof line
+        mid = left_x + width // 2
+        for dy in (1, 2):
+            lo = mid - dy
+            hi = mid + dy + 1
+            if 0 <= base - dy < world.height:
+                for rx in range(lo, hi):
+                    world.set_block(rx, base - dy, wall_block)
+    elif kind == "chimney_stack":
+        # Two tall chimneys, one near each end
+        for cx in (left_x + 1, left_x + width - 2):
+            for dy in range(1, 4):
+                if 0 <= base - dy < world.height:
+                    world.set_block(cx, base - dy, CHIMNEY_BREAST_REN)
+    elif kind == "lookout":
+        # Small open-top observation platform centered above the roof
+        mid = left_x + width // 2
+        for dx in (-1, 1):
+            for dy in (1, 2, 3):
+                if 0 <= base - dy < world.height:
+                    world.set_block(mid + dx, base - dy, wall_block)
+        cap_y = base - 4
+        for rx in (mid - 1, mid, mid + 1):
+            if 0 <= cap_y < world.height:
+                world.set_block(rx, cap_y, CRENELLATION)
+
+
+def _tower_at(world, lx, base_y, w, h, wall_block, cap=None):
+    """Helper: build a small tower starting at (lx, base_y), rising h above."""
+    for ty in range(base_y - h, base_y):
+        for rx in range(lx, lx + w):
+            if 0 <= ty < world.height:
+                if rx == lx or rx == lx + w - 1 or ty == base_y - h:
+                    world.set_block(rx, ty, wall_block)
+                else:
+                    world.set_block(rx, ty, AIR)
+                    world.set_bg_block(rx, ty, wall_block)
+    if cap is not None:
+        cap_y = base_y - h - 1
+        for rx in range(lx, lx + w):
+            if 0 <= cap_y < world.height:
+                world.set_block(rx, cap_y, cap)
+
+
+# --- Main entry -------------------------------------------------------------
+
+def _place_generated_house(world, left_x, sy, width, wall_height,
+                           wall_block, roof_block, rng, variant_name):
+    """Build a house variant from its declarative spec in HOUSE_VARIANT_SPECS."""
+    spec = HOUSE_VARIANT_SPECS.get(variant_name)
+    if spec is None:
+        _place_house(world, left_x, sy, width, wall_height, wall_block, roof_block, rng)
+        return
+    # Apply optional foundation (mutates effective floor)
+    effective_sy = _apply_foundation(world, spec.get("foundation", "ground"),
+                                     left_x, sy, width, wall_block)
+    h = wall_height + spec.get("height_bonus", 0)
+    _build_house_box(world, rng, left_x, effective_sy, width, h, wall_block, roof_block)
+    _apply_roof(world, spec.get("roof", "peak"), left_x, effective_sy, width, h,
+                wall_block, roof_block, rng)
+    if "facade" in spec:
+        _apply_facade(world, spec["facade"], left_x, effective_sy, width, h,
+                      wall_block, roof_block, rng)
+    if "upper" in spec:
+        _apply_upper(world, spec["upper"], left_x, effective_sy, width, h,
+                     wall_block, roof_block)
+
+
 def _place_library(world, left_x, sy, width, wall_height, rng,
                    wall_block=HOUSE_WALL_STONE, roof_block=HOUSE_ROOF_STONE):
     """Stone library: arched window, reading tables, scroll racks, lantern sconce."""
@@ -6445,6 +8354,47 @@ def _place_vignette(world, rng, left_x, sy, width, height, theme=None):
                 _set_bg_furniture(world, wx, wy, FIREWOOD_STACK)
 
 
+def _place_chapter_house(world, left_x, sy, width, wall_height,
+                         wall_block, roof_block, rng):
+    """Knights' Hall: stone hall with order banner, weapon rack, and a hay pell.
+
+    Reuses the standard house shell so it slots into the city block layout,
+    but stamps two unmistakable knight-coded decorations on it: a HERALDIC
+    banner mounted above the doorway (bg block on the front wall) and a
+    WEAPON_RACK row along the inside back wall. A WOOD_FENCE pell topped
+    with a HAY_BALE stands just outside, signalling a training yard even
+    when the player is across the street.
+    """
+    _place_house(world, left_x, sy, width, wall_height, wall_block, roof_block, rng)
+
+    # Banner mounted above the door (door is placed by _place_house around
+    # the building's mid-column). Use bg so it reads as a hanging cloth and
+    # doesn't block the doorway.
+    banner_x = left_x + width // 2
+    banner_y = sy - wall_height
+    if 0 <= banner_x < world.width and 0 <= banner_y < world.height:
+        world.set_bg_block(banner_x, banner_y, BANNER_BLOCK)
+
+    # Weapon racks along the inside back wall (row just above the floor).
+    rack_y = sy - 1
+    for off in range(1, width - 1):
+        bx = left_x + off
+        if 0 <= bx < world.width and 0 <= rack_y < world.height:
+            if world.get_bg_block(bx, rack_y) == AIR:
+                world.set_bg_block(bx, rack_y, WEAPON_RACK_BLOCK)
+
+    # Training pell just to the right of the building (post + hay head),
+    # using fg blocks so it reads as a solid silhouette from a distance.
+    pell_x = left_x + width
+    if 0 <= pell_x < world.width:
+        for py in range(sy - 2, sy):
+            if 0 <= py < world.height:
+                world.set_block(pell_x, py, WOOD_FENCE)
+        head_y = sy - 3
+        if 0 <= head_y < world.height:
+            world.set_block(pell_x, head_y, HAY_BALE)
+
+
 def _place_shrine_for_biome(world, left_x, sy, width, wall_height, biodome):
     _, style = RELIGION_BY_BIOME.get(biodome, ("Forest Chapel", "chapel"))
     if style == "dzong":
@@ -6692,7 +8642,7 @@ def _repair_city_walkability(world, lo_x, hi_x, sy, terrain_profile):
             break
 
 
-def _build_single_city(world, rng, city_bx, difficulty):
+def _build_single_city(world, rng, city_bx, difficulty, palace_type=None):
     sy = world.surface_y_at(city_bx)
     biodome = world.biodome_at(city_bx)
     # town_id is the index this city will occupy in world.town_centers (appended after return)
@@ -6832,8 +8782,21 @@ def _build_single_city(world, rng, city_bx, difficulty):
             variants = item["variants"]
             npc_type = item["npc_type"]
             
-            # Palette selection
-            if is_arabia:
+            # Palette selection — palace style wins; biome only used as fallback.
+            style = PALACE_BUILDING_STYLES.get(palace_type) if palace_type else None
+            if style is not None:
+                wall_block, roof_block = rng.choice(style["palettes"])
+                swap = style.get("swaps", {})
+                pool = style.get("house_pool", ())
+                if variants and (swap or pool):
+                    new_variants = []
+                    for v in variants:
+                        if v == "house" and pool:
+                            new_variants.extend(pool)
+                        else:
+                            new_variants.append(swap.get(v, v))
+                    variants = new_variants
+            elif is_arabia:
                 wall_block, roof_block = _ARABIA_PALETTE
                 if variants: variants = [_ARABIA_SWAP.get(v, v) for v in variants]
             elif is_desert:
@@ -6879,10 +8842,40 @@ def _build_single_city(world, rng, city_bx, difficulty):
                 _place_restaurant(world, left_x, item_sy, width, height, restaurant_style)
             elif variant == "shrine":
                 _place_shrine_for_biome(world, left_x, item_sy, width, height, biodome)
+            elif variant == "chapter_house":
+                _place_chapter_house(world, left_x, item_sy, width, height,
+                                     wall_block, roof_block, rng)
             elif variant == "tower":
                 _place_tower(world, left_x, item_sy, width, height, wall_block, roof_block)
             elif variant == "longhouse":
                 _place_longhouse(world, left_x, item_sy, width, height, wall_block, roof_block, rng)
+            elif variant == "gothic_house":
+                _place_gothic_house(world, left_x, item_sy, width, height,
+                                    wall_block, roof_block, rng)
+            elif variant == "mesoamerican_house":
+                _place_mesoamerican_house(world, left_x, item_sy, width, height,
+                                          wall_block, roof_block, rng)
+            elif variant == "polynesian_hut":
+                _place_polynesian_hut(world, left_x, item_sy, width, height,
+                                      wall_block, roof_block, rng)
+            elif variant == "pagoda_house":
+                _place_pagoda_house(world, left_x, item_sy, width, height,
+                                    wall_block, roof_block, rng)
+            elif variant == "byzantine_house":
+                _place_byzantine_house(world, left_x, item_sy, width, height,
+                                       wall_block, roof_block, rng)
+            elif variant == "french_baroque_house":
+                _place_french_baroque_house(world, left_x, item_sy, width, height,
+                                            wall_block, roof_block, rng)
+            elif variant == "african_hut":
+                _place_african_hut(world, left_x, item_sy, width, height,
+                                   wall_block, roof_block, rng)
+            elif variant == "incan_house":
+                _place_incan_house(world, left_x, item_sy, width, height,
+                                   wall_block, roof_block, rng)
+            elif variant == "persian_house":
+                _place_persian_house(world, left_x, item_sy, width, height,
+                                     wall_block, roof_block, rng)
             elif variant == "ruin":
                 _place_ruin(world, left_x, item_sy, width, height)
             elif variant == "market_stall":
@@ -6911,7 +8904,12 @@ def _build_single_city(world, rng, city_bx, difficulty):
                 _place_wine_shop(world, left_x, item_sy, width, height, rng)
             elif variant == "racing_ring":
                 _place_racing_ring(world, left_x, item_sy, width, height, rng)
+            elif variant in HOUSE_VARIANT_SPECS:
+                print(f"[city-debug] city_bx={city_bx} palace={palace_type} -> GEN {variant}")
+                _place_generated_house(world, left_x, item_sy, width, height,
+                                       wall_block, roof_block, rng, variant)
             else:
+                print(f"[city-debug] city_bx={city_bx} palace={palace_type} -> FALLBACK _place_house (variant={variant!r})")
                 _place_house(world, left_x, item_sy, width, height, wall_block, roof_block, rng)
 
             # Connectors between adjacent buildings
@@ -6936,7 +8934,11 @@ def _build_single_city(world, rng, city_bx, difficulty):
             prev_sy = item_sy
 
             npc_bx = left_x + 1
-            if variant in ("house", "two_story", "three_story", "longhouse", "tower"):
+            if (variant in ("house", "two_story", "three_story", "longhouse", "tower",
+                            "gothic_house", "mesoamerican_house", "polynesian_hut",
+                            "pagoda_house", "byzantine_house", "french_baroque_house",
+                            "african_hut", "incan_house", "persian_house")
+                or variant in HOUSE_VARIANT_SPECS):
                 _decorate_interior(world, rng, left_x, item_sy, width, npc_bx)
                 _decorate_facade(world, rng, left_x, item_sy, width, height, wall_block)
 
@@ -6964,6 +8966,8 @@ def _build_single_city(world, rng, city_bx, difficulty):
                 world.entities.append(ChildNPC(npc_px, npc_py, world, biodome=biodome))
             elif npc_type == "guard":
                 world.entities.append(GuardNPC(npc_px, npc_py, world, biodome=biodome))
+            elif npc_type == "knight":
+                world.entities.append(KnightNPC(npc_px, npc_py, world, biodome=biodome))
             elif npc_type == "elder":
                 world.entities.append(ElderNPC(npc_px, npc_py, world, biodome=biodome))
             elif npc_type == "beggar":
@@ -7006,6 +9010,10 @@ def _build_single_city(world, rng, city_bx, difficulty):
                 world.entities.append(DoctorNPC(npc_px, npc_py, world, biodome=biodome))
             elif npc_type == "coffee_merchant":
                 world.entities.append(CoffeeMerchantNPC(npc_px, npc_py, world, rng, biodome=biodome))
+            elif npc_type == "scribe_merchant":
+                world.entities.append(ScribeMerchantNPC(npc_px, npc_py, world, rng, biodome=biodome))
+            elif npc_type == "scribe":
+                world.entities.append(ScribeNPC(npc_px, npc_py, world, rng, biodome=biodome))
             elif npc_type == "wine_merchant":
                 world.entities.append(WineMerchantNPC(npc_px, npc_py, world, rng, biodome=biodome))
             elif npc_type == "beer_merchant":
@@ -7046,10 +9054,24 @@ def _build_single_city(world, rng, city_bx, difficulty):
                 world.entities.append(HoneyMerchantNPC(npc_px, npc_py, world, rng, biodome))
             elif npc_type == "coin_dealer":
                 world.entities.append(CoinDealerNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "auctioneer":
+                from coin_npcs import AuctioneerNPC
+                world.entities.append(AuctioneerNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "money_changer":
+                from coin_npcs import MoneyChangerNPC
+                world.entities.append(MoneyChangerNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "coin_appraiser":
+                from coin_npcs import CoinAppraiserNPC
+                world.entities.append(CoinAppraiserNPC(npc_px, npc_py, world, rng, biodome))
+            elif npc_type == "coin_collector":
+                from coin_npcs import CoinCollectorNPC
+                world.entities.append(CoinCollectorNPC(npc_px, npc_py, world, rng, biodome))
             elif npc_type == "noble_maecenas":
                 world.entities.append(NobleMaecenasNPC(npc_px, npc_py, world, rng, difficulty, biodome))
             elif npc_type == "weapon_order":
                 world.entities.append(WeaponOrderNPC(npc_px, npc_py, world, rng, difficulty, biodome))
+            elif npc_type == "chapter_master":
+                world.entities.append(ChapterMasterNPC(npc_px, npc_py, world, biodome=biodome))
 
         current_x += width + gaps[i]
 
@@ -7060,6 +9082,7 @@ def _build_single_city(world, rng, city_bx, difficulty):
 
     # 4. Final dynamic elements
     _ambient_npc_cls = {"villager": VillagerNPC, "child": ChildNPC, "guard": GuardNPC,
+                        "knight": KnightNPC,
                         "elder": ElderNPC, "beggar": BeggarNPC, "noble": NobleNPC,
                         "pilgrim": PilgrimNPC, "drunkard": DrunkardNPC,
                         "musician": MusicianNPC, "town_crier": TownCrierNPC,
@@ -11288,7 +13311,10 @@ def _build_settlement(world, settlement, rng):
         return False
 
     desired_size = _settlement_size(settlement)
-    actual_size = _build_single_city(world, rng, city_bx, difficulty=2)
+    from towns import _palace_type_for
+    palace_type = _palace_type_for(settlement.kingdom_id, world.seed)
+    actual_size = _build_single_city(world, rng, city_bx, difficulty=2,
+                                     palace_type=palace_type)
     # _build_single_city may pick a biome-flavored variant (e.g. military,
     # arabia). If it picked a different bucket, prefer the plan-derived tier
     # for downstream town tier math, but keep the actual variant string so

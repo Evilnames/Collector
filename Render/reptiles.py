@@ -28,35 +28,121 @@ def _draw_reptile(screen, rep, sx, sy):
         _draw_lizard(screen, rep, sx, sy, phase)
 
 
+def _shade(color, factor):
+    return (
+        max(0, min(255, int(color[0] * factor))),
+        max(0, min(255, int(color[1] * factor))),
+        max(0, min(255, int(color[2] * factor))),
+    )
+
+
 def _draw_snake(screen, rep, sx, sy, phase):
     W, H = rep.W, rep.H
     bc = rep.BODY_COLOR
     pc = rep.PATTERN_COLOR
     belly = rep.BELLY_COLOR
+    shadow = _shade(bc, 0.55)
+    highlight = _shade(bc, 1.25)
     moving = rep.state in ("moving", "fleeing")
-    amp = int(abs(math.sin(phase)) * 3) if moving else 0
+    facing = rep.facing
 
-    # Draw body as three connected ellipses: tail, mid, head
-    seg = W // 3
-    # Tail
-    pygame.draw.ellipse(screen, bc, (sx, sy - amp, seg + 2, H - 2))
-    # Mid-body (slight wave)
-    pygame.draw.ellipse(screen, bc, (sx + seg - 1, sy + amp, seg + 2, H))
-    # Head (slightly larger, different shade)
-    pygame.draw.ellipse(screen, bc, (sx + seg * 2 - 1, sy - amp, seg + 3, H))
-    # Head highlight (darker)
-    hx = sx + seg * 2 + 1 if rep.facing == 1 else sx + seg * 2 - 1
-    pygame.draw.ellipse(screen, pc, (hx, sy - amp + 1, seg, H - 2))
-    # Belly stripe
-    pygame.draw.ellipse(screen, belly, (sx + 1, sy + H // 3, W - 4, H // 3))
-    # Pattern bands
-    for i in range(1, 3):
-        bx = sx + (W * i) // 3 - 1
-        by = sy + amp if i == 1 else sy - amp
-        pygame.draw.rect(screen, pc, (bx, by, 2, H - 1))
-    # Eye
-    ex = sx + W - 5 if rep.facing == 1 else sx + 3
-    pygame.draw.circle(screen, (20, 15, 10), (ex, sy - amp + H // 3), 1)
+    # Body thickness: rattlesnakes/pythons are chunkier, garter snakes slim.
+    body_r = max(2, H // 2)
+    head_r = body_r + 1
+
+    # Sinuous S-curve traced left→right; flip mirror via facing for head placement.
+    # Segments are dense small circles for smooth scale-like appearance.
+    seg_count = max(14, W)
+    cy = sy + H // 2
+    wave_amp = (body_r + 1) if moving else max(1, body_r - 1)
+    wave_freq = 2.0 * math.pi / max(8, W // 2)
+    wave_speed = phase if moving else phase * 0.25
+
+    # Precompute spine points and per-segment radius (taper toward tail).
+    spine = []
+    for i in range(seg_count + 1):
+        t = i / seg_count  # 0 = tail, 1 = head
+        x = sx + int(t * (W - 1))
+        # Tail sways more than head; head is anchored for striking pose.
+        sway_scale = (1.0 - t) * 0.7 + 0.3
+        y = cy + int(math.sin(t * wave_freq * (W // 2) - wave_speed) * wave_amp * sway_scale)
+        # Taper: thin tail, full mid, slightly bulged neck before head.
+        if t < 0.15:
+            r = max(1, int(body_r * (0.35 + t * 4.0)))
+        elif t > 0.88:
+            r = body_r  # neck holds full width into head
+        else:
+            r = body_r
+        spine.append((x, y, r))
+
+    # If facing left, mirror the spine across the bbox so the head ends up on the left.
+    if facing == -1:
+        x_min = sx
+        x_max = sx + W - 1
+        spine = [(x_min + (x_max - x), y, r) for (x, y, r) in spine]
+
+    # Body: dark underbelly shadow first, then main color, then top highlight.
+    for (x, y, r) in spine:
+        pygame.draw.circle(screen, shadow, (x, y + 1), r)
+    for (x, y, r) in spine:
+        pygame.draw.circle(screen, bc, (x, y), r)
+    # Dorsal highlight (top ridge — gives roundness)
+    for (x, y, r) in spine:
+        if r >= 2:
+            pygame.draw.circle(screen, highlight, (x, y - r + 1), max(1, r - 1))
+
+    # Belly: light pixels along underside, only where spine is.
+    for (x, y, r) in spine[2:-2]:
+        if r >= 2:
+            pygame.draw.line(screen, belly, (x, y + r - 1), (x, y + r - 1))
+
+    # Pattern bands / diamonds along the back, following the curve.
+    # Spacing scales with body length so small snakes don't look noisy.
+    band_spacing = max(3, seg_count // 8)
+    for i in range(2, seg_count - 1, band_spacing):
+        x, y, r = spine[i]
+        if r >= 2:
+            # Diamond shape on dorsal surface
+            pygame.draw.line(screen, pc, (x - 1, y - r + 1), (x + 1, y - r + 1))
+            pygame.draw.line(screen, pc, (x, y - r), (x, y - r + 2))
+
+    # Head: oval oriented along facing direction. Use last spine point as anchor.
+    hx, hy, _ = spine[-1]
+    head_dx = facing
+    # Head body
+    head_rect = (hx - head_r + (head_dx * 1), hy - head_r + 1, head_r * 2, head_r * 2 - 1)
+    pygame.draw.ellipse(screen, bc, head_rect)
+    # Top of head highlight
+    pygame.draw.ellipse(screen, highlight,
+                        (head_rect[0] + 1, head_rect[1], head_rect[2] - 2, max(1, head_r - 1)))
+    # Jaw line shadow
+    pygame.draw.line(screen, shadow,
+                     (head_rect[0] + 1, hy + head_r - 2),
+                     (head_rect[0] + head_rect[2] - 2, hy + head_r - 2))
+
+    # Eye: small bright dot with dark pupil, set forward on the head.
+    eye_x = hx + head_dx * (head_r - 1)
+    eye_y = hy - 1
+    pygame.draw.circle(screen, (240, 220, 160), (eye_x, eye_y), 1)
+    pygame.draw.circle(screen, (10, 8, 5), (eye_x + head_dx, eye_y), 1)
+
+    # Forked tongue flick when alert/moving — flickers with phase.
+    if moving and math.sin(phase * 3.0) > 0.4:
+        tongue_col = (200, 40, 60)
+        tip_x = hx + head_dx * (head_r + 2)
+        mid_x = hx + head_dx * (head_r + 1)
+        pygame.draw.line(screen, tongue_col, (mid_x, hy), (tip_x, hy - 1))
+        pygame.draw.line(screen, tongue_col, (mid_x, hy), (tip_x, hy + 1))
+
+    # Rattle tail for rattlesnakes (any species with "rattle" in name).
+    species = getattr(rep, "SPECIES", "")
+    if "rattle" in species or species == "sidewinder" or "diamondback" in species:
+        tail_x, tail_y, _ = spine[0]
+        rattle_col = _shade(belly, 0.85)
+        rx = tail_x - head_dx * 2
+        for k in range(3):
+            pygame.draw.rect(screen, rattle_col, (rx - head_dx * k * 2, tail_y - 1, 2, 3), 0)
+            pygame.draw.rect(screen, shadow, (rx - head_dx * k * 2, tail_y - 1, 2, 3), 1)
 
 
 def _draw_lizard(screen, rep, sx, sy, phase):

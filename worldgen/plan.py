@@ -9,10 +9,8 @@ Designed to be cheaply (de)serializable to JSON for SQLite storage.
 """
 
 from dataclasses import dataclass, field, asdict
-from typing import Any
 import json
 import gzip
-import base64
 
 
 # ---------------------------------------------------------------------------
@@ -30,6 +28,21 @@ class BiomeCell:
     coastal: bool
     seed: int                   # deterministic per-cell rng seed
     drama: float = 1.0          # 0.3=flat plains .. 1.0=dramatic peaks
+    # Erosion pass output — see worldgen/geography.py:_erode.
+    # predicted_y_offset: mean offset from SURFACE_Y after erosion smoothing.
+    # The game uses this as the base height so the sample map and the actual
+    # terrain match.
+    predicted_y_offset: float = 0.0
+    # erosion: 0..1 multiplier applied to per-block noise amplitude — sharp
+    # transitions get more erosion (smaller value → flatter surface).
+    erosion: float = 1.0
+    # weathering: 0.3..1.6 per-region propensity to erode. Young ranges <1
+    # (jagged, sharp), old ranges >1 (rolling, smooth). Feeds the erosion pass.
+    weathering: float = 1.0
+    # anomaly: per-cell terrain exception ("mesa", "spike", "sinkhole",
+    # "plateau", "trench") or "" for normal cells. Overrides predicted_y_offset
+    # after the erosion pass with its own offset + erosion values.
+    anomaly: str = ""
 
 
 @dataclass
@@ -116,6 +129,13 @@ class WorldPlan:
     dynasties: dict             # dynasty_id -> Dynasty
     chronicle: list             # list[Event] in year order
     lost_artifacts: list = field(default_factory=list)   # list[LostArtifact dicts]
+    # Pre-baked guild histories produced by worldgen.history.economy.
+    # Shape: {f"{kingdom_id}|{industry}": {
+    #   "founded_year": int, "founder_name": str, "founder_house": str,
+    #   "final_treasury": int, "final_share_price": float,
+    #   "ledger": [HistoricalYear dicts], "legendary_events": [str], ...
+    # }}. Consumed at world load by guild_worldgen.seed_guilds.
+    guild_histories: dict = field(default_factory=dict)
 
     # ----- coordinate helpers -----
     @property
@@ -195,6 +215,7 @@ def _plan_to_dict(p: WorldPlan) -> dict:
         "dynasties": {str(k): _dynasty_dict(v) for k, v in p.dynasties.items()},
         "chronicle": [asdict(e) for e in p.chronicle],
         "lost_artifacts": p.lost_artifacts,
+        "guild_histories": p.guild_histories,
     }
 
 
@@ -252,4 +273,5 @@ def _plan_from_dict(d: dict) -> WorldPlan:
         dynasties=dynasties,
         chronicle=chronicle,
         lost_artifacts=d.get("lost_artifacts", []),
+        guild_histories=d.get("guild_histories", {}),
     )

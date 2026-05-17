@@ -146,6 +146,7 @@ BROCCOLI_CROP_MATURE   = 183
 CACTUS_YOUNG           = 184
 CACTUS_MATURE          = 185
 SANDSTONE_BLOCK        = 186
+RED_SANDSTONE_BLOCK    = 1713  # Sedona-style red sandstone — used as surface for red_rock biodome
 DESERT_FORGE_BLOCK     = 187
 DATE_PALM_BUSH         = 188
 DATE_PALM_CROP_YOUNG   = 189
@@ -1581,6 +1582,69 @@ SIENNA_DEPOSIT       = 1661   # sienna deposit — drops raw_sienna
 # ── Pigment Mill ───────────────────────────────────────────────────────────
 PIGMENT_MILL_BLOCK   = 1662   # pigment grinding station
 
+# ── Scribing / manuscripts ─────────────────────────────────────────────────
+SCRIBES_DESK_BLOCK   = 1663   # scribing station: parchment, ink, illumination, binding
+LECTERN_BLOCK        = 1664   # decorative display block; right-click → manuscript reader
+BOOKCASE_BLOCK       = 1665   # 6-slot manuscript shelf; grants nearby library bonus
+
+# ── Additional underground stone veins (decorative pocket variants) ────────
+CHALK_VEIN           = 1673   # pale white sedimentary; depth 5-30 (was 1665, collided with BOOKCASE_BLOCK)
+SHALE_VEIN           = 1666   # dark gray flaky sedimentary; depth 20-70
+SLATE_VEIN           = 1667   # blue-gray metamorphic; depth 40-100
+ANDESITE_VEIN        = 1668   # mid-gray intermediate volcanic; depth 50-130
+TUFF_VEIN            = 1669   # pale tan welded volcanic ash; depth 40-110
+QUARTZITE_VEIN       = 1670   # pink-white crystalline metamorphic; depth 80-160
+GNEISS_VEIN          = 1671   # banded pink-gray deep metamorphic; depth 100-180
+GABBRO_VEIN          = 1672   # coarse dark green-black plutonic; depth 160+
+
+# Guild physical presence (Phase 8 + 9 local variants)
+GUILD_HALL_BLOCK         = 1700   # default highland-style Stock Exchange Hall
+GUILD_FLAG_BLOCK         = 1701   # default violet guild banner
+# Phase 9: regional Hall variants picked by biome_group
+GUILD_HALL_FOREST        = 1702
+GUILD_HALL_EAST_ASIAN    = 1703
+GUILD_HALL_MEDITERRANEAN = 1704
+GUILD_HALL_DESERT        = 1705
+GUILD_HALL_JUNGLE        = 1706
+# Phase 9: banner color variants picked by industry
+GUILD_FLAG_WINE          = 1707
+GUILD_FLAG_COFFEE        = 1708
+GUILD_FLAG_TEA           = 1709
+GUILD_FLAG_SPIRITS       = 1710
+GUILD_FLAG_FORGE         = 1711
+GUILD_FLAG_TEXTILE       = 1712
+
+# Falconry stations
+FALCONER_PERCH       = 1714   # outdoor block perch / training station
+MEWS_BLOCK           = 1715   # indoor housing — keeps raptor sheltered
+
+# Livestock grazing — holds wheat/carrot/hay_bale that nearby herd animals consume
+FEED_TROUGH_BLOCK    = 1716
+# Salt lick — herd animals visit for a productivity buff
+SALT_LICK_BLOCK      = 1717
+
+# Miners' Guild — underground mine structures (all bg-only decorative)
+MINE_ENTRANCE_BLOCK  = 1720   # timber-framed arched mine head at surface
+MINE_SUPPORT_BEAM    = 1721   # vertical timber post lining tunnel walls
+MINE_TIMBER_FRAME    = 1722   # horizontal beam at tunnel ceiling
+MINE_RAIL            = 1723   # floor track running along tunnel
+MINE_CART_DECOR      = 1724   # static minecart parked at chamber end
+MINE_LANTERN_BLOCK   = 1725   # wall-mounted mine lantern; emits light
+GUILD_FLAG_MINING    = 1726   # pick + hammer banner above Miners outposts
+MINE_SCAFFOLD        = 1727   # wood scaffolding flanking chamber openings
+MINE_DEBRIS          = 1728   # rubble/spoil pile on tunnel floor
+MINE_ORE_HEAP        = 1729   # unloaded ore pile (looks like sorted minerals)
+MINE_PILLAR_BLOCK    = 1730   # carved stone pillar; dwarven grand-hall layouts
+
+GUILD_HALL_VARIANTS = {GUILD_HALL_BLOCK, GUILD_HALL_FOREST, GUILD_HALL_EAST_ASIAN,
+                       GUILD_HALL_MEDITERRANEAN, GUILD_HALL_DESERT, GUILD_HALL_JUNGLE}
+GUILD_FLAG_VARIANTS = {GUILD_FLAG_BLOCK, GUILD_FLAG_WINE, GUILD_FLAG_COFFEE,
+                       GUILD_FLAG_TEA, GUILD_FLAG_SPIRITS, GUILD_FLAG_FORGE,
+                       GUILD_FLAG_TEXTILE, GUILD_FLAG_MINING}
+MINE_STRUCTURE_BLOCKS = {MINE_ENTRANCE_BLOCK, MINE_SUPPORT_BEAM, MINE_TIMBER_FRAME,
+                         MINE_RAIL, MINE_CART_DECOR, MINE_LANTERN_BLOCK,
+                         MINE_SCAFFOLD, MINE_DEBRIS, MINE_ORE_HEAP, MINE_PILLAR_BLOCK}
+
 PIPE_DEVICE_BLOCKS = frozenset((HOPPER_BLOCK, PIPE_OUTPUT_BLOCK, PIPE_FILTER_BLOCK, PIPE_SORTER_BLOCK,
                                 PIPE_VALVE_CLOSED, PIPE_VALVE_OPEN, PIPE_BUFFER_BLOCK))
 
@@ -1629,7 +1693,10 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     PIPE_VALVE_CLOSED, PIPE_VALVE_OPEN,
                     PIPE_BUFFER_BLOCK,
                     TRAPDOOR_OPEN,
-                    PIGMENT_MILL_BLOCK}
+                    PIGMENT_MILL_BLOCK,
+                    SCRIBES_DESK_BLOCK, LECTERN_BLOCK, BOOKCASE_BLOCK,
+                    FALCONER_PERCH, MEWS_BLOCK,
+                    FEED_TROUGH_BLOCK, SALT_LICK_BLOCK}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT,
                     OCHRE_DEPOSIT, UMBER_DEPOSIT, SIENNA_DEPOSIT}
@@ -2481,6 +2548,7 @@ BLOCKS = {
     CACTUS_YOUNG:           {"name": "Cactus",                   "hardness": 0.5, "color": ( 65, 155,  60), "drop": "cactus_spine",      "drop_chance": 1.0},
     CACTUS_MATURE:          {"name": "Cactus (Ripe)",            "hardness": 0.5, "color": ( 45, 135,  40), "drop": "cactus_fruit",      "drop_chance": 1.0},
     SANDSTONE_BLOCK:        {"name": "Sandstone",                "hardness": 2,   "color": (210, 185, 120), "drop": "sandstone"},
+    RED_SANDSTONE_BLOCK:    {"name": "Red Sandstone",            "hardness": 2,   "color": (180,  88,  52), "drop": "red_sandstone"},
     DESERT_FORGE_BLOCK:     {"name": "Desert Forge",             "hardness": 1,   "color": (175,  95,  40), "drop": "desert_forge_item"},
     DATE_PALM_BUSH:         {"name": "Date Palm Bush",           "hardness": 0.5, "color": ( 90, 140,  55), "drop": "date_palm_seed",    "drop_chance": 1.0},
     DATE_PALM_CROP_YOUNG:   {"name": "Date Palm",                "hardness": 0.5, "color": ( 80, 150,  55), "drop": "date_palm_seed",    "drop_chance": 1.0},
@@ -2581,6 +2649,8 @@ BLOCKS = {
     WILDFLOWER_DISPLAY_BLOCK:  {"name": "Wildflower Display",        "hardness": 1.0, "color": (200, 230, 200), "drop": "wildflower_display"},
     STABLE_BLOCK:              {"name": "Stable",                   "hardness": 2.0, "color": (120,  85,  45), "drop": "stable_item"},
     HORSE_TROUGH_BLOCK:        {"name": "Horse Trough",             "hardness": 1.5, "color": ( 60, 100, 130), "drop": "horse_trough_item"},
+    FEED_TROUGH_BLOCK:         {"name": "Feed Trough",              "hardness": 1.0, "color": (150, 115,  60), "drop": "feed_trough_item"},
+    SALT_LICK_BLOCK:           {"name": "Salt Lick",                "hardness": 0.5, "color": (230, 220, 200), "drop": "salt_lick_item"},
     KENNEL_BLOCK:              {"name": "Kennel",                   "hardness": 2.0, "color": (100,  75,  40), "drop": "kennel_item"},
     DOG_BOWL_BLOCK:            {"name": "Dog Bowl",                 "hardness": 1.0, "color": (180, 140,  90), "drop": "dog_bowl_item"},
     TRAINING_PADDOCK_BLOCK:    {"name": "Training Paddock",         "hardness": 2.0, "color": ( 90,  65,  35), "drop": "training_paddock_item"},
@@ -3276,6 +3346,14 @@ BLOCKS = {
     ALABASTER_VEIN: {"name": "Alabaster Vein", "hardness": 2.0, "color": (232, 218, 198), "drop": "alabaster_chunk", "drop_chance": 1.0},
     VERDITE_VEIN:   {"name": "Verdite Vein",   "hardness": 2.5, "color": ( 38, 105,  58), "drop": "verdite_slab",    "drop_chance": 1.0},
     ONYX_VEIN:      {"name": "Onyx Vein",      "hardness": 3.0, "color": ( 28,  22,  38), "drop": "onyx_slab",       "drop_chance": 1.0},
+    CHALK_VEIN:     {"name": "Chalk Vein",     "hardness": 1.0, "color": (236, 232, 220), "drop": "chalk_chunk",     "drop_chance": 1.0},
+    SHALE_VEIN:     {"name": "Shale Vein",     "hardness": 1.8, "color": ( 78,  78,  82), "drop": "shale_chunk",     "drop_chance": 1.0},
+    SLATE_VEIN:     {"name": "Slate Vein",     "hardness": 2.2, "color": ( 70,  82,  98), "drop": "slate_chunk",     "drop_chance": 1.0},
+    ANDESITE_VEIN:  {"name": "Andesite Vein",  "hardness": 2.5, "color": (130, 130, 132), "drop": "andesite_chunk",  "drop_chance": 1.0},
+    TUFF_VEIN:      {"name": "Tuff Vein",      "hardness": 1.6, "color": (188, 172, 142), "drop": "tuff_chunk",      "drop_chance": 1.0},
+    QUARTZITE_VEIN: {"name": "Quartzite Vein", "hardness": 2.8, "color": (228, 212, 210), "drop": "quartzite_chunk", "drop_chance": 1.0},
+    GNEISS_VEIN:    {"name": "Gneiss Vein",    "hardness": 2.7, "color": (170, 152, 148), "drop": "gneiss_chunk",    "drop_chance": 1.0},
+    GABBRO_VEIN:    {"name": "Gabbro Vein",    "hardness": 3.2, "color": ( 48,  56,  60), "drop": "gabbro_chunk",    "drop_chance": 1.0},
 
     # Placed forms of the rare stones
     ALABASTER_BLOCK: {"name": "Alabaster",  "hardness": 2.0, "color": (235, 222, 204), "drop": "alabaster_chunk"},
@@ -3648,6 +3726,30 @@ BLOCKS = {
     GLOW_VINE:                 {"name": "Glow Vine",          "hardness": 0.5, "color": ( 40, 100,  60), "drop": "glow_vine"},
     TOWN_FLAG_BLOCK:           {"name": "Town Flag",          "hardness": float('inf'), "color": (200, 80, 40), "drop": None},
     OUTPOST_FLAG_BLOCK:        {"name": "Outpost Flag",       "hardness": float('inf'), "color": (180, 140, 60), "drop": None},
+    GUILD_HALL_BLOCK:          {"name": "Guild Hall",         "hardness": float('inf'), "color": (140, 110, 200), "drop": None},
+    GUILD_FLAG_BLOCK:          {"name": "Guild Banner",       "hardness": float('inf'), "color": (180, 100, 200), "drop": None},
+    GUILD_HALL_FOREST:         {"name": "Guildhall (Forest)", "hardness": float('inf'), "color": (130, 100,  60), "drop": None},
+    GUILD_HALL_EAST_ASIAN:     {"name": "Guildhall (Pagoda)", "hardness": float('inf'), "color": (185,  55,  55), "drop": None},
+    GUILD_HALL_MEDITERRANEAN:  {"name": "Guildhall (Med.)",   "hardness": float('inf'), "color": (210, 165, 110), "drop": None},
+    GUILD_HALL_DESERT:         {"name": "Guildhall (Desert)", "hardness": float('inf'), "color": (210, 175, 110), "drop": None},
+    GUILD_HALL_JUNGLE:         {"name": "Guildhall (Jungle)", "hardness": float('inf'), "color": ( 90, 130,  70), "drop": None},
+    GUILD_FLAG_WINE:           {"name": "Vintners Banner",    "hardness": float('inf'), "color": (170,  35,  55), "drop": None},
+    GUILD_FLAG_COFFEE:         {"name": "Coffee Banner",      "hardness": float('inf'), "color": (110,  70,  40), "drop": None},
+    GUILD_FLAG_TEA:            {"name": "Tea Banner",         "hardness": float('inf'), "color": ( 80, 150,  90), "drop": None},
+    GUILD_FLAG_SPIRITS:        {"name": "Distillers Banner",  "hardness": float('inf'), "color": (215, 165,  60), "drop": None},
+    GUILD_FLAG_FORGE:          {"name": "Forge Banner",       "hardness": float('inf'), "color": (210, 110,  50), "drop": None},
+    GUILD_FLAG_TEXTILE:        {"name": "Weavers Banner",     "hardness": float('inf'), "color": (180,  90, 165), "drop": None},
+    GUILD_FLAG_MINING:         {"name": "Miners Banner",      "hardness": float('inf'), "color": (155, 130,  85), "drop": None},
+    MINE_ENTRANCE_BLOCK:       {"name": "Mine Entrance",      "hardness": float('inf'), "color": (110,  80,  50), "drop": None},
+    MINE_SUPPORT_BEAM:         {"name": "Mine Support Beam",  "hardness": float('inf'), "color": (135, 100,  60), "drop": None},
+    MINE_TIMBER_FRAME:         {"name": "Mine Timber Frame",  "hardness": float('inf'), "color": (115,  85,  50), "drop": None},
+    MINE_RAIL:                 {"name": "Mine Rail",          "hardness": float('inf'), "color": (140, 130, 120), "drop": None},
+    MINE_CART_DECOR:           {"name": "Mine Cart",          "hardness": float('inf'), "color": (110,  85,  55), "drop": None},
+    MINE_LANTERN_BLOCK:        {"name": "Mine Lantern",       "hardness": float('inf'), "color": (230, 200,  90), "drop": None},
+    MINE_SCAFFOLD:             {"name": "Mine Scaffold",      "hardness": float('inf'), "color": (140, 100,  60), "drop": None},
+    MINE_DEBRIS:               {"name": "Rubble Pile",        "hardness": float('inf'), "color": (110, 100,  90), "drop": None},
+    MINE_ORE_HEAP:             {"name": "Sorted Ore Heap",    "hardness": float('inf'), "color": (155, 130,  90), "drop": None},
+    MINE_PILLAR_BLOCK:         {"name": "Carved Stone Pillar","hardness": float('inf'), "color": (170, 160, 145), "drop": None},
     LANDMARK_FLAG_BLOCK:       {"name": "Landmark Flag",      "hardness": float('inf'), "color": (190, 150,  60), "drop": None},
     RUIN_MARKER_BLOCK:         {"name": "Ruin Marker",        "hardness": float('inf'), "color": (155, 145, 130), "drop": None},
     # --- Brewery supply chain ---
@@ -3657,6 +3759,8 @@ BLOCKS = {
     BREW_KETTLE_BLOCK:         {"name": "Brew Kettle",        "hardness": 1.5, "color": (185, 130,  55), "drop": "brew_kettle_item"},
     FERM_VESSEL_BLOCK:         {"name": "Fermentation Vessel","hardness": 1.5, "color": ( 95, 130,  80), "drop": "ferm_vessel_item"},
     TAPROOM_BLOCK:             {"name": "Taproom",            "hardness": 1.5, "color": ( 95,  65,  40), "drop": "taproom_item"},
+    FALCONER_PERCH:            {"name": "Falconer's Perch",   "hardness": 1.0, "color": (135, 100,  60), "drop": "falconer_perch_item"},
+    MEWS_BLOCK:                {"name": "Mews",               "hardness": 1.5, "color": (105,  78,  52), "drop": "mews_item"},
     ICE_SHARD:                 {"name": "Ice Shard", "hardness": 1, "color": (185, 225, 248), "drop": "ice_shard"},
     FROZEN_BOG:                {"name": "Frozen Bog", "hardness": 1, "color": ( 95, 120, 138), "drop": "frozen_bog"},
     STONE_BRIDGE:              {"name": "Stone Bridge",     "hardness": 2.5, "color": (118, 112, 102), "drop": "stone_chip"},
@@ -4005,6 +4109,11 @@ BLOCKS = {
 
     # ── Pigment Mill ────────────────────────────────────────────────────────
     PIGMENT_MILL_BLOCK:  {"name": "Pigment Mill",        "hardness": 2.0, "color": (110,  95,  75), "drop": "pigment_mill_item", "drop_chance": 1.0, "equipment": True},
+
+    # ── Scribing ────────────────────────────────────────────────────────────
+    SCRIBES_DESK_BLOCK:  {"name": "Scribe's Desk",       "hardness": 1.5, "color": (135, 100,  60), "drop": "scribes_desk_item", "drop_chance": 1.0, "equipment": True},
+    LECTERN_BLOCK:       {"name": "Lectern",             "hardness": 1.5, "color": (150, 115,  70), "drop": "lectern_item",      "drop_chance": 1.0},
+    BOOKCASE_BLOCK:      {"name": "Bookcase",            "hardness": 1.5, "color": (110,  72,  45), "drop": "bookcase_item",     "drop_chance": 1.0, "equipment": True},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}
@@ -4025,6 +4134,7 @@ LIGHT_EMITTERS = {
     # City / decorative lanterns
     GARDEN_LANTERN:  ( 90, "circle"),
     IRON_LANTERN:    ( 85, "soft"),
+    MINE_LANTERN_BLOCK: ( 95, "flicker"),
     TRIPOD_BRAZIER:  (100, "flicker"),
     PAPER_LANTERN:   ( 90, "soft"),
     STONE_LANTERN:   ( 65, "dim"),
