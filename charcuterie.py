@@ -33,13 +33,15 @@ MEAT_SOURCES = {
         "display":        "Boar",
         "fat":            0.65,
         "protein":        0.60,
-        "eligible_cures": ["prosciutto", "salami", "jerky", "lardo", "pancetta"],
+        "eligible_cures": ["prosciutto", "salami", "jerky", "lardo", "pancetta",
+                            "coppa", "speck", "chorizo", "guanciale"],
     },
     "raw_pork": {
         "display":        "Pork",
         "fat":            0.45,
         "protein":        0.55,
-        "eligible_cures": ["prosciutto", "salami", "jerky", "pancetta"],
+        "eligible_cures": ["prosciutto", "salami", "jerky", "pancetta",
+                            "coppa", "speck", "chorizo", "guanciale"],
     },
     "lard": {
         "display":        "Lard (Fatback)",
@@ -51,31 +53,61 @@ MEAT_SOURCES = {
         "display":        "Beef",
         "fat":            0.25,
         "protein":        0.75,
-        "eligible_cures": ["salami", "jerky"],
+        "eligible_cures": ["salami", "jerky", "bresaola", "pastrami"],
     },
     "raw_venison": {
         "display":        "Venison",
         "fat":            0.10,
         "protein":        0.80,
-        "eligible_cures": ["jerky", "salami"],
+        "eligible_cures": ["jerky", "salami", "bresaola", "biltong"],
     },
     "raw_bison_meat": {
         "display":        "Bison",
         "fat":            0.20,
         "protein":        0.78,
-        "eligible_cures": ["jerky", "salami"],
+        "eligible_cures": ["jerky", "salami", "bresaola", "pastrami", "biltong"],
     },
     "raw_mutton": {
         "display":        "Mutton",
         "fat":            0.45,
         "protein":        0.65,
-        "eligible_cures": ["jerky", "salami"],
+        "eligible_cures": ["jerky", "salami", "biltong"],
     },
     "raw_bear_meat": {
         "display":        "Bear",
         "fat":            0.30,
         "protein":        0.70,
         "eligible_cures": ["jerky"],
+    },
+    "raw_chicken": {
+        "display":        "Chicken",
+        "fat":            0.15,
+        "protein":        0.70,
+        "eligible_cures": ["jerky", "sausage"],
+    },
+    "raw_turkey": {
+        "display":        "Turkey",
+        "fat":            0.18,
+        "protein":        0.72,
+        "eligible_cures": ["jerky", "sausage", "pastrami"],
+    },
+    "raw_duck": {
+        "display":        "Duck",
+        "fat":            0.55,
+        "protein":        0.55,
+        "eligible_cures": ["prosciutto", "sausage", "smoked_breast"],
+    },
+    "raw_goose": {
+        "display":        "Goose",
+        "fat":            0.60,
+        "protein":        0.55,
+        "eligible_cures": ["prosciutto", "sausage", "smoked_breast"],
+    },
+    "raw_rabbit": {
+        "display":        "Rabbit",
+        "fat":            0.10,
+        "protein":        0.75,
+        "eligible_cures": ["jerky", "sausage"],
     },
 }
 
@@ -137,12 +169,77 @@ CURE_TYPES = {
         "salt_req":       0.35,
         "age_days":       5,
         "eligible_meats": {"raw_pork", "raw_boar_meat", "raw_beef",
-                           "raw_venison", "raw_bison_meat"},
-        "required_extra": "sausage_casing",  # one casing per sausage
+                           "raw_venison", "raw_bison_meat",
+                           "raw_chicken", "raw_turkey",
+                           "raw_duck", "raw_goose", "raw_rabbit"},
+        "required_extra": "sausage_casing",
+    },
+    "coppa":      {
+        "label":          "Coppa",
+        "desc":           "Whole pork-shoulder muscle, dry-cured with cracked pepper.",
+        "salt_req":       0.45,
+        "age_days":       14,
+        "eligible_meats": {"raw_pork", "raw_boar_meat"},
+    },
+    "speck":      {
+        "label":          "Speck",
+        "desc":           "Juniper-rubbed, lightly cold-smoked alpine prosciutto.",
+        "salt_req":       0.48,
+        "age_days":       18,
+        "eligible_meats": {"raw_pork", "raw_boar_meat"},
+        "required_method": "smoke",
+    },
+    "guanciale":  {
+        "label":          "Guanciale",
+        "desc":           "Cured pork jowl — fat-rich, sweet, used in Roman dishes.",
+        "salt_req":       0.42,
+        "age_days":       11,
+        "eligible_meats": {"raw_pork", "raw_boar_meat"},
+    },
+    "chorizo":    {
+        "label":          "Chorizo",
+        "desc":           "Paprika-fired pork sausage. Bright red, deeply spiced.",
+        "salt_req":       0.38,
+        "age_days":       7,
+        "eligible_meats": {"raw_pork", "raw_boar_meat"},
+        "required_extra": "sausage_casing",
+    },
+    "bresaola":   {
+        "label":          "Bresaola",
+        "desc":           "Air-cured lean red meat. Crimson, fragrant, delicate.",
+        "salt_req":       0.50,
+        "age_days":       15,
+        "eligible_meats": {"raw_beef", "raw_bison_meat", "raw_venison"},
+    },
+    "pastrami":   {
+        "label":          "Pastrami",
+        "desc":           "Brined, peppered, hot-smoked. Hearty deli classic.",
+        "salt_req":       0.55,
+        "age_days":       6,
+        "eligible_meats": {"raw_beef", "raw_bison_meat", "raw_turkey"},
+        "required_method": "smoke",
+    },
+    "biltong":    {
+        "label":          "Biltong",
+        "desc":           "Vinegar-soaked air-dried strips. Tangy, dense, sharp.",
+        "salt_req":       0.52,
+        "age_days":       4,
+        "eligible_meats": {"raw_beef", "raw_bison_meat", "raw_venison", "raw_mutton"},
+        "required_extra": "vinegar",
+    },
+    "smoked_breast": {
+        "label":          "Smoked Breast",
+        "desc":           "Whole poultry breast brined and slowly cold-smoked.",
+        "salt_req":       0.45,
+        "age_days":       5,
+        "eligible_meats": {"raw_duck", "raw_goose", "raw_turkey"},
+        "required_method": "smoke",
     },
 }
 
-CURE_ORDER = ["prosciutto", "salami", "jerky", "lardo", "pancetta", "bacon", "sausage"]
+CURE_ORDER = ["prosciutto", "salami", "jerky", "lardo", "pancetta", "bacon", "sausage",
+              "coppa", "speck", "guanciale", "chorizo", "bresaola", "pastrami",
+              "biltong", "smoked_breast"]
 
 
 # ---------------------------------------------------------------------------
@@ -173,9 +270,34 @@ CURE_METHODS = {
         "salt_penetration": +0.12,
         "spice_intensity":  +0.08,
     },
+    "wet_brine": {
+        "label":            "Wet Brine",
+        "desc":             "Submerged in salt water. Even penetration, mild flavour.",
+        "salt_penetration": +0.22,
+        "spice_intensity":  -0.02,
+    },
+    "sugar_cure":{
+        "label":            "Sugar Cure",
+        "desc":             "Salt + honey mix. Slight sweetness, caramelised crust.",
+        "salt_penetration": +0.08,
+        "spice_intensity":  +0.06,
+    },
+    "wine_cure": {
+        "label":            "Wine Cure",
+        "desc":             "Salt with red wine reduction. Tannic, fruit-edged.",
+        "salt_penetration": +0.07,
+        "spice_intensity":  +0.16,
+    },
+    "paprika_rub":{
+        "label":            "Paprika Rub",
+        "desc":             "Salt, garlic and smoked paprika. Iberian punch.",
+        "salt_penetration": +0.06,
+        "spice_intensity":  +0.26,
+    },
 }
 
-CURE_METHOD_ORDER = ["dry_salt", "spice_rub", "herb_cure", "smoke"]
+CURE_METHOD_ORDER = ["dry_salt", "spice_rub", "herb_cure", "smoke",
+                     "wet_brine", "sugar_cure", "wine_cure", "paprika_rub"]
 
 
 # ---------------------------------------------------------------------------
@@ -218,9 +340,64 @@ SMOKE_WOODS = {
         "quality_bonus":    +0.05,
         "notes":            ["oak smoke", "tannin warmth", "barrel-room depth"],
     },
+    "mesquite": {
+        "label":            "Mesquite",
+        "item":             "smoking_chips_mesquite",
+        "desc":             "Aggressive desert smoke. Earthy, smouldering, intense.",
+        "salt_penetration": +0.08,
+        "spice_intensity":  +0.10,
+        "quality_bonus":    +0.04,
+        "notes":            ["mesquite blaze", "desert smoulder", "leathery bark"],
+    },
+    "maple":   {
+        "label":            "Maple",
+        "item":             "smoking_chips_maple",
+        "desc":             "Gentle, sweet, syrup-edged smoke. Excellent on bacon.",
+        "salt_penetration": +0.02,
+        "spice_intensity":  +0.03,
+        "quality_bonus":    +0.07,
+        "notes":            ["maple sweetness", "syrup-edged smoke", "amber finish"],
+    },
+    "pecan":   {
+        "label":            "Pecan",
+        "item":             "smoking_chips_pecan",
+        "desc":             "Nutty mid-strength smoke. Rich, autumnal, mellow.",
+        "salt_penetration": +0.04,
+        "spice_intensity":  +0.05,
+        "quality_bonus":    +0.06,
+        "notes":            ["pecan warmth", "buttery smoke", "toasted-nut depth"],
+    },
+    "alder":   {
+        "label":            "Alder",
+        "item":             "smoking_chips_alder",
+        "desc":             "Delicate, slightly sweet. Pacific classic for fish and pork.",
+        "salt_penetration": +0.03,
+        "spice_intensity":  +0.02,
+        "quality_bonus":    +0.05,
+        "notes":            ["alder mist", "river-smoke", "delicate woodiness"],
+    },
+    "juniper": {
+        "label":            "Juniper",
+        "item":             "smoking_chips_juniper",
+        "desc":             "Resinous, piney, gin-like. Bold and aromatic on game.",
+        "salt_penetration": +0.06,
+        "spice_intensity":  +0.08,
+        "quality_bonus":    +0.05,
+        "notes":            ["juniper resin", "piney bite", "alpine forest"],
+    },
+    "beech":   {
+        "label":            "Beech",
+        "item":             "smoking_chips_beech",
+        "desc":             "Mild, traditional, slightly sweet European hardwood.",
+        "salt_penetration": +0.04,
+        "spice_intensity":  +0.04,
+        "quality_bonus":    +0.05,
+        "notes":            ["beech wood", "soft sweetness", "old-world smokehouse"],
+    },
 }
 
-SMOKE_WOOD_ORDER = ["apple", "hickory", "cherry", "oak"]
+SMOKE_WOOD_ORDER = ["apple", "hickory", "cherry", "oak",
+                    "mesquite", "maple", "pecan", "alder", "juniper", "beech"]
 
 
 # ---------------------------------------------------------------------------
@@ -234,16 +411,30 @@ BUFF_DESCS = {
     "decadence":    "Decadence — XP gain +25% for 90 s",
     "hearty":       "Hearty — health regen +0.5/s for 60 s",
     "stamina":      "Stamina — sprint stamina drain −30% for 60 s",
+    "focus":        "Focus — crafting yield +10% for 90 s",
+    "warmth":       "Warmth — cold resistance for 120 s",
+    "fervor":       "Fervor — combat damage +10% for 60 s",
+    "wanderer":     "Wanderer — food spoilage paused for 180 s",
+    "grit":         "Grit — incoming damage −10% for 60 s",
+    "swiftness":    "Swiftness — movement speed +15% for 45 s",
 }
 
 CURE_TYPE_BUFFS = {
-    "prosciutto": "preservation",
-    "salami":     "sustenance",
-    "jerky":      "vitality",
-    "lardo":      "fortitude",
-    "pancetta":   "decadence",
-    "bacon":      "hearty",
-    "sausage":    "stamina",
+    "prosciutto":    "preservation",
+    "salami":        "sustenance",
+    "jerky":         "vitality",
+    "lardo":         "fortitude",
+    "pancetta":      "decadence",
+    "bacon":         "hearty",
+    "sausage":       "stamina",
+    "coppa":         "focus",
+    "speck":         "warmth",
+    "guanciale":     "fortitude",
+    "chorizo":       "fervor",
+    "bresaola":      "focus",
+    "pastrami":      "hearty",
+    "biltong":       "wanderer",
+    "smoked_breast": "swiftness",
 }
 
 
@@ -272,6 +463,30 @@ OUTPUT_DESCS = {
     "sausage":              "Sausage — fermented links, garlicky and savoury",
     "sausage_fine":         "Sausage (Fine) — well-spiced fermented links",
     "sausage_superior":     "Sausage (Superior) — heirloom-grind reserve links",
+    "coppa":                "Coppa — peppered cured pork shoulder",
+    "coppa_fine":           "Coppa (Fine) — marbled rosy pepper-crusted rounds",
+    "coppa_superior":       "Coppa (Superior) — heritage reserve, silky-marbled",
+    "speck":                "Speck — juniper-smoked alpine prosciutto",
+    "speck_fine":           "Speck (Fine) — perfumed pinewood-cured slices",
+    "speck_superior":       "Speck (Superior) — Tyrolean reserve, mountain-cured",
+    "guanciale":            "Guanciale — cured pork jowl, jewel-rich fat",
+    "guanciale_fine":       "Guanciale (Fine) — ribbon-fat Roman classic",
+    "guanciale_superior":   "Guanciale (Superior) — heirloom jowl, silky-sweet",
+    "chorizo":              "Chorizo — paprika-fired pork sausage",
+    "chorizo_fine":         "Chorizo (Fine) — bright-spiced Iberian reserve",
+    "chorizo_superior":     "Chorizo (Superior) — master-grind heritage chorizo",
+    "bresaola":             "Bresaola — air-cured lean beef, crimson slices",
+    "bresaola_fine":        "Bresaola (Fine) — fragrant pepper-laced fillet",
+    "bresaola_superior":    "Bresaola (Superior) — Valtellina-style reserve",
+    "pastrami":             "Pastrami — peppered smoke-cured deli classic",
+    "pastrami_fine":        "Pastrami (Fine) — coriander-crusted juicy slabs",
+    "pastrami_superior":    "Pastrami (Superior) — barrel-aged spice reserve",
+    "biltong":              "Biltong — tangy air-dried strips",
+    "biltong_fine":         "Biltong (Fine) — well-spiced South African strips",
+    "biltong_superior":     "Biltong (Superior) — masterful 21-day air-cure",
+    "smoked_breast":        "Smoked Breast — slow-cold-smoked poultry breast",
+    "smoked_breast_fine":   "Smoked Breast (Fine) — fragrant glazed breast",
+    "smoked_breast_superior":"Smoked Breast (Superior) — heritage smokehouse reserve",
 }
 
 OUTPUT_COLORS = {
@@ -296,6 +511,30 @@ OUTPUT_COLORS = {
     "sausage":              (170,  85,  65),
     "sausage_fine":         (185,  95,  75),
     "sausage_superior":     (200, 110,  85),
+    "coppa":                (190, 100,  85),
+    "coppa_fine":           (205, 115,  95),
+    "coppa_superior":       (220, 130, 105),
+    "speck":                (160,  85,  60),
+    "speck_fine":           (175,  95,  70),
+    "speck_superior":       (190, 105,  80),
+    "guanciale":            (235, 210, 195),
+    "guanciale_fine":       (245, 220, 205),
+    "guanciale_superior":   (252, 232, 218),
+    "chorizo":              (185,  55,  40),
+    "chorizo_fine":         (200,  65,  45),
+    "chorizo_superior":     (220,  75,  50),
+    "bresaola":             (130,  35,  45),
+    "bresaola_fine":        (150,  45,  55),
+    "bresaola_superior":    (170,  55,  65),
+    "pastrami":             (115,  60,  45),
+    "pastrami_fine":        (130,  70,  50),
+    "pastrami_superior":    (150,  82,  58),
+    "biltong":              (110,  60,  35),
+    "biltong_fine":         (125,  70,  42),
+    "biltong_superior":     (140,  82,  50),
+    "smoked_breast":        (175, 125,  85),
+    "smoked_breast_fine":   (190, 140,  95),
+    "smoked_breast_superior":(210, 160, 110),
 }
 
 

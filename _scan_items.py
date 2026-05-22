@@ -55,6 +55,10 @@ key_set = set(keys)
 QUOTED = re.compile(r"""['"]([a-z][a-z0-9_\-]*)['"]""")
 # Detect dynamic key construction: f"prefix_{...}..." — captures the literal prefix.
 FSTRING_PREFIX = re.compile(r"""f['"]([a-z][a-z0-9_]+_)\{""")
+# Detect f-strings that START with {var} and have a literal middle/end segment,
+# e.g. f"{method}{tier}_{herb}" — captures the literal "_dried_" / "_fine" parts.
+# Any item key containing such a segment is treated as potentially produced.
+FSTRING_LITERAL_SEG = re.compile(r"""f['"][^'"]*\}(_[a-z][a-z0-9_]+?)(?=\{|['"])""")
 
 dynamic_prefixes = set()
 for p in py_files:
@@ -70,12 +74,67 @@ for p in py_files:
     for m in FSTRING_PREFIX.finditer(body):
         dynamic_prefixes.add((m.group(1), p.relative_to(ROOT).as_posix()))
 
+dynamic_segments = set()
+# Multi-interpolation f-strings: `f"{a}{b}_{c}"` — for each interpolated var
+# whose name appears as a comparison literal elsewhere in the file (e.g.
+# `method == "drip_coffee"`), enumerate candidate values and treat keys
+# matching <method><tier>_<herb> as produced. Pragmatic heuristic.
+MULTI_INTERP = re.compile(r"""f['"]((?:\{[a-zA-Z_]\w*\}|_)+)['"]""")
+ASSIGN_LITERAL = re.compile(r"""['"]([a-z][a-z0-9_]+)['"]""")
+
+for p in py_files:
+    try:
+        body = p.read_text(encoding="utf-8")
+    except Exception:
+        continue
+    for m in FSTRING_LITERAL_SEG.finditer(body):
+        seg = m.group(1)
+        if len(seg) >= 4:
+            dynamic_segments.add((seg, p.relative_to(ROOT).as_posix()))
+    # For each pure-interpolation f-string, capture the file's literal pool
+    # and treat any item key formed by joining 2+ pool literals with "_" as referenced.
+    has_multi = False
+    for m in MULTI_INTERP.finditer(body):
+        if m.group(1).count("{") >= 2 and "_" in m.group(1):
+            has_multi = True
+            break
+    if has_multi:
+        pool = {lit.group(1) for lit in ASSIGN_LITERAL.finditer(body)}
+        # Limit pool to plausible enum values (avoid huge keys / variable names).
+        pool = {p for p in pool if 3 <= len(p) <= 40}
+        for k in keys:
+            if counts[k] > 0:
+                continue
+            parts = k.split("_")
+            # Try every 2- and 3-part decomposition: a_b or a_b_c (with multi-underscore items)
+            for cut1 in range(1, len(parts)):
+                a = "_".join(parts[:cut1])
+                b = "_".join(parts[cut1:])
+                if a in pool and b in pool:
+                    counts[k] = 1
+                    locations[k].add("(multi-interp f-string)")
+                    break
+
 # Any item key starting with a dynamic prefix is considered "produced".
 for k in keys:
+    if counts[k] > 0:
+        continue
+    matched = False
     for prefix, loc in dynamic_prefixes:
         if k.startswith(prefix):
-            counts[k] = max(counts[k], 1)  # at least one ref
-            locations[k].add(f"{loc} (f-string)")
+            counts[k] = 1
+            locations[k].add(f"{loc} (f-string prefix)")
+            matched = True
+            break
+    if matched:
+        continue
+    # Match f-strings of form `f"{var}_<literal>_..."` — these produce keys
+    # containing the literal segment. Treat as "potentially produced" if the
+    # key contains any discovered segment.
+    for seg, loc in dynamic_segments:
+        if seg in k:
+            counts[k] = 1
+            locations[k].add(f"{loc} (f-string segment)")
             break
 
 orphans = sorted(k for k in keys if counts[k] == 0)

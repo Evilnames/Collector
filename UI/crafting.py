@@ -5,7 +5,7 @@ from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOO
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
                       BAIT_STATION_RECIPES, FLETCHING_RECIPES, SMELTER_RECIPES, GLASS_KILN_RECIPES,
                       GARDEN_WORKSHOP_RECIPES, JUICER_RECIPES, AUTOMATION_RECIPES,
-                      TANNING_RACK_RECIPES,
+                      TANNING_RACK_RECIPES, PICKLING_CROCK_RECIPES,
                       ARTISAN_TABS, ARTISAN_RECIPE_TAB,
                       RECIPE_GROUPS, RECIPE_GROUPS_ORDER,
                       match_recipe, craft_costs, can_craft,
@@ -1058,13 +1058,20 @@ class CraftingMixin:
                             GLASS_KILN_BLOCK, GARDEN_WORKSHOP_BLOCK,
                             JEWELRY_WORKBENCH_BLOCK, JUICER_BLOCK,
                             AUTOMATION_BENCH_BLOCK, WEAPON_ASSEMBLER_BLOCK)
-        from blocks import TANNING_RACK_BLOCK
+        from blocks import TANNING_RACK_BLOCK, PICKLING_CROCK_BLOCK
         if self.refinery_block_id == TANNING_RACK_BLOCK:
             self._draw_cooking_station(player, TANNING_RACK_RECIPES, "TANNING RACK",
                                        (145, 105, 60), self._tanning_rack_selected_recipe,
                                        self._tanning_rack_recipe_rects,
                                        block_id=TANNING_RACK_BLOCK,
                                        action_label="TAN")
+            return
+        if self.refinery_block_id == PICKLING_CROCK_BLOCK:
+            self._draw_cooking_station(player, PICKLING_CROCK_RECIPES, "PICKLING CROCK",
+                                       (180, 200, 140), self._pickling_crock_selected_recipe,
+                                       self._pickling_crock_recipe_rects,
+                                       block_id=PICKLING_CROCK_BLOCK,
+                                       action_label="PICKLE")
             return
         if self.refinery_block_id == JEWELRY_WORKBENCH_BLOCK:
             self._draw_jewelry_workbench(player, dt)

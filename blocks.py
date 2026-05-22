@@ -1636,6 +1636,8 @@ MINE_DEBRIS          = 1728   # rubble/spoil pile on tunnel floor
 MINE_ORE_HEAP        = 1729   # unloaded ore pile (looks like sorted minerals)
 MINE_PILLAR_BLOCK    = 1730   # carved stone pillar; dwarven grand-hall layouts
 
+PICKLING_CROCK_BLOCK = 1731   # placed pickling crock; turns vegetables + vinegar + salt into pickles
+
 GUILD_HALL_VARIANTS = {GUILD_HALL_BLOCK, GUILD_HALL_FOREST, GUILD_HALL_EAST_ASIAN,
                        GUILD_HALL_MEDITERRANEAN, GUILD_HALL_DESERT, GUILD_HALL_JUNGLE}
 GUILD_FLAG_VARIANTS = {GUILD_FLAG_BLOCK, GUILD_FLAG_WINE, GUILD_FLAG_COFFEE,
@@ -1687,7 +1689,7 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     FACTORY_BLOCK,
                     BEEHIVE_BLOCK,
                     MEAD_VAT_BLOCK, MEAD_CELLAR_BLOCK,
-                    SALTING_RACK_BLOCK, CURING_CELLAR_BLOCK,
+                    SALTING_RACK_BLOCK, CURING_CELLAR_BLOCK, PICKLING_CROCK_BLOCK,
                     CROSSOVER_WIRE_BLOCK,
                     SIGNAL_LAMP_OFF, SIGNAL_LAMP_ON,
                     PIPE_VALVE_CLOSED, PIPE_VALVE_OPEN,
@@ -4080,6 +4082,7 @@ BLOCKS = {
     MEAD_CELLAR_BLOCK:         {"name": "Mead Cellar",       "hardness": 2, "color": (130, 100,  45), "drop": "mead_cellar_item",   "drop_chance": 1.0, "equipment": True},
     SALTING_RACK_BLOCK:        {"name": "Salting Rack",      "hardness": 2, "color": (160, 130, 100), "drop": "salting_rack_item",  "drop_chance": 1.0, "equipment": True},
     CURING_CELLAR_BLOCK:       {"name": "Curing Cellar",     "hardness": 2, "color": ( 90,  70,  55), "drop": "curing_cellar_item", "drop_chance": 1.0, "equipment": True},
+    PICKLING_CROCK_BLOCK:      {"name": "Pickling Crock",    "hardness": 2, "color": (115,  95,  75), "drop": "pickling_crock_item","drop_chance": 1.0, "equipment": True},
 
     XOR_GATE_BLOCK:      {"name": "XOR Gate",          "hardness": 2.0, "color": ( 90, 110,  60), "drop": "xor_gate_item"},
     PLAYER_SENSOR_BLOCK: {"name": "Player Sensor",     "hardness": 2.0, "color": ( 60,  80, 120), "drop": "player_sensor_item"},

@@ -676,6 +676,7 @@ class Player:
         self.discovered_meads   = set(d.get("discovered_meads", []))
         self.charcuterie_items      = [CuredMeat(**x) for x in d.get("charcuterie_items", [])]
         self.discovered_charcuterie = set(d.get("discovered_charcuterie", []))
+        self.pork_quality_queue     = list(d.get("pork_quality_queue", []))
         self.pottery_buffs      = d.get("pottery_buffs", {})
         self.salt_crystals          = [SaltCrystal(**x) for x in d.get("salt_crystals", [])]
         self.discovered_salt_origins= set(d.get("discovered_salt_origins", []))

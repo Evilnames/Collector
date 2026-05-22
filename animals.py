@@ -2854,6 +2854,9 @@ class Pig(Animal):
             drops.append(("lard", lard))
         if self.traits.get("mutation") == "golden":
             drops.append(("golden_pork", 1))
+        # Sausage casings — intestines, ~60% chance to drop 1.
+        if random.random() < 0.60:
+            drops.append(("sausage_casing", 1))
         # Stash breed quality for charcuterie — one entry per meat/lard unit dropped.
         raw_q = ((self.traits.get("meat_yield", 1.0) - 0.6) * 0.5
                  + (self.traits.get("fat", 1.0) - 0.5) * 0.5)

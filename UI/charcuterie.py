@@ -6,6 +6,7 @@ from charcuterie import (
     MEAT_SOURCES, CURE_TYPES, CURE_METHODS, CURE_METHOD_ORDER, CURE_ORDER,
     BUFF_DESCS, CURE_TYPE_BUFFS, OUTPUT_DESCS, OUTPUT_COLORS,
     _CODEX_MEATS, TYPE_ORDER, MEAT_DISPLAY_NAMES,
+    SMOKE_WOODS, SMOKE_WOOD_ORDER,
     apply_cure_method, start_aging, finish_aging,
     get_charcuterie_output_id, age_progress,
 )
@@ -94,6 +95,8 @@ class CharcuterieMixin:
             self._draw_rack_select_cure(player)
         elif ph == "select_method":
             self._draw_rack_select_method(player)
+        elif ph == "select_wood":
+            self._draw_rack_select_wood(player)
         elif ph == "massaging":
             self._draw_rack_massage(player, dt)
         elif ph == "result":
@@ -177,7 +180,9 @@ class CharcuterieMixin:
         y0 = 105
         for cure_key in CURE_ORDER:
             ct   = CURE_TYPES[cure_key]
-            has  = cure_key in eligible
+            extra = ct.get("required_extra")
+            extra_ok = (not extra) or player.inventory.get(extra, 0) > 0
+            has  = (cure_key in eligible) and extra_ok
             sel  = (cure_key == self._curing_cure_sel)
             rect = pygame.Rect(x0, y0, bw, bh)
             bg   = (60, 42, 18) if sel else (_COL_SEL_BG if has else _COL_DIM_BG)
@@ -217,16 +222,24 @@ class CharcuterieMixin:
 
     def _draw_rack_select_method(self, player):
         cx = SCREEN_W // 2
-        cure_label = CURE_TYPES[self._curing_cure_sel]["label"]
+        cure_info  = CURE_TYPES[self._curing_cure_sel]
+        cure_label = cure_info["label"]
+        forced     = cure_info.get("required_method")
         lbl = self.font.render(f"SELECT CURE METHOD — {cure_label.upper()}", True, _COL_TITLE)
         self.screen.blit(lbl, (cx - lbl.get_width() // 2, 48))
+        if forced:
+            req = self.small.render(
+                f"This cure requires the {CURE_METHODS[forced]['label']} method.",
+                True, (220, 165, 90))
+            self.screen.blit(req, (cx - req.get_width() // 2, 76))
 
         self._curing_method_btns = {}
         bw, bh, gap = 210, 72, 14
-        total_w = len(CURE_METHOD_ORDER) * (bw + gap) - gap
+        method_pool = [forced] if forced else CURE_METHOD_ORDER
+        total_w = len(method_pool) * (bw + gap) - gap
         x0 = cx - total_w // 2
         y0 = 105
-        for method_key in CURE_METHOD_ORDER:
+        for method_key in method_pool:
             cm   = CURE_METHODS[method_key]
             sel  = (method_key == self._curing_method_sel)
             rect = pygame.Rect(x0, y0, bw, bh)
@@ -251,12 +264,75 @@ class CharcuterieMixin:
             start_btn = pygame.Rect(cx - 100, y0 + bh + 24, 200, 36)
             pygame.draw.rect(self.screen, _COL_SEL_BG, start_btn, border_radius=5)
             pygame.draw.rect(self.screen, _COL_SEL_BOR, start_btn, 2, border_radius=5)
-            s = self.small.render("START CURING →", True, _COL_TITLE)
+            nxt_label = "PICK WOOD →" if self._curing_method_sel == "smoke" else "START CURING →"
+            s = self.small.render(nxt_label, True, _COL_TITLE)
             self.screen.blit(s, (start_btn.centerx - s.get_width() // 2,
                                   start_btn.centery - s.get_height() // 2))
             self._curing_method_start_btn = start_btn
         else:
             self._curing_method_start_btn = None
+
+        back = self.small.render("← Back", True, _COL_SUBTITLE)
+        self.screen.blit(back, (20, SCREEN_H - back.get_height() - 10))
+        self._curing_back_btn = pygame.Rect(14, SCREEN_H - back.get_height() - 14,
+                                            back.get_width() + 12, back.get_height() + 8)
+
+    # ── Salting Rack — phase: select_wood (only for smoke method) ────────────
+
+    def _draw_rack_select_wood(self, player):
+        cx = SCREEN_W // 2
+        lbl = self.font.render("SELECT SMOKING WOOD", True, _COL_TITLE)
+        self.screen.blit(lbl, (cx - lbl.get_width() // 2, 48))
+        sub = self.small.render("One handful of chips will be consumed.", True, _COL_SUBTITLE)
+        self.screen.blit(sub, (cx - sub.get_width() // 2, 74))
+
+        self._curing_wood_btns = {}
+        bw, bh, gap = 200, 96, 12
+        per_row = 5
+        row_w   = per_row * (bw + gap) - gap
+        row_x0  = cx - row_w // 2
+        x0 = row_x0
+        y0 = 110
+        for idx, wkey in enumerate(SMOKE_WOOD_ORDER):
+            if idx > 0 and idx % per_row == 0:
+                x0  = row_x0
+                y0 += bh + 14
+            wm    = SMOKE_WOODS[wkey]
+            count = player.inventory.get(wm["item"], 0)
+            has   = count > 0
+            sel   = (wkey == getattr(self, "_curing_wood_sel", None))
+            rect  = pygame.Rect(x0, y0, bw, bh)
+            bg    = (60, 42, 18) if sel else (_COL_SEL_BG if has else _COL_DIM_BG)
+            pygame.draw.rect(self.screen, bg, rect, border_radius=6)
+            border = (230, 185, 75) if sel else (_COL_SEL_BOR if has else _COL_DIM_BOR)
+            pygame.draw.rect(self.screen, border, rect, 2, border_radius=6)
+            col = _COL_TITLE if has else (65, 52, 30)
+            ls = self.small.render(wm["label"], True, col)
+            self.screen.blit(ls, (rect.centerx - ls.get_width() // 2, rect.y + 6))
+            ds = self.small.render(wm["desc"][:40], True,
+                                   (150, 125, 70) if has else (50, 42, 22))
+            self.screen.blit(ds, (rect.centerx - ds.get_width() // 2, rect.y + 28))
+            cs = self.small.render(f"x{count} chips in inventory", True,
+                                   (140, 115, 65) if has else (50, 42, 22))
+            self.screen.blit(cs, (rect.centerx - cs.get_width() // 2, rect.y + 52))
+            bs = self.small.render(
+                f"Quality bonus +{int(wm['quality_bonus']*100)}%",
+                True, (160, 200, 140) if has else (45, 60, 40))
+            self.screen.blit(bs, (rect.centerx - bs.get_width() // 2, rect.y + 72))
+            if has:
+                self._curing_wood_btns[wkey] = rect
+            x0 += bw + gap
+
+        if getattr(self, "_curing_wood_sel", None):
+            start_btn = pygame.Rect(cx - 100, y0 + bh + 24, 200, 36)
+            pygame.draw.rect(self.screen, _COL_SEL_BG, start_btn, border_radius=5)
+            pygame.draw.rect(self.screen, _COL_SEL_BOR, start_btn, 2, border_radius=5)
+            s = self.small.render("START SMOKING →", True, _COL_TITLE)
+            self.screen.blit(s, (start_btn.centerx - s.get_width() // 2,
+                                  start_btn.centery - s.get_height() // 2))
+            self._curing_wood_start_btn = start_btn
+        else:
+            self._curing_wood_start_btn = None
 
         back = self.small.render("← Back", True, _COL_SUBTITLE)
         self.screen.blit(back, (20, SCREEN_H - back.get_height() - 10))
@@ -328,15 +404,18 @@ class CharcuterieMixin:
         self.screen.blit(prog_hint, (cx - prog_hint.get_width() // 2, y0 + zh + 18))
 
     def _finish_massage(self, player):
-        """All zones filled — consume resources, create CuredMeat, enter result."""
+        """All zones filled — consume resources, push CuredMeat, enter result.
+        Cure method (and smoke wood) was already applied at confirm time."""
         item = self._curing_wip
         if item is None:
             return
-        apply_cure_method(item, self._curing_method_sel)
         player.charcuterie_items.append(item)
         player.inventory[self._curing_meat_sel] = max(
             0, player.inventory.get(self._curing_meat_sel, 0) - 1)
         _consume_salt(player)
+        extra = CURE_TYPES[item.cure_type].get("required_extra")
+        if extra and player.inventory.get(extra, 0) > 0:
+            player._remove_item(extra)
         self._curing_rack_phase = "result"
 
     # ── Salting Rack — phase: result ─────────────────────────────────────────
@@ -535,12 +614,45 @@ class CharcuterieMixin:
             if (self._curing_method_sel and
                     getattr(self, "_curing_method_start_btn", None) and
                     self._curing_method_start_btn.collidepoint(pos)):
-                # Generate the CuredMeat and enter massaging phase
+                # Pop a breed quality entry if pork/lard, else 0.
+                bq = 0.0
+                if self._curing_meat_sel in ("raw_pork", "lard"):
+                    q = getattr(player, "pork_quality_queue", [])
+                    if q:
+                        bq = q.pop(0)
                 self._curing_wip = player._charcuterie_gen.generate(
-                    self._curing_meat_sel, self._curing_cure_sel)
-                self._curing_zone_prog  = [0.0, 0.0, 0.0, 0.0]
-                self._curing_zone_held  = None
-                self._curing_rack_phase = "massaging"
+                    self._curing_meat_sel, self._curing_cure_sel, breed_quality=bq)
+                if self._curing_method_sel == "smoke":
+                    # Detour through wood-pick before massaging.
+                    self._curing_wood_sel   = None
+                    self._curing_rack_phase = "select_wood"
+                else:
+                    apply_cure_method(self._curing_wip, self._curing_method_sel)
+                    self._curing_zone_prog  = [0.0, 0.0, 0.0, 0.0]
+                    self._curing_zone_held  = None
+                    self._curing_rack_phase = "massaging"
+                return
+
+        elif ph == "select_wood":
+            if getattr(self, "_curing_back_btn", None) and self._curing_back_btn.collidepoint(pos):
+                self._curing_wip        = None
+                self._curing_rack_phase = "select_method"
+                return
+            for wkey, rect in getattr(self, "_curing_wood_btns", {}).items():
+                if rect.collidepoint(pos):
+                    self._curing_wood_sel = wkey
+                    return
+            if (getattr(self, "_curing_wood_sel", None) and
+                    getattr(self, "_curing_wood_start_btn", None) and
+                    self._curing_wood_start_btn.collidepoint(pos)):
+                # Consume the chips and apply the smoke + wood.
+                chip_item = SMOKE_WOODS[self._curing_wood_sel]["item"]
+                if player.inventory.get(chip_item, 0) > 0:
+                    player._remove_item(chip_item)
+                    apply_cure_method(self._curing_wip, "smoke", self._curing_wood_sel)
+                    self._curing_zone_prog  = [0.0, 0.0, 0.0, 0.0]
+                    self._curing_zone_held  = None
+                    self._curing_rack_phase = "massaging"
                 return
 
         elif ph == "massaging":

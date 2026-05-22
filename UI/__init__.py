@@ -240,6 +240,8 @@ class UI(
         self._automation_recipe_rects         = {}
         self._tanning_rack_selected_recipe    = 0
         self._tanning_rack_recipe_rects       = {}
+        self._pickling_crock_selected_recipe  = 0
+        self._pickling_crock_recipe_rects     = {}
         self._assembler_selected_recipe       = 0
         self._assembler_recipe_rects          = {}
         self._cook_station_scroll         = {}

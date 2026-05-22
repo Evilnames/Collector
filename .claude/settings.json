@@ -38,7 +38,8 @@
       "PowerShell(python -c \"import UI.crafting; print\\('OK'\\)\")",
       "PowerShell(python -c \"import UI.herbalism, UI.hire_panel, UI.worldgen_screen, UI.crafting, wine, worldgen.history.sim, worldgen.history.events; print\\('All imports OK'\\)\")",
       "PowerShell(python -c \"import main, UI.chapter_house, knightly_orders; print\\('OK'\\); print\\(len\\(knightly_orders.QUARTERMASTER_OFFERS[4]\\), 'rank-4 shop items'\\)\")",
-      "PowerShell(python -c \"import main, UI.chapter_house, UI.hire_panel, UI.worldgen_screen, UI.crafting, UI.herbalism, knightly_orders, cities, wine, coffee, worldgen.history.sim; print\\('All clean'\\)\")"
+      "PowerShell(python -c \"import main, UI.chapter_house, UI.hire_panel, UI.worldgen_screen, UI.crafting, UI.herbalism, knightly_orders, cities, wine, coffee, worldgen.history.sim; print\\('All clean'\\)\")",
+      "PowerShell(python -c \"import main; print\\('main.py imports cleanly'\\)\")"
     ],
     "additionalDirectories": [
       "d:\\Dev\\CollectorBlocks\\.claude\\skills"

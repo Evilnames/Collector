@@ -1051,6 +1051,65 @@ FORGE_RECIPES = [
     {"name": "Cholla Needle",    "ingredients": {"cholla_joint": 3},                        "output_id": "cholla_needle",    "output_count": 2},
     {"name": "Desert Mortar",    "ingredients": {"sandstone": 2, "agave_syrup": 1},         "output_id": "desert_mortar",    "output_count": 2},
     {"name": "Desert Pitch",     "ingredients": {"cholla_joint": 1, "agave_syrup": 1},      "output_id": "desert_pitch",     "output_count": 2},
+    # Smoking chips for charcuterie — lumber → flavored chips.
+    {"name": "Applewood Chips",  "ingredients": {"lumber": 1, "apple": 1},                  "output_id": "smoking_chips_apple",   "output_count": 4},
+    {"name": "Hickory Chips",    "ingredients": {"lumber": 2},                              "output_id": "smoking_chips_hickory", "output_count": 4},
+    {"name": "Cherrywood Chips", "ingredients": {"lumber": 1, "coal": 1},                   "output_id": "smoking_chips_cherry",  "output_count": 4},
+    {"name": "Oak Chips",        "ingredients": {"lumber": 1},                              "output_id": "smoking_chips_oak",     "output_count": 4},
+    {"name": "Mesquite Chips",   "ingredients": {"lumber": 1, "agave": 1},                  "output_id": "smoking_chips_mesquite","output_count": 4},
+    {"name": "Maplewood Chips",  "ingredients": {"lumber": 1, "honey_jar": 1},              "output_id": "smoking_chips_maple",   "output_count": 4},
+    {"name": "Pecan Chips",      "ingredients": {"lumber": 2, "coal": 1},                   "output_id": "smoking_chips_pecan",   "output_count": 4},
+    {"name": "Alder Chips",      "ingredients": {"lumber": 1, "kelp": 1},                   "output_id": "smoking_chips_alder",   "output_count": 4},
+    {"name": "Juniper Chips",    "ingredients": {"lumber": 1, "strawberry": 2},             "output_id": "smoking_chips_juniper", "output_count": 4},
+    {"name": "Beech Chips",      "ingredients": {"lumber": 2},                              "output_id": "smoking_chips_beech",   "output_count": 4},
+    # Vinegar — quick fermentation from apples (legal at the forge for now)
+    {"name": "Apple Vinegar",    "ingredients": {"apple": 3},                               "output_id": "vinegar",               "output_count": 2},
+    {"name": "Wine Vinegar",     "ingredients": {"red_wine": 1},                            "output_id": "vinegar",               "output_count": 2},
+    {"name": "Brine",            "ingredients": {"coarse_salt": 2},                         "output_id": "brine",                 "output_count": 4},
+]
+
+
+# ---------------------------------------------------------------------------
+# Pickling Crock recipes — fast batch pickling at PICKLING_CROCK_BLOCK
+# Each recipe takes 1 vegetable + 1 vinegar + 1 salt → 2 pickled outputs
+# ---------------------------------------------------------------------------
+
+PICKLING_CROCK_RECIPES = [
+    {"name": "Sauerkraut",         "ingredients": {"cabbage": 2, "coarse_salt": 1},                      "output_id": "pickled_cabbage",   "output_count": 2},
+    {"name": "Pickled Carrots",    "ingredients": {"carrot": 2, "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_carrot",    "output_count": 2},
+    {"name": "Pickled Beets",      "ingredients": {"beet": 2,   "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_beet",      "output_count": 2},
+    {"name": "Pickled Onions",     "ingredients": {"onion": 2,  "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_onion",     "output_count": 2},
+    {"name": "Pickled Peppers",    "ingredients": {"pepper": 2, "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_pepper",    "output_count": 2},
+    {"name": "Pickled Eggs",       "ingredients": {"egg": 2,    "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_egg",       "output_count": 2},
+    {"name": "Pickled Mushrooms",  "ingredients": {"mushroom": 2,"vinegar": 1,"coarse_salt": 1},         "output_id": "pickled_mushroom",  "output_count": 2},
+    {"name": "Pickled Chilies",    "ingredients": {"chili": 2,  "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_chili",     "output_count": 2},
+    {"name": "Pickled Garlic",     "ingredients": {"garlic": 3, "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_garlic",    "output_count": 2},
+    {"name": "Pickled Radish",     "ingredients": {"radish": 2, "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_radish",    "output_count": 2},
+    {"name": "Pickled Turnips",    "ingredients": {"turnip": 2, "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_turnip",    "output_count": 2},
+    {"name": "Pickled Ginger",     "ingredients": {"ginger": 2, "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_ginger",    "output_count": 2},
+    {"name": "Pickled Tomatoes",   "ingredients": {"tomato": 2, "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_tomato",    "output_count": 2},
+    {"name": "Pickled Fennel",     "ingredients": {"fennel": 2, "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_fennel",    "output_count": 2},
+    {"name": "Pickled Leeks",      "ingredients": {"leek": 2,   "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_leek",      "output_count": 2},
+    {"name": "Pickled Pumpkin",    "ingredients": {"pumpkin": 1,"vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_pumpkin",   "output_count": 2},
+    {"name": "Pickled Fish",       "ingredients": {"fish": 2,   "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_fish",      "output_count": 2},
+    {"name": "Pickled Kelp",       "ingredients": {"kelp": 3,   "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_kelp",      "output_count": 2},
+    {"name": "Pickled Grapes",     "ingredients": {"grape": 3,  "vinegar": 1, "coarse_salt": 1},         "output_id": "pickled_grape",     "output_count": 2},
+    # Composed pickles — multiple ingredients into a distinct dish.
+    {"name": "Kimchi",             "ingredients": {"cabbage": 2, "chili": 1, "garlic": 1, "ginger": 1, "coarse_salt": 1}, "output_id": "kimchi",            "output_count": 3},
+    {"name": "Giardiniera",        "ingredients": {"carrot": 1, "pepper": 1, "onion": 1, "vinegar": 1, "coarse_salt": 1}, "output_id": "giardiniera",       "output_count": 3},
+    {"name": "Branston Relish",    "ingredients": {"carrot": 1, "onion": 1,  "apple": 1, "vinegar": 1, "coarse_salt": 1}, "output_id": "branston_relish",   "output_count": 3},
+    # Exotic single-ingredient pickles.
+    {"name": "Preserved Lemon",    "ingredients": {"lemon": 2, "coarse_salt": 2},                                          "output_id": "preserved_lemon",   "output_count": 2},
+    {"name": "Watermelon Rind",    "ingredients": {"watermelon": 1, "vinegar": 1, "coarse_salt": 1},                       "output_id": "watermelon_rind",   "output_count": 3},
+    {"name": "Pickled Strawberries","ingredients": {"strawberry": 3, "vinegar": 1, "coarse_salt": 1},                      "output_id": "pickled_strawberry","output_count": 2},
+    {"name": "Pickled Scallions",  "ingredients": {"scallion": 3, "vinegar": 1, "coarse_salt": 1},                         "output_id": "pickled_scallion",  "output_count": 2},
+    {"name": "Gherkins",           "ingredients": {"cabbage": 1, "scallion": 1, "vinegar": 1, "coarse_salt": 1},           "output_id": "gherkin",           "output_count": 3},
+    {"name": "Lime Pickle",        "ingredients": {"chili": 2, "ginger": 1, "vinegar": 1, "coarse_salt": 1},               "output_id": "pickled_lime",      "output_count": 2},
+    # Composed exotic plates.
+    {"name": "Chow-Chow",          "ingredients": {"cabbage": 1, "tomato": 1, "pepper": 1, "vinegar": 1, "coarse_salt": 1},"output_id": "chow_chow",         "output_count": 3},
+    {"name": "Piccalilli",         "ingredients": {"cabbage": 1, "onion": 1, "pepper": 1, "vinegar": 1, "coarse_salt": 1},     "output_id": "piccalilli",        "output_count": 3},
+    {"name": "Escabeche",          "ingredients": {"fish": 1, "onion": 1, "vinegar": 1, "lemon": 1, "coarse_salt": 1},     "output_id": "escabeche",         "output_count": 3},
+    {"name": "Tsukemono",          "ingredients": {"radish": 1, "cabbage": 1, "ginger": 1, "coarse_salt": 1},              "output_id": "tsukemono",         "output_count": 3},
 ]
 
 # ---------------------------------------------------------------------------
@@ -3618,6 +3677,7 @@ SMELTER_RECIPES = [
     {"name": "Steel Bar",   "ingredients": {"iron_bar": 1, "coal": 2},   "output_id": "steel_bar",   "output_count": 1},
     {"name": "Steel Ingot", "ingredients": {"iron_bar": 2, "coal": 1},   "output_id": "steel_ingot", "output_count": 1},
     {"name": "Cut Crystal", "ingredients": {"crystal_shard": 1, "coal": 1},"output_id": "cut_crystal","output_count": 1},
+    {"name": "Soot",        "ingredients": {"coal": 2},                    "output_id": "soot",        "output_count": 1},
 ]
 
 FLETCHING_RECIPES = [

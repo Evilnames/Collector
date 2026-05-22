@@ -5,7 +5,7 @@ from crafting import (RECIPES, BAKERY_RECIPES, WOK_RECIPES, STEAMER_RECIPES, NOO
                       BBQ_GRILL_RECIPES, CLAY_POT_RECIPES, FORGE_RECIPES, ARTISAN_RECIPES,
                       BAIT_STATION_RECIPES, FLETCHING_RECIPES, SMELTER_RECIPES, GLASS_KILN_RECIPES,
                       GARDEN_WORKSHOP_RECIPES, JUICER_RECIPES, AUTOMATION_RECIPES,
-                      TANNING_RACK_RECIPES,
+                      TANNING_RACK_RECIPES, PICKLING_CROCK_RECIPES,
                       match_recipe, craft_costs, can_craft,
                       RESEARCH_LOCKED_RECIPES, is_research_locked, can_craft_with_research)
 from rocks import get_refinery_equipment
@@ -25,7 +25,8 @@ from blocks import (BAKERY_BLOCK, WOK_BLOCK, STEAMER_BLOCK, NOODLE_POT_BLOCK, BB
                     DAIRY_VAT_BLOCK, CHEESE_PRESS_BLOCK, AGING_CAVE_BLOCK,
                     FLETCHING_TABLE_BLOCK, SMELTER_BLOCK, ANAEROBIC_TANK_BLOCK,
                     GLASS_KILN_BLOCK, GARDEN_WORKSHOP_BLOCK, AUTOMATION_BENCH_BLOCK,
-                    WEAPON_ASSEMBLER_BLOCK, TANNING_RACK_BLOCK, BEEHIVE_BLOCK)
+                    WEAPON_ASSEMBLER_BLOCK, TANNING_RACK_BLOCK, PICKLING_CROCK_BLOCK,
+                    BEEHIVE_BLOCK)
 from constants import SCREEN_W, SCREEN_H, HOTBAR_SIZE, BLOCK_SIZE
 
 
@@ -617,6 +618,15 @@ class HandlersMixin:
                             npc.execute_sell(idx, player)
                     break
             return
+        # Generic coin-offer footer: handled before NPC-specific dispatch so
+        # the click doesn't fall through into merchant/blacksmith barter logic.
+        if getattr(npc, "coin_interest", None):
+            for key, rect in self._trade_rects.items():
+                if not (isinstance(key, tuple) and rect.collidepoint(pos)):
+                    continue
+                if key[0] == "coin_offer":
+                    npc.execute_coin_offer(key[1], player)
+                    return
         # Auction / Money-Changer / Appraiser / Collector dispatch
         from coin_npcs import (AuctioneerNPC, MoneyChangerNPC,
                                CoinAppraiserNPC, CoinCollectorNPC)
@@ -1121,6 +1131,14 @@ class HandlersMixin:
                     return
             if self._refine_btn and self._refine_btn.collidepoint(pos):
                 self._do_cook(player, TANNING_RACK_RECIPES, self._tanning_rack_selected_recipe)
+            return
+        if self.refinery_block_id == PICKLING_CROCK_BLOCK:
+            for i, rect in self._pickling_crock_recipe_rects.items():
+                if rect.collidepoint(pos):
+                    self._pickling_crock_selected_recipe = i
+                    return
+            if self._refine_btn and self._refine_btn.collidepoint(pos):
+                self._do_cook(player, PICKLING_CROCK_RECIPES, self._pickling_crock_selected_recipe)
             return
         if self.refinery_block_id == COMPOST_BIN_BLOCK:
             self._handle_compost_bin_click(pos, player)

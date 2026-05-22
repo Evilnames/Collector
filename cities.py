@@ -682,6 +682,58 @@ class NPC:
         self.spouse_uid   = None
         self.parent_uids  = []
         self.sibling_uids = []
+        # Coin trading: lazily filled from coin_interest seed once player has a coin gen
+        self.coin_interest: dict | None = None
+        self._coin_interest_seed = id(self) & 0xFFFFFFFF
+        self._coin_interest_resolved = False
+        self._coin_interest_budget   = 200
+        self._coin_interest_last_day = -1
+
+    def _resolve_coin_interest(self, player):
+        if self._coin_interest_resolved:
+            return
+        gen = getattr(player, "_coin_gen", None)
+        if gen is None:
+            return  # try again later when gen exists
+        from coins import derive_npc_coin_interest
+        seed = self._coin_interest_seed
+        if self.npc_uid:
+            seed ^= hash(self.npc_uid) & 0xFFFFFFFF
+        self.coin_interest = derive_npc_coin_interest(seed, gen)
+        self._coin_interest_resolved = True
+
+    def _refresh_coin_budget(self):
+        day = int(getattr(self.world, "day", 0))
+        if day != self._coin_interest_last_day:
+            self._coin_interest_last_day = day
+            self._coin_interest_budget   = 200
+
+    def offer_for_coin(self, coin) -> int:
+        if not self.coin_interest:
+            return 0
+        from coins import npc_coin_offer
+        return npc_coin_offer(coin, self.coin_interest)
+
+    def can_buy_coin(self, coin) -> bool:
+        self._refresh_coin_budget()
+        offer = self.offer_for_coin(coin)
+        return offer > 0 and self._coin_interest_budget >= offer
+
+    def execute_coin_offer(self, coin_idx: int, player) -> bool:
+        self._resolve_coin_interest(player)
+        if not (0 <= coin_idx < len(player.coins)):
+            return False
+        coin = player.coins[coin_idx]
+        if not self.can_buy_coin(coin):
+            return False
+        price = self.offer_for_coin(coin)
+        player.coins.pop(coin_idx)
+        player.money += price
+        self._coin_interest_budget -= price
+        player.pending_notifications.append(
+            (f"{getattr(self, 'display_name', 'NPC')} pleased",
+             f"+{price}g  {coin.denomination_label}", coin.rarity))
+        return True
 
     def _setup_identity(self, town_id: int, npc_index: int, world_seed: int):
         """Called once after spawn to assign stable name, lineage, and preferences."""

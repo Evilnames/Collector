@@ -1,16 +1,16 @@
 # Static-analysis cleanup — status report
 
-Generated 2026-05-16. Updated after batches 1–3.
+Generated 2026-05-16. Updated after batches 1–5.
 Full per-item dumps live in `planning/_items_raw.txt` and `planning/_orphan_buckets.md`.
 
 ## Progress
 
-| Metric | Start | After B1 | After B2 | After B3 | Status |
-|---|---|---|---|---|---|
-| Orphan items in `ITEMS` | 455 | 423 | 289 | **35** | 30 are scanner false-positives, 5 are tiny vestigial materials |
-| Vulture findings (80%) | 27 | 7 | 7 | 7 | Unused locals remain — possibly incomplete features |
-| Unreachable UI panels | 1 | 0 | 0 | 0 | Done |
-| Module orphans | 14 | 14 | 14 | 14 | All expected (tests, dev scripts) |
+| Metric | Start | After B1 | After B2 | After B3 | After B4 | After B5 | Status |
+|---|---|---|---|---|---|---|---|
+| Orphan items in `ITEMS` | 455 | 423 | 289 | 35 | 35 | **0** | All wired or confirmed produced |
+| Vulture findings (80%) | 27 | 7 | 7 | 7 | **1** | 1 | Remaining is in a dev script |
+| Unreachable UI panels | 1 | 0 | 0 | 0 | 0 | 0 | Done |
+| Module orphans | 14 | 14 | 14 | 14 | 14 | 14 | All expected (tests, dev scripts) |
 
 ## Batch 1 — Mechanical cleanup
 
@@ -118,9 +118,34 @@ All 6 unused parameters were real incomplete features. Each is now functional:
 
 **Vulture findings: 27 → 1** (remaining one is `inspect` import in `DataWork/export_birds.py`, a dev script — skip).
 
-## Outstanding future work
+## Batch 5 — Live dynasty events, vestigial materials, scanner improvements
 
-1. **Live dynasty events** *(biggest remaining gap)* — currently dynasty items drop from RoyalCuratorNPC quest completions + the Quartermaster shop. A more immersive integration would tie them to live runtime events (coronation, royal marriage, death, succession, abdication) using existing chronicle data. Requires building a live-event scheduler that fires near the player's date, surfaces a notification, and grants thematically-tied dynasty items. Substantial standalone feature (~2-4 hrs).
-2. **5 tiny vestigial materials** — `jute_seed`, `kumis_flask`, `seal_rivalry_token`, `soot`, `throne_ash`. Each is a one-line decision (wire or delete).
-3. **30 coffee-herb scanner false positives** — items like `drip_coffee_dried_mint`. Confirmed functionally wired after the [coffee.py:322](coffee.py#L322) fix; scanner just can't see f-strings that start with `{var}` instead of a literal prefix. Cosmetic — `_scan_items.py` could be taught to handle this pattern.
+### Live dynasty events ([dynasty_events.py](dynasty_events.py), new)
+
+The chronicle was previously worldgen-static text. Now there's a runtime scheduler that, each in-game day, has a ~1/12 chance to fire one royal event somewhere in the realm:
+
+- **Event kinds**: coronation, marriage, succession, abdication, royal_birth, royal_death, court_ritual, court_culture, diplomacy, intrigue. Weighted toward ceremonial events; rare for intrigue/abdication.
+- **Cluster mapping**: each kind has its own dynasty-item pool (e.g. `royal_birth` drops toy_doll/rattle/kite/crib_coverlet; `royal_death` drops mourning_robe/pyre_ashes/throne_ash; `marriage` drops bridal_*/betrothal_brooch/wedding_band_pair).
+- **Player notification**: two pending_notifications fire per event — a flavor line ("A pyre is lit in Aurelan Reach — House Vael mourns.") and a gift summary ("Mourning Veil, Royal Death Shroud + 1 more").
+- **Drops**: 2-4 items per event, sampled with no repeats.
+- **Deterministic**: seeded by `world.seed XOR day_count`, so save/reload doesn't re-roll the same day twice.
+- **Tick hook**: called once per day from [world.py:update_time](world.py) alongside town/outpost/guild ticks.
+
+At ~36 events/year × 3 items average, the player picks up ~108 royal items/year just by existing.
+
+### 5 tiny vestigial materials — resolved
+
+| Item | Resolution |
+|---|---|
+| `jute_seed` | Deleted from `ITEMS` (no jute crop block exists and adding the whole crop infrastructure for one item is out of scope) |
+| `kumis_flask` | Added to steppe-nomad outpost `sells` list in [outposts.py](outposts.py) at 12g |
+| `seal_rivalry_token` | Confirmed already wired — sold in Quartermaster shop at rank 3, batch 4 |
+| `soot` | Added smelter recipe `2 coal → 1 soot` in [crafting.py SMELTER_RECIPES](crafting.py) — completes the ink pipeline alluded to in [manuscripts.py:3](manuscripts.py#L3) |
+| `throne_ash` | Added to `dynasty_events` royal_death cluster — drops as funeral relic |
+
+### Scanner improvements — coffee herb-combo false positives resolved
+
+Taught `_scan_items.py` to recognize multi-interpolation f-strings (e.g. `f"{method}{tier}_{herb}"`) by enumerating concatenations of literals found in the same file. The 30 coffee-herb combos (`drip_coffee_dried_mint`, `cold_brew_dried_garlic`, etc.) are now correctly identified as produced.
+
+**Final orphan count: 0.**
 

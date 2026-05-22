@@ -2598,6 +2598,8 @@ class World:
             tick_market(self, getattr(self, "_player_ref", None))
             from player_cities import tick_city_day
             tick_city_day(self)
+            from dynasty_events import tick_dynasty_events
+            tick_dynasty_events(self, getattr(self, "_player_ref", None))
             self._tick_training_day()
         self._tick_light_traps(dt)
         if self.time_of_day < prev:

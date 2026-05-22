@@ -232,6 +232,62 @@ class PanelsMixin:
         elif is_outpost:
             self._draw_outpost_keeper_content(player, npc, px, py, PW, PH)
 
+        # Coin-interest tagline: every NPC may fancy a kind of coin
+        self._maybe_draw_npc_coin_interest(player, npc, px, py, PW, PH)
+
+    def _maybe_draw_npc_coin_interest(self, player, npc, px, py, PW, PH):
+        """If the NPC has a coin interest, show a small footer with a 'Show Coin'
+        button per matching coin in the player's collection."""
+        if not hasattr(npc, "_resolve_coin_interest"):
+            return
+        # Dedicated coin NPCs already have richer panels — skip them.
+        from cities import CoinDealerNPC
+        if isinstance(npc, CoinDealerNPC):
+            return
+        if _is_coin_npc(npc, "Auctioneer") or _is_coin_npc(npc, "MoneyChanger") \
+           or _is_coin_npc(npc, "Appraiser") or _is_coin_npc(npc, "Collector"):
+            return
+        npc._resolve_coin_interest(player)
+        if not npc.coin_interest:
+            return
+        my_coins = getattr(player, "coins", [])
+        from coins import coin_matches_interest
+        matches = [(i, c) for i, c in enumerate(my_coins)
+                   if coin_matches_interest(c, npc.coin_interest)]
+        if not matches:
+            return
+
+        # Footer band at the bottom of the panel
+        h = 56
+        fy = py + PH - h - 6
+        fx = px + 8
+        fw = PW - 16
+        pygame.draw.rect(self.screen, (28, 24, 16), (fx, fy, fw, h))
+        pygame.draw.rect(self.screen, (200, 165, 80), (fx, fy, fw, h), 1)
+        tag = self.small.render(
+            f"Coin interest: {npc.coin_interest['label']}", True, (220, 190, 110))
+        self.screen.blit(tag, (fx + 8, fy + 4))
+        npc._refresh_coin_budget()
+        budget_s = self.small.render(
+            f"Today's purse: {npc._coin_interest_budget}g",
+            True, (200, 185, 130))
+        self.screen.blit(budget_s, (fx + 8, fy + 22))
+
+        # Up to 3 matching coins shown as quick-sell buttons
+        bx = fx + 220
+        for slot, (real_i, coin) in enumerate(matches[:3]):
+            offer = npc.offer_for_coin(coin)
+            can_buy = npc.can_buy_coin(coin)
+            label = f"{coin.denomination_label[:14]}  +{offer}g"
+            col = (220, 175, 50) if can_buy else (110, 100, 60)
+            ls = self.small.render(label, True, col)
+            br = pygame.Rect(bx, fy + 8, ls.get_width() + 12, h - 16)
+            pygame.draw.rect(self.screen, (36, 30, 18), br)
+            pygame.draw.rect(self.screen, col, br, 1)
+            self.screen.blit(ls, (br.x + 6, br.y + br.height // 2 - ls.get_height() // 2))
+            self._trade_rects[("coin_offer", real_i)] = br
+            bx += br.width + 6
+
     def _draw_rep_rank(self, npc, px, py):
         from cities import rep_rank
         rep = npc._town_rep()
@@ -4447,17 +4503,16 @@ class PanelsMixin:
         self.screen.blit(self.small.render("PREFERENCES", True, (110, 110, 160)), (px + 16, cy))
         cy += 18
 
-        if rel_score >= 20:
-            liked    = npc_prefs_mod.preferred_system_labels(prefs, 4)
-            disliked = npc_prefs_mod.disliked_system_labels(prefs)
-            if liked:
-                self.screen.blit(self.small.render("Loves: " + " . ".join(liked), True, (140, 210, 120)), (px + 24, cy))
-                cy += 18
-            if disliked:
-                self.screen.blit(self.small.render("Dislikes: " + ", ".join(disliked), True, (200, 100, 90)), (px + 24, cy))
-                cy += 18
-        else:
-            self.screen.blit(self.small.render("Get to know them better...", True, (100, 95, 90)), (px + 24, cy))
+        liked    = npc_prefs_mod.preferred_system_labels(prefs, 4)
+        disliked = npc_prefs_mod.disliked_system_labels(prefs)
+        if liked:
+            self.screen.blit(self.small.render("Loves: " + ", ".join(liked), True, (140, 210, 120)), (px + 24, cy))
+            cy += 18
+        if disliked:
+            self.screen.blit(self.small.render("Dislikes: " + ", ".join(disliked), True, (200, 100, 90)), (px + 24, cy))
+            cy += 18
+        if not liked and not disliked:
+            self.screen.blit(self.small.render("No strong preferences.", True, (100, 95, 90)), (px + 24, cy))
             cy += 18
 
         # ---- Rumour section (Friendly tier and above) ----

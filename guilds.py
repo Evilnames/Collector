@@ -38,6 +38,9 @@ INDUSTRY_TIMBER   = "timber"
 INDUSTRY_FUR      = "fur"
 INDUSTRY_APIARY   = "apiary"
 INDUSTRY_MINING   = "mining"
+INDUSTRY_MASONRY  = "masonry"
+INDUSTRY_CARPENTRY = "carpentry"
+INDUSTRY_ROOFING  = "roofing"
 
 INDUSTRY_DISPLAY = {
     INDUSTRY_WINE:    "Vintners",
@@ -58,6 +61,9 @@ INDUSTRY_DISPLAY = {
     INDUSTRY_FUR:     "Furriers",
     INDUSTRY_APIARY:  "Beekeepers",
     INDUSTRY_MINING:  "Miners",
+    INDUSTRY_MASONRY: "Masons",
+    INDUSTRY_CARPENTRY: "Carpenters",
+    INDUSTRY_ROOFING: "Roofers",
 }
 
 # Map outpost_type → industry. Military / nomadic outposts are omitted.
@@ -104,6 +110,15 @@ OUTPOST_TYPE_TO_INDUSTRY = {
     "dwarven_hold":          INDUSTRY_MINING,
     "sulfur_pit":            INDUSTRY_MINING,
     "gold_panning_camp":     INDUSTRY_MINING,
+    "brickworks":            INDUSTRY_MASONRY,
+    "stonemason_yard":       INDUSTRY_MASONRY,
+    "mason_hall":            INDUSTRY_MASONRY,
+    "sawmill":               INDUSTRY_CARPENTRY,
+    "joinery_workshop":      INDUSTRY_CARPENTRY,
+    "carpenter_lodge":       INDUSTRY_CARPENTRY,
+    "tile_kiln":             INDUSTRY_ROOFING,
+    "thatcher_camp":         INDUSTRY_ROOFING,
+    "slate_roofers_lodge":   INDUSTRY_ROOFING,
 }
 
 
