@@ -1217,6 +1217,7 @@ def draw_entities(renderer, entities):
         elif aid == "npc_merchant":   renderer._draw_npc_merchant(sx, sy, e)
         elif aid == "npc_chef":       renderer._draw_npc_chef(sx, sy, e)
         elif aid == "npc_monk":       renderer._draw_npc_monk(sx, sy, e)
+        elif aid == "npc_bishop":     renderer._draw_npc_bishop(sx, sy, e)
         elif aid == "npc_leader":     renderer._draw_npc_leader(sx, sy, e)
         elif aid == "npc_farmer":     renderer._draw_npc_farmer(sx, sy, e)
         elif aid == "npc_villager":   renderer._draw_npc_villager(sx, sy, e)

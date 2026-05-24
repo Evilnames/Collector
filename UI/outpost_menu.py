@@ -119,6 +119,21 @@ class OutpostMenuMixin:
                     f"Agenda: {agenda_label(region.agenda)}", True, (210, 175, 80))
                 self.screen.blit(ag_s, (px + 16, line_y))
                 line_y += 18
+            # Faith — always resolved via religion.faith_for_outpost so the
+            # outpost's allegiance is visible before entering the sanctuary.
+            try:
+                import religion as rel
+                op_faith = rel.faith_for_outpost(op)
+                if op_faith is not None:
+                    tint = rel.doctrine_profile(op_faith.doctrine).get(
+                        "tint", (200, 195, 170))
+                    fs = self.small.render(
+                        f"Faith: {op_faith.name} ({op_faith.doctrine})",
+                        True, tint)
+                    self.screen.blit(fs, (px + 16, line_y))
+                    line_y += 18
+            except Exception:
+                pass
             if region.tagline:
                 line_y += 6
                 for ln in _wrap_text(region.tagline, self.small, _PW - 32):
@@ -134,6 +149,20 @@ class OutpostMenuMixin:
             "Speak with the keeper to trade.   [E] or [ESC] to close",
             True, _DIM_C)
         self.screen.blit(hint, (px + 16, py + _PH - 24))
+
+        # ── Enter Sanctuary button (religious outposts only) ──────────────
+        self._enter_sanctuary_rect = None
+        from outposts import RELIGIOUS_OUTPOST_TYPES
+        if op.outpost_type in RELIGIOUS_OUTPOST_TYPES:
+            btn_w, btn_h = 220, 34
+            bx = px + (_PW - btn_w) // 2
+            by = py + _PH - 70
+            pygame.draw.rect(self.screen, (110, 90, 130),
+                             (bx, by, btn_w, btn_h), border_radius=4)
+            ls = self.small.render("Enter Sanctuary", True, _WHITE)
+            self.screen.blit(ls, (bx + (btn_w - ls.get_width()) // 2,
+                                  by + (btn_h - ls.get_height()) // 2))
+            self._enter_sanctuary_rect = pygame.Rect(bx, by, btn_w, btn_h)
 
         # ── Tournament sign-up button (tournament_grounds only) ────────────
         self._tournament_sign_up_rect = None
@@ -278,6 +307,14 @@ class OutpostMenuMixin:
 
     def handle_sommelier_click(self, pos, player):
         """Returns True if a sommelier request card was clicked."""
+        # Enter Sanctuary button at religious outposts
+        rect = getattr(self, "_enter_sanctuary_rect", None)
+        if rect is not None and rect.collidepoint(pos):
+            op = self.active_outpost
+            self.close_outpost_menu()
+            if op is not None:
+                self.open_temple(op)
+            return True
         # Tournament sign-up at tournament_grounds outposts
         rect = getattr(self, "_tournament_sign_up_rect", None)
         if rect is not None and rect.collidepoint(pos):

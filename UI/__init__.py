@@ -36,6 +36,7 @@ from .coat_of_arms import CoatOfArmsDesignerMixin
 from .hire_panel import HirePanelMixin
 from .job_panel import JobPanelMixin
 from .reputation_screen import ReputationScreenMixin
+from .court import CourtMixin
 from .dogs_ui import DogsMixin
 from .weapons import SmithingMixin
 from .gambling import GamblingMixin
@@ -52,13 +53,15 @@ from .pigments import PigmentMixin
 from .manuscripts import ManuscriptMixin
 from .falconry import FalconryMixin
 from .jousting import JoustingMixin
+from .glassblowing import GlassblowingMixin
+from .temple import TempleMixin
 
 
 class UI(
     HUDMixin, MenusMixin, HandlersMixin, PanelsMixin,
     CraftingMixin, CoffeeMixin, WineMixin, TeaMixin, HerbalismMixin, SpiritsMixin, BeerMixin, MinigamesMixin, CollectionsMixin,
     HelpMixin, HorseMixin, DogsMixin, TextileMixin, CheeseMixin, JewelryMixin, SculptureMixin, TapestryMixin, PotteryMixin, SaltMixin, CoinsMixin,
-    TownMenuMixin, OutpostMenuMixin, ChapterHouseMixin, LandmarkMenuMixin, CityBlockMenuMixin, CoatOfArmsDesignerMixin, HirePanelMixin, JobPanelMixin, ReputationScreenMixin, SmithingMixin, GamblingMixin, RacingMixin, ArenaUIMixin, BazaarUIMixin, StockExchangeMixin, TeaHouseMixin,
+    TownMenuMixin, OutpostMenuMixin, ChapterHouseMixin, LandmarkMenuMixin, CityBlockMenuMixin, CoatOfArmsDesignerMixin, HirePanelMixin, JobPanelMixin, ReputationScreenMixin, CourtMixin, SmithingMixin, GamblingMixin, RacingMixin, ArenaUIMixin, BazaarUIMixin, StockExchangeMixin, TeaHouseMixin,
     DynastyTreeMixin,
     BeekeepingMixin,
     MeadMixin,
@@ -67,6 +70,8 @@ class UI(
     ManuscriptMixin,
     FalconryMixin,
     JoustingMixin,
+    GlassblowingMixin,
+    TempleMixin,
 ):
     def __init__(self, screen):
         self.screen = screen
@@ -265,6 +270,11 @@ class UI(
         # Outpost menu (diplomatic-only — kingdom & coat of arms)
         self.outpost_menu_open = False
         self.active_outpost    = None
+        self.temple_open            = False
+        self.active_temple_op       = None
+        self.active_temple_faith_id = None
+        self._temple_action_rects   = {}
+        self._temple_result_msg     = ""
         # Landmark menu (dedicated landmark info + activation screen)
         self.landmark_menu_open     = False
         self.active_landmark_region = None
@@ -324,6 +334,27 @@ class UI(
         self._map_scroll        = 0
         self._map_node_rects    = {}
         self._rep_tab_rects     = {}
+        # Court & Crown — politics tabs grafted onto reputation_screen
+        self._court_tab            = "standing"
+        self._court_scroll         = 0
+        self._court_max_scroll     = 0
+        self._court_tab_rects      = {}
+        self._court_house_rects    = {}
+        self._court_faith_rects    = {}
+        self._court_faith_panel_fid = None
+        self._court_selected_fid   = None
+        self._court_web_rects      = {}
+        self._court_order_rects    = {}
+        self._court_action_rects   = []
+        self._court_selected_rid   = None
+        self._court_selected_order_id = None
+        self._court_last_msg       = ""
+        # Deep panel state — when set, takes over the Houses tab content
+        self._court_house_panel_rid = None
+        self._court_back_btn        = None
+        # Web view: selected edge (pair of region_ids) for reason tooltip
+        self._court_selected_edge  = None
+        self._court_web_edge_rects = []   # [(rid_a, rid_b, x1, y1, x2, y2)]
         self.automation_open   = False
         self.active_automation = None
         self._auto_deposit1_btn    = None
@@ -758,6 +789,13 @@ class UI(
         self._inv_search        = ""
         self._inv_search_active = False
         self._inv_search_rect   = None
+        self._codex_search        = ""
+        self._codex_search_active = False
+        self._codex_search_rect   = None
+        self.flash_message        = ""
+        self.flash_until          = 0
+        self._codex_undisc_only       = False
+        self._codex_undisc_btn_rect   = None
         # Achievements (populated by main.py after save_mgr.load_achievements())
         self.achievements_data: dict  = {}   # {achievement_id: bool}
         self.global_collection: dict  = {}   # {category: set(item_id_str)}
@@ -1060,6 +1098,13 @@ class UI(
         self._tapestry_ink            = None   # Pigment instance selected as ink, or None
         self._tapestry_dye_rects      = {}     # ui hit rects for select_dye phase
         self._tapestry_dye_scroll     = 0      # scroll offset within dye list
+
+        # Glassblowing
+        self.glass_sand_key      = None     # selected sand biome
+        self.glass_shape_key     = None     # selected target shape
+        self.glass_puff_count    = 0        # taps during current blow
+        self.glass_selected_idx  = None     # selected blown-piece index at anneal oven
+        self.glass_rate_key      = None     # selected cool rate
 
         # Pottery Wheel
         self._wheel_phase        = "select_clay"
@@ -1412,8 +1457,10 @@ class UI(
         self._draw_depth(player)
         self._draw_pick_level(player)
         self._draw_money(player)
+        self._draw_pinned_quests(player)
         self._draw_mine_bar(player)
         self._draw_hints(research, player)
+        self._draw_flash_message()
         if self.research_open and research:
             self._draw_research(player, research)
         if self.inventory_open:
@@ -1436,6 +1483,8 @@ class UI(
             self._draw_ruin_plaque()
         if self.outpost_menu_open and self.active_outpost is not None:
             self._draw_outpost_menu(player)
+        if getattr(self, "temple_open", False) and self.active_temple_op is not None:
+            self._draw_temple(player)
         if self.landmark_menu_open and self.active_landmark_region is not None:
             self._draw_landmark_menu(player)
         if self.city_block_menu_open and self.active_city_block is not None:

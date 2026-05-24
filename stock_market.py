@@ -131,6 +131,19 @@ def tick_market(world, player=None) -> None:
         from bonds import issue_periodic_bonds
         issue_periodic_bonds(day)
         _margin_call_check(player)
+        try:
+            import order_guild_links
+            order_guild_links.assign_patrons(getattr(world, "seed", 0) or 0)
+            order_guild_links.tick_patronage()
+            order_guild_links.industry_event_prestige()
+            order_guild_links.propagate_rivalries()
+        except Exception:
+            pass
+        try:
+            import guild_contracts
+            guild_contracts.refresh_contracts(world)
+        except Exception:
+            pass
 
 
 def _need_satisfaction(op) -> float:

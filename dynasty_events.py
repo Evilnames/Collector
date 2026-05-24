@@ -81,6 +81,148 @@ _EVENT_CLUSTERS = {
         "dynasty_bastard_signet", "dynasty_book_bastard_roll",
         "dynasty_concubine_ring",
     ],
+    "tournament": [
+        "dynasty_tournament_sash", "dynasty_parade_lance",
+        "dynasty_ceremonial_bow", "dynasty_ancestral_spurs",
+        "dynasty_herald_tabard",
+    ],
+    "royal_hunt": [
+        "dynasty_hawk_glove", "dynasty_hunting_cloak",
+        "dynasty_ceremonial_bow", "dynasty_ancestral_spurs",
+        "dynasty_royal_boots",
+    ],
+    "state_banquet": [
+        "dynasty_imperial_tea_set", "dynasty_royal_goblet",
+        "dynasty_state_plate", "dynasty_tasting_spoon",
+        "dynasty_reception_tureen", "dynasty_royal_saltcellar",
+        "dynasty_royal_recipe_book", "dynasty_court_chopsticks",
+    ],
+    "royal_progress": [
+        "dynasty_royal_boots", "dynasty_walking_cane",
+        "dynasty_court_slippers", "dynasty_state_robe",
+        "dynasty_procession_banner", "dynasty_throne_footstool",
+    ],
+    "archive_compilation": [
+        "dynasty_book_births", "dynasty_book_cadet_roll",
+        "dynasty_book_coronations", "dynasty_book_court_etiquette",
+        "dynasty_book_deaths", "dynasty_book_dynastic_law",
+        "dynasty_book_heir_roll", "dynasty_book_marriages",
+    ],
+    "regency": [
+        "dynasty_dowager_crown", "dynasty_consort_robe",
+        "dynasty_queen_gown", "dynasty_acknowledgment_letter",
+        "dynasty_recall_heir",
+    ],
+    "garden_fete": [
+        "dynasty_garden_pavilion_key", "dynasty_painted_fan",
+        "dynasty_lotus_pendant", "dynasty_crescent_pendant",
+        "dynasty_sun_pendant", "dynasty_court_anklet",
+        "dynasty_topaz_circlet",
+    ],
+    "investiture_of_state": [
+        "dynasty_ruby_pin_of_state", "dynasty_sapphire_earrings",
+        "dynasty_topaz_circlet", "dynasty_state_robe",
+        "dynasty_state_plate", "dynasty_herald_tabard",
+    ],
+    "royal_betrothal": [
+        "dynasty_betrothal_brooch", "dynasty_engagement_necklace",
+        "dynasty_engagement_proposal", "dynasty_first_marriage_locket",
+        "dynasty_signet_bridal",
+    ],
+    "prince_of_age": [
+        "dynasty_heir_first_robe", "dynasty_heir_horoscope",
+        "dynasty_investiture_sword", "dynasty_recognition_locket",
+        "dynasty_heir_bracelet", "dynasty_investiture_cap",
+    ],
+    "royal_pilgrimage": [
+        "dynasty_anointing_oil", "dynasty_anointing_spoon",
+        "dynasty_walking_cane", "dynasty_royal_boots",
+        "dynasty_state_robe",
+    ],
+    "harvest_festival": [
+        "dynasty_royal_recipe_book", "dynasty_tasting_spoon",
+        "dynasty_reception_tureen", "dynasty_court_chopsticks",
+        "dynasty_painted_fan", "dynasty_state_plate",
+    ],
+    "alliance_signed": [
+        "dynasty_oath_of_fealty", "dynasty_diplomatic_missive",
+        "dynasty_cipher_key", "dynasty_rival_treaty",
+        "dynasty_pigeon_tube",
+    ],
+    "rebellion_quelled": [
+        "dynasty_parade_lance", "dynasty_ceremonial_bow",
+        "dynasty_herald_tabard", "dynasty_oath_of_fealty",
+        "dynasty_ancestral_spurs",
+    ],
+    "plague_at_court": [
+        "dynasty_mourning_robe", "dynasty_mourning_veil",
+        "dynasty_augur_liver", "dynasty_omens_book",
+        "dynasty_astrologer_chart", "dynasty_funeral_sweet",
+    ],
+    "bastard_recognized": [
+        "dynasty_bastard_signet", "dynasty_book_bastard_roll",
+        "dynasty_acknowledgment_letter", "dynasty_legitimization",
+        "dynasty_cadet_brooch", "dynasty_signet_cadet",
+    ],
+    "dowager_council": [
+        "dynasty_dowager_crown", "dynasty_queen_gown",
+        "dynasty_consort_robe", "dynasty_signet_cadet",
+        "dynasty_acknowledgment_letter",
+    ],
+    "royal_pardon": [
+        "dynasty_succession_decree", "dynasty_acknowledgment_letter",
+        "dynasty_oath_of_fealty", "dynasty_recall_heir",
+    ],
+    "state_visit": [
+        "dynasty_state_robe", "dynasty_state_plate",
+        "dynasty_herald_tabard", "dynasty_imperial_tea_set",
+        "dynasty_diplomatic_missive", "dynasty_reception_tureen",
+    ],
+    "patronage_of_arts": [
+        "dynasty_court_sketch", "dynasty_court_pipa",
+        "dynasty_painted_fan", "dynasty_lineage_mural",
+        "dynasty_bust_lacquer", "dynasty_storyteller_drum",
+    ],
+    "monastery_founded": [
+        "dynasty_anointing_oil", "dynasty_omens_book",
+        "dynasty_dream_journal", "dynasty_lineage_mural",
+        "dynasty_iching_stalks",
+    ],
+    "military_review": [
+        "dynasty_parade_lance", "dynasty_ancestral_spurs",
+        "dynasty_herald_tabard", "dynasty_ceremonial_bow",
+        "dynasty_procession_banner", "dynasty_acclamation_horn",
+    ],
+    "assassination_attempt": [
+        "dynasty_bastard_signet", "dynasty_cipher_key",
+        "dynasty_concubine_ring", "dynasty_pigeon_tube",
+        "dynasty_disinheritance",
+    ],
+    "heir_fostered": [
+        "dynasty_heir_first_letter", "dynasty_heir_first_robe",
+        "dynasty_toy_first_book", "dynasty_recall_heir",
+        "dynasty_acknowledgment_letter",
+    ],
+    "silver_jubilee": [
+        "dynasty_coronation_cup", "dynasty_coronation_robe",
+        "dynasty_state_robe", "dynasty_parade_lance",
+        "dynasty_lineage_mural", "dynasty_acclamation_horn",
+    ],
+    "royal_audience": [
+        "dynasty_throne_footstool", "dynasty_royal_goblet",
+        "dynasty_court_slippers", "dynasty_herald_tabard",
+        "dynasty_state_robe",
+    ],
+    "court_ball": [
+        "dynasty_masquerade_mask", "dynasty_painted_fan",
+        "dynasty_court_pipa", "dynasty_jester_bells",
+        "dynasty_court_anklet", "dynasty_queen_gown",
+    ],
+    "mint_dedication": [
+        "dynasty_diviner_coin", "dynasty_state_plate",
+        "dynasty_herald_tabard", "dynasty_succession_decree",
+        "dynasty_ruby_pin_of_state",
+    ],
 }
 
 # Roll rate: one event roll per day, ~1/12 chance fires. Average ~30/year.
@@ -119,6 +261,62 @@ def _format_message(kind: str, kingdom, dyn_house: str) -> str:
         return f"Heralds ride between {realm} and a rival court."
     if kind == "intrigue":
         return f"Whispers of scandal flutter through {realm}."
+    if kind == "tournament":
+        return f"Lances are blessed for the grand tournament of {realm}."
+    if kind == "royal_hunt":
+        return f"{house} rides out from {realm} on a royal hunt."
+    if kind == "state_banquet":
+        return f"A state banquet honors visiting envoys at {realm}."
+    if kind == "royal_progress":
+        return f"The royal progress of {house} winds through the towns of {realm}."
+    if kind == "archive_compilation":
+        return f"Court scribes of {realm} bind a new volume of the {house} chronicles."
+    if kind == "regency":
+        return f"A regency is proclaimed in {realm} — {house} rules in trust."
+    if kind == "garden_fete":
+        return f"Lanterns light the palace gardens of {realm} for a midsummer fete."
+    if kind == "investiture_of_state":
+        return f"Great officers of {realm} receive their seals from {house}."
+    if kind == "royal_betrothal":
+        return f"A betrothal is announced at the court of {realm}."
+    if kind == "prince_of_age":
+        return f"The heir of {house} comes of age in {realm}."
+    if kind == "royal_pilgrimage":
+        return f"{house} sets out on a royal pilgrimage from {realm}."
+    if kind == "harvest_festival":
+        return f"{realm} celebrates the harvest with a court-led festival."
+    if kind == "alliance_signed":
+        return f"{realm} signs a binding alliance with a neighboring crown."
+    if kind == "rebellion_quelled":
+        return f"A rebellion against {house} is put down in {realm}."
+    if kind == "plague_at_court":
+        return f"Sickness sweeps the court of {realm} — physicians attend {house}."
+    if kind == "bastard_recognized":
+        return f"A natural-born child of {house} is recognized in {realm}."
+    if kind == "dowager_council":
+        return f"The dowager of {house} convenes a council of state in {realm}."
+    if kind == "royal_pardon":
+        return f"{house} issues a royal pardon in {realm}."
+    if kind == "state_visit":
+        return f"A foreign monarch arrives in {realm} on a state visit."
+    if kind == "patronage_of_arts":
+        return f"{house} bestows patronage on the artists of {realm}."
+    if kind == "monastery_founded":
+        return f"{house} endows a new monastery in {realm}."
+    if kind == "military_review":
+        return f"{house} reviews the assembled hosts of {realm}."
+    if kind == "assassination_attempt":
+        return f"An assassin is foiled at the court of {realm}."
+    if kind == "heir_fostered":
+        return f"An heir of {house} is sent to be fostered abroad."
+    if kind == "silver_jubilee":
+        return f"{realm} marks a silver jubilee of {house}'s reign."
+    if kind == "royal_audience":
+        return f"{house} holds a grand audience in {realm}."
+    if kind == "court_ball":
+        return f"A masked ball lights the halls of {realm}."
+    if kind == "mint_dedication":
+        return f"A new royal coinage is struck in {realm} under {house}."
     return f"News from the court of {realm}."
 
 
@@ -160,12 +358,38 @@ def tick_dynasty_events(world, player) -> None:
         ("abdication", 1), ("royal_birth", 4), ("royal_death", 3),
         ("court_ritual", 3), ("court_culture", 5),
         ("diplomacy", 3), ("intrigue", 2),
+        ("tournament", 4), ("royal_hunt", 4), ("state_banquet", 4),
+        ("royal_progress", 3), ("archive_compilation", 2),
+        ("regency", 1), ("garden_fete", 3),
+        ("investiture_of_state", 2),
+        ("royal_betrothal", 4), ("prince_of_age", 3),
+        ("royal_pilgrimage", 2), ("harvest_festival", 4),
+        ("alliance_signed", 3), ("rebellion_quelled", 2),
+        ("plague_at_court", 1), ("bastard_recognized", 2),
+        ("dowager_council", 2), ("royal_pardon", 2),
+        ("state_visit", 3), ("patronage_of_arts", 4),
+        ("monastery_founded", 2), ("military_review", 3),
+        ("assassination_attempt", 1), ("heir_fostered", 2),
+        ("silver_jubilee", 1), ("royal_audience", 4),
+        ("court_ball", 4), ("mint_dedication", 2),
     ]
     kinds, weight_vals = zip(*weights)
     kind = rng.choices(kinds, weights=weight_vals, k=1)[0]
 
     drops = _grant_drops(player, kind, rng)
     msg = _format_message(kind, kingdom, house)
+    # Politics hook — let the live political layer react. Map to a random
+    # known region since kingdoms (plan-level) and regions (runtime) are
+    # separate id spaces.
+    try:
+        from politics import on_dynasty_event, HOUSE_STATES
+        from towns import REGIONS
+        if REGIONS:
+            pool = list(REGIONS.keys())
+            picked_rid = rng.choice(pool)
+            on_dynasty_event(kind, picked_rid, getattr(world, "day_count", 0))
+    except Exception:
+        pass
     notes = getattr(player, "pending_notifications", None)
     if notes is not None:
         # The HUD tuple format is (category, text, rarity_or_tone)

@@ -21,7 +21,7 @@ def _wf_to_dict(wf):
         "fragrance": wf.fragrance, "vibrancy": wf.vibrancy,
         "specials": wf.specials, "biodome_found": wf.biodome_found, "seed": wf.seed,
     }
-SAVE_VERSION = 8
+SAVE_VERSION = 14   # +textile motif column (figured silk weaves)
 
 
 class SaveManager:
@@ -40,7 +40,7 @@ class SaveManager:
                             "tea_leaves", "textiles", "cheese_wheels", "jewelry", "sculptures", "custom_tapestries", "pottery_pieces", "salt_crystals", "coins",
                             "research", "automations",
                             "towns", "regions", "outposts", "player_cities", "world_plan",
-                            "guilds", "guild_chapters", "share_holdings",
+                            "guilds", "guild_chapters", "share_holdings", "politics_state", "religion_state",
                             "farm_bots", "backhoes", "elevator_cars", "minecarts", "boats", "entities", "dropped_items", "chests", "banners"):
                     # global_collection and achievements are intentionally preserved
                     con.execute(f"DELETE FROM {tbl}")
@@ -76,8 +76,11 @@ class SaveManager:
             self._save_outposts(con)
             self._save_sommelier_requests(con)
             self._save_guilds(con)
+            self._save_guild_contracts(con)
             self._save_bonds(con)
             self._save_knightly_orders(con, player)
+            self._save_politics(con)
+            self._save_religion(con)
             self._save_player_cities(con)
             self._save_player(con, player)
             self._save_npc_relationships(con, player)
@@ -102,6 +105,7 @@ class SaveManager:
             self._save_sculptures(con, player)
             self._save_tapestries(con, player)
             self._save_pottery_pieces(con, player)
+            self._save_glass_items(con, player)
             self._save_honey_jars(con, player)
             self._save_hive_progress(con, world)
             self._save_mead_batches(con, player)
@@ -722,7 +726,8 @@ class SaveManager:
             softness       REAL,
             luster         REAL,
             pattern_quality REAL,
-            seed           INTEGER
+            seed           INTEGER,
+            motif          TEXT DEFAULT 'none'
         );
         CREATE TABLE IF NOT EXISTS cheese_wheels (
             uid             TEXT PRIMARY KEY,
@@ -811,6 +816,20 @@ class SaveManager:
             seed           INTEGER,
             profile        TEXT,
             blend_components TEXT DEFAULT '[]'
+        );
+        CREATE TABLE IF NOT EXISTS glass_items (
+            uid            TEXT PRIMARY KEY,
+            origin_biome   TEXT,
+            variety        TEXT,
+            state          TEXT,
+            shape          TEXT,
+            clarity        REAL,
+            tint_strength  REAL,
+            symmetry       REAL,
+            bubble_count   INTEGER,
+            wall_thickness REAL,
+            flavor_notes   TEXT,
+            seed           INTEGER
         );
         CREATE TABLE IF NOT EXISTS salt_crystals (
             uid              TEXT PRIMARY KEY,
@@ -1091,6 +1110,11 @@ class SaveManager:
             con.execute("ALTER TABLE player ADD COLUMN guild_debt INTEGER DEFAULT 0")
         except Exception:
             pass
+        # v14: textiles motif column for figured silk weaves
+        try:
+            con.execute("ALTER TABLE textiles ADD COLUMN motif TEXT DEFAULT 'none'")
+        except Exception:
+            pass
         # v7: knightly orders + jousting persistence
         try:
             con.execute("""CREATE TABLE IF NOT EXISTS knightly_orders (
@@ -1150,6 +1174,34 @@ class SaveManager:
                 pass
         try:
             con.execute("ALTER TABLE player ADD COLUMN tournament_record TEXT DEFAULT '{}'")
+        except Exception:
+            pass
+        # v9 → v10: guild contracts + per-guild reputation.
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN guild_rep_json TEXT DEFAULT '{}'")
+        except Exception:
+            pass
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN active_contracts_json TEXT DEFAULT '[]'")
+        except Exception:
+            pass
+        try:
+            con.execute("""CREATE TABLE IF NOT EXISTS guild_contracts (
+                contract_id      INTEGER PRIMARY KEY,
+                guild_id         TEXT,
+                kind             TEXT,
+                tier             TEXT,
+                item_id          TEXT,
+                count            INTEGER,
+                reward_gold      INTEGER,
+                reward_rep       INTEGER,
+                posted_day       INTEGER,
+                expires_day      INTEGER,
+                target_guild_id  TEXT,
+                target_label     TEXT,
+                state            TEXT,
+                accepted_by      TEXT
+            )""")
         except Exception:
             pass
         try:
@@ -1360,6 +1412,24 @@ class SaveManager:
                 pass
         try:
             con.execute("ALTER TABLE custom_tapestries ADD COLUMN width INTEGER DEFAULT 1")
+        except Exception:
+            pass
+        # v9: politics layer (houses, inter-house relations, succession crises,
+        # per-region player influence, sworn knightly orders). Stored as a
+        # single JSON blob per state type — small, easy to evolve.
+        try:
+            con.execute("""CREATE TABLE IF NOT EXISTS politics_state (
+                key TEXT PRIMARY KEY, blob TEXT
+            )""")
+        except Exception:
+            pass
+        # v13: religion layer (faiths, regional clergy, faith-faith relations,
+        # player standing, schisms, heresy). One JSON blob per key — same
+        # shape as politics_state.
+        try:
+            con.execute("""CREATE TABLE IF NOT EXISTS religion_state (
+                key TEXT PRIMARY KEY, blob TEXT
+            )""")
         except Exception:
             pass
 
@@ -1897,6 +1967,14 @@ class SaveManager:
             "UPDATE player SET lost_artifacts=?",
             (json.dumps(getattr(player, "lost_artifacts", [])),)
         )
+        try:
+            con.execute("ALTER TABLE player ADD COLUMN hotbar_profiles TEXT DEFAULT '[null,null,null]'")
+        except Exception:
+            pass
+        con.execute(
+            "UPDATE player SET hotbar_profiles=?",
+            (json.dumps(getattr(player, "hotbar_profiles", [None, None, None])),)
+        )
 
         # Knightly Order membership (added 2026-05-16).
         for col, default, ctype in [
@@ -1978,6 +2056,17 @@ class SaveManager:
                 json.dumps(list(getattr(player, "discovered_pig_biomes", set()))),
             ),
         )
+        # v10 — guild contracts + per-guild reputation
+        try:
+            con.execute(
+                "UPDATE player SET guild_rep_json=?, active_contracts_json=?",
+                (
+                    json.dumps(getattr(player, "guild_rep", {}) or {}),
+                    json.dumps(getattr(player, "active_contracts", []) or []),
+                ),
+            )
+        except Exception:
+            pass
         # Phase 7 — margin loan debt
         try:
             con.execute("UPDATE player SET guild_debt=?",
@@ -2301,11 +2390,12 @@ class SaveManager:
         con.execute("DELETE FROM textiles")
         for t in player.textiles:
             con.execute(
-                "INSERT OR REPLACE INTO textiles VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT OR REPLACE INTO textiles VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     t.uid, t.fiber_type, t.state, t.output_type, t.texture,
                     t.dye_family, json.dumps(t.dye_color),
                     t.quality, t.softness, t.luster, t.pattern_quality, t.seed,
+                    getattr(t, "motif", "none"),
                 )
             )
         # Save worn slots as JSON in player table
@@ -2439,6 +2529,26 @@ class SaveManager:
                     json.dumps(p.texture_notes), p.seed,
                     json.dumps(p.profile),
                     json.dumps(getattr(p, "blend_components", [])),
+                )
+            )
+
+    def _save_glass_items(self, con, player):
+        # Safe migration: create table if it doesn't exist on this older DB.
+        con.execute("""CREATE TABLE IF NOT EXISTS glass_items (
+            uid TEXT PRIMARY KEY, origin_biome TEXT, variety TEXT, state TEXT,
+            shape TEXT, clarity REAL, tint_strength REAL, symmetry REAL,
+            bubble_count INTEGER, wall_thickness REAL,
+            flavor_notes TEXT, seed INTEGER
+        )""")
+        con.execute("DELETE FROM glass_items")
+        for g in getattr(player, "glass_items", []):
+            con.execute(
+                "INSERT OR REPLACE INTO glass_items VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    g.uid, g.origin_biome, g.variety, g.state, g.shape,
+                    g.clarity, g.tint_strength, g.symmetry,
+                    g.bubble_count, g.wall_thickness,
+                    json.dumps(g.flavor_notes), g.seed,
                 )
             )
 
@@ -2857,6 +2967,120 @@ class SaveManager:
         ko._NEXT_ORDER_ID  = max_oid + 1
         ko._NEXT_KNIGHT_ID = max_kid + 1
 
+    def _save_politics(self, con):
+        import json as _json
+        try:
+            import politics as pol
+        except Exception:
+            return
+        try:
+            con.execute("DELETE FROM politics_state")
+            payload = {
+                "houses":     pol.serialize_houses(),
+                "relations":  pol.serialize_relations(),
+                "influence":  pol.serialize_influence(),
+                "succession": pol.serialize_succession(),
+                "pledges":    pol.serialize_pledges(),
+            }
+            for key, value in payload.items():
+                con.execute(
+                    "INSERT OR REPLACE INTO politics_state (key, blob) VALUES (?,?)",
+                    (key, _json.dumps(value)),
+                )
+        except Exception:
+            pass
+
+    def _load_politics(self) -> None:
+        import json as _json
+        try:
+            import politics as pol
+        except Exception:
+            return
+        pol.reset_registries()
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                rows = con.execute(
+                    "SELECT key, blob FROM politics_state"
+                ).fetchall()
+        except Exception:
+            return
+        data = {}
+        for k, b in rows:
+            try:
+                data[k] = _json.loads(b) if b else None
+            except Exception:
+                data[k] = None
+        if data.get("houses"):
+            pol.deserialize_houses(data["houses"])
+        if data.get("relations"):
+            pol.deserialize_relations(data["relations"])
+        if data.get("influence"):
+            pol.deserialize_influence(data["influence"])
+        if data.get("succession"):
+            pol.deserialize_succession(data["succession"])
+        if data.get("pledges"):
+            pol.deserialize_pledges(data["pledges"])
+
+    def _save_religion(self, con):
+        import json as _json
+        try:
+            import religion as rel
+        except Exception:
+            return
+        try:
+            con.execute("DELETE FROM religion_state")
+            payload = {
+                "faiths":         rel.serialize_faiths(),
+                "faith_regions":  rel.serialize_faith_regions(),
+                "clergy":         rel.serialize_clergy(),
+                "relations":      rel.serialize_faith_relations(),
+                "standing":       rel.serialize_standing(),
+                "schisms":        rel.serialize_schisms(),
+                "heresy":         rel.serialize_heresy(),
+            }
+            for key, value in payload.items():
+                con.execute(
+                    "INSERT OR REPLACE INTO religion_state (key, blob) VALUES (?,?)",
+                    (key, _json.dumps(value)),
+                )
+        except Exception:
+            pass
+
+    def _load_religion(self) -> None:
+        import json as _json
+        try:
+            import religion as rel
+        except Exception:
+            return
+        rel.reset_registries()
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                rows = con.execute(
+                    "SELECT key, blob FROM religion_state"
+                ).fetchall()
+        except Exception:
+            return
+        data = {}
+        for k, b in rows:
+            try:
+                data[k] = _json.loads(b) if b else None
+            except Exception:
+                data[k] = None
+        if data.get("faiths"):
+            rel.deserialize_faiths(data["faiths"])
+        if data.get("faith_regions"):
+            rel.deserialize_faith_regions(data["faith_regions"])
+        if data.get("clergy"):
+            rel.deserialize_clergy(data["clergy"])
+        if data.get("relations"):
+            rel.deserialize_faith_relations(data["relations"])
+        if data.get("standing"):
+            rel.deserialize_standing(data["standing"])
+        if data.get("schisms"):
+            rel.deserialize_schisms(data["schisms"])
+        if data.get("heresy"):
+            rel.deserialize_heresy(data["heresy"])
+
     def _save_guilds(self, con):
         import json as _json
         from guilds import GUILDS, CHAPTERS, SHARE_HOLDINGS
@@ -2923,6 +3147,50 @@ class SaveManager:
                 "INSERT OR REPLACE INTO share_holdings VALUES (?,?,?,?)",
                 (h.owner_id, h.guild_id, h.shares, h.avg_buy_price),
             )
+
+    def _save_guild_contracts(self, con) -> None:
+        try:
+            from guild_contracts import CONTRACTS
+        except Exception:
+            return
+        con.execute("DELETE FROM guild_contracts")
+        for c in CONTRACTS.values():
+            con.execute(
+                "INSERT OR REPLACE INTO guild_contracts VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (c.contract_id, c.guild_id, c.kind, c.tier, c.item_id, c.count,
+                 c.reward_gold, c.reward_rep, c.posted_day, c.expires_day,
+                 c.target_guild_id, c.target_label, c.state, c.accepted_by),
+            )
+
+    def _load_guild_contracts(self) -> None:
+        try:
+            import guild_contracts as gc
+        except Exception:
+            return
+        gc.reset_registries()
+        try:
+            with sqlite3.connect(self.db_path) as con:
+                rows = con.execute(
+                    "SELECT contract_id, guild_id, kind, tier, item_id, count, "
+                    "reward_gold, reward_rep, posted_day, expires_day, "
+                    "target_guild_id, target_label, state, accepted_by "
+                    "FROM guild_contracts"
+                ).fetchall()
+        except Exception:
+            return
+        max_id = 0
+        for r in rows:
+            c = gc.Contract(
+                contract_id=int(r[0]), guild_id=r[1], kind=r[2], tier=r[3],
+                item_id=r[4], count=int(r[5]), reward_gold=int(r[6]),
+                reward_rep=int(r[7]), posted_day=int(r[8]),
+                expires_day=int(r[9]), target_guild_id=r[10],
+                target_label=r[11] or "", state=r[12] or "open",
+                accepted_by=r[13] or "",
+            )
+            gc.CONTRACTS[c.contract_id] = c
+            max_id = max(max_id, c.contract_id)
+        gc._NEXT_CONTRACT_ID = max_id + 1
 
     def _load_guilds(self) -> None:
         """Repopulate the in-memory guild registries from the DB."""
@@ -3690,6 +3958,7 @@ class SaveManager:
             ("circuits_completed_by_tier",    "null"),
             ("training_sessions",             "[]"),
             ("lost_artifacts",                "[]"),
+            ("hotbar_profiles",               "[null,null,null]"),
         ):
             try:
                 con.execute(f"ALTER TABLE player ADD COLUMN {col} TEXT DEFAULT '{default}'")
@@ -3763,7 +4032,8 @@ class SaveManager:
                    COALESCE(completed_circuits, '[]'),
                    COALESCE(circuits_completed_by_tier, 'null'),
                    COALESCE(training_sessions, '[]'),
-                   COALESCE(lost_artifacts, '[]')
+                   COALESCE(lost_artifacts, '[]'),
+                   COALESCE(hotbar_profiles, '[null,null,null]')
             FROM player LIMIT 1
         """).fetchone()
 
@@ -3795,7 +4065,8 @@ class SaveManager:
          dog_races_entered_raw, dog_races_won_raw, gold_won_dog_racing_raw,
          dog_race_pbs_raw,
          active_circuit_raw, completed_circuits_raw, circuits_by_tier_raw,
-         training_sessions_raw, lost_artifacts_raw) = row
+         training_sessions_raw, lost_artifacts_raw,
+         hotbar_profiles_raw) = row
 
         rocks_rows = con.execute("""
             SELECT uid, base_type, rarity, size, primary_color, secondary_color,
@@ -4126,7 +4397,7 @@ class SaveManager:
         try:
             textile_rows = con.execute(
                 "SELECT uid, fiber_type, state, output_type, texture, dye_family, "
-                "dye_color, quality, softness, luster, pattern_quality, seed FROM textiles"
+                "dye_color, quality, softness, luster, pattern_quality, seed, motif FROM textiles"
             ).fetchall()
         except Exception:
             textile_rows = []
@@ -4137,6 +4408,7 @@ class SaveManager:
                 "dye_color": json.loads(r[6]) if r[6] else [230, 215, 185],
                 "quality": r[7], "softness": r[8], "luster": r[9],
                 "pattern_quality": r[10], "seed": r[11],
+                "motif": r[12] if r[12] is not None else "none",
             }
             for r in textile_rows
         ]
@@ -4313,6 +4585,24 @@ class SaveManager:
                 "seed": r[10],
                 "profile": json.loads(r[11] or "[]"),
                 "blend_components": json.loads(r[12] or "[]"),
+            })
+
+        try:
+            glass_rows = con.execute(
+                "SELECT uid, origin_biome, variety, state, shape, clarity, tint_strength, "
+                "symmetry, bubble_count, wall_thickness, flavor_notes, seed FROM glass_items"
+            ).fetchall()
+        except Exception:
+            glass_rows = []
+        glass_data = []
+        for r in glass_rows:
+            glass_data.append({
+                "uid": r[0], "origin_biome": r[1], "variety": r[2], "state": r[3],
+                "shape": r[4] or "", "clarity": r[5], "tint_strength": r[6],
+                "symmetry": r[7], "bubble_count": int(r[8] or 0),
+                "wall_thickness": r[9],
+                "flavor_notes": json.loads(r[10] or "[]"),
+                "seed": int(r[11] or 0),
             })
 
         try:
@@ -4539,6 +4829,11 @@ class SaveManager:
                 f"{p['clay_biome']}_{p['firing_level']}"
                 for p in pottery_data if p["state"] == "fired" and p["firing_level"] != "cracked"
             }),
+            "glass_items": glass_data,
+            "discovered_glass": list({
+                f"{g['origin_biome']}_{g['shape']}"
+                for g in glass_data if g["state"] == "annealed" and g["shape"]
+            }),
             "honey_jars": honey_data,
             "discovered_honeys": list({
                 f"{h['origin_biome']}_{'artisan' if h['quality'] >= 0.80 else 'fine' if h['quality'] >= 0.55 else 'base'}"
@@ -4564,6 +4859,7 @@ class SaveManager:
             "pigments": pigment_data,
             "discovered_pigments": list({p["pigment_key"] for p in pigment_data}),
             "lost_artifacts": json.loads(lost_artifacts_raw or "[]"),
+            "hotbar_profiles": json.loads(hotbar_profiles_raw or "[null,null,null]"),
         }
 
         order_defaults = {
@@ -4600,6 +4896,22 @@ class SaveManager:
                 result.update(order_defaults)
         except Exception:
             result.update(order_defaults)
+
+        # v10 — guild contracts + per-guild reputation
+        try:
+            gc_row = con.execute(
+                "SELECT COALESCE(guild_rep_json, '{}'), COALESCE(active_contracts_json, '[]') "
+                "FROM player LIMIT 1"
+            ).fetchone()
+            if gc_row:
+                result["guild_rep"] = json.loads(gc_row[0] or "{}")
+                result["active_contracts"] = json.loads(gc_row[1] or "[]")
+            else:
+                result["guild_rep"] = {}
+                result["active_contracts"] = []
+        except Exception:
+            result["guild_rep"] = {}
+            result["active_contracts"] = []
 
         llama_yak_defaults = {
             "llamas_tamed": 0, "llamas_bred": 0,

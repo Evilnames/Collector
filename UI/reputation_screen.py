@@ -106,17 +106,38 @@ class ReputationScreenMixin:
         pygame.draw.rect(screen, _BG, (cx, cy, cw, ch))
         pygame.draw.rect(screen, _BORDER, (cx, cy, cw, ch), 2)
 
-        ts = self.font.render("KINGDOMS  &  STANDING", True, _TITLE_C)
+        ts = self.font.render("COURT  &  CROWN", True, _TITLE_C)
         screen.blit(ts, (cx + (cw - ts.get_width()) // 2, cy + 10))
         pygame.draw.line(screen, _BORDER, (cx + 16, cy + 34), (cx + cw - 16, cy + 34), 1)
 
         hs = self.small.render("K  or  ESC  to close", True, _DIM_C)
         screen.blit(hs, (cx + (cw - hs.get_width()) // 2, cy + ch - 18))
 
+        # Court tab bar (delegates to CourtMixin); shifts content down 32px.
+        self._draw_court_tab_bar(screen, cx, cy, cw, ch)
+        court_tab = self.get_court_tab()
+        court_top = cy + 70
+        court_bot = cy + ch - 24
+        if court_tab != "standing":
+            # Dispatch to one of the court tabs
+            if court_tab == "houses":
+                self._draw_court_houses(screen, player, cx, cy, cw, ch, court_top, court_bot)
+            elif court_tab == "faiths":
+                self._draw_court_faiths(screen, player, cx, cy, cw, ch, court_top, court_bot)
+            elif court_tab == "web":
+                self._draw_court_web(screen, player, cx, cy, cw, ch, court_top, court_bot)
+            elif court_tab == "news":
+                self._draw_court_news(screen, player, cx, cy, cw, ch, court_top, court_bot)
+            elif court_tab == "orders":
+                self._draw_court_orders(screen, player, cx, cy, cw, ch, court_top, court_bot)
+            elif court_tab == "actions":
+                self._draw_court_actions(screen, player, cx, cy, cw, ch, court_top, court_bot)
+            return
+
         # ── LIST / MAP toggle buttons ────────────────────────────────────────
         view = getattr(self, '_rep_view', 'list')
         btn_w, btn_h = 52, 20
-        btn_y = cy + 40
+        btn_y = cy + 72
         btn_gap = 6
         total_btn_w = btn_w * 2 + btn_gap
         btn_list_x = cx + cw - total_btn_w - 18
@@ -135,7 +156,7 @@ class ReputationScreenMixin:
             screen.blit(ls, (bx + (btn_w - ls.get_width()) // 2, btn_y + (btn_h - ls.get_height()) // 2))
         self._rep_tab_rects = tab_rects
 
-        content_top = cy + 66
+        content_top = cy + 98
         content_bot = cy + ch - 24
         content_h   = content_bot - content_top
 
@@ -610,7 +631,15 @@ class ReputationScreenMixin:
 
     # ── INPUT ─────────────────────────────────────────────────────────────────
 
-    def handle_reputation_screen_click(self, pos):
+    def handle_reputation_screen_click(self, pos, player=None, world=None):
+        # 1. Court tab bar always intercepts first
+        if self.handle_court_tab_click(pos):
+            return
+        # 2. If we're on a non-standing court tab, let the court mixin handle it
+        if self.get_court_tab() != "standing":
+            self.handle_court_content_click(pos, player, world)
+            return
+        # 3. Standing tab: existing list/map toggle + map node clicks
         tab_rects = getattr(self, '_rep_tab_rects', {})
         for key, rect in tab_rects.items():
             if rect.collidepoint(pos):
@@ -630,6 +659,10 @@ class ReputationScreenMixin:
                 return
 
     def handle_reputation_screen_scroll(self, dy):
+        # Route scroll to court tab if active
+        if self.get_court_tab() != "standing":
+            self.handle_court_scroll(dy)
+            return
         self._rep_scroll = max(0, min(
             getattr(self, '_rep_scroll', 0) + dy,
             getattr(self, '_rep_max_scroll', 0),

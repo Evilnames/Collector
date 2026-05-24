@@ -3,8 +3,9 @@ from constants import SCREEN_W, SCREEN_H
 from textiles import (
     FIBER_PROFILES, TEXTURE_PATTERNS, DYE_FAMILY_COLORS, DYE_FAMILY_DISPLAY,
     GARMENT_BUFFS, GARMENT_BUFF_DESCS, GARMENT_MAX_BONUS, OUTPUT_DISPLAY,
+    GARMENT_SLOTS, SILK_FIBERS, SILK_ONLY_OUTPUTS, MOTIFS,
     apply_dye, apply_pigment_dye, apply_weave, output_item_key, discovery_key,
-    dye_family_from_color, TOTAL_TEXTILE_TYPES,
+    dye_family_from_color, TOTAL_TEXTILE_TYPES, can_weave, motif_label,
 )
 from pigments import PIGMENT_TYPES
 
@@ -29,13 +30,16 @@ _LOOM_CLICK_WINDOW = 2.5  # seconds the active cell stays clickable
 
 # Short description of each fiber's passive bonus when worn
 _FIBER_INTRINSIC_DESCS = {
-    "silk":     "Lucky Drop: +8% chance to double a block drop per piece",
-    "cashmere": "HP Regen: +0.4 HP/s per piece when not hungry",
-    "jute":     "Move Hunger: -8% hunger drain while moving per piece",
-    "wool":     "Warmth: +6% extra cold resistance per piece",
-    "linen":    "Day Speed: +4% movement speed during daytime per piece",
-    "cotton":   "Jump: +5% jump force per piece",
-    "blend":    "No fiber intrinsic bonus",
+    "silk":         "Lucky Drop: +8% chance to double a block drop per piece",
+    "cashmere":     "HP Regen: +0.4 HP/s per piece when not hungry",
+    "jute":         "Move Hunger: -8% hunger drain while moving per piece",
+    "wool":         "Warmth: +6% extra cold resistance per piece",
+    "linen":        "Day Speed: +4% movement speed during daytime per piece",
+    "cotton":       "Jump: +5% jump force per piece",
+    "blend":        "No fiber intrinsic bonus",
+    "tussah_silk":  "Wild Silk: +5% lucky drop & +4% warmth per piece",
+    "dupioni_silk": "Slubby Silk: +6% lucky drop & +3% jump per piece",
+    "sea_silk":     "Byssus: +12% lucky drop per piece (rarest fiber)",
 }
 
 
@@ -73,6 +77,12 @@ class TextileMixin:
                 fibers.append(("cashmere", "Cashmere Fiber", f"x{player.inventory['cashmere_fiber']}"))
             if player.inventory.get("jute_fiber", 0) > 0:
                 fibers.append(("jute", "Jute Fiber", f"x{player.inventory['jute_fiber']}"))
+            if player.inventory.get("tussah_silk_thread", 0) > 0:
+                fibers.append(("tussah_silk", "Tussah Silk", f"x{player.inventory['tussah_silk_thread']}"))
+            if player.inventory.get("dupioni_silk_thread", 0) > 0:
+                fibers.append(("dupioni_silk", "Dupioni Silk", f"x{player.inventory['dupioni_silk_thread']}"))
+            if player.inventory.get("sea_silk_thread", 0) > 0:
+                fibers.append(("sea_silk", "Sea Silk", f"x{player.inventory['sea_silk_thread']}"))
 
             if not fibers:
                 msg = self.font.render("No fiber! Shear Sheep for wool, grow Flax/Jute, or collect Silk.", True, _LABEL_C)
@@ -196,6 +206,12 @@ class TextileMixin:
             player.inventory["cashmere_fiber"] = max(0, player.inventory.get("cashmere_fiber", 0) - 1)
         elif ftype == "jute":
             player.inventory["jute_fiber"] = max(0, player.inventory.get("jute_fiber", 0) - 1)
+        elif ftype == "tussah_silk":
+            player.inventory["tussah_silk_thread"]  = max(0, player.inventory.get("tussah_silk_thread", 0) - 1)
+        elif ftype == "dupioni_silk":
+            player.inventory["dupioni_silk_thread"] = max(0, player.inventory.get("dupioni_silk_thread", 0) - 1)
+        elif ftype == "sea_silk":
+            player.inventory["sea_silk_thread"]     = max(0, player.inventory.get("sea_silk_thread", 0) - 1)
         else:  # wool
             player.inventory["wool"] = max(0, player.inventory.get("wool", 0) - 1)
         thread = player._textile_gen.generate(ftype)
@@ -404,7 +420,8 @@ class TextileMixin:
         # Dye extract list (right half)
         sub_d = self.small.render("Select dye extract:", True, _LABEL_C)
         self.screen.blit(sub_d, (SCREEN_W // 2 + 40, 68))
-        dye_families = ["golden", "crimson", "rose", "cobalt", "violet", "verdant", "amber", "ivory", "teal", "indigo", "ochre"]
+        dye_families = ["golden", "crimson", "rose", "cobalt", "violet", "verdant", "amber", "ivory", "teal", "indigo", "ochre",
+                        "imperial_yellow", "cinnabar", "jade", "porcelain_blue"]
         CELL_W2, CELL_H2, GAP2 = 200, 44, 6
         rx0 = SCREEN_W // 2 + 40
         for di, fam in enumerate(dye_families):
@@ -602,6 +619,11 @@ class TextileMixin:
 
         elif self._loom_phase == "select_output":
             self._loom_output_rects.clear()
+            # Look up the selected thread's fiber so we can lock silk-only outputs.
+            sel_t = None
+            if self._loom_thread_idx is not None and self._loom_thread_idx < len(player.textiles):
+                sel_t = player.textiles[self._loom_thread_idx]
+            fiber = sel_t.fiber_type if sel_t else ""
             sub = self.small.render("Choose what to weave:", True, _LABEL_C)
             self.screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 34))
             outputs = list(OUTPUT_DISPLAY.items())
@@ -614,11 +636,18 @@ class TextileMixin:
                 px = gx0 + col_i * (BTN_W + BTN_GAP)
                 py = 58 + row_i * (BTN_H + BTN_GAP)
                 prect = pygame.Rect(px, py, BTN_W, BTN_H)
-                self._loom_output_rects[okey] = prect
+                locked = not can_weave(fiber, okey)
+                self._loom_output_rects[okey] = (prect, locked)
                 pygame.draw.rect(self.screen, _CELL_BG, prect)
-                pygame.draw.rect(self.screen, _ACCENT, prect, 2)
-                lbl = self.font.render(olabel, True, _TITLE_C)
+                border = _DIM_C if locked else _ACCENT
+                pygame.draw.rect(self.screen, border, prect, 2)
+                title_col = _DIM_C if locked else _TITLE_C
+                lbl = self.font.render(olabel, True, title_col)
                 self.screen.blit(lbl, (px + BTN_W // 2 - lbl.get_width() // 2, py + 12))
+                if locked:
+                    lk = self.small.render("Requires silk-class fiber", True, (180, 110, 110))
+                    self.screen.blit(lk, (px + 8, py + 44))
+                    continue
                 if okey in GARMENT_BUFFS:
                     stat = GARMENT_BUFFS[okey]
                     mx = GARMENT_MAX_BONUS[stat]
@@ -674,6 +703,9 @@ class TextileMixin:
 
             rline(f"{OUTPUT_DISPLAY.get(t.output_type, t.output_type)}")
             rline(f"{t.fiber_type.title()} · {DYE_FAMILY_DISPLAY.get(t.dye_family,'Natural')} · {TEXTURE_PATTERNS[t.texture]['label']}", dye_col)
+            ml = motif_label(t)
+            if ml:
+                rline(f"Woven motif: {ml}", (235, 200, 120))
             rline(f"Quality: {t.quality:.0%}  Pattern: {t.pattern_quality:.0%}", _LABEL_C)
             if t.output_type in GARMENT_BUFFS:
                 from textiles import get_garment_bonus
@@ -744,8 +776,11 @@ class TextileMixin:
                     self._loom_phase = "select_output"
                     return
         elif self._loom_phase == "select_output":
-            for okey, rect in self._loom_output_rects.items():
+            for okey, entry in self._loom_output_rects.items():
+                rect, locked = entry if isinstance(entry, tuple) else (entry, False)
                 if rect.collidepoint(pos):
+                    if locked:
+                        return
                     self._loom_output_type = okey
                     self._loom_phase = "weaving"
                     self._loom_active_cell = 0
@@ -862,13 +897,7 @@ class TextileMixin:
         _sec("GARMENTS IN INVENTORY", INV_Y)
 
         self._wardrobe_item_rects = {}
-        garment_slots = {
-            "garment_hat": "head", "garment_vest": "chest", "garment_boots": "feet",
-            "garment_gloves": "hands", "garment_leggings": "legs",
-            "garment_cloak": "back", "garment_cloak_hooded": "back",
-            "garment_cloak_royal": "back", "garment_cloak_tattered": "back",
-            "garment_cloak_half": "back",
-        }
+        garment_slots = GARMENT_SLOTS
         garment_items = [(k, player.inventory.get(k, 0)) for k in garment_slots if player.inventory.get(k, 0) > 0]
         GCELL_W, GCELL_H, GCELL_HDR_H, GCELL_GAP = 175, 60, 18, 10
         GCELLS_Y = INV_Y + 16
@@ -998,13 +1027,7 @@ class TextileMixin:
                         player.worn[slot] = None
                     return
         if hasattr(self, "_wardrobe_item_rects"):
-            garment_slots = {
-                "garment_hat": "head", "garment_vest": "chest", "garment_boots": "feet",
-                "garment_gloves": "hands", "garment_leggings": "legs",
-                "garment_cloak": "back", "garment_cloak_hooded": "back",
-                "garment_cloak_royal": "back", "garment_cloak_tattered": "back",
-                "garment_cloak_half": "back",
-            }
+            garment_slots = GARMENT_SLOTS
             for gkey, rect in self._wardrobe_item_rects.items():
                 if rect.collidepoint(pos):
                     slot = garment_slots[gkey]

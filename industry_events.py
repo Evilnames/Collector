@@ -118,6 +118,11 @@ def roll_rivalries(rng, day: int) -> None:
             _push_news(day,
                        f"{attacker.name} accused of sabotaging {target.name}.",
                        "rivalry")
+            try:
+                from politics import on_guild_sabotage
+                on_guild_sabotage(attacker.guild_id, target.guild_id, day)
+            except Exception:
+                pass
 
 
 def roll_tournament_day(rng, day: int) -> None:

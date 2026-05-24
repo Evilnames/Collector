@@ -111,17 +111,72 @@ def _flag_block_for(industry: str) -> int:
     return getattr(_blocks, name, _blocks.GUILD_FLAG_BLOCK)
 
 
-_HALL_SPACING = 3   # blocks between adjacent guild halls along the capital row
+_HALL_WIDTH   = 5   # width of each guild-hall building
+_HALL_HEIGHT  = 4   # interior wall height (excluding roof)
+_HALL_GAP     = 1   # empty blocks between adjacent buildings
+_HALL_SPACING = _HALL_WIDTH + _HALL_GAP
+_HALL_START_OFFSET = 6  # first hall's left_x relative to capital.center_bx
+
+
+# Biome-flavored wall/roof palette for the guild-hall building shell. The
+# distinctive `hall_block` is embedded as a background tile inside; the shell
+# just needs to feel local. Keys mirror `_BIOME_GROUP_TO_HALL`.
+def _shell_palette(biome_group: str) -> tuple:
+    import blocks as _b
+    palettes = {
+        "forest":         (_b.HOUSE_WALL,      _b.HOUSE_ROOF),
+        "boreal":         (_b.HOUSE_WALL_DARK, _b.HOUSE_ROOF_DARK),
+        "jungle":         (_b.HOUSE_WALL_DARK, _b.HOUSE_ROOF_DARK),
+        "tropical":       (_b.HOUSE_WALL,      _b.HOUSE_ROOF),
+        "mediterranean":  (_b.HOUSE_WALL,      _b.HOUSE_ROOF),
+        "coastal":        (_b.HOUSE_WALL,      _b.HOUSE_ROOF),
+        "levant":         (getattr(_b, "ADOBE_BRICK", _b.HOUSE_WALL), _b.HOUSE_ROOF),
+        "east_asian":     (_b.HOUSE_WALL_DARK, _b.HOUSE_ROOF_DARK),
+        "south_asian":    (_b.HOUSE_WALL,      _b.HOUSE_ROOF),
+        "desert":         (getattr(_b, "ADOBE_BRICK", _b.HOUSE_WALL), _b.HOUSE_ROOF),
+        "steppe":         (getattr(_b, "ADOBE_BRICK", _b.HOUSE_WALL), _b.HOUSE_ROOF),
+        "wasteland":      (_b.HOUSE_WALL_DARK, _b.HOUSE_ROOF_DARK),
+    }
+    return palettes.get(biome_group, (_b.HOUSE_WALL, _b.HOUSE_ROOF))
+
+
+def _build_hall_building(world, rng, left_x: int, sy: int,
+                          hall_block: int, biome_group: str) -> tuple:
+    """Build a small guild-hall house and embed the biome's hall block as a
+    background tile on the floor row. Returns (bg_bx, bg_by) — the coordinate
+    that should be registered in `GUILD_HALL_AT`. Returns None on failure."""
+    from cities import _build_modular_building
+    wall_block, roof_block = _shell_palette(biome_group)
+    try:
+        _build_modular_building(world, rng, left_x, sy,
+                                 _HALL_WIDTH, _HALL_HEIGHT,
+                                 wall_block, roof_block, "shop")
+    except Exception:
+        return None
+    bg_bx = left_x + _HALL_WIDTH // 2
+    bg_by = sy - 1                         # floor row of the building interior
+    try:
+        world.set_block(bg_bx, bg_by, 0)   # ensure fg is AIR so player can stand
+        world.set_bg_block(bg_bx, bg_by, hall_block)
+        # Also wipe one row up so the hall block reads as a tall feature without
+        # obstructing walking — interior decoration above the floor cell.
+        world.set_bg_block(bg_bx, bg_by - 1, hall_block)
+    except Exception:
+        return None
+    return (bg_bx, bg_by)
 
 
 def place_guild_halls(world) -> None:
-    """Plant one Hall per guild in each regional capital, biome-flavored.
+    """Build one guild-hall house per guild in each regional capital.
 
-    Halls are walked left-to-right starting at `center_bx + 4`, spaced
-    `_HALL_SPACING` apart. Guilds are sorted by industry so the same guild
-    always lands on the same slot (idempotent across save/load).
+    Each hall is a small biome-flavored building with the distinctive
+    `GUILD_HALL_*` block embedded as a background tile inside (so the player
+    can walk in and interact without the block walling off the interior).
+    Guilds are sorted by industry so the same guild always lands on the same
+    slot (idempotent across save/load).
     """
-    from blocks import GUILD_HALL_VARIANTS, AIR
+    import random as _rnd
+    from blocks import GUILD_HALL_VARIANTS
     from towns import TOWNS, REGIONS
     GUILD_HALL_AT.clear()
     for region in REGIONS.values():
@@ -135,23 +190,29 @@ def place_guild_halls(world) -> None:
         )
         if not region_guilds:
             continue
-        hall_block = _hall_block_for(getattr(region, "biome_group", ""))
+        biome_group = getattr(region, "biome_group", "")
+        hall_block  = _hall_block_for(biome_group)
         for slot, g in enumerate(region_guilds):
-            bx = capital.center_bx + 4 + slot * _HALL_SPACING
-            sy = _surface_y(world, bx)
+            left_x = capital.center_bx + _HALL_START_OFFSET + slot * _HALL_SPACING
+            mid_bx = left_x + _HALL_WIDTH // 2
+            sy = _surface_y(world, mid_bx)
             if sy is None:
                 continue
-            hall_y = sy - 1
+            # Idempotent: if a hall already exists here from a prior call,
+            # just re-register its position.
             try:
-                current = world.get_block(bx, hall_y)
-                if current in GUILD_HALL_VARIANTS:
-                    GUILD_HALL_AT[(bx, hall_y)] = g.guild_id
-                    continue
-                if current == AIR:
-                    world.set_block(bx, hall_y, hall_block)
-                    GUILD_HALL_AT[(bx, hall_y)] = g.guild_id
+                existing_bg = world.get_bg_block(mid_bx, sy - 1)
             except Exception:
+                existing_bg = None
+            if existing_bg in GUILD_HALL_VARIANTS:
+                GUILD_HALL_AT[(mid_bx, sy - 1)] = g.guild_id
                 continue
+            rng = _rnd.Random((capital.center_bx * 131) ^ (slot * 977))
+            placed = _build_hall_building(world, rng, left_x, sy,
+                                           hall_block, biome_group)
+            if placed is None:
+                continue
+            GUILD_HALL_AT[placed] = g.guild_id
 
 
 def place_guild_flags(world) -> None:

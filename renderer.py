@@ -858,6 +858,10 @@ class Renderer:
         from Render.Workernpcs import draw_npc_monk
         draw_npc_monk(self.screen, sx, sy, npc)
 
+    def _draw_npc_bishop(self, sx, sy, npc):
+        from Render.Workernpcs import draw_npc_bishop
+        draw_npc_bishop(self.screen, sx, sy, npc)
+
     def _draw_npc_leader(self, sx, sy, npc):
         from Render.Workernpcs import draw_npc_leader
         draw_npc_leader(self.screen, sx, sy, npc)

@@ -139,6 +139,44 @@ def draw_npc_monk(screen, sx, sy, npc):
     pygame.draw.circle(screen, (255, 240, 130), (gx, gy), 2)
 
 
+def draw_npc_bishop(screen, sx, sy, npc):
+    """Robed figure with a tall mitre and a holy staff. Robe + mitre colors
+    come from the BishopNPC's clothing (which is set from the faith's
+    doctrine tint at spawn)."""
+    bob = int(npc._bob_offset)
+    c    = getattr(npc, 'clothing', {})
+    body = c.get('body', (140, 130, 150))
+    skin = c.get('skin', (240, 200, 150))
+    hat  = c.get('hat',  (210, 200, 230))
+    fold = tuple(max(0, v - 35) for v in body)
+    trim = (218, 175, 40)   # gold sash — bishops are wealthy
+
+    # Long robe (taller than a monk's)
+    pygame.draw.rect(screen, body, (sx, sy + bob, 20, 19))
+    pygame.draw.rect(screen, fold, (sx + 9, sy + bob, 3, 19))
+    pygame.draw.rect(screen, trim, (sx, sy + 14 + bob, 20, 2))   # gold hem
+    # Head
+    pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
+    pygame.draw.rect(screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
+    pygame.draw.rect(screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
+    # Mitre — two stepped peaks
+    mitre_dark = tuple(max(0, v - 30) for v in hat)
+    pygame.draw.rect(screen, hat,        (sx + 3, sy - 18 + bob, 14, 8))
+    pygame.draw.polygon(screen, hat,
+                        [(sx + 3,  sy - 18 + bob),
+                         (sx + 10, sy - 26 + bob),
+                         (sx + 17, sy - 18 + bob)])
+    pygame.draw.line(screen, mitre_dark,
+                     (sx + 10, sy - 26 + bob),
+                     (sx + 10, sy - 11 + bob), 1)
+    pygame.draw.rect(screen, trim, (sx + 3, sy - 12 + bob, 14, 1))   # gold band
+    # Staff (crozier) — vertical pole with curled top
+    pygame.draw.line(screen, (110, 80, 40),
+                     (sx + 19, sy - 16 + bob),
+                     (sx + 19, sy + 16 + bob), 2)
+    pygame.draw.circle(screen, trim, (sx + 21, sy - 16 + bob), 2)
+
+
 def draw_npc_leader(screen, sx, sy, npc):
     bob   = int(npc._bob_offset)
     lc    = getattr(npc, 'leader_color', (140, 30, 40))

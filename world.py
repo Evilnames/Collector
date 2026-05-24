@@ -183,6 +183,9 @@ _CROP_MATURE_MAP = {
     RICE_CROP_YOUNG_P:       RICE_CROP_MATURE_P,
 }
 
+from blocks import MULBERRY_TREE_YOUNG, MULBERRY_TREE_MATURE
+_CROP_MATURE_MAP[MULBERRY_TREE_YOUNG] = MULBERRY_TREE_MATURE
+
 
 _OCEAN_SPREAD    = 2     # zones on each side of an ocean seed that expand to ocean
 _OCEAN_SEED_PROB = 0.025 # probability a zone seeds an ocean cluster
@@ -392,12 +395,24 @@ class World:
         init_player_cities(self)
         if preloaded and getattr(self, "_save_mgr", None) is not None:
             self._save_mgr._load_guilds()
+            self._save_mgr._load_guild_contracts()
             self._save_mgr._load_bonds()
             self._save_mgr._load_knightly_orders()
+            self._save_mgr._load_politics()
+            self._save_mgr._load_religion()
         from guild_worldgen import seed_guilds
         seed_guilds(self)
+        try:
+            import guild_contracts
+            guild_contracts.refresh_contracts(self)
+        except Exception:
+            pass
         from knightly_orders import seed_knightly_orders
         seed_knightly_orders(self)
+        from politics import seed_all_houses as _seed_all_houses
+        _seed_all_houses()
+        from religion import seed_faiths_for_world as _seed_faiths
+        _seed_faiths(self)
         self._spawn_birds()
         self._spawn_insects()
         self._spawn_reptiles()
@@ -2600,6 +2615,10 @@ class World:
             tick_city_day(self)
             from dynasty_events import tick_dynasty_events
             tick_dynasty_events(self, getattr(self, "_player_ref", None))
+            from politics import tick_politics
+            tick_politics(self, getattr(self, "_player_ref", None))
+            from religion import tick_religion
+            tick_religion(self, getattr(self, "_player_ref", None))
             self._tick_training_day()
         self._tick_light_traps(dt)
         if self.time_of_day < prev:
@@ -3132,6 +3151,13 @@ class World:
             (top_y + 1, range(bx - 2, bx + 3)),
         ], TREE_LEAVES, rng, density=0.85)
         self._add_branch_stubs(bx, by, h, TREE_LOG, rng, count=rng.randint(1, 2))
+        # Wild silkmoth cocoon clumps — rare on oak canopies (tussah silk source).
+        if rng.random() < 0.04:
+            from blocks import TUSSAH_COCOON_CLUMP
+            cx = bx + rng.choice((-1, 0, 1))
+            cy = top_y + rng.choice((0, 1))
+            if self.get_block(cx, cy) == TREE_LEAVES:
+                self.set_block(cx, cy, TUSSAH_COCOON_CLUMP)
 
     def _grow_pine(self, bx, by, rng=None):
         rng = rng or self._sapling_rng

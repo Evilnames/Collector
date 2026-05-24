@@ -12,11 +12,12 @@ from guilds import (
     buy_shares, sell_shares,
     found_player_guild, buyback_shares, issue_shares,
     npc_holdings_for,
-    open_short, close_short, player_short,
+    open_short, close_short, player_short, player_holding,
     borrow, repay, portfolio_value,
     FOUNDING_FEE, FOUNDING_FEE_PER_SHARE,
 )
 from bonds import BONDS, buy_bond, player_bonds, float_bonds
+import guild_contracts as gc
 from guild_policies import (
     OWNERSHIP_FINANCIALS, OWNERSHIP_BOARD_SEAT, OWNERSHIP_MAJORITY,
     OWNERSHIP_SUBSIDIARY, player_tier,
@@ -106,6 +107,8 @@ class StockExchangeMixin:
             self._draw_stock_portfolio(player, content_rect)
         elif self._stock_tab == "history":
             self._draw_stock_history(player, content_rect)
+        elif self._stock_tab == "contracts":
+            self._draw_stock_contracts(player, content_rect)
         elif self._stock_tab == "board":
             self._draw_stock_board_room(player, content_rect)
         else:
@@ -129,7 +132,7 @@ class StockExchangeMixin:
 
     def _draw_stock_tabs(self, px, py, pw):
         tabs = [("market", "Market"), ("portfolio", "Portfolio"),
-                ("history", "History")]
+                ("contracts", "Contracts"), ("history", "History")]
         if self._board_view_unlocked():
             tabs.append(("board", "Board Room"))
         if self._charter_unlocked():
@@ -415,6 +418,126 @@ class StockExchangeMixin:
     # History tab — worldgen-era backstory per guild
     # ------------------------------------------------------------------
 
+    # ------------------------------------------------------------------
+    # Contracts tab — mission board hosted by the currently-selected hall.
+    # ------------------------------------------------------------------
+
+    def _draw_stock_contracts(self, player, rect):
+        hall_gid = self._stock_selected_gid
+        g = GUILDS.get(hall_gid)
+        if g is None:
+            s = self.small.render(
+                "Stand next to a Guild Hall and press E to open its contract board.",
+                True, _MUTED)
+            self.screen.blit(s, (rect.x + 8, rect.y + 8))
+            return
+
+        # Header: hall name + player rep with this guild.
+        title = self.font.render(f"{g.name} — Contract Board", True, _GOLD)
+        self.screen.blit(title, (rect.x + 8, rect.y + 4))
+        rep = gc.player_rep(player, g.guild_id)
+        rep_label = gc.rep_label(rep)
+        sub = self.small.render(f"Your standing: {rep_label} ({rep:+d})", True, _SAND)
+        self.screen.blit(sub, (rect.x + 8, rect.y + 28))
+
+        # Two columns: Open (left), Accepted (right).
+        col_gap = 12
+        col_w = (rect.w - col_gap) // 2
+        open_rect = pygame.Rect(rect.x, rect.y + 54, col_w, rect.h - 56)
+        acc_rect  = pygame.Rect(rect.x + col_w + col_gap, rect.y + 54,
+                                col_w, rect.h - 56)
+        self._draw_contracts_open(player, hall_gid, open_rect)
+        self._draw_contracts_accepted(player, hall_gid, acc_rect)
+
+    def _draw_contracts_open(self, player, hall_gid, rect):
+        hdr = self.small.render("Open Contracts", True, _SAND)
+        self.screen.blit(hdr, (rect.x + 6, rect.y))
+        items = gc.open_contracts_at(hall_gid)
+        if not items:
+            s = self.small.render("(None posted this week.)", True, _MUTED)
+            self.screen.blit(s, (rect.x + 6, rect.y + 22))
+            return
+        row_h = 56
+        for i, c in enumerate(items[:6]):
+            y = rect.y + 22 + i * row_h
+            row_r = pygame.Rect(rect.x, y, rect.w, row_h - 4)
+            bg = _ROW_BG if i % 2 == 0 else _ROW_ALT
+            pygame.draw.rect(self.screen, bg, row_r, border_radius=3)
+            pygame.draw.rect(self.screen, _BORDER, row_r, 1, border_radius=3)
+            t_s = self.small.render(c.title[:48], True, _GOLD)
+            self.screen.blit(t_s, (row_r.x + 6, row_r.y + 4))
+            d_s = self.small.render(
+                f"{c.tier.title()} · {c.reward_gold}g · +{c.reward_rep} rep · "
+                f"exp d{c.expires_day}", True, _MUTED)
+            self.screen.blit(d_s, (row_r.x + 6, row_r.y + 20))
+            if c.kind == "courier":
+                dest = self.small.render(f"→ {c.target_label}", True, _SAND)
+                self.screen.blit(dest, (row_r.x + 6, row_r.y + 36))
+            already = c.contract_id in (getattr(player, "active_contracts", []) or [])
+            label = "Accepted" if already else "Accept"
+            btn = pygame.Rect(row_r.right - 76, row_r.y + 16, 68, 22)
+            pygame.draw.rect(self.screen,
+                             _TAB_IDLE if already else _TAB_SEL,
+                             btn, border_radius=3)
+            pygame.draw.rect(self.screen, _BORDER, btn, 1, border_radius=3)
+            s = self.small.render(label, True, _GOLD if not already else _MUTED)
+            self.screen.blit(s, (btn.centerx - s.get_width() // 2,
+                                 btn.centery - s.get_height() // 2))
+            if not already:
+                self._stock_rects[("contract_accept", c.contract_id)] = btn
+
+    def _draw_contracts_accepted(self, player, hall_gid, rect):
+        hdr = self.small.render("Your Active Contracts", True, _SAND)
+        self.screen.blit(hdr, (rect.x + 6, rect.y))
+        items = gc.accepted_by_player(player)
+        if not items:
+            s = self.small.render("(None accepted.)", True, _MUTED)
+            self.screen.blit(s, (rect.x + 6, rect.y + 22))
+            return
+        row_h = 58
+        for i, c in enumerate(items[:6]):
+            y = rect.y + 22 + i * row_h
+            row_r = pygame.Rect(rect.x, y, rect.w, row_h - 4)
+            bg = _ROW_BG if i % 2 == 0 else _ROW_ALT
+            pygame.draw.rect(self.screen, bg, row_r, border_radius=3)
+            pygame.draw.rect(self.screen, _BORDER, row_r, 1, border_radius=3)
+            t_s = self.small.render(c.title[:48], True, _GOLD)
+            self.screen.blit(t_s, (row_r.x + 6, row_r.y + 4))
+            have = gc._inventory_count(player, c.item_id)
+            d_s = self.small.render(
+                f"Have {have}/{c.count} · {c.reward_gold}g · exp d{c.expires_day}",
+                True, _MUTED)
+            self.screen.blit(d_s, (row_r.x + 6, row_r.y + 20))
+            issuing = GUILDS.get(c.guild_id)
+            if c.kind == "courier" and gc.turn_in_hall_for(c) != hall_gid:
+                dest = self.small.render(
+                    f"Deliver to {c.target_label}", True, _SAND)
+                self.screen.blit(dest, (row_r.x + 6, row_r.y + 36))
+            else:
+                tag = "Turn in here" if gc.turn_in_hall_for(c) == hall_gid else \
+                      f"Issued by {issuing.name if issuing else c.guild_id}"
+                self.screen.blit(self.small.render(tag, True, _SAND),
+                                 (row_r.x + 6, row_r.y + 36))
+            can_turn = gc.can_turn_in_here(player, c, hall_gid)
+            btn = pygame.Rect(row_r.right - 76, row_r.y + 4, 68, 22)
+            pygame.draw.rect(self.screen,
+                             _TAB_SEL if can_turn else _TAB_IDLE,
+                             btn, border_radius=3)
+            pygame.draw.rect(self.screen, _BORDER, btn, 1, border_radius=3)
+            s = self.small.render("Turn In", True,
+                                  _GOLD if can_turn else _MUTED)
+            self.screen.blit(s, (btn.centerx - s.get_width() // 2,
+                                 btn.centery - s.get_height() // 2))
+            if can_turn:
+                self._stock_rects[("contract_turnin", c.contract_id)] = btn
+            ab = pygame.Rect(row_r.right - 76, row_r.y + 30, 68, 20)
+            pygame.draw.rect(self.screen, (60, 32, 22), ab, border_radius=3)
+            pygame.draw.rect(self.screen, _BORDER, ab, 1, border_radius=3)
+            s2 = self.small.render("Abandon", True, _LOSS)
+            self.screen.blit(s2, (ab.centerx - s2.get_width() // 2,
+                                  ab.centery - s2.get_height() // 2))
+            self._stock_rects[("contract_abandon", c.contract_id)] = ab
+
     def _draw_stock_history(self, player, rect):
         """Two-pane: guild list on the left, deep history on the right.
         Pulls Guild.historical_ledger + legendary_events seeded by the
@@ -577,6 +700,21 @@ class StockExchangeMixin:
                 self._charter_region_id = key[1]
             elif isinstance(key, tuple) and key[0] in ("charter_shares", "charter_price", "charter_float"):
                 self._adjust_charter_wizard(*key)
+            elif isinstance(key, tuple) and key[0] == "contract_accept":
+                c = gc.CONTRACTS.get(key[1])
+                if c is not None and gc.accept(player, c):
+                    self._stock_status_msg = f"Accepted: {c.title[:48]}"
+            elif isinstance(key, tuple) and key[0] == "contract_turnin":
+                c = gc.CONTRACTS.get(key[1])
+                if c is not None and gc.turn_in(player, c, self._stock_selected_gid):
+                    self._stock_status_msg = (
+                        f"Turned in: {c.title[:40]} (+{c.reward_gold}g, "
+                        f"+{c.reward_rep} rep)")
+            elif isinstance(key, tuple) and key[0] == "contract_abandon":
+                c = gc.CONTRACTS.get(key[1])
+                if c is not None:
+                    gc.abandon(player, c)
+                    self._stock_status_msg = f"Abandoned: {c.title[:40]} (-1 rep)"
             break
 
     def handle_stock_exchange_keydown(self, key, player, unicode=""):
@@ -593,7 +731,7 @@ class StockExchangeMixin:
         if key == pygame.K_ESCAPE:
             self.stock_exchange_open = False
         elif key == pygame.K_TAB:
-            order = ["market", "portfolio", "history"]
+            order = ["market", "portfolio", "contracts", "history"]
             try:
                 idx = order.index(self._stock_tab)
             except ValueError:

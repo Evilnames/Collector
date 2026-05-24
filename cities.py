@@ -874,6 +874,18 @@ class AmbientNPC(NPC):
         self.clothing["skin"] = self.skin_tone
         self.hair_color = random.choice(_AMBIENT_HAIR_COLORS)
         self.build = random.choice(_AMBIENT_BUILDS)
+
+        # Every resident belongs to the regional faith. Stored as faith_id so
+        # we can look up name/doctrine on demand without bloating the entity.
+        self.faith_id = 0
+        try:
+            import religion as rel
+            faith = rel.faith_for_position(world, int(x // BLOCK_SIZE))
+            if faith is not None:
+                self.faith_id = faith.faith_id
+        except Exception:
+            pass
+
         # Ensure spawn is not inside solid terrain
         self._snap_to_surface()
 
@@ -3055,10 +3067,35 @@ class ShrineKeeperNPC(NPC):
         super().__init__(x, y, world, "npc_monk")
         self.clothing = _npc_clothing(biodome)
         display_name, style = RELIGION_BY_BIOME.get(biodome, ("Forest Chapel", "chapel"))
-        self.religion_name = display_name
+        self.religion_name  = display_name
         self.religion_style = style
         self.flavor = SHRINE_FLAVOR.get(style, SHRINE_FLAVOR["chapel"])
         self.blessing_cost = 10 + difficulty * 10
+
+        # Link the shrine to the surrounding region's faith. faith_for_position
+        # guarantees a result whenever any faith has been seeded; only stays
+        # empty if religion.tick_religion hasn't run yet on a fresh world.
+        self.faith_id       = 0
+        self.faith_name     = ""
+        self.faith_doctrine = ""
+        self.bishop_name    = ""
+        try:
+            import religion as rel
+            faith = rel.faith_for_position(world, int(x // BLOCK_SIZE))
+            if faith is not None:
+                self.faith_id       = faith.faith_id
+                self.faith_name     = faith.name
+                self.faith_doctrine = faith.doctrine
+                self.religion_name  = faith.name
+                # Bishop only if regional clergy is present; otherwise omit.
+                from towns import region_for_bx
+                region = region_for_bx(world, int(x // BLOCK_SIZE))
+                if region is not None:
+                    clergy = rel.CLERGY.get(region.region_id)
+                    if clergy is not None and clergy.faith_id == faith.faith_id:
+                        self.bishop_name = clergy.bishop_name
+        except Exception:
+            pass
 
     def discounted_cost(self):
         return max(1, round(self.blessing_cost
@@ -4229,7 +4266,14 @@ _FACADE_FLOWER_BOXES = (FLOWER_BOX, GERANIUM_BOX)
 _WEAPON_ARMORER_BASE = {"dagger": 20, "sword": 35, "spear": 30, "axe": 40,
                         "mace": 45, "halberd": 55, "glaive": 48,
                         "rapier": 32, "trident": 42, "scythe": 60,
-                        "lance": 65}
+                        "lance": 65,
+                        "sabre": 33, "flail": 48, "warhammer": 55,
+                        "kris": 25, "falchion": 38, "claymore": 50,
+                        "pike": 50, "morningstar": 50, "katar": 24,
+                        "bardiche": 55,
+                        "jian": 35, "dao": 38, "ji": 52, "guandao": 60,
+                        "chui": 55, "emei": 22, "hook_sword": 40,
+                        "monk_spade": 50, "butterfly_sword": 28, "podao": 52}
 _WEAPON_MATERIAL_MULT = {"iron": 1.0, "gold": 1.6, "steel": 2.0}
 
 
@@ -4324,7 +4368,11 @@ def _build_garrison_quest(rng, difficulty):
     count     = rng.randint(1, 1 + min(difficulty, 2))
     min_tier  = _TIER_ORDER[min(difficulty, 2)]
     wtype     = rng.choice(["dagger", "sword", "spear", "axe", "mace", "halberd", "glaive",
-                            "rapier", "trident", "scythe", "lance", None])
+                            "rapier", "trident", "scythe", "lance",
+                            "sabre", "flail", "warhammer", "kris", "falchion", "claymore",
+                            "pike", "morningstar", "katar", "bardiche",
+                            "jian", "dao", "ji", "guandao", "chui", "emei",
+                            "hook_sword", "monk_spade", "butterfly_sword", "podao", None])
     reward    = (35 + difficulty * 20) * count
     return {"count": count, "min_tier": min_tier, "weapon_type": wtype, "reward": reward}
 
@@ -4641,6 +4689,63 @@ class MonkNPC(AmbientNPC):
         self.speed = 18
 
 
+class BishopNPC(AmbientNPC):
+    """Regional faith leader. Robes tinted by doctrine; name + title pulled
+    from religion.CLERGY for the surrounding region. Stationary-feeling —
+    short patrol, slow gait.
+
+    Stores faith_id / bishop_name / bishop_title so a future talk panel
+    (step 3+) can branch on the faith's doctrine without re-looking-up."""
+    def __init__(self, x, y, world, biodome="temperate"):
+        super().__init__(x, y, world, "npc_bishop", patrol_half=18, biodome=biodome)
+        self._walk_speed = 12.0
+        self._pause_max  = 6.0
+        self.faith_id      = 0
+        self.bishop_name   = ""
+        self.bishop_title  = "Bishop"
+        self.doctrine      = "ascetic"
+
+        # Resolve regional clergy + faith via faith_for_position so we always
+        # get a faith if any have been seeded; clergy may still be None when
+        # this bx is outside any region.
+        clergy = None
+        faith  = None
+        try:
+            from towns import region_for_bx
+            import religion as rel
+            bx = int(x // BLOCK_SIZE)
+            faith = rel.faith_for_position(world, bx)
+            region = region_for_bx(world, bx)
+            if region is not None:
+                clergy = rel.CLERGY.get(region.region_id)
+        except Exception:
+            pass
+
+        # Doctrine drives the robe color; clergy provides identity.
+        if faith is not None:
+            self.faith_id     = faith.faith_id
+            self.doctrine     = faith.doctrine
+        if clergy is not None:
+            self.bishop_name  = clergy.bishop_name
+            self.bishop_title = clergy.bishop_title
+
+        # Robe + mitre palette per doctrine — dimmed body, brighter hat.
+        try:
+            import religion as rel
+            tint = rel.doctrine_profile(self.doctrine).get("tint", (180, 170, 150))
+        except Exception:
+            tint = (180, 170, 150)
+        robe = (max(40, tint[0] * 4 // 5),
+                max(40, tint[1] * 4 // 5),
+                max(40, tint[2] * 4 // 5))
+        hat  = (min(255, tint[0] + 25),
+                min(255, tint[1] + 25),
+                min(255, tint[2] + 25))
+        self.clothing["body"] = robe
+        self.clothing["leg"]  = robe
+        self.clothing["hat"]  = hat
+
+
 class VendorNPC(AmbientNPC):
     """Street hawker who wanders selling wares from a basket."""
     def __init__(self, x, y, world, biodome="temperate"):
@@ -4812,6 +4917,7 @@ CITY_CONFIGS = {
                          (35,  ["villager", "child", "none", "none"]),
                          (-3,  ["beggar", "none", "none", "none"]),
                          (3,   ["pilgrim", "elder", "monk", "none"]),
+                         (26,  ["bishop", "monk", "monk", "none"]),
                          (-25, ["noble", "none", "none"]),
                          (12,  ["drunkard", "none", "none"]),
                          (-20, ["craftsman", "vendor", "none", "none"]),
@@ -4864,7 +4970,9 @@ CITY_CONFIGS = {
                          (25,  ["noble", "knight", "none"]),
                          (-20, ["knight", "knight", "guard"]),
                          (-35, ["beggar", "none", "none"]),
-                         (10,  ["pilgrim", "elder", "monk"])],
+                         (10,  ["pilgrim", "elder", "monk"]),
+                         (-12, ["bishop", "monk", "none"]),
+                         (46,  ["bishop", "monk", "monk", "pilgrim"])],
     },
     # Military garrison — spawns biome-driven in frontier biomes (steppe/wasteland/etc.)
     "military": {
@@ -9124,6 +9232,8 @@ def _build_single_city(world, rng, city_bx, difficulty, palace_type=None):
                 world.entities.append(WeaponOrderNPC(npc_px, npc_py, world, rng, difficulty, biodome))
             elif npc_type == "chapter_master":
                 world.entities.append(ChapterMasterNPC(npc_px, npc_py, world, biodome=biodome))
+            elif npc_type == "bishop":
+                world.entities.append(BishopNPC(npc_px, npc_py, world, biodome=biodome))
 
         current_x += width + gaps[i]
 
@@ -9140,7 +9250,8 @@ def _build_single_city(world, rng, city_bx, difficulty, palace_type=None):
                         "musician": MusicianNPC, "town_crier": TownCrierNPC,
                         "farmer": FarmerNPC,
                         "scout": ScoutNPC, "monk": MonkNPC, "vendor": VendorNPC,
-                        "sailor": SailorNPC, "craftsman": CraftsmanNPC}
+                        "sailor": SailorNPC, "craftsman": CraftsmanNPC,
+                        "bishop": BishopNPC}
     
     # Ambient NPCs now roam randomly between the city walls
     for _, npc_type in cfg.get("ambient_npcs", ()):

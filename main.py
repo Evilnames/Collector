@@ -45,7 +45,7 @@ def _nearby_guild_hall(world, player):
     for dy in range(-3, 4):
         for dx in range(-3, 4):
             bx, by = px + dx, py + dy
-            if world.get_block(bx, by) in _GHV:
+            if world.get_bg_block(bx, by) in _GHV or world.get_block(bx, by) in _GHV:
                 return (bx, by, guild_at_hall(bx, by))
     return None
 
@@ -661,6 +661,8 @@ def main():
         ui.active_town = None
         ui.outpost_menu_open = False
         ui.active_outpost = None
+        ui.temple_open = False
+        ui.active_temple_op = None
         ui.landmark_menu_open = False
         ui.active_landmark_region = None
         ui.active_landmark_spec = None
@@ -699,7 +701,7 @@ def main():
                     ui.automation_open, ui.farm_bot_open, ui.chest_open,
                     ui.backhoe_open, ui.breeding_open, ui.garden_open, ui.wildflower_display_open,
                     ui.horse_breeding_open, ui._hb_active, ui.wardrobe_open,
-                    ui.town_menu_open, ui.outpost_menu_open, ui.landmark_menu_open, ui.city_block_menu_open, ui.coa_designer_open, ui.hire_panel_open, ui.job_panel_open, ui.reputation_screen_open, ui.trade_block_open,
+                    ui.town_menu_open, ui.outpost_menu_open, ui.landmark_menu_open, ui.city_block_menu_open, ui.coa_designer_open, ui.hire_panel_open, ui.job_panel_open, ui.reputation_screen_open, ui.trade_block_open, getattr(ui, "temple_open", False),
                     ui.dog_view_open, ui.dog_breeding_open, ui.gambling_open, ui.racing_open, ui.arena_open, ui.bazaar_open, ui.tea_house_open, getattr(ui, "training_paddock_open", False),
                     getattr(ui, "ruin_plaque_open", False),
                     getattr(ui, "hopper_open", False), getattr(ui, "pipe_output_open", False),
@@ -827,6 +829,11 @@ def main():
                     ui.handle_artisan_search_key(event)
                     continue
 
+                # Collection codex search bar intercepts all keys while active
+                if ui.collection_open and ui._codex_search_active:
+                    ui.handle_codex_search_key(event)
+                    continue
+
                 # Death screen: only SPACE/ENTER to respawn
                 if player.dead:
                     if event.key in (pygame.K_SPACE, pygame.K_RETURN, pygame.K_KP_ENTER):
@@ -883,6 +890,11 @@ def main():
                 # Roaster: ENTER to stop roasting
                 if ui.refinery_open and ui.refinery_block_id == ROASTER_BLOCK:
                     ui.handle_roaster_keydown(event.key, player)
+
+                # Glass Blowing Bench: SPACE for each puff during blow mini-game
+                from blocks import GLASS_BLOWING_BENCH_BLOCK as _GBB
+                if ui.refinery_open and ui.refinery_block_id == _GBB:
+                    ui.handle_glass_keydown(event.key, player)
 
                 # Grape Press: ENTER to finish pressing
                 if ui.refinery_open and ui.refinery_block_id == GRAPE_PRESS_BLOCK:
@@ -1129,6 +1141,9 @@ def main():
                     ui.research_open = ui.inventory_open = ui.crafting_open = False
                     ui.equipment_crafting_open = ui.refinery_open = ui.breeding_open = False
                     ui._inv_search = ""; ui._inv_search_active = False
+                    if not ui.collection_open:
+                        ui._codex_search = ""; ui._codex_search_active = False
+                        ui._codex_undisc_only = False
 
                 if event.key == pygame.K_b:
                     ui.breeding_open = not ui.breeding_open
@@ -1748,6 +1763,27 @@ def main():
                     if event.key == getattr(pygame, f"K_{i + 1}", None):
                         player.selected_slot = i
 
+                # Hotbar profiles: F1/F2/F3 load, Shift+F1/F2/F3 save
+                for pi, fkey in enumerate((pygame.K_F1, pygame.K_F2, pygame.K_F3)):
+                    if event.key == fkey and not _any_ui_open():
+                        mods = pygame.key.get_mods()
+                        if mods & pygame.KMOD_SHIFT:
+                            player.hotbar_profiles[pi] = {
+                                "hotbar": list(player.hotbar),
+                                "hotbar_uses": list(player.hotbar_uses),
+                            }
+                            ui.flash_message = f"Hotbar profile {pi + 1} saved"
+                            ui.flash_until = pygame.time.get_ticks() + 1500
+                        else:
+                            prof = player.hotbar_profiles[pi]
+                            if prof is not None:
+                                player.hotbar = list(prof.get("hotbar", [None] * len(player.hotbar)))
+                                player.hotbar_uses = list(prof.get("hotbar_uses", [None] * len(player.hotbar_uses)))
+                                ui.flash_message = f"Hotbar profile {pi + 1} loaded"
+                            else:
+                                ui.flash_message = f"Profile {pi + 1} empty (Shift+F{pi + 1} to save)"
+                            ui.flash_until = pygame.time.get_ticks() + 1500
+
                 # Shape brush cycling (Tab = next shape)
                 if event.key == pygame.K_TAB and not _any_ui_open():
                     from block_shapes import SHAPE_VARIANTS as _SV
@@ -1758,7 +1794,9 @@ def main():
                     if ui.coa_designer_open:
                         ui.handle_coa_scroll(event.y)
                     elif ui.reputation_screen_open:
-                        if getattr(ui, '_rep_view', 'list') == 'map':
+                        if ui.get_court_tab() != 'standing':
+                            ui.handle_court_scroll(-event.y * 20)
+                        elif getattr(ui, '_rep_view', 'list') == 'map':
                             ui._map_scroll = max(0, getattr(ui, '_map_scroll', 0) - event.y * 20)
                         else:
                             ui.handle_reputation_screen_scroll(-event.y * 20)
@@ -1928,9 +1966,11 @@ def main():
                 elif ui.hire_panel_open:
                     ui.handle_hire_panel_click(event.pos, player)
                 elif ui.reputation_screen_open:
-                    ui.handle_reputation_screen_click(event.pos)
+                    ui.handle_reputation_screen_click(event.pos, player, world)
                 elif ui.outpost_menu_open:
                     ui.handle_sommelier_click(event.pos, player)
+                elif getattr(ui, "temple_open", False):
+                    ui.handle_temple_click(event.pos, player)
                 elif getattr(player, "inspecting_npc", None) is not None:
                     ui.handle_inspect_click(event.pos, player, world)
                 elif ui.npc_open:
@@ -2243,6 +2283,56 @@ def main():
                                 _prdx = 1
                             _pbcfg["rate"] = _rates[(_prdx + 1) % len(_rates)]
                             world.pipe_state[(_rbx, _rby)] = _pbcfg
+                    # Silk pipeline right-click: feed tray / reel cocoons / degum raw silk
+                    if event.button == 3 and not _any_ui_open():
+                        from blocks import (SILKWORM_TRAY_EGG as _STE, SILKWORM_TRAY_LARVA as _STL,
+                                            SILKWORM_TRAY_SPINNING as _STS, SILKWORM_TRAY_COCOON as _STC,
+                                            REELING_FRAME_BLOCK as _RFB,
+                                            DEGUMMING_VAT_BLOCK as _DVB)
+                        from items import ITEMS as _SITEMS
+                        import sericulture as _seri
+                        _sx_w = event.pos[0] + renderer.cam_x
+                        _sy_w = event.pos[1] + renderer.cam_y
+                        _sbx = int(_sx_w // BLOCK_SIZE)
+                        _sby = int(_sy_w // BLOCK_SIZE)
+                        _sbid = world.get_block(_sbx, _sby)
+
+                        # ── Feed silkworm tray with mulberry leaves ───────
+                        _STAGE_NEXT = {_STE: _STL, _STL: _STS, _STS: _STC}
+                        _STAGE_KEY  = {_STE: "egg", _STL: "larva", _STS: "spinning"}
+                        if _sbid in _STAGE_NEXT and player.inventory.get("mulberry_leaves", 0) > 0:
+                            if not hasattr(world, "_silkworm_feed"):
+                                world._silkworm_feed = {}
+                            player.inventory["mulberry_leaves"] -= 1
+                            key = (_sbx, _sby)
+                            world._silkworm_feed[key] = world._silkworm_feed.get(key, 0) + 1
+                            need = _seri.LEAVES_PER_STAGE[_STAGE_KEY[_sbid]]
+                            if world._silkworm_feed[key] >= need:
+                                world.set_block(_sbx, _sby, _STAGE_NEXT[_sbid])
+                                world._silkworm_feed[key] = 0
+                                player.pending_notifications.append(
+                                    ("Silkworms", f"Advanced → {_STAGE_KEY[_sbid]} done", None))
+
+                        # ── Reeling Frame: cocoon → raw silk ──────────────
+                        elif _sbid == _RFB:
+                            for _cocoon, _raw in _seri.REELING_RECIPES.items():
+                                if player.inventory.get(_cocoon, 0) > 0:
+                                    player.inventory[_cocoon] -= 1
+                                    player._add_item(_raw)
+                                    player.pending_notifications.append(
+                                        ("Reeled", _SITEMS[_raw]["name"], None))
+                                    break
+
+                        # ── Degumming Vat: raw silk (or byssus) → thread ──
+                        elif _sbid == _DVB:
+                            for _raw, _thread in _seri.DEGUMMING_RECIPES.items():
+                                if player.inventory.get(_raw, 0) > 0:
+                                    player.inventory[_raw] -= 1
+                                    player._add_item(_thread)
+                                    player.pending_notifications.append(
+                                        ("Degummed", _SITEMS[_thread]["name"], None))
+                                    break
+
                     # Sculptor right-click: restore stone in carve phase
                     if event.button == 3 and ui.refinery_open:
                         from blocks import SCULPTORS_BENCH as _SCULPTORS_BENCH_R

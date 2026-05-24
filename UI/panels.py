@@ -99,9 +99,17 @@ class PanelsMixin:
                             WeaponArmorerNPC, QuartermasterNPC, GarrisonCommanderNPC,
                             DoctorNPC, CoinDealerNPC,
                             NobleMaecenasNPC, WeaponOrderNPC,
+                            HerboristNPC, FishmongerNPC, SaltMerchantNPC,
+                            SpiritsDistillerNPC, DyerNPC, CartographerNPC,
+                            FarrierNPC, CandlemakerNPC, TeaMerchantNPC,
+                            HoneyMerchantNPC, LibraryNPC,
                             sculpture_commission_display, sculpture_commission_hint,
                             tapestry_commission_display, tapestry_commission_hint,
                             weapon_commission_display, weapon_commission_hint)
+        _SIMPLE_SHOP_NPCS = (HerboristNPC, FishmongerNPC, SaltMerchantNPC,
+                             SpiritsDistillerNPC, DyerNPC, CartographerNPC,
+                             FarrierNPC, CandlemakerNPC, TeaMerchantNPC,
+                             HoneyMerchantNPC, LibraryNPC)
         from outpost_npcs import OutpostKeeperNPC
         npc = self.active_npc
         if isinstance(npc, LeaderNPC):
@@ -146,7 +154,7 @@ class PanelsMixin:
             border_col = (130, 170, 230)
         elif _is_coin_npc(npc, "Collector"):
             border_col = (200, 165, 100)
-        elif isinstance(npc, MerchantNPC):
+        elif isinstance(npc, MerchantNPC) or isinstance(npc, _SIMPLE_SHOP_NPCS):
             border_col = (180, 140, 40)
         elif isinstance(npc, RestaurantNPC):
             border_col = (200, 90, 30)
@@ -207,7 +215,7 @@ class PanelsMixin:
             self._draw_coin_appraiser_content(player, npc, px, py, PW, PH)
         elif _is_coin_npc(npc, "Collector"):
             self._draw_coin_collector_content(player, npc, px, py, PW, PH)
-        elif isinstance(npc, MerchantNPC):
+        elif isinstance(npc, MerchantNPC) or isinstance(npc, _SIMPLE_SHOP_NPCS):
             self._draw_merchant_content(player, npc, px, py, PW, PH)
         elif isinstance(npc, RestaurantNPC):
             self._draw_restaurant_content(player, npc, px, py, PW, PH)
@@ -1584,6 +1592,17 @@ class PanelsMixin:
             "Left-click: transfer all  |  Right-click: transfer one  |  E or ESC: close",
             True, (110, 90, 60))
         self.screen.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, py + 8))
+
+        # Quick-stack button (deposits any inventory items already present in chest)
+        qs_w, qs_h = 140, 22
+        qs_x = px + PW - qs_w - 12
+        qs_y = py + 6
+        self._chest_quick_stack_rect = pygame.Rect(qs_x, qs_y, qs_w, qs_h)
+        pygame.draw.rect(self.screen, (50, 38, 18), self._chest_quick_stack_rect)
+        pygame.draw.rect(self.screen, (180, 140, 60), self._chest_quick_stack_rect, 1)
+        qs_s = self.small.render("Quick Stack", True, (240, 210, 130))
+        self.screen.blit(qs_s, (qs_x + (qs_w - qs_s.get_width()) // 2,
+                                 qs_y + (qs_h - qs_s.get_height()) // 2))
 
         half = (PW - 30) // 2
         lx = px + 10
@@ -3884,15 +3903,52 @@ class PanelsMixin:
         gold_txt = self.font.render(f"Your gold: {player.money}", True, (220, 175, 40))
         self.screen.blit(gold_txt, (px + PW - gold_txt.get_width() - 20, py + 10))
 
+        # Faith line — doctrine + bishop. Lazy-bind faith_id for NPCs from
+        # older saves so the indicator appears once faiths exist in this world.
+        fy_offset = 0
+        try:
+            import religion as rel
+            faith_id = getattr(npc, "faith_id", 0)
+            if not faith_id:
+                from constants import BLOCK_SIZE as _BS
+                f = rel.faith_for_position(player.world,
+                                           int(getattr(npc, "x", 0) // _BS))
+                if f is not None:
+                    npc.faith_id       = f.faith_id
+                    npc.faith_name     = f.name
+                    npc.faith_doctrine = f.doctrine
+                    npc.religion_name  = f.name
+                    faith_id = f.faith_id
+            if faith_id:
+                faith = rel.FAITH_STATES.get(faith_id)
+                doctrine = (faith.doctrine if faith
+                            else getattr(npc, "faith_doctrine", ""))
+                bishop   = getattr(npc, "bishop_name", "")
+                tint = rel.doctrine_profile(doctrine).get(
+                    "tint", (180, 170, 150))
+                fline = doctrine.title() if doctrine else ""
+                if bishop:
+                    fline += (f"  ·  Bishop {bishop}" if fline
+                              else f"Bishop {bishop}")
+                if fline:
+                    fs = self.small.render(fline, True, tint)
+                    self.screen.blit(fs, (px + PW // 2 - fs.get_width() // 2,
+                                          py + 32))
+                    fy_offset = 18
+                if faith is not None and npc.religion_name != faith.name:
+                    npc.religion_name = faith.name
+        except Exception:
+            pass
+
         disc_pct = npc.rep_discount_pct()
         duration = int(npc._blessing_duration())
         if disc_pct > 0:
             rep_txt = self.small.render(
                 f"Town rep: -{disc_pct}% cost, {duration}s blessing", True, (120, 200, 120))
-            self.screen.blit(rep_txt, (px + 20, py + 32))
+            self.screen.blit(rep_txt, (px + 20, py + 32 + fy_offset))
 
         # Flavor text
-        fy = py + 56
+        fy = py + 56 + fy_offset
         for line in npc.flavor.split("\n"):
             flavor_s = self.font.render(line, True, (170, 160, 130))
             self.screen.blit(flavor_s, (px + PW // 2 - flavor_s.get_width() // 2, fy))
@@ -3933,6 +3989,20 @@ class PanelsMixin:
         lbl = self.font.render(btn_label, True, btn_col)
         self.screen.blit(lbl, (btn_rect.centerx - lbl.get_width() // 2,
                                 btn_rect.centery - lbl.get_height() // 2))
+
+        # Sanctuary button — placed ABOVE the blessing button with a gap so
+        # the two click rects never overlap. Only shown when this shrine is
+        # linked to a faith.
+        if getattr(npc, "faith_id", 0):
+            sw, sh = 220, 26
+            srect = pygame.Rect(px + PW // 2 - sw // 2,
+                                btn_rect.y - sh - 10, sw, sh)
+            self._trade_rects[99] = srect
+            pygame.draw.rect(self.screen, (40, 30, 50), srect)
+            pygame.draw.rect(self.screen, (175, 130, 200), srect, 1)
+            slbl = self.small.render("Visit Sanctuary", True, (220, 200, 240))
+            self.screen.blit(slbl, (srect.centerx - slbl.get_width() // 2,
+                                     srect.centery - slbl.get_height() // 2))
 
     def _draw_trade_block_panel(self, player):
         from towns import TOWNS
@@ -4213,6 +4283,28 @@ class PanelsMixin:
         role_s = self.small.render(role, True, (170, 150, 110))
         self.screen.blit(role_s, (px + 16, cy))
         cy += 20
+        # Faith line — every NPC has a faith_id set at spawn (or lazily here)
+        try:
+            import religion as rel
+            fid = getattr(npc, "faith_id", 0)
+            if not fid:
+                # Lazy bind for older NPCs that pre-date faith_id
+                from constants import BLOCK_SIZE as _BS
+                f2 = rel.faith_for_position(world,
+                                            int(getattr(npc, "x", 0) // _BS))
+                if f2 is not None:
+                    npc.faith_id = f2.faith_id
+                    fid = f2.faith_id
+            faith = rel.FAITH_STATES.get(fid) if fid else None
+            if faith is not None:
+                tint = rel.doctrine_profile(faith.doctrine).get(
+                    "tint", (170, 150, 110))
+                fs = self.small.render(
+                    f"Devout: {faith.name} ({faith.doctrine})", True, tint)
+                self.screen.blit(fs, (px + 16, cy))
+                cy += 18
+        except Exception:
+            pass
         bio = identity.get("bio", blurb)
         if bio:
             for line in _wrap_text(bio, self.small, PW - 32):

@@ -90,10 +90,12 @@ from sculpture import SculptureGenerator, Sculpture
 from weapons import WeaponGenerator, Weapon, weapon_damage, WEAPON_TYPES
 from tapestry import TapestryGenerator, Tapestry
 from pottery import PotteryPiece, PotteryGenerator
+from glassblowing import GlassPiece, GlassblowingGenerator, classify_sand_biome, sand_item_for_biome
 from spirits import SpiritGenerator, Spirit
 from beer import BeerGenerator, Beer
 from tea import TeaGenerator, TeaLeaf
 from textiles import TextileGenerator, Textile
+from blocks import SILKWORM_TRAY_COCOON
 from cheese import CheeseGenerator, Cheese
 from jewelry import Jewelry
 from salt import SaltGenerator, SaltCrystal
@@ -166,10 +168,13 @@ class Player:
         self.inventory = {}
         self.hotbar = [None] * HOTBAR_SIZE
         self.hotbar_uses = [None] * HOTBAR_SIZE
+        self.hotbar_profiles = [None, None, None]   # 3 saved layouts; each None or {"hotbar":..., "hotbar_uses":...}
         self.selected_slot = 0
         self.shape_idx = 0          # index into block_shapes.SHAPE_VARIANTS
         self.money = 0
         self.guild_debt = 0
+        self.guild_rep = {}              # gid -> int reputation
+        self.active_contracts = []       # list of contract_id ints
         self.blessing_timer = 0.0
         self.blessing_mult  = 1.0
         # Rock collection
@@ -309,6 +314,10 @@ class Player:
         self._pottery_gen         = PotteryGenerator(world.seed)
         self.unplaced_vases       = []   # PotteryPiece vases available to mount on a display pedestal
         self.pottery_buffs        = {}   # buff_name -> {"duration": float}
+        # Glassblowing
+        self.glass_items          = []      # GlassPiece objects, all states
+        self.discovered_glass     = set()   # "biome_shape" strings
+        self._glass_gen           = GlassblowingGenerator(world.seed)
         # Pigment collection
         self.pigments             = []        # list of Pigment objects
         self.discovered_pigments  = set()     # pigment_key strings
@@ -541,10 +550,15 @@ class Player:
         self.health, self.hunger = d["health"], d["hunger"]
         self.pick_power, self.money = d["pick_power"], d["money"]
         self.guild_debt = d.get("guild_debt", 0)
+        self.guild_rep = dict(d.get("guild_rep", {}) or {})
+        self.active_contracts = list(d.get("active_contracts", []) or [])
         self.selected_slot = d["selected_slot"]
         self.inventory = d["inventory"]
         self.hotbar = d["hotbar"]
         self.hotbar_uses = d["hotbar_uses"]
+        self.hotbar_profiles = list(d.get("hotbar_profiles", [None, None, None]) or [None, None, None])
+        while len(self.hotbar_profiles) < 3:
+            self.hotbar_profiles.append(None)
         self.known_recipes = set(d["known_recipes"])
         self.known_crops   = set(d.get("known_crops", []))
         self.rocks = [Rock(**r) for r in d["rocks"]]
@@ -670,6 +684,8 @@ class Player:
         self.pottery_pieces     = [PotteryPiece(**x) for x in d.get("pottery_pieces", [])]
         self.lost_artifacts     = d.get("lost_artifacts", [])
         self.discovered_pottery = set(d.get("discovered_pottery", []))
+        self.glass_items        = [GlassPiece(**x) for x in d.get("glass_items", [])]
+        self.discovered_glass   = set(d.get("discovered_glass", []))
         self.honey_jars         = [HoneyJar(**x) for x in d.get("honey_jars", [])]
         self.discovered_honeys  = set(d.get("discovered_honeys", []))
         self.mead_batches       = [MeadBatch(**x) for x in d.get("mead_batches", [])]
@@ -1467,6 +1483,11 @@ class Player:
                 self.discovered_shell_types.add(shell.species)
                 self.pending_notifications.append(
                     ("Seashell", shell.species.replace("_", " ").title(), shell.rarity))
+                # Pen shells yield byssus filament — raw input for sea silk.
+                if shell.species == "pen_shell" and random.random() < 0.35:
+                    self._add_item("byssus_fiber")
+                    self.pending_notifications.append(
+                        ("Byssus", "Byssus Filament", None))
             elif block_id == OYSTER_BLOCK:
                 biome = self.world.get_biome(bx)
                 shell = self._shell_gen.generate(bx, by, biome)
@@ -1512,6 +1533,24 @@ class Player:
                 drop = block_data["drop"]
                 if drop and random.random() < block_data.get("drop_chance", 1.0):
                     self._add_item(drop)
+                # Mulberry leaves rarely scattered through leafy canopies — the
+                # starter feed source until the player grows their own tree.
+                if random.random() < 0.05:
+                    self._add_item("mulberry_leaves")
+                # And, even rarer, a mulberry sapling so the player can farm them.
+                if random.random() < 0.015:
+                    self._add_item("mulberry_sapling")
+            elif block_id == SILKWORM_TRAY_COCOON:
+                # ~10% chance the silkworm tray spun a double cocoon (dupioni source).
+                from sericulture import DUPIONI_CHANCE
+                if random.random() < DUPIONI_CHANCE:
+                    self._add_item("silk_cocoon_double")
+                    self.pending_notifications.append(
+                        ("Sericulture", "Double Cocoon — Dupioni!", None))
+                else:
+                    self._add_item("silk_cocoon")
+                    self.pending_notifications.append(
+                        ("Sericulture", "Silk Cocoon", None))
             elif block_id == COFFEE_CROP_MATURE:
                 biodome = self.world.get_biodome(bx)
                 # Farmed crops: compute terroir from soil below the crop tile.
@@ -1645,6 +1684,12 @@ class Player:
                 if drop in ("cave_mushroom", "rare_mushroom"):
                     self._add_item(drop)
                 self.pending_notifications.append(("Mushroom", block_id, None))
+            elif block_id == SAND:
+                # Glassblowing: sand carries biome-typed variety.
+                biome    = self.world.get_biome(bx)
+                biodome  = self.world.get_biodome(bx)
+                sand_key = classify_sand_biome(biodome) if biodome in {"beach", "coastal", "volcanic", "saltflat", "salt_flat"} else classify_sand_biome(biome)
+                self._add_item(sand_item_for_biome(sand_key))
             else:
                 block_data = BLOCKS[block_id]
                 drop = block_data["drop"]

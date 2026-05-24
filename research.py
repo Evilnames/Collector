@@ -759,6 +759,23 @@ class ResearchTree:
             {"tournament_pennant": 1, "gold_nugget": 12}, ["chivalry_armor"],
             _noop, money_cost=500), 26, 2)
 
+        # --- Glassworking (column 27) ---
+        self._add(ResearchNode(
+            "glassworking_basics", "Glassblowing",
+            "Smelt and blow biome-typed sand into bottles, vessels, and panes. Unlocks Blowing Bench and Annealing Oven.",
+            {"sand_grain": 6, "iron_chunk": 2}, [],
+            _noop, money_cost=60), 27, 0)
+        self._add(ResearchNode(
+            "fine_glassblowing", "Fine Glassblowing",
+            "Refined technique yields fine and superior vessels and lets glass bottles unlock fine-tier wine, beer, and spirits.",
+            {"glass_bottle": 2, "gold_nugget": 2}, ["glassworking_basics"],
+            _noop, money_cost=200), 27, 1)
+        self._add(ResearchNode(
+            "pane_lamination", "Pane Lamination",
+            "Cooling broad sheets without warping. Unlocks placeable Glass Pane window blocks.",
+            {"glass_bottle": 4}, ["glassworking_basics"],
+            _noop, money_cost=140), 27, 2)
+
     def prereqs_met(self, node_id):
         return all(self.nodes[p].unlocked for p in self.nodes[node_id].prerequisites)
 

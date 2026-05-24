@@ -200,7 +200,30 @@ class HandlersMixin:
             for _ in range(out_count):
                 player._add_item(out_id)
 
+    def handle_codex_search_key(self, event):
+        if event.key == pygame.K_ESCAPE:
+            self._codex_search = ""
+            self._codex_search_active = False
+        elif event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+            self._codex_search_active = False
+        elif event.key == pygame.K_BACKSPACE:
+            self._codex_search = self._codex_search[:-1]
+            self._unified_scroll = 0
+        elif event.unicode and event.unicode.isprintable():
+            self._codex_search += event.unicode
+            self._unified_scroll = 0
+
     def handle_collection_click(self, pos, player):
+        # Undiscovered-only toggle (Encyclopedia tab only)
+        if self._codex_undisc_btn_rect and self._codex_undisc_btn_rect.collidepoint(pos):
+            self._codex_undisc_only = not self._codex_undisc_only
+            self._codex_search_active = False
+            return
+        # Search bar activation (Collection tab only)
+        if self._codex_search_rect and self._codex_search_rect.collidepoint(pos):
+            self._codex_search_active = True
+            return
+        self._codex_search_active = False
         # Main tab buttons
         for tab_idx, rect in self._tab_rects.items():
             if rect.collidepoint(pos):
@@ -447,6 +470,25 @@ class HandlersMixin:
         inv = self.active_chest_inv
         if inv is None:
             return
+        # Quick Stack: deposit every item the player has that already exists in this chest
+        qs_rect = getattr(self, "_chest_quick_stack_rect", None)
+        if qs_rect is not None and qs_rect.collidepoint(pos) and button == 1:
+            moved = 0
+            for item_id in list(inv.keys()):
+                have = player.inventory.get(item_id, 0)
+                if have <= 0:
+                    continue
+                inv[item_id] = inv.get(item_id, 0) + have
+                del player.inventory[item_id]
+                while item_id in player.hotbar:
+                    idx = player.hotbar.index(item_id)
+                    player.hotbar[idx] = None
+                    player.hotbar_uses[idx] = None
+                moved += have
+            self.flash_message = (f"Quick-stacked {moved} item{'s' if moved != 1 else ''}"
+                                  if moved else "Nothing to quick-stack")
+            self.flash_until = pygame.time.get_ticks() + 1500
+            return
         count = 1 if button == 3 else None
         for item_id, rect in self._chest_rects.items():
             if rect.collidepoint(pos) and inv.get(item_id, 0) > 0:
@@ -597,8 +639,16 @@ class HandlersMixin:
                             RoyalPaleontologistNPC, RoyalAnglerNPC,
                             WeaponArmorerNPC, QuartermasterNPC, GarrisonCommanderNPC,
                             DoctorNPC, CoinDealerNPC,
-                            NobleMaecenasNPC, WeaponOrderNPC, ChapterMasterNPC)
+                            NobleMaecenasNPC, WeaponOrderNPC, ChapterMasterNPC,
+                            HerboristNPC, FishmongerNPC, SaltMerchantNPC,
+                            SpiritsDistillerNPC, DyerNPC, CartographerNPC,
+                            FarrierNPC, CandlemakerNPC, TeaMerchantNPC,
+                            HoneyMerchantNPC, LibraryNPC)
         from outpost_npcs import OutpostKeeperNPC
+        _SIMPLE_SHOP_NPCS = (HerboristNPC, FishmongerNPC, SaltMerchantNPC,
+                             SpiritsDistillerNPC, DyerNPC, CartographerNPC,
+                             FarrierNPC, CandlemakerNPC, TeaMerchantNPC,
+                             HoneyMerchantNPC, LibraryNPC)
         npc = self.active_npc
         if isinstance(npc, ChapterMasterNPC):
             self._handle_chapter_house_click(pos, player)
@@ -683,7 +733,7 @@ class HandlersMixin:
                 if rect.collidepoint(pos):
                     npc.complete_commission(player, cidx)
                     break
-        elif isinstance(npc, MerchantNPC):
+        elif isinstance(npc, MerchantNPC) or isinstance(npc, _SIMPLE_SHOP_NPCS):
             for key, rect in self._trade_rects.items():
                 if rect.collidepoint(pos):
                     idx, action = key
@@ -698,7 +748,15 @@ class HandlersMixin:
                     npc.execute_purchase(i, player)
                     break
         elif isinstance(npc, ShrineKeeperNPC):
-            if self._trade_rects.get(0) and self._trade_rects[0].collidepoint(pos):
+            # Sanctuary first — smaller/more-specific button wins if rects
+            # ever overlap with the blessing button.
+            if self._trade_rects.get(99) and self._trade_rects[99].collidepoint(pos):
+                fid = getattr(npc, "faith_id", 0)
+                if fid:
+                    self.npc_open = False
+                    self.active_npc = None
+                    self.open_temple(faith_id=fid)
+            elif self._trade_rects.get(0) and self._trade_rects[0].collidepoint(pos):
                 npc.give_blessing(player)
         elif isinstance(npc, JewelryMerchantNPC):
             self.handle_jewelry_merchant_click(pos, player, npc)
@@ -861,6 +919,13 @@ class HandlersMixin:
             return
         if self.refinery_block_id == TAPROOM_BLOCK:
             self._handle_taproom_click(pos, player)
+            return
+        from blocks import GLASS_BLOWING_BENCH_BLOCK, ANNEALING_OVEN_BLOCK
+        if self.refinery_block_id == GLASS_BLOWING_BENCH_BLOCK:
+            self._handle_blowing_bench_click(pos, player)
+            return
+        if self.refinery_block_id == ANNEALING_OVEN_BLOCK:
+            self._handle_annealing_oven_click(pos, player)
             return
         from blocks import FALCONER_PERCH, MEWS_BLOCK
         if self.refinery_block_id in (FALCONER_PERCH, MEWS_BLOCK):

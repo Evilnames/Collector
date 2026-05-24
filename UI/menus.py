@@ -11,6 +11,7 @@ class MenusMixin:
         "rare":      (60,  100, 220),
         "epic":      (150,  50, 220),
         "legendary": (240, 180,   0),
+        "royal":     (220, 175,  70),
     }
 
     def _draw_pause_menu(self):

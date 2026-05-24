@@ -197,12 +197,111 @@ class HUDMixin:
         y = 70
         self.screen.blit(line1, (x + 6, y))
         self.screen.blit(line2, (x + 6, y + 14))
+
+    def _draw_flash_message(self):
+        if not getattr(self, "flash_message", "") or pygame.time.get_ticks() >= getattr(self, "flash_until", 0):
+            return
+        txt = self.font.render(self.flash_message, True, (250, 230, 140))
+        x = (SCREEN_W - txt.get_width()) // 2
+        y = SCREEN_H - 110
+        bg = pygame.Surface((txt.get_width() + 24, txt.get_height() + 12), pygame.SRCALPHA)
+        bg.fill((20, 20, 28, 210))
+        self.screen.blit(bg, (x - 12, y - 6))
+        pygame.draw.rect(self.screen, (140, 120, 60),
+                         (x - 12, y - 6, txt.get_width() + 24, txt.get_height() + 12), 1)
+        self.screen.blit(txt, (x, y))
+
+    def _draw_pinned_quests(self, player):
+        """Compact left-side strip showing the player's active order quest and guild contracts."""
+        entries = []
+
+        # Order quest
         q = getattr(player, "order_quest", None)
         if q is not None:
-            tag = self.small.render(
-                f"Quest: {q.get('kind','?').title()} T{q.get('tier',0)}",
-                True, (180, 200, 140))
-            self.screen.blit(tag, (SCREEN_W - tag.get_width() - 10, y + 30))
+            try:
+                import knightly_orders as ko
+                order = ko.order(getattr(player, "order_id", 0))
+                order_name = order.name if order else "Order"
+            except Exception:
+                order_name = "Order"
+            kind = str(q.get("kind", "quest")).replace("_", " ").title()
+            tier = q.get("tier", 0)
+            entries.append({
+                "tag": "ORDER",
+                "tag_col": (220, 195, 110),
+                "title": f"{order_name}: {kind} T{tier}",
+                "progress": None,
+                "reward": None,
+            })
+
+        # Active guild contracts
+        active = list(getattr(player, "active_contracts", []) or [])
+        if active:
+            try:
+                from guild_contracts import CONTRACTS as _CONTRACTS
+            except Exception:
+                _CONTRACTS = {}
+            for cid in active:
+                c = _CONTRACTS.get(cid)
+                if c is None:
+                    continue
+                if c.kind == "supply":
+                    have = player.inventory.get(c.item_id, 0)
+                    progress = f"{min(have, c.count)}/{c.count}"
+                    progress_col = (140, 220, 140) if have >= c.count else (220, 200, 110)
+                else:
+                    progress = "deliver"
+                    progress_col = (180, 200, 230)
+                entries.append({
+                    "tag": "GUILD",
+                    "tag_col": (160, 200, 230),
+                    "title": c.title,
+                    "progress": progress,
+                    "progress_col": progress_col,
+                    "reward": f"${c.reward_gold}",
+                })
+
+        if not entries:
+            return
+
+        PANEL_W = 240
+        ROW_H = 30
+        HEADER_H = 18
+        x = 10
+        y = 82  # below hunger/breath bars
+        total_h = HEADER_H + len(entries) * ROW_H + 4
+
+        bg = pygame.Surface((PANEL_W, total_h), pygame.SRCALPHA)
+        bg.fill((18, 22, 30, 195))
+        self.screen.blit(bg, (x, y))
+        pygame.draw.rect(self.screen, (90, 110, 140), (x, y, PANEL_W, total_h), 1)
+
+        hdr = self.small.render(f"Pinned Quests ({len(entries)})", True, (200, 215, 235))
+        self.screen.blit(hdr, (x + 8, y + 3))
+        pygame.draw.line(self.screen, (60, 75, 95),
+                         (x, y + HEADER_H), (x + PANEL_W, y + HEADER_H))
+
+        for i, e in enumerate(entries):
+            ry = y + HEADER_H + i * ROW_H + 2
+            tag = self.small.render(e["tag"], True, e["tag_col"])
+            self.screen.blit(tag, (x + 6, ry))
+
+            title_max = PANEL_W - 16
+            title_text = e["title"]
+            while self.small.size(title_text)[0] > title_max and len(title_text) > 4:
+                title_text = title_text[:-2]
+            if title_text != e["title"]:
+                title_text = title_text[:-1] + "…"
+            ttxt = self.small.render(title_text, True, (220, 225, 235))
+            self.screen.blit(ttxt, (x + 6, ry + 12))
+
+            if e.get("progress") is not None:
+                pcol = e.get("progress_col", (200, 200, 200))
+                ptxt = self.small.render(e["progress"], True, pcol)
+                self.screen.blit(ptxt, (x + PANEL_W - ptxt.get_width() - 6, ry))
+            if e.get("reward") is not None:
+                rtxt = self.small.render(e["reward"], True, (240, 210, 50))
+                self.screen.blit(rtxt, (x + PANEL_W - rtxt.get_width() - 6, ry + 12))
 
     def _draw_hints(self, research, player):
         nearby_bed = player.get_nearby_bed()

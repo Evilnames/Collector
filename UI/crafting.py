@@ -1254,6 +1254,13 @@ class CraftingMixin:
                                        block_id=GLASS_KILN_BLOCK,
                                        action_label="SMELT")
             return
+        from blocks import GLASS_BLOWING_BENCH_BLOCK, ANNEALING_OVEN_BLOCK
+        if self.refinery_block_id == GLASS_BLOWING_BENCH_BLOCK:
+            self._draw_blowing_bench(player, dt)
+            return
+        if self.refinery_block_id == ANNEALING_OVEN_BLOCK:
+            self._draw_annealing_oven(player, dt)
+            return
         if self.refinery_block_id == GARDEN_WORKSHOP_BLOCK:
             self._draw_cooking_station(player, GARDEN_WORKSHOP_RECIPES, "GARDEN WORKSHOP",
                                        (100, 155, 80), self._garden_workshop_selected_recipe,

@@ -1010,6 +1010,10 @@ class KnightlyOrder:
     # kingdom_alignment maps kingdom_id -> "sworn"|"rival"|"exiled"|"independent".
     kingdom_alignment:  dict = field(default_factory=dict)
     patron_dynasty_id:  Optional[int] = None
+    # Runtime-only link to a guild that sponsors the order. Assigned by
+    # order_guild_links.assign_patrons after both ORDERS and GUILDS exist.
+    # Not persisted — re-derived on every load.
+    patron_guild_id:    Optional[str] = None
     # Worldgen-era ledger of notable moments. List[str], short prose lines like
     # "Year 142: Sir Carad slew the Bear-of-the-Marches at the Spring Lists."
     # Populated by _backdate_history at order creation so brand-new worlds
@@ -1561,6 +1565,13 @@ def seed_knightly_orders(world) -> None:
                 partner = rng.choice(others)
                 new_orders[0].rival_id = partner.order_id
                 partner.rival_id        = new_orders[0].order_id
+    # Assign a patron guild to any order that doesn't have one yet. Safe
+    # to call even if guilds haven't been seeded — it's a no-op until they are.
+    try:
+        import order_guild_links
+        order_guild_links.assign_patrons(seed)
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------

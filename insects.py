@@ -3608,6 +3608,4344 @@ class FrostMidge(Insect):
 
 
 # ---------------------------------------------------------------------------
+# Asian fauna (100 species)
+# ---------------------------------------------------------------------------
+
+# --- Asian butterflies ---
+
+class PaperKite(Insect):
+    SPECIES      = "paper_kite"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 10
+    BODY_COLOR   = (40, 40, 40)
+    WING_COLOR   = (245, 245, 240)
+    ACCENT_COLOR = (20, 20, 20)
+    HOVER_RANGE  = 60
+    SPEED        = 24.0
+    WING_TYPE    = "butterfly"
+
+
+class CommonRose(Insect):
+    SPECIES      = "common_rose"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 10
+    BODY_COLOR   = (25, 18, 22)
+    WING_COLOR   = (45, 30, 38)
+    ACCENT_COLOR = (215, 55, 75)
+    HOVER_RANGE  = 55
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class CrimsonRose(Insect):
+    SPECIES      = "crimson_rose"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 11
+    BODY_COLOR   = (30, 12, 18)
+    WING_COLOR   = (55, 22, 32)
+    ACCENT_COLOR = (235, 30, 55)
+    HOVER_RANGE  = 60
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class BlueTigerButterfly(Insect):
+    SPECIES      = "blue_tiger_butterfly"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 10
+    BODY_COLOR   = (28, 28, 38)
+    WING_COLOR   = (62, 92, 178)
+    ACCENT_COLOR = (235, 235, 245)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class PlainTigerAsia(Insect):
+    SPECIES      = "plain_tiger_asia"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical", "savanna"]
+    W, H         = 12, 9
+    BODY_COLOR   = (40, 25, 12)
+    WING_COLOR   = (220, 140, 40)
+    ACCENT_COLOR = (35, 25, 18)
+    HOVER_RANGE  = 50
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class CommonJezebel(Insect):
+    SPECIES      = "common_jezebel"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 9
+    BODY_COLOR   = (35, 35, 35)
+    WING_COLOR   = (240, 235, 220)
+    ACCENT_COLOR = (235, 105, 45)
+    HOVER_RANGE  = 50
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class PeacockPansy(Insect):
+    SPECIES      = "peacock_pansy"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "wetland"]
+    W, H         = 12, 9
+    BODY_COLOR   = (62, 42, 22)
+    WING_COLOR   = (205, 145, 55)
+    ACCENT_COLOR = (35, 65, 145)
+    HOVER_RANGE  = 50
+    SPEED        = 26.0
+    WING_TYPE    = "butterfly"
+
+
+class BandedPeacock(Insect):
+    SPECIES      = "banded_peacock"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 14, 10
+    BODY_COLOR   = (15, 25, 18)
+    WING_COLOR   = (22, 60, 38)
+    ACCENT_COLOR = (95, 215, 165)
+    HOVER_RANGE  = 60
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class CommonNawab(Insect):
+    SPECIES      = "common_nawab"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle"]
+    W, H         = 13, 10
+    BODY_COLOR   = (45, 38, 18)
+    WING_COLOR   = (185, 170, 65)
+    ACCENT_COLOR = (78, 102, 38)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class RedLacewing(Insect):
+    SPECIES      = "red_lacewing"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 9
+    BODY_COLOR   = (38, 18, 18)
+    WING_COLOR   = (215, 55, 38)
+    ACCENT_COLOR = (250, 235, 220)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class MalayLacewing(Insect):
+    SPECIES      = "malay_lacewing"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 9
+    BODY_COLOR   = (40, 18, 18)
+    WING_COLOR   = (228, 75, 45)
+    ACCENT_COLOR = (35, 22, 18)
+    HOVER_RANGE  = 58
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class CommonMime(Insect):
+    SPECIES      = "common_mime"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle"]
+    W, H         = 13, 10
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (40, 40, 45)
+    ACCENT_COLOR = (240, 240, 245)
+    HOVER_RANGE  = 55
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class ChocolatePansy(Insect):
+    SPECIES      = "chocolate_pansy"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "wetland"]
+    W, H         = 11, 8
+    BODY_COLOR   = (55, 32, 18)
+    WING_COLOR   = (115, 72, 38)
+    ACCENT_COLOR = (185, 138, 78)
+    HOVER_RANGE  = 45
+    SPEED        = 26.0
+    WING_TYPE    = "butterfly"
+
+
+class GreatMormon(Insect):
+    SPECIES      = "great_mormon"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 15, 11
+    BODY_COLOR   = (18, 18, 22)
+    WING_COLOR   = (35, 35, 42)
+    ACCENT_COLOR = (220, 215, 235)
+    HOVER_RANGE  = 65
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class JapaneseEmperor(Insect):
+    SPECIES      = "japanese_emperor"
+    RARITY       = "rare"
+    BIOMES       = ["temperate"]
+    W, H         = 15, 11
+    BODY_COLOR   = (32, 18, 38)
+    WING_COLOR   = (98, 62, 165)
+    ACCENT_COLOR = (240, 235, 230)
+    HOVER_RANGE  = 60
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class KaiserIHind(Insect):
+    SPECIES      = "kaiser_i_hind"
+    RARITY       = "rare"
+    BIOMES       = ["alpine_mountain", "rocky_mountain"]
+    W, H         = 15, 11
+    BODY_COLOR   = (28, 28, 18)
+    WING_COLOR   = (105, 158, 72)
+    ACCENT_COLOR = (235, 195, 55)
+    HOVER_RANGE  = 60
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class CommonCrow(Insect):
+    SPECIES      = "common_crow_butterfly"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 10
+    BODY_COLOR   = (15, 15, 15)
+    WING_COLOR   = (35, 28, 42)
+    ACCENT_COLOR = (215, 215, 220)
+    HOVER_RANGE  = 50
+    SPEED        = 26.0
+    WING_TYPE    = "butterfly"
+
+
+class ChestnutTiger(Insect):
+    SPECIES      = "chestnut_tiger"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "alpine_mountain"]
+    W, H         = 13, 9
+    BODY_COLOR   = (55, 32, 18)
+    WING_COLOR   = (155, 95, 45)
+    ACCENT_COLOR = (245, 240, 220)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class AsianCommaButterfly(Insect):
+    SPECIES      = "asian_comma_butterfly"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "boreal"]
+    W, H         = 11, 8
+    BODY_COLOR   = (62, 32, 12)
+    WING_COLOR   = (205, 125, 38)
+    ACCENT_COLOR = (38, 22, 12)
+    HOVER_RANGE  = 45
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class YellowOrangeTip(Insect):
+    SPECIES      = "yellow_orange_tip"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 11, 8
+    BODY_COLOR   = (60, 50, 22)
+    WING_COLOR   = (245, 220, 90)
+    ACCENT_COLOR = (235, 110, 38)
+    HOVER_RANGE  = 45
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class StripedAlbatross(Insect):
+    SPECIES      = "striped_albatross"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 9
+    BODY_COLOR   = (35, 35, 35)
+    WING_COLOR   = (245, 240, 230)
+    ACCENT_COLOR = (28, 28, 32)
+    HOVER_RANGE  = 50
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class CommonGull(Insect):
+    SPECIES      = "common_gull_butterfly"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 11, 8
+    BODY_COLOR   = (28, 28, 28)
+    WING_COLOR   = (242, 240, 232)
+    ACCENT_COLOR = (78, 78, 82)
+    HOVER_RANGE  = 45
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class CommonSailor(Insect):
+    SPECIES      = "common_sailor"
+    RARITY       = "common"
+    BIOMES       = ["jungle"]
+    W, H         = 12, 9
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (32, 32, 32)
+    ACCENT_COLOR = (235, 235, 235)
+    HOVER_RANGE  = 50
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class BlueOakleaf(Insect):
+    SPECIES      = "blue_oakleaf"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "temperate"]
+    W, H         = 13, 10
+    BODY_COLOR   = (45, 32, 18)
+    WING_COLOR   = (62, 92, 158)
+    ACCENT_COLOR = (105, 78, 38)
+    HOVER_RANGE  = 55
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class AutumnLeafButterfly(Insect):
+    SPECIES      = "autumn_leaf_butterfly"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 10
+    BODY_COLOR   = (62, 32, 12)
+    WING_COLOR   = (185, 88, 28)
+    ACCENT_COLOR = (95, 45, 18)
+    HOVER_RANGE  = 50
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+# --- Asian beetles ---
+
+class JapaneseRhinocerosBeetle(Insect):
+    SPECIES      = "japanese_rhinoceros_beetle"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "boreal"]
+    W, H         = 14, 8
+    BODY_COLOR   = (52, 28, 12)
+    WING_COLOR   = (88, 52, 22)
+    ACCENT_COLOR = (158, 108, 55)
+    HOVER_RANGE  = 30
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class GoldenStagBeetle(Insect):
+    SPECIES      = "golden_stag_beetle"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "temperate"]
+    W, H         = 13, 7
+    BODY_COLOR   = (108, 78, 18)
+    WING_COLOR   = (188, 142, 38)
+    ACCENT_COLOR = (245, 220, 88)
+    HOVER_RANGE  = 32
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class MiyamaStagBeetle(Insect):
+    SPECIES      = "miyama_stag_beetle"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "boreal", "alpine_mountain"]
+    W, H         = 13, 7
+    BODY_COLOR   = (62, 38, 18)
+    WING_COLOR   = (118, 72, 32)
+    ACCENT_COLOR = (175, 125, 65)
+    HOVER_RANGE  = 30
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class SaberhornLonghorn(Insect):
+    SPECIES      = "saberhorn_longhorn"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle"]
+    W, H         = 14, 6
+    BODY_COLOR   = (28, 38, 22)
+    WING_COLOR   = (52, 78, 42)
+    ACCENT_COLOR = (138, 168, 92)
+    HOVER_RANGE  = 30
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class AsiaticTigerBeetle(Insect):
+    SPECIES      = "asiatic_tiger_beetle"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 6
+    BODY_COLOR   = (22, 68, 48)
+    WING_COLOR   = (38, 128, 88)
+    ACCENT_COLOR = (245, 220, 92)
+    HOVER_RANGE  = 32
+    SPEED        = 32.0
+    WING_TYPE    = "beetle"
+
+
+class JapaneseRoseChafer(Insect):
+    SPECIES      = "japanese_rose_chafer"
+    RARITY       = "common"
+    BIOMES       = ["temperate"]
+    W, H         = 11, 6
+    BODY_COLOR   = (60, 92, 38)
+    WING_COLOR   = (108, 158, 62)
+    ACCENT_COLOR = (175, 215, 95)
+    HOVER_RANGE  = 30
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class HimalayanLonghorn(Insect):
+    SPECIES      = "himalayan_longhorn"
+    RARITY       = "rare"
+    BIOMES       = ["alpine_mountain", "rocky_mountain"]
+    W, H         = 14, 6
+    BODY_COLOR   = (32, 28, 38)
+    WING_COLOR   = (62, 52, 78)
+    ACCENT_COLOR = (158, 138, 195)
+    HOVER_RANGE  = 32
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class ThaiJewelBeetle(Insect):
+    SPECIES      = "thai_jewel_beetle"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 7
+    BODY_COLOR   = (18, 78, 92)
+    WING_COLOR   = (32, 148, 158)
+    ACCENT_COLOR = (118, 235, 215)
+    HOVER_RANGE  = 32
+    SPEED        = 26.0
+    WING_TYPE    = "beetle"
+
+
+class BalinesePeacockBeetle(Insect):
+    SPECIES      = "balinese_peacock_beetle"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 7
+    BODY_COLOR   = (22, 38, 88)
+    WING_COLOR   = (38, 78, 175)
+    ACCENT_COLOR = (108, 215, 188)
+    HOVER_RANGE  = 32
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class CelebesGoldenStag(Insect):
+    SPECIES      = "celebes_golden_stag"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 7
+    BODY_COLOR   = (118, 78, 22)
+    WING_COLOR   = (215, 158, 38)
+    ACCENT_COLOR = (250, 230, 95)
+    HOVER_RANGE  = 30
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class SumatranLonghorn(Insect):
+    SPECIES      = "sumatran_longhorn"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 6
+    BODY_COLOR   = (35, 22, 18)
+    WING_COLOR   = (72, 45, 32)
+    ACCENT_COLOR = (188, 142, 88)
+    HOVER_RANGE  = 32
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class JapaneseLadyBeetle(Insect):
+    SPECIES      = "japanese_lady_beetle"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 8, 5
+    BODY_COLOR   = (35, 18, 18)
+    WING_COLOR   = (215, 55, 38)
+    ACCENT_COLOR = (28, 22, 18)
+    HOVER_RANGE  = 28
+    SPEED        = 26.0
+    WING_TYPE    = "beetle"
+
+
+class KoreanGroundBeetle(Insect):
+    SPECIES      = "korean_ground_beetle"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "boreal"]
+    W, H         = 11, 5
+    BODY_COLOR   = (28, 28, 32)
+    WING_COLOR   = (48, 52, 62)
+    ACCENT_COLOR = (105, 115, 138)
+    HOVER_RANGE  = 28
+    SPEED        = 26.0
+    WING_TYPE    = "beetle"
+
+
+class AsianFlowerChafer(Insect):
+    SPECIES      = "asian_flower_chafer"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "jungle"]
+    W, H         = 11, 6
+    BODY_COLOR   = (78, 102, 22)
+    WING_COLOR   = (128, 168, 42)
+    ACCENT_COLOR = (215, 235, 118)
+    HOVER_RANGE  = 32
+    SPEED        = 26.0
+    WING_TYPE    = "beetle"
+
+
+class RainbowMountainStag(Insect):
+    SPECIES      = "rainbow_mountain_stag"
+    RARITY       = "rare"
+    BIOMES       = ["alpine_mountain", "rocky_mountain"]
+    W, H         = 13, 7
+    BODY_COLOR   = (45, 22, 78)
+    WING_COLOR   = (108, 62, 188)
+    ACCENT_COLOR = (235, 158, 215)
+    HOVER_RANGE  = 32
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+# --- Asian dragonflies ---
+
+class AsianEmperorDragonfly(Insect):
+    SPECIES      = "asian_emperor_dragonfly"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "jungle"]
+    W, H         = 15, 5
+    BODY_COLOR   = (22, 78, 128)
+    WING_COLOR   = (138, 188, 235)
+    ACCENT_COLOR = (235, 245, 255)
+    HOVER_RANGE  = 65
+    SPEED        = 38.0
+    WING_TYPE    = "dragonfly"
+
+
+class ChineseRedDragonfly(Insect):
+    SPECIES      = "chinese_red_dragonfly"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 13, 4
+    BODY_COLOR   = (185, 38, 28)
+    WING_COLOR   = (235, 78, 55)
+    ACCENT_COLOR = (250, 215, 195)
+    HOVER_RANGE  = 55
+    SPEED        = 34.0
+    WING_TYPE    = "dragonfly"
+
+
+class JapaneseGoldenRing(Insect):
+    SPECIES      = "japanese_golden_ring"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 15, 5
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (188, 188, 195)
+    ACCENT_COLOR = (240, 195, 55)
+    HOVER_RANGE  = 60
+    SPEED        = 36.0
+    WING_TYPE    = "dragonfly"
+
+
+class YellowStripedHawker(Insect):
+    SPECIES      = "yellow_striped_hawker"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "jungle"]
+    W, H         = 14, 5
+    BODY_COLOR   = (38, 38, 22)
+    WING_COLOR   = (148, 148, 92)
+    ACCENT_COLOR = (245, 218, 78)
+    HOVER_RANGE  = 60
+    SPEED        = 36.0
+    WING_TYPE    = "dragonfly"
+
+
+class RubyMeadowhawkAsia(Insect):
+    SPECIES      = "ruby_meadowhawk_asia"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 12, 4
+    BODY_COLOR   = (158, 35, 38)
+    WING_COLOR   = (215, 78, 75)
+    ACCENT_COLOR = (245, 200, 195)
+    HOVER_RANGE  = 50
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+
+
+class PiedPaddyDragonfly(Insect):
+    SPECIES      = "pied_paddy_dragonfly"
+    RARITY       = "common"
+    BIOMES       = ["wetland"]
+    W, H         = 12, 5
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (215, 215, 215)
+    ACCENT_COLOR = (78, 78, 88)
+    HOVER_RANGE  = 50
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+
+
+class CrimsonDropwing(Insect):
+    SPECIES      = "crimson_dropwing"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "jungle"]
+    W, H         = 13, 5
+    BODY_COLOR   = (148, 22, 22)
+    WING_COLOR   = (215, 38, 32)
+    ACCENT_COLOR = (248, 175, 142)
+    HOVER_RANGE  = 55
+    SPEED        = 36.0
+    WING_TYPE    = "dragonfly"
+
+
+class AsianClubtail(Insect):
+    SPECIES      = "asian_clubtail"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland"]
+    W, H         = 14, 5
+    BODY_COLOR   = (28, 35, 22)
+    WING_COLOR   = (108, 138, 92)
+    ACCENT_COLOR = (215, 235, 158)
+    HOVER_RANGE  = 55
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+
+
+class RiceFieldSkimmer(Insect):
+    SPECIES      = "rice_field_skimmer"
+    RARITY       = "common"
+    BIOMES       = ["wetland"]
+    W, H         = 12, 4
+    BODY_COLOR   = (138, 105, 38)
+    WING_COLOR   = (195, 168, 92)
+    ACCENT_COLOR = (235, 218, 158)
+    HOVER_RANGE  = 50
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+
+
+class KoreanGreenSkimmer(Insect):
+    SPECIES      = "korean_green_skimmer"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 13, 5
+    BODY_COLOR   = (28, 88, 48)
+    WING_COLOR   = (62, 158, 92)
+    ACCENT_COLOR = (148, 235, 158)
+    HOVER_RANGE  = 55
+    SPEED        = 34.0
+    WING_TYPE    = "dragonfly"
+
+
+# --- Asian fireflies ---
+
+class GenjiFirefly(Insect):
+    SPECIES      = "genji_firefly"
+    RARITY       = "rare"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 9, 6
+    BODY_COLOR   = (28, 28, 22)
+    WING_COLOR   = (45, 45, 38)
+    ACCENT_COLOR = (245, 250, 158)
+    HOVER_RANGE  = 55
+    SPEED        = 20.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class HeikeFirefly(Insect):
+    SPECIES      = "heike_firefly"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 8, 5
+    BODY_COLOR   = (28, 28, 22)
+    WING_COLOR   = (42, 42, 38)
+    ACCENT_COLOR = (235, 245, 175)
+    HOVER_RANGE  = 50
+    SPEED        = 22.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class TaiwaneseFirefly(Insect):
+    SPECIES      = "taiwanese_firefly"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 8, 5
+    BODY_COLOR   = (32, 22, 22)
+    WING_COLOR   = (52, 38, 38)
+    ACCENT_COLOR = (255, 230, 138)
+    HOVER_RANGE  = 50
+    SPEED        = 22.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class KoreanFirefly(Insect):
+    SPECIES      = "korean_firefly"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "wetland"]
+    W, H         = 8, 5
+    BODY_COLOR   = (30, 30, 22)
+    WING_COLOR   = (48, 48, 38)
+    ACCENT_COLOR = (215, 248, 145)
+    HOVER_RANGE  = 48
+    SPEED        = 22.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class HimalayanFirefly(Insect):
+    SPECIES      = "himalayan_firefly"
+    RARITY       = "rare"
+    BIOMES       = ["alpine_mountain", "rocky_mountain"]
+    W, H         = 9, 6
+    BODY_COLOR   = (22, 22, 32)
+    WING_COLOR   = (38, 38, 52)
+    ACCENT_COLOR = (158, 215, 245)
+    HOVER_RANGE  = 55
+    SPEED        = 20.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+# --- Asian moths ---
+
+class JapaneseSilkmoth(Insect):
+    SPECIES      = "japanese_silkmoth"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate"]
+    W, H         = 14, 9
+    BODY_COLOR   = (215, 205, 185)
+    WING_COLOR   = (245, 238, 218)
+    ACCENT_COLOR = (185, 158, 118)
+    HOVER_RANGE  = 50
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class ChineseTussahMoth(Insect):
+    SPECIES      = "chinese_tussah_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "jungle"]
+    W, H         = 14, 9
+    BODY_COLOR   = (118, 78, 38)
+    WING_COLOR   = (175, 132, 62)
+    ACCENT_COLOR = (240, 205, 105)
+    HOVER_RANGE  = 50
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class JapaneseOakSilkmoth(Insect):
+    SPECIES      = "japanese_oak_silkmoth"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "boreal"]
+    W, H         = 15, 10
+    BODY_COLOR   = (88, 118, 62)
+    WING_COLOR   = (148, 188, 108)
+    ACCENT_COLOR = (215, 245, 178)
+    HOVER_RANGE  = 55
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class MalayanMoonMoth(Insect):
+    SPECIES      = "malayan_moon_moth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 16, 11
+    BODY_COLOR   = (78, 138, 88)
+    WING_COLOR   = (128, 215, 158)
+    ACCENT_COLOR = (218, 248, 215)
+    HOVER_RANGE  = 60
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class MalaccanMoonmoth(Insect):
+    SPECIES      = "malaccan_moonmoth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 15, 10
+    BODY_COLOR   = (78, 128, 95)
+    WING_COLOR   = (138, 215, 168)
+    ACCENT_COLOR = (235, 248, 215)
+    HOVER_RANGE  = 60
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class HimalayanGiantMoth(Insect):
+    SPECIES      = "himalayan_giant_moth"
+    RARITY       = "rare"
+    BIOMES       = ["alpine_mountain", "rocky_mountain"]
+    W, H         = 16, 11
+    BODY_COLOR   = (85, 65, 45)
+    WING_COLOR   = (148, 118, 78)
+    ACCENT_COLOR = (220, 195, 138)
+    HOVER_RANGE  = 60
+    SPEED        = 22.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class JadeHawkMoth(Insect):
+    SPECIES      = "jade_hawk_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 8
+    BODY_COLOR   = (28, 88, 62)
+    WING_COLOR   = (52, 158, 108)
+    ACCENT_COLOR = (118, 245, 188)
+    HOVER_RANGE  = 55
+    SPEED        = 38.0
+    WING_TYPE    = "moth"
+
+
+class AsianBeeHawkmoth(Insect):
+    SPECIES      = "asian_bee_hawkmoth"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "temperate"]
+    W, H         = 11, 7
+    BODY_COLOR   = (62, 82, 38)
+    WING_COLOR   = (215, 215, 215)
+    ACCENT_COLOR = (245, 195, 55)
+    HOVER_RANGE  = 45
+    SPEED        = 38.0
+    WING_TYPE    = "moth"
+
+
+class BambooBorerMoth(Insect):
+    SPECIES      = "bamboo_borer_moth"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "jungle"]
+    W, H         = 11, 7
+    BODY_COLOR   = (118, 118, 88)
+    WING_COLOR   = (175, 175, 138)
+    ACCENT_COLOR = (220, 215, 178)
+    HOVER_RANGE  = 40
+    SPEED        = 22.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class TigerSwallowtailMoth(Insect):
+    SPECIES      = "tiger_swallowtail_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 9
+    BODY_COLOR   = (38, 22, 12)
+    WING_COLOR   = (215, 152, 42)
+    ACCENT_COLOR = (38, 18, 12)
+    HOVER_RANGE  = 50
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+
+
+class RubyTailedMoth(Insect):
+    SPECIES      = "ruby_tailed_moth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 9
+    BODY_COLOR   = (148, 28, 38)
+    WING_COLOR   = (215, 55, 65)
+    ACCENT_COLOR = (245, 215, 145)
+    HOVER_RANGE  = 50
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class CrimsonTigerMoth(Insect):
+    SPECIES      = "crimson_tiger_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "temperate"]
+    W, H         = 13, 8
+    BODY_COLOR   = (32, 18, 18)
+    WING_COLOR   = (175, 38, 38)
+    ACCENT_COLOR = (245, 215, 178)
+    HOVER_RANGE  = 48
+    SPEED        = 26.0
+    WING_TYPE    = "moth"
+
+
+class EmperorSilkmoth(Insect):
+    SPECIES      = "emperor_silkmoth"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "boreal"]
+    W, H         = 16, 11
+    BODY_COLOR   = (138, 78, 28)
+    WING_COLOR   = (205, 138, 55)
+    ACCENT_COLOR = (245, 220, 138)
+    HOVER_RANGE  = 60
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class CherryBlossomMoth(Insect):
+    SPECIES      = "cherry_blossom_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate"]
+    W, H         = 12, 8
+    BODY_COLOR   = (138, 78, 88)
+    WING_COLOR   = (235, 188, 200)
+    ACCENT_COLOR = (250, 235, 240)
+    HOVER_RANGE  = 50
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+
+
+class MountainSilkmoth(Insect):
+    SPECIES      = "mountain_silkmoth"
+    RARITY       = "rare"
+    BIOMES       = ["alpine_mountain", "rocky_mountain"]
+    W, H         = 15, 10
+    BODY_COLOR   = (155, 145, 175)
+    WING_COLOR   = (205, 195, 220)
+    ACCENT_COLOR = (235, 230, 245)
+    HOVER_RANGE  = 55
+    SPEED        = 22.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+# --- Asian other (mantises, wasps, cicadas, stick insects, etc.) ---
+
+class JapaneseMantis(Insect):
+    SPECIES      = "japanese_mantis"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 14, 7
+    BODY_COLOR   = (88, 128, 52)
+    WING_COLOR   = (128, 168, 78)
+    ACCENT_COLOR = (185, 215, 118)
+    HOVER_RANGE  = 35
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+
+
+class OrchidMantis(Insect):
+    SPECIES      = "orchid_mantis"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 7
+    BODY_COLOR   = (235, 218, 230)
+    WING_COLOR   = (250, 235, 245)
+    ACCENT_COLOR = (220, 138, 178)
+    HOVER_RANGE  = 35
+    SPEED        = 22.0
+    WING_TYPE    = "other"
+
+
+class JadeMantis(Insect):
+    SPECIES      = "jade_mantis"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle"]
+    W, H         = 14, 7
+    BODY_COLOR   = (38, 108, 78)
+    WING_COLOR   = (62, 158, 118)
+    ACCENT_COLOR = (138, 220, 178)
+    HOVER_RANGE  = 35
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+
+
+class BorneanLeafMantis(Insect):
+    SPECIES      = "bornean_leaf_mantis"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 8
+    BODY_COLOR   = (88, 78, 38)
+    WING_COLOR   = (128, 118, 62)
+    ACCENT_COLOR = (188, 175, 105)
+    HOVER_RANGE  = 35
+    SPEED        = 22.0
+    WING_TYPE    = "other"
+
+
+class BambooMantis(Insect):
+    SPECIES      = "bamboo_mantis"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "temperate"]
+    W, H         = 14, 7
+    BODY_COLOR   = (115, 138, 62)
+    WING_COLOR   = (158, 188, 95)
+    ACCENT_COLOR = (215, 235, 138)
+    HOVER_RANGE  = 35
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+
+
+class JapaneseHornet(Insect):
+    SPECIES      = "japanese_hornet"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "boreal"]
+    W, H         = 12, 6
+    BODY_COLOR   = (50, 28, 12)
+    WING_COLOR   = (185, 138, 38)
+    ACCENT_COLOR = (245, 215, 78)
+    HOVER_RANGE  = 50
+    SPEED        = 38.0
+    WING_TYPE    = "other"
+
+
+class KoreanHornet(Insect):
+    SPECIES      = "korean_hornet"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "boreal"]
+    W, H         = 12, 6
+    BODY_COLOR   = (62, 38, 18)
+    WING_COLOR   = (175, 125, 48)
+    ACCENT_COLOR = (235, 195, 88)
+    HOVER_RANGE  = 50
+    SPEED        = 38.0
+    WING_TYPE    = "other"
+
+
+class AsianPaperWasp(Insect):
+    SPECIES      = "asian_paper_wasp"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "jungle"]
+    W, H         = 11, 5
+    BODY_COLOR   = (78, 52, 22)
+    WING_COLOR   = (175, 138, 65)
+    ACCENT_COLOR = (235, 215, 138)
+    HOVER_RANGE  = 45
+    SPEED        = 36.0
+    WING_TYPE    = "other"
+
+
+class JapaneseHoneybee(Insect):
+    SPECIES      = "japanese_honeybee"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 9, 5
+    BODY_COLOR   = (88, 62, 28)
+    WING_COLOR   = (215, 215, 220)
+    ACCENT_COLOR = (235, 188, 78)
+    HOVER_RANGE  = 45
+    SPEED        = 32.0
+    WING_TYPE    = "other"
+
+
+class AsianBlueCarpenterBee(Insect):
+    SPECIES      = "asian_blue_carpenter_bee"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 6
+    BODY_COLOR   = (22, 38, 88)
+    WING_COLOR   = (62, 92, 158)
+    ACCENT_COLOR = (148, 188, 245)
+    HOVER_RANGE  = 50
+    SPEED        = 34.0
+    WING_TYPE    = "other"
+
+
+class AsianCarpenterAnt(Insect):
+    SPECIES      = "asian_carpenter_ant"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "jungle"]
+    W, H         = 8, 4
+    BODY_COLOR   = (32, 22, 18)
+    WING_COLOR   = (48, 38, 32)
+    ACCENT_COLOR = (95, 72, 52)
+    HOVER_RANGE  = 25
+    SPEED        = 26.0
+    WING_TYPE    = "other"
+
+
+class WeaverAnt(Insect):
+    SPECIES      = "weaver_ant"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 8, 4
+    BODY_COLOR   = (138, 62, 22)
+    WING_COLOR   = (188, 92, 38)
+    ACCENT_COLOR = (235, 158, 88)
+    HOVER_RANGE  = 28
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+
+
+class AsianFireAnt(Insect):
+    SPECIES      = "asian_fire_ant"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 7, 4
+    BODY_COLOR   = (148, 38, 18)
+    WING_COLOR   = (185, 65, 32)
+    ACCENT_COLOR = (235, 118, 72)
+    HOVER_RANGE  = 25
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+
+
+class JapaneseGiantCicada(Insect):
+    SPECIES      = "japanese_giant_cicada"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate"]
+    W, H         = 14, 7
+    BODY_COLOR   = (35, 32, 28)
+    WING_COLOR   = (188, 188, 195)
+    ACCENT_COLOR = (105, 95, 78)
+    HOVER_RANGE  = 35
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+
+
+class EveningCicada(Insect):
+    SPECIES      = "evening_cicada"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "boreal"]
+    W, H         = 12, 6
+    BODY_COLOR   = (78, 62, 42)
+    WING_COLOR   = (195, 178, 148)
+    ACCENT_COLOR = (235, 215, 178)
+    HOVER_RANGE  = 35
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+    DUSK_ONLY    = True
+
+
+class AnnualCicada(Insect):
+    SPECIES      = "annual_cicada"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 11, 6
+    BODY_COLOR   = (68, 78, 52)
+    WING_COLOR   = (158, 168, 138)
+    ACCENT_COLOR = (215, 220, 195)
+    HOVER_RANGE  = 35
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+
+
+class JungleCicadaAsia(Insect):
+    SPECIES      = "jungle_cicada_asia"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 6
+    BODY_COLOR   = (38, 52, 38)
+    WING_COLOR   = (148, 165, 138)
+    ACCENT_COLOR = (215, 235, 188)
+    HOVER_RANGE  = 35
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+
+
+class CherryBlossomCicada(Insect):
+    SPECIES      = "cherry_blossom_cicada"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate"]
+    W, H         = 11, 6
+    BODY_COLOR   = (118, 62, 78)
+    WING_COLOR   = (220, 175, 188)
+    ACCENT_COLOR = (245, 225, 230)
+    HOVER_RANGE  = 35
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+
+
+class RiceGrasshopper(Insect):
+    SPECIES      = "rice_grasshopper"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "rolling_hills"]
+    W, H         = 11, 6
+    BODY_COLOR   = (108, 138, 62)
+    WING_COLOR   = (158, 188, 92)
+    ACCENT_COLOR = (215, 235, 138)
+    HOVER_RANGE  = 32
+    SPEED        = 32.0
+    WING_TYPE    = "other"
+
+
+class JapaneseKatydid(Insect):
+    SPECIES      = "japanese_katydid"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 13, 7
+    BODY_COLOR   = (78, 128, 52)
+    WING_COLOR   = (128, 178, 88)
+    ACCENT_COLOR = (188, 220, 128)
+    HOVER_RANGE  = 35
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+
+
+class BellCricket(Insect):
+    SPECIES      = "bell_cricket"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate"]
+    W, H         = 10, 6
+    BODY_COLOR   = (28, 28, 22)
+    WING_COLOR   = (48, 45, 38)
+    ACCENT_COLOR = (115, 105, 72)
+    HOVER_RANGE  = 30
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class PineCricket(Insect):
+    SPECIES      = "pine_cricket"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "boreal"]
+    W, H         = 10, 6
+    BODY_COLOR   = (62, 48, 28)
+    WING_COLOR   = (92, 72, 45)
+    ACCENT_COLOR = (148, 118, 78)
+    HOVER_RANGE  = 30
+    SPEED        = 26.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class BambooStickInsect(Insect):
+    SPECIES      = "bamboo_stick_insect"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "temperate"]
+    W, H         = 16, 4
+    BODY_COLOR   = (115, 138, 62)
+    WING_COLOR   = (158, 188, 95)
+    ACCENT_COLOR = (215, 235, 138)
+    HOVER_RANGE  = 30
+    SPEED        = 18.0
+    WING_TYPE    = "other"
+
+
+class MalayanLeafInsect(Insect):
+    SPECIES      = "malayan_leaf_insect"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 9
+    BODY_COLOR   = (62, 108, 38)
+    WING_COLOR   = (108, 168, 62)
+    ACCENT_COLOR = (175, 215, 105)
+    HOVER_RANGE  = 30
+    SPEED        = 18.0
+    WING_TYPE    = "other"
+
+
+class BorneanStickInsect(Insect):
+    SPECIES      = "bornean_stick_insect"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 16, 4
+    BODY_COLOR   = (78, 52, 28)
+    WING_COLOR   = (118, 88, 45)
+    ACCENT_COLOR = (175, 138, 78)
+    HOVER_RANGE  = 30
+    SPEED        = 18.0
+    WING_TYPE    = "other"
+
+
+class HimalayanStickInsect(Insect):
+    SPECIES      = "himalayan_stick_insect"
+    RARITY       = "rare"
+    BIOMES       = ["alpine_mountain", "rocky_mountain"]
+    W, H         = 15, 4
+    BODY_COLOR   = (88, 78, 62)
+    WING_COLOR   = (128, 115, 92)
+    ACCENT_COLOR = (188, 175, 148)
+    HOVER_RANGE  = 30
+    SPEED        = 18.0
+    WING_TYPE    = "other"
+
+
+class AsianAssassinBug(Insect):
+    SPECIES      = "asian_assassin_bug"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 10, 6
+    BODY_COLOR   = (118, 22, 28)
+    WING_COLOR   = (175, 38, 42)
+    ACCENT_COLOR = (28, 22, 22)
+    HOVER_RANGE  = 35
+    SPEED        = 30.0
+    WING_TYPE    = "other"
+
+
+class JapaneseShieldBug(Insect):
+    SPECIES      = "japanese_shield_bug"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 9, 7
+    BODY_COLOR   = (68, 95, 48)
+    WING_COLOR   = (108, 148, 78)
+    ACCENT_COLOR = (175, 205, 118)
+    HOVER_RANGE  = 30
+    SPEED        = 22.0
+    WING_TYPE    = "other"
+
+
+class JapaneseBumblebee(Insect):
+    SPECIES      = "japanese_bumblebee"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "alpine_mountain"]
+    W, H         = 10, 6
+    BODY_COLOR   = (40, 32, 18)
+    WING_COLOR   = (185, 178, 165)
+    ACCENT_COLOR = (245, 195, 78)
+    HOVER_RANGE  = 45
+    SPEED        = 32.0
+    WING_TYPE    = "other"
+
+
+class AsianHoneyWasp(Insect):
+    SPECIES      = "asian_honey_wasp"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 10, 5
+    BODY_COLOR   = (118, 78, 18)
+    WING_COLOR   = (188, 138, 38)
+    ACCENT_COLOR = (245, 215, 105)
+    HOVER_RANGE  = 45
+    SPEED        = 36.0
+    WING_TYPE    = "other"
+
+
+# --- Asian fauna (batch 2, 25 species) ---
+
+class GoldenBirdwing(Insect):
+    SPECIES      = "golden_birdwing"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 16, 11
+    BODY_COLOR   = (28, 28, 22)
+    WING_COLOR   = (50, 50, 40)
+    ACCENT_COLOR = (245, 200, 55)
+    HOVER_RANGE  = 65
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class TreeNymph(Insect):
+    SPECIES      = "tree_nymph"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 15, 10
+    BODY_COLOR   = (32, 32, 32)
+    WING_COLOR   = (242, 240, 230)
+    ACCENT_COLOR = (28, 28, 28)
+    HOVER_RANGE  = 60
+    SPEED        = 22.0
+    WING_TYPE    = "butterfly"
+
+
+class CommonBluebottle(Insect):
+    SPECIES      = "common_bluebottle"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 9
+    BODY_COLOR   = (22, 22, 32)
+    WING_COLOR   = (32, 32, 48)
+    ACCENT_COLOR = (88, 178, 235)
+    HOVER_RANGE  = 55
+    SPEED        = 34.0
+    WING_TYPE    = "butterfly"
+
+
+class PaintedJezebel(Insect):
+    SPECIES      = "painted_jezebel"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 9
+    BODY_COLOR   = (32, 32, 32)
+    WING_COLOR   = (240, 235, 215)
+    ACCENT_COLOR = (235, 88, 55)
+    HOVER_RANGE  = 55
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class CommonLeopardButterfly(Insect):
+    SPECIES      = "common_leopard_butterfly"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "temperate"]
+    W, H         = 12, 9
+    BODY_COLOR   = (62, 38, 12)
+    WING_COLOR   = (215, 148, 38)
+    ACCENT_COLOR = (32, 22, 12)
+    HOVER_RANGE  = 50
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class RustyTippedPage(Insect):
+    SPECIES      = "rusty_tipped_page"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle"]
+    W, H         = 13, 9
+    BODY_COLOR   = (42, 22, 18)
+    WING_COLOR   = (158, 65, 32)
+    ACCENT_COLOR = (235, 215, 178)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class ChineseGoldenChafer(Insect):
+    SPECIES      = "chinese_golden_chafer"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 11, 6
+    BODY_COLOR   = (118, 92, 22)
+    WING_COLOR   = (205, 168, 42)
+    ACCENT_COLOR = (250, 230, 105)
+    HOVER_RANGE  = 32
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class JapaneseTigerLonghorn(Insect):
+    SPECIES      = "japanese_tiger_longhorn"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "boreal"]
+    W, H         = 13, 6
+    BODY_COLOR   = (28, 22, 22)
+    WING_COLOR   = (45, 38, 38)
+    ACCENT_COLOR = (245, 200, 78)
+    HOVER_RANGE  = 32
+    SPEED        = 26.0
+    WING_TYPE    = "beetle"
+
+
+class MalayanFireBeetle(Insect):
+    SPECIES      = "malayan_fire_beetle"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 11, 6
+    BODY_COLOR   = (148, 32, 18)
+    WING_COLOR   = (215, 62, 28)
+    ACCENT_COLOR = (250, 188, 95)
+    HOVER_RANGE  = 32
+    SPEED        = 26.0
+    WING_TYPE    = "beetle"
+
+
+class AsianFlatHeadedBorer(Insect):
+    SPECIES      = "asian_flat_headed_borer"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "temperate"]
+    W, H         = 11, 6
+    BODY_COLOR   = (38, 78, 62)
+    WING_COLOR   = (62, 138, 108)
+    ACCENT_COLOR = (148, 220, 178)
+    HOVER_RANGE  = 30
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class JapaneseSkimmer(Insect):
+    SPECIES      = "japanese_skimmer"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 13, 5
+    BODY_COLOR   = (148, 105, 32)
+    WING_COLOR   = (215, 178, 78)
+    ACCENT_COLOR = (245, 225, 158)
+    HOVER_RANGE  = 55
+    SPEED        = 34.0
+    WING_TYPE    = "dragonfly"
+
+
+class ChineseDarner(Insect):
+    SPECIES      = "chinese_darner"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "jungle"]
+    W, H         = 15, 5
+    BODY_COLOR   = (28, 62, 38)
+    WING_COLOR   = (108, 158, 92)
+    ACCENT_COLOR = (195, 235, 158)
+    HOVER_RANGE  = 60
+    SPEED        = 36.0
+    WING_TYPE    = "dragonfly"
+
+
+class AsianBlueDamsel(Insect):
+    SPECIES      = "asian_blue_damsel"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "jungle"]
+    W, H         = 11, 3
+    BODY_COLOR   = (42, 78, 158)
+    WING_COLOR   = (148, 188, 240)
+    ACCENT_COLOR = (220, 235, 250)
+    HOVER_RANGE  = 45
+    SPEED        = 30.0
+    WING_TYPE    = "dragonfly"
+
+
+class SilverlinedHawkmoth(Insect):
+    SPECIES      = "silverlined_hawkmoth"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "temperate"]
+    W, H         = 14, 8
+    BODY_COLOR   = (62, 52, 42)
+    WING_COLOR   = (118, 105, 88)
+    ACCENT_COLOR = (220, 220, 225)
+    HOVER_RANGE  = 55
+    SPEED        = 38.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class PinkUnderwingMoth(Insect):
+    SPECIES      = "pink_underwing_moth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 9
+    BODY_COLOR   = (72, 48, 42)
+    WING_COLOR   = (115, 78, 68)
+    ACCENT_COLOR = (235, 138, 168)
+    HOVER_RANGE  = 50
+    SPEED        = 26.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class RoyalSilkmoth(Insect):
+    SPECIES      = "royal_silkmoth"
+    RARITY       = "rare"
+    BIOMES       = ["temperate"]
+    W, H         = 15, 10
+    BODY_COLOR   = (118, 38, 88)
+    WING_COLOR   = (175, 78, 138)
+    ACCENT_COLOR = (245, 215, 235)
+    HOVER_RANGE  = 55
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class SnowMoth(Insect):
+    SPECIES      = "snow_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["alpine_mountain", "tundra"]
+    W, H         = 12, 8
+    BODY_COLOR   = (215, 220, 230)
+    WING_COLOR   = (240, 243, 248)
+    ACCENT_COLOR = (175, 195, 220)
+    HOVER_RANGE  = 45
+    SPEED        = 22.0
+    WING_TYPE    = "moth"
+
+
+class GiantAsianHoneybee(Insect):
+    SPECIES      = "giant_asian_honeybee"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 11, 6
+    BODY_COLOR   = (78, 52, 22)
+    WING_COLOR   = (205, 195, 178)
+    ACCENT_COLOR = (240, 200, 88)
+    HOVER_RANGE  = 50
+    SPEED        = 36.0
+    WING_TYPE    = "other"
+
+
+class AsianTreeMantis(Insect):
+    SPECIES      = "asian_tree_mantis"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "temperate"]
+    W, H         = 14, 7
+    BODY_COLOR   = (62, 42, 22)
+    WING_COLOR   = (108, 78, 45)
+    ACCENT_COLOR = (175, 138, 92)
+    HOVER_RANGE  = 35
+    SPEED        = 22.0
+    WING_TYPE    = "other"
+
+
+class DeadLeafMantis(Insect):
+    SPECIES      = "dead_leaf_mantis"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 8
+    BODY_COLOR   = (88, 55, 28)
+    WING_COLOR   = (138, 92, 48)
+    ACCENT_COLOR = (195, 148, 88)
+    HOVER_RANGE  = 32
+    SPEED        = 20.0
+    WING_TYPE    = "other"
+
+
+class ChineseRiceLocust(Insect):
+    SPECIES      = "chinese_rice_locust"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "rolling_hills"]
+    W, H         = 12, 6
+    BODY_COLOR   = (118, 138, 52)
+    WING_COLOR   = (165, 188, 88)
+    ACCENT_COLOR = (215, 235, 138)
+    HOVER_RANGE  = 32
+    SPEED        = 32.0
+    WING_TYPE    = "other"
+
+
+class PaddyKatydid(Insect):
+    SPECIES      = "paddy_katydid"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "jungle"]
+    W, H         = 12, 7
+    BODY_COLOR   = (88, 138, 62)
+    WING_COLOR   = (138, 188, 92)
+    ACCENT_COLOR = (195, 230, 138)
+    HOVER_RANGE  = 33
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+
+
+class AsianTreeCricket(Insect):
+    SPECIES      = "asian_tree_cricket"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "temperate"]
+    W, H         = 10, 6
+    BODY_COLOR   = (118, 138, 78)
+    WING_COLOR   = (158, 188, 108)
+    ACCENT_COLOR = (215, 235, 158)
+    HOVER_RANGE  = 28
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class AsianLeafhopper(Insect):
+    SPECIES      = "asian_leafhopper"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "temperate"]
+    W, H         = 7, 4
+    BODY_COLOR   = (62, 138, 88)
+    WING_COLOR   = (108, 188, 128)
+    ACCENT_COLOR = (175, 235, 178)
+    HOVER_RANGE  = 28
+    SPEED        = 30.0
+    WING_TYPE    = "other"
+
+
+class JadeWeevil(Insect):
+    SPECIES      = "jade_weevil"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 9, 6
+    BODY_COLOR   = (32, 92, 78)
+    WING_COLOR   = (62, 158, 128)
+    ACCENT_COLOR = (138, 235, 195)
+    HOVER_RANGE  = 28
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+# ---------------------------------------------------------------------------
+# North American fauna (100 species)
+# ---------------------------------------------------------------------------
+
+# --- NA butterflies ---
+
+class MourningCloak(Insect):
+    SPECIES      = "mourning_cloak"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "boreal", "birch_forest"]
+    W, H         = 13, 10
+    BODY_COLOR   = (28, 22, 22)
+    WING_COLOR   = (62, 28, 22)
+    ACCENT_COLOR = (235, 215, 145)
+    HOVER_RANGE  = 55
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class Viceroy(Insect):
+    SPECIES      = "viceroy"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "wetland"]
+    W, H         = 12, 9
+    BODY_COLOR   = (38, 22, 12)
+    WING_COLOR   = (215, 118, 32)
+    ACCENT_COLOR = (32, 22, 12)
+    HOVER_RANGE  = 50
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class SpicebushSwallowtail(Insect):
+    SPECIES      = "spicebush_swallowtail"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 14, 10
+    BODY_COLOR   = (22, 22, 28)
+    WING_COLOR   = (38, 38, 52)
+    ACCENT_COLOR = (108, 178, 188)
+    HOVER_RANGE  = 60
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class PipevineSwallowtail(Insect):
+    SPECIES      = "pipevine_swallowtail"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 14, 10
+    BODY_COLOR   = (18, 22, 32)
+    WING_COLOR   = (32, 42, 62)
+    ACCENT_COLOR = (88, 188, 178)
+    HOVER_RANGE  = 60
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class AmericanLady(Insect):
+    SPECIES      = "american_lady"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 11, 8
+    BODY_COLOR   = (62, 32, 18)
+    WING_COLOR   = (215, 118, 38)
+    ACCENT_COLOR = (32, 22, 18)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class WoodlandSkipper(Insect):
+    SPECIES      = "woodland_skipper"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 9, 7
+    BODY_COLOR   = (62, 38, 18)
+    WING_COLOR   = (188, 128, 45)
+    ACCENT_COLOR = (32, 22, 12)
+    HOVER_RANGE  = 40
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class ZebraSwallowtail(Insect):
+    SPECIES      = "zebra_swallowtail"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "wetland"]
+    W, H         = 14, 10
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (240, 240, 240)
+    ACCENT_COLOR = (28, 28, 28)
+    HOVER_RANGE  = 60
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class GiantSwallowtail(Insect):
+    SPECIES      = "giant_swallowtail"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 16, 11
+    BODY_COLOR   = (28, 22, 18)
+    WING_COLOR   = (45, 35, 28)
+    ACCENT_COLOR = (245, 215, 92)
+    HOVER_RANGE  = 65
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class PineWhite(Insect):
+    SPECIES      = "pine_white"
+    RARITY       = "common"
+    BIOMES       = ["boreal", "redwood"]
+    W, H         = 11, 8
+    BODY_COLOR   = (28, 28, 28)
+    WING_COLOR   = (245, 240, 230)
+    ACCENT_COLOR = (38, 38, 38)
+    HOVER_RANGE  = 45
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class CloudedSulphur(Insect):
+    SPECIES      = "clouded_sulphur"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 10, 8
+    BODY_COLOR   = (108, 92, 32)
+    WING_COLOR   = (245, 220, 88)
+    ACCENT_COLOR = (188, 138, 38)
+    HOVER_RANGE  = 45
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class OrangeSulphur(Insect):
+    SPECIES      = "orange_sulphur"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 10, 8
+    BODY_COLOR   = (108, 62, 18)
+    WING_COLOR   = (245, 175, 55)
+    ACCENT_COLOR = (188, 88, 22)
+    HOVER_RANGE  = 45
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class PearlCrescent(Insect):
+    SPECIES      = "pearl_crescent"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 9, 7
+    BODY_COLOR   = (62, 32, 12)
+    WING_COLOR   = (220, 138, 38)
+    ACCENT_COLOR = (32, 22, 12)
+    HOVER_RANGE  = 40
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class AmericanCopper(Insect):
+    SPECIES      = "american_copper"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 9, 7
+    BODY_COLOR   = (62, 32, 18)
+    WING_COLOR   = (215, 105, 32)
+    ACCENT_COLOR = (28, 22, 18)
+    HOVER_RANGE  = 40
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class EasternTailedBlue(Insect):
+    SPECIES      = "eastern_tailed_blue"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 8, 6
+    BODY_COLOR   = (62, 82, 138)
+    WING_COLOR   = (118, 158, 215)
+    ACCENT_COLOR = (215, 230, 245)
+    HOVER_RANGE  = 38
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class SpringAzure(Insect):
+    SPECIES      = "spring_azure"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 9, 7
+    BODY_COLOR   = (62, 88, 158)
+    WING_COLOR   = (138, 188, 245)
+    ACCENT_COLOR = (225, 238, 250)
+    HOVER_RANGE  = 40
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class RegalFritillary(Insect):
+    SPECIES      = "regal_fritillary"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 13, 10
+    BODY_COLOR   = (62, 28, 18)
+    WING_COLOR   = (175, 75, 28)
+    ACCENT_COLOR = (32, 28, 32)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class GulfFritillary(Insect):
+    SPECIES      = "gulf_fritillary"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "savanna", "beach"]
+    W, H         = 13, 10
+    BODY_COLOR   = (62, 28, 18)
+    WING_COLOR   = (215, 88, 32)
+    ACCENT_COLOR = (245, 215, 178)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class QuestionMarkButterfly(Insect):
+    SPECIES      = "question_mark_butterfly"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 11, 9
+    BODY_COLOR   = (62, 32, 18)
+    WING_COLOR   = (175, 92, 32)
+    ACCENT_COLOR = (215, 215, 215)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class EasternComma(Insect):
+    SPECIES      = "eastern_comma"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 11, 9
+    BODY_COLOR   = (62, 32, 18)
+    WING_COLOR   = (188, 105, 38)
+    ACCENT_COLOR = (215, 215, 215)
+    HOVER_RANGE  = 48
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class CommonBuckeye(Insect):
+    SPECIES      = "common_buckeye"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 12, 9
+    BODY_COLOR   = (62, 42, 18)
+    WING_COLOR   = (138, 92, 42)
+    ACCENT_COLOR = (62, 92, 168)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class RedSpottedPurple(Insect):
+    SPECIES      = "red_spotted_purple"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 13, 10
+    BODY_COLOR   = (18, 18, 32)
+    WING_COLOR   = (32, 28, 78)
+    ACCENT_COLOR = (188, 38, 78)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class AmericanSnout(Insect):
+    SPECIES      = "american_snout"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 10, 8
+    BODY_COLOR   = (62, 42, 22)
+    WING_COLOR   = (148, 88, 38)
+    ACCENT_COLOR = (215, 178, 118)
+    HOVER_RANGE  = 45
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class HackberryEmperor(Insect):
+    SPECIES      = "hackberry_emperor"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 12, 9
+    BODY_COLOR   = (62, 42, 22)
+    WING_COLOR   = (138, 95, 48)
+    ACCENT_COLOR = (215, 178, 118)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class TawnyEmperor(Insect):
+    SPECIES      = "tawny_emperor"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 12, 9
+    BODY_COLOR   = (72, 38, 18)
+    WING_COLOR   = (175, 105, 38)
+    ACCENT_COLOR = (220, 175, 92)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class FloridaLeafwing(Insect):
+    SPECIES      = "florida_leafwing"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "tropical"]
+    W, H         = 13, 10
+    BODY_COLOR   = (62, 22, 18)
+    WING_COLOR   = (195, 62, 32)
+    ACCENT_COLOR = (115, 38, 22)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+# --- NA beetles ---
+
+class EasternEyedClickBeetle(Insect):
+    SPECIES      = "eastern_eyed_click_beetle"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 12, 6
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (45, 45, 45)
+    ACCENT_COLOR = (235, 235, 235)
+    HOVER_RANGE  = 32
+    SPEED        = 26.0
+    WING_TYPE    = "beetle"
+
+
+class ColoradoPotatoBeetle(Insect):
+    SPECIES      = "colorado_potato_beetle"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 9, 6
+    BODY_COLOR   = (62, 42, 18)
+    WING_COLOR   = (235, 215, 78)
+    ACCENT_COLOR = (32, 22, 12)
+    HOVER_RANGE  = 28
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class SixSpottedTigerBeetle(Insect):
+    SPECIES      = "six_spotted_tiger_beetle"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 11, 6
+    BODY_COLOR   = (28, 105, 78)
+    WING_COLOR   = (52, 175, 128)
+    ACCENT_COLOR = (235, 240, 235)
+    HOVER_RANGE  = 32
+    SPEED        = 34.0
+    WING_TYPE    = "beetle"
+
+
+class AmericanBuryingBeetle(Insect):
+    SPECIES      = "american_burying_beetle"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 12, 6
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (38, 38, 38)
+    ACCENT_COLOR = (235, 105, 32)
+    HOVER_RANGE  = 30
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class GoldsmithBeetle(Insect):
+    SPECIES      = "goldsmith_beetle"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 11, 6
+    BODY_COLOR   = (118, 92, 22)
+    WING_COLOR   = (215, 180, 62)
+    ACCENT_COLOR = (250, 235, 138)
+    HOVER_RANGE  = 32
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class JuneBeetle(Insect):
+    SPECIES      = "june_beetle"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 10, 6
+    BODY_COLOR   = (62, 38, 12)
+    WING_COLOR   = (118, 78, 32)
+    ACCENT_COLOR = (175, 138, 78)
+    HOVER_RANGE  = 35
+    SPEED        = 30.0
+    WING_TYPE    = "beetle"
+    NIGHT_ONLY   = True
+
+
+class NorthernCornRootworm(Insect):
+    SPECIES      = "northern_corn_rootworm"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 7, 4
+    BODY_COLOR   = (78, 108, 32)
+    WING_COLOR   = (138, 175, 62)
+    ACCENT_COLOR = (215, 235, 118)
+    HOVER_RANGE  = 25
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class AmericanCarrionBeetle(Insect):
+    SPECIES      = "american_carrion_beetle"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 11, 6
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (38, 38, 38)
+    ACCENT_COLOR = (215, 195, 88)
+    HOVER_RANGE  = 30
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class PennsylvaniaLeatherwing(Insect):
+    SPECIES      = "pennsylvania_leatherwing"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 10, 5
+    BODY_COLOR   = (108, 78, 22)
+    WING_COLOR   = (215, 178, 62)
+    ACCENT_COLOR = (32, 22, 22)
+    HOVER_RANGE  = 35
+    SPEED        = 32.0
+    WING_TYPE    = "beetle"
+
+
+class BronzedCarabid(Insect):
+    SPECIES      = "bronzed_carabid"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "boreal"]
+    W, H         = 11, 5
+    BODY_COLOR   = (78, 52, 22)
+    WING_COLOR   = (148, 105, 42)
+    ACCENT_COLOR = (215, 175, 95)
+    HOVER_RANGE  = 30
+    SPEED        = 28.0
+    WING_TYPE    = "beetle"
+
+
+class GiantStagBeetle(Insect):
+    SPECIES      = "giant_stag_beetle"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 14, 7
+    BODY_COLOR   = (38, 22, 18)
+    WING_COLOR   = (72, 42, 28)
+    ACCENT_COLOR = (138, 92, 55)
+    HOVER_RANGE  = 32
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class RedMilkweedBeetle(Insect):
+    SPECIES      = "red_milkweed_beetle"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 10, 5
+    BODY_COLOR   = (148, 32, 22)
+    WING_COLOR   = (215, 55, 38)
+    ACCENT_COLOR = (32, 22, 22)
+    HOVER_RANGE  = 30
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class SpottedPineSawyer(Insect):
+    SPECIES      = "spotted_pine_sawyer"
+    RARITY       = "uncommon"
+    BIOMES       = ["boreal", "redwood"]
+    W, H         = 13, 6
+    BODY_COLOR   = (38, 28, 22)
+    WING_COLOR   = (72, 55, 42)
+    ACCENT_COLOR = (215, 215, 215)
+    HOVER_RANGE  = 32
+    SPEED        = 26.0
+    WING_TYPE    = "beetle"
+
+
+class BumbleFlowerBeetle(Insect):
+    SPECIES      = "bumble_flower_beetle"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 10, 6
+    BODY_COLOR   = (62, 42, 18)
+    WING_COLOR   = (188, 138, 55)
+    ACCENT_COLOR = (32, 22, 22)
+    HOVER_RANGE  = 32
+    SPEED        = 26.0
+    WING_TYPE    = "beetle"
+
+
+class AmericanOakBorer(Insect):
+    SPECIES      = "american_oak_borer"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 13, 6
+    BODY_COLOR   = (45, 32, 18)
+    WING_COLOR   = (88, 65, 38)
+    ACCENT_COLOR = (175, 138, 78)
+    HOVER_RANGE  = 32
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+# --- NA dragonflies ---
+
+class CommonGreenDarner(Insect):
+    SPECIES      = "common_green_darner"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 15, 5
+    BODY_COLOR   = (32, 108, 62)
+    WING_COLOR   = (62, 158, 105)
+    ACCENT_COLOR = (215, 235, 158)
+    HOVER_RANGE  = 65
+    SPEED        = 38.0
+    WING_TYPE    = "dragonfly"
+
+
+class TwelveSpottedSkimmer(Insect):
+    SPECIES      = "twelve_spotted_skimmer"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 13, 5
+    BODY_COLOR   = (62, 62, 62)
+    WING_COLOR   = (215, 215, 215)
+    ACCENT_COLOR = (28, 28, 28)
+    HOVER_RANGE  = 55
+    SPEED        = 36.0
+    WING_TYPE    = "dragonfly"
+
+
+class WidowSkimmer(Insect):
+    SPECIES      = "widow_skimmer"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 13, 5
+    BODY_COLOR   = (32, 32, 38)
+    WING_COLOR   = (62, 62, 78)
+    ACCENT_COLOR = (215, 215, 235)
+    HOVER_RANGE  = 55
+    SPEED        = 36.0
+    WING_TYPE    = "dragonfly"
+
+
+class EasternPondhawk(Insect):
+    SPECIES      = "eastern_pondhawk"
+    RARITY       = "common"
+    BIOMES       = ["wetland"]
+    W, H         = 12, 5
+    BODY_COLOR   = (62, 138, 78)
+    WING_COLOR   = (108, 188, 118)
+    ACCENT_COLOR = (215, 240, 175)
+    HOVER_RANGE  = 50
+    SPEED        = 34.0
+    WING_TYPE    = "dragonfly"
+
+
+class BlueDasher(Insect):
+    SPECIES      = "blue_dasher"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 12, 4
+    BODY_COLOR   = (62, 108, 188)
+    WING_COLOR   = (148, 188, 245)
+    ACCENT_COLOR = (215, 235, 250)
+    HOVER_RANGE  = 50
+    SPEED        = 34.0
+    WING_TYPE    = "dragonfly"
+
+
+class AutumnMeadowhawk(Insect):
+    SPECIES      = "autumn_meadowhawk"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 11, 4
+    BODY_COLOR   = (188, 62, 38)
+    WING_COLOR   = (235, 105, 78)
+    ACCENT_COLOR = (250, 195, 158)
+    HOVER_RANGE  = 48
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+
+
+class EasternAmberwing(Insect):
+    SPECIES      = "eastern_amberwing"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland"]
+    W, H         = 10, 4
+    BODY_COLOR   = (148, 92, 22)
+    WING_COLOR   = (235, 178, 65)
+    ACCENT_COLOR = (250, 225, 158)
+    HOVER_RANGE  = 45
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+
+
+class RoseateSkimmer(Insect):
+    SPECIES      = "roseate_skimmer"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 13, 5
+    BODY_COLOR   = (188, 88, 138)
+    WING_COLOR   = (235, 158, 195)
+    ACCENT_COLOR = (250, 215, 230)
+    HOVER_RANGE  = 55
+    SPEED        = 34.0
+    WING_TYPE    = "dragonfly"
+
+
+class EbonyJewelwing(Insect):
+    SPECIES      = "ebony_jewelwing"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "birch_forest"]
+    W, H         = 13, 5
+    BODY_COLOR   = (28, 88, 78)
+    WING_COLOR   = (22, 22, 28)
+    ACCENT_COLOR = (62, 178, 148)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "dragonfly"
+
+
+class AmericanRubyspot(Insect):
+    SPECIES      = "american_rubyspot"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland"]
+    W, H         = 12, 4
+    BODY_COLOR   = (38, 32, 32)
+    WING_COLOR   = (62, 62, 62)
+    ACCENT_COLOR = (215, 38, 55)
+    HOVER_RANGE  = 50
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+
+
+# --- NA fireflies ---
+
+class BigDipperFirefly(Insect):
+    SPECIES      = "big_dipper_firefly"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 9, 6
+    BODY_COLOR   = (32, 22, 22)
+    WING_COLOR   = (52, 38, 32)
+    ACCENT_COLOR = (245, 230, 138)
+    HOVER_RANGE  = 50
+    SPEED        = 22.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class SynchronousFirefly(Insect):
+    SPECIES      = "synchronous_firefly"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 9, 6
+    BODY_COLOR   = (28, 22, 22)
+    WING_COLOR   = (48, 38, 32)
+    ACCENT_COLOR = (250, 240, 158)
+    HOVER_RANGE  = 55
+    SPEED        = 22.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class PennsylvaniaFirefly(Insect):
+    SPECIES      = "pennsylvania_firefly"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "wetland"]
+    W, H         = 8, 5
+    BODY_COLOR   = (30, 22, 22)
+    WING_COLOR   = (52, 38, 32)
+    ACCENT_COLOR = (240, 225, 138)
+    HOVER_RANGE  = 48
+    SPEED        = 22.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class WinterFirefly(Insect):
+    SPECIES      = "winter_firefly"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "boreal"]
+    W, H         = 8, 5
+    BODY_COLOR   = (30, 30, 32)
+    WING_COLOR   = (52, 52, 58)
+    ACCENT_COLOR = (188, 220, 225)
+    HOVER_RANGE  = 40
+    SPEED        = 20.0
+    WING_TYPE    = "firefly"
+    DAWN_ONLY    = True
+
+
+class AppalachianBlueGhost(Insect):
+    SPECIES      = "appalachian_blue_ghost"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 8, 5
+    BODY_COLOR   = (25, 25, 32)
+    WING_COLOR   = (42, 42, 55)
+    ACCENT_COLOR = (158, 210, 245)
+    HOVER_RANGE  = 50
+    SPEED        = 18.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+# --- NA moths ---
+
+class CecropiaSilkmoth(Insect):
+    SPECIES      = "cecropia_silkmoth"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 16, 11
+    BODY_COLOR   = (108, 38, 38)
+    WING_COLOR   = (158, 78, 62)
+    ACCENT_COLOR = (235, 215, 178)
+    HOVER_RANGE  = 60
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class PrometheaMoth(Insect):
+    SPECIES      = "promethea_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 14, 9
+    BODY_COLOR   = (62, 32, 32)
+    WING_COLOR   = (105, 55, 48)
+    ACCENT_COLOR = (215, 175, 138)
+    HOVER_RANGE  = 50
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class RegalMoth(Insect):
+    SPECIES      = "regal_moth"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 16, 11
+    BODY_COLOR   = (62, 32, 18)
+    WING_COLOR   = (158, 92, 38)
+    ACCENT_COLOR = (235, 215, 88)
+    HOVER_RANGE  = 60
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class ImperialMoth(Insect):
+    SPECIES      = "imperial_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 15, 10
+    BODY_COLOR   = (138, 105, 22)
+    WING_COLOR   = (220, 188, 62)
+    ACCENT_COLOR = (148, 78, 38)
+    HOVER_RANGE  = 55
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class RosyMapleMoth(Insect):
+    SPECIES      = "rosy_maple_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 11, 8
+    BODY_COLOR   = (235, 195, 78)
+    WING_COLOR   = (245, 215, 105)
+    ACCENT_COLOR = (235, 138, 178)
+    HOVER_RANGE  = 45
+    SPEED        = 26.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class WhiteFurcula(Insect):
+    SPECIES      = "white_furcula"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 11, 7
+    BODY_COLOR   = (215, 215, 215)
+    WING_COLOR   = (235, 235, 235)
+    ACCENT_COLOR = (108, 108, 108)
+    HOVER_RANGE  = 42
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class PandoraSphinx(Insect):
+    SPECIES      = "pandora_sphinx"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 14, 8
+    BODY_COLOR   = (62, 78, 52)
+    WING_COLOR   = (108, 128, 88)
+    ACCENT_COLOR = (188, 138, 175)
+    HOVER_RANGE  = 55
+    SPEED        = 38.0
+    WING_TYPE    = "moth"
+
+
+class AbbottsSphinx(Insect):
+    SPECIES      = "abbotts_sphinx"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "wetland"]
+    W, H         = 13, 8
+    BODY_COLOR   = (62, 42, 22)
+    WING_COLOR   = (108, 78, 45)
+    ACCENT_COLOR = (188, 158, 88)
+    HOVER_RANGE  = 50
+    SPEED        = 36.0
+    WING_TYPE    = "moth"
+
+
+class BlindedSphinx(Insect):
+    SPECIES      = "blinded_sphinx"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 13, 8
+    BODY_COLOR   = (78, 62, 38)
+    WING_COLOR   = (138, 115, 78)
+    ACCENT_COLOR = (215, 92, 62)
+    HOVER_RANGE  = 50
+    SPEED        = 38.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class AchemonSphinx(Insect):
+    SPECIES      = "achemon_sphinx"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 13, 8
+    BODY_COLOR   = (105, 78, 65)
+    WING_COLOR   = (175, 138, 115)
+    ACCENT_COLOR = (215, 188, 158)
+    HOVER_RANGE  = 50
+    SPEED        = 36.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class UnderwingCatocala(Insect):
+    SPECIES      = "underwing_catocala"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 14, 9
+    BODY_COLOR   = (78, 62, 38)
+    WING_COLOR   = (118, 95, 62)
+    ACCENT_COLOR = (215, 65, 38)
+    HOVER_RANGE  = 50
+    SPEED        = 26.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class GiantLeopardMoth(Insect):
+    SPECIES      = "giant_leopard_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 14, 9
+    BODY_COLOR   = (245, 245, 245)
+    WING_COLOR   = (245, 245, 245)
+    ACCENT_COLOR = (28, 28, 28)
+    HOVER_RANGE  = 50
+    SPEED        = 26.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class SaltMarshMoth(Insect):
+    SPECIES      = "salt_marsh_moth"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "beach"]
+    W, H         = 12, 8
+    BODY_COLOR   = (215, 165, 38)
+    WING_COLOR   = (245, 235, 215)
+    ACCENT_COLOR = (32, 32, 32)
+    HOVER_RANGE  = 45
+    SPEED        = 26.0
+    WING_TYPE    = "moth"
+
+
+class EightSpottedForester(Insect):
+    SPECIES      = "eight_spotted_forester"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 11, 7
+    BODY_COLOR   = (28, 22, 22)
+    WING_COLOR   = (38, 32, 32)
+    ACCENT_COLOR = (240, 230, 218)
+    HOVER_RANGE  = 45
+    SPEED        = 28.0
+    WING_TYPE    = "moth"
+
+
+class TulipTreeBeauty(Insect):
+    SPECIES      = "tulip_tree_beauty"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 12, 8
+    BODY_COLOR   = (138, 105, 78)
+    WING_COLOR   = (188, 158, 128)
+    ACCENT_COLOR = (62, 48, 38)
+    HOVER_RANGE  = 45
+    SPEED        = 26.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+# --- NA other ---
+
+class CarolinaMantis(Insect):
+    SPECIES      = "carolina_mantis"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 13, 7
+    BODY_COLOR   = (108, 95, 62)
+    WING_COLOR   = (148, 138, 92)
+    ACCENT_COLOR = (188, 175, 128)
+    HOVER_RANGE  = 35
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+
+
+class BaldfacedHornet(Insect):
+    SPECIES      = "baldfaced_hornet"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 12, 6
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (62, 62, 62)
+    ACCENT_COLOR = (235, 235, 235)
+    HOVER_RANGE  = 50
+    SPEED        = 38.0
+    WING_TYPE    = "other"
+
+
+class AmericanYellowjacket(Insect):
+    SPECIES      = "american_yellowjacket"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 10, 5
+    BODY_COLOR   = (38, 28, 12)
+    WING_COLOR   = (215, 215, 220)
+    ACCENT_COLOR = (245, 215, 62)
+    HOVER_RANGE  = 45
+    SPEED        = 36.0
+    WING_TYPE    = "other"
+
+
+class GreatBlackWasp(Insect):
+    SPECIES      = "great_black_wasp"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 12, 5
+    BODY_COLOR   = (18, 18, 22)
+    WING_COLOR   = (32, 32, 38)
+    ACCENT_COLOR = (88, 105, 178)
+    HOVER_RANGE  = 50
+    SPEED        = 38.0
+    WING_TYPE    = "other"
+
+
+class CicadaKiller(Insect):
+    SPECIES      = "cicada_killer"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 13, 6
+    BODY_COLOR   = (45, 28, 12)
+    WING_COLOR   = (175, 138, 78)
+    ACCENT_COLOR = (240, 215, 92)
+    HOVER_RANGE  = 55
+    SPEED        = 40.0
+    WING_TYPE    = "other"
+
+
+class EasternCarpenterBee(Insect):
+    SPECIES      = "eastern_carpenter_bee"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 11, 6
+    BODY_COLOR   = (22, 22, 28)
+    WING_COLOR   = (105, 105, 115)
+    ACCENT_COLOR = (215, 195, 78)
+    HOVER_RANGE  = 50
+    SPEED        = 34.0
+    WING_TYPE    = "other"
+
+
+class ValleyCarpenterBee(Insect):
+    SPECIES      = "valley_carpenter_bee"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "desert"]
+    W, H         = 11, 6
+    BODY_COLOR   = (108, 78, 32)
+    WING_COLOR   = (175, 138, 65)
+    ACCENT_COLOR = (235, 195, 105)
+    HOVER_RANGE  = 50
+    SPEED        = 34.0
+    WING_TYPE    = "other"
+
+
+class SweatBee(Insect):
+    SPECIES      = "sweat_bee"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 7, 4
+    BODY_COLOR   = (38, 108, 78)
+    WING_COLOR   = (108, 188, 128)
+    ACCENT_COLOR = (215, 240, 175)
+    HOVER_RANGE  = 38
+    SPEED        = 34.0
+    WING_TYPE    = "other"
+
+
+class LeafcutterBee(Insect):
+    SPECIES      = "leafcutter_bee"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 9, 5
+    BODY_COLOR   = (62, 38, 22)
+    WING_COLOR   = (215, 200, 178)
+    ACCENT_COLOR = (148, 215, 88)
+    HOVER_RANGE  = 40
+    SPEED        = 34.0
+    WING_TYPE    = "other"
+
+
+class PeriodicalCicada(Insect):
+    SPECIES      = "periodical_cicada"
+    RARITY       = "rare"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 11, 6
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (188, 158, 32)
+    ACCENT_COLOR = (215, 48, 32)
+    HOVER_RANGE  = 35
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+
+
+class DogDayCicada(Insect):
+    SPECIES      = "dog_day_cicada"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 12, 6
+    BODY_COLOR   = (38, 52, 38)
+    WING_COLOR   = (158, 175, 138)
+    ACCENT_COLOR = (215, 235, 195)
+    HOVER_RANGE  = 35
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+
+
+class ScissorGrinderCicada(Insect):
+    SPECIES      = "scissor_grinder_cicada"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate"]
+    W, H         = 12, 6
+    BODY_COLOR   = (48, 62, 32)
+    WING_COLOR   = (158, 178, 128)
+    ACCENT_COLOR = (218, 235, 188)
+    HOVER_RANGE  = 35
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+
+
+class RockyMountainLocust(Insect):
+    SPECIES      = "rocky_mountain_locust"
+    RARITY       = "rare"
+    BIOMES       = ["rocky_mountain", "rolling_hills"]
+    W, H         = 12, 6
+    BODY_COLOR   = (118, 92, 38)
+    WING_COLOR   = (158, 128, 62)
+    ACCENT_COLOR = (215, 195, 138)
+    HOVER_RANGE  = 35
+    SPEED        = 34.0
+    WING_TYPE    = "other"
+
+
+class EasternLubberGrasshopper(Insect):
+    SPECIES      = "eastern_lubber_grasshopper"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "savanna"]
+    W, H         = 14, 8
+    BODY_COLOR   = (215, 178, 38)
+    WING_COLOR   = (188, 65, 32)
+    ACCENT_COLOR = (32, 22, 22)
+    HOVER_RANGE  = 32
+    SPEED        = 22.0
+    WING_TYPE    = "other"
+
+
+class DifferentialGrasshopper(Insect):
+    SPECIES      = "differential_grasshopper"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 12, 6
+    BODY_COLOR   = (138, 108, 38)
+    WING_COLOR   = (185, 148, 65)
+    ACCENT_COLOR = (32, 32, 28)
+    HOVER_RANGE  = 32
+    SPEED        = 32.0
+    WING_TYPE    = "other"
+
+
+class AmericanGrasshopper(Insect):
+    SPECIES      = "american_grasshopper"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 12, 6
+    BODY_COLOR   = (108, 78, 28)
+    WING_COLOR   = (158, 128, 52)
+    ACCENT_COLOR = (215, 188, 105)
+    HOVER_RANGE  = 32
+    SPEED        = 32.0
+    WING_TYPE    = "other"
+
+
+class SnowyTreeCricket(Insect):
+    SPECIES      = "snowy_tree_cricket"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 10, 5
+    BODY_COLOR   = (215, 240, 188)
+    WING_COLOR   = (240, 248, 215)
+    ACCENT_COLOR = (138, 175, 108)
+    HOVER_RANGE  = 28
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class JerusalemCricket(Insect):
+    SPECIES      = "jerusalem_cricket"
+    RARITY       = "rare"
+    BIOMES       = ["desert", "rocky_mountain"]
+    W, H         = 13, 7
+    BODY_COLOR   = (188, 138, 78)
+    WING_COLOR   = (215, 175, 108)
+    ACCENT_COLOR = (108, 62, 32)
+    HOVER_RANGE  = 30
+    SPEED        = 20.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class NorthernMoleCricket(Insect):
+    SPECIES      = "northern_mole_cricket"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "wetland"]
+    W, H         = 12, 6
+    BODY_COLOR   = (88, 65, 38)
+    WING_COLOR   = (128, 92, 55)
+    ACCENT_COLOR = (175, 138, 88)
+    HOVER_RANGE  = 30
+    SPEED        = 22.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class AmericanWalkingstick(Insect):
+    SPECIES      = "american_walkingstick"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "birch_forest"]
+    W, H         = 16, 4
+    BODY_COLOR   = (88, 62, 38)
+    WING_COLOR   = (138, 105, 62)
+    ACCENT_COLOR = (188, 158, 105)
+    HOVER_RANGE  = 30
+    SPEED        = 18.0
+    WING_TYPE    = "other"
+
+
+class WheelBug(Insect):
+    SPECIES      = "wheel_bug"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 12, 7
+    BODY_COLOR   = (108, 95, 78)
+    WING_COLOR   = (148, 128, 108)
+    ACCENT_COLOR = (62, 52, 42)
+    HOVER_RANGE  = 32
+    SPEED        = 26.0
+    WING_TYPE    = "other"
+
+
+class MaskedHunter(Insect):
+    SPECIES      = "masked_hunter"
+    RARITY       = "uncommon"
+    BIOMES       = ["temperate"]
+    W, H         = 10, 5
+    BODY_COLOR   = (28, 22, 22)
+    WING_COLOR   = (45, 38, 38)
+    ACCENT_COLOR = (108, 92, 78)
+    HOVER_RANGE  = 30
+    SPEED        = 30.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class LargeMilkweedBug(Insect):
+    SPECIES      = "large_milkweed_bug"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 9, 5
+    BODY_COLOR   = (188, 38, 32)
+    WING_COLOR   = (215, 62, 45)
+    ACCENT_COLOR = (28, 22, 22)
+    HOVER_RANGE  = 30
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+
+
+class SquashBug(Insect):
+    SPECIES      = "squash_bug"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 9, 6
+    BODY_COLOR   = (78, 55, 32)
+    WING_COLOR   = (118, 88, 55)
+    ACCENT_COLOR = (175, 138, 92)
+    HOVER_RANGE  = 28
+    SPEED        = 22.0
+    WING_TYPE    = "other"
+
+
+class BoxElderBug(Insect):
+    SPECIES      = "box_elder_bug"
+    RARITY       = "common"
+    BIOMES       = ["temperate", "rolling_hills"]
+    W, H         = 9, 5
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (42, 38, 38)
+    ACCENT_COLOR = (215, 38, 38)
+    HOVER_RANGE  = 28
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+
+
+class WesternConiferSeedBug(Insect):
+    SPECIES      = "western_conifer_seed_bug"
+    RARITY       = "common"
+    BIOMES       = ["boreal", "redwood"]
+    W, H         = 10, 5
+    BODY_COLOR   = (78, 52, 22)
+    WING_COLOR   = (118, 88, 38)
+    ACCENT_COLOR = (175, 138, 78)
+    HOVER_RANGE  = 32
+    SPEED        = 26.0
+    WING_TYPE    = "other"
+
+
+class AmericanCockroach(Insect):
+    SPECIES      = "american_cockroach"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "swamp"]
+    W, H         = 12, 6
+    BODY_COLOR   = (108, 62, 28)
+    WING_COLOR   = (158, 95, 42)
+    ACCENT_COLOR = (215, 158, 88)
+    HOVER_RANGE  = 30
+    SPEED        = 38.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class DobsonFly(Insect):
+    SPECIES      = "dobson_fly"
+    RARITY       = "rare"
+    BIOMES       = ["wetland", "birch_forest"]
+    W, H         = 15, 6
+    BODY_COLOR   = (62, 42, 28)
+    WING_COLOR   = (148, 128, 95)
+    ACCENT_COLOR = (215, 195, 158)
+    HOVER_RANGE  = 45
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class AmericanMayfly(Insect):
+    SPECIES      = "american_mayfly"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "temperate"]
+    W, H         = 11, 5
+    BODY_COLOR   = (188, 158, 92)
+    WING_COLOR   = (220, 205, 158)
+    ACCENT_COLOR = (245, 235, 215)
+    HOVER_RANGE  = 50
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+    DAWN_ONLY    = True
+
+
+class AmericanCaddisfly(Insect):
+    SPECIES      = "american_caddisfly"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "birch_forest"]
+    W, H         = 10, 5
+    BODY_COLOR   = (78, 62, 32)
+    WING_COLOR   = (138, 115, 62)
+    ACCENT_COLOR = (188, 175, 118)
+    HOVER_RANGE  = 38
+    SPEED        = 28.0
+    WING_TYPE    = "moth"
+    DUSK_ONLY    = True
+
+
+# ---------------------------------------------------------------------------
+# South American fauna (100 species)
+# ---------------------------------------------------------------------------
+
+# --- SA butterflies ---
+
+class HelenaMorpho(Insect):
+    SPECIES      = "helena_morpho"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 16, 12
+    BODY_COLOR   = (22, 22, 32)
+    WING_COLOR   = (62, 92, 215)
+    ACCENT_COLOR = (138, 175, 245)
+    HOVER_RANGE  = 65
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class CommonMorpho(Insect):
+    SPECIES      = "common_morpho"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 15, 11
+    BODY_COLOR   = (22, 22, 32)
+    WING_COLOR   = (72, 108, 215)
+    ACCENT_COLOR = (155, 188, 245)
+    HOVER_RANGE  = 60
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class AchillesMorpho(Insect):
+    SPECIES      = "achilles_morpho"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 15, 11
+    BODY_COLOR   = (28, 28, 38)
+    WING_COLOR   = (62, 88, 195)
+    ACCENT_COLOR = (240, 240, 248)
+    HOVER_RANGE  = 60
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class CramerMorpho(Insect):
+    SPECIES      = "cramer_morpho"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 15, 11
+    BODY_COLOR   = (32, 32, 48)
+    WING_COLOR   = (78, 118, 188)
+    ACCENT_COLOR = (188, 215, 248)
+    HOVER_RANGE  = 60
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class OwlButterfly(Insect):
+    SPECIES      = "owl_butterfly"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 15, 11
+    BODY_COLOR   = (62, 42, 22)
+    WING_COLOR   = (118, 88, 55)
+    ACCENT_COLOR = (32, 22, 18)
+    HOVER_RANGE  = 55
+    SPEED        = 26.0
+    WING_TYPE    = "butterfly"
+
+
+class GiantOwlButterfly(Insect):
+    SPECIES      = "giant_owl_butterfly"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 16, 12
+    BODY_COLOR   = (62, 38, 22)
+    WING_COLOR   = (118, 78, 48)
+    ACCENT_COLOR = (28, 22, 22)
+    HOVER_RANGE  = 60
+    SPEED        = 24.0
+    WING_TYPE    = "butterfly"
+
+
+class GlasswingButterfly(Insect):
+    SPECIES      = "glasswing_butterfly"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 9
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (215, 215, 220)
+    ACCENT_COLOR = (148, 38, 32)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class CrackerButterfly(Insect):
+    SPECIES      = "cracker_butterfly"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 9
+    BODY_COLOR   = (62, 62, 78)
+    WING_COLOR   = (138, 138, 158)
+    ACCENT_COLOR = (28, 28, 32)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class BlueCracker(Insect):
+    SPECIES      = "blue_cracker"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle"]
+    W, H         = 12, 9
+    BODY_COLOR   = (32, 42, 78)
+    WING_COLOR   = (78, 118, 178)
+    ACCENT_COLOR = (188, 220, 245)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class JuliaHeliconian(Insect):
+    SPECIES      = "julia_heliconian"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 8
+    BODY_COLOR   = (78, 32, 12)
+    WING_COLOR   = (235, 118, 38)
+    ACCENT_COLOR = (32, 22, 18)
+    HOVER_RANGE  = 50
+    SPEED        = 32.0
+    WING_TYPE    = "butterfly"
+
+
+class ErythraeaHeliconian(Insect):
+    SPECIES      = "erythraea_heliconian"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 8
+    BODY_COLOR   = (78, 22, 22)
+    WING_COLOR   = (188, 38, 38)
+    ACCENT_COLOR = (245, 218, 88)
+    HOVER_RANGE  = 50
+    SPEED        = 32.0
+    WING_TYPE    = "butterfly"
+
+
+class ScarletPeacock(Insect):
+    SPECIES      = "scarlet_peacock"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 9
+    BODY_COLOR   = (78, 22, 18)
+    WING_COLOR   = (215, 55, 32)
+    ACCENT_COLOR = (32, 22, 18)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class AmazonNymph(Insect):
+    SPECIES      = "amazon_nymph"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle"]
+    W, H         = 12, 9
+    BODY_COLOR   = (62, 38, 22)
+    WING_COLOR   = (188, 138, 62)
+    ACCENT_COLOR = (235, 215, 138)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class RuddyDaggerwing(Insect):
+    SPECIES      = "ruddy_daggerwing"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 9
+    BODY_COLOR   = (118, 62, 22)
+    WING_COLOR   = (215, 105, 38)
+    ACCENT_COLOR = (38, 22, 18)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class SilverEmperorButterfly(Insect):
+    SPECIES      = "silver_emperor_butterfly"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 14, 10
+    BODY_COLOR   = (108, 108, 118)
+    WING_COLOR   = (188, 188, 200)
+    ACCENT_COLOR = (245, 245, 250)
+    HOVER_RANGE  = 60
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class PurpleSpottedSwallowtail(Insect):
+    SPECIES      = "purple_spotted_swallowtail"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 10
+    BODY_COLOR   = (32, 22, 42)
+    WING_COLOR   = (62, 38, 92)
+    ACCENT_COLOR = (175, 105, 215)
+    HOVER_RANGE  = 60
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class AmazonianSwallowtail(Insect):
+    SPECIES      = "amazonian_swallowtail"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle"]
+    W, H         = 14, 10
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (32, 38, 28)
+    ACCENT_COLOR = (245, 220, 92)
+    HOVER_RANGE  = 60
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class TropicalKiteSwallowtail(Insect):
+    SPECIES      = "tropical_kite_swallowtail"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 10
+    BODY_COLOR   = (32, 32, 32)
+    WING_COLOR   = (245, 240, 230)
+    ACCENT_COLOR = (108, 188, 138)
+    HOVER_RANGE  = 60
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class AmazonSulphur(Insect):
+    SPECIES      = "amazon_sulphur"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 11, 8
+    BODY_COLOR   = (108, 92, 32)
+    WING_COLOR   = (245, 215, 75)
+    ACCENT_COLOR = (188, 138, 38)
+    HOVER_RANGE  = 45
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class CloudedMimic(Insect):
+    SPECIES      = "clouded_mimic"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle"]
+    W, H         = 12, 9
+    BODY_COLOR   = (52, 42, 22)
+    WING_COLOR   = (108, 88, 55)
+    ACCENT_COLOR = (215, 195, 138)
+    HOVER_RANGE  = 50
+    SPEED        = 28.0
+    WING_TYPE    = "butterfly"
+
+
+class RubyEyedBrushfoot(Insect):
+    SPECIES      = "ruby_eyed_brushfoot"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle"]
+    W, H         = 12, 9
+    BODY_COLOR   = (78, 22, 22)
+    WING_COLOR   = (138, 42, 42)
+    ACCENT_COLOR = (235, 188, 78)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class AndeanFritillary(Insect):
+    SPECIES      = "andean_fritillary"
+    RARITY       = "uncommon"
+    BIOMES       = ["alpine_mountain", "rocky_mountain"]
+    W, H         = 12, 9
+    BODY_COLOR   = (62, 38, 18)
+    WING_COLOR   = (205, 138, 38)
+    ACCENT_COLOR = (32, 28, 22)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class PatagonianBlue(Insect):
+    SPECIES      = "patagonian_blue"
+    RARITY       = "uncommon"
+    BIOMES       = ["steppe", "rocky_mountain"]
+    W, H         = 9, 7
+    BODY_COLOR   = (38, 62, 138)
+    WING_COLOR   = (88, 138, 215)
+    ACCENT_COLOR = (188, 220, 248)
+    HOVER_RANGE  = 40
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class ScarletMormon(Insect):
+    SPECIES      = "scarlet_mormon"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 10
+    BODY_COLOR   = (28, 22, 22)
+    WING_COLOR   = (45, 38, 38)
+    ACCENT_COLOR = (215, 38, 55)
+    HOVER_RANGE  = 60
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+class MarbledGlasswing(Insect):
+    SPECIES      = "marbled_glasswing"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 9
+    BODY_COLOR   = (32, 32, 32)
+    WING_COLOR   = (220, 215, 220)
+    ACCENT_COLOR = (62, 62, 65)
+    HOVER_RANGE  = 50
+    SPEED        = 30.0
+    WING_TYPE    = "butterfly"
+
+
+# --- SA beetles ---
+
+class TitanBeetle(Insect):
+    SPECIES      = "titan_beetle"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 16, 8
+    BODY_COLOR   = (62, 42, 22)
+    WING_COLOR   = (108, 78, 38)
+    ACCENT_COLOR = (175, 138, 78)
+    HOVER_RANGE  = 32
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class ElephantBeetle(Insect):
+    SPECIES      = "elephant_beetle"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 15, 8
+    BODY_COLOR   = (38, 32, 22)
+    WING_COLOR   = (62, 52, 38)
+    ACCENT_COLOR = (115, 105, 78)
+    HOVER_RANGE  = 32
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class HarlequinBeetle(Insect):
+    SPECIES      = "harlequin_beetle"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 15, 6
+    BODY_COLOR   = (138, 92, 32)
+    WING_COLOR   = (32, 32, 38)
+    ACCENT_COLOR = (215, 55, 38)
+    HOVER_RANGE  = 32
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class JewelScarab(Insect):
+    SPECIES      = "jewel_scarab"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 7
+    BODY_COLOR   = (45, 105, 88)
+    WING_COLOR   = (62, 188, 148)
+    ACCENT_COLOR = (188, 245, 215)
+    HOVER_RANGE  = 32
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class BrazilianJewelBeetle(Insect):
+    SPECIES      = "brazilian_jewel_beetle"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 7
+    BODY_COLOR   = (78, 32, 105)
+    WING_COLOR   = (138, 62, 188)
+    ACCENT_COLOR = (215, 138, 235)
+    HOVER_RANGE  = 32
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class AmazonianFireBeetle(Insect):
+    SPECIES      = "amazonian_fire_beetle"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle"]
+    W, H         = 11, 6
+    BODY_COLOR   = (138, 38, 18)
+    WING_COLOR   = (215, 78, 38)
+    ACCENT_COLOR = (250, 178, 105)
+    HOVER_RANGE  = 32
+    SPEED        = 26.0
+    WING_TYPE    = "beetle"
+
+
+class AndeanWeevil(Insect):
+    SPECIES      = "andean_weevil"
+    RARITY       = "uncommon"
+    BIOMES       = ["alpine_mountain", "rocky_mountain"]
+    W, H         = 9, 6
+    BODY_COLOR   = (62, 62, 78)
+    WING_COLOR   = (108, 108, 138)
+    ACCENT_COLOR = (175, 178, 215)
+    HOVER_RANGE  = 28
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class CaribbeanRhinoBeetle(Insect):
+    SPECIES      = "caribbean_rhino_beetle"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 7
+    BODY_COLOR   = (32, 22, 22)
+    WING_COLOR   = (62, 42, 32)
+    ACCENT_COLOR = (138, 92, 55)
+    HOVER_RANGE  = 32
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class AmazonStagBeetle(Insect):
+    SPECIES      = "amazon_stag_beetle"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 14, 7
+    BODY_COLOR   = (42, 28, 18)
+    WING_COLOR   = (78, 52, 32)
+    ACCENT_COLOR = (148, 105, 62)
+    HOVER_RANGE  = 32
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class NeotropicalLonghorn(Insect):
+    SPECIES      = "neotropical_longhorn"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 6
+    BODY_COLOR   = (62, 42, 22)
+    WING_COLOR   = (118, 78, 38)
+    ACCENT_COLOR = (188, 148, 92)
+    HOVER_RANGE  = 32
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class NeotropicalRhinoBeetle(Insect):
+    SPECIES      = "neotropical_rhino_beetle"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 7
+    BODY_COLOR   = (38, 28, 18)
+    WING_COLOR   = (72, 52, 28)
+    ACCENT_COLOR = (148, 115, 65)
+    HOVER_RANGE  = 32
+    SPEED        = 24.0
+    WING_TYPE    = "beetle"
+
+
+class AndeanTigerBeetle(Insect):
+    SPECIES      = "andean_tiger_beetle"
+    RARITY       = "uncommon"
+    BIOMES       = ["alpine_mountain", "rocky_mountain"]
+    W, H         = 11, 6
+    BODY_COLOR   = (38, 62, 88)
+    WING_COLOR   = (78, 118, 148)
+    ACCENT_COLOR = (235, 215, 92)
+    HOVER_RANGE  = 32
+    SPEED        = 34.0
+    WING_TYPE    = "beetle"
+
+
+class AmazonianGoldChafer(Insect):
+    SPECIES      = "amazonian_gold_chafer"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 11, 6
+    BODY_COLOR   = (138, 105, 22)
+    WING_COLOR   = (215, 178, 55)
+    ACCENT_COLOR = (250, 235, 138)
+    HOVER_RANGE  = 32
+    SPEED        = 26.0
+    WING_TYPE    = "beetle"
+
+
+class HornedPassalusBeetle(Insect):
+    SPECIES      = "horned_passalus_beetle"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 6
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (42, 38, 38)
+    ACCENT_COLOR = (108, 92, 78)
+    HOVER_RANGE  = 30
+    SPEED        = 22.0
+    WING_TYPE    = "beetle"
+
+
+class AmazonianClickBeetle(Insect):
+    SPECIES      = "amazonian_click_beetle"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle"]
+    W, H         = 12, 6
+    BODY_COLOR   = (28, 28, 28)
+    WING_COLOR   = (52, 52, 52)
+    ACCENT_COLOR = (175, 235, 138)
+    HOVER_RANGE  = 32
+    SPEED        = 28.0
+    WING_TYPE    = "beetle"
+
+
+# --- SA dragonflies ---
+
+class AmazonHelicopterDamsel(Insect):
+    SPECIES      = "amazon_helicopter_damsel"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 16, 5
+    BODY_COLOR   = (32, 32, 32)
+    WING_COLOR   = (62, 62, 62)
+    ACCENT_COLOR = (215, 235, 215)
+    HOVER_RANGE  = 65
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+
+
+class NeotropicalGreatPondhawk(Insect):
+    SPECIES      = "neotropical_great_pondhawk"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "jungle"]
+    W, H         = 13, 5
+    BODY_COLOR   = (62, 138, 88)
+    WING_COLOR   = (108, 188, 128)
+    ACCENT_COLOR = (215, 245, 175)
+    HOVER_RANGE  = 55
+    SPEED        = 36.0
+    WING_TYPE    = "dragonfly"
+
+
+class ScarletSkimmerSA(Insect):
+    SPECIES      = "scarlet_skimmer_sa"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "jungle"]
+    W, H         = 12, 4
+    BODY_COLOR   = (188, 38, 28)
+    WING_COLOR   = (235, 78, 55)
+    ACCENT_COLOR = (250, 215, 195)
+    HOVER_RANGE  = 50
+    SPEED        = 34.0
+    WING_TYPE    = "dragonfly"
+
+
+class FieryRubyspot(Insect):
+    SPECIES      = "fiery_rubyspot"
+    RARITY       = "uncommon"
+    BIOMES       = ["wetland", "jungle"]
+    W, H         = 12, 4
+    BODY_COLOR   = (32, 22, 22)
+    WING_COLOR   = (62, 32, 32)
+    ACCENT_COLOR = (235, 55, 38)
+    HOVER_RANGE  = 50
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+
+
+class NeotropicalGlider(Insect):
+    SPECIES      = "neotropical_glider"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "wetland"]
+    W, H         = 14, 5
+    BODY_COLOR   = (188, 92, 32)
+    WING_COLOR   = (235, 158, 55)
+    ACCENT_COLOR = (250, 215, 138)
+    HOVER_RANGE  = 55
+    SPEED        = 36.0
+    WING_TYPE    = "dragonfly"
+
+
+class AmazonianDarner(Insect):
+    SPECIES      = "amazonian_darner"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "wetland"]
+    W, H         = 15, 5
+    BODY_COLOR   = (32, 88, 62)
+    WING_COLOR   = (78, 158, 108)
+    ACCENT_COLOR = (188, 235, 175)
+    HOVER_RANGE  = 60
+    SPEED        = 38.0
+    WING_TYPE    = "dragonfly"
+
+
+class AndeanGreenSkimmer(Insect):
+    SPECIES      = "andean_green_skimmer"
+    RARITY       = "uncommon"
+    BIOMES       = ["alpine_mountain", "wetland"]
+    W, H         = 13, 5
+    BODY_COLOR   = (38, 108, 78)
+    WING_COLOR   = (78, 178, 128)
+    ACCENT_COLOR = (175, 245, 195)
+    HOVER_RANGE  = 55
+    SPEED        = 34.0
+    WING_TYPE    = "dragonfly"
+
+
+class PatagonianDarter(Insect):
+    SPECIES      = "patagonian_darter"
+    RARITY       = "uncommon"
+    BIOMES       = ["steppe", "wetland"]
+    W, H         = 12, 4
+    BODY_COLOR   = (158, 78, 38)
+    WING_COLOR   = (215, 138, 78)
+    ACCENT_COLOR = (245, 215, 175)
+    HOVER_RANGE  = 50
+    SPEED        = 34.0
+    WING_TYPE    = "dragonfly"
+
+
+class RustyClubtail(Insect):
+    SPECIES      = "rusty_clubtail"
+    RARITY       = "common"
+    BIOMES       = ["wetland", "jungle"]
+    W, H         = 13, 5
+    BODY_COLOR   = (108, 62, 22)
+    WING_COLOR   = (175, 118, 55)
+    ACCENT_COLOR = (235, 195, 138)
+    HOVER_RANGE  = 50
+    SPEED        = 32.0
+    WING_TYPE    = "dragonfly"
+
+
+class RainforestDamselfly(Insect):
+    SPECIES      = "rainforest_damselfly"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "wetland"]
+    W, H         = 11, 3
+    BODY_COLOR   = (62, 138, 88)
+    WING_COLOR   = (148, 215, 178)
+    ACCENT_COLOR = (220, 248, 235)
+    HOVER_RANGE  = 45
+    SPEED        = 30.0
+    WING_TYPE    = "dragonfly"
+
+
+# --- SA fireflies ---
+
+class AmazonianFirefly(Insect):
+    SPECIES      = "amazonian_firefly"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "wetland"]
+    W, H         = 9, 6
+    BODY_COLOR   = (28, 22, 22)
+    WING_COLOR   = (48, 38, 32)
+    ACCENT_COLOR = (245, 235, 138)
+    HOVER_RANGE  = 52
+    SPEED        = 22.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class AndeanFirefly(Insect):
+    SPECIES      = "andean_firefly"
+    RARITY       = "rare"
+    BIOMES       = ["alpine_mountain", "rocky_mountain"]
+    W, H         = 9, 6
+    BODY_COLOR   = (22, 22, 32)
+    WING_COLOR   = (38, 38, 52)
+    ACCENT_COLOR = (188, 235, 195)
+    HOVER_RANGE  = 50
+    SPEED        = 20.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class BrazilianRailroadGlow(Insect):
+    SPECIES      = "brazilian_railroad_glow"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 10, 5
+    BODY_COLOR   = (32, 22, 18)
+    WING_COLOR   = (62, 42, 32)
+    ACCENT_COLOR = (235, 88, 55)
+    HOVER_RANGE  = 45
+    SPEED        = 18.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class AmazonGiantFirefly(Insect):
+    SPECIES      = "amazon_giant_firefly"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 11, 7
+    BODY_COLOR   = (32, 22, 22)
+    WING_COLOR   = (52, 42, 32)
+    ACCENT_COLOR = (250, 240, 158)
+    HOVER_RANGE  = 58
+    SPEED        = 22.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+class TropicalNightfire(Insect):
+    SPECIES      = "tropical_nightfire"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 9, 6
+    BODY_COLOR   = (28, 22, 22)
+    WING_COLOR   = (48, 38, 32)
+    ACCENT_COLOR = (255, 175, 78)
+    HOVER_RANGE  = 50
+    SPEED        = 22.0
+    WING_TYPE    = "firefly"
+    NIGHT_ONLY   = True
+
+
+# --- SA moths ---
+
+class WhiteWitchMoth(Insect):
+    SPECIES      = "white_witch_moth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 16, 11
+    BODY_COLOR   = (188, 175, 158)
+    WING_COLOR   = (235, 230, 220)
+    ACCENT_COLOR = (108, 95, 78)
+    HOVER_RANGE  = 60
+    SPEED        = 26.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class JaguarMoth(Insect):
+    SPECIES      = "jaguar_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle"]
+    W, H         = 13, 9
+    BODY_COLOR   = (188, 138, 38)
+    WING_COLOR   = (235, 188, 62)
+    ACCENT_COLOR = (32, 28, 22)
+    HOVER_RANGE  = 50
+    SPEED        = 26.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class AmazonHawkMoth(Insect):
+    SPECIES      = "amazon_hawk_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 8
+    BODY_COLOR   = (62, 48, 32)
+    WING_COLOR   = (118, 95, 62)
+    ACCENT_COLOR = (188, 158, 105)
+    HOVER_RANGE  = 55
+    SPEED        = 38.0
+    WING_TYPE    = "moth"
+
+
+class RubyHawkMoth(Insect):
+    SPECIES      = "ruby_hawk_moth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 7
+    BODY_COLOR   = (108, 22, 38)
+    WING_COLOR   = (188, 38, 55)
+    ACCENT_COLOR = (245, 138, 158)
+    HOVER_RANGE  = 50
+    SPEED        = 38.0
+    WING_TYPE    = "moth"
+
+
+class PinkSpottedHawkmoth(Insect):
+    SPECIES      = "pink_spotted_hawkmoth"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 8
+    BODY_COLOR   = (78, 62, 62)
+    WING_COLOR   = (148, 118, 118)
+    ACCENT_COLOR = (235, 138, 175)
+    HOVER_RANGE  = 55
+    SPEED        = 38.0
+    WING_TYPE    = "moth"
+
+
+class AndeanSilkmoth(Insect):
+    SPECIES      = "andean_silkmoth"
+    RARITY       = "rare"
+    BIOMES       = ["alpine_mountain", "rocky_mountain"]
+    W, H         = 14, 9
+    BODY_COLOR   = (158, 148, 138)
+    WING_COLOR   = (215, 205, 195)
+    ACCENT_COLOR = (115, 78, 65)
+    HOVER_RANGE  = 55
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class TropicalEmperorMoth(Insect):
+    SPECIES      = "tropical_emperor_moth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 15, 10
+    BODY_COLOR   = (62, 38, 78)
+    WING_COLOR   = (138, 92, 148)
+    ACCENT_COLOR = (235, 195, 218)
+    HOVER_RANGE  = 60
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class AmazonRoyalMoth(Insect):
+    SPECIES      = "amazon_royal_moth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 16, 11
+    BODY_COLOR   = (108, 38, 22)
+    WING_COLOR   = (175, 78, 38)
+    ACCENT_COLOR = (245, 215, 92)
+    HOVER_RANGE  = 60
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class AmazonGiantSilkmoth(Insect):
+    SPECIES      = "amazon_giant_silkmoth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 16, 11
+    BODY_COLOR   = (78, 52, 32)
+    WING_COLOR   = (148, 105, 62)
+    ACCENT_COLOR = (220, 188, 138)
+    HOVER_RANGE  = 60
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class UraniaMoth(Insect):
+    SPECIES      = "urania_moth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 10
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (38, 38, 42)
+    ACCENT_COLOR = (62, 188, 158)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "moth"
+
+
+class SunsetMoth(Insect):
+    SPECIES      = "sunset_moth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 10
+    BODY_COLOR   = (22, 22, 22)
+    WING_COLOR   = (62, 38, 38)
+    ACCENT_COLOR = (235, 128, 38)
+    HOVER_RANGE  = 55
+    SPEED        = 30.0
+    WING_TYPE    = "moth"
+
+
+class EcuadorianHawkMoth(Insect):
+    SPECIES      = "ecuadorian_hawk_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "alpine_mountain"]
+    W, H         = 14, 8
+    BODY_COLOR   = (62, 92, 62)
+    WING_COLOR   = (108, 148, 105)
+    ACCENT_COLOR = (188, 215, 175)
+    HOVER_RANGE  = 55
+    SPEED        = 38.0
+    WING_TYPE    = "moth"
+
+
+class SaturniidEclipseMoth(Insect):
+    SPECIES      = "saturniid_eclipse_moth"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 15, 10
+    BODY_COLOR   = (28, 22, 32)
+    WING_COLOR   = (62, 52, 78)
+    ACCENT_COLOR = (215, 178, 95)
+    HOVER_RANGE  = 55
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+class PatagonianTigerMoth(Insect):
+    SPECIES      = "patagonian_tiger_moth"
+    RARITY       = "uncommon"
+    BIOMES       = ["steppe", "rocky_mountain"]
+    W, H         = 12, 8
+    BODY_COLOR   = (28, 22, 22)
+    WING_COLOR   = (62, 38, 38)
+    ACCENT_COLOR = (235, 195, 88)
+    HOVER_RANGE  = 50
+    SPEED        = 26.0
+    WING_TYPE    = "moth"
+
+
+class AmazonTussockMoth(Insect):
+    SPECIES      = "amazon_tussock_moth"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 11, 7
+    BODY_COLOR   = (148, 105, 62)
+    WING_COLOR   = (215, 175, 118)
+    ACCENT_COLOR = (245, 218, 175)
+    HOVER_RANGE  = 42
+    SPEED        = 24.0
+    WING_TYPE    = "moth"
+    NIGHT_ONLY   = True
+
+
+# --- SA other ---
+
+class JungleNymphMantis(Insect):
+    SPECIES      = "jungle_nymph_mantis"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 14, 8
+    BODY_COLOR   = (62, 108, 38)
+    WING_COLOR   = (108, 158, 62)
+    ACCENT_COLOR = (175, 215, 108)
+    HOVER_RANGE  = 35
+    SPEED        = 22.0
+    WING_TYPE    = "other"
+
+
+class BrazilianDeadLeafMantis(Insect):
+    SPECIES      = "brazilian_dead_leaf_mantis"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 14, 8
+    BODY_COLOR   = (88, 55, 28)
+    WING_COLOR   = (138, 88, 45)
+    ACCENT_COLOR = (188, 138, 78)
+    HOVER_RANGE  = 32
+    SPEED        = 20.0
+    WING_TYPE    = "other"
+
+
+class PeruvianStickInsect(Insect):
+    SPECIES      = "peruvian_stick_insect"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "alpine_mountain"]
+    W, H         = 16, 4
+    BODY_COLOR   = (78, 55, 32)
+    WING_COLOR   = (118, 88, 52)
+    ACCENT_COLOR = (175, 138, 88)
+    HOVER_RANGE  = 30
+    SPEED        = 18.0
+    WING_TYPE    = "other"
+
+
+class AmazonLeafInsect(Insect):
+    SPECIES      = "amazon_leaf_insect"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 9
+    BODY_COLOR   = (62, 105, 38)
+    WING_COLOR   = (108, 158, 62)
+    ACCENT_COLOR = (175, 215, 105)
+    HOVER_RANGE  = 30
+    SPEED        = 18.0
+    WING_TYPE    = "other"
+
+
+class BulletAnt(Insect):
+    SPECIES      = "bullet_ant"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 9, 5
+    BODY_COLOR   = (38, 22, 18)
+    WING_COLOR   = (62, 38, 28)
+    ACCENT_COLOR = (138, 88, 55)
+    HOVER_RANGE  = 28
+    SPEED        = 30.0
+    WING_TYPE    = "other"
+
+
+class LeafcutterAnt(Insect):
+    SPECIES      = "leafcutter_ant"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 8, 4
+    BODY_COLOR   = (88, 52, 32)
+    WING_COLOR   = (138, 88, 55)
+    ACCENT_COLOR = (138, 188, 88)
+    HOVER_RANGE  = 28
+    SPEED        = 30.0
+    WING_TYPE    = "other"
+
+
+class ArmyAnt(Insect):
+    SPECIES      = "army_ant"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 8, 4
+    BODY_COLOR   = (62, 32, 18)
+    WING_COLOR   = (108, 55, 32)
+    ACCENT_COLOR = (158, 88, 52)
+    HOVER_RANGE  = 28
+    SPEED        = 32.0
+    WING_TYPE    = "other"
+
+
+class AmazonFireAnt(Insect):
+    SPECIES      = "amazon_fire_ant"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 7, 4
+    BODY_COLOR   = (148, 38, 22)
+    WING_COLOR   = (185, 62, 32)
+    ACCENT_COLOR = (235, 118, 78)
+    HOVER_RANGE  = 25
+    SPEED        = 30.0
+    WING_TYPE    = "other"
+
+
+class NeotropicalAssassinBug(Insect):
+    SPECIES      = "neotropical_assassin_bug"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 11, 6
+    BODY_COLOR   = (118, 22, 28)
+    WING_COLOR   = (175, 38, 42)
+    ACCENT_COLOR = (28, 22, 22)
+    HOVER_RANGE  = 35
+    SPEED        = 30.0
+    WING_TYPE    = "other"
+
+
+class AmazonOrchidBee(Insect):
+    SPECIES      = "amazon_orchid_bee"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 10, 5
+    BODY_COLOR   = (32, 88, 78)
+    WING_COLOR   = (62, 188, 158)
+    ACCENT_COLOR = (148, 245, 215)
+    HOVER_RANGE  = 50
+    SPEED        = 38.0
+    WING_TYPE    = "other"
+
+
+class EuglossineBee(Insect):
+    SPECIES      = "euglossine_bee"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 9, 5
+    BODY_COLOR   = (32, 38, 138)
+    WING_COLOR   = (62, 78, 215)
+    ACCENT_COLOR = (158, 188, 245)
+    HOVER_RANGE  = 45
+    SPEED        = 36.0
+    WING_TYPE    = "other"
+
+
+class AmazonStinglessBee(Insect):
+    SPECIES      = "amazon_stingless_bee"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 8, 5
+    BODY_COLOR   = (62, 42, 18)
+    WING_COLOR   = (138, 105, 62)
+    ACCENT_COLOR = (215, 178, 105)
+    HOVER_RANGE  = 40
+    SPEED        = 32.0
+    WING_TYPE    = "other"
+
+
+class CitronellaAnt(Insect):
+    SPECIES      = "citronella_ant"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "wetland"]
+    W, H         = 7, 4
+    BODY_COLOR   = (188, 148, 38)
+    WING_COLOR   = (215, 188, 78)
+    ACCENT_COLOR = (245, 230, 148)
+    HOVER_RANGE  = 28
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+
+
+class AmazonGiantCockroach(Insect):
+    SPECIES      = "amazon_giant_cockroach"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 7
+    BODY_COLOR   = (78, 42, 22)
+    WING_COLOR   = (128, 78, 38)
+    ACCENT_COLOR = (188, 138, 78)
+    HOVER_RANGE  = 30
+    SPEED        = 36.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class PatagonianGrasshopper(Insect):
+    SPECIES      = "patagonian_grasshopper"
+    RARITY       = "common"
+    BIOMES       = ["steppe", "rocky_mountain"]
+    W, H         = 11, 6
+    BODY_COLOR   = (108, 92, 62)
+    WING_COLOR   = (158, 138, 92)
+    ACCENT_COLOR = (215, 195, 148)
+    HOVER_RANGE  = 32
+    SPEED        = 30.0
+    WING_TYPE    = "other"
+
+
+class AmazonGiantLocust(Insect):
+    SPECIES      = "amazon_giant_locust"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "savanna"]
+    W, H         = 14, 7
+    BODY_COLOR   = (118, 138, 38)
+    WING_COLOR   = (175, 195, 78)
+    ACCENT_COLOR = (235, 215, 138)
+    HOVER_RANGE  = 35
+    SPEED        = 34.0
+    WING_TYPE    = "other"
+
+
+class BrazilianFireGrasshopper(Insect):
+    SPECIES      = "brazilian_fire_grasshopper"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 12, 6
+    BODY_COLOR   = (215, 78, 22)
+    WING_COLOR   = (245, 138, 38)
+    ACCENT_COLOR = (32, 22, 22)
+    HOVER_RANGE  = 32
+    SPEED        = 32.0
+    WING_TYPE    = "other"
+
+
+class TropicalLeafhopper(Insect):
+    SPECIES      = "tropical_leafhopper"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 7, 4
+    BODY_COLOR   = (78, 138, 62)
+    WING_COLOR   = (128, 215, 105)
+    ACCENT_COLOR = (215, 245, 178)
+    HOVER_RANGE  = 28
+    SPEED        = 30.0
+    WING_TYPE    = "other"
+
+
+class RubyTreehopper(Insect):
+    SPECIES      = "ruby_treehopper"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 7, 5
+    BODY_COLOR   = (148, 28, 38)
+    WING_COLOR   = (215, 62, 78)
+    ACCENT_COLOR = (245, 178, 188)
+    HOVER_RANGE  = 28
+    SPEED        = 28.0
+    WING_TYPE    = "other"
+
+
+class AmazonStinkBug(Insect):
+    SPECIES      = "amazon_stink_bug"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 10, 7
+    BODY_COLOR   = (62, 92, 62)
+    WING_COLOR   = (105, 148, 105)
+    ACCENT_COLOR = (175, 215, 148)
+    HOVER_RANGE  = 30
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+
+
+class BrazilianCockroach(Insect):
+    SPECIES      = "brazilian_cockroach"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "swamp"]
+    W, H         = 11, 6
+    BODY_COLOR   = (105, 62, 28)
+    WING_COLOR   = (148, 92, 42)
+    ACCENT_COLOR = (215, 158, 88)
+    HOVER_RANGE  = 28
+    SPEED        = 36.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class AmazonShieldBug(Insect):
+    SPECIES      = "amazon_shield_bug"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 10, 7
+    BODY_COLOR   = (28, 88, 62)
+    WING_COLOR   = (62, 148, 108)
+    ACCENT_COLOR = (148, 235, 188)
+    HOVER_RANGE  = 30
+    SPEED        = 22.0
+    WING_TYPE    = "other"
+
+
+class PeanutHeadBug(Insect):
+    SPECIES      = "peanut_head_bug"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 7
+    BODY_COLOR   = (108, 88, 62)
+    WING_COLOR   = (175, 148, 105)
+    ACCENT_COLOR = (235, 215, 158)
+    HOVER_RANGE  = 35
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+
+
+class PeruvianMantis(Insect):
+    SPECIES      = "peruvian_mantis"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "alpine_mountain"]
+    W, H         = 13, 7
+    BODY_COLOR   = (88, 108, 62)
+    WING_COLOR   = (128, 158, 92)
+    ACCENT_COLOR = (188, 215, 138)
+    HOVER_RANGE  = 32
+    SPEED        = 22.0
+    WING_TYPE    = "other"
+
+
+class AmazonGhostMantis(Insect):
+    SPECIES      = "amazon_ghost_mantis"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 12, 7
+    BODY_COLOR   = (108, 78, 55)
+    WING_COLOR   = (158, 128, 92)
+    ACCENT_COLOR = (215, 195, 158)
+    HOVER_RANGE  = 32
+    SPEED        = 20.0
+    WING_TYPE    = "other"
+
+
+class AmazonGiantWasp(Insect):
+    SPECIES      = "amazon_giant_wasp"
+    RARITY       = "rare"
+    BIOMES       = ["jungle", "tropical"]
+    W, H         = 13, 6
+    BODY_COLOR   = (38, 18, 12)
+    WING_COLOR   = (108, 55, 22)
+    ACCENT_COLOR = (235, 138, 38)
+    HOVER_RANGE  = 55
+    SPEED        = 40.0
+    WING_TYPE    = "other"
+
+
+class NeotropicalScorpionFly(Insect):
+    SPECIES      = "neotropical_scorpion_fly"
+    RARITY       = "uncommon"
+    BIOMES       = ["jungle", "wetland"]
+    W, H         = 11, 5
+    BODY_COLOR   = (62, 42, 22)
+    WING_COLOR   = (138, 108, 62)
+    ACCENT_COLOR = (215, 188, 138)
+    HOVER_RANGE  = 38
+    SPEED        = 32.0
+    WING_TYPE    = "other"
+
+
+class AmazonDragonHeadKatydid(Insect):
+    SPECIES      = "amazon_dragonhead_katydid"
+    RARITY       = "rare"
+    BIOMES       = ["jungle"]
+    W, H         = 14, 8
+    BODY_COLOR   = (78, 138, 62)
+    WING_COLOR   = (128, 188, 92)
+    ACCENT_COLOR = (215, 235, 138)
+    HOVER_RANGE  = 35
+    SPEED        = 24.0
+    WING_TYPE    = "other"
+
+
+class PeruvianCricket(Insect):
+    SPECIES      = "peruvian_cricket"
+    RARITY       = "common"
+    BIOMES       = ["jungle", "alpine_mountain"]
+    W, H         = 10, 6
+    BODY_COLOR   = (62, 42, 22)
+    WING_COLOR   = (105, 78, 45)
+    ACCENT_COLOR = (158, 128, 78)
+    HOVER_RANGE  = 28
+    SPEED        = 26.0
+    WING_TYPE    = "other"
+    NIGHT_ONLY   = True
+
+
+class PampasCricket(Insect):
+    SPECIES      = "pampas_cricket"
+    RARITY       = "common"
+    BIOMES       = ["steppe", "savanna"]
+    W, H         = 10, 6
+    BODY_COLOR   = (118, 95, 62)
+    WING_COLOR   = (158, 128, 88)
+    ACCENT_COLOR = (215, 188, 138)
+    HOVER_RANGE  = 28
+    SPEED        = 26.0
+    WING_TYPE    = "other"
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 
@@ -3702,6 +8040,95 @@ ALL_INSECT_SPECIES = [
     StoneflyMoss, VioletWaterfly, SpottedMayfly, MidnightMarshSkater, ElmPondButterfly,
     # Arctic
     ArcticFritillary, GlacierMoth, FrostMidge,
+    # Asian butterflies
+    PaperKite, CommonRose, CrimsonRose, BlueTigerButterfly, PlainTigerAsia,
+    CommonJezebel, PeacockPansy, BandedPeacock, CommonNawab, RedLacewing,
+    MalayLacewing, CommonMime, ChocolatePansy, GreatMormon, JapaneseEmperor,
+    KaiserIHind, CommonCrow, ChestnutTiger, AsianCommaButterfly, YellowOrangeTip,
+    StripedAlbatross, CommonGull, CommonSailor, BlueOakleaf, AutumnLeafButterfly,
+    # Asian beetles
+    JapaneseRhinocerosBeetle, GoldenStagBeetle, MiyamaStagBeetle, SaberhornLonghorn,
+    AsiaticTigerBeetle, JapaneseRoseChafer, HimalayanLonghorn, ThaiJewelBeetle,
+    BalinesePeacockBeetle, CelebesGoldenStag, SumatranLonghorn, JapaneseLadyBeetle,
+    KoreanGroundBeetle, AsianFlowerChafer, RainbowMountainStag,
+    # Asian dragonflies
+    AsianEmperorDragonfly, ChineseRedDragonfly, JapaneseGoldenRing, YellowStripedHawker,
+    RubyMeadowhawkAsia, PiedPaddyDragonfly, CrimsonDropwing, AsianClubtail,
+    RiceFieldSkimmer, KoreanGreenSkimmer,
+    # Asian fireflies
+    GenjiFirefly, HeikeFirefly, TaiwaneseFirefly, KoreanFirefly, HimalayanFirefly,
+    # Asian moths
+    JapaneseSilkmoth, ChineseTussahMoth, JapaneseOakSilkmoth, MalayanMoonMoth,
+    MalaccanMoonmoth, HimalayanGiantMoth, JadeHawkMoth, AsianBeeHawkmoth,
+    BambooBorerMoth, TigerSwallowtailMoth, RubyTailedMoth, CrimsonTigerMoth,
+    EmperorSilkmoth, CherryBlossomMoth, MountainSilkmoth,
+    # Asian other
+    JapaneseMantis, OrchidMantis, JadeMantis, BorneanLeafMantis, BambooMantis,
+    JapaneseHornet, KoreanHornet, AsianPaperWasp, JapaneseHoneybee, AsianBlueCarpenterBee,
+    AsianCarpenterAnt, WeaverAnt, AsianFireAnt, JapaneseGiantCicada, EveningCicada,
+    AnnualCicada, JungleCicadaAsia, CherryBlossomCicada, RiceGrasshopper, JapaneseKatydid,
+    BellCricket, PineCricket, BambooStickInsect, MalayanLeafInsect, BorneanStickInsect,
+    HimalayanStickInsect, AsianAssassinBug, JapaneseShieldBug, JapaneseBumblebee, AsianHoneyWasp,
+    # Asian fauna (batch 2)
+    GoldenBirdwing, TreeNymph, CommonBluebottle, PaintedJezebel, CommonLeopardButterfly,
+    RustyTippedPage, ChineseGoldenChafer, JapaneseTigerLonghorn, MalayanFireBeetle, AsianFlatHeadedBorer,
+    JapaneseSkimmer, ChineseDarner, AsianBlueDamsel, SilverlinedHawkmoth, PinkUnderwingMoth,
+    RoyalSilkmoth, SnowMoth, GiantAsianHoneybee, AsianTreeMantis, DeadLeafMantis,
+    ChineseRiceLocust, PaddyKatydid, AsianTreeCricket, AsianLeafhopper, JadeWeevil,
+    # NA butterflies
+    MourningCloak, Viceroy, SpicebushSwallowtail, PipevineSwallowtail, AmericanLady,
+    WoodlandSkipper, ZebraSwallowtail, GiantSwallowtail, PineWhite, CloudedSulphur,
+    OrangeSulphur, PearlCrescent, AmericanCopper, EasternTailedBlue, SpringAzure,
+    RegalFritillary, GulfFritillary, QuestionMarkButterfly, EasternComma, CommonBuckeye,
+    RedSpottedPurple, AmericanSnout, HackberryEmperor, TawnyEmperor, FloridaLeafwing,
+    # NA beetles
+    EasternEyedClickBeetle, ColoradoPotatoBeetle, SixSpottedTigerBeetle, AmericanBuryingBeetle,
+    GoldsmithBeetle, JuneBeetle, NorthernCornRootworm, AmericanCarrionBeetle,
+    PennsylvaniaLeatherwing, BronzedCarabid, GiantStagBeetle, RedMilkweedBeetle,
+    SpottedPineSawyer, BumbleFlowerBeetle, AmericanOakBorer,
+    # NA dragonflies
+    CommonGreenDarner, TwelveSpottedSkimmer, WidowSkimmer, EasternPondhawk, BlueDasher,
+    AutumnMeadowhawk, EasternAmberwing, RoseateSkimmer, EbonyJewelwing, AmericanRubyspot,
+    # NA fireflies
+    BigDipperFirefly, SynchronousFirefly, PennsylvaniaFirefly, WinterFirefly, AppalachianBlueGhost,
+    # NA moths
+    CecropiaSilkmoth, PrometheaMoth, RegalMoth, ImperialMoth, RosyMapleMoth,
+    WhiteFurcula, PandoraSphinx, AbbottsSphinx, BlindedSphinx, AchemonSphinx,
+    UnderwingCatocala, GiantLeopardMoth, SaltMarshMoth, EightSpottedForester, TulipTreeBeauty,
+    # NA other
+    CarolinaMantis, BaldfacedHornet, AmericanYellowjacket, GreatBlackWasp, CicadaKiller,
+    EasternCarpenterBee, ValleyCarpenterBee, SweatBee, LeafcutterBee, PeriodicalCicada,
+    DogDayCicada, ScissorGrinderCicada, RockyMountainLocust, EasternLubberGrasshopper,
+    DifferentialGrasshopper, AmericanGrasshopper, SnowyTreeCricket, JerusalemCricket,
+    NorthernMoleCricket, AmericanWalkingstick, WheelBug, MaskedHunter, LargeMilkweedBug,
+    SquashBug, BoxElderBug, WesternConiferSeedBug, AmericanCockroach, DobsonFly,
+    AmericanMayfly, AmericanCaddisfly,
+    # SA butterflies
+    HelenaMorpho, CommonMorpho, AchillesMorpho, CramerMorpho, OwlButterfly,
+    GiantOwlButterfly, GlasswingButterfly, CrackerButterfly, BlueCracker, JuliaHeliconian,
+    ErythraeaHeliconian, ScarletPeacock, AmazonNymph, RuddyDaggerwing, SilverEmperorButterfly,
+    PurpleSpottedSwallowtail, AmazonianSwallowtail, TropicalKiteSwallowtail, AmazonSulphur, CloudedMimic,
+    RubyEyedBrushfoot, AndeanFritillary, PatagonianBlue, ScarletMormon, MarbledGlasswing,
+    # SA beetles
+    TitanBeetle, ElephantBeetle, HarlequinBeetle, JewelScarab, BrazilianJewelBeetle,
+    AmazonianFireBeetle, AndeanWeevil, CaribbeanRhinoBeetle, AmazonStagBeetle, NeotropicalLonghorn,
+    NeotropicalRhinoBeetle, AndeanTigerBeetle, AmazonianGoldChafer, HornedPassalusBeetle, AmazonianClickBeetle,
+    # SA dragonflies
+    AmazonHelicopterDamsel, NeotropicalGreatPondhawk, ScarletSkimmerSA, FieryRubyspot, NeotropicalGlider,
+    AmazonianDarner, AndeanGreenSkimmer, PatagonianDarter, RustyClubtail, RainforestDamselfly,
+    # SA fireflies
+    AmazonianFirefly, AndeanFirefly, BrazilianRailroadGlow, AmazonGiantFirefly, TropicalNightfire,
+    # SA moths
+    WhiteWitchMoth, JaguarMoth, AmazonHawkMoth, RubyHawkMoth, PinkSpottedHawkmoth,
+    AndeanSilkmoth, TropicalEmperorMoth, AmazonRoyalMoth, AmazonGiantSilkmoth, UraniaMoth,
+    SunsetMoth, EcuadorianHawkMoth, SaturniidEclipseMoth, PatagonianTigerMoth, AmazonTussockMoth,
+    # SA other
+    JungleNymphMantis, BrazilianDeadLeafMantis, PeruvianStickInsect, AmazonLeafInsect, BulletAnt,
+    LeafcutterAnt, ArmyAnt, AmazonFireAnt, NeotropicalAssassinBug, AmazonOrchidBee,
+    EuglossineBee, AmazonStinglessBee, CitronellaAnt, AmazonGiantCockroach, PatagonianGrasshopper,
+    AmazonGiantLocust, BrazilianFireGrasshopper, TropicalLeafhopper, RubyTreehopper, AmazonStinkBug,
+    BrazilianCockroach, AmazonShieldBug, PeanutHeadBug, PeruvianMantis, AmazonGhostMantis,
+    AmazonGiantWasp, NeotropicalScorpionFly, AmazonDragonHeadKatydid, PeruvianCricket, PampasCricket,
 ]
 
 INSECT_SPECIES_BY_ID = {cls.SPECIES: cls for cls in ALL_INSECT_SPECIES}

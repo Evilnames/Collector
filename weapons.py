@@ -30,6 +30,27 @@ WEAPON_TYPES = {
     "trident": {"name": "Trident", "parts": ["trident_head"],  "base_damage": 4, "attack_range": 2, "cooldown": 0.80},
     "scythe":  {"name": "Scythe",  "parts": ["scythe_blade"],  "base_damage": 6, "attack_range": 2, "cooldown": 1.30},
     "lance":   {"name": "Lance",   "parts": ["lance_head"],    "base_damage": 5, "attack_range": 3, "cooldown": 1.40, "mounted_only": True},
+    "sabre":       {"name": "Sabre",       "parts": ["sabre_blade"],        "base_damage": 3, "attack_range": 1, "cooldown": 0.50},
+    "flail":       {"name": "Flail",       "parts": ["flail_head"],         "base_damage": 5, "attack_range": 2, "cooldown": 1.15},
+    "warhammer":   {"name": "Warhammer",   "parts": ["warhammer_head"],     "base_damage": 6, "attack_range": 1, "cooldown": 1.25},
+    "kris":        {"name": "Kris",        "parts": ["kris_blade"],         "base_damage": 3, "attack_range": 1, "cooldown": 0.45},
+    "falchion":    {"name": "Falchion",    "parts": ["falchion_blade"],     "base_damage": 4, "attack_range": 1, "cooldown": 0.65},
+    "claymore":    {"name": "Claymore",    "parts": ["claymore_blade"],     "base_damage": 5, "attack_range": 1, "cooldown": 1.00},
+    "pike":        {"name": "Pike",        "parts": ["pike_head"],          "base_damage": 4, "attack_range": 3, "cooldown": 1.20},
+    "morningstar": {"name": "Morningstar", "parts": ["morningstar_head"],   "base_damage": 5, "attack_range": 1, "cooldown": 1.15},
+    "katar":       {"name": "Katar",       "parts": ["katar_blade"],        "base_damage": 3, "attack_range": 1, "cooldown": 0.45},
+    "bardiche":    {"name": "Bardiche",    "parts": ["bardiche_blade"],     "base_damage": 5, "attack_range": 2, "cooldown": 1.10},
+    # ---- Ancient China-inspired weapons ----
+    "jian":            {"name": "Jian",            "parts": ["jian_blade"],        "base_damage": 3, "attack_range": 1, "cooldown": 0.50},
+    "dao":             {"name": "Dao",             "parts": ["dao_blade"],         "base_damage": 4, "attack_range": 1, "cooldown": 0.55},
+    "ji":              {"name": "Ji Dagger-Axe",   "parts": ["ji_head"],           "base_damage": 5, "attack_range": 2, "cooldown": 1.15},
+    "guandao":         {"name": "Guandao",         "parts": ["guandao_blade"],     "base_damage": 6, "attack_range": 2, "cooldown": 1.25},
+    "chui":            {"name": "Chui",            "parts": ["chui_head"],         "base_damage": 6, "attack_range": 1, "cooldown": 1.30},
+    "emei":            {"name": "Emei Daggers",    "parts": ["emei_blade"],        "base_damage": 2, "attack_range": 1, "cooldown": 0.30},
+    "hook_sword":      {"name": "Hook Sword",      "parts": ["hook_blade"],        "base_damage": 4, "attack_range": 1, "cooldown": 0.60},
+    "monk_spade":      {"name": "Monk's Spade",    "parts": ["monk_spade_head"],   "base_damage": 5, "attack_range": 2, "cooldown": 1.10},
+    "butterfly_sword": {"name": "Butterfly Sword", "parts": ["butterfly_blade"],   "base_damage": 3, "attack_range": 1, "cooldown": 0.40},
+    "podao":           {"name": "Podao",           "parts": ["podao_blade"],       "base_damage": 5, "attack_range": 2, "cooldown": 1.15},
 }
 
 # ── Smithing styles ───────────────────────────────────────────────────────────
@@ -105,10 +126,34 @@ ASSEMBLY_HANDLES = {
     "trident": "trident_shaft",
     "scythe":  "scythe_snath",
     "lance":   "lance_shaft",
+    "sabre":       "sabre_grip",
+    "flail":       "flail_haft",
+    "warhammer":   "warhammer_haft",
+    "kris":        "kris_hilt",
+    "falchion":    "falchion_grip",
+    "claymore":    "claymore_grip",
+    "pike":        "pike_shaft",
+    "morningstar": "morningstar_haft",
+    "katar":       "katar_grip",
+    "bardiche":    "bardiche_shaft",
+    "jian":            "jian_hilt",
+    "dao":             "dao_hilt",
+    "ji":              "ji_shaft",
+    "guandao":         "guandao_shaft",
+    "chui":            "chui_haft",
+    "emei":            "emei_ring",
+    "hook_sword":      "hook_grip",
+    "monk_spade":      "monk_spade_shaft",
+    "butterfly_sword": "butterfly_grip",
+    "podao":           "podao_shaft",
 }
 
 WEAPON_TYPE_ORDER = ["dagger", "sword", "spear", "axe", "mace", "halberd", "glaive",
-                     "rapier", "trident", "scythe", "lance"]
+                     "rapier", "trident", "scythe", "lance",
+                     "sabre", "flail", "warhammer", "kris", "falchion", "claymore",
+                     "pike", "morningstar", "katar", "bardiche",
+                     "jian", "dao", "ji", "guandao", "chui", "emei",
+                     "hook_sword", "monk_spade", "butterfly_sword", "podao"]
 MATERIAL_ORDER    = ["iron", "gold", "steel"]
 
 QUALITY_TIERS = [
@@ -321,6 +366,246 @@ PART_TEMPLATES = {
         _row((6,  9)),
         _row((6,  9)),   # socket
         _row((6,  9)),
+    ],
+    "sabre_blade": [
+        _row((10, 13)),  # curved tip
+        _row(( 8, 12)),
+        _row(( 6, 11)),
+        _row(( 5, 10)),
+        _row(( 5,  9)),
+        _row(( 5,  9)),
+        _row(( 6,  8)),  # tang
+        _row(( 6,  8)),
+        _row(( 6,  8)),
+        _row(( 6,  8)),
+    ],
+    "flail_head": [
+        _row(( 5, 10)),  # spiked ball
+        _row(( 4, 11)),
+        _row(( 4, 11)),
+        _row(( 5, 10)),
+        _row(( 7,  8)),  # chain
+        _row(( 7,  8)),
+        _row(( 7,  8)),
+        _row(( 6,  9)),  # socket
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+    ],
+    "warhammer_head": [
+        _row(( 4, 11)),
+        _row(( 3, 12)),
+        _row(( 3, 12)),
+        _row(( 4, 11)),
+        _row(( 6,  9)),  # eye
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+    ],
+    "kris_blade": [
+        _row(( 7,  8)),  # tip
+        _row_multi(( 6,  7), ( 8,  9)),
+        _row(( 7, 10)),
+        _row(( 6,  9)),
+        _row(( 5,  8)),
+        _row(( 6,  9)),
+        _row(( 7, 10)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),  # tang
+        _row(( 6,  9)),
+    ],
+    "falchion_blade": [
+        _row(( 7, 12)),  # broad tip
+        _row(( 5, 12)),
+        _row(( 4, 11)),
+        _row(( 4, 10)),
+        _row(( 5,  9)),
+        _row(( 5,  9)),
+        _row(( 6,  8)),
+        _row(( 6,  8)),  # tang
+        _row(( 6,  8)),
+        _row(( 6,  8)),
+    ],
+    "claymore_blade": [
+        _row(( 7,  8)),  # tip
+        _row(( 6,  9)),
+        _row(( 5, 10)),
+        _row(( 4, 11)),
+        _row(( 4, 11)),
+        _row(( 4, 11)),
+        _row(( 4, 11)),
+        _row(( 5, 10)),
+        _row(( 6,  9)),  # tang
+        _row(( 6,  9)),
+    ],
+    "pike_head": [
+        _row(( 7,  8)),  # narrow long spike
+        _row(( 7,  8)),
+        _row(( 7,  8)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),  # socket
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+    ],
+    "morningstar_head": [
+        _row(( 5, 10)),  # spiked ball
+        _row(( 4, 11)),
+        _row(( 3, 12)),
+        _row(( 3, 12)),
+        _row(( 4, 11)),
+        _row(( 5, 10)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),  # socket
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+    ],
+    "katar_blade": [
+        _row(( 7,  8)),  # tip
+        _row(( 7,  8)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 5, 10)),
+        _row(( 5, 10)),
+        _row(( 4, 11)),  # widest near grip
+        _row(( 6,  9)),  # crossbar
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+    ],
+    "bardiche_blade": [
+        _row(( 9, 11)),  # curved tip
+        _row(( 7, 11)),
+        _row(( 5, 10)),
+        _row(( 4, 10)),
+        _row(( 4,  9)),
+        _row(( 5,  9)),
+        _row(( 5,  8)),
+        _row(( 6,  8)),  # tang
+        _row(( 6,  8)),
+        _row(( 6,  8)),
+    ],
+    "jian_blade": [
+        _row(( 7,  8)),  # straight double-edged
+        _row(( 7,  8)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),  # tang
+        _row(( 6,  9)),
+    ],
+    "dao_blade": [
+        _row(( 7, 10)),  # curved single-edge
+        _row(( 5, 10)),
+        _row(( 4,  9)),
+        _row(( 4,  9)),
+        _row(( 5,  9)),
+        _row(( 5,  9)),
+        _row(( 6,  8)),
+        _row(( 6,  8)),  # tang
+        _row(( 6,  8)),
+        _row(( 6,  8)),
+    ],
+    "ji_head": [
+        _row(( 7,  8)),  # spear point
+        _row(( 7,  8)),
+        _row(( 6,  9)),
+        _row(( 1,  9)),  # perpendicular dagger-axe blade
+        _row(( 1,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),  # socket
+        _row(( 6,  9)),
+    ],
+    "guandao_blade": [
+        _row(( 9, 12)),  # heavy curved blade
+        _row(( 7, 13)),
+        _row(( 5, 12)),
+        _row(( 4, 10)),
+        _row(( 5,  9)),
+        _row(( 6,  8)),
+        _row(( 7,  8)),  # pole
+        _row(( 7,  8)),
+        _row(( 7,  8)),
+        _row(( 7,  8)),
+    ],
+    "chui_head": [
+        _row(( 5, 10)),  # iron ball
+        _row(( 3, 12)),
+        _row(( 2, 13)),
+        _row(( 2, 13)),
+        _row(( 3, 12)),
+        _row(( 5, 10)),
+        _row(( 7,  8)),  # neck
+        _row(( 7,  8)),
+        _row(( 6,  9)),  # socket
+        _row(( 6,  9)),
+    ],
+    "emei_blade": [
+        _row_multi(( 6,  6), ( 9,  9)),  # twin needle blades
+        _row_multi(( 6,  6), ( 9,  9)),
+        _row_multi(( 6,  6), ( 9,  9)),
+        _row_multi(( 6,  6), ( 9,  9)),
+        _row_multi(( 6,  6), ( 9,  9)),
+        _row(( 5, 10)),  # finger ring
+        _row(( 5, 10)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),
+    ],
+    "hook_blade": [
+        _row(( 8,  9)),  # hook tip
+        _row(( 8, 11)),
+        _row(( 9, 11)),
+        _row(( 6, 10)),  # curving back
+        _row(( 5,  9)),
+        _row(( 5,  8)),
+        _row(( 6,  8)),
+        _row(( 6,  8)),  # tang
+        _row(( 6,  8)),
+        _row(( 6,  8)),
+    ],
+    "monk_spade_head": [
+        _row_multi(( 2,  4), (11, 13)),  # crescent tips
+        _row(( 2, 13)),                  # crescent rim
+        _row(( 3, 12)),
+        _row(( 4, 11)),
+        _row(( 6,  9)),
+        _row(( 6,  9)),  # shaft socket
+        _row(( 7,  8)),
+        _row(( 7,  8)),
+        _row(( 6,  9)),  # butt cap
+        _row(( 6,  9)),
+    ],
+    "butterfly_blade": [
+        _row(( 7, 10)),  # short broad single-edge
+        _row(( 6, 10)),
+        _row(( 5, 10)),
+        _row(( 5, 10)),
+        _row(( 5,  9)),
+        _row(( 6,  9)),
+        _row(( 6,  8)),
+        _row(( 6,  8)),  # tang / D-guard root
+        _row(( 6,  8)),
+        _row(( 6,  8)),
+    ],
+    "podao_blade": [
+        _row(( 9, 12)),  # horse-cutter blade
+        _row(( 7, 12)),
+        _row(( 5, 11)),
+        _row(( 4, 10)),
+        _row(( 5,  9)),
+        _row(( 6,  8)),
+        _row(( 7,  8)),  # pole
+        _row(( 7,  8)),
+        _row(( 7,  8)),
+        _row(( 7,  8)),
     ],
 }
 

@@ -14,6 +14,7 @@ import pygame
 from constants import SCREEN_W, SCREEN_H
 import heraldry
 import knightly_orders as ko
+import order_guild_links as ogl
 from .panels import _wrap_text
 
 
@@ -258,6 +259,21 @@ class ChapterHouseMixin:
             s = self.small.render(ln, True, _LABEL_C)
             self.screen.blit(s, (cx + 8, ty))
             ty += 14
+        sponsor_g = ogl.patron_guild_for(order.order_id)
+        if sponsor_g is not None:
+            for ln in _wrap_text(f"Sponsor: {sponsor_g.name}",
+                                 self.small, _COA_W - 16):
+                s = self.small.render(ln, True, (160, 200, 220))
+                self.screen.blit(s, (cx + 8, ty))
+                ty += 14
+            pct = sponsor_g.player_pct()
+            if pct >= 0.10:
+                disc = ogl.quartermaster_discount(player)
+                if disc > 0:
+                    tag = f"  Shareholder: -{int(disc * 100)}% QM"
+                    s = self.small.render(tag, True, _OK_C)
+                    self.screen.blit(s, (cx + 8, ty))
+                    ty += 14
         for ln in _wrap_text(f"Relic: {order.relic}", self.small,
                              _COA_W - 16):
             s = self.small.render(ln, True, _LABEL_C)
@@ -368,6 +384,7 @@ class ChapterHouseMixin:
         scroll = max(0, min(self._ch_shop_scroll, max(0, len(offers) - rows_visible)))
         self._ch_shop_scroll = scroll
         self._ch_shop_buy_rects.clear()
+        disc_pct = ogl.quartermaster_discount(player)
         for idx, (item_id, price, min_rank) in enumerate(offers[scroll:scroll + rows_visible]):
             row_y = list_top + idx * row_h
             name = _ITEMS.get(item_id, {}).get("name", item_id)
@@ -378,16 +395,20 @@ class ChapterHouseMixin:
             # Item name (truncate)
             n_s = self.small.render(name[:36], True, color)
             self.screen.blit(n_s, (px + 44, row_y + 4))
-            # Price
-            can_afford = int(getattr(player, "money", 0)) >= price
+            # Price (sponsor-discounted if applicable)
+            eff_price = max(1, int(round(price * (1.0 - disc_pct)))) if disc_pct > 0 else price
+            can_afford = int(getattr(player, "money", 0)) >= eff_price
             p_col = _OK_C if can_afford else _WARN_C
-            p_s = self.small.render(f"{price}g", True, p_col)
-            self.screen.blit(p_s, (px + _PW - 130, row_y + 4))
+            if disc_pct > 0 and eff_price != price:
+                p_s = self.small.render(f"{eff_price}g ({price})", True, p_col)
+            else:
+                p_s = self.small.render(f"{eff_price}g", True, p_col)
+            self.screen.blit(p_s, (px + _PW - 160, row_y + 4))
             # Buy button
             btn = self._draw_btn(px + _PW - 84, row_y, 64, row_h - 2,
                                  "Buy", can_afford)
             if btn is not None:
-                self._ch_shop_buy_rects[item_id] = (btn, price)
+                self._ch_shop_buy_rects[item_id] = (btn, eff_price)
 
         # Scroll hint
         if len(offers) > rows_visible:

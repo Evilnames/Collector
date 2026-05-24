@@ -1638,6 +1638,24 @@ MINE_PILLAR_BLOCK    = 1730   # carved stone pillar; dwarven grand-hall layouts
 
 PICKLING_CROCK_BLOCK = 1731   # placed pickling crock; turns vegetables + vinegar + salt into pickles
 
+# Glassblowing — Glass Kiln (524) already exists; these are stages 2–4 of the chain.
+GLASS_BLOWING_BENCH_BLOCK = 1732   # blowing bench; player runs the puff mini-game here
+ANNEALING_OVEN_BLOCK      = 1733   # cools/cures blown glass; sets final clarity + break risk
+GLASS_DISPLAY_BLOCK       = 1734   # decorative bg block holding a finished vessel
+GLASS_PANE_BLOCK          = 1735   # placeable window block; passes light, low hardness
+
+# ── Sericulture / Silk Manufacturing ────────────────────────────────────────
+MULBERRY_TREE_BUSH        = 1736   # sapling / starter bush; drops mulberry_sapling
+MULBERRY_TREE_YOUNG       = 1737   # young mulberry tree (grows on tilled soil)
+MULBERRY_TREE_MATURE      = 1738   # mature tree; mining yields mulberry_leaves + sapling
+SILKWORM_TRAY_EGG         = 1739   # silkworm tray — egg stage; feed leaves to hatch
+SILKWORM_TRAY_LARVA       = 1740   # silkworm tray — larva stage; feed leaves to enter spinning
+SILKWORM_TRAY_SPINNING    = 1741   # silkworm tray — spinning stage; feed leaves to complete cocoon
+SILKWORM_TRAY_COCOON      = 1742   # silkworm tray — ready cocoon; mining yields silk_cocoon (or dupioni)
+REELING_FRAME_BLOCK       = 1743   # reeling frame; right-click: cocoon → raw silk
+DEGUMMING_VAT_BLOCK       = 1744   # degumming vat; right-click: raw silk → silk thread
+TUSSAH_COCOON_CLUMP       = 1745   # wild cocoon cluster on oak/forest branches; drops tussah_cocoon
+
 GUILD_HALL_VARIANTS = {GUILD_HALL_BLOCK, GUILD_HALL_FOREST, GUILD_HALL_EAST_ASIAN,
                        GUILD_HALL_MEDITERRANEAN, GUILD_HALL_DESERT, GUILD_HALL_JUNGLE}
 GUILD_FLAG_VARIANTS = {GUILD_FLAG_BLOCK, GUILD_FLAG_WINE, GUILD_FLAG_COFFEE,
@@ -1665,7 +1683,7 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     FLETCHING_TABLE_BLOCK,
                     SMELTER_BLOCK,
                     ANAEROBIC_TANK_BLOCK,
-                    GLASS_KILN_BLOCK,
+                    GLASS_KILN_BLOCK, GLASS_BLOWING_BENCH_BLOCK, ANNEALING_OVEN_BLOCK,
                     JEWELRY_WORKBENCH_BLOCK,
                     GARDEN_WORKSHOP_BLOCK,
                     GARDEN_BLOCK,
@@ -1698,7 +1716,10 @@ EQUIPMENT_BLOCKS = {TUMBLER_BLOCK, CRUSHER_BLOCK, GEM_CUTTER_BLOCK, KILN_BLOCK, 
                     PIGMENT_MILL_BLOCK,
                     SCRIBES_DESK_BLOCK, LECTERN_BLOCK, BOOKCASE_BLOCK,
                     FALCONER_PERCH, MEWS_BLOCK,
-                    FEED_TROUGH_BLOCK, SALT_LICK_BLOCK}
+                    FEED_TROUGH_BLOCK, SALT_LICK_BLOCK,
+                    REELING_FRAME_BLOCK, DEGUMMING_VAT_BLOCK,
+                    SILKWORM_TRAY_EGG, SILKWORM_TRAY_LARVA,
+                    SILKWORM_TRAY_SPINNING, SILKWORM_TRAY_COCOON}
 RESOURCE_BLOCKS  = {COAL_ORE, IRON_ORE, GOLD_ORE, CRYSTAL_ORE, RUBY_ORE, OBSIDIAN, ROCK_DEPOSIT, FOSSIL_DEPOSIT, GEM_DEPOSIT,
                     CLAY_DEPOSIT, LIMESTONE_DEPOSIT, SALT_DEPOSIT,
                     OCHRE_DEPOSIT, UMBER_DEPOSIT, SIENNA_DEPOSIT}
@@ -1782,7 +1803,8 @@ YOUNG_CROP_BLOCKS = {STRAWBERRY_CROP_YOUNG, WHEAT_CROP_YOUNG, CARROT_CROP_YOUNG,
                      CORN_CROP_YOUNG_P, RICE_CROP_YOUNG_P,
                      FLAX_CROP_YOUNG, COTTON_CROP_YOUNG,
                      TARO_CROP_YOUNG, BREADFRUIT_CROP_YOUNG, COCONUT_CROP_YOUNG,
-                     INDIGO_CROP_YOUNG, MADDER_CROP_YOUNG, WELD_CROP_YOUNG, WOAD_CROP_YOUNG}
+                     INDIGO_CROP_YOUNG, MADDER_CROP_YOUNG, WELD_CROP_YOUNG, WOAD_CROP_YOUNG,
+                     MULBERRY_TREE_YOUNG}
 # Desert plants that grow wild on SAND — bypass tilled-soil requirement
 WILD_DESERT_PLANT_BLOCKS = {
     CACTUS_YOUNG, SAGUARO_YOUNG, BARREL_CACTUS_YOUNG, OCOTILLO_YOUNG,
@@ -1811,7 +1833,8 @@ MATURE_CROP_BLOCKS= {STRAWBERRY_CROP_MATURE, WHEAT_CROP_MATURE, CARROT_CROP_MATU
                      CORN_CROP_MATURE_P, RICE_CROP_MATURE_P,
                      FLAX_CROP_MATURE, COTTON_CROP_MATURE,
                      TARO_CROP_MATURE, BREADFRUIT_CROP_MATURE, COCONUT_CROP_MATURE,
-                     INDIGO_CROP_MATURE, MADDER_CROP_MATURE, WELD_CROP_MATURE, WOAD_CROP_MATURE}
+                     INDIGO_CROP_MATURE, MADDER_CROP_MATURE, WELD_CROP_MATURE, WOAD_CROP_MATURE,
+                     MULBERRY_TREE_MATURE}
 CROP_BLOCKS       = YOUNG_CROP_BLOCKS | MATURE_CROP_BLOCKS
 
 # Perennial crops regrow after harvest (each harvest has ~33% chance to die)
@@ -1835,6 +1858,7 @@ PERENNIAL_CROP_MATURE = {
     BREADFRUIT_CROP_MATURE,
     COCONUT_CROP_MATURE,
     INDIGO_CROP_MATURE, MADDER_CROP_MATURE, WELD_CROP_MATURE, WOAD_CROP_MATURE,
+    MULBERRY_TREE_MATURE,
 }
 
 # Reverse mapping: mature → young, used for perennial regrowth
@@ -1929,6 +1953,7 @@ MATURE_TO_YOUNG_CROP = {
     MADDER_CROP_MATURE:       MADDER_CROP_YOUNG,
     WELD_CROP_MATURE:         WELD_CROP_YOUNG,
     WOAD_CROP_MATURE:         WOAD_CROP_YOUNG,
+    MULBERRY_TREE_MATURE:     MULBERRY_TREE_YOUNG,
 }
 
 ALPINE_BALCONY_RAIL          = 1022  # alpine balcony rail
@@ -4117,6 +4142,24 @@ BLOCKS = {
     SCRIBES_DESK_BLOCK:  {"name": "Scribe's Desk",       "hardness": 1.5, "color": (135, 100,  60), "drop": "scribes_desk_item", "drop_chance": 1.0, "equipment": True},
     LECTERN_BLOCK:       {"name": "Lectern",             "hardness": 1.5, "color": (150, 115,  70), "drop": "lectern_item",      "drop_chance": 1.0},
     BOOKCASE_BLOCK:      {"name": "Bookcase",            "hardness": 1.5, "color": (110,  72,  45), "drop": "bookcase_item",     "drop_chance": 1.0, "equipment": True},
+
+    # ── Glassblowing ────────────────────────────────────────────────────────
+    GLASS_BLOWING_BENCH_BLOCK: {"name": "Glass Blowing Bench", "hardness": 1.5, "color": (175, 110,  70), "drop": "glass_blowing_bench_item", "drop_chance": 1.0, "equipment": True},
+    ANNEALING_OVEN_BLOCK:      {"name": "Annealing Oven",      "hardness": 1.5, "color": (140,  95,  60), "drop": "annealing_oven_item",      "drop_chance": 1.0, "equipment": True},
+    GLASS_DISPLAY_BLOCK:       {"name": "Glass Display",       "hardness": 0.8, "color": (200, 220, 230), "drop": "glass_display_item",       "drop_chance": 1.0},
+    GLASS_PANE_BLOCK:          {"name": "Glass Pane",          "hardness": 0.5, "color": (210, 235, 240), "drop": "glass_pane_item",          "drop_chance": 1.0, "transparent": True},
+
+    # ── Sericulture ────────────────────────────────────────────────────────
+    MULBERRY_TREE_BUSH:     {"name": "Mulberry Bush",        "hardness": 0.5, "color": ( 90, 150,  70), "drop": "mulberry_sapling",    "drop_chance": 1.0},
+    MULBERRY_TREE_YOUNG:    {"name": "Mulberry (Young)",     "hardness": 0.6, "color": ( 80, 145,  60), "drop": "mulberry_sapling",    "drop_chance": 1.0},
+    MULBERRY_TREE_MATURE:   {"name": "Mulberry Tree",        "hardness": 0.8, "color": ( 50, 120,  45), "drop": "mulberry_leaves",     "drop_chance": 1.0},
+    SILKWORM_TRAY_EGG:      {"name": "Silkworm Tray (Eggs)",      "hardness": 0.5, "color": (210, 200, 180), "drop": "silkworm_tray_item",  "drop_chance": 1.0, "equipment": True},
+    SILKWORM_TRAY_LARVA:    {"name": "Silkworm Tray (Larvae)",    "hardness": 0.5, "color": (220, 215, 175), "drop": "silkworm_tray_item",  "drop_chance": 1.0, "equipment": True},
+    SILKWORM_TRAY_SPINNING: {"name": "Silkworm Tray (Spinning)",  "hardness": 0.5, "color": (235, 230, 210), "drop": "silkworm_tray_item",  "drop_chance": 1.0, "equipment": True},
+    SILKWORM_TRAY_COCOON:   {"name": "Silkworm Tray (Cocoons)",   "hardness": 0.5, "color": (245, 240, 220), "drop": "silk_cocoon",         "drop_chance": 1.0, "equipment": True},
+    REELING_FRAME_BLOCK:    {"name": "Reeling Frame",        "hardness": 1.2, "color": (170, 130,  70), "drop": "reeling_frame_item",  "drop_chance": 1.0, "equipment": True},
+    DEGUMMING_VAT_BLOCK:    {"name": "Degumming Vat",        "hardness": 1.4, "color": (130, 110,  85), "drop": "degumming_vat_item",  "drop_chance": 1.0, "equipment": True},
+    TUSSAH_COCOON_CLUMP:    {"name": "Wild Tussah Cocoons",  "hardness": 0.5, "color": (200, 165,  90), "drop": "tussah_cocoon",       "drop_chance": 1.0},
 }
 
 # Light-emitting blocks: {block_id: (radius_px, pattern)}
