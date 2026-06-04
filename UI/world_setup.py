@@ -64,12 +64,55 @@ _OPTIONS = [
                     "Many small competing kingdoms"],
         "default": "standard",
     },
+    {
+        "key": "mountains",
+        "label": "Mountains",
+        "choices": ["sparse",   "standard", "abundant"],
+        "labels":  ["Sparse",   "Standard", "Abundant"],
+        "descs":   ["Mostly lowlands and rolling hills",
+                    "Balanced ranges",
+                    "Towering ranges dominate the world"],
+        "default": "standard",
+    },
+    {
+        "key": "drama",
+        "label": "Terrain Drama",
+        "choices": ["gentle",   "standard", "dramatic"],
+        "labels":  ["Gentle",   "Standard", "Dramatic"],
+        "descs":   ["Smooth, forgiving terrain",
+                    "Balanced peaks and valleys",
+                    "Towering spires and sharp valleys"],
+        "default": "standard",
+    },
+    {
+        "key": "anomalies",
+        "label": "Anomalies",
+        "choices": ["rare",     "standard", "frequent"],
+        "labels":  ["Rare",     "Standard", "Frequent"],
+        "descs":   ["Few mesas, spikes, sinkholes or trenches",
+                    "Balanced rare features",
+                    "Mesas, spikes, sinkholes and trenches abound"],
+        "default": "standard",
+    },
+    {
+        "key": "climate",
+        "label": "Climate",
+        "choices": ["cold",     "temperate", "hot"],
+        "labels":  ["Cold",     "Temperate", "Hot"],
+        "descs":   ["Boreal, tundra and alpine biomes dominate",
+                    "Balanced biome distribution",
+                    "Deserts, savannas and jungles dominate"],
+        "default": "temperate",
+    },
 ]
 
 _SIZE_TO_SPAN    = {"small": 100, "medium": 250, "large": 400, "huge": 800, "epic": 1200}
 _HISTORY_TO_YEARS = {"young": 200, "standard": 500, "ancient": 1000}
 _OCEANS_TO_COUNT  = {"sparse": 1,  "standard": 2,   "abundant": 4}
 _CIV_TO_KINGDOMS  = {"isolated": 0.8, "standard": 2.2, "fragmented": 4.5}
+_MOUNTAINS_TO_BIAS = {"sparse": 1.6, "standard": 1.0, "abundant": 0.55}
+_DRAMA_TO_SCALE    = {"gentle": 0.5, "standard": 1.0, "dramatic": 1.5}
+_ANOMALY_TO_SCALE  = {"rare":   0.4, "standard": 1.0, "frequent": 2.2}
 
 
 def _build_overrides(sel: dict) -> dict:
@@ -81,6 +124,10 @@ def _build_overrides(sel: dict) -> dict:
         "ocean_count_default":             oc,
         "ocean_count_variance":            1 if oc == 1 else 2,
         "starting_kingdoms_per_100_cells": _CIV_TO_KINGDOMS[sel["civilizations"]],
+        "elevation_bias":                  _MOUNTAINS_TO_BIAS[sel["mountains"]],
+        "drama_scale":                     _DRAMA_TO_SCALE[sel["drama"]],
+        "anomaly_scale":                   _ANOMALY_TO_SCALE[sel["anomalies"]],
+        "climate_bias":                    sel["climate"],
     }
 
 
@@ -88,8 +135,10 @@ def _build_overrides(sel: dict) -> dict:
 # Layout
 # ---------------------------------------------------------------------------
 
-_ROW_Y    = [110, 190, 270, 350, 430]
-_BTN_H    = 44
+_ROW_Y0   = 92
+_ROW_DY   = 46
+_ROW_Y    = [_ROW_Y0 + _ROW_DY * i for i in range(len(_OPTIONS))]
+_BTN_H    = 36
 _LABEL_X  = 60
 _BTN_X0   = 310
 _BTN_GAP  = 10
@@ -146,7 +195,7 @@ def show_world_setup(screen, seed: int):
 
     selections = {opt["key"]: opt["default"] for opt in _OPTIONS}
 
-    seed_y      = 522
+    seed_y      = _ROW_Y[-1] + _BTN_H + 28
     reroll_rect = pygame.Rect(_BTN_X0, seed_y, 110, 36)
     begin_rect  = pygame.Rect(SCREEN_W // 2 - 120, SCREEN_H - 62, 240, 46)
 

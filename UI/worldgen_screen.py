@@ -164,31 +164,36 @@ def _build_year_states(plan):
 # Drawing helpers
 # ---------------------------------------------------------------------------
 
-_OFFSET_RANGE = 30.0   # |predicted_y_offset| roughly fits in ±30 blocks
-_SILHOUETTE_LO = 0.20  # frac of silhouette_h above the highest peak
-_SILHOUETTE_HI = 0.90  # frac of silhouette_h above the deepest ocean basin
-
-
-def _offset_to_frac(offset: float) -> float:
-    """Map a predicted_y_offset (in blocks, neg=peak, pos=basin) → 0..1 silhouette frac."""
-    norm = max(-_OFFSET_RANGE, min(_OFFSET_RANGE, offset)) / _OFFSET_RANGE
-    # norm: -1 (peak) .. +1 (basin) → frac 0 (top) .. 1 (bottom of silhouette)
-    return (norm + 1.0) * 0.5
-
-
-def _frac_to_y(strip_rect, frac: float) -> int:
-    _, y0, _, h = strip_rect
-    band_h = h // 4
-    silhouette_h = h - band_h
-    return y0 + band_h + int(silhouette_h * (_SILHOUETTE_LO + (_SILHOUETTE_HI - _SILHOUETTE_LO) * frac))
+# Vertical mapping: pixels per block of terrain offset. Kept small so the
+# silhouette reads like the actual game (subtle peaks and shallow basins)
+# rather than an exaggerated cross-section. Offsets typically span roughly
+# -20 (alpine peak) to +36 (deep ocean basin); we clamp into the strip.
+_PX_PER_BLOCK = 2.8
+_SEA_FRAC     = 0.50   # sea-level sits at the middle of the silhouette band
 
 
 def _sea_level_y(strip_rect):
-    """Y at which the ocean surface sits within the silhouette area.
+    """Y at which the ocean surface sits within the silhouette area."""
+    _, y0, _, h = strip_rect
+    band_h = h // 4
+    silhouette_h = h - band_h
+    return y0 + band_h + int(silhouette_h * _SEA_FRAC)
 
-    Sea level corresponds to offset=0 (SURFACE_Y in the game).
+
+def _offset_to_y(strip_rect, offset: float) -> int:
+    """Map a predicted_y_offset (blocks, neg=peak, pos=basin) → silhouette y.
+
+    Linear pixels-per-block around the sea-level line, clamped to the
+    silhouette band so anomalies don't escape the strip.
     """
-    return _frac_to_y(strip_rect, _offset_to_frac(0.0))
+    _, y0, _, h = strip_rect
+    band_h = h // 4
+    silhouette_h = h - band_h
+    sea_y = _sea_level_y(strip_rect)
+    y = sea_y + int(offset * _PX_PER_BLOCK)
+    top = y0 + band_h + 2
+    bottom = y0 + h - 2
+    return max(top, min(bottom, y))
 
 
 def _draw_strip(surface, plan, strip_rect, cells_visible: int):
@@ -215,7 +220,7 @@ def _draw_strip(surface, plan, strip_rect, cells_visible: int):
         # Elevation silhouette under the band — driven by the same
         # predicted_y_offset the game uses, so the sample map and the
         # generated terrain match.
-        top_y = _frac_to_y(strip_rect, _offset_to_frac(c.predicted_y_offset))
+        top_y = _offset_to_y(strip_rect, c.predicted_y_offset)
         if c.biodome == "ocean":
             # Ocean floor sits at the predicted (eroded) basin depth; water
             # fills from sea level down.
@@ -224,6 +229,12 @@ def _draw_strip(surface, plan, strip_rect, cells_visible: int):
                              (cx, sea_y, cw, max(0, top_y - sea_y)))
         else:
             pygame.draw.rect(surface, _GROUND, (cx, top_y, cw, y0 + h - top_y))
+
+    # Faint sea-level horizon across the visible portion.
+    visible_w = int(min(cells_visible, span) * cell_px)
+    if visible_w > 0:
+        pygame.draw.line(surface, (90, 130, 170),
+                         (x0, sea_y), (x0 + visible_w, sea_y), 1)
 
 
 def _draw_kingdom_flags(surface, plan, strip_rect, alpha_progress: float, kingdoms_visible: list):

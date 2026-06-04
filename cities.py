@@ -870,6 +870,9 @@ class AmbientNPC(NPC):
         self._state_timer = random.uniform(1.0, 4.0)
         style = _CLOTHING_STYLE_BY_BIODOME.get(biodome, "temperate")
         self.clothing = dict(_CLOTHING_PALETTES.get(style, _CLOTHING_DEFAULT))
+        body_weave, trim_weave = _pick_weaves(style)
+        self.clothing["texture"]      = body_weave
+        self.clothing["trim_texture"] = trim_weave
         self.skin_tone = random.choice(_AMBIENT_SKIN_TONE_POOLS.get(style, _AMBIENT_SKIN_TONE_POOLS["temperate"]))
         self.clothing["skin"] = self.skin_tone
         self.hair_color = random.choice(_AMBIENT_HAIR_COLORS)
@@ -5447,6 +5450,50 @@ _CLOTHING_PALETTES = {
 }
 _CLOTHING_DEFAULT = _CLOTHING_PALETTES["temperate"]
 
+# Weave overlays for body fabric, per cultural style.  Each NPC picks one
+# at construction time so two villagers in the same biome still look
+# different from each other.  Keys map to the textures supported by
+# Render/textile_fill.draw_textured_rect.
+_CULTURE_BODY_WEAVES = {
+    "temperate":     ["plain", "plain", "twill",       "herringbone",  "stripes"],
+    "desert":        ["plain", "plain", "plain",       "stripes",      "twill"],
+    "alpine":        ["tartan", "tartan", "herringbone","twill",       "plain"],
+    "mediterranean": ["plain", "stripes", "twill",     "diamond",      "plain"],
+    "east_asian":    ["plain", "brocade", "damask",    "brocade",      "plain"],
+    "japanese":      ["plain", "damask", "plain",      "stripes",      "diamond"],
+    "south_asian":   ["plain", "brocade", "diamond",   "damask",       "plain"],
+    "jungle":        ["plain", "plain",  "dots",       "diamond",      "stripes"],
+    "boreal":        ["plain", "twill",  "herringbone","tartan",       "plain"],
+    "steppe":        ["plain", "tartan", "diamond",    "twill",        "plain"],
+    "coastal":       ["plain", "stripes","stripes",    "twill",        "plain"],
+    "polynesian":    ["plain", "tartan", "diamond",    "stripes",      "dots"],
+}
+
+# Trim-band weave per culture.  Trim rects are short (~2 px tall) so
+# only finer patterns read; we keep this list deliberately tight.
+_CULTURE_TRIM_WEAVES = {
+    "temperate":     ["plain", "stripes",     "plain"],
+    "desert":        ["plain", "stripes",     "plain"],
+    "alpine":        ["herringbone", "stripes","plain"],
+    "mediterranean": ["plain", "stripes",     "plain"],
+    "east_asian":    ["brocade", "damask",    "stripes"],
+    "japanese":      ["plain", "stripes",     "damask"],
+    "south_asian":   ["brocade", "damask",    "stripes"],
+    "jungle":        ["plain", "dots",        "stripes"],
+    "boreal":        ["herringbone", "plain", "stripes"],
+    "steppe":        ["plain", "stripes",     "tartan"],
+    "coastal":       ["stripes", "plain",     "stripes"],
+    "polynesian":    ["stripes", "dots",      "plain"],
+}
+
+
+def _pick_weaves(style, rng=None):
+    """Return (body_weave, trim_weave) for a clothing style."""
+    rng = rng or random
+    body_pool = _CULTURE_BODY_WEAVES.get(style, _CULTURE_BODY_WEAVES["temperate"])
+    trim_pool = _CULTURE_TRIM_WEAVES.get(style, _CULTURE_TRIM_WEAVES["temperate"])
+    return rng.choice(body_pool), rng.choice(trim_pool)
+
 # Per-style skin tone pools — used by AmbientNPC to vary skin colour
 # from the single hard-coded value baked into each clothing palette.
 _AMBIENT_SKIN_TONE_POOLS = {
@@ -5532,7 +5579,11 @@ _CLOTHING_STYLE_BY_BIODOME = {
 
 def _npc_clothing(biodome):
     style = _CLOTHING_STYLE_BY_BIODOME.get(biodome, "temperate")
-    return _CLOTHING_PALETTES.get(style, _CLOTHING_DEFAULT)
+    palette = dict(_CLOTHING_PALETTES.get(style, _CLOTHING_DEFAULT))
+    body_weave, trim_weave = _pick_weaves(style)
+    palette["texture"]      = body_weave
+    palette["trim_texture"] = trim_weave
+    return palette
 
 
 

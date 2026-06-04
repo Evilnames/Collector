@@ -16,6 +16,11 @@ WORLDGEN_CONFIG = {
     "ocean_count_variance": 2,    # extra stretches rolled on top: count = default + randint(0, variance)
     "ocean_stretch_width_range": (15, 35),  # fallback width if a type doesn't override
     "viz_seconds": 6.0,
+    # Terrain knobs (1.0 = neutral / unchanged from legacy worldgen).
+    "elevation_bias": 1.0,   # <1 raises terrain (more mountains), >1 flattens
+    "drama_scale":    1.0,   # scales per-region drama amplitude
+    "anomaly_scale":  1.0,   # scales mesa/spike/sinkhole/trench chance
+    "climate_bias":   "temperate",   # "cold" | "temperate" | "hot"
 }
 
 

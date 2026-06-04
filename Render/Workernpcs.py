@@ -1,4 +1,5 @@
 import pygame
+from Render.textile_fill import draw_textured_rect
 
 _crown_font = None
 
@@ -111,7 +112,7 @@ def draw_npc_chef(screen, sx, sy, npc, font):
     c = getattr(npc, 'clothing', {})
     body = c.get('body', (70, 55, 45))
     skin = c.get('skin', (255, 215, 160))
-    pygame.draw.rect(screen, body, (sx, sy + bob, 20, 18))
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, c.get('texture', 'plain'))
     pygame.draw.rect(screen, (240, 235, 220), (sx + 5, sy + bob, 10, 18))
     pygame.draw.rect(screen, (245, 242, 235), (sx + 4, sy - 18 + bob, 12, 10))
     pygame.draw.rect(screen, (200, 195, 185), (sx + 4, sy - 18 + bob, 12, 2))
@@ -128,8 +129,8 @@ def draw_npc_monk(screen, sx, sy, npc):
     body = c.get('body', (210, 130, 40))
     skin = c.get('skin', (240, 200, 150))
     fold = tuple(max(0, v - 35) for v in body)
-    pygame.draw.rect(screen, body, (sx, sy + bob, 20, 18))
-    pygame.draw.rect(screen, fold, (sx + 8, sy + bob, 5, 18))
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, c.get('texture', 'plain'))
+    draw_textured_rect(screen, sx + 8, sy + bob, 5, 18, fold, c.get('trim_texture', 'plain'))
     pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
     pygame.draw.rect(screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
     pygame.draw.rect(screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
@@ -152,9 +153,11 @@ def draw_npc_bishop(screen, sx, sy, npc):
     trim = (218, 175, 40)   # gold sash — bishops are wealthy
 
     # Long robe (taller than a monk's)
-    pygame.draw.rect(screen, body, (sx, sy + bob, 20, 19))
-    pygame.draw.rect(screen, fold, (sx + 9, sy + bob, 3, 19))
-    pygame.draw.rect(screen, trim, (sx, sy + 14 + bob, 20, 2))   # gold hem
+    btx = c.get('texture', 'damask')          # bishops default to figured cloth
+    ttx = c.get('trim_texture', 'brocade')
+    draw_textured_rect(screen, sx, sy + bob, 20, 19, body, btx)
+    draw_textured_rect(screen, sx + 9, sy + bob, 3, 19, fold, ttx)
+    draw_textured_rect(screen, sx, sy + 14 + bob, 20, 2, trim, ttx)   # gold hem
     # Head
     pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
     pygame.draw.rect(screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
@@ -509,9 +512,11 @@ def draw_npc_farmer(screen, sx, sy, npc):
     trim  = c.get('trim',  (110,  75, 35))
     skin  = c.get('skin',  (230, 185, 135))
     hat   = c.get('hat',   (200, 175, 80))
-    pygame.draw.rect(screen, body,  (sx, sy + bob, 20, 18))
-    pygame.draw.rect(screen, trim,  (sx + 7,  sy + bob, 3, 18))
-    pygame.draw.rect(screen, trim,  (sx + 12, sy + bob, 3, 18))
+    btx = c.get('texture', 'plain')
+    ttx = c.get('trim_texture', 'plain')
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, btx)
+    draw_textured_rect(screen, sx + 7,  sy + bob, 3, 18, trim, ttx)
+    draw_textured_rect(screen, sx + 12, sy + bob, 3, 18, trim, ttx)
     pygame.draw.rect(screen, skin,  (sx + 2, sy - 10 + bob, 16, 12))
     pygame.draw.rect(screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
     pygame.draw.rect(screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
@@ -529,9 +534,9 @@ def draw_npc_villager(screen, sx, sy, npc):
     body  = c.get('body', (100, 125, 80))
     trim  = c.get('trim', (110,  75, 35))
     skin  = c.get('skin', (255, 215, 160))
-    pygame.draw.rect(screen, body, (sx, sy + bob, 20, 18))
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, c.get('texture', 'plain'))
     collar = tuple(min(255, v + 100) for v in trim)
-    pygame.draw.rect(screen, collar, (sx + 7, sy + bob, 6, 7))
+    draw_textured_rect(screen, sx + 7, sy + bob, 6, 7, collar, c.get('trim_texture', 'plain'))
     pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
     pygame.draw.rect(screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
     pygame.draw.rect(screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
@@ -585,7 +590,7 @@ def draw_npc_child(screen, sx, sy, npc):
     leg  = c.get('leg',  (80, 60, 120))
     skin = c.get('skin', (255, 210, 160))
     w = npc.NPC_W
-    pygame.draw.rect(screen, body, (sx, sy + bob, w, 11))
+    draw_textured_rect(screen, sx, sy + bob, w, 11, body, c.get('texture', 'plain'))
     pygame.draw.rect(screen, leg,  (sx + 1, sy + 11 + bob, w - 2, 9))
     pygame.draw.rect(screen, skin, (sx + 1, sy - 12 + bob, 12, 13))
     pygame.draw.rect(screen, (40, 30, 20), (sx + 2, sy - 9 + bob, 3, 4))

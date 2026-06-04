@@ -432,7 +432,7 @@ class CollectionsMixin:
                     eb_txt = eb_brd
                 pygame.draw.rect(self.screen, eb, brect)
                 pygame.draw.rect(self.screen, eb_brd, brect, 2 if is_active else 1)
-                ls = self.small.render(cat_label, True, eb_txt)
+                ls = self.small.render(self._fit_label(cat_label, SB_W - 6), True, eb_txt)
                 self.screen.blit(ls, (SB_X + SB_W // 2 - ls.get_width() // 2,
                                        by + SB_BTN_H // 2 - ls.get_height() // 2))
             self.screen.set_clip(None)
@@ -3704,7 +3704,7 @@ class CollectionsMixin:
 
                     def dline(txt, col=(210, 160, 80)):
                         nonlocal iy2
-                        s = self.small.render(txt, True, col)
+                        s = self.small.render(self._fit_label(txt, dpw - 12), True, col)
                         self.screen.blit(s, (dx2 + 6, iy2))
                         iy2 += 15
 
@@ -3791,7 +3791,7 @@ class CollectionsMixin:
 
                         def dline(txt, c=(220, 170, 180)):
                             nonlocal iy2
-                            s = self.small.render(txt, True, c)
+                            s = self.small.render(self._fit_label(txt, dpw - 12), True, c)
                             self.screen.blit(s, (dx2 + 6, iy2))
                             iy2 += 15
 
@@ -4442,7 +4442,7 @@ class CollectionsMixin:
         for bi, biome in enumerate(all_biomes):
             # Column header
             bname = BIOME_DISPLAY_NAMES.get(biome, biome.title())
-            bh = self.small.render(bname, True, _TXT)
+            bh = self.small.render(self._fit_label(bname, CELL_W - 4), True, _TXT)
             self.screen.blit(bh, (gx0 + bi * (CELL_W + GAP) + CELL_W // 2 - bh.get_width() // 2, gy0 + 18))
             for fi, level in enumerate(fire_levels):
                 key = f"{biome}_{level}"
@@ -4653,12 +4653,12 @@ class CollectionsMixin:
                     facing = 1
                 draw_dog(self.screen, cx + 6, cy + 20, _StubDog(), scale=1.4, facing=1)
 
-                name_s = self.small.render(breed, True, _TITLE)
+                name_s = self.small.render(self._fit_label(breed, cell_w - 60), True, _TITLE)
                 self.screen.blit(name_s, (cx + 56, cy + 6))
                 biomes_str = ", ".join(sorted(profile["biomes"])[:3])
-                bio_s = self.small.render(biomes_str[:28], True, (140, 115, 60))
+                bio_s = self.small.render(self._fit_label(biomes_str, cell_w - 60), True, (140, 115, 60))
                 self.screen.blit(bio_s, (cx + 56, cy + 22))
-                size_s = self.small.render(f"Size: {profile['size_class']}", True, (130, 105, 55))
+                size_s = self.small.render(self._fit_label(f"Size: {profile['size_class']}", cell_w - 60), True, (130, 105, 55))
                 self.screen.blit(size_s, (cx + 56, cy + 38))
             else:
                 q_s = self.small.render("???", True, _DIM)
@@ -4755,7 +4755,7 @@ class CollectionsMixin:
             if count > 0 and best > 0:
                 stat_label = STAT_LABELS.get(stat_key, stat_key.replace("_", " ").title())
                 stat_text  = f"Best {stat_label}: {best} {unit}"
-                stat_s = self.small.render(stat_text, True, _STAT)
+                stat_s = self.small.render(self._fit_label(stat_text, col_w // 2 - 8), True, _STAT)
                 self.screen.blit(stat_s, (cx + col_w // 2, cy + 4))
 
         rows = (len(HUNTING_LOG_SPECIES) + 1) // 2
@@ -5018,9 +5018,9 @@ class CollectionsMixin:
                 if is_disc:
                     # Color strip on left
                     pygame.draw.rect(self.screen, pig_rgb, (cx_ + 2, row_y + 2, 10, CELL_H - 4))
-                    nm = self.small.render(pig_data["display"], True, _TITLE_C)
+                    nm = self.small.render(self._fit_label(pig_data["display"], CELL_W - 20), True, _TITLE_C)
                     self.screen.blit(nm, (cx_ + 16, row_y + 6))
-                    src = self.small.render(pig_data["source_type"].title(), True, _DIM_C)
+                    src = self.small.render(self._fit_label(pig_data["source_type"].title(), CELL_W - 20), True, _DIM_C)
                     self.screen.blit(src, (cx_ + 16, row_y + 24))
                 else:
                     unk = self.font.render("?", True, _DIM_C)
@@ -5047,7 +5047,7 @@ class CollectionsMixin:
 
             def dline(txt, col=_LABEL_C):
                 nonlocal iy2
-                s = self.small.render(txt, True, col)
+                s = self.small.render(self._fit_label(txt, dw2 - 40), True, col)
                 self.screen.blit(s, (dpx + 32, iy2))
                 iy2 += 16
 

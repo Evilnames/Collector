@@ -1,4 +1,5 @@
 import pygame
+from Render.textile_fill import draw_textured_rect
 
 
 def draw_npc_quest(screen, sx, sy, npc, font):
@@ -8,8 +9,8 @@ def draw_npc_quest(screen, sx, sy, npc, font):
     skin = c.get('skin', (255, 215, 160))
     trim = c.get('trim', (130,  90, 30))
     # Body + belt
-    pygame.draw.rect(screen, body, (sx, sy + bob, 20, 18))
-    pygame.draw.rect(screen, trim, (sx, sy + 11 + bob, 20, 3))
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, c.get('texture', 'plain'))
+    draw_textured_rect(screen, sx, sy + 11 + bob, 20, 3, trim, c.get('trim_texture', 'plain'))
     # Head
     pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
     # Eyes
@@ -27,8 +28,8 @@ def draw_npc_trade(screen, sx, sy, npc, font):
     skin = c.get('skin', (255, 215, 160))
     trim = c.get('trim', (40,  80, 130))
     # Body + lapel
-    pygame.draw.rect(screen, body, (sx, sy + bob, 20, 18))
-    pygame.draw.rect(screen, trim, (sx + 8, sy + bob, 4, 12))
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, c.get('texture', 'plain'))
+    draw_textured_rect(screen, sx + 8, sy + bob, 4, 12, trim, c.get('trim_texture', 'plain'))
     # Head
     pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
     # Eyes
@@ -46,8 +47,8 @@ def draw_npc_herbalist(screen, sx, sy, npc):
     skin = c.get('skin', (255, 215, 160))
     trim = c.get('trim', (90,  55, 20))
     # Body + belt
-    pygame.draw.rect(screen, body, (sx, sy + bob, 20, 18))
-    pygame.draw.rect(screen, trim, (sx, sy + 11 + bob, 20, 3))
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, c.get('texture', 'plain'))
+    draw_textured_rect(screen, sx, sy + 11 + bob, 20, 3, trim, c.get('trim_texture', 'plain'))
     # Head
     pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
     # Eyes
@@ -192,8 +193,8 @@ def draw_npc_merchant(screen, sx, sy, npc):
     trim = c.get('trim', (120, 75, 35))
     lapel = tuple(min(255, v + 30) for v in body)
     # Body + lapel
-    pygame.draw.rect(screen, body,  (sx, sy + bob, 20, 18))
-    pygame.draw.rect(screen, lapel, (sx + 8, sy + bob, 4, 12))
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, c.get('texture', 'plain'))
+    draw_textured_rect(screen, sx + 8, sy + bob, 4, 12, lapel, c.get('trim_texture', 'plain'))
     # Head
     pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
     # Eyes
@@ -212,8 +213,8 @@ def draw_npc_outpost_keeper(screen, sx, sy, npc):
     skin = c.get('skin', (220, 180, 130))
     trim = c.get('trim', (55, 85, 55))
     # Tunic + trim stripe
-    pygame.draw.rect(screen, body, (sx, sy + bob, 20, 18))
-    pygame.draw.rect(screen, trim, (sx + 7, sy + bob, 3, 18))
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, c.get('texture', 'plain'))
+    draw_textured_rect(screen, sx + 7, sy + bob, 3, 18, trim, c.get('trim_texture', 'plain'))
     # Head
     pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
     # Eyes

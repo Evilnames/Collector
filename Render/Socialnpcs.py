@@ -1,5 +1,6 @@
 import math
 import pygame
+from Render.textile_fill import draw_textured_rect
 
 
 def draw_npc_elder(screen, sx, sy, npc):
@@ -10,8 +11,8 @@ def draw_npc_elder(screen, sx, sy, npc):
     trim = c.get('trim', (60, 60, 75))
     skin = c.get('skin', (225, 200, 175))
     hair = (235, 235, 230)
-    pygame.draw.rect(screen, body, (sx, sy + bob, 20, 18))
-    pygame.draw.rect(screen, trim, (sx, sy + 16 + bob, 20, 2))
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, c.get('texture', 'plain'))
+    draw_textured_rect(screen, sx, sy + 16 + bob, 20, 2, trim, c.get('trim_texture', 'plain'))
     pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
     pygame.draw.rect(screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
     pygame.draw.rect(screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
@@ -61,17 +62,19 @@ def draw_npc_noble(screen, sx, sy, npc):
     body  = c.get('body', (90, 35, 110))
     trim  = c.get('trim', (220, 180, 70))
     plume = (210, 60, 70)
-    pygame.draw.rect(screen, body, (sx, sy + bob, 20, 18))
-    pygame.draw.rect(screen, trim, (sx + 8, sy + bob, 4, 18))
-    pygame.draw.rect(screen, trim, (sx,    sy + bob, 20, 2))
+    btx = c.get('texture', 'brocade')   # nobles default to figured cloth
+    ttx = c.get('trim_texture', 'damask')
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, btx)
+    draw_textured_rect(screen, sx + 8, sy + bob, 4, 18, trim, ttx)
+    draw_textured_rect(screen, sx,    sy + bob, 20, 2, trim, ttx)
     pygame.draw.rect(screen, (245, 240, 225), (sx + 5, sy + bob, 10, 3))
     pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
     pygame.draw.rect(screen, (40, 30, 20), (sx + 4,  sy - 7 + bob, 3, 3))
     pygame.draw.rect(screen, (40, 30, 20), (sx + 11, sy - 7 + bob, 3, 3))
     hat_dark = tuple(max(0, v - 30) for v in body)
     pygame.draw.rect(screen, hat_dark, (sx - 2, sy - 13 + bob, 24, 3))
-    pygame.draw.rect(screen, body,     (sx + 3, sy - 19 + bob, 14, 7))
-    pygame.draw.rect(screen, trim,     (sx + 3, sy - 13 + bob, 14, 2))
+    draw_textured_rect(screen, sx + 3, sy - 19 + bob, 14, 7, body, btx)
+    draw_textured_rect(screen, sx + 3, sy - 13 + bob, 14, 2, trim, ttx)
     plume_x = sx + 13 if facing == 1 else sx + 3
     pygame.draw.rect(screen, plume, (plume_x,     sy - 22 + bob, 4, 2))
     pygame.draw.rect(screen, plume, (plume_x + 1, sy - 24 + bob, 3, 2))
@@ -221,9 +224,9 @@ def draw_npc_drunkard(screen, sx, sy, npc):
     trim  = c.get('trim', (90, 55, 30))
     skin  = c.get('skin', (255, 195, 165))
     flush = (220, 110, 95)
-    pygame.draw.rect(screen, body, (sx, sy + bob, 20, 18))
-    pygame.draw.rect(screen, trim, (sx + 1, sy + 14 + bob, 18, 2))
-    pygame.draw.rect(screen, trim, (sx + 4, sy + 16 + bob, 12, 2))
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, c.get('texture', 'plain'))
+    draw_textured_rect(screen, sx + 1, sy + 14 + bob, 18, 2, trim, c.get('trim_texture', 'plain'))
+    draw_textured_rect(screen, sx + 4, sy + 16 + bob, 12, 2, trim, c.get('trim_texture', 'plain'))
     pygame.draw.rect(screen, skin,  (sx + 2, sy - 10 + bob, 16, 12))
     pygame.draw.rect(screen, flush, (sx + 2, sy - 4 + bob, 4, 3))
     pygame.draw.rect(screen, flush, (sx + 14, sy - 4 + bob, 4, 3))
@@ -241,7 +244,7 @@ def draw_npc_blacksmith(screen, sx, sy, npc):
     body = c.get('body', (80, 55, 35))
     skin = c.get('skin', (200, 165, 115))
     soot = tuple(max(0, v - 40) for v in skin)
-    pygame.draw.rect(screen, body,          (sx, sy + bob, 20, 18))
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, c.get('texture', 'plain'))
     pygame.draw.rect(screen, (80, 55, 30),  (sx + 6, sy + bob, 8, 18))
     pygame.draw.rect(screen, soot,          (sx + 2, sy - 10 + bob, 16, 12))
     pygame.draw.rect(screen, (30, 20, 10),  (sx + 4,  sy - 7 + bob, 3, 3))
@@ -256,7 +259,7 @@ def draw_npc_innkeeper(screen, sx, sy, npc):
     c = getattr(npc, 'clothing', {})
     body = c.get('body', (130, 80, 40))
     skin = c.get('skin', (255, 215, 160))
-    pygame.draw.rect(screen, body,            (sx, sy + bob, 20, 18))
+    draw_textured_rect(screen, sx, sy + bob, 20, 18, body, c.get('texture', 'plain'))
     pygame.draw.rect(screen, (240, 235, 220), (sx + 5, sy + bob, 10, 10))
     pygame.draw.rect(screen, skin,            (sx + 2, sy - 10 + bob, 16, 12))
     pygame.draw.rect(screen, (40, 30, 20),    (sx + 4,  sy - 7 + bob, 3, 3))
@@ -273,8 +276,8 @@ def draw_npc_scholar(screen, sx, sy, npc):
     body = c.get('body', (60, 60, 100))
     skin = c.get('skin', (255, 215, 160))
     fold = tuple(max(0, v - 30) for v in body)
-    pygame.draw.rect(screen, body, (sx + 2, sy + bob, 16, 20))
-    pygame.draw.rect(screen, fold, (sx + 8, sy + bob,  4, 20))
+    draw_textured_rect(screen, sx + 2, sy + bob, 16, 20, body, c.get('texture', 'plain'))
+    draw_textured_rect(screen, sx + 8, sy + bob,  4, 20, fold, c.get('trim_texture', 'plain'))
     pygame.draw.rect(screen, skin, (sx + 2, sy - 10 + bob, 16, 12))
     pygame.draw.circle(screen, (60, 50, 40), (sx + 6,  sy - 6 + bob), 3, 1)
     pygame.draw.circle(screen, (60, 50, 40), (sx + 13, sy - 6 + bob), 3, 1)
@@ -460,8 +463,8 @@ def draw_npc_royal_child(screen, sx, sy, npc):
 
     pygame.draw.rect(screen, legs,  (sx + 3,  sy + 10 + bob, 5, 8))   # left leg
     pygame.draw.rect(screen, legs,  (sx + 12, sy + 10 + bob, 5, 8))   # right leg
-    pygame.draw.rect(screen, body,  (sx + 2, sy + bob, 16, 11))        # tunic
-    pygame.draw.rect(screen, _gold(),(sx + 2, sy + bob, 16, 2))        # gold top band
+    draw_textured_rect(screen, sx + 2, sy + bob, 16, 11, body, c.get('texture', 'brocade'))  # tunic
+    draw_textured_rect(screen, sx + 2, sy + bob, 16, 2, _gold(), c.get('trim_texture', 'damask'))  # gold top band
     pygame.draw.rect(screen, (245, 240, 225), (sx + 6, sy + 2 + bob, 8, 3))  # cream collar
     pygame.draw.rect(screen, skin,  (sx + 3, sy - 9 + bob, 14, 10))   # head (slightly smaller)
     pygame.draw.rect(screen, (55, 40, 25), (sx + 3, sy - 11 + bob, 14, 3))   # hair

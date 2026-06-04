@@ -114,6 +114,36 @@ _ANOMALY_TYPES = {
 _LAND_ANOMALY_CHANCE = 0.045   # per non-coastal land cell
 _OCEAN_ANOMALY_CHANCE = 0.10   # per interior ocean cell
 
+# Climate biasing — favored biomes get repeated in the candidate pool,
+# suppressed biomes are dropped. Used when climate_bias != "temperate".
+_CLIMATE_FAVOR = {
+    "cold": {"boreal", "birch_forest", "tundra", "alpine_mountain",
+             "rocky_mountain", "redwood"},
+    "hot":  {"desert", "savanna", "arid_steppe", "jungle", "tropical",
+             "south_asian", "mediterranean", "red_rock"},
+}
+_CLIMATE_SUPPRESS = {
+    "cold": {"desert", "savanna", "arid_steppe", "jungle", "tropical",
+             "south_asian", "red_rock"},
+    "hot":  {"boreal", "tundra", "alpine_mountain", "birch_forest"},
+}
+
+
+def _climate_filter(pool: list, climate: str) -> list:
+    if climate not in _CLIMATE_FAVOR:
+        return pool
+    fav = _CLIMATE_FAVOR[climate]
+    sup = _CLIMATE_SUPPRESS[climate]
+    out = []
+    for b in pool:
+        if b in fav:
+            out.extend([b] * 4)
+        elif b in sup:
+            continue
+        else:
+            out.append(b)
+    return out if out else list(pool)
+
 # Per-biodome overrides — high-anomaly biomes get a much greater chance and
 # can restrict the pool to a thematic subset.
 _BIODOME_ANOMALY = {
@@ -305,8 +335,10 @@ def build_geography(seed: int, span: int) -> list:
     cell_w = WORLDGEN_CONFIG["cell_block_width"]
     world_min_x = -(span * cell_w) // 2
 
-    # Step 1 — elevation backbone.
-    elevation = [_fbm(seed + 1, i) for i in range(span)]
+    # Step 1 — elevation backbone. ``elevation_bias`` power-curves the raw
+    # fBm: values <1 push terrain higher (more mountains), >1 flatten it.
+    elev_bias = max(0.2, float(WORLDGEN_CONFIG.get("elevation_bias", 1.0)))
+    elevation = [_fbm(seed + 1, i) ** elev_bias for i in range(span)]
 
     # Step 2 — coastal stretches override biodome for those cells.
     stretches = _coast_stretches(seed, span, elevation)
@@ -316,6 +348,8 @@ def build_geography(seed: int, span: int) -> list:
             coast_map[i] = (s, e, otype)
 
     # Step 3 — biodome assignment with streaking.
+    climate = str(WORLDGEN_CONFIG.get("climate_bias", "temperate"))
+    drama_scale = float(WORLDGEN_CONFIG.get("drama_scale", 1.0))
     cells = []
     prev_biodome = None
     raw_offsets = []
@@ -330,13 +364,16 @@ def build_geography(seed: int, span: int) -> list:
             biodome = _biodome_for_ocean_cell(i, s, e, otype, rng)
             coastal = True
         else:
-            pool = _BAND_POOLS[band]
+            pool = _climate_filter(_BAND_POOLS[band], climate)
             biodome = _pick_streaky_biodome(prev_biodome, pool, rng)
             coastal = False
 
         biome = _pick_deep_biome(biodome, rng)
         world_x = world_min_x + i * cell_w + cell_w // 2
-        drama = _terrain_drama(seed, i)
+        # Drama scaled around its midpoint so 1.0 = neutral. Re-center on 0.65
+        # (the mean of the raw 0.30..1.00 range) and stretch by drama_scale.
+        raw_drama = _terrain_drama(seed, i)
+        drama = max(0.05, min(1.6, 0.65 + (raw_drama - 0.65) * drama_scale))
         weathering = _weathering(seed, i)
 
         # Ocean cells get a position-based depth profile instead of the flat
@@ -371,6 +408,9 @@ def build_geography(seed: int, span: int) -> list:
     # sinkholes, trenches) that survive the erosion pass with their own
     # offset + erosion values. Coastal/beach cells stay untouched so shores
     # don't sprout cliffs mid-transition.
+    anomaly_scale = max(0.0, float(WORLDGEN_CONFIG.get("anomaly_scale", 1.0)))
+    land_chance = min(1.0, _LAND_ANOMALY_CHANCE * anomaly_scale)
+    ocean_chance = min(1.0, _OCEAN_ANOMALY_CHANCE * anomaly_scale)
     for i, c in enumerate(cells):
         c.predicted_y_offset = eroded[i]
         c.erosion = erosion[i]
@@ -379,7 +419,7 @@ def build_geography(seed: int, span: int) -> list:
             continue
         anom_rng = random.Random(c.seed ^ 0xA105E)
         if c.biodome == "ocean":
-            if anom_rng.random() < _OCEAN_ANOMALY_CHANCE:
+            if anom_rng.random() < ocean_chance:
                 # Skip trenches at the very edges of a stretch.
                 cm = coast_map.get(i)
                 if cm and 2 <= (i - cm[0]) < (cm[1] - cm[0]) - 2:
@@ -390,8 +430,8 @@ def build_geography(seed: int, span: int) -> list:
                     c.erosion = spec["erosion"]
         else:
             override = _BIODOME_ANOMALY.get(c.biodome)
-            chance = override["chance"] if override else _LAND_ANOMALY_CHANCE
-            if anom_rng.random() < chance:
+            chance = (override["chance"] * anomaly_scale) if override else land_chance
+            if anom_rng.random() < min(1.0, chance):
                 if override:
                     name = anom_rng.choice(override["pool"])
                 else:
